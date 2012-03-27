@@ -1,0 +1,316 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Alert Console</title>
+
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="css/docs.css" rel="stylesheet">
+    <link href="css/custom.css" rel="stylesheet">
+  </head>
+
+  <body>
+   <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="./index.html">Alert Console</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class=""><a href="./index.html">Production</a></li>
+              <li class="active"><a href="./release.html">Release</a></li>
+              <li class=""><a href="./qa.html">QA</a></li>
+              <li class=""><a href="./test.html">Test</a></li>
+              <li class=""><a href="./code.html">Code</a></li>
+              <li class=""><a href="./dev.html">Development</a></li>
+              <li class=""><a href="./stage.html">Stage</a></li>
+              <li class=""><a href="./infra.html">Infrastructure</a></li>
+              <li class=""><a href="./treemap.html">Treemap</a></li>
+              <li class=""><a href="/Kibana">History</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      
+      <div align="right">
+        <button class="btn" id="toggle-NORMAL" class="toggle-NORMAL"><span><i class="icon-minus"></i> Hide</span><span class="initially-hidden"><i class="icon-plus"></i> Show</span> Normals</button>
+        <!-- button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh</button -->
+        <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh Now</button>
+      </div>
+      <!-- div><a id="refresh-all" class="btn btn-success" href="#"><i class="icon-shopping-cart icon-white"></i> Refresh</a></div -->
+
+      <div class="row show-grid">
+        <div class="span12">
+          <strong>Alert Summary</strong>
+        <div class="row show-grid">
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="R2" data-label="R2">
+              <thead>
+                <tr> <th colspan="6" id="REL-R2-status">R2</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="R2-warnings" class="warnings">
+                  <td id="REL-R2-critical">0</td>
+                  <td id="REL-R2-major">0</td>
+                  <td id="REL-R2-minor">0</td>
+                  <td id="REL-R2-warning">0</td>
+                  <td id="REL-R2-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Discussion" data-label="Discussion">
+              <thead>
+                <tr> <th colspan="6" id="REL-Discussion-status">Discussion</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="Discussion-warnings" class="warnings">
+                  <td id="REL-Discussion-critical">0</td>
+                  <td id="REL-Discussion-major">0</td>
+                  <td id="REL-Discussion-minor">0</td>
+                  <td id="REL-Discussion-warning">0</td>
+                  <td id="REL-Discussion-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="ContentAPI" data-label="Content API">
+              <thead>
+                <tr> <th colspan="6" id="REL-ContentAPI-status">Content API</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="ContentAPI-warnings" class="warnings">
+                  <td id="REL-ContentAPI-critical">0</td>
+                  <td id="REL-ContentAPI-major">0</td>
+                  <td id="REL-ContentAPI-minor">0</td>
+                  <td id="REL-ContentAPI-warning">0</td>
+                  <td id="REL-ContentAPI-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Identity" data-label="Identity">
+              <thead>
+                <tr> <th colspan="6" id="REL-Identity-status">Identity</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="Identity-warnings" class="warnings">
+                  <td id="REL-Identity-critical">0</td>
+                  <td id="REL-Identity-major">0</td>
+                  <td id="REL-Identity-minor">0</td>
+                  <td id="REL-Identity-warning">0</td>
+                  <td id="REL-Identity-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="row show-grid">
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="R1" data-label="R1">
+              <thead>
+                <tr> <th colspan="6" id="REL-R1-status">R1</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="R1-warnings" class="warnings">
+                  <td id="REL-R1-critical">0</td>
+                  <td id="REL-R1-major">0</td>
+                  <td id="REL-R1-minor">0</td>
+                  <td id="REL-R1-warning">0</td>
+                  <td id="REL-R1-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="FlexibleContent" data-label="Flexible Content">
+              <thead>
+                <tr> <th colspan="6" id="REL-FlexibleContent-status">Flexible Content</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="FlexibleContent-warnings" class="warnings">
+                  <td id="REL-FlexibleContent-critical">0</td>
+                  <td id="REL-FlexibleContent-major">0</td>
+                  <td id="REL-FlexibleContent-minor">0</td>
+                  <td id="REL-FlexibleContent-warning">0</td>
+                  <td id="REL-FlexibleContent-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Soulmates" data-label="Soulmates">
+              <thead>
+                <tr> <th colspan="6" id="REL-Soulmates-status">Soulmates</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="Soulmates-warnings" class="warnings">
+                  <td id="REL-Soulmates-critical">0</td>
+                  <td id="REL-Soulmates-major">0</td>
+                  <td id="REL-Soulmates-minor">0</td>
+                  <td id="REL-Soulmates-warning">0</td>
+                  <td id="REL-Soulmates-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="SharedSvcs" data-label="Shared Services">
+              <thead>
+                <tr> <th colspan="6" id="REL-SharedSvcs-status">Shared Services</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="SharedSvcs-warnings" class="warnings">
+                  <td id="REL-SharedSvcs-critical">0</td>
+                  <td id="REL-SharedSvcs-major">0</td>
+                  <td id="REL-SharedSvcs-minor">0</td>
+                  <td id="REL-SharedSvcs-warning">0</td>
+                  <td id="REL-SharedSvcs-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="row show-grid">
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="MicroApp" data-label="MicroApp">
+              <thead>
+                <tr> <th colspan="6" id="REL-MicroApp-status">Micro App</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="MicroApp-warnings" class="warnings">
+                  <td id="REL-MicroApp-critical">0</td>
+                  <td id="REL-MicroApp-major">0</td>
+                  <td id="REL-MicroApp-minor">0</td>
+                  <td id="REL-MicroApp-warning">0</td>
+                  <td id="REL-MicroApp-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Mutualisation" data-label="Mutualisation">
+              <thead>
+                <tr> <th colspan="6" id="REL-Mutualisation-status">Mutualisation</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="Mutualisation-warnings" class="warnings">
+                  <td id="REL-Mutualisation-critical">0</td>
+                  <td id="REL-Mutualisation-major">0</td>
+                  <td id="REL-Mutualisation-minor">0</td>
+                  <td id="REL-Mutualisation-warning">0</td>
+                  <td id="REL-Mutualisation-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="EC2" data-label="EC2">
+              <thead>
+                <tr> <th colspan="6" id="REL-EC2-status">EC2 Servers</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="EC2-warnings" class="warnings">
+                  <td id="REL-EC2-critical">0</td>
+                  <td id="REL-EC2-major">0</td>
+                  <td id="REL-EC2-minor">0</td>
+                  <td id="REL-EC2-warning">0</td>
+                  <td id="REL-EC2-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Network" data-label="Network">
+              <thead>
+                <tr> <th colspan="6" id="REL-Network-status">Network</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="Network-warnings" class="warnings">
+                  <td id="REL-Network-critical">0</td>
+                  <td id="REL-Network-major">0</td>
+                  <td id="REL-Network-minor">0</td>
+                  <td id="REL-Network-warning">0</td>
+                  <td id="REL-Network-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <!-- Alert Details -->
+      <div class="row show-grid">
+        <div class="span12">
+          <table class="table table-bordered table-condensed" id="alert-details">
+            <caption class="alerts-caption">
+              Release - <span id="alert-details-caption">R2</span> alert details
+            </caption>
+            <thead>
+              <tr> <th></th><th>Severity</th><th>Last Receive Time</th><th>Dupl. Count</th><th>Source</th><th>Event</th><th>Value</th><th>Text</th></tr> 
+            </thead>
+            <tbody id="R2-alerts" class="serviceAlerts">
+            </tbody>
+            <tbody id="Discussion-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="ContentAPI-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Identity-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="R1-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="FlexibleContent-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Soulmates-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="SharedSvcs-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="MicroApp-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Mutualisation-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="EC2-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Network-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+      <!-- end Alert Details -->
+
+    </div> <!-- end container -->
+    <script src="js/jquery-1.7.1.min.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="js/bootstrap-tooltip.js"></script>
+    <script src="js/console.js"></script>
+
+    <script>
+      $(document).ready(function() {
+
+        var services = ['R2', 'Discussion', 'ContentAPI', 'Identity', 'R1', 'FlexibleContent', 'Soulmates', 'SharedSvcs', 'MicroApp', 'Mutualisation', 'EC2', 'Network'],
+            env = "REL";
+
+        loadAlerts(services, env, true);
+
+        $('#refresh-all').click(function() {
+          loadAlerts(services, env, false)
+        });
+      });
+    </script>
+    
+  </body>
+</html>

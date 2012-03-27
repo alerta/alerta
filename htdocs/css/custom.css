@@ -1,0 +1,114 @@
+body { 
+	font-family: Verdana, Arial, monospace, sans-serif;
+	padding-top: 50px;
+	overflow-y: scroll;
+}
+
+hr {
+	margin: 9px 0;
+}
+
+.table {
+	margin-bottom: 0;
+}
+
+.loader {
+	background-image: url(../img/loading.gif);
+	background-position: right top;
+	background-repeat: no-repeat;
+}
+
+.initially-hidden {
+	display: none;
+}
+
+.table th {
+	vertical-align: top;
+}
+
+.summary td {
+	width: 20%;
+}
+
+.ad-more {
+	width: 1%;
+}
+
+.CRITICAL {
+  background-color: red;
+}
+.table tbody tr:hover td.critical, .critical {
+  background-color: red;
+}
+
+.MAJOR {
+  background-color: orange;
+}
+.table tbody tr:hover td.major, .major {
+  background-color: orange;
+}
+
+.MINOR {
+	background-color: yellow;
+}
+.table tbody tr:hover td.minor, .minor {
+  background-color: yellow;
+}
+
+.label-minor {
+  background-color: #ffd700;
+}
+.label-minor:hover {
+  background-color: #CDAD00;
+}
+
+.WARNING {
+  background-color: #1E90FF; // dodger-blue
+}
+.table tbody tr:hover td.warning, .warning {
+  background-color: #1E90FF;
+}
+
+.NORMAL {
+  background-color: lime;
+}
+.table tbody tr:hover td.normal, .normal {
+	background-color: lime;
+}
+
+.table tbody tr:hover td.zero, .zero {
+	background-color: #ddd;
+}
+
+caption {
+	font-weight: bold;
+}
+
+.priority .NORMAL {
+	display: none;
+}
+
+.alert-more {
+	background: #fff;
+}
+
+/*
+.table tbody tr:hover td, .table tbody tr:hover th {
+  background-color: #f5f5f5;
+} */
+
+/* .table tbody tr:hover td {
+  background-color: rgba(255, 250, 240, 0.5);   
+}
+*/
+
+/* .table.summary tbody tr:hover td {
+  background-color: #f5f5f5;
+} */
+/*
+.table tbody tr:hover td, .table tbody tr:hover th {
+    background-color: transparent;
+}*/
+.table#alert-details tbody tr:hover td {
+  background-color: rgba(255, 250, 240, 0.5);
+}

@@ -1,0 +1,26 @@
+.cell {
+  border: solid 1px white;
+  font: 10px sans-serif;
+  font-weight: bold;
+  line-height: 12px;
+  overflow: hidden;
+  position: absolute;
+  text-indent: 2px;
+  font-size:14px; 	
+}
+
+.tooltip {
+//	font-family: Optima; Palatino;
+	position: absolute;
+	background-color: white;
+	border-style:solid;
+	border-width:2px;	
+	padding:5px;
+	border-top-color:#f0f0f0;
+	border-bottom-color:#ededed;	
+	border-left-color:#f0f0f0;
+	border-right-color:#ededed;	
+	border-radius: 15px;
+	-moz-border-radius: 15px;
+	font-size:14px; 	
+}
