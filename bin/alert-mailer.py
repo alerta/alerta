@@ -33,7 +33,7 @@ ALERTER_MAIL = 'alerta@guardian.co.uk'
 MAILING_LIST = ['nick.satterly@guardian.co.uk', 'simon.huggins@guardian.co.uk']
 
 LOGFILE = '/var/log/alerta/alert-mailer.log'
-PIDFILE = '/var/run/alert-mailer.pid'
+PIDFILE = '/var/run/alerta/alert-mailer.pid'
 
 _TokenThread = None            # Worker thread object
 _Lock = threading.Lock()       # Synchronization lock

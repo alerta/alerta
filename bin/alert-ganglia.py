@@ -37,9 +37,9 @@ API_VERSION = 'latest'
 # METRIC_API = 'http://%s/ganglia/api/%s/metric-data' % (API_SERVER, API_VERSION)
 METRIC_API = 'http://%s/ganglia/api/snapshot.py' % (API_SERVER)
 
-RULESFILE = '/opt/alerta/bin/alert-ganglia.rules'
-LOG_FILE = '/var/log/alerta/alert-ganglia.log'
-PID_FILE = '/var/run/alert-ganglia.pid'
+RULESFILE = '/opt/alerta/conf/alert-ganglia.rules'
+LOGFILE = '/var/log/alerta/alert-ganglia.log'
+PIDFILE = '/var/run/alerta/alert-ganglia.pid'
 
 _WorkerThread = None            # Worker thread object
 _Lock = threading.Lock()        # Synchronization lock
@@ -186,7 +186,7 @@ def main():
     host_metrics = dict()
     rules = dict()
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-ganglia[%(process)d] %(levelname)s - %(message)s", filename=LOG_FILE)
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-ganglia[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alert Ganglia version %s', __version__)
 
     # Command line options
@@ -198,14 +198,14 @@ def main():
     environment = options.environment
 
     if options.pidfile:
-        PID_FILE = options.pidfile
+        PIDFILE = options.pidfile
 
     # Write pid file
-    if os.path.isfile(PID_FILE):
-        logging.error('%s already exists, exiting' % PID_FILE)
+    if os.path.isfile(PIDFILE):
+        logging.error('%s already exists, exiting' % PIDFILE)
         sys.exit(1)
     else:
-        file(PID_FILE, 'w').write(str(os.getpid()))
+        file(PIDFILE, 'w').write(str(os.getpid()))
 
     # Connect to message broker
     try:
@@ -381,7 +381,7 @@ def main():
         except KeyboardInterrupt, SystemExit:
             conn.disconnect()
             _WorkerThread.shutdown()
-            os.unlink(PID_FILE)
+            os.unlink(PIDFILE)
             sys.exit()
 
 if __name__ == '__main__':

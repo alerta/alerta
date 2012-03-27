@@ -26,7 +26,7 @@ ALERT_QUEUE  = '/queue/alerts' # inbound
 NOTIFY_TOPIC = '/topic/notify' # outbound
 
 LOGFILE = '/var/log/alerta/alerta.log'
-PIDFILE = '/var/run/alerta.pid'
+PIDFILE = '/var/run/alerta/alerta.pid'
 
 # Extend JSON Encoder to support ISO 8601 format dates
 class DateEncoder(json.JSONEncoder):

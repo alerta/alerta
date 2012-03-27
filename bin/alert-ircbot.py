@@ -27,7 +27,7 @@ IRC_CHANNEL  = '#alerts'
 IRC_USER     = 'alerta'
 
 LOGFILE = '/var/log/alerta/alert-ircbot.log'
-PIDFILE = '/var/run/alert-ircbot.pid'
+PIDFILE = '/var/run/alerta/alert-ircbot.pid'
 
 #
 # An IRC client may send 1 message every 2 seconds

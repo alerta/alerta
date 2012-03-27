@@ -23,7 +23,7 @@ BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers f
 LOGGER_QUEUE = '/queue/logger' # XXX note use of queue not topic because all alerts should be logged
 
 LOGFILE = '/var/log/alerta/alert-logger.log'
-PIDFILE = '/var/run/alert-logger.pid'
+PIDFILE = '/var/run/alerta/alert-logger.pid'
 
 ES_SERVER   = 'devmonsvr01'
 ES_BASE_URL = 'http://%s:9200/logstash' % (ES_SERVER)
