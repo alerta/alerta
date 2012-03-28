@@ -62,7 +62,7 @@ class MessageHandler(object):
             return
 
         if not alerts.find_one({"source": alert['source'], "event": alert['event']}):
-            logging.info('%s New alert %s %s %s', alert['uuid'], alert['source'], alert['event'], alert['severity'])
+            logging.info('%s : New alert -> insert', alert['uuid'])
             # New alert so ... 1. insert entire document
             #                  2. push history
             #                  3. set duplicate count to zero
@@ -70,20 +70,20 @@ class MessageHandler(object):
             alert['receiveTime'] = receiveTime.isoformat()
             alert['lastReceiveTime'] = receiveTime.isoformat()
             alert['repeat'] = False
-            alerts.insert(alert)
+            alerts.insert( "_id": new BinData(3, alert['uuid']), alert)
             alerts.update(
                 { "source": alert['source'], "event": alert['event'] },
                 { '$push': { "history": { "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "severity": alert['severity'], "text": alert['text'], "uuid": alert['uuid'] }}, 
                   '$set': { "duplicateCount": 0 }})
 
             # Forward alert to notify topic
-            logging.info('Fwd alert %s to %s', alert['uuid'], NOTIFY_TOPIC)
+            logging.info('%s : Fwd alert to %s', alert['uuid'], NOTIFY_TOPIC)
             alert = alerts.find_one({"uuid": alert['uuid']}, {"_id": 0, "history": 0})
             expireTime = int(start * 1000) + 5000
             conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
 
         elif alerts.find_one({"source": alert['source'], "event": alert['event'], "severity": alert['severity']}):
-            logging.info('%s Duplicate alert %s %s %s', alert['uuid'], alert['source'], alert['event'], alert['severity'])
+            logging.info('%s : Duplicate alert -> update dup count', alert['uuid'])
             # Duplicate alert .. 1. update existing document with lastReceiveTime, uuid, text, summary, value, tags, group and origin
             #                    2. increment duplicate count
             alerts.update(
@@ -93,15 +93,15 @@ class MessageHandler(object):
                             "tags": alert['tags'], "group": alert['group'], "repeat": True, "origin": alert['origin'] },
                   '$inc': { "duplicateCount": 1 }})
             # Forward alert to notify topic
-            logging.info('Fwd alert %s to %s', alert['uuid'], NOTIFY_TOPIC)
+            logging.info('%s : Fwd alert to %s', alert['uuid'], NOTIFY_TOPIC)
             alert = alerts.find_one({"uuid": alert['uuid']}, {"_id": 0, "history": 0})
             expireTime = int(start * 1000) + 5000
             conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "true"}, ack="auto")
 
         else:
-            logging.info('%s Diff sev alert %s %s %s', alert['uuid'], alert['source'], alert['event'], alert['severity'])
+            logging.info('%s : Severity change -> update details', alert['uuid'])
             previousSeverity = alerts.find_one({"source": alert['source'], "event": alert['event']}, { "severity": 1 , "_id": 0})['severity']
-            # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime, lastReceiveTime, (previousSeverity) <-- is this used???
+            # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime, lastReceiveTime, previousSeverity,
             #                        uuid, text, summary, value, tags, group and origin
             #                    2. set duplicate count to zero
             #                    3. push history
@@ -114,7 +114,7 @@ class MessageHandler(object):
                   '$push': { "history": { "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "severity": alert['severity'], "text": alert['text'], "uuid": alert['uuid'] }}})
 
             # Forward alert to notify topic
-            logging.info('Fwd alert %s to %s', alert['uuid'], NOTIFY_TOPIC)
+            logging.info('%s : Fwd alert to %s', alert['uuid'], NOTIFY_TOPIC)
             alert = alerts.find_one({"uuid": alert['uuid']}, {"_id": 0, "history": 0})
             # conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, repeat=False)
             expireTime = int(start * 1000) + 5000
