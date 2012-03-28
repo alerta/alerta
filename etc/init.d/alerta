@@ -11,7 +11,7 @@
 RETVAL=0
 prog="alerta"
 binary=/opt/alerta/bin/alerta.py
-pidfile=/var/run/$prog.pid
+pidfile=/var/run/alerta/$prog.pid
 lockfile=/var/lock/subsys/$prog
 
 # Source config
