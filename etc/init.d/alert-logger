@@ -53,7 +53,7 @@ case "$1" in
 	start
 	;;
   status)
-	status $prog
+	status -p $pidfile $prog
 	;;
   try-restart|condrestart)
 	if status $prog > /dev/null; then
