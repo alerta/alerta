@@ -9,10 +9,22 @@
 . /etc/init.d/functions
 
 RETVAL=0
-prog="alert-ganglia"
+prog=$(basename $0)
 binary=/opt/alerta/bin/alert-ganglia.py
 pidfile=/var/run/alerta/$prog.pid
 lockfile=/var/lock/subsys/$prog
+
+case "$prog" in
+  alert-ganglia-prod)
+	OPTIONS="-p $pidfile -E \"PROD;INFRA\""
+	;;
+  alert-ganglia-dev) 
+	OPTIONS="-p $pidfile -E \"REL;QA;TEST;CODE;DEV;STAGE;LWP\""
+	;;
+  *)
+	OPTIONS="-p $pidfile"
+	;;
+esac
 
 # Source config
 if [ -f /etc/sysconfig/$prog ] ; then
