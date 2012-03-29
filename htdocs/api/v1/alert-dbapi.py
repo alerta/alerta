@@ -59,7 +59,7 @@ def main():
             if os.environ['REQUEST_METHOD'] == 'GET':
 
                 # REQUEST_URI: /alerta/api/v1/alerts/alert/3bfd0f9d-2843-419d-9d4d-c99079a39d36
-                # QUERY_STRING: uuid=3bfd0f9d-2843-419d-9d4d-c99079a39d36 (after RewriteRule applied)
+                # QUERY_STRING: id=3bfd0f9d-2843-419d-9d4d-c99079a39d36 (after RewriteRule applied)
 
                 queryStr = os.environ['QUERY_STRING']
                 form = dict([queryParam.split('=') for queryParam in queryStr.split('&')])
@@ -92,9 +92,9 @@ def main():
             # elif os.environ['REQUEST_METHOD'] == 'DELETE':
             elif os.environ['REQUEST_METHOD'] == 'POST' and cgiform.getvalue("_method") == 'delete':
 
-                logging.info('DELETE %s', cgiform.getvalue("uuid"))
+                logging.info('DELETE %s', cgiform.getvalue("id"))
                 form = dict()
-                form['uuid'] = cgiform.getvalue("uuid")
+                form['id'] = cgiform.getvalue("id")
                 
                 logging.debug('MongoDB DELETE -> alerts.remove(%s)', form)
                 status['response']['status'] = alerts.remove(form, safe=True)

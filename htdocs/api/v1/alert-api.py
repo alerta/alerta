@@ -61,7 +61,7 @@ def main():
         logging.info('POST')
 
         alertid = str(uuid.uuid4()) # random UUID
-        alert['uuid']        = alertid
+        alert['id']          = alertid
         alert['summary']     = '%s - %s %s is %s on %s %s' % (alert['environment'], alert['severity'], alert['event'], alert['value'], alert['service'], os.uname()[1])
         alert['createTime']  = datetime.datetime.now().isoformat()
         alert['origin']      = 'alert-api/%s' % os.uname()[1]
@@ -86,7 +86,7 @@ def main():
             logging.error('ERROR: Failed to send alert to broker %s - %s', BROKER, e)
             sys.exit(1)
         stomp.disconnect()
-        status['response']['uuid'] = alertid
+        status['response']['id'] = alertid
 
         diff = time.time() - start
         status['response']['status'] = 'ok'

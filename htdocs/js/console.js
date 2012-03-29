@@ -74,7 +74,7 @@ function getAlerts(service, env, refresh) {
             historydata += '<hr/>' +
                           '<table class="table table-condensed table-striped">' +
                           '<tr><td><b>Severity</b></td><td>' + sev2label(hist.severity) + '</td></tr>' +
-                          '<tr><td><b>UUID</b></td><td>' + hist.uuid + '</td></tr>' +
+                          '<tr><td><b>Alert ID</b></td><td>' + hist.id + '</td></tr>' +
                           '<tr><td><b>Create time</b></td><td>' + date2str(hist.createTime) + '</td></tr>' +
                           '<tr><td><b>Receive time</b></td><td>' + date2str(hist.receiveTime) + '</td></tr>' +
                           '<tr><td><b>Text</b></td><td>' + hist.text + '</td></tr>' +
@@ -117,13 +117,13 @@ function getAlerts(service, env, refresh) {
                   '<td>' + ad.source + '</td>' +
                   '<td>' + ad.event + '</td>' +
                   '<td>' + ad.value + '</td>' +
-                  '<td class="alert-text">' + ad.text + '<a id="' + ad.uuid + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a></td>' +
+                  '<td class="alert-text">' + ad.text + '<a id="' + ad.lastReceiveId + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a></td>' +
                 '</tr>' +
                 '<tr id="' + service + 'details' + i +'data" class="initially-hidden">' +
                   '<td colspan="10" class="alert-more"><table class="table table-bordered table-condensed alert-more-table">' +
                      '<tr><td>' + 
                         '<table class="table table-condensed table-striped">' +
-                        '<tr><td><b>UUID</b></td><td>' + ad.uuid + '</td></tr>' +
+                        '<tr><td><b>Alert ID</b></td><td>' + ad.lastReceiveId + '</td></tr>' +
                         '<tr><td><b>Create Time</b></td><td>' + date2str(ad.createTime) + '</td></tr>' +
                         '<tr><td><b>Receive Time</b></td><td>' + date2str(ad.receiveTime) + '</td></tr>' +
                         '<tr><td><b>Last Receive Time</b></td><td>' + date2str(ad.lastReceiveTime) + '</td></tr>' +
