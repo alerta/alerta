@@ -59,7 +59,7 @@ def main():
             if os.environ['REQUEST_METHOD'] == 'GET':
 
                 # REQUEST_URI: /alerta/api/v1/alerts/alert/3bfd0f9d-2843-419d-9d4d-c99079a39d36
-                # QUERY_STRING: id=3bfd0f9d-2843-419d-9d4d-c99079a39d36 (after RewriteRule applied)
+                # QUERY_STRING: _id=3bfd0f9d-2843-419d-9d4d-c99079a39d36 (after RewriteRule applied)
 
                 queryStr = os.environ['QUERY_STRING']
                 form = dict([queryParam.split('=') for queryParam in queryStr.split('&')])
@@ -70,6 +70,7 @@ def main():
                 logging.debug('MongoDB GET -> alerts.find_one(%s, {"_id": 0})', form)
                 alert = alerts.find_one(form, {"_id": 0})
                 if alert:
+                    alert['id'] = form['_id']
                     status['response']['alert'] = alert
                     status['response']['status'] = 'ok'
                     total = 1
