@@ -108,7 +108,7 @@ def main():
     headers['correlation-id'] = alertid
 
     alert = dict()
-    alert['uuid']        = alertid
+    alert['id']          = alertid
     alert['source']      = (options.environment + '.' + options.service + '.' + options.source).lower()
     alert['event']       = options.event
     alert['group']       = options.group

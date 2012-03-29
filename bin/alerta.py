@@ -14,6 +14,7 @@ except ImportError:
     import simplejson as json
 import stomp
 import pymongo
+import bson
 import datetime
 import pytz
 import logging
@@ -49,7 +50,12 @@ class MessageHandler(object):
         alert = dict()
         alert = json.loads(body)
 
-        logging.info('%s : %s', alert['uuid'], alert['summary'])
+        # Move 'id' to '_id' ...
+        alertid = alert['id']
+        alert['_id'] = alertid
+        del alert['id']
+
+        logging.info('%s : %s', alertid, alert['summary'])
 
         receiveTime = datetime.datetime.utcnow()
         receiveTime = receiveTime.replace(tzinfo=pytz.utc) # XXX - kludge because python utcnow() is a naive datetime despite the name... bizarre
@@ -62,61 +68,65 @@ class MessageHandler(object):
             return
 
         if not alerts.find_one({"source": alert['source'], "event": alert['event']}):
-            logging.info('%s : New alert -> insert', alert['uuid'])
+            logging.info('%s : New alert -> insert', alertid)
             # New alert so ... 1. insert entire document
             #                  2. push history
             #                  3. set duplicate count to zero
 
-            alert['receiveTime'] = receiveTime.isoformat()
+            alert['lastReceiveId']   = alertid
+            alert['receiveTime']     = receiveTime.isoformat()
             alert['lastReceiveTime'] = receiveTime.isoformat()
-            alert['repeat'] = False
-            alerts.insert( "_id": new BinData(3, alert['uuid']), alert)
+            alert['repeat']          = False
+
+            alerts.insert(alert)
             alerts.update(
                 { "source": alert['source'], "event": alert['event'] },
-                { '$push': { "history": { "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "severity": alert['severity'], "text": alert['text'], "uuid": alert['uuid'] }}, 
+                { '$push': { "history": { "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "severity": alert['severity'], "text": alert['text'], "id": alertid }}, 
                   '$set': { "duplicateCount": 0 }})
 
             # Forward alert to notify topic
-            logging.info('%s : Fwd alert to %s', alert['uuid'], NOTIFY_TOPIC)
-            alert = alerts.find_one({"uuid": alert['uuid']}, {"_id": 0, "history": 0})
+            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+            alert = alerts.find_one({"_id": alertid}, {"_id": 0, "history": 0})
+            alert['id'] = alertid
             expireTime = int(start * 1000) + 5000
             conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
 
         elif alerts.find_one({"source": alert['source'], "event": alert['event'], "severity": alert['severity']}):
-            logging.info('%s : Duplicate alert -> update dup count', alert['uuid'])
-            # Duplicate alert .. 1. update existing document with lastReceiveTime, uuid, text, summary, value, tags, group and origin
+            logging.info('%s : Duplicate alert -> update dup count', alertid)
+            # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary, value, tags, group and origin
             #                    2. increment duplicate count
             alerts.update(
                 { "source": alert['source'], "event": alert['event']},
                 { '$set': { "lastReceiveTime": receiveTime.isoformat(),
-                            "uuid": alert['uuid'], "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
+                            "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "group": alert['group'], "repeat": True, "origin": alert['origin'] },
                   '$inc': { "duplicateCount": 1 }})
             # Forward alert to notify topic
-            logging.info('%s : Fwd alert to %s', alert['uuid'], NOTIFY_TOPIC)
-            alert = alerts.find_one({"uuid": alert['uuid']}, {"_id": 0, "history": 0})
+            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+            alert = alerts.find_one({"lastReceiveId": alertid}, {"_id": 0, "history": 0})
+            alert['id'] = alertid
             expireTime = int(start * 1000) + 5000
             conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "true"}, ack="auto")
 
         else:
-            logging.info('%s : Severity change -> update details', alert['uuid'])
+            logging.info('%s : Severity change -> update details', alertid)
             previousSeverity = alerts.find_one({"source": alert['source'], "event": alert['event']}, { "severity": 1 , "_id": 0})['severity']
             # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime, lastReceiveTime, previousSeverity,
-            #                        uuid, text, summary, value, tags, group and origin
+            #                        lastReceiveId, text, summary, value, tags, group and origin
             #                    2. set duplicate count to zero
             #                    3. push history
             alerts.update(
                 { "source": alert['source'], "event": alert['event']},
                 { '$set': { "severity": alert['severity'], "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "lastReceiveTime": receiveTime.isoformat(), "previousSeverity": previousSeverity,
-                            "uuid": alert['uuid'], "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
+                            "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "group": alert['group'], "repeat": False, "origin": alert['origin'],
                             "duplicateCount": 0 },
-                  '$push': { "history": { "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "severity": alert['severity'], "text": alert['text'], "uuid": alert['uuid'] }}})
+                  '$push': { "history": { "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "severity": alert['severity'], "text": alert['text'], "id": alertid }}})
 
             # Forward alert to notify topic
-            logging.info('%s : Fwd alert to %s', alert['uuid'], NOTIFY_TOPIC)
-            alert = alerts.find_one({"uuid": alert['uuid']}, {"_id": 0, "history": 0})
-            # conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, repeat=False)
+            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+            alert = alerts.find_one({"lastReceiveId": alertid}, {"_id": 0, "history": 0})
+            alert['id'] = alertid
             expireTime = int(start * 1000) + 5000
             conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
 

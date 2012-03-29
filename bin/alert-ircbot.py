@@ -55,16 +55,16 @@ class MessageHandler(object):
             _Lock.acquire()
             tokens -= 1
             _Lock.release()
-            logging.info('%s : %d tokens left.', alert['uuid'], tokens)
+            logging.info('%s : %d tokens left.', alert['lastReceiveId'], tokens)
         else:
-            logging.info('%s : Rate limiting this alert because no tokens left (%s)', alert['uuid'], alert['summary'])
+            logging.info('%s : Rate limiting this alert because no tokens left (%s)', alert['lastReceiveId'], alert['summary'])
             return
 
         try:
-            logging.info('%s : IRC message %s', alert['uuid'], alert['summary'])
+            logging.info('%s : IRC message %s', alert['lastReceiveId'], alert['summary'])
             irc.send('PRIVMSG '+IRC_CHANNEL+' :'+alert['summary']+'\r\n')
         except Exception, e:
-            logging.error('%s : IRC send failed %s %s', alert['uuid'], e, alert['summary'])
+            logging.error('%s : IRC send failed %s %s', alert['lastReceiveId'], e, alert['summary'])
 
     def on_disconnected(self):
         global conn

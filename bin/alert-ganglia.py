@@ -338,7 +338,7 @@ def main():
 
                             # standard alert info
                             alert = dict()
-                            alert['uuid']             = alertid
+                            alert['id']               = alertid
                             alert['source']           = host_info[h]['id']
                             alert['event']            = r['event']
                             alert['group']            = r['group']

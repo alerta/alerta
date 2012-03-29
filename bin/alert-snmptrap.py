@@ -200,7 +200,7 @@ def main():
     headers['correlation-id'] = alertid
 
     alert = dict()
-    alert['uuid']        = alertid
+    alert['id']          = alertid
     alert['source']      = (environment + '.' + service + '.' + source).lower()
     alert['event']       = event
     alert['group']       = group
@@ -235,7 +235,7 @@ def main():
     print alertid
     sys.exit(0)
     
-    logging.info('ALERT sent: %s', alertid)
+    logging.info('%s : Trap forwarded to %s', alertid, ALERT_QUEUE)
 
 if __name__ == '__main__':
     main()

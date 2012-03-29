@@ -52,7 +52,7 @@ class MessageHandler(object):
         alert = dict()
         alert = json.loads(body)
 
-        logging.info('%s %s %s %s', alert['uuid'], alert['source'], alert['event'], alert['severity'])
+        logging.info('%s : %s', alert['lastReceiveId'], alert['summary'])
 
         if tokens:
             _Lock.acquire()
@@ -68,12 +68,12 @@ class MessageHandler(object):
             prev = alert['previousSeverity']
         else:
             prev = '(unknown)'
-        logging.info('%s %s %s %s -> %s', alert['uuid'], alert['source'], alert['event'], prev, alert['severity'])
+        logging.info('%s : %s -> %s', alert['lastReceiveId'], prev, alert['severity'])
 
         text = ''
         text += '%s\n' % (alert['summary'])
         text += 'Alert Details\n'
-        text += 'Alert ID: %s\n' % (alert['uuid'])
+        text += 'Alert ID: %s\n' % (alert['lastReceiveId'])
         text += 'Create Time: %s\n' % (alert['createTime'])
         text += 'Source: %s\n' % (alert['source'])
         text += 'Environment: %s\n' % (alert['environment'])
@@ -110,7 +110,7 @@ class MessageHandler(object):
 
         html += '<tr><td><p align="left" style="font-size:18px;line-height:22px;color:#c25130;font-weight:bold;">Alert Details</p>\n'
         html += '<table>\n'
-        html += '<tr><td><b>Alert ID:</b></td><td>%s</td></tr>\n' % (alert['uuid'])
+        html += '<tr><td><b>Alert ID:</b></td><td>%s</td></tr>\n' % (alert['lastReceiveId'])
         html += '<tr><td><b>Create Time:</b></td><td>%s</td></tr>\n' % (alert['createTime'])
         html += '<tr><td><b>Source:</b></td><td>%s</td></tr>\n' % (alert['source'])
         html += '<tr><td><b>Environment:</b></td><td>%s</td></tr>\n' % (alert['environment'])
@@ -175,12 +175,12 @@ class MessageHandler(object):
                     pass
         
         try:
-            logging.info('%s Send via email  %s', alert['uuid'], alert['summary'])
+            logging.info('%s : Send email to %s', alert['lastReceiveId'], ','.join(MAILING_LIST))
             s = smtplib.SMTP('mx.gudev.gnl', 25)
             s.sendmail(ALERTER_MAIL, MAILING_LIST, msg_root.as_string())
             s.quit
         except Exception, e:
-            logging.error('Sendmail failed %s %s', e, alert['summary'])
+            logging.error('%s : Sendmail failed - ', alert['lastReceiveId'], e)
 
     def on_disconnected(self):
         global conn

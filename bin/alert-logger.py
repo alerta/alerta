@@ -40,7 +40,7 @@ class MessageHandler(object):
         if not alert['tags']:           # Kibana GUI borks if tags are null
             alert['tags'] = 'none'
 
-        logging.info('%s : %s', alert['uuid'], alert['summary'])
+        logging.info('%s : %s', alert['lastReceiveId'], alert['summary'])
 
         # Index alerts in ElasticSearch using Logstash format so that logstash GUI and/or Kibana can be used as frontends
         logstash = dict() 
@@ -58,10 +58,10 @@ class MessageHandler(object):
             response = urllib2.urlopen(url, json.dumps(logstash)).readlines()
             id = json.loads(''.join(response))['_id']
         except Exception, e:
-            logging.error('%s : Alert indexing failed %s %s %s', alert['uuid'], e, url, json.dumps(response))
+            logging.error('%s : Alert indexing failed %s %s %s', alert['lastReceiveId'], e, url, json.dumps(response))
             return
 
-        logging.info('%s : Alert indexed at %s/%s/%s', alert['uuid'], ES_BASE_URL, alert['type'], id)
+        logging.info('%s : Alert indexed at %s/%s/%s', alert['lastReceiveId'], ES_BASE_URL, alert['type'], id)
         
     def on_disconnected(self):
         global conn
