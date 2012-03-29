@@ -25,8 +25,8 @@ function sev2label(severity) {
 }
 
 function date2str(datetime) {
-        var d = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d*)?Z?$/.exec(datetime);
-        return (d[4]+':'+d[5]+':'+d[6]+' '+d[3]+'/'+d[2]+'/'+d[1]);
+        var d = new Date(datetime);
+        return d.toLocaleString();
 }
 
 // Update Alert Summaries
@@ -107,17 +107,15 @@ function getAlerts(service, env, refresh) {
           default: label='label-success';
         }
 
-        var d = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d*)?Z?$/.exec(ad.lastReceiveTime);
-
         rows += '<tr class="' + service + ' latest ' + ad.severity + '">' +
                   '<td class="ad-more"><a id="' + service + 'details' + i + '" class="show-details"><span class="show-d"><i class="icon-chevron-up icon-chevron-down"></i></span></a></td>' +
                   '<td class="ad-sev-td">' + sev2label(ad.severity) + '</td>' +
-                  '<td>' + d[4]+':'+d[5]+':'+d[6]+' '+d[3]+'/'+d[2]+'/'+d[1] + '</td>' +
+                  '<td>'+ date2str(ad.lastReceiveTime) + '</td>' +
                   '<td>' + ad.duplicateCount + '</td>' +
-                  '<td>' + ad.source + '</td>' +
+                  '<td>' + ad.resource + '</td>' +
                   '<td>' + ad.event + '</td>' +
                   '<td>' + ad.value + '</td>' +
-                  '<td class="alert-text">' + ad.text + '<a id="' + ad.lastReceiveId + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a></td>' +
+                  '<td class="alert-text">' + ad.text + '<a id="' + ad.id + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a></td>' +
                 '</tr>' +
                 '<tr id="' + service + 'details' + i +'data" class="initially-hidden">' +
                   '<td colspan="10" class="alert-more"><table class="table table-bordered table-condensed alert-more-table">' +
@@ -127,7 +125,7 @@ function getAlerts(service, env, refresh) {
                         '<tr><td><b>Create Time</b></td><td>' + date2str(ad.createTime) + '</td></tr>' +
                         '<tr><td><b>Receive Time</b></td><td>' + date2str(ad.receiveTime) + '</td></tr>' +
                         '<tr><td><b>Last Receive Time</b></td><td>' + date2str(ad.lastReceiveTime) + '</td></tr>' +
-                        '<tr><td><b>Source</b></td><td>' + ad.source + '</td></tr>' +
+                        '<tr><td><b>Resource</b></td><td>' + ad.resource + '</td></tr>' +
                         '<tr><td><b>Environment</b></td><td>' + ad.environment + '</td></tr>' +
                         '<tr><td><b>Service</b></td><td>' + ad.service + '</td></tr>' +
                         '<tr><td><b>Event</b></td><td>' + ad.event + '</td></tr>' +

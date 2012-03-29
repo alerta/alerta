@@ -90,7 +90,7 @@ def main():
             sevCounts = dict()
             logging.debug('MongoDB -> alerts.find(%s, {"_id": 0})', form)
             for alert in alerts.find(form, {"_id": 0}):
-                host = alert['source']
+                host = alert['resource']
                 env = alert['environment']
                 svc = alert['service']
                 sev = alert['severity']

@@ -57,6 +57,7 @@ class MessageHandler(object):
 
         logging.info('%s : %s', alertid, alert['summary'])
 
+        # Add receive timestamp
         receiveTime = datetime.datetime.utcnow()
         receiveTime = receiveTime.replace(tzinfo=pytz.utc) # XXX - kludge because python utcnow() is a naive datetime despite the name... bizarre
 
@@ -67,7 +68,7 @@ class MessageHandler(object):
             logging.warning('no datetime match')
             return
 
-        if not alerts.find_one({"source": alert['source'], "event": alert['event']}):
+        if not alerts.find_one({"resource": alert['resource'], "event": alert['event']}):
             logging.info('%s : New alert -> insert', alertid)
             # New alert so ... 1. insert entire document
             #                  2. push history
@@ -80,7 +81,7 @@ class MessageHandler(object):
 
             alerts.insert(alert)
             alerts.update(
-                { "source": alert['source'], "event": alert['event'] },
+                { "resource": alert['resource'], "event": alert['event'] },
                 { '$push': { "history": { "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "severity": alert['severity'], "text": alert['text'], "id": alertid }}, 
                   '$set': { "duplicateCount": 0 }})
 
@@ -91,12 +92,12 @@ class MessageHandler(object):
             expireTime = int(start * 1000) + 5000
             conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
 
-        elif alerts.find_one({"source": alert['source'], "event": alert['event'], "severity": alert['severity']}):
+        elif alerts.find_one({"resource": alert['resource'], "event": alert['event'], "severity": alert['severity']}):
             logging.info('%s : Duplicate alert -> update dup count', alertid)
             # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary, value, tags, group and origin
             #                    2. increment duplicate count
             alerts.update(
-                { "source": alert['source'], "event": alert['event']},
+                { "resource": alert['resource'], "event": alert['event']},
                 { '$set': { "lastReceiveTime": receiveTime.isoformat(),
                             "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "group": alert['group'], "repeat": True, "origin": alert['origin'] },
@@ -110,13 +111,13 @@ class MessageHandler(object):
 
         else:
             logging.info('%s : Severity change -> update details', alertid)
-            previousSeverity = alerts.find_one({"source": alert['source'], "event": alert['event']}, { "severity": 1 , "_id": 0})['severity']
+            previousSeverity = alerts.find_one({"resource": alert['resource'], "event": alert['event']}, { "severity": 1 , "_id": 0})['severity']
             # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime, lastReceiveTime, previousSeverity,
             #                        lastReceiveId, text, summary, value, tags, group and origin
             #                    2. set duplicate count to zero
             #                    3. push history
             alerts.update(
-                { "source": alert['source'], "event": alert['event']},
+                { "resource": alert['resource'], "event": alert['event']},
                 { '$set': { "severity": alert['severity'], "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "lastReceiveTime": receiveTime.isoformat(), "previousSeverity": previousSeverity,
                             "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "group": alert['group'], "repeat": False, "origin": alert['origin'],

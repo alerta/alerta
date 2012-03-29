@@ -138,7 +138,7 @@ def main():
             alertDetails = dict()
             logging.debug('MongoDB -> alerts.find(%s, {"_id": 0}, sort=%s)', form, sortby)
             for alert in alerts.find(form, {"_id": 0}, sort=sortby):
-                host = alert['source']
+                host = alert['resource']
                 env = alert['environment']
                 svc = alert['service']
                 sev = alert['severity']
