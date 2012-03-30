@@ -25,6 +25,7 @@ __version__ = "1.0"
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
 NOTIFY_TOPIC = '/topic/notify' # outbound
+LOGGER_QUEUE = '/queue/logger' # outbound
 
 LOGFILE = '/var/log/alerta/alerta.log'
 PIDFILE = '/var/run/alerta/alerta.pid'
@@ -91,6 +92,7 @@ class MessageHandler(object):
             alert['id'] = alertid
             expireTime = int(start * 1000) + 5000
             conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
+            conn.send(json.dumps(alert, cls=DateEncoder), destination=LOGGER_QUEUE, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
 
         elif alerts.find_one({"resource": alert['resource'], "event": alert['event'], "severity": alert['severity']}):
             logging.info('%s : Duplicate alert -> update dup count', alertid)
@@ -108,6 +110,7 @@ class MessageHandler(object):
             alert['id'] = alertid
             expireTime = int(start * 1000) + 5000
             conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "true"}, ack="auto")
+            conn.send(json.dumps(alert, cls=DateEncoder), destination=LOGGER_QUEUE, headers={"persistent": "true", "expires": expireTime, "repeat": "true"}, ack="auto")
 
         else:
             logging.info('%s : Severity change -> update details', alertid)
@@ -130,6 +133,7 @@ class MessageHandler(object):
             alert['id'] = alertid
             expireTime = int(start * 1000) + 5000
             conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
+            conn.send(json.dumps(alert, cls=DateEncoder), destination=LOGGER_QUEUE, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
 
         diff = int((time.time() - start) * 1000)
         mgmt.update(
