@@ -21,6 +21,7 @@ Basic Concepts
 Standard Attributes
 -------------------
 Most alerts have the following attributes:
+
 * id - alert id is a random UUID
 * severity - one of CRITICAL, MAJOR, MINOR, WARNING, NORMAL, INFORM or DEBUG
 * createTime - UTC date & time in ISO 8601 format in Zulu timezone
