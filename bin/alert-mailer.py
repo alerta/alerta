@@ -54,6 +54,11 @@ class MessageHandler(object):
 
         logging.info('%s : %s', alert['lastReceiveId'], alert['summary'])
 
+        # Only send a NORMAL email for alerts that have cleared
+        if alert['severity'] == 'NORMAL' and alert['previousSeverity'] == 'UNKNOWN':
+            logging.info('%s : Do not email this NORMAL alert because it is not clearing a known alarm')
+            return
+
         if tokens:
             _Lock.acquire()
             tokens -= 1
@@ -64,27 +69,20 @@ class MessageHandler(object):
             logging.info('No tokens left, rate limiting this alert')
             return
    
-        if 'previousSeverity' in alert:
-            prev = alert['previousSeverity']
-        else:
-            prev = '(unknown)'
-        logging.info('%s : %s -> %s', alert['lastReceiveId'], prev, alert['severity'])
+        logging.info('%s : %s -> %s', alert['lastReceiveId'], alert['previousSeverity'], alert['severity'])
 
         text = ''
         text += '%s\n' % (alert['summary'])
         text += 'Alert Details\n'
         text += 'Alert ID: %s\n' % (alert['lastReceiveId'])
         text += 'Create Time: %s\n' % (alert['createTime'])
-        text += 'Source: %s\n' % (alert['source'])
+        text += 'Resource: %s\n' % (alert['resource'])
         text += 'Environment: %s\n' % (alert['environment'])
         text += 'Service/Grid: %s\n' % (alert['service'])
         text += 'Event Name: %s\n' % (alert['event'])
         text += 'Event Group: %s\n' % (alert['group'])
         text += 'Event Value: %s\n' % (alert['value'])
-        if 'previousSeverity' in alert:
-            text += 'State: %s -> %s\n' % (alert['previousSeverity'], alert['severity'])
-        else:
-            text += 'State: %s -> %s\n' % ('(unknown)', alert['severity'])
+        text += 'State: %s -> %s\n' % (alert['previousSeverity'], alert['severity'])
         text += 'Text: %s\n' % (alert['text'])
         if 'alertRule' in alert:
             text += 'Alert Rule: %s\n' % (alert['alertRule'])
@@ -112,16 +110,13 @@ class MessageHandler(object):
         html += '<table>\n'
         html += '<tr><td><b>Alert ID:</b></td><td>%s</td></tr>\n' % (alert['lastReceiveId'])
         html += '<tr><td><b>Create Time:</b></td><td>%s</td></tr>\n' % (alert['createTime'])
-        html += '<tr><td><b>Source:</b></td><td>%s</td></tr>\n' % (alert['source'])
+        html += '<tr><td><b>Resource:</b></td><td>%s</td></tr>\n' % (alert['resource'])
         html += '<tr><td><b>Environment:</b></td><td>%s</td></tr>\n' % (alert['environment'])
         html += '<tr><td><b>Service/Grid:</b></td><td>%s</td></tr>\n' % (alert['service'])
         html += '<tr><td><b>Event Name:</b></td><td>%s</td></tr>\n' % (alert['event'])
         html += '<tr><td><b>Event Group:</b></td><td>%s</td></tr>\n' % (alert['group'])
         html += '<tr><td><b>Event Value:</b></td><td>%s</td></tr>\n' % (alert['value'])
-        if 'previousSeverity' in alert:
-            html += '<tr><td><b>State:</b></td><td>%s -> %s</td></tr>\n' % (alert['previousSeverity'], alert['severity'])
-        else:
-            html += '<tr><td><b>State:</b></td><td>%s -> %s</td></tr>\n' % ('(unknown)', alert['severity'])
+        html += '<tr><td><b>State:</b></td><td>%s -> %s</td></tr>\n' % (alert['previousSeverity'], alert['severity'])
         html += '<tr><td><b>Text:</b></td><td>%s</td></tr>\n' % (alert['text'])
         if 'alertRule' in alert:
             html += '<tr><td><b>Alert Rule:</b></td><td>%s</td></tr>\n' % (alert['alertRule'])

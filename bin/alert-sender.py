@@ -17,6 +17,7 @@ except ImportError:
     import simplejson as json
 from optparse import OptionParser
 import stomp
+import time
 import datetime
 import logging
 import uuid
@@ -25,6 +26,7 @@ __version__ = '1.0'
 
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
+EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-sender.log'
 
@@ -45,7 +47,7 @@ VALID_SEVERITY    = [ 'CRITICAL','MAJOR','MINOR','WARNING','NORMAL','INFORM', 'D
 VALID_ENVIRONMENT = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP','INFRA' ]
 VALID_SERVICES    = [ 'R1', 'R2', 'Discussion', 'Soulmates', 'ContentAPI', 'MicroApp', 'FlexibleContent', 'Mutualisation', 'SharedSvcs' ]
 
-SEVERITY_MAP = {
+SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
     'CRITICAL':       1, # Alert
     'MAJOR':          2, # Crtical
@@ -97,27 +99,30 @@ def main():
     alertid = str(uuid.uuid4()) # random UUID
 
     headers = dict()
-    headers['type'] = "exceptionAlert"
+    headers['type']           = "exceptionAlert"
     headers['correlation-id'] = alertid
+    headers['persistent']     = 'true'
+    headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
     alert = dict()
-    alert['id']           = alertid
-    alert['resource']     = (options.environment + '.' + options.service + '.' + options.resource).lower()
-    alert['event']        = options.event
-    alert['group']        = options.group
-    alert['value']        = options.value
-    alert['severity']     = options.severity.upper()
-    alert['severityCode'] = SEVERITY_MAP[alert['severity']]
-    alert['environment']  = options.environment.upper()
-    alert['service']      = options.service
-    alert['text']         = options.text
-    alert['type']         = 'exceptionAlert'
-    alert['tags']         = options.tags
-    alert['summary']      = '%s - %s %s is %s on %s %s' % (options.environment, options.severity.upper(), options.event, options.value, options.service, options.resource)
-    alert['createTime']   = datetime.datetime.utcnow().isoformat()+'+00:00'
-    alert['origin']       = 'alert-sender/%s' % os.uname()[1]
+    alert['id']            = alertid
+    alert['resource']      = (options.environment + '.' + options.service + '.' + options.resource).lower()
+    alert['event']         = options.event
+    alert['group']         = options.group
+    alert['value']         = options.value
+    alert['severity']      = options.severity.upper()
+    alert['severityCode']  = SEVERITY_CODE[alert['severity']]
+    alert['environment']   = options.environment.upper()
+    alert['service']       = options.service
+    alert['text']          = options.text
+    alert['type']          = 'exceptionAlert'
+    alert['tags']          = options.tags
+    alert['summary']       = '%s - %s %s is %s on %s %s' % (options.environment, options.severity.upper(), options.event, options.value, options.service, options.resource)
+    alert['createTime']    = datetime.datetime.utcnow().isoformat()+'+00:00'
+    alert['origin']        = 'alert-sender/%s' % os.uname()[1]
+    alert['thresholdInfo'] = 'n/a'
 
-    logging.info('ALERT: %s', json.dumps(alert))
+    logging.info('%s : %s', alertid, json.dumps(alert))
 
     if (not options.dry_run):
         try:

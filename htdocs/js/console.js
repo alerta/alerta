@@ -19,6 +19,8 @@ function sev2label(severity) {
           case 'MAJOR':    label='label-warning'; break;
           case 'MINOR':    label='label-minor'; break;
           case 'WARNING':  label='label-info'; break;
+          case 'DEBUG':    label='label-inverse'; break;
+          case 'UNKNOWN':  label=''; break;
           default:         label='label-success'; 
         }
         return('<span class="label '+label+'">' + severity + '</span>');
@@ -115,7 +117,7 @@ function getAlerts(service, env, refresh) {
                   '<td>' + ad.resource + '</td>' +
                   '<td>' + ad.event + '</td>' +
                   '<td>' + ad.value + '</td>' +
-                  '<td class="alert-text">' + ad.text + '<a id="' + ad.id + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a></td>' +
+                  '<td class="alert-text">' + ad.text + '<a id="' + ad.lastReceiveId + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a></td>' +
                 '</tr>' +
                 '<tr id="' + service + 'details' + i +'data" class="initially-hidden">' +
                   '<td colspan="10" class="alert-more"><table class="table table-bordered table-condensed alert-more-table">' +
@@ -133,7 +135,7 @@ function getAlerts(service, env, refresh) {
                         '<tr><td><b>Value</b></td><td>' + ad.value + '</td></tr>' +
                         '<tr><td><b>State</b></td><td>' + sev2label(ad.previousSeverity) + ' -> ' + sev2label(ad.severity) + '</td></tr>' +
                         '<tr><td><b>Text</b></td><td>' + ad.text + '</td></tr>' +
-                        '<tr><td><b>Alert Rule</b></td><td>' + ad.alertRule + '</td></tr>' +
+                        '<tr><td><b>Threshold Info</b></td><td>' + ad.thresholdInfo + '</td></tr>' +
                         '<tr><td><b>Type</b></td><td>' + ad.type + '</td></tr>' +
                         '<tr><td><b>Repeat</b></td><td>' + ad.repeat + '</td></tr>' +
                         '<tr><td><b>Duplicate Count</b></td><td>' + ad.duplicateCount + '</td></tr>' +

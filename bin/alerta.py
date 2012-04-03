@@ -75,10 +75,11 @@ class MessageHandler(object):
             #                  2. push history
             #                  3. set duplicate count to zero
 
-            alert['lastReceiveId']   = alertid
-            alert['receiveTime']     = receiveTime.isoformat()
-            alert['lastReceiveTime'] = receiveTime.isoformat()
-            alert['repeat']          = False
+            alert['lastReceiveId']    = alertid
+            alert['receiveTime']      = receiveTime.isoformat()
+            alert['lastReceiveTime']  = receiveTime.isoformat()
+            alert['previousSeverity'] = 'UNKNOWN'
+            alert['repeat']           = False
 
             alerts.insert(alert)
             alerts.update(
@@ -113,8 +114,8 @@ class MessageHandler(object):
             conn.send(json.dumps(alert, cls=DateEncoder), destination=LOGGER_QUEUE, headers={"persistent": "true", "expires": expireTime, "repeat": "true"}, ack="auto")
 
         else:
-            logging.info('%s : Severity change -> update details', alertid)
             previousSeverity = alerts.find_one({"resource": alert['resource'], "event": alert['event']}, { "severity": 1 , "_id": 0})['severity']
+            logging.info('%s : Severity change %s -> %s update details', alertid, previousSeverity, alert['severity'])
             # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime, lastReceiveTime, previousSeverity,
             #                        lastReceiveId, text, summary, value, tags, group and origin
             #                    2. set duplicate count to zero

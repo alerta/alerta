@@ -5,26 +5,41 @@
 #
 ########################################
 
-import os, sys
-import time
-import re
+import os
+import sys
 try:
     import json
 except ImportError:
     import simplejson as json
-
+import stomp
+import time
 import datetime
-# STOMP bindings from https://github.com/mozes/stompest
-from stompest.simple import Stomp
 import logging
 import uuid
+import re
 
-BROKER  = 'devmonsvr01:61613'
-QUEUE   = '/queue/prod.alerts'
-LOGFILE = '/tmp/alert-api.log'
+__version__ = '1.3'
 
-Version = "1.2 05/03/2012"
-Debug = False
+BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
+ALERT_QUEUE  = '/queue/alerts'
+EXPIRATION_TIME = 600 # seconds = 10 minutes
+
+LOGFILE = '/var/log/alerta/alert-api.log'
+
+VALID_SEVERITY    = [ 'CRITICAL','MAJOR','MINOR','WARNING','NORMAL','INFORM', 'DEBUG' ]
+VALID_ENVIRONMENT = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP','INFRA' ]
+VALID_SERVICES    = [ 'R1', 'R2', 'Discussion', 'Soulmates', 'ContentAPI', 'MicroApp', 'FlexibleContent', 'Mutualisation', 'SharedSvcs' ]
+
+SEVERITY_CODE = {
+    # ITU RFC5674 -> Syslog RFC5424
+    'CRITICAL':       1, # Alert
+    'MAJOR':          2, # Crtical
+    'MINOR':          3, # Error
+    'WARNING':        4, # Warning
+    'NORMAL':         5, # Notice
+    'INFORM':         6, # Informational
+    'DEBUG':          7, # Debug
+}
 
 # Extend JSON Encoder to support ISO 8601 format dates
 class DateEncoder(json.JSONEncoder):
@@ -36,7 +51,7 @@ class DateEncoder(json.JSONEncoder):
 
 def main():
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-api[%(process)d] %(levelname)s Thread-%(thread)d - %(message)s", filename=LOGFILE, filemode='a')
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-api[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
 
     callback = None
 
@@ -58,34 +73,39 @@ def main():
 
         # REQUEST_URI: /alerta/api/v1/alerts/alert.json
 
-        logging.info('POST')
-
         alertid = str(uuid.uuid4()) # random UUID
-        alert['id']          = alertid
-        alert['summary']     = '%s - %s %s is %s on %s %s' % (alert['environment'], alert['severity'], alert['event'], alert['value'], alert['service'], os.uname()[1])
-        alert['createTime']  = datetime.datetime.now().isoformat()
-        alert['origin']      = 'alert-api/%s' % os.uname()[1]
-
 
         headers = dict()
-        headers['type'] = "text"
+        headers['type']           = "exceptionAlert"
         headers['correlation-id'] = alertid
-                
-        logging.info('ALERT: %s', json.dumps(alert))
+        headers['persistent']     = 'true'
+        headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+             
+        alert = dict()   
+        alert['id']            = alertid
+        alert['severityCode']  = SEVERITY_CODE[alert['severity']]
+        alert['summary']       = '%s - %s %s is %s on %s %s' % (alert['environment'], alert['severity'].upper(), alert['event'], alert['value'], alert['service'], alert['resource'])
+        alert['createTime']    = datetime.datetime.utcnow().isoformat()+'+00:00'
+        alert['origin']        = 'alert-api/%s' % os.uname()[1]
 
-        broker, port = BROKER.split(':')
-        stomp = Stomp(broker, int(port))
+        logging.info('%s : %s', alertid, json.dumps(alert))
+
         try:
-            stomp.connect()
+            conn = stomp.Connection(BROKER_LIST)
+            conn.start()
+            conn.connect(wait=True)
         except Exception, e:
-            logging.error('ERROR: Could not connect to to broker %s - %s', BROKER, e)
-            sys.exit(1)
+            print >>sys.stderr, "ERROR: Could not connect to broker - %s" % e
+            logging.error('Could not connect to broker %s', e)
         try:
-            stomp.send(QUEUE, json.dumps(alert), headers)
+            conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
         except Exception, e:
-            logging.error('ERROR: Failed to send alert to broker %s - %s', BROKER, e)
-            sys.exit(1)
-        stomp.disconnect()
+            print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
+            logging.error('Failed to send alert to broker %s', e)
+        broker = conn.get_host_and_port()
+        logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
+        conn.disconnect()
+
         status['response']['id'] = alertid
 
         diff = time.time() - start

@@ -5,22 +5,21 @@
 #
 ########################################
 
-import os, sys
-import time
-import re
+import os
+import sys
 try:
     import json
 except ImportError:
     import simplejson as json
-
+import time
 import datetime
 import copy
 import pymongo
 import cgi, cgitb
 import logging
+import re
 
-Version = "1.2 05/03/2012"
-Debug = False
+__version__ = '1.2'
 
 # Extend JSON Encoder to support ISO 8601 format dates
 class DateEncoder(json.JSONEncoder):
@@ -95,7 +94,7 @@ def main():
 
                 logging.info('DELETE %s', cgiform.getvalue("id"))
                 form = dict()
-                form['id'] = cgiform.getvalue("id")
+                form['lastReceiveId'] = cgiform.getvalue("_id")
                 
                 logging.debug('MongoDB DELETE -> alerts.remove(%s)', form)
                 status['response']['status'] = alerts.remove(form, safe=True)

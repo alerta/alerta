@@ -65,7 +65,7 @@ def main():
 
     alert = dict()
     alert['id']          = alertid
-    alert['source']      = options.environment.lower()+'.'+options.service.lower()+'.'+options.source
+    alert['resource']    = options.environment.lower()+'.'+options.service.lower()+'.'+options.resource
     alert['event']       = options.event
     alert['group']       = options.group
     alert['value']       = options.value

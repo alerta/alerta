@@ -45,7 +45,7 @@ class MessageHandler(object):
         # Index alerts in ElasticSearch using Logstash format so that logstash GUI and/or Kibana can be used as frontends
         logstash = dict() 
         logstash['@message']     = alert['summary']
-        logstash['@source']      = alert['source']
+        logstash['@source']      = alert['resource']
         logstash['@source_host'] = 'not_used'
         logstash['@source_path'] = alert['origin']
         logstash['@tags']        = alert['tags']

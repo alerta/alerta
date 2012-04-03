@@ -19,6 +19,7 @@ except ImportError:
     import simplejson as json
 from optparse import OptionParser
 import stomp
+import time
 import datetime
 import logging
 import uuid
@@ -28,6 +29,7 @@ __version__ = '1.0'
 
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
+EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-snmptrap.log'
 
@@ -77,7 +79,7 @@ def main():
     # Defaults
     environment = 'INFRA'
     service     = 'Network'
-    source      = agent
+    resource    = agent
     event       = trapoid
     group       = 'SNMP'
     severity    = 'WARNING'
@@ -196,12 +198,14 @@ def main():
     alertid = str(uuid.uuid4()) # random UUID
 
     headers = dict()
-    headers['type'] = "snmptrapAlert"
+    headers['type']           = "snmptrapAlert"
     headers['correlation-id'] = alertid
+    headers['persistent']     = 'true'
+    headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
     alert = dict()
     alert['id']          = alertid
-    alert['source']      = (environment + '.' + service + '.' + source).lower()
+    alert['resource']    = (environment + '.' + service + '.' + resource).lower()
     alert['event']       = event
     alert['group']       = group
     alert['value']       = value
@@ -211,7 +215,7 @@ def main():
     alert['text']        = text
     alert['type']        = 'snmptrapAlert'
     alert['tags']        = list() # FIXME - should be set somewhere above
-    alert['summary']     = '%s - %s %s is %s on %s %s' % (environment, severity, event, value, service, source)
+    alert['summary']     = '%s - %s %s is %s on %s %s' % (environment, severity, event, value, service, resource)
     alert['createTime']  = datetime.datetime.utcnow().isoformat()+'+00:00'
     alert['origin']      = 'alert-snmptrap/%s' % os.uname()[1]
     alert['rawData']     = rawData

@@ -21,6 +21,7 @@ try:
 except ImportError:
     import simplejson as json
 import stomp
+import time
 import datetime
 import logging
 import copy
@@ -31,6 +32,7 @@ __version__ = "1.4"
 
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
+EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 API_SERVER = 'ganglia.gul3.gnl:80'
 API_VERSION = 'latest'
@@ -333,13 +335,16 @@ def main():
                             alertid = str(uuid.uuid4()) # random UUID
 
                             headers = dict()
-                            headers['type'] = "text"
+                            headers['type']           = "gangliaAlert"
                             headers['correlation-id'] = alertid
+                            headers['persistent']     = 'true'
+                            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+
 
                             # standard alert info
                             alert = dict()
                             alert['id']               = alertid
-                            alert['source']           = host_info[h]['id']
+                            alert['resource']         = host_info[h]['id']
                             alert['event']            = r['event']
                             alert['group']            = r['group']
                             alert['value']            = valueStr
@@ -355,7 +360,7 @@ def main():
                             alert['createTime']       = datetime.datetime.utcnow().isoformat()+'+00:00'
                             alert['moreInfo']         = host_info[h]['graphUrl']
                             alert['origin']           = "alert-ganglia/%s" % os.uname()[1]
-                            alert['alertRule']        = "%s: %s x %s" % (r['target'], r['rule'], r['count'])
+                            alert['thresholdInfo']    = "%s: %s x %s" % (r['target'], r['rule'], r['count'])
                             alert['repeat']           = repeat
 
                             alert['graphs']           = list()
