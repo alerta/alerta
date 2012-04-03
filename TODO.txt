@@ -1,0 +1,12 @@
+Phase 1a
+========
+- scripts should use YAML-based configuration files
+
+Phase 1b
+========
+- components should automatically reconnect if broker restarts
+
+Phase 2
+=======
+- sort-able and search-able alert console
+- add event correlation using ESPER or some such tool
