@@ -138,7 +138,7 @@ class MessageHandler(object):
 
         diff = int((time.time() - start) * 1000)
         mgmt.update(
-            { "group": "alerts", "name": "received", "type": "counter", "title": "Alerts received", "description": "Alerts received by via the message queue" },
+            { "group": "alerts", "name": "received", "type": "timer", "title": "Alerts received", "description": "Alerts received via the message queue" },
             { '$inc': { "count": 1, "totalTime": diff}},
            True)
 

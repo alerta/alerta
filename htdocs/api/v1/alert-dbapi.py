@@ -87,7 +87,7 @@ def main():
     
                 diff = int(diff * 1000) # XXX - management status needs time in milliseconds
                 mgmt.update(
-                    { "group": "requests", "name": "api", "type": "counter", "title": "API requests", "description": "Requests to the alert status API" },
+                    { "group": "requests", "name": "simple_get", "type": "counter", "title": "Simple GET requests", "description": "Requests to the alert status API" },
                     { '$inc': { "count": 1, "totalTime": diff}},
                     True)
 
@@ -107,7 +107,7 @@ def main():
 
                 diff = int(diff * 1000) # XXX - management status needs time in milliseconds
                 mgmt.update(
-                    { "group": "requests", "name": "api", "type": "counter", "title": "API requests", "description": "Requests to the alert status API" },
+                    { "group": "requests", "name": "delete", "type": "timer", "title": "DELETE requests", "description": "Requests to delete alerts via the API" },
                     { '$inc': { "count": 1, "totalTime": diff}},
                     True)
 
@@ -177,7 +177,7 @@ def main():
     
             diff = int(diff * 1000) # XXX - management status needs time in milliseconds
             mgmt.update(
-                { "group": "requests", "name": "api", "type": "counter", "title": "API requests", "description": "Requests to the alert status API" },
+                { "group": "requests", "name": "complex_get", "type": "timer", "title": "Complex GET requests", "description": "Requests to the alert status API" },
                 { '$inc': { "count": 1, "totalTime": diff}},
                 True)
 

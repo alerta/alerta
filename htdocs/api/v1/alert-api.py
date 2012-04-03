@@ -53,17 +53,19 @@ def main():
 
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-api[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
 
+    alert = dict()
     callback = None
 
     # cgiform = cgi.FieldStorage()
     data = sys.stdin.read()
+    logging.info('POST data: %s', data)
     alert = json.loads(data)
 
     for e in os.environ:
-        logging.info('%s: %s', e, os.environ[e])
+       logging.info('%s: %s', e, os.environ[e])
 
-    status = dict()
     start = time.time()
+    status = dict()
     status['response'] = dict()
     status['response']['status'] = 'failed' # assume 'failed', unless a response overwrites with 'ok'
 
@@ -81,7 +83,6 @@ def main():
         headers['persistent']     = 'true'
         headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
              
-        alert = dict()   
         alert['id']            = alertid
         alert['severityCode']  = SEVERITY_CODE[alert['severity']]
         alert['summary']       = '%s - %s %s is %s on %s %s' % (alert['environment'], alert['severity'].upper(), alert['event'], alert['value'], alert['service'], alert['resource'])
