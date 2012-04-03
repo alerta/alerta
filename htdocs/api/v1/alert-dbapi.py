@@ -21,6 +21,8 @@ import re
 
 __version__ = '1.2'
 
+LOGFILE = '/var/log/alerta/alert-dbapi.log'
+
 # Extend JSON Encoder to support ISO 8601 format dates
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -31,7 +33,7 @@ class DateEncoder(json.JSONEncoder):
 
 def main():
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-dbapi[%(process)d] %(levelname)s Thread-%(thread)d - %(message)s", filename='/tmp/alert-dbapi.log', filemode='a')
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-dbapi[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
 
     cgiform = cgi.FieldStorage() # only used by POST to smuggle 'delete' as "_method" variable
     callback = None
@@ -94,7 +96,7 @@ def main():
 
                 logging.info('DELETE %s', cgiform.getvalue("id"))
                 form = dict()
-                form['lastReceiveId'] = cgiform.getvalue("_id")
+                form['lastReceiveId'] = cgiform.getvalue("id")
                 
                 logging.debug('MongoDB DELETE -> alerts.remove(%s)', form)
                 status['response']['status'] = alerts.remove(form, safe=True)

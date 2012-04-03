@@ -19,8 +19,9 @@ import pymongo
 import cgi, cgitb
 import logging
 
-Version = "1.2 05/03/2012"
-Debug = False
+__version__ = '1.2'
+
+LOGFILE = '/var/log/alerta/alert-treemap.log'
 
 # Extend JSON Encoder to support ISO 8601 format dates
 class DateEncoder(json.JSONEncoder):
@@ -32,7 +33,7 @@ class DateEncoder(json.JSONEncoder):
 
 def main():
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-treemap[%(process)d] %(levelname)s Thread-%(thread)d - %(message)s", filename='/tmp/alert-treemap.log', filemode='a')
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-treemap[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
 
     form = dict()
     callback = None
