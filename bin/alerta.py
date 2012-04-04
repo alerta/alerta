@@ -154,7 +154,7 @@ def main():
     global alerts, mgmt, conn
 
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alerta[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
-    logging.info('Starting up Alerter version %s', __version__)
+    logging.info('Starting up Alerta version %s', __version__)
 
     # Write pid file
     if os.path.isfile(PIDFILE):

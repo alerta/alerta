@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ########################################
 #
-# alert-ircbot.py - Alerter IRC module
+# alert-ircbot.py - Alert IRC module
 #
 ########################################
 

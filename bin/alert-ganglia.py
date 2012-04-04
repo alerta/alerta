@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 ########################################
 #
-# alert-ganglia.py - Alerter Ganglia module
+# alert-ganglia.py - Alert Ganglia module
 #
 ########################################
-
-# Sends Ganglia alerts to a message bus
 
 # TODO
 # 1. query for cluster metrics so can alert off them too
@@ -20,6 +18,7 @@ try:
     import json
 except ImportError:
     import simplejson as json
+import yaml
 import stomp
 import time
 import datetime
@@ -28,7 +27,7 @@ import copy
 import uuid
 import re
 
-__version__ = "1.4"
+__version__ = '1.5'
 
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -39,20 +38,33 @@ API_VERSION = 'latest'
 # METRIC_API = 'http://%s/ganglia/api/%s/metric-data' % (API_SERVER, API_VERSION)
 METRIC_API = 'http://%s/ganglia/api/snapshot.py' % (API_SERVER)
 
-RULESFILE = '/opt/alerta/conf/alert-ganglia.rules'
+RULESFILE = '/opt/alerta/conf/alert-ganglia.yaml'
 LOGFILE = '/var/log/alerta/alert-ganglia.log'
 PIDFILE = '/var/run/alerta/alert-ganglia.pid'
 
+SEVERITY_CODE = {
+    # ITU RFC5674 -> Syslog RFC5424
+    'CRITICAL':       1, # Alert
+    'MAJOR':          2, # Crtical
+    'MINOR':          3, # Error
+    'WARNING':        4, # Warning
+    'NORMAL':         5, # Notice
+    'INFORM':         6, # Informational
+    'DEBUG':          7, # Debug
+}
+
 _WorkerThread = None            # Worker thread object
 _Lock = threading.Lock()        # Synchronization lock
-_refresh_rate = 120             # Refresh rate of the data
+_refresh_rate = 60              # Refresh rate of the data
 _check_rate   = 60              # Check rate of alerts
+
+host_info = dict()
+host_metrics = dict()
+rules = dict()
 
 currentCount  = dict()
 currentState  = dict()
-previousAlert = dict()
-
-updates = 0
+previousSeverity = dict()
 
 # Convert string to number
 def num(value):
@@ -84,7 +96,7 @@ class UpdateMetricThread(threading.Thread):
         self.join()
 
     def run(self):
-        global _refresh_rate, environment, host_info, host_metrics, updates
+        global _refresh_rate, environment, host_info, host_metrics
         self.running = True
 
         while not self.shuttingdown:
@@ -118,7 +130,7 @@ class UpdateMetricThread(threading.Thread):
 
                 self._metrics[h['host']] = dict()
 
-            # logging.info('%s', json.dumps(self._hosts))
+            logging.debug('%s', json.dumps(self._hosts))
 
             metrics = [metric for metric in response['response']['metrics'] if metric.has_key('value') and (metric['slope'] == u'both' or metric['slope'] == u'zero' or metric['units'] == u'timestamp')]
             for m in metrics:
@@ -140,7 +152,7 @@ class UpdateMetricThread(threading.Thread):
                 if m['host'] == 'devmonsvr01' and m['metric'] == 'swap_util':
                     logging.debug('%s', json.dumps(self._metrics[m['host']][m['metric']]))
 
-            # logging.info('%s', json.dumps(self._metrics))
+            logging.debug('%s', json.dumps(self._metrics))
 
             _Lock.acquire()
             host_info    = copy.deepcopy(self._hosts)
@@ -149,7 +161,6 @@ class UpdateMetricThread(threading.Thread):
 
             diff = time.time() - now
             logging.info('Updated %d host info and %d host metrics and it took %.2f seconds', len(host_info), len(host_metrics), diff)
-            updates += 1
 
             if not self.shuttingdown:
                 logging.debug('Metric gather is sleeping %d seconds', _refresh_rate)
@@ -160,19 +171,17 @@ class UpdateMetricThread(threading.Thread):
 # Initialise Rules
 def init_rules():
     global rules
-    logging.info('Re-initialising rules')
+    logging.info('Loading rules...')
     try:
-        rules = json.loads(''.join(open(RULESFILE)))
+        rules = yaml.load(open(RULESFILE))
     except Exception, e:
-        logging.error('Could not re-load alerta rules: %s', e)
+        logging.error('Failed to load alert rules: %s', e)
     for r in rules:
         check_rule(r['rule'])
-    logging.info('Rules loaded OK')
+    logging.info('Loaded %d rules OK', len(rules))
 
 # Rule validation
 def check_rule(rule):
-
-    # logging.info('Checking rule %s', rule) 
     dummy_variable = 1
     try:
         test = re.sub(r'(\$([A-Za-z0-9-_]+))', 'dummy_variable', rule)
@@ -182,13 +191,9 @@ def check_rule(rule):
         os._exit(1)
 
 def main():
-    global environment, host_info, host_metrics
+    global environment, host_info, host_metrics, rules
 
-    host_info = dict()
-    host_metrics = dict()
-    rules = dict()
-
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-ganglia[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-ganglia[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alert Ganglia version %s', __version__)
 
     # Command line options
@@ -210,12 +215,11 @@ def main():
         file(PIDFILE, 'w').write(str(os.getpid()))
 
     # Connect to message broker
+    logging.info('Connect to broker')
     try:
         conn = stomp.Connection(BROKER_LIST)
-        # conn.set_listener('', MessageHandler())
         conn.start()
         conn.connect(wait=True)
-        # conn.subscribe(destination=NOTIFY_TOPIC, ack='auto', headers={'selector': "repeat = 'false'"}) # TODO - subscribe to a 'heartbeat' channel for PING/PONGs
     except Exception, e:
         logging.error('Stomp connection error: %s', e)
 
@@ -224,17 +228,8 @@ def main():
     _WorkerThread = UpdateMetricThread()
     _WorkerThread.start()
 
-    # Initialiase Rules
-    logging.info('Initialising rules')
-    try:
-        rules = json.loads(''.join(open(RULESFILE)))
-    except Exception, e:
-        logging.error('Could not load alerta rules: %s', e)
-        sys.exit(1)
-    for r in rules:
-        check_rule(r['rule'])
-    logging.info('Rules loaded OK')
-
+    # Initialiase alert rules
+    init_rules()
     rules_mod_time = os.path.getmtime(RULESFILE)
 
     while True:
@@ -246,9 +241,9 @@ def main():
 
             for r in rules:
                 for h in host_info:
-                    m = re.search(r['target'], host_info[h]['id'])
+                    m = re.search(r['resource'], host_info[h]['id'])
                     if not m:
-                        logging.debug('%s Rule %s target %s does not match host %s', r['severity'], r['rule'], r['target'], h)
+                        logging.debug('%s %s: Skip rule %s %s as no match for target %s', r['event'], r['severity'], r['resource'], r['rule'], h)
                         continue
 
                     # Make substitutions to evaluate expression
@@ -262,47 +257,37 @@ def main():
                         # logging.warning('WARNING: host %s does not have metric values to evaluate rule %s', h, evalStr)
                         continue
                         
-                    # logging.debug('host %s has metric values to evaluate rule %s => %s', h, evalStr, result)
-
                     if result:
-                        logging.debug('%s Rule EVAL is TRUE: %s against rule %s', r['severity'], h, evalStr)
+                        logging.debug('%s %s %s: Rule %s %s is True', h, r['event'], r['severity'], r['resource'], r['rule'])
 
-                        logging.debug('Updates = %s', updates)
                         # Set necessary state variables if currentState is unknown
                         if (h, r['event']) not in currentState:
                             currentState[(h, r['event'])] = r['severity']
-
                             currentCount[(h, r['event'], r['severity'])] = 0
-                            if updates > 1:
-                                previousAlert[(h, r['event'])] = '(unknown)'
-                            else:
-                                previousAlert[(h, r['event'])] = r['severity']
-
-                            logging.debug('Update # is %s -> prevSev set to %s', updates, previousAlert[(h, r['event'])])
-                            logging.debug('New alert set currentCount to 0')
+                            previousSeverity[(h, r['event'])] = r['severity']
     
-                        # Change of threshold state
-                        if currentState[(h, r['event'])] != r['severity']:
+                        if currentState[(h, r['event'])] != r['severity']:                                                          # Change of threshold state
                             currentCount[(h, r['event'], r['severity'])] = currentCount.get((h, r['event'], r['severity']), 0) + 1
-                            currentCount[(h, r['event'], currentState[(h, r['event'])])] = 0 # zero-out previous sev counter
+                            currentCount[(h, r['event'], currentState[(h, r['event'])])] = 0                                        # zero-out previous sev counter
                             currentState[(h, r['event'])] = r['severity']
-    
-                        # Threshold state has not changed
-                        elif currentState[(h, r['event'])] == r['severity']:
+                        elif currentState[(h, r['event'])] == r['severity']:                                                        # Threshold state has not changed
                             currentCount[(h, r['event'], r['severity'])] += 1
-                            logging.debug('Inc currentCount by one if state hasnt changed, now %s', currentCount[(h, r['event'], r['severity'])])
 
+                        logging.debug('currentState = %s, currentCount = %d', currentState[(h, r['event'])], currentCount[(h, r['event'], r['severity'])])
+
+                        # Determine if should send a repeat alert 
                         if currentCount[(h, r['event'], r['severity'])] > r.get('count', 1):
                             repeat = (currentCount[(h, r['event'], r['severity'])] - r.get('count', 1)) % r.get('repeat', 1) == 0
                         else:
                             repeat = False
+                        logging.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, currentCount[(h, r['event'], r['severity'])], r.get('count', 1), r.get('repeat', 1))
 
-                        logging.debug('IF prevSev %s != %s AND thresh %d == %s', previousAlert[(h, r['event'])], r['severity'], currentCount[(h, r['event'], r['severity'])], r.get('count', 1))
-                        logging.debug('IF prevSev %s == %s AND repeat? %s', previousAlert[(h, r['event'])], r['severity'], repeat)
-    
+                        logging.debug('Send alert if prevSev %s != %s AND thresh %d == %s', previousSeverity[(h, r['event'])], r['severity'], currentCount[(h, r['event'], r['severity'])], r.get('count', 1))
+                        logging.debug('Send alert if prevSev %s == %s AND repeat? %s', previousSeverity[(h, r['event'])], r['severity'], repeat)
+   
                         # Determine if current threshold count requires an alert
-                        if ((previousAlert[(h, r['event'])] != r['severity'] and currentCount[(h, r['event'], r['severity'])] == r.get('count', 1))
-                            or (previousAlert[(h, r['event'])] == r['severity'] and repeat)):
+                        if ((previousSeverity[(h, r['event'])] != r['severity'] and currentCount[(h, r['event'], r['severity'])] == r.get('count', 1))
+                            or (previousSeverity[(h, r['event'])] == r['severity'] and repeat)):
 
                             # Subsitute real values into alert description where required
                             descrStr = r['description']
@@ -340,7 +325,6 @@ def main():
                             headers['persistent']     = 'true'
                             headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
-
                             # standard alert info
                             alert = dict()
                             alert['id']               = alertid
@@ -349,8 +333,7 @@ def main():
                             alert['group']            = r['group']
                             alert['value']            = valueStr
                             alert['severity']         = r['severity']
-                            if repeat == False:
-                                alert['previousSeverity'] = previousAlert[(h, r['event'])]
+                            alert['severityCode']     = SEVERITY_CODE[r['severity']]
                             alert['environment']      = host_info[h]['environment']
                             alert['service']          = host_info[h]['grid']
                             alert['text']             = descrStr
@@ -358,17 +341,15 @@ def main():
                             alert['tags']             = r['tags'] + [ "location:"+host_info[h]['location'], "cluster:"+host_info[h]['cluster'] ]
                             alert['summary']          = '%s - %s %s is %s on %s %s' % (host_info[h]['environment'], r['severity'], r['event'], valueStr, host_info[h]['grid'], h)
                             alert['createTime']       = datetime.datetime.utcnow().isoformat()+'+00:00'
-                            alert['moreInfo']         = host_info[h]['graphUrl']
                             alert['origin']           = "alert-ganglia/%s" % os.uname()[1]
-                            alert['thresholdInfo']    = "%s: %s x %s" % (r['target'], r['rule'], r['count'])
-                            alert['repeat']           = repeat
+                            alert['thresholdInfo']    = "%s: %s x %s" % (r['resource'], r['rule'], r['count'])
+                            alert['moreInfo']         = host_info[h]['graphUrl']
 
                             alert['graphs']           = list()
                             for g in r['graphs']:
                                 alert['graphs'].append(host_metrics[h][g]['graphUrl'])
 
-
-                            logging.info('%s %s %s %s -> %s', alertid, h, r['event'], previousAlert[(h, r['event'])], r['severity'])
+                            logging.info('%s : %s', alertid, json.dumps(alert))
 
                             try:
                                 conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
@@ -378,9 +359,13 @@ def main():
                             broker = conn.get_host_and_port()
                             logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
     
-                            # Keep track of previous alert
-                            previousAlert[(h, r['event'])] = r['severity']
+                            # Keep track of previous severity
+                            previousSeverity[(h, r['event'])] = r['severity']
 
+                    else:
+                        logging.debug('%s %s %s: Rule %s %s is False', h, r['event'], r['severity'], r['resource'], r['rule'])
+
+            logging.debug('Rule check is sleeping %d seconds', _check_rate)
             time.sleep(_check_rate)
 
         except KeyboardInterrupt, SystemExit:

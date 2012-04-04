@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ########################################
 #
-# alert-mailer.py - Alerter Mailer module
+# alert-mailer.py - Alert Mailer module
 #
 ########################################
 
