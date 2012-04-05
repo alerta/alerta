@@ -27,7 +27,7 @@ import copy
 import uuid
 import re
 
-__version__ = '1.5'
+__version__ = "1.5"
 
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -55,8 +55,8 @@ SEVERITY_CODE = {
 
 _WorkerThread = None            # Worker thread object
 _Lock = threading.Lock()        # Synchronization lock
-_refresh_rate = 60              # Refresh rate of the data
-_check_rate   = 60              # Check rate of alerts
+_refresh_rate = 90              # Refresh rate of the data
+_check_rate   = 120             # Check rate of alerts
 
 host_info = dict()
 host_metrics = dict()
@@ -115,6 +115,8 @@ class UpdateMetricThread(threading.Thread):
                 logging.error('Could not retrieve data from %s - %s', url, e)
                 return
 
+            logging.info('Snapshot taken at %s', response['response']['localTime'])
+
             hosts = [host for host in response['response']['hosts']]
             for h in hosts:
                 self._hosts[h['host']] = dict()
@@ -130,7 +132,7 @@ class UpdateMetricThread(threading.Thread):
 
                 self._metrics[h['host']] = dict()
 
-            logging.debug('%s', json.dumps(self._hosts))
+            # logging.debug('%s', json.dumps(self._hosts))
 
             metrics = [metric for metric in response['response']['metrics'] if metric.has_key('value') and (metric['slope'] == u'both' or metric['slope'] == u'zero' or metric['units'] == u'timestamp')]
             for m in metrics:
@@ -149,10 +151,7 @@ class UpdateMetricThread(threading.Thread):
                     'group':       m['group'],
                     'graphUrl':    m.get('graphUrl', 'none') }
 
-                if m['host'] == 'devmonsvr01' and m['metric'] == 'swap_util':
-                    logging.debug('%s', json.dumps(self._metrics[m['host']][m['metric']]))
-
-            logging.debug('%s', json.dumps(self._metrics))
+            # logging.debug('%s', json.dumps(self._metrics))
 
             _Lock.acquire()
             host_info    = copy.deepcopy(self._hosts)
@@ -163,7 +162,7 @@ class UpdateMetricThread(threading.Thread):
             logging.info('Updated %d host info and %d host metrics and it took %.2f seconds', len(host_info), len(host_metrics), diff)
 
             if not self.shuttingdown:
-                logging.debug('Metric gather is sleeping %d seconds', _refresh_rate)
+                logging.info('Metric gather is sleeping %d seconds', _refresh_rate)
                 time.sleep(_refresh_rate)
 
         self.running = False
@@ -276,14 +275,10 @@ def main():
                         logging.debug('currentState = %s, currentCount = %d', currentState[(h, r['event'])], currentCount[(h, r['event'], r['severity'])])
 
                         # Determine if should send a repeat alert 
-                        if currentCount[(h, r['event'], r['severity'])] > r.get('count', 1):
-                            repeat = (currentCount[(h, r['event'], r['severity'])] - r.get('count', 1)) % r.get('repeat', 1) == 0
-                        else:
-                            repeat = False
-                        logging.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, currentCount[(h, r['event'], r['severity'])], r.get('count', 1), r.get('repeat', 1))
+                        repeat = (currentCount[(h, r['event'], r['severity'])] - r.get('count', 1)) % r.get('repeat', 1) == 0
 
                         logging.debug('Send alert if prevSev %s != %s AND thresh %d == %s', previousSeverity[(h, r['event'])], r['severity'], currentCount[(h, r['event'], r['severity'])], r.get('count', 1))
-                        logging.debug('Send alert if prevSev %s == %s AND repeat? %s', previousSeverity[(h, r['event'])], r['severity'], repeat)
+                        logging.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, currentCount[(h, r['event'], r['severity'])], r.get('count', 1), r.get('repeat', 1))
    
                         # Determine if current threshold count requires an alert
                         if ((previousSeverity[(h, r['event'])] != r['severity'] and currentCount[(h, r['event'], r['severity'])] == r.get('count', 1))
@@ -365,7 +360,7 @@ def main():
                     else:
                         logging.debug('%s %s %s: Rule %s %s is False', h, r['event'], r['severity'], r['resource'], r['rule'])
 
-            logging.debug('Rule check is sleeping %d seconds', _check_rate)
+            logging.info('Rule check is sleeping %d seconds', _check_rate)
             time.sleep(_check_rate)
 
         except KeyboardInterrupt, SystemExit:
