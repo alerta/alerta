@@ -57,7 +57,7 @@ def main():
         sev_count['type'] = "gauge"
         sev_count['title'] = "Active " + sev + " alerts"
         sev_count['description'] = "Total number of active " + sev + " alerts"
-        sev_count['count'] = alerts.find({"severity": sev}).count()
+        sev_count['value'] = alerts.find({"severity": sev}).count()
         status['metrics'].append(sev_count)
 
     content = json.dumps(status, cls=DateEncoder)
