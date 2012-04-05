@@ -20,12 +20,13 @@ import pytz
 import logging
 import re
 
-__version__ = "1.0"
+__version__ = '1.1'
 
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
 NOTIFY_TOPIC = '/topic/notify' # outbound
 LOGGER_QUEUE = '/queue/logger' # outbound
+EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alerta.log'
 PIDFILE = '/var/run/alerta/alerta.pid'
@@ -90,10 +91,16 @@ class MessageHandler(object):
             # Forward alert to notify topic
             logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
             alert = alerts.find_one({"_id": alertid}, {"_id": 0, "history": 0})
+
+            headers['type']           = alert['type']
+            headers['correlation-id'] = alertid
+            headers['persistent']     = 'true'
+            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+            headers['repeat']         = 'false'
+
             alert['id'] = alertid
-            expireTime = int(start * 1000) + 5000
-            conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
-            conn.send(json.dumps(alert, cls=DateEncoder), destination=LOGGER_QUEUE, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
+            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
         elif alerts.find_one({"resource": alert['resource'], "event": alert['event'], "severity": alert['severity']}):
             logging.info('%s : Duplicate alert -> update dup count', alertid)
@@ -108,10 +115,16 @@ class MessageHandler(object):
             # Forward alert to notify topic
             logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
             alert = alerts.find_one({"lastReceiveId": alertid}, {"_id": 0, "history": 0})
+
+            headers['type']           = alert['type']
+            headers['correlation-id'] = alertid
+            headers['persistent']     = 'true'
+            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+            headers['repeat']         = 'true'
+
             alert['id'] = alertid
-            expireTime = int(start * 1000) + 5000
-            conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "true"}, ack="auto")
-            conn.send(json.dumps(alert, cls=DateEncoder), destination=LOGGER_QUEUE, headers={"persistent": "true", "expires": expireTime, "repeat": "true"}, ack="auto")
+            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
         else:
             previousSeverity = alerts.find_one({"resource": alert['resource'], "event": alert['event']}, { "severity": 1 , "_id": 0})['severity']
@@ -131,10 +144,16 @@ class MessageHandler(object):
             # Forward alert to notify topic
             logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
             alert = alerts.find_one({"lastReceiveId": alertid}, {"_id": 0, "history": 0})
+
+            headers['type']           = alert['type']
+            headers['correlation-id'] = alertid
+            headers['persistent']     = 'true'
+            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+            headers['repeat']         = 'false'
+
             alert['id'] = alertid
-            expireTime = int(start * 1000) + 5000
-            conn.send(json.dumps(alert, cls=DateEncoder), destination=NOTIFY_TOPIC, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
-            conn.send(json.dumps(alert, cls=DateEncoder), destination=LOGGER_QUEUE, headers={"persistent": "true", "expires": expireTime, "repeat": "false"}, ack="auto")
+            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
         diff = int((time.time() - start) * 1000)
         mgmt.update(
