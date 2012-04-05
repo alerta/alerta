@@ -38,6 +38,7 @@ def main():
     # Connection to MongoDB
     mongo = pymongo.Connection()
     db = mongo.monitoring
+    alerts = db.alerts
     mgmt = db.status
 
     status = dict()
@@ -48,6 +49,17 @@ def main():
     for stat in mgmt.find({}, {"_id": 0}):
         logging.debug('%s', json.dumps(stat))
         status['metrics'].append(stat)
+
+    for sev in ['CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'NORMAL', 'INFORM', 'DEBUG']:
+        sev_count = dict()
+        sev_count['group'] = "alerts"
+        sev_count['name'] = sev.lower()
+        sev_count['type'] = "gauge"
+        sev_count['title'] = "Active " + sev + " alerts"
+        sev_count['description'] = "Total number of active " + sev + " alerts"
+        sev_count['count'] = alerts.find({"severity": sev}).count()
+        status['metrics'].append(sev_count)
+
     content = json.dumps(status, cls=DateEncoder)
 
     # logging.debug('API >>> %s', content)
