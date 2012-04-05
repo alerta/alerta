@@ -20,7 +20,7 @@ import pytz
 import logging
 import re
 
-__version__ = '1.1'
+__version__ = '1.1.1'
 
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -114,7 +114,7 @@ class MessageHandler(object):
                   '$inc': { "duplicateCount": 1 }})
             # Forward alert to notify topic
             logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-            alert = alerts.find_one({"lastReceiveId": alertid}, {"_id": 0, "history": 0})
+            alert = alerts.find_one({"lastReceiveId": alertid}, {"history": 0})
 
             headers['type']           = alert['type']
             headers['correlation-id'] = alertid
@@ -122,7 +122,8 @@ class MessageHandler(object):
             headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
             headers['repeat']         = 'true'
 
-            alert['id'] = alertid
+            alert['id'] = alert['_id']
+            del alert['_id']
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
@@ -143,7 +144,7 @@ class MessageHandler(object):
 
             # Forward alert to notify topic
             logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-            alert = alerts.find_one({"lastReceiveId": alertid}, {"_id": 0, "history": 0})
+            alert = alerts.find_one({"lastReceiveId": alertid}, {"history": 0})
 
             headers['type']           = alert['type']
             headers['correlation-id'] = alertid
@@ -151,7 +152,8 @@ class MessageHandler(object):
             headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
             headers['repeat']         = 'false'
 
-            alert['id'] = alertid
+            alert['id'] = alert['_id']
+            del alert['_id']
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
