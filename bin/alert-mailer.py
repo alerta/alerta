@@ -84,8 +84,8 @@ class MessageHandler(object):
         text += 'Event Value: %s\n' % (alert['value'])
         text += 'State: %s -> %s\n' % (alert['previousSeverity'], alert['severity'])
         text += 'Text: %s\n' % (alert['text'])
-        if 'alertRule' in alert:
-            text += 'Alert Rule: %s\n' % (alert['alertRule'])
+        if 'thresholdInfo' in alert:
+            text += 'Threshold Info: %s\n' % (alert['thresholdInfo'])
         if 'duplicateCount' in alert:
             text += 'Duplicate Count: %s\n' % (alert['duplicateCount'])
         if 'moreInfo' in alert:
@@ -118,8 +118,8 @@ class MessageHandler(object):
         html += '<tr><td><b>Event Value:</b></td><td>%s</td></tr>\n' % (alert['value'])
         html += '<tr><td><b>State:</b></td><td>%s -> %s</td></tr>\n' % (alert['previousSeverity'], alert['severity'])
         html += '<tr><td><b>Text:</b></td><td>%s</td></tr>\n' % (alert['text'])
-        if 'alertRule' in alert:
-            html += '<tr><td><b>Alert Rule:</b></td><td>%s</td></tr>\n' % (alert['alertRule'])
+        if 'thresholdInfo' in alert:
+            html += '<tr><td><b>Threshold Info:</b></td><td>%s</td></tr>\n' % (alert['thresholdInfo'])
         if 'duplicateCount' in alert:
             html += '<tr><td><b>Duplicate Count:</b></td><td>%s</td></tr>\n' % (alert['duplicateCount'])
         if 'moreInfo' in alert:
