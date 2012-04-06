@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ########################################
 #
-# alert-ircbot.py - Alert IRC module
+# alert-ircbot.py - Alert IRC client
 #
 ########################################
 
@@ -18,7 +18,7 @@ except ImportError:
 import stomp
 import logging
 
-__version__ = "1.0"
+__version__ = '1.0'
 
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -161,11 +161,11 @@ def main():
                         irc.send('QUIT\r\n')
 
             time.sleep(0.01)
-        except KeyboardInterrupt, SystemExit:
+        except (KeyboardInterrupt, SystemExit):
             conn.disconnect()
             _TokenThread.shutdown()
             os.unlink(PIDFILE)
-            sys.exit()
+            sys.exit(0)
 
 if __name__ == '__main__':
     main()

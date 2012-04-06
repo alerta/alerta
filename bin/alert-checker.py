@@ -3,8 +3,6 @@
 ########################################
 #
 # alert-checker.py - Alert Nagios Check
-#
-# Written by Nick Satterly (Mar 2012)
 # 
 ########################################
 

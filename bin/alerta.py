@@ -185,7 +185,7 @@ def main():
     # Write pid file
     if os.path.isfile(PIDFILE):
         logging.error('%s already exists, exiting' % PIDFILE)
-        sys.exit()
+        sys.exit(1)
     else:
         file(PIDFILE, 'w').write(str(os.getpid()))
    
@@ -211,10 +211,10 @@ def main():
     while True:
         try:
             time.sleep(0.01)
-        except KeyboardInterrupt, SystemExit:
+        except (KeyboardInterrupt, SystemExit):
             conn.disconnect()
             os.unlink(PIDFILE)
-            sys.exit()
+            sys.exit(0)
 
 if __name__ == '__main__':
     main()

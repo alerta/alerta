@@ -2,9 +2,7 @@
 
 ########################################
 #
-# alert-aws.py - Amazon Web Service Alert Adapter
-#
-# Written by Nick Satterly (Mar 2012)
+# alert-aws.py - Amazon Web Service Alerter
 # 
 ########################################
 
@@ -27,7 +25,7 @@ BROKER  = 'devmonsvr01:61613'
 QUEUE   = '/queue/prod.alerts'
 LOGFILE = '/tmp/alert-aws.log'
 
-Version = '1.0, 16/03/2012'
+__version__ = '1.0'
 
 def main():
 

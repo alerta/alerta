@@ -19,7 +19,7 @@ import pycurl
 import urllib2
 import re
 
-__version__ = "1.0"
+__version__ = '1.0'
 
 TWITTER_STREAM = 'https://stream.twitter.com/1/statuses/filter.json'
 TWITTER_USERNAME = 'nicksatterly'
@@ -93,8 +93,8 @@ class StatusHandler(object):
 
         try:
             url = "%s/%s" % (ES_BASE_URL, 'tweet')
-            response = urllib2.urlopen(url, json.dumps(logstash)).readlines()
-            id = json.loads(''.join(response))['_id']
+            response = urllib2.urlopen(url, json.dumps(logstash)).read()
+            id = json.loads(response)['_id']
         except Exception, e:
             logging.error('%s : Tweet indexing failed %s %s %s %s', tweet['id_str'], e, url, json.dumps(response), json.dumps(logstash))
             return
@@ -109,7 +109,7 @@ def main():
     # Write pid file
     if os.path.isfile(PIDFILE):
         logging.error('%s already exists, exiting' % PIDFILE)
-        sys.exit()
+        sys.exit(1)
     else:
         file(PIDFILE, 'w').write(str(os.getpid()))
 
@@ -119,9 +119,9 @@ def main():
     while True:
         try:
             time.sleep(0.01)
-        except KeyboardInterrupt, SystemExit:
+        except (KeyboardInterrupt, SystemExit):
             os.unlink(PIDFILE)
-            sys.exit()
+            sys.exit(0)
 
 if __name__ == '__main__':
     main()

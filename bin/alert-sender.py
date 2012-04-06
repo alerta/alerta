@@ -4,8 +4,6 @@
 #
 # alert-sender.py - Alert Command-line script
 #
-# Written by Nick Satterly (Feb 2012)
-# 
 ########################################
 
 import os
