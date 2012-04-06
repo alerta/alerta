@@ -12,7 +12,6 @@ import os
 import sys
 import optparse
 import time
-import threading
 import urllib2
 try:
     import json
@@ -27,7 +26,7 @@ import copy
 import uuid
 import re
 
-__version__ = "1.5"
+__version__ = '1.5'
 
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -53,9 +52,6 @@ SEVERITY_CODE = {
     'DEBUG':          7, # Debug
 }
 
-_WorkerThread = None            # Worker thread object
-_Lock = threading.Lock()        # Synchronization lock
-_refresh_rate = 90              # Refresh rate of the data
 _check_rate   = 120             # Check rate of alerts
 
 host_info = dict()
@@ -78,94 +74,63 @@ def num(value):
         return value
 
 # Query Ganglia Snapshot API for metric data
-class UpdateMetricThread(threading.Thread):
+def get_metrics():
+    global _refresh_rate, environment, host_info, host_metrics
 
-    def __init__(self):
-        threading.Thread.__init__(self)
-        self.running      = False
-        self.shuttingdown = False
+    now = time.time()
 
-        self._hosts        = {}
-        self._metrics      = {}
-        self.timeout       = 2
+    url = "%s?environment=%s" % (METRIC_API, environment)
+    logging.info('Getting metrics from %s', url)
 
-    def shutdown(self):
-        self.shuttingdown = True
-        if not self.running:
-            return
-        self.join()
+    try:
+        output = urllib2.urlopen(url).read()
+        response = json.loads(output)
+    except urllib2.URLError, e:
+        logging.error('Could not retrieve data from %s - %s', url, e)
+        return
 
-    def run(self):
-        global _refresh_rate, environment, host_info, host_metrics
-        self.running = True
+    logging.info('Snapshot taken at %s', response['response']['localTime'])
 
-        while not self.shuttingdown:
-            if self.shuttingdown:
-                break
+    hosts = [host for host in response['response']['hosts']]
+    for h in hosts:
+        host_info[h['host']] = dict()
+        host_info[h['host']] = {
+            'id':          h['id'],
+            'environment': h['environment'],
+            'grid':        h['grid'],
+            'cluster':     h['cluster'],
+            'ipAddress':   h['ipAddress'],
+            'location':    h['location'],
+            'uptime':      h['gmondStarted'],
+            'graphUrl':    h.get('graphUrl', 'none')
+        }
 
-            now = time.time()
+        host_metrics[h['host']] = dict()
 
-            url = "%s?environment=%s" % (METRIC_API, environment)
-            logging.info('Getting metrics from %s', url)
+    # logging.debug('%s', json.dumps(host_info))
 
-            try:
-                output = urllib2.urlopen(url).readlines()
-                response = json.loads(''.join(output))
-            except urllib2.URLError, e:
-                logging.error('Could not retrieve data from %s - %s', url, e)
-                return
+    metrics = [metric for metric in response['response']['metrics'] if metric.has_key('value') and (metric['slope'] == u'both' or metric['slope'] == u'zero' or metric['units'] == u'timestamp')]
+    for m in metrics:
+        host_metrics[m['host']][m['metric']] = {
+            'id':          m['id'],
+            'environment': m['environment'],
+            'grid':        m['grid'], 
+            'cluster':     m['cluster'], 
+            'host':        m['host'],
+            'metric':      m['metric'],
+            'value':       num(m['value']),
+            'age':         m['age'],
+            'type':        'TBC',
+            'slope':       m['slope'],
+            'units':       m['units'],
+            'group':       m['group'],
+            'graphUrl':    m.get('graphUrl', 'none')
+        }
 
-            logging.info('Snapshot taken at %s', response['response']['localTime'])
+    # logging.debug('%s', json.dumps(host_metrics))
 
-            hosts = [host for host in response['response']['hosts']]
-            for h in hosts:
-                self._hosts[h['host']] = dict()
-                self._hosts[h['host']]['id']           = h['id']
-                self._hosts[h['host']]['environment']  = str(h['environment'])
-                self._hosts[h['host']]['grid']         = str(h['grid'])
-                self._hosts[h['host']]['cluster']      = str(h['cluster'])
-                self._hosts[h['host']]['ipAddress']    = str(h['ipAddress'])
-                self._hosts[h['host']]['location']     = str(h['location'])
-                self._hosts[h['host']]['gmondStarted'] = str(h['gmondStarted'])
-                self._hosts[h['host']]['type']         = 'TBC'
-                self._hosts[h['host']]['graphUrl']     = h.get('graphUrl', 'none')
-
-                self._metrics[h['host']] = dict()
-
-            # logging.debug('%s', json.dumps(self._hosts))
-
-            metrics = [metric for metric in response['response']['metrics'] if metric.has_key('value') and (metric['slope'] == u'both' or metric['slope'] == u'zero' or metric['units'] == u'timestamp')]
-            for m in metrics:
-                self._metrics[m['host']][m['metric']] = {
-                    'id':          m['id'],
-                    'environment': m['environment'],
-                    'grid':        m['grid'], 
-                    'cluster':     m['cluster'], 
-                    'host':        m['host'],
-                    'metric':      m['metric'],
-                    'value':       num(m['value']),
-                    'age':         m['age'],
-                    'type':        'TBC',
-                    'slope':       m['slope'],
-                    'units':       m['units'],
-                    'group':       m['group'],
-                    'graphUrl':    m.get('graphUrl', 'none') }
-
-            # logging.debug('%s', json.dumps(self._metrics))
-
-            _Lock.acquire()
-            host_info    = copy.deepcopy(self._hosts)
-            host_metrics = copy.deepcopy(self._metrics)
-            _Lock.release()
-
-            diff = time.time() - now
-            logging.info('Updated %d host info and %d host metrics and it took %.2f seconds', len(host_info), len(host_metrics), diff)
-
-            if not self.shuttingdown:
-                logging.info('Metric gather is sleeping %d seconds', _refresh_rate)
-                time.sleep(_refresh_rate)
-
-        self.running = False
+    diff = time.time() - now
+    logging.info('Updated %d host info and %d host metrics and it took %.2f seconds', len(host_info), len(host_metrics), diff)
 
 # Initialise Rules
 def init_rules():
@@ -186,8 +151,8 @@ def check_rule(rule):
         test = re.sub(r'(\$([A-Za-z0-9-_]+))', 'dummy_variable', rule)
         eval (test)
     except SyntaxError, e:
-        logging.error('ERROR: SyntaxError in rule %s %s', rule, e)
-        os._exit(1)
+        logging.error('SyntaxError in rule %s %s', rule, e)
+        sys.exit(3)
 
 def main():
     global environment, host_info, host_metrics, rules
@@ -222,17 +187,14 @@ def main():
     except Exception, e:
         logging.error('Stomp connection error: %s', e)
 
-    # Start metric update thread
-    logging.info('Start update metric thread')
-    _WorkerThread = UpdateMetricThread()
-    _WorkerThread.start()
-
     # Initialiase alert rules
     init_rules()
     rules_mod_time = os.path.getmtime(RULESFILE)
 
     while True:
         try:
+            get_metrics()
+
             # Read (or re-read) rules as necessary
             if os.path.getmtime(RULESFILE) != rules_mod_time:
                 init_rules()
@@ -363,11 +325,10 @@ def main():
             logging.info('Rule check is sleeping %d seconds', _check_rate)
             time.sleep(_check_rate)
 
-        except KeyboardInterrupt, SystemExit:
+        except (KeyboardInterrupt, SystemExit):
             conn.disconnect()
-            _WorkerThread.shutdown()
             os.unlink(PIDFILE)
-            sys.exit()
+            sys.exit(0)
 
 if __name__ == '__main__':
     main()
