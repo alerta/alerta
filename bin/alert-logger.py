@@ -17,7 +17,7 @@ import datetime
 import logging
 import urllib2
 
-__version__ = "1.0"
+__version__ = '1.0'
 
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 LOGGER_QUEUE = '/queue/logger' # XXX note use of queue not topic because all alerts should be logged
@@ -55,12 +55,12 @@ class MessageHandler(object):
 
         try:
             url = "%s/%s" % (ES_BASE_URL, alert['type'])
-            response = urllib2.urlopen(url, json.dumps(logstash)).readlines()
-            id = json.loads(''.join(response))['_id']
+            response = urllib2.urlopen(url, json.dumps(logstash)).read()
         except Exception, e:
-            logging.error('%s : Alert indexing failed %s %s %s', alert['lastReceiveId'], e, url, json.dumps(response))
+            logging.error('%s : Alert indexing to %s failed - %s', alert['lastReceiveId'], url, e)
             return
 
+        id = json.loads(response)['_id']
         logging.info('%s : Alert indexed at %s/%s/%s', alert['lastReceiveId'], ES_BASE_URL, alert['type'], id)
         
     def on_disconnected(self):
@@ -80,7 +80,7 @@ def main():
     # Write pid file
     if os.path.isfile(PIDFILE):
         logging.error('%s already exists, exiting' % PIDFILE)
-        sys.exit()
+        sys.exit(1)
     else:
         file(PIDFILE, 'w').write(str(os.getpid()))
 
@@ -97,10 +97,10 @@ def main():
     while True:
         try:
             time.sleep(0.01)
-        except KeyboardInterrupt, SystemExit:
+        except (KeyboardInterrupt, SystemExit):
             conn.disconnect()
             os.unlink(PIDFILE)
-            sys.exit()
+            sys.exit(0)
 
 if __name__ == '__main__':
     main()

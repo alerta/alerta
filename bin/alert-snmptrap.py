@@ -4,8 +4,6 @@
 #
 # alert-snmptrap.py - Alert SNMP Trap Script
 #
-# Written by Nick Satterly (Mar 2012)
-# 
 ########################################
 
 # See http://pysnmp.sourceforge.net/examples/2.x/snmptrap.html
@@ -62,7 +60,6 @@ def main():
 
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-snmptrap[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
 
-    # recv = sys.stdin.readlines()
     rawData = sys.stdin.read()
     recv = rawData.split('\n')
     logging.info('trap -> %s', json.dumps(recv))
