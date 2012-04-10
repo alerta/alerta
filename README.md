@@ -106,3 +106,6 @@ Thanks
 * 10gen for mongodb
 * Apache for ActiveMQ and STOMP
 * Shay Banon for elasticsearch
+* Twitter for Bootstrap
+* Kibana
+* jQuery

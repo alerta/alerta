@@ -1,12 +1,14 @@
-Phase 1a
-========
-- scripts should use YAML-based configuration files
+Version 1.0
+===========
+- run all python code through pylint
 
-Phase 1b
-========
+Version 1.1
+===========
 - components should automatically reconnect if broker restarts
+- scripts should use YAML-based configuration files
+- add ability to remote kill client auto-refresh
 
-Phase 2
-=======
+Version 2.0
+===========
 - sort-able and search-able alert console
 - add event correlation using ESPER or some such tool
