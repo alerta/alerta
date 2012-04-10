@@ -33,7 +33,7 @@ class MessageHandler(object):
         logging.error('Received an error %s', body)
 
     def on_message(self, headers, body):
-        logging.debug("Received alert; %s", body)
+        logging.debug("Received alert : %s", body)
 
         alert = dict()
         alert = json.loads(body)

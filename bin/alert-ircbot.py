@@ -46,7 +46,7 @@ class MessageHandler(object):
     def on_message(self, headers, body):
         global tokens
 
-        logging.debug("Received alert; %s", body)
+        logging.debug("Received alert : %s", body)
 
         alert = dict()
         alert = json.loads(body)
