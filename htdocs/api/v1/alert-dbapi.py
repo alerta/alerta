@@ -27,7 +27,7 @@ LOGFILE = '/var/log/alerta/alert-dbapi.log'
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.isoformat()
+            return obj.isoformat()+'Z'
         else:
             return json.JSONEncoder.default(self, obj)
 
@@ -134,45 +134,44 @@ def main():
 
             logging.info('%s', json.dumps(form))
     
-            status['response']['alerts'] = list()
-
-            sevCounts = dict()
-            alertDetails = dict()
+            alertDetails = list()
             logging.debug('MongoDB -> alerts.find(%s, {"_id": 0}, sort=%s)', form, sortby)
             for alert in alerts.find(form, {"_id": 0}, sort=sortby):
-                host = alert['resource']
-                env = alert['environment']
-                svc = alert['service']
-                sev = alert['severity']
-                evt = alert['event']
-    
-                if (env,svc) not in sevCounts:
-                    sevCounts[(env,svc)] = dict()
-                    sevCounts[(env,svc)][sev] = 1
-                elif sev not in sevCounts[(env,svc)]:
-                    sevCounts[(env,svc)][sev] = dict()
-                    sevCounts[(env,svc)][sev] = 1
-                else:
-                    sevCounts[(env,svc)][sev] += 1
-                total += 1
-    
-                if (env,svc) not in alertDetails:
-                    alertDetails[(env,svc)] = list()
-                alertDetails[(env,svc)].append(alert)
-            
-            for env,svc in sevCounts.keys():
-                sev = { 'critical': sevCounts[(env,svc)].get(('CRITICAL'), 0),
-                        'major': sevCounts[(env,svc)].get(('MAJOR'), 0),
-                        'minor': sevCounts[(env,svc)].get(('MINOR'), 0), 
-                        'warning': sevCounts[(env,svc)].get(('WARNING'), 0),
-                        'normal': sevCounts[(env,svc)].get(('NORMAL'), 0) }
-                a = { 'environment': env, 'service': svc, 'severityCounts': sev , 'alertDetails': list(alertDetails[(env,svc)]) }
-                status['response']['alerts'].append(a)
+                alertDetails.append(alert)
+
+            form['severity'] = 'CRITICAL'
+            critical = alerts.find(form).count()
+            form['severity'] = 'MAJOR'
+            major = alerts.find(form).count()
+            form['severity'] = 'MINOR'
+            minor = alerts.find(form).count()
+            form['severity'] = 'WARNING'
+            warning = alerts.find(form).count()
+            form['severity'] = 'NORMAL'
+            normal = alerts.find(form).count()
+            form['severity'] = 'INFORM'
+            inform = alerts.find(form).count()
+            form['severity'] = 'DEBUG'
+            debug = alerts.find(form).count()
+
+            sev = { 'critical': critical,
+                    'major': major,
+                    'minor': minor,
+                    'warning': warning,
+                    'normal': normal,
+                    'inform': inform,
+                    'debug': debug
+            }
+            logging.debug('severityCounts %s', sev)
+
+            a = { 'severityCounts': sev , 'alertDetails': list(alertDetails) }
+            status['response']['alerts'] = list()
+            status['response']['alerts'].append(a)
     
             diff = time.time() - start
             status['response']['status'] = 'ok'
             status['response']['time'] = "%.3f" % diff
-            status['response']['total'] = total
+            status['response']['total'] = critical + major + minor + warning + normal + inform + debug
             status['response']['localTime'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     
             diff = int(diff * 1000) # XXX - management status needs time in milliseconds
