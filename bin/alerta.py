@@ -20,7 +20,7 @@ import pytz
 import logging
 import re
 
-__version__ = '1.1.1'
+__version__ = '1.2'
 
 BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -47,7 +47,7 @@ class MessageHandler(object):
         global alerts, mgmt, conn
 
         start = time.time()
-        logging.debug("Received alert; %s", body)
+        logging.debug("Received alert : %s", body)
 
         alert = dict()
         alert = json.loads(body)
@@ -89,8 +89,7 @@ class MessageHandler(object):
                 { '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "text": alert['text'], "id": alertid }}, 
                   '$set': { "duplicateCount": 0 }})
 
-            # Forward alert to notify topic
-            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+            # Forward alert to notify topic and logger queue
             alert = alerts.find_one({"_id": alertid}, {"_id": 0, "history": 0})
 
             headers['type']           = alert['type']
@@ -100,7 +99,10 @@ class MessageHandler(object):
             headers['repeat']         = 'false'
 
             alert['id'] = alertid
+
+            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
         elif alerts.find_one({"resource": alert['resource'], "event": alert['event'], "severity": alert['severity']}):
@@ -113,8 +115,8 @@ class MessageHandler(object):
                             "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "group": alert['group'], "repeat": True, "origin": alert['origin'] },
                   '$inc': { "duplicateCount": 1 }})
-            # Forward alert to notify topic
-            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+
+            # Forward alert to notify topic and logger queue
             alert = alerts.find_one({"lastReceiveId": alertid}, {"history": 0})
 
             headers['type']           = alert['type']
@@ -125,7 +127,10 @@ class MessageHandler(object):
 
             alert['id'] = alert['_id']
             del alert['_id']
+
+            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
         else:
@@ -143,8 +148,7 @@ class MessageHandler(object):
                             "duplicateCount": 0 },
                   '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "text": alert['text'], "id": alertid }}})
 
-            # Forward alert to notify topic
-            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+            # Forward alert to notify topic and logger queue
             alert = alerts.find_one({"lastReceiveId": alertid}, {"history": 0})
 
             headers['type']           = alert['type']
@@ -155,7 +159,10 @@ class MessageHandler(object):
 
             alert['id'] = alert['_id']
             del alert['_id']
+
+            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
         diff = int((time.time() - start) * 1000)
