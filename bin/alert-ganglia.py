@@ -91,6 +91,9 @@ def get_metrics():
 
     logging.info('Snapshot taken at %s', response['response']['localTime'])
 
+    host_info = {}
+    host_metrics = {}
+
     hosts = [host for host in response['response']['hosts']]
     for h in hosts:
         host_info[h['host']] = dict()
