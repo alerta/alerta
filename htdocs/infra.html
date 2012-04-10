@@ -55,15 +55,15 @@
           <div class="span3">
             <table class="table table-bordered table-condensed summary" id="Servers" data-label="Servers">
               <thead>
-                <tr> <th colspan="6" id="INFRA-Servers-status">Servers</th> </tr> 
+                <tr> <th colspan="6" id="Servers-status">Servers</th> </tr> 
               </thead>
               <tbody>
                 <tr id="Servers-warnings" class="warnings">
-                  <td id="INFRA-Servers-critical">0</td>
-                  <td id="INFRA-Servers-major">0</td>
-                  <td id="INFRA-Servers-minor">0</td>
-                  <td id="INFRA-Servers-warning">0</td>
-                  <td id="INFRA-Servers-normal">0</td>
+                  <td id="Servers-critical">0</td>
+                  <td id="Servers-major">0</td>
+                  <td id="Servers-minor">0</td>
+                  <td id="Servers-warning">0</td>
+                  <td id="Servers-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -71,15 +71,15 @@
           <div class="span3">
             <table class="table table-bordered table-condensed summary" id="Network" data-label="Network">
               <thead>
-                <tr> <th colspan="6" id="INFRA-Network-status">Network</th> </tr> 
+                <tr> <th colspan="6" id="Network-status">Network</th> </tr> 
               </thead>
               <tbody>
                 <tr id="Network-warnings" class="warnings">
-                  <td id="INFRA-Network-critical">0</td>
-                  <td id="INFRA-Network-major">0</td>
-                  <td id="INFRA-Network-minor">0</td>
-                  <td id="INFRA-Network-warning">0</td>
-                  <td id="INFRA-Network-normal">0</td>
+                  <td id="Network-critical">0</td>
+                  <td id="Network-major">0</td>
+                  <td id="Network-minor">0</td>
+                  <td id="Network-warning">0</td>
+                  <td id="Network-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -87,31 +87,97 @@
           <div class="span3">
             <table class="table table-bordered table-condensed summary" id="EC2" data-label="EC2">
               <thead>
-                <tr> <th colspan="6" id="INFRA-EC2-status">EC2 Servers</th> </tr> 
+                <tr> <th colspan="6" id="EC2-status">EC2 Servers</th> </tr> 
               </thead>
               <tbody>
                 <tr id="EC2-warnings" class="warnings">
-                  <td id="INFRA-EC2-critical">0</td>
-                  <td id="INFRA-EC2-major">0</td>
-                  <td id="INFRA-EC2-minor">0</td>
-                  <td id="INFRA-EC2-warning">0</td>
-                  <td id="INFRA-EC2-normal">0</td>
+                  <td id="EC2-critical">0</td>
+                  <td id="EC2-major">0</td>
+                  <td id="EC2-minor">0</td>
+                  <td id="EC2-warning">0</td>
+                  <td id="EC2-normal">0</td>
                 </tr>
               </tbody>
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="SharedSvcs" data-label="Shared Services">
+            <table class="table table-bordered table-condensed summary" id="Puppet" data-label="Puppet">
               <thead>
-                <tr> <th colspan="6" id="INFRA-SharedSvcs-status">-</th> </tr> 
+                <tr> <th colspan="6" id="Puppet-status">Puppet</th> </tr> 
               </thead>
               <tbody>
-                <tr id="SharedSvcs-warnings" class="warnings">
-                  <td id="INFRA-SharedSvcs-critical">0</td>
-                  <td id="INFRA-SharedSvcs-major">0</td>
-                  <td id="INFRA-SharedSvcs-minor">0</td>
-                  <td id="INFRA-SharedSvcs-warning">0</td>
-                  <td id="INFRA-SharedSvcs-normal">0</td>
+                <tr id="Puppet-warnings" class="warnings">
+                  <td id="Puppet-critical">0</td>
+                  <td id="Puppet-major">0</td>
+                  <td id="Puppet-minor">0</td>
+                  <td id="Puppet-warning">0</td>
+                  <td id="Puppet-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="row show-grid">
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="OS" data-label="OS">
+              <thead>
+                <tr> <th colspan="6" id="OS-status">OS</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="OS-warnings" class="warnings">
+                  <td id="OS-critical">0</td>
+                  <td id="OS-major">0</td>
+                  <td id="OS-minor">0</td>
+                  <td id="OS-warning">0</td>
+                  <td id="OS-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Database" data-label="Database">
+              <thead>
+                <tr> <th colspan="6" id="Database-status">Database</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="Database-warnings" class="warnings">
+                  <td id="Database-critical">0</td>
+                  <td id="Database-major">0</td>
+                  <td id="Database-minor">0</td>
+                  <td id="Database-warning">0</td>
+                  <td id="Database-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Hardware" data-label="Hardware">
+              <thead>
+                <tr> <th colspan="6" id="Hardware-status">Hardware</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="Hardware-warnings" class="warnings">
+                  <td id="Hardware-critical">0</td>
+                  <td id="Hardware-major">0</td>
+                  <td id="Hardware-minor">0</td>
+                  <td id="Hardware-warning">0</td>
+                  <td id="Hardware-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Ganglia" data-label="Ganglia">
+              <thead>
+                <tr> <th colspan="6" id="Ganglia-status">Ganglia</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="Ganglia-warnings" class="warnings">
+                  <td id="Ganglia-critical">0</td>
+                  <td id="Ganglia-major">0</td>
+                  <td id="Ganglia-minor">0</td>
+                  <td id="Ganglia-warning">0</td>
+                  <td id="Ganglia-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -136,7 +202,15 @@
             </tbody>
             <tbody id="EC2-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id=MyService-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="OS-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Database-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Hardware-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Ganglia-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Puppet-alerts" class="serviceAlerts initially-hidden">
             </tbody>
           </table>
 
@@ -154,13 +228,19 @@
     <script>
       $(document).ready(function() {
 
-        var services = ['Servers', 'Network', 'EC2'],
-            env = "INFRA";
+        var services = { 'Servers':  'environment=INFRA&service=Servers',
+                         'Network':  'environment=INFRA&service=Network',
+                         'EC2':      'environment=INFRA&service=EC2',
+                         'OS':       'group=OS',
+                         'Database': 'group=Database',
+                         'Hardware': 'group=Hardware',
+                         'Ganglia':  'group=Ganglia',
+                         'Puppet':   'group=Puppet' };
 
-        loadAlerts(services, env, true);
+        loadAlerts(services, true);
 
         $('#refresh-all').click(function() {
-          loadAlerts(services, env, false)
+          loadAlerts(services, false)
         });
       });
     </script>

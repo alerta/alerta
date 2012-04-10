@@ -2,11 +2,11 @@
 var logger = 0,
     timer;
 
-function loadAlerts(services, env, refresh) {
+function loadAlerts(services, refresh) {
   var delayer = 0;
-  $.each(services, function(n, service) {
+  $.each(services, function(service, filter) {
     setTimeout(function() { 
-      getAlerts(service, env, refresh);
+      getAlerts(service, filter, refresh);
     }, delayer);
     delayer += 100;
   });
@@ -32,15 +32,15 @@ function date2str(datetime) {
 }
 
 // Update Alert Summaries
-function getAlerts(service, env, refresh) {
+function getAlerts(service, filter, refresh) {
 
   $('#' + service +' th').addClass('loader');
 
-  $.getJSON('http://monitoring.gudev.gnl/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&environment=' + env + '&service=' + service, function(data) {
+  $.getJSON('http://monitoring.gudev.gnl/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&' + filter, function(data) {
 
     $.each(data.response.alerts, function(key, val) {
 
-      var sev_id = '#' + env + '-' + service;
+      var sev_id = '#' + service;
 
       $.each(val.severityCounts, function(sev, count) {
         $(sev_id + "-" + sev).text(count);
@@ -158,7 +158,7 @@ function getAlerts(service, env, refresh) {
     });
 
     if (refresh) {
-      timer = setTimeout(function() { getAlerts(service, env, refresh); }, 120000);
+      timer = setTimeout(function() { getAlerts(service, filter, refresh); }, 120000);
     }
   });
 };

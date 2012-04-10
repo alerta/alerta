@@ -76,6 +76,14 @@ hr {
 	background-color: lime;
 }
 
+.INFORM {
+  background-color: lime;
+}
+
+.DEBUG {
+  background-color: gray;
+}
+
 .table tbody tr:hover td.zero, .zero {
 	background-color: #ddd;
 }
