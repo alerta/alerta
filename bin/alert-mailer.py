@@ -38,6 +38,7 @@ PIDFILE = '/var/run/alerta/alert-mailer.pid'
 
 _TokenThread = None            # Worker thread object
 _Lock = threading.Lock()       # Synchronization lock
+TOKEN_LIMIT = 20 
 _token_rate = 30               # Add a token every 30 seconds
 tokens = 20
 
@@ -57,7 +58,7 @@ class MessageHandler(object):
 
         # Only send a NORMAL email for alerts that have cleared
         if alert['severity'] == 'NORMAL' and alert['previousSeverity'] == 'UNKNOWN':
-            logging.info('%s : Do not email this NORMAL alert because it is not clearing a known alarm')
+            logging.info('%s : Skip this NORMAL alert because it is not clearing a known alarm', alert['lastReceiveId'])
             return
 
         if tokens:
@@ -66,12 +67,9 @@ class MessageHandler(object):
             _Lock.release()
             logging.debug('Taken a token, there are only %d left', tokens)
         else:
-            # if there are no tokens don't send this alert (wait until next time)
-            logging.info('No tokens left, rate limiting this alert')
+            logging.warning('%s : No tokens left, rate limiting this alert', alert['lastReceiveId'])
             return
    
-        logging.info('%s : %s -> %s', alert['lastReceiveId'], alert['previousSeverity'], alert['severity'])
-
         text = ''
         text += '%s\n' % (alert['summary'])
         text += 'Alert Details\n'
@@ -207,7 +205,7 @@ class TokenTopUp(threading.Thread):
             if self.shuttingdown:
                 break
 
-            if tokens < 20:
+            if tokens < TOKEN_LIMIT:
                 _Lock.acquire()
                 tokens += 1
                 _Lock.release()
