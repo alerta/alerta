@@ -45,7 +45,7 @@ SEVERITY_CODE = {
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.isoformat()
+            return obj.isoformat()+'Z'
         else:
             return json.JSONEncoder.default(self, obj)
 
@@ -86,7 +86,7 @@ def main():
         alert['id']            = alertid
         alert['severityCode']  = SEVERITY_CODE[alert['severity']]
         alert['summary']       = '%s - %s %s is %s on %s %s' % (alert['environment'], alert['severity'].upper(), alert['event'], alert['value'], alert['service'], alert['resource'])
-        alert['createTime']    = datetime.datetime.utcnow().isoformat()+'+00:00'
+        alert['createTime']    = datetime.datetime.utcnow().isoformat()+'Z'
         alert['origin']        = 'alert-api/%s' % os.uname()[1]
 
         logging.info('%s : %s', alertid, json.dumps(alert))
