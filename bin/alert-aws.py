@@ -76,7 +76,7 @@ def main():
     alert['type']        = 'exceptionAlert'
     alert['tags']        = options.tags
     alert['summary']     = '%s - %s %s is %s on %s %s' % (options.environment, options.severity, options.event, options.value, options.service, os.uname()[1])
-    alert['createTime']  = datetime.datetime.now().isoformat()
+    alert['createTime']  = datetime.datetime.now().isoformat()+'Z'
     alert['origin']      = 'alert-cli/%s' % os.uname()[1]
     alert['repeat']      = options.repeat
 

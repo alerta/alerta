@@ -300,7 +300,7 @@ def main():
                             alert['type']             = 'gangliaAlert'
                             alert['tags']             = r['tags'] + [ "location:"+host_info[h]['location'], "cluster:"+host_info[h]['cluster'] ]
                             alert['summary']          = '%s - %s %s is %s on %s %s' % (host_info[h]['environment'], r['severity'], r['event'], valueStr, host_info[h]['grid'], h)
-                            alert['createTime']       = datetime.datetime.utcnow().isoformat()+'+00:00'
+                            alert['createTime']       = datetime.datetime.utcnow().isoformat()+'Z'
                             alert['origin']           = "alert-ganglia/%s" % os.uname()[1]
                             alert['thresholdInfo']    = "%s: %s x %s" % (r['resource'], r['rule'], r['count'])
                             alert['moreInfo']         = host_info[h]['graphUrl']

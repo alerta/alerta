@@ -78,7 +78,7 @@ class StatusHandler(object):
         for ht in tweet['entities']['hashtags']:
             tags.append('#'+ht['text'])
         fields['tags'] = ' '.join(tags)
-        fields['createTime'] = datetime.datetime.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y').isoformat()+'+00:00'
+        fields['createTime'] = datetime.datetime.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y').isoformat()+'Z'
 
         # Index tweets in ElasticSearch using Logstash format so that logstash GUI and/or Kibana can be used as frontend
         logstash = dict() 
@@ -87,7 +87,7 @@ class StatusHandler(object):
         logstash['@source_host'] = 'not_used'
         logstash['@source_path'] = 'stream.twitter.com'
         logstash['@tags']        = ' '.join(tags)
-        logstash['@timestamp']   = datetime.datetime.utcnow().isoformat()+'+00:00'
+        logstash['@timestamp']   = datetime.datetime.utcnow().isoformat()+'+Z'
         logstash['@type']        = 'tweet'
         logstash['@fields']      = fields
 

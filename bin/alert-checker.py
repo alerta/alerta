@@ -134,7 +134,7 @@ def main():
     alert['type']          = 'exceptionAlert'
     alert['tags']          = options.tags
     alert['summary']       = '%s - %s %s is %s on %s %s' % (options.environment, severity, options.event, value, options.service, options.resource)
-    alert['createTime']    = datetime.datetime.utcnow().isoformat()+'+00:00'
+    alert['createTime']    = datetime.datetime.utcnow().isoformat()+'Z'
     alert['origin']        = 'alert-checker/%s' % os.uname()[1]
     alert['thresholdInfo'] = options.nagios
 

@@ -30,7 +30,8 @@ BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers f
 NOTIFY_TOPIC = '/topic/notify'
 SMTP_SERVER  = 'mx.gudev.gnl:25'
 ALERTER_MAIL = 'alerta@guardian.co.uk'
-MAILING_LIST = ['nick.satterly@guardian.co.uk', 'simon.huggins@guardian.co.uk']
+# MAILING_LIST = ['nick.satterly@guardian.co.uk', 'simon.huggins@guardian.co.uk']
+MAILING_LIST = ['nick.satterly@guardian.co.uk']
 
 LOGFILE = '/var/log/alerta/alert-mailer.log'
 PIDFILE = '/var/run/alerta/alert-mailer.pid'

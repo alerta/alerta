@@ -213,7 +213,7 @@ def main():
     alert['type']        = 'snmptrapAlert'
     alert['tags']        = list() # FIXME - should be set somewhere above
     alert['summary']     = '%s - %s %s is %s on %s %s' % (environment, severity, event, value, service, resource)
-    alert['createTime']  = datetime.datetime.utcnow().isoformat()+'+00:00'
+    alert['createTime']  = datetime.datetime.utcnow().isoformat()+'Z'
     alert['origin']      = 'alert-snmptrap/%s' % os.uname()[1]
     alert['rawData']     = rawData
 

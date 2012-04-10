@@ -35,7 +35,7 @@ PIDFILE = '/var/run/alerta/alerta.pid'
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.isoformat()
+            return obj.isoformat()+'Z'
         else:
             return json.JSONEncoder.default(self, obj)
 
@@ -63,9 +63,10 @@ class MessageHandler(object):
         receiveTime = datetime.datetime.utcnow()
         receiveTime = receiveTime.replace(tzinfo=pytz.utc) # XXX - kludge because python utcnow() is a naive datetime despite the name... bizarre
 
-        m = re.match('(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)\+00:00', alert['createTime'])
+        m = re.match('(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)Z', alert['createTime'])
         if m:
             createTime = datetime.datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), int(m.group(6)), int(m.group(7)), pytz.utc)
+            alert['createTime'] = createTime
         else:
             logging.warning('no datetime match')
             return
@@ -77,15 +78,15 @@ class MessageHandler(object):
             #                  3. set duplicate count to zero
 
             alert['lastReceiveId']    = alertid
-            alert['receiveTime']      = receiveTime.isoformat()
-            alert['lastReceiveTime']  = receiveTime.isoformat()
+            alert['receiveTime']      = receiveTime
+            alert['lastReceiveTime']  = receiveTime
             alert['previousSeverity'] = 'UNKNOWN'
             alert['repeat']           = False
 
             alerts.insert(alert)
             alerts.update(
                 { "resource": alert['resource'], "event": alert['event'] },
-                { '$push': { "history": { "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "severity": alert['severity'], "text": alert['text'], "id": alertid }}, 
+                { '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "text": alert['text'], "id": alertid }}, 
                   '$set': { "duplicateCount": 0 }})
 
             # Forward alert to notify topic
@@ -108,7 +109,7 @@ class MessageHandler(object):
             #                    2. increment duplicate count
             alerts.update(
                 { "resource": alert['resource'], "event": alert['event']},
-                { '$set': { "lastReceiveTime": receiveTime.isoformat(),
+                { '$set': { "lastReceiveTime": receiveTime,
                             "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "group": alert['group'], "repeat": True, "origin": alert['origin'] },
                   '$inc': { "duplicateCount": 1 }})
@@ -136,11 +137,11 @@ class MessageHandler(object):
             #                    3. push history
             alerts.update(
                 { "resource": alert['resource'], "event": alert['event']},
-                { '$set': { "severity": alert['severity'], "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "lastReceiveTime": receiveTime.isoformat(), "previousSeverity": previousSeverity,
+                { '$set': { "severity": alert['severity'], "createTime": createTime, "receiveTime": receiveTime, "lastReceiveTime": receiveTime, "previousSeverity": previousSeverity,
                             "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "group": alert['group'], "repeat": False, "origin": alert['origin'],
                             "duplicateCount": 0 },
-                  '$push': { "history": { "createTime": createTime.isoformat(), "receiveTime": receiveTime.isoformat(), "severity": alert['severity'], "text": alert['text'], "id": alertid }}})
+                  '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "text": alert['text'], "id": alertid }}})
 
             # Forward alert to notify topic
             logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
