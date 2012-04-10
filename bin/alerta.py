@@ -170,10 +170,11 @@ class MessageHandler(object):
             { "group": "alerts", "name": "received", "type": "timer", "title": "Alerts received", "description": "Alerts received via the message queue" },
             { '$inc': { "count": 1, "totalTime": diff}},
            True)
-        diff = receiveTime - createTime
+        delta = receiveTime - createTime
+        diff = int(delta.days * 24 * 60 * 60 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000)
         mgmt.update(
             { "group": "alerts", "name": "latency", "type": "timer", "title": "Alerts latency", "description": "Time taken for alert to be received by the server" },
-            { '$inc': { "count": 1, "totalTime": diff.seconds}},
+            { '$inc': { "count": 1, "totalTime": diff}},
            True)
 
     def on_disconnected(self):
