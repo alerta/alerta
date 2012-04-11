@@ -15,18 +15,20 @@ try:
 except ImportError:
     import simplejson as json
 import smtplib
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEText import MIMEText
-from email.MIMEImage import MIMEImage
+# from email.MIMEMultipart import MIMEMultipart
+# from email.MIMEText import MIMEText
+# from email.MIMEImage import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 import stomp
 import datetime
 import logging
 import uuid
-import re
 
 __version__ = '1.0'
 
-BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('devmonsvr01', 61613), ('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
 SMTP_SERVER  = 'mx.gudev.gnl:25'
 ALERTER_MAIL = 'alerta@guardian.co.uk'
@@ -174,7 +176,7 @@ class MessageHandler(object):
             s.sendmail(ALERTER_MAIL, MAILING_LIST, msg_root.as_string())
             s.quit
         except Exception, e:
-            logging.error('%s : Sendmail failed - ', alert['lastReceiveId'], e)
+            logging.error('%s : Sendmail failed - %s', alert['lastReceiveId'], e)
 
     def on_disconnected(self):
         global conn
@@ -224,7 +226,7 @@ def main():
 
     # Write pid file
     if os.path.isfile(PIDFILE):
-        logging.error('%s already exists, exiting' % PIDFILE)
+        logging.error('%s already exists, exiting', PIDFILE)
         sys.exit(1)
     else:
         file(PIDFILE, 'w').write(str(os.getpid()))

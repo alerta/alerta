@@ -10,12 +10,10 @@
 
 import os
 import sys
-import optparse
 try:
     import json
 except ImportError:
     import simplejson as json
-from optparse import OptionParser
 import stomp
 import time
 import datetime
@@ -25,13 +23,13 @@ import re
 
 __version__ = '1.0'
 
-BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('devmonsvr01', 61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-snmptrap.log'
 
-def getEnv(line):
+def get_env(line):
 
     env = {
         # '': 'PROD',
@@ -71,7 +69,7 @@ def main():
     trapoid    = recv[3].strip().split()[1]
     trapnumber = trapoid.rpartition('.')[2]
     payload    = recv[4].partition(' ')[2].strip().lstrip('\"').rstrip('\"')
-    logging.info('agent %s trapoid %s payload %s', agent, trapoid, payload)
+    logging.info('agent=%s, ip=%s, uptime=%s, trapoid=%s, trapnumber=%s, payload=%s', agent, ip, uptime, trapoid, trapnumber, payload)
 
     # Defaults
     environment = 'INFRA'
@@ -187,7 +185,7 @@ def main():
                 severity = 'WARNING'
             elif payload.startswith('SERIOUS'):
                 severity = 'MAJOR'
-        environment = getEnv(payload)
+        environment = get_env(payload)
         service = 'Network' # XXX - could we programatically determine the specific service eg. R1, R2, etc? do we care?
         logging.info('Suppressing ZXTM alerts for now!!!!!')
         sys.exit()

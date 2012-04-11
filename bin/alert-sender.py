@@ -22,7 +22,7 @@ import uuid
 
 __version__ = '1.0'
 
-BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('devmonsvr01', 61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
@@ -41,7 +41,7 @@ parser.add_option("-T", "--tag", action="append", dest="tags", help="Tag the eve
 parser.add_option("-t", "--text", dest="text", help="Freeform alert text eg. Host not responding to ping.")
 parser.add_option("-d", "--dry-run", action="store_true", default=False, help="Do not send alert.")
 
-VALID_SEVERITY    = [ 'CRITICAL','MAJOR','MINOR','WARNING','NORMAL','INFORM', 'DEBUG' ]
+VALID_SEVERITY    = [ 'CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'NORMAL', 'INFORM', 'DEBUG' ]
 VALID_ENVIRONMENT = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP','INFRA' ]
 VALID_SERVICES    = [ 'R1', 'R2', 'Discussion', 'Soulmates', 'ContentAPI', 'MicroApp', 'FlexibleContent', 'Mutualisation', 'SharedSvcs' ]
 
@@ -143,7 +143,7 @@ def main():
         print alertid
         sys.exit(0)
     else:
-        print "%s %s" % (json.dumps(headers,indent=4), json.dumps(alert,indent=4))
+        print "%s %s" % (json.dumps(headers, indent=4), json.dumps(alert, indent=4))
 
 if __name__ == '__main__':
     main()

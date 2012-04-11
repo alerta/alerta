@@ -12,18 +12,16 @@ try:
     import json
 except ImportError:
     import simplejson as json
-import stomp
 import datetime
 import logging
 import pycurl
 import urllib2
-import re
 
 __version__ = '1.0'
 
 TWITTER_STREAM = 'https://stream.twitter.com/1/statuses/filter.json'
-TWITTER_USERNAME = 'nicksatterly'
-TWITTER_PASSWORD = 'tw33tm3'
+TWITTER_USERNAME = os.environ['TWITTER_USERNAME']
+TWITTER_PASSWORD = os.environ['TWITTER_PASSWORD']
 
 TRACK = 'guardian website down'
 
@@ -108,7 +106,7 @@ def main():
 
     # Write pid file
     if os.path.isfile(PIDFILE):
-        logging.error('%s already exists, exiting' % PIDFILE)
+        logging.error('%s already exists, exiting', PIDFILE)
         sys.exit(1)
     else:
         file(PIDFILE, 'w').write(str(os.getpid()))

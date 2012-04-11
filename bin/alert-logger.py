@@ -13,13 +13,12 @@ try:
 except ImportError:
     import simplejson as json
 import stomp
-import datetime
 import logging
 import urllib2
 
 __version__ = '1.0'
 
-BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('devmonsvr01', 61613), ('localhost', 61613)] # list of brokers for failover
 LOGGER_QUEUE = '/queue/logger' # XXX note use of queue not topic because all alerts should be logged
 
 LOGFILE = '/var/log/alerta/alert-logger.log'
@@ -79,7 +78,7 @@ def main():
 
     # Write pid file
     if os.path.isfile(PIDFILE):
-        logging.error('%s already exists, exiting' % PIDFILE)
+        logging.error('%s already exists, exiting', PIDFILE)
         sys.exit(1)
     else:
         file(PIDFILE, 'w').write(str(os.getpid()))

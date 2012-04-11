@@ -19,16 +19,14 @@ except ImportError:
     import simplejson as json
 import yaml
 import stomp
-import time
 import datetime
 import logging
-import copy
 import uuid
 import re
 
 __version__ = '1.5'
 
-BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('devmonsvr01', 61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
@@ -53,6 +51,9 @@ SEVERITY_CODE = {
 }
 
 _check_rate   = 120             # Check rate of alerts
+
+# Global variables
+environment = None
 
 host_info = dict()
 host_metrics = dict()
@@ -168,7 +169,7 @@ def main():
     parser.add_option("-E", "--environment", dest="environment", help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA")
     parser.add_option("-p", "--pid-file", dest="pidfile", help="Pidfile")
 
-    (options, args) = parser.parse_args()
+    options, args = parser.parse_args()
     environment = options.environment
 
     if options.pidfile:
@@ -176,7 +177,7 @@ def main():
 
     # Write pid file
     if os.path.isfile(PIDFILE):
-        logging.error('%s already exists, exiting' % PIDFILE)
+        logging.error('%s already exists, exiting', PIDFILE)
         sys.exit(1)
     else:
         file(PIDFILE, 'w').write(str(os.getpid()))
@@ -260,7 +261,7 @@ def main():
                                         descrStr = re.sub(m, time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(host_metrics[h][name]['value'])), descrStr)
                                     else:
                                         descrStr = re.sub(m, str(host_metrics[h][name]['value']), descrStr)
-                                except:
+                                except Exception:
                                     descrStr += '[FAILED TO PARSE]'
 
                             # Subsitute real values into alert description where required
@@ -274,7 +275,7 @@ def main():
                                         valueStr = re.sub(m, time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(host_metrics[h][name]['value'])), valueStr)
                                     else:
                                         valueStr = re.sub(m, str(host_metrics[h][name]['value']), valueStr)
-                                except:
+                                except Exception:
                                     valueStr += '[FAILED TO PARSE]'
 
                             alertid = str(uuid.uuid4()) # random UUID

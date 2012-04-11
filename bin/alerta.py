@@ -14,7 +14,6 @@ except ImportError:
     import simplejson as json
 import stomp
 import pymongo
-import bson
 import datetime
 import pytz
 import logging
@@ -22,7 +21,7 @@ import re
 
 __version__ = '1.2'
 
-BROKER_LIST  = [('devmonsvr01',61613), ('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('devmonsvr01', 61613), ('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
 NOTIFY_TOPIC = '/topic/notify' # outbound
 LOGGER_QUEUE = '/queue/logger' # outbound
@@ -30,6 +29,11 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alerta.log'
 PIDFILE = '/var/run/alerta/alerta.pid'
+
+# Global variables
+conn = None
+alerts = None
+mgmt = None
 
 # Extend JSON Encoder to support ISO 8601 format dates
 class DateEncoder(json.JSONEncoder):
@@ -40,6 +44,7 @@ class DateEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 class MessageHandler(object):
+
     def on_error(self, headers, body):
         logging.error('Received an error %s', body)
 
@@ -167,13 +172,13 @@ class MessageHandler(object):
 
         diff = int((time.time() - start) * 1000)
         mgmt.update(
-            { "group": "alerts", "name": "received", "type": "timer", "title": "Alerts received", "description": "Alerts received via the message queue" },
+            { "group": "alerts", "name": "processed", "type": "timer", "title": "Alert process rate and duration", "description": "Time taken to process the alert" },
             { '$inc': { "count": 1, "totalTime": diff}},
            True)
         delta = receiveTime - createTime
         diff = int(delta.days * 24 * 60 * 60 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000)
         mgmt.update(
-            { "group": "alerts", "name": "latency", "type": "timer", "title": "Alerts latency", "description": "Time taken for alert to be received by the server" },
+            { "group": "alerts", "name": "received", "type": "timer", "title": "Alert receive rate and latency", "description": "Time taken for alert to be received by the server" },
             { '$inc': { "count": 1, "totalTime": diff}},
            True)
 
@@ -193,7 +198,7 @@ def main():
 
     # Write pid file
     if os.path.isfile(PIDFILE):
-        logging.error('%s already exists, exiting' % PIDFILE)
+        logging.error('%s already exists, exiting', PIDFILE)
         sys.exit(1)
     else:
         file(PIDFILE, 'w').write(str(os.getpid()))
@@ -204,8 +209,9 @@ def main():
         db = mongo.monitoring
         alerts = db.alerts
         mgmt = db.status
-    except Exception, e:
-        logging.error('Mongo connection error: %s', e)
+    except pymongo.errors.ConnectionFailure, e:
+        logging.error('Mongo connection failure: %s', e)
+        sys.exit(1)
 
     # Connect to message broker
     try:
