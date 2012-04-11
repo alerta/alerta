@@ -36,7 +36,7 @@ function getAlerts(service, filter, refresh) {
 
   $('#' + service +' th').addClass('loader');
 
-  $.getJSON('http://monitoring.gudev.gnl/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&' + filter, function(data) {
+  $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&' + filter, function(data) {
 
     $.each(data.response.alerts, function(key, val) {
 
@@ -189,11 +189,11 @@ $(document).ready(function() {
     $('tbody').on('click', '.delete-alert', function() {
       /* $.ajax({
         type: 'DELETE',
-        url: 'http://devmonsvr01.gudev.gnl/alerta/api/v1/alerts/alert/' + this.id,
+        url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
       }); */
       $.ajax({
         type: 'POST',
-        url: 'http://monitoring.gudev.gnl/alerta/api/v1/alerts/alert/' + this.id,
+        url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
         data: { _method: 'delete' }
       });
       $(this).parent().parent().next().remove(); // delete drop-down
