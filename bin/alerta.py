@@ -66,15 +66,10 @@ class MessageHandler(object):
 
         # Add receive timestamp
         receiveTime = datetime.datetime.utcnow()
-        receiveTime = receiveTime.replace(tzinfo=pytz.utc) # XXX - kludge because python utcnow() is a naive datetime despite the name... bizarre
+        receiveTime = receiveTime.replace(tzinfo=pytz.utc)
 
-        m = re.match('(\d+)-(\d+)-(\d+)T(\d+):(\d+):(\d+)\.(\d+)Z', alert['createTime'])
-        if m:
-            createTime = datetime.datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5)), int(m.group(6)), int(m.group(7)), pytz.utc)
-            alert['createTime'] = createTime
-        else:
-            logging.warning('no datetime match')
-            return
+        createTime = datetime.datetime.strptime(alert['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        createTime = createTime.replace(tzinfo=pytz.utc)
 
         if not alerts.find_one({"resource": alert['resource'], "event": alert['event']}):
             logging.info('%s : New alert -> insert', alertid)
@@ -83,6 +78,7 @@ class MessageHandler(object):
             #                  3. set duplicate count to zero
 
             alert['lastReceiveId']    = alertid
+            alert['createTime']       = createTime
             alert['receiveTime']      = receiveTime
             alert['lastReceiveTime']  = receiveTime
             alert['previousSeverity'] = 'UNKNOWN'
