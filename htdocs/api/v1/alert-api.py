@@ -26,7 +26,7 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-api.log'
 
-VALID_SEVERITY    = [ 'CRITICAL','MAJOR','MINOR','WARNING','NORMAL','INFORM', 'DEBUG' ]
+VALID_SEVERITY    = [ 'CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'NORMAL', 'INFORM', 'DEBUG' ]
 VALID_ENVIRONMENT = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP','INFRA' ]
 VALID_SERVICES    = [ 'R1', 'R2', 'Discussion', 'Soulmates', 'ContentAPI', 'MicroApp', 'FlexibleContent', 'Mutualisation', 'SharedSvcs' ]
 
@@ -73,44 +73,77 @@ def main():
 
     if os.environ['REQUEST_URI'].startswith('/alerta/api/v1/alerts/alert.json') and os.environ['REQUEST_METHOD'] == 'POST':
 
-        # REQUEST_URI: /alerta/api/v1/alerts/alert.json
+        # Set any defaults
+        if 'severity' not in alert:
+            alert['severity'] = 'normal'
+        if 'group' not in alert:
+            alert['group'] = 'Misc'
 
-        alertid = str(uuid.uuid4()) # random UUID
+        # Check for mandatory attributes
+        if 'resource' not in alert:
+            status['response']['status'] = 'error'
+            status['response']['message'] = 'must supply a resource'
+        elif 'event' not in alert:
+            status['response']['status'] = 'error'
+            status['response']['message'] = 'must supply event name'
+        elif 'value' not in alert:
+            status['response']['status'] = 'error'
+            status['response']['message'] = 'must supply event value'
+        elif alert['severity'].upper() not in VALID_SEVERITY:
+            status['response']['status'] = 'error'
+            status['response']['message'] = 'severity must be one of %s' % ','.join(VALID_SEVERITY)
+        elif 'environment' not in alert or alert['environment'] not in VALID_ENVIRONMENT:
+            status['response']['status'] = 'error'
+            status['response']['message'] = 'environment must be one of %s' % ','.join(VALID_ENVIRONMENT)
+        elif 'service' not in alert or alert['service'] not in VALID_SERVICES:
+            status['response']['status'] = 'error'
+            status['response']['message'] = 'service must be one of %s' % ','.join(VALID_SERVICES)
+        elif 'text' not in alert:
+            status['response']['status'] = 'error'
+            status['response']['message'] = 'must supply alert text'
+        else:
+            # REQUEST_URI: /alerta/api/v1/alerts/alert.json
 
-        headers = dict()
-        headers['type']           = "exceptionAlert"
-        headers['correlation-id'] = alertid
-        headers['persistent']     = 'true'
-        headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
-             
-        alert['id']            = alertid
-        alert['severityCode']  = SEVERITY_CODE[alert['severity']]
-        alert['summary']       = '%s - %s %s is %s on %s %s' % (alert['environment'], alert['severity'].upper(), alert['event'], alert['value'], alert['service'], alert['resource'])
-        alert['createTime']    = datetime.datetime.utcnow().isoformat()+'Z'
-        alert['origin']        = 'alert-api/%s' % os.uname()[1]
+            alertid = str(uuid.uuid4()) # random UUID
 
-        logging.info('%s : %s', alertid, json.dumps(alert))
+            headers = dict()
+            headers['type']           = "exceptionAlert"
+            headers['correlation-id'] = alertid
+            headers['persistent']     = 'true'
+            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
-        try:
-            conn = stomp.Connection(BROKER_LIST)
-            conn.start()
-            conn.connect(wait=True)
-        except Exception, e:
-            print >>sys.stderr, "ERROR: Could not connect to broker - %s" % e
-            logging.error('Could not connect to broker %s', e)
-        try:
-            conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
-        except Exception, e:
-            print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
-            logging.error('Failed to send alert to broker %s', e)
-        broker = conn.get_host_and_port()
-        logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
-        conn.disconnect()
+            alert['id']            = alertid
+            alert['summary']       = '%s - %s %s is %s on %s %s' % (alert['environment'], alert['severity'].upper(), alert['event'], alert['value'], alert['service'], alert['resource'])
+            alert['resource']      = (alert['environment'] + '.' + alert['service'] + '.' + alert['resource']).lower()
+            alert['severity']      = alert['severity'].upper()
+            alert['severityCode']  = SEVERITY_CODE[alert['severity']]
+            alert['environment']   = alert['environment'].upper()
+            alert['type']          = 'exceptionAlert'
+            alert['createTime']    = datetime.datetime.utcnow().isoformat()+'Z'
+            alert['origin']        = 'alert-api/%s' % os.uname()[1]
 
-        status['response']['id'] = alertid
+            logging.info('%s : %s', alertid, json.dumps(alert))
+
+            try:
+                conn = stomp.Connection(BROKER_LIST)
+                conn.start()
+                conn.connect(wait=True)
+            except Exception, e:
+                print >>sys.stderr, "ERROR: Could not connect to broker - %s" % e
+                logging.error('Could not connect to broker %s', e)
+            try:
+                conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
+            except Exception, e:
+                print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
+                logging.error('Failed to send alert to broker %s', e)
+            broker = conn.get_host_and_port()
+            logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
+            conn.disconnect()
+
+            status['response']['id'] = alertid
+            status['response']['status'] = 'ok'
 
         diff = time.time() - start
-        status['response']['status'] = 'ok'
         status['response']['time'] = "%.3f" % diff
         status['response']['localTime'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
