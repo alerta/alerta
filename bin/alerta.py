@@ -21,7 +21,7 @@ import re
 
 __version__ = '1.2'
 
-BROKER_LIST  = [('devmonsvr01', 61613), ('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
 NOTIFY_TOPIC = '/topic/notify' # outbound
 LOGGER_QUEUE = '/queue/logger' # outbound

@@ -18,13 +18,13 @@ import urllib2
 
 __version__ = '1.0'
 
-BROKER_LIST  = [('devmonsvr01', 61613), ('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 LOGGER_QUEUE = '/queue/logger' # XXX note use of queue not topic because all alerts should be logged
 
 LOGFILE = '/var/log/alerta/alert-logger.log'
 PIDFILE = '/var/run/alerta/alert-logger.pid'
 
-ES_SERVER   = 'devmonsvr01'
+ES_SERVER   = 'localhost'
 ES_BASE_URL = 'http://%s:9200/logstash' % (ES_SERVER)
 
 class MessageHandler(object):

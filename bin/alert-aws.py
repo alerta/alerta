@@ -21,7 +21,7 @@ import logging
 import uuid
 import boto.ec2
 
-BROKER  = 'devmonsvr01:61613'
+BROKER  = 'localhost:61613'
 QUEUE   = '/queue/prod.alerts'
 LOGFILE = '/tmp/alert-aws.log'
 

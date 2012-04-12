@@ -28,7 +28,7 @@ import uuid
 
 __version__ = '1.0'
 
-BROKER_LIST  = [('devmonsvr01', 61613), ('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
 SMTP_SERVER  = 'mx.gudev.gnl:25'
 ALERTER_MAIL = 'alerta@guardian.co.uk'
@@ -172,7 +172,7 @@ class MessageHandler(object):
         
         try:
             logging.info('%s : Send email to %s', alert['lastReceiveId'], ','.join(MAILING_LIST))
-            s = smtplib.SMTP('mx.gudev.gnl', 25)
+            s = smtplib.SMTP(SMTP_SERVER, 25)
             s.sendmail(ALERTER_MAIL, MAILING_LIST, msg_root.as_string())
             s.quit
         except Exception, e:

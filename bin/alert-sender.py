@@ -22,7 +22,7 @@ import uuid
 
 __version__ = '1.0'
 
-BROKER_LIST  = [('devmonsvr01', 61613), ('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 

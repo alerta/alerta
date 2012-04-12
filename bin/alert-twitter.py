@@ -28,7 +28,7 @@ TRACK = 'guardian website down'
 LOGFILE = '/var/log/alerta/alert-twitter.log'
 PIDFILE = '/var/run/alerta/alert-twitter.pid'
 
-ES_SERVER   = 'devmonsvr01'
+ES_SERVER   = 'localhost'
 ES_BASE_URL = 'http://%s:9200/logstash' % (ES_SERVER)
 
 class StatusHandler(object):

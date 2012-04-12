@@ -20,7 +20,7 @@ import logging
 
 __version__ = '1.0'
 
-BROKER_LIST  = [('devmonsvr01', 61613), ('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
 IRC_SERVER   = 'irc.gudev.gnl:6667'
 IRC_CHANNEL  = '#alerts'
