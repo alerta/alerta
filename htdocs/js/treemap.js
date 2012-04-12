@@ -1,6 +1,5 @@
 var w = 940,
     h = 500;
-    //color = d3.scale.category20c();
 
 function color(sev) {
     if (sev == "critical") {
@@ -32,16 +31,13 @@ var div = d3.select("#chart").append("div")
     .style("width", w + "px")
     .style("height", h + "px");
 
-// d3.json("./treemap.json", function(json) {
-// d3.json("http://devmonsvr01.gudev.gnl/alerta/api/v1/alert-treemap.py?environment=PROD", function(json) {
-d3.json("http://monitoring.gudev.gnl/alerta/api/v1/alert-treemap.py", function(json) {
+d3.json('http://' + document.domain + '/alerta/api/v1/alert-treemap.py', function(json) {
   div.data([json.response.treemap]).selectAll("div")
       .data(treemap.nodes)
     .enter().append("div")
       .attr("class", "cell")
       .style("background-color", function(d) { return color(d.name); })
       .call(cell)
-//      .text(function(d) { return d.children ? null : d.description; });
       .text(function(d) { return d.children ? null : d.description; })
       .on("mouseover", function(d){
 	  	tooltip.text(d.children ? null : d.name + ": " + d.size)
