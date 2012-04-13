@@ -1,111 +1,59 @@
 Alerta monitoring system and console
 ====================================
 
-Introduction
-------------
 The alerta monitoring tool was developed with the following aims in mind:
 
-*   distributed and de-coupled
-*   minimal configuarion and easily accepts alerts from any source
-*   use APIs and standards where possible
+*   distributed and de-coupled so that it is **SCALABLE**
+*   minimal **CONFIGURATION** that easily accepts alerts from any source
+*   quick at-a-glance **VISUALISATION** with drill-down to detail
 
-Basic Concepts
---------------
-1. all alerts SHOULD send a corresponding 'clear' alert (ie. NORMAL severity) when the 
-   alert condition is no longer active
-2. alerts MUST be uniquely identifiable by the RESOURCE and EVENT NAME fields which can
-   then be used for de-duplication
-3. only the most recent state of an alert is shown in the console and NORMAL severity
-   alerts are periodically cleared from the system
+![console](/guardian/alerta/raw/master/images/alerta-console-small.png)
 
-Standard Attributes
--------------------
-Most alerts have the following attributes:
+More screenshots are available [here](/guardian/alerta/tree/master/images/)
 
-* id - alert id is a random UUID
-* severity - one of CRITICAL, MAJOR, MINOR, WARNING, NORMAL, INFORM or DEBUG
-* createTime - UTC date & time in ISO 8601 format in Zulu timezone
-* resource - uniquely identifies the resource under alarm
-* environment - user-defined but possible values are PROD, RELEASE, QA, DEV, TEST, STAGE etc
-* service - user-defined category for grouping resources into service-related entities
-* event 
-* value
-* group
-* text 
-* summary - short, pre-formatted text for SMS, IRC, email subjects etc
-* tags - array of single, double or triple tags eg. [ "aTag", "aDouble:Tag", "a:Triple=Tag" ]
-* type - describes type of alert ie. snmpAlert, logAlert, exceptionAlert (CLI)
-* origin - script/tool/application that generated the alert
+Installation
+------------
 
-Optional Attributes
--------------------
-Some alert sources as a consequence of how the alerts are generated have access to 
-additional context about an alert. For example Ganglia alerts can forward links to
-host and metric graphs. 
+The backend components are written in Python and the web frontend in JavaScript so there is nothing to compile.
 
-* thresholdInfo
-* moreInfo
-* graphs
+An RPM is available for Linux [here](/guardian/alerta/tree/master/rpm/). **TBC**
 
-Dervied Attributes
-------------------
-The following attributes are derived by the alerta server daemon based on information
-determined when the alert was received and/or located in the database.
+Requirements
+------------
 
-* receiveTime
-* lastReceiveTime
-* lastReceiveId
-* duplicateCount
-* repeat - if this is the first time an alert has been sent in this state then repeat is
-  set to 'false'. Some alert notify subscribers discard repeat alerts eg. IRCbot, mailer 
-* previousSeverity
-* history - whenever an alert changes state (ie. the severity changes) then the following
-  attributes for the alert are kept in a history log:
-    * severity
-    * lastReceiveId
-    * createTime
-    * receiveTime
-    * text
+- [Apache ActiveMQ][1]
+- [MongoDB][2]
+- [elasticsearch][3]
+- [Kibana][4]
 
-Server
-------
-*   alerta - main server daemon, listens to the queue for incoming alerts, inserts them in the mongo
-    database, and then forwards alerts to the logger queue and notify topic
+> Note: None of these packages require special configuration to work with Alerta.
 
-Inputs
-------
-*   alert-sender - command-line tool for sending alerts from scripts, cron jobs and other monitoring
-    tools that trigger actions based on errors
+Contribute
+----------
 
-*   alert-checker - a wrapper script for Nagios checks that will run any check and map the Nagios plugin
-    result to the format expected by alerta
+If you'd like to hack on Alerta, start by forking this repo on GitHub.
 
-*   alert-snmptrap - parses SNMP traps and forwards them as alerts
+http://github.com/guardian/alerta
 
-*   alert-ganglia - parses the Ganglia gmetad XML and compares current metric values against a set of
-    user-defined rules for alert generation
-
-*   alert-aws - forward EC2 instance status changes to alerta
-
-Outputs
+License
 -------
-*   alert-logger - logs all alerts to elasticsearch for long-term archiving and powerful search
 
-*   alert-mailer - sends emails to user-defined recipients including when the issue has cleared
+    Alerta monitoring system and console
+    Copyright 2012 Guardian News & Media
 
-*   alert-ircbot - posts a message on the #alerta IRC channel whenever an alert is received
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-Other
------
-*    alert-twitter - listens to a twitter stream for related tweets about website availability and logs
-     them to the elasticsearch search engine
+        http://www.apache.org/licenses/LICENSE-2.0
 
-Thanks
-======
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 
-* 10gen for mongodb
-* Apache for ActiveMQ and STOMP
-* Shay Banon for elasticsearch
-* Twitter for Bootstrap
-* Kibana
-* jQuery
+[1]: <http://activemq.apache.org/> "Apache ActiveMQ"
+[2]: <http://www.10gen.com/> "10gen MongoDB"
+[3]: <http://www.elasticsearch.org/> "elasticsearch"
+[4]: <https://github.com/rashidkpc/Kibana> "Kibana"
