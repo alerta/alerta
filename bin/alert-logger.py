@@ -36,10 +36,11 @@ class MessageHandler(object):
 
         alert = dict()
         alert = json.loads(body)
-        if not alert['tags']:           # Kibana GUI borks if tags are null
-            alert['tags'] = 'none'
 
         logging.info('%s : %s', alert['lastReceiveId'], alert['summary'])
+
+        if 'tags' not in alert or not alert['tags']:           # Kibana GUI borks if tags are null
+            alert['tags'] = 'none'
 
         # Index alerts in ElasticSearch using Logstash format so that logstash GUI and/or Kibana can be used as frontends
         logstash = dict() 
