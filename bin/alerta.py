@@ -55,7 +55,11 @@ class MessageHandler(object):
         logging.debug("Received alert : %s", body)
 
         alert = dict()
-        alert = json.loads(body)
+        try:
+            alert = json.loads(body)
+        except ValueError, e:
+            logging.error("Could not decode JSON - %s", e)
+            return
 
         # Move 'id' to '_id' ...
         alertid = alert['id']
