@@ -47,7 +47,7 @@ function getAlerts(service, filter, refresh) {
 
         switch (count) {
           case 0: $(sev_id + "-" + sev).removeClass(sev).addClass('zero'); break;
-          default: $(sev_id + "-" + sev).addClass(sev); 
+          default: $(sev_id + "-" + sev).addClass(sev).removeClass('zero');
         }
 
       });
