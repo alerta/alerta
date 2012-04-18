@@ -80,6 +80,7 @@ function getAlerts(service, filter, refresh) {
                           '<tr><td><b>Create time</b></td><td>' + date2str(hist.createTime) + '</td></tr>' +
                           '<tr><td><b>Receive time</b></td><td>' + date2str(hist.receiveTime) + '</td></tr>' +
                           '<tr><td><b>Text</b></td><td>' + hist.text + '</td></tr>' +
+                          '<tr><td><b>Value</b></td><td>' + hist.value + '</td></tr>' +
                           '</table>' +
                         '';
           });
