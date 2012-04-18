@@ -1,0 +1,17 @@
+Release Notes
+=============
+
+Alerta version 1.1.0
+--------------------
+
+*   New alert-query tool for querying alert database
+*   Added alert value to history
+*   Alert console modified to support value in history
+*   Alert group no longer updates each time
+*   Fixed severityCode not updating bug
+*   Do not send emails for Warnings
+
+Alerta version 1.0.0
+--------------------
+
+*   First production-ready release
