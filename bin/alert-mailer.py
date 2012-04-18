@@ -65,6 +65,12 @@ class MessageHandler(object):
             logging.info('%s : Skip this NORMAL alert because it is not clearing a known alarm', alert['lastReceiveId'])
             return
 
+        # WARNINGs to/from NORMAL or UNKNOWN severity should not trigger emails
+        if ((alert['severity'] == 'WARNING' and alert['previousSeverity'] in ['NORMAL','UNKNOWN']) or
+            (alert['severity'] == 'NORMAL' and alert['previousSeverity'] == 'WARNING')):
+            logging.info('%s : Skip this state change to/from WARNING alert because warnings should not trigger emails', alert['lastReceiveId'])
+            return
+
         if tokens:
             _Lock.acquire()
             tokens -= 1
