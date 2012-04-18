@@ -13,7 +13,7 @@ import pymongo
 import operator
 import pytz
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -331,7 +331,7 @@ def main():
 
         if 'color' in options.show or options.color:
             line_color = COLOR[severity]
-        print(line_color + '%s|%s|%s|%-15s|%12s|%11s|%12s' % (alertid[0:8],
+        print(line_color + '%s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
             createTime.astimezone(tz).strftime(DATE_FORMAT),
             SEV[severity],
             resource.split('.')[-1],
@@ -364,7 +364,7 @@ def main():
     if not options.nofooter:
         now = datetime.datetime.utcnow()
         print
-        print "Total: %d (produced on %s at %s by %s,%s on %s)" % (count, now.strftime("%d/%m/%y"), now.strftime("%H:%M:%S"), PGM, __version__, os.uname()[1])
+        print "Total: %d (produced on %s at %s by %s,v%s on %s)" % (count, now.strftime("%d/%m/%y"), now.strftime("%H:%M:%S"), PGM, __version__, os.uname()[1])
 
 if __name__ == '__main__':
     main()
