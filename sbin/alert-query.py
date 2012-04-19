@@ -239,10 +239,10 @@ def main():
         end = end.replace(tzinfo=pytz.utc)
         start = end - datetime.timedelta(days=days, minutes=minutes+hours*60)
         start = start.replace(tzinfo=pytz.utc)
-    if options.orderby in ['createTime', 'receiveTime', 'lastReceiveTime']:
-        query[options.orderby] = {'$gte': start, '$lt': end}
-    else:
-        query['createTime'] = {'$gte': start, '$lt': end}
+        if options.orderby in ['createTime', 'receiveTime', 'lastReceiveTime']:
+            query[options.orderby] = {'$gte': start, '$lt': end}
+        else:
+            query['createTime'] = {'$gte': start, '$lt': end}
 
     fields = { "environment": 1, "service": 1,
         "resource": 1, "event": 1, "group": 1,
