@@ -13,7 +13,7 @@ import pymongo
 import operator
 import pytz
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -239,6 +239,9 @@ def main():
         end = end.replace(tzinfo=pytz.utc)
         start = end - datetime.timedelta(days=days, minutes=minutes+hours*60)
         start = start.replace(tzinfo=pytz.utc)
+    if options.orderby in ['createTime', 'receiveTime', 'lastReceiveTime']:
+        query[options.orderby] = {'$gte': start, '$lt': end}
+    else:
         query['createTime'] = {'$gte': start, '$lt': end}
 
     fields = { "environment": 1, "service": 1,
@@ -364,10 +367,17 @@ def main():
         thresholdInfo   = r[17]
         count += 1
 
+        if options.orderby == 'receiveTime':
+            displayTime = receiveTime
+        elif options.orderby == 'lastReceiveTime':
+            displayTime = lastReceiveTime
+        else:
+            displayTime = createTime
+
         if 'color' in options.show or options.color:
             line_color = COLOR[severity]
         print(line_color + '%s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
-            createTime.astimezone(tz).strftime(DATE_FORMAT),
+            displayTime.astimezone(tz).strftime(DATE_FORMAT),
             SEV[severity],
             resource.split('.')[-1],
             group,
@@ -400,8 +410,9 @@ def main():
 
     if not options.nofooter:
         now = datetime.datetime.utcnow()
+        now = now.replace(tzinfo=pytz.utc)
         print
-        print "Total: %d (produced on %s at %s by %s,v%s on %s)" % (count, now.strftime("%d/%m/%y"), now.strftime("%H:%M:%S"), PGM, __version__, os.uname()[1])
+        print "Total: %d (produced on %s at %s by %s,v%s on %s)" % (count, now.astimezone(tz).strftime("%d/%m/%y"), now.astimezone(tz).strftime("%H:%M:%S %Z"), PGM, __version__, os.uname()[1])
 
 if __name__ == '__main__':
     main()
