@@ -13,7 +13,7 @@ import pymongo
 import operator
 import pytz
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -46,6 +46,24 @@ COLOR = {
     'DEBUG':    '\033[90m',
 }
 ENDC     = '\033[0m'
+
+ORDERBY = {
+    'environment':     ('environment', pymongo.DESCENDING),
+    'service':         ('service', pymongo.DESCENDING),
+    'resource':        ('resource', pymongo.DESCENDING),
+    'event':           ('event', pymongo.DESCENDING),
+    'group':           ('group', pymongo.DESCENDING),
+    'value':           ('history.value', pymongo.DESCENDING),
+    #'severity':        ('history.severityCode', pymongo.DESCENDING),
+    'severity':        ('history.severity', pymongo.DESCENDING),
+    'text':            ('history.text', pymongo.DESCENDING),
+    'type':            ('type', pymongo.DESCENDING),
+    'createTime':      ('history.createTime', pymongo.DESCENDING),
+    'receiveTime':     ('history.receiveTime', pymongo.DESCENDING),
+    'lastReceiveTime': ('lastReceiveTime', pymongo.DESCENDING),
+    'origin':          ('origin', pymongo.DESCENDING),
+    'thresholdInfo':   ('thresholdInfo', pymongo.DESCENDING)
+}
 
 # Defaults
 PGM='alert-query.py'
@@ -102,7 +120,7 @@ def main():
     parser.add_option("-s",
                       "--severity",
                       dest="severity",
-                      help="Severity or range eg. major, critical..warning")
+                      help="Severity or range eg. major, warning..critical")
     parser.add_option("-e",
                       "--event",
                       dest="event",
@@ -123,6 +141,11 @@ def main():
                       dest="show",
                       default=[],
                       help="Show 'text', 'times', 'details', 'tags' and 'color'")
+    parser.add_option("-o",
+                      "--orderby",
+                      "--sort",
+                      dest="orderby",
+                      help="Order by attribute (default: createTime)")
     parser.add_option("-c",
                       "--count",
                       "--limit",
@@ -173,8 +196,11 @@ def main():
     if options.days:
         days = options.days
     if options.alertid:
-        query['history.id'] = { '$regex': '^'+options.alertid }
-        num_regex += 1
+        # Example - db.alerts.findOne({$or: [{'lastReceiveId': {'$regex': '^b8d05b47'}}, { 'history.id': {'$regex': '^b8d05b47'}} ] });
+        query['$or'] = list()
+        query['$or'].append({ 'history.id': { '$regex': '^'+options.alertid } } )
+        query['$or'].append({ 'lastReceiveId': { '$regex': '^'+options.alertid } } )
+        num_regex += 2
     if options.environment:
         query['environment'] = { '$regex': options.environment }
         num_regex += 1
@@ -187,7 +213,7 @@ def main():
     if options.severity:
         m = options.severity.split('..')
         if len(m) > 1:
-            query['severityCode'] = { '$gte': SEVERITY_CODE[m[0].upper()], '$lte': SEVERITY_CODE[m[1].upper()] }
+            query['severityCode'] = { '$lte': SEVERITY_CODE[m[0].upper()], '$gte': SEVERITY_CODE[m[1].upper()] }
         else:
             query['severityCode'] = SEVERITY_CODE[options.severity.upper()]
     if options.event:
@@ -218,22 +244,26 @@ def main():
     fields = { "environment": 1, "service": 1,
         "resource": 1, "event": 1, "group": 1,
         "type": 1, "tags": 1, "origin": 1,
-        "thresholdInfo": 1 }
+        "thresholdInfo": 1, "lastReceiveId": 1,
+        "lastReceiveTime": 1 }
     if 'history' in options.show:
         fields['history'] = 1
     else:
         fields['history'] = { '$slice': -1 }
+
+    orderby = list()
+    if options.orderby:
+        orderby.append(ORDERBY[options.orderby])
+    else:
+        orderby.append(('history.createTime', pymongo.DESCENDING))
 
     if options.limit:
         LIMIT = options.limit
     else:
         LIMIT = 0
 
-    orderby = "'history.createTime': pymongo.DESCENDING"
-    # TODO - make orderby user-configurable
-
     if options.dry_run:
-        print "DEBUG: monitoring.alerts { $query: %s, $orderby: { %s } }" % (query, orderby)
+        print "DEBUG: monitoring.alerts { $query: %s, $orderby: %s }" % (query, orderby)
         sys.exit(0)
 
     results = list()
@@ -241,6 +271,7 @@ def main():
         for hist in alert['history']:
             results.append((alert['_id'],
                 hist['id'],
+                alert['lastReceiveId'],
                 alert['environment'],
                 alert['service'],
                 alert['resource'],
@@ -253,6 +284,7 @@ def main():
                 alert['tags'],
                 hist['createTime'].replace(tzinfo=pytz.utc),
                 hist['receiveTime'].replace(tzinfo=pytz.utc),
+                alert['lastReceiveTime'].replace(tzinfo=pytz.utc),
                 alert['origin'],
                 alert.get('thresholdInfo', 'n/a')))
 
@@ -270,6 +302,8 @@ def main():
             print "    interval: %s - %s" % (start.astimezone(tz).strftime(DATE_FORMAT), end.astimezone(tz).strftime(DATE_FORMAT))
         if options.show:
             print "        show: %s" % ', '.join(options.show)
+        if options.orderby:
+            print "    order by: %s" % options.orderby
         if options.alertid:
             print "    alert id: ^%s" % options.alertid
         if options.environment:
@@ -307,26 +341,27 @@ def main():
         end_color = ENDC
 
     count = 0
-    results = sorted(results, key=operator.itemgetter(12)) # sort by createTime ie. results[12]
+    results.reverse()
     for r in results:
-        objectid      = r[0]
-        alertid       = r[1]
-        environment   = r[2]
-        service       = r[3]
-        resource      = r[4]
-        event         = r[5]
-        group         = r[6]
-        value         = r[7]
-        severity      = r[8]
-        severityCode  = SEVERITY_CODE[severity]
-        text          = r[9]
-        type          = r[10]
-        tags          = r[11]
-        createTime    = r[12]
-        receiveTime   = r[13]
-        latency       = receiveTime - createTime
-        origin        = r[14]
-        thresholdInfo = r[15]
+        objectid        = r[0]
+        alertid         = r[1]
+        lastReceiveId   = r[2]
+        environment     = r[3]
+        service         = r[4]
+        resource        = r[5]
+        event           = r[6]
+        group           = r[7]
+        value           = r[8]
+        severity        = r[9]
+        text            = r[10]
+        type            = r[11]
+        tags            = r[12]
+        createTime      = r[13]
+        receiveTime     = r[14]
+        latency         = receiveTime - createTime
+        lastReceiveTime = r[15]
+        origin          = r[16]
+        thresholdInfo   = r[17]
         count += 1
 
         if 'color' in options.show or options.color:
@@ -345,17 +380,19 @@ def main():
         if 'times' in options.show:
             print(line_color + '    time created  | %s' % (createTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
             print(line_color + '    time received | %s' % (receiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
+            print(line_color + '    last received | %s' % (lastReceiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
             print(line_color + '    latency       | %s' % (latency) + end_color)
 
         if 'details' in options.show:
-            print(line_color + '        object id   | %s' % (objectid) + end_color)
-            print(line_color + '        alert id    | %s' % (alertid) + end_color)
-            print(line_color + '        environment | %s' % (environment) + end_color)
-            print(line_color + '        service     | %s' % (service) + end_color)
-            print(line_color + '        resource    | %s' % (resource) + end_color)
-            print(line_color + '        type        | %s' % (type) + end_color)
-            print(line_color + '        origin      | %s' % (origin) + end_color)
-            print(line_color + '        threshold   | %s' % (thresholdInfo) + end_color)
+            print(line_color + '        object id    | %s' % (objectid) + end_color)
+            print(line_color + '        alert id     | %s' % (alertid) + end_color)
+            print(line_color + '        last recv id | %s' % (lastReceiveId) + end_color)
+            print(line_color + '        environment  | %s' % (environment) + end_color)
+            print(line_color + '        service      | %s' % (service) + end_color)
+            print(line_color + '        resource     | %s' % (resource) + end_color)
+            print(line_color + '        type         | %s' % (type) + end_color)
+            print(line_color + '        origin       | %s' % (origin) + end_color)
+            print(line_color + '        threshold    | %s' % (thresholdInfo) + end_color)
 
         if 'tags' in options.show and tags:
             for t in tags:
