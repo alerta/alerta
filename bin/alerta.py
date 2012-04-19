@@ -91,7 +91,8 @@ class MessageHandler(object):
             alerts.insert(alert)
             alerts.update(
                 { "resource": alert['resource'], "event": alert['event'] },
-                { '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "value": alert['value'], "text": alert['text'], "id": alertid }},
+                { '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'],
+                             "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }},
                   '$set': { "duplicateCount": 0 }})
 
             # Forward alert to notify topic and logger queue
@@ -150,7 +151,8 @@ class MessageHandler(object):
                 { '$set': { "severity": alert['severity'], "severityCode": alert['severityCode'], "createTime": createTime, "receiveTime": receiveTime, "lastReceiveTime": receiveTime,
                             "previousSeverity": previousSeverity, "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "repeat": False, "origin": alert['origin'], "duplicateCount": 0 },
-                  '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "value": alert['value'], "text": alert['text'], "id": alertid }}})
+                  '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'],
+                             "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }}})
 
             # Forward alert to notify topic and logger queue
             alert = alerts.find_one({"lastReceiveId": alertid}, {"history": 0})
