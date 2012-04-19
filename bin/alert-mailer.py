@@ -27,7 +27,7 @@ import pytz
 import logging
 import uuid
 
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -37,6 +37,7 @@ ALERTER_MAIL = 'alerta@guardian.co.uk'
 MAILING_LIST = ['nick.satterly@guardian.co.uk']
 TIMEZONE = 'Europe/London'
 
+DISABLE = '/opt/alerta/conf/alert-mailer.disable'
 LOGFILE = '/var/log/alerta/alert-mailer.log'
 PIDFILE = '/var/run/alerta/alert-mailer.pid'
 
@@ -183,7 +184,7 @@ class MessageHandler(object):
                     msg_root.attach(msg_img[g])
                 except:
                     pass
-        
+
         try:
             logging.info('%s : Send email to %s', alert['lastReceiveId'], ','.join(MAILING_LIST))
             s = smtplib.SMTP(SMTP_SERVER)
@@ -245,6 +246,10 @@ def main():
         sys.exit(1)
     else:
         file(PIDFILE, 'w').write(str(os.getpid()))
+
+    while os.path.isfile(DISABLE):
+        logging.warning('Disable flag exists (%s). Sleeping...', DISABLE)
+        time.sleep(120)
 
     # Connect to message broker
     try:

@@ -18,7 +18,7 @@ except ImportError:
 import stomp
 import logging
 
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -26,6 +26,7 @@ IRC_SERVER   = 'irc.gudev.gnl:6667'
 IRC_CHANNEL  = '#alerts'
 IRC_USER     = 'alerta'
 
+DISABLE = '/opt/alerta/conf/alert-ircbot.disable'
 LOGFILE = '/var/log/alerta/alert-ircbot.log'
 PIDFILE = '/var/run/alerta/alert-ircbot.pid'
 
@@ -119,6 +120,10 @@ def main():
         sys.exit(1)
     else:
         file(PIDFILE, 'w').write(str(os.getpid()))
+
+    while os.path.isfile(DISABLE):
+        logging.warning('Disable flag exists (%s). Sleeping...', DISABLE)
+        time.sleep(120)
 
     # Connect to IRC server
     try:
