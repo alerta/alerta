@@ -13,7 +13,7 @@ import pymongo
 import operator
 import pytz
 
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -54,8 +54,7 @@ ORDERBY = {
     'event':           ('event', pymongo.DESCENDING),
     'group':           ('group', pymongo.DESCENDING),
     'value':           ('history.value', pymongo.DESCENDING),
-    #'severity':        ('history.severityCode', pymongo.DESCENDING),
-    'severity':        ('history.severity', pymongo.DESCENDING),
+    'severity':        ('history.severityCode', pymongo.DESCENDING),
     'text':            ('history.text', pymongo.DESCENDING),
     'type':            ('type', pymongo.DESCENDING),
     'createTime':      ('history.createTime', pymongo.DESCENDING),
