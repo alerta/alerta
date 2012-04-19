@@ -21,13 +21,24 @@ import logging
 import uuid
 import re
 
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-snmptrap.log'
+
+SEVERITY_CODE = {
+    # ITU RFC5674 -> Syslog RFC5424
+    'CRITICAL':       1, # Alert
+    'MAJOR':          2, # Crtical
+    'MINOR':          3, # Error
+    'WARNING':        4, # Warning
+    'NORMAL':         5, # Notice
+    'INFORM':         6, # Informational
+    'DEBUG':          7, # Debug
+}
 
 def get_env(line):
 
@@ -168,6 +179,30 @@ def main():
     }
 
     #
+    # Generic Traps
+    #
+    if trapoid.startswith('SNMPv2-MIB::coldStart'):
+        event = 'AgentStatus'
+        value = 'ColdStart'
+        severity = 'WARNING'
+    elif trapoid.startswith('SNMPv2-MIB::warmStart'):
+        event = 'AgentStatus'
+        value = 'WarmStart'
+        severity = 'MINOR'
+    elif trapoid.startswith('IF-MIB::linkDown'):
+        event = 'LinkStatus'
+        value = 'LinkDown'
+        severity = 'MAJOR'
+    elif trapoid.startswith('IF-MIB::linkUp'):
+        event = 'LinkStatus'
+        value = 'LinkUp'
+        severity = 'NORMAL'
+    elif trapoid.startswith('SNMPv2-MIB::authenticationFailure'):
+        event = 'AuthStatus'
+        value = 'Failure'
+        severity = 'CRITICAL'
+
+    #
     # Zeus ZXTM
     #
     if trapoid.startswith('SNMPv2-SMI::enterprises.7146'):
@@ -187,8 +222,6 @@ def main():
                 severity = 'MAJOR'
         environment = get_env(payload)
         service = 'Network' # XXX - could we programatically determine the specific service eg. R1, R2, etc? do we care?
-        logging.info('Suppressing ZXTM alerts for now!!!!!')
-        sys.exit()
 
     alertid = str(uuid.uuid4()) # random UUID
 
@@ -199,39 +232,41 @@ def main():
     headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
     alert = dict()
-    alert['id']          = alertid
-    alert['resource']    = (environment + '.' + service + '.' + resource).lower()
-    alert['event']       = event
-    alert['group']       = group
-    alert['value']       = value
-    alert['severity']    = severity.upper()
-    alert['environment'] = environment.upper()
-    alert['service']     = service
-    alert['text']        = text
-    alert['type']        = 'snmptrapAlert'
-    alert['tags']        = list() # FIXME - should be set somewhere above
-    alert['summary']     = '%s - %s %s is %s on %s %s' % (environment, severity, event, value, service, resource)
-    alert['createTime']  = datetime.datetime.utcnow().isoformat()+'Z'
-    alert['origin']      = 'alert-snmptrap/%s' % os.uname()[1]
-    alert['rawData']     = rawData
+    alert['id']            = alertid
+    alert['resource']      = (environment + '.' + service + '.' + resource).lower()
+    alert['event']         = event
+    alert['group']         = group
+    alert['value']         = value
+    alert['severity']      = severity.upper()
+    alert['severityCode']  = SEVERITY_CODE[alert['severity']]
+    alert['environment']   = environment.upper()
+    alert['service']       = service
+    alert['text']          = text
+    alert['type']          = 'snmptrapAlert'
+    alert['tags']          = list() # FIXME - should be set somewhere above
+    alert['summary']       = '%s - %s %s is %s on %s %s' % (environment, severity.upper(), event, value, service, resource)
+    alert['createTime']    = datetime.datetime.utcnow().isoformat()+'Z'
+    alert['origin']        = 'alert-snmptrap/%s' % os.uname()[1]
+    alert['thresholdInfo'] = 'n/a'
+    alert['rawData']       = rawData
 
-    logging.info('ALERT: %s', json.dumps(alert))
+    logging.info('%s : %s', alertid, json.dumps(alert))
+
     try:
         conn = stomp.Connection(BROKER_LIST)
         conn.start()
         conn.connect(wait=True)
     except Exception, e:
         print >>sys.stderr, "ERROR: Could not connect to broker - %s" % e
-        logging.error('ERROR: Could not connect to broker %s', e)
+        logging.error('Could not connect to broker %s', e)
         sys.exit(1)
     try:
         conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
     except Exception, e:
         print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
-        logging.error('ERROR: Failed to send alert to broker %s', e)
+        logging.error('Failed to send alert to broker %s', e)
         sys.exit(1)
     conn.disconnect()
-    print alertid
     sys.exit(0)
     
     logging.info('%s : Trap forwarded to %s', alertid, ALERT_QUEUE)
