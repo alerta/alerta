@@ -150,7 +150,7 @@ class MessageHandler(object):
                 { "resource": alert['resource'], "event": alert['event']},
                 { '$set': { "severity": alert['severity'], "severityCode": alert['severityCode'], "createTime": createTime, "receiveTime": receiveTime, "lastReceiveTime": receiveTime,
                             "previousSeverity": previousSeverity, "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
-                            "tags": alert['tags'], "repeat": False, "origin": alert['origin'], "duplicateCount": 0 },
+                            "tags": alert['tags'], "repeat": False, "origin": alert['origin'], "thresholdInfo": alert['thresholdInfo'], "duplicateCount": 0 },
                   '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'],
                              "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }}})
 
