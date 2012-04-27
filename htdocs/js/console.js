@@ -90,7 +90,7 @@ function getAlerts(service, filter, refresh) {
         if (ad.tags) {
           tagsdata += '';
           $.each (ad.tags, function(y, tag) {
-            tagsdata += tag + ' ';
+            tagsdata += '<span class="label">' + tag + '</span> ';
           });
         }
 
