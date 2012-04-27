@@ -1,0 +1,21 @@
+- resource: guardian-sport
+  url: http://www.guardian.co.uk/sport
+  search: sport
+  environment: PROD
+  service: R2
+
+- resource: google-search
+  url: http://www.google.co.uk/search?q=test
+  environment: TEST
+  service: Search
+
+- resource: twitter-search
+  url: https://twitter.com/#!/search/%23leveson
+  environment: TEST
+  service: Search
+
+- resource: nytimes-todayspaper
+  url: http://www.nytimes.com/pages/todayspaper/index.html
+  environment: TEST
+  service: Website
+
