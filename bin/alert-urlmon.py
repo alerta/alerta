@@ -38,6 +38,9 @@ URLFILE = '/opt/alerta/conf/alert-urlmon.yaml'
 LOGFILE = '/var/log/alerta/alert-urlmon.log'
 PIDFILE = '/var/run/alerta/alert-urlmon.pid'
 
+os.environ['http_proxy'] = 'http://proxy.gul3.gnl:3128/'
+os.environ['https_proxy'] = 'http://proxy.gul3.gnl:3128/'
+
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
     'CRITICAL':       1, # Alert
@@ -49,7 +52,7 @@ SEVERITY_CODE = {
     'DEBUG':          7, # Debug
 }
 
-_check_rate   = 30             # Check rate of alerts
+_check_rate   = 60             # Check rate of alerts
 
 # Global variables
 urls = dict()
@@ -131,6 +134,7 @@ class WorkerThread(threading.Thread):
                 value = 'OK %dms' % rtt
                 descrStr = 'Website available and responding within RT thresholds'
                 if search_string:
+                    logging.debug('Searching for %s', search_string)
                     found = False
                     for line in body.split('\n'):
                         m = re.search(search_string, line)
@@ -144,15 +148,19 @@ class WorkerThread(threading.Thread):
                         value = 'RegexFailed'
                         descrStr = 'Website available but pattern "%s" not found' % (search_string)
                 elif rule:
+                    logging.debug('Evaluating rule %s', rule)
                     if headers['Content-type'] == 'application/json':
                         body = json.loads(body)
                     try:
                         eval(rule)
                     except:
-                        event = 'WebsiteStatus'
-                        severity = 'MINOR'
-                        value = 'EvalFailed'
-                        descrStr = 'Website available but rule evaluation failed (%s)' % (rule)
+                        logging.error('Could not evaluate rule %s', rule)
+                    else:
+                        if not eval(rule):
+                            event = 'WebsiteStatus'
+                            severity = 'MINOR'
+                            value = 'EvalFailed'
+                            descrStr = 'Website available but rule evaluation failed (%s)' % (rule)
                 if rtt > crit_thold:
                     event = 'WebsiteStatus'
                     severity = 'CRITICAL'
