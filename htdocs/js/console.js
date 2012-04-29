@@ -75,6 +75,7 @@ function getAlerts(service, filter, refresh) {
           $.each(reverseHistory, function (y, hist) {
             historydata += '<hr/>' +
                           '<table class="table table-condensed table-striped">' +
+                          '<tr><td><b>Event</b></td><td>' + hist.event + '</td></tr>' +
                           '<tr><td><b>Severity</b></td><td>' + sev2label(hist.severity) + '</td></tr>' +
                           '<tr><td><b>Alert ID</b></td><td>' + hist.id + '</td></tr>' +
                           '<tr><td><b>Create time</b></td><td>' + date2str(hist.createTime) + '</td></tr>' +
@@ -133,8 +134,8 @@ function getAlerts(service, filter, refresh) {
                         '<tr><td><b>Service</b></td><td>' + ad.service + '</td></tr>' +
                         '<tr><td><b>Event</b></td><td>' + ad.event + '</td></tr>' +
                         '<tr><td><b>Group</b></td><td>' + ad.group + '</td></tr>' +
-                        '<tr><td><b>Value</b></td><td>' + ad.value + '</td></tr>' +
                         '<tr><td><b>State</b></td><td>' + sev2label(ad.previousSeverity) + ' -> ' + sev2label(ad.severity) + '</td></tr>' +
+                        '<tr><td><b>Value</b></td><td>' + ad.value + '</td></tr>' +
                         '<tr><td><b>Text</b></td><td>' + ad.text + '</td></tr>' +
                         '<tr><td><b>Threshold Info</b></td><td>' + ad.thresholdInfo + '</td></tr>' +
                         '<tr><td><b>Type</b></td><td>' + ad.type + '</td></tr>' +

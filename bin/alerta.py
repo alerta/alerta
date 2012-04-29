@@ -103,19 +103,20 @@ class MessageHandler(object):
             logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
-        elif alerts.find_one({"resource": alert['resource'], "event": alert['event']}):
-            previousSeverity = alerts.find_one({"resource": alert['resource'], "event": alert['event']}, { "severity": 1 , "_id": 0})['severity']
-            logging.info('%s : Severity change %s -> %s update details', alertid, previousSeverity, alert['severity'])
+        elif alerts.find_one({"resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]}):
+            previousSeverity = alerts.find_one({"resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]}, { "severity": 1 , "_id": 0})['severity']
+            logging.info('%s : Event and/or severity change %s %s -> %s update details', alertid, alert['event'], previousSeverity, alert['severity'])
             # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime, lastReceiveTime, previousSeverity,
             #                        severityCode, lastReceiveId, text, summary, value, tags and origin
             #                    2. set duplicate count to zero
             #                    3. push history
             alerts.update(
-                { "resource": alert['resource'], "event": alert['event']},
-                { '$set': { "severity": alert['severity'], "severityCode": alert['severityCode'], "createTime": createTime, "receiveTime": receiveTime, "lastReceiveTime": receiveTime,
+                { "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
+                { '$set': { "event": alert['event'], "severity": alert['severity'], "severityCode": alert['severityCode'],
+                            "createTime": createTime, "receiveTime": receiveTime, "lastReceiveTime": receiveTime,
                             "previousSeverity": previousSeverity, "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "repeat": False, "origin": alert['origin'], "thresholdInfo": alert['thresholdInfo'], "duplicateCount": 0 },
-                  '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'],
+                  '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "event": alert['event'],
                              "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }}})
 
             # Forward alert to notify topic and logger queue
@@ -151,7 +152,7 @@ class MessageHandler(object):
             alerts.insert(alert)
             alerts.update(
                 { "resource": alert['resource'], "event": alert['event'] },
-                { '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'],
+                { '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "event": alert['event'],
                              "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }},
                   '$set': { "duplicateCount": 0 }})
 
