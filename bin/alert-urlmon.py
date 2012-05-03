@@ -7,7 +7,7 @@
 
 # TODO
 # 1. add count and repeat
-# 2. make warn and crit threshold configurable
+# 2. DONE
 # 3. send RT to ganglia via gmetric (support spoof host)
 # 4. support username/password for urban airship
 # 5. only send alert on state-change (but fwd to ganglia every time)
@@ -32,7 +32,7 @@ import re
 from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -128,8 +128,9 @@ class WorkerThread(threading.Thread):
             # defaults
             search_string = item.get('search', None)
             rule = item.get('rule', None)
-            warn_thold = 200 # ms
-            crit_thold = 1000 # ms
+
+            warn_thold = item.get('warning', 5000)  # ms
+            crit_thold = item.get('critical', 10000) # ms
 
             response = ''
             code = None
@@ -194,6 +195,16 @@ class WorkerThread(threading.Thread):
                 severity = 'NORMAL'
                 value = '%s (%d)' % (status, code)
                 descrStr = 'HTTP server responded with status code %d in %dms' % (code, rtt)
+                if rtt > crit_thold:
+                    event = 'HttpResponseSlow'
+                    severity = 'CRITICAL'
+                    value = '%dms' % rtt
+                    descrStr = 'Website available but exceeding critical RT thresholds of %dms' % (crit_thold)
+                elif rtt > warn_thold:
+                    event = 'HttpResponseSlow'
+                    severity = 'WARNING'
+                    value = '%dms' % rtt
+                    descrStr = 'Website available but exceeding warning RT thresholds of %dms' % (warn_thold)
                 if search_string:
                     logging.debug('Searching for %s', search_string)
                     found = False
@@ -222,16 +233,6 @@ class WorkerThread(threading.Thread):
                             severity = 'MINOR'
                             value = 'Rule failed'
                             descrStr = 'Website available but rule evaluation failed (%s)' % (rule)
-                elif rtt > crit_thold:
-                    event = 'HttpResponseSlow'
-                    severity = 'CRITICAL'
-                    value = '%dms' % rtt
-                    descrStr = 'Website available but exceeding critical RT thresholds of %dms' % (crit_thold)
-                elif rtt > warn_thold:
-                    event = 'HttpResponseSlow'
-                    severity = 'WARNING'
-                    value = '%dms' % rtt
-                    descrStr = 'Website available but exceeding warning RT thresholds of %dms' % (warn_thold)
             elif code >= 100:
                 event = 'HttpInformational'
                 severity = 'NORMAL'
