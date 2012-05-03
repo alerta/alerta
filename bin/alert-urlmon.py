@@ -11,7 +11,7 @@
 # 3. send RT to ganglia via gmetric (support spoof host)
 # 4. support username/password for urban airship
 # 5. only send alert on state-change (but fwd to ganglia every time)
-# 6. start configurable number of threads
+# 6. DONE
 
 import os
 import sys
@@ -32,7 +32,7 @@ import re
 from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
-__version__ = '1.0.1'
+__version__ = '1.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -41,6 +41,8 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 URLFILE = '/opt/alerta/conf/alert-urlmon.yaml'
 LOGFILE = '/var/log/alerta/alert-urlmon.log'
 PIDFILE = '/var/run/alerta/alert-urlmon.pid'
+
+NUM_THREADS = 5
 
 os.environ['http_proxy'] = 'http://proxy.gul3.gnl:3128/'
 os.environ['https_proxy'] = 'http://proxy.gul3.gnl:3128/'
@@ -80,6 +82,7 @@ _check_rate   = 60             # Check rate of alerts
 
 # Global variables
 urls = dict()
+queue = Queue()
 
 # Do not follow redirects
 class NoRedirection(urllib2.HTTPRedirectHandler):
@@ -93,16 +96,9 @@ class NoRedirection(urllib2.HTTPRedirectHandler):
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, *args, **kwargs):
-        threading.Thread.__init__(self, *args, **kwargs)
-        self.input_queue = Queue()
-
-    def send(self, item):
-        self.input_queue.put(item)
-
-    def close(self):
-        self.input_queue.put(None)
-        self.input_queue.join()
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.input_queue = queue
 
     def run(self):
         global conn
@@ -112,32 +108,20 @@ class WorkerThread(threading.Thread):
             if item is None:
                 break
 
-            # URL check logic
-            # 1. get URL  (XXX - support GET, HEAD, POST, PUT, DELETE?)
-            # 2. if connection error... 
-            #         ALERT = ConnectionError   <- could not fulfill the request
-            # 3. if http status code bad...
-            #         ALERT = BadStatusCode  <-- non-200 error code
-            # 4. if status code 200 but missing search text
-            #         ALERT = RegexFailed
-            # 5. if status code 200 but RT > warn or crit
-            #         ALERT = RespTime <x>ms
-            # 6. if status code 200
-            #         ALERT = WebStatus OK with response time (fwd RT to ganglia)
-
             # defaults
             search_string = item.get('search', None)
             rule = item.get('rule', None)
-
             warn_thold = item.get('warning', 5000)  # ms
             crit_thold = item.get('critical', 10000) # ms
+            post = item.get('post', None)
+
+            logging.info('%s checking %s', self.getName(), item['url'])
 
             response = ''
             code = None
             status = None
 
             start = time.time()
-            post = item.get('post', None)
 
             headers = dict()
             if 'headers' in item:
@@ -321,27 +305,33 @@ def main():
     init_urls()
     url_mod_time = os.path.getmtime(URLFILE)
 
-    # Start worker thread
-    w = WorkerThread()
-    w.start()
+    # Start worker threads
+    for i in range(NUM_THREADS):
+        w = WorkerThread(queue)
+        w.start()
+        logging.info('Starting thread: %s', w.getName())
 
     while True:
         try:
-
             # Read (or re-read) urls as necessary
             if os.path.getmtime(URLFILE) != url_mod_time:
                 init_urls()
                 url_mod_time = os.path.getmtime(URLFILE)
 
             for url in urls:
-                w.send(url)
+                queue.put(url)
+
+            # XXX - uncomment following line if we should wait the on queue until everything has been processed
+            # queue.join()
 
             logging.info('URL check is sleeping %d seconds', _check_rate)
             time.sleep(_check_rate)
 
         except (KeyboardInterrupt, SystemExit):
             conn.disconnect()
-            w.close()
+            for i in range(NUM_THREADS):
+                queue.put(None)
+            w.join()
             os.unlink(PIDFILE)
             sys.exit(0)
 
