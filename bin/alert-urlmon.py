@@ -6,12 +6,8 @@
 ########################################
 
 # TODO
-# 1. add count and repeat
-# 2. DONE
-# 3. send RT to ganglia via gmetric (support spoof host)
-# 4. support username/password for urban airship
-# 5. only send alert on state-change (but fwd to ganglia every time)
-# 6. DONE
+# 1. send RT to ganglia via gmetric (support spoof host)
+# 2. support username/password for urban airship
 
 import os
 import sys
@@ -83,6 +79,10 @@ _check_rate   = 60             # Check rate of alerts
 # Global variables
 urls = dict()
 queue = Queue()
+
+currentCount  = dict()
+currentState  = dict()
+previousSeverity = dict()
 
 # Do not follow redirects
 class NoRedirection(urllib2.HTTPRedirectHandler):
@@ -225,43 +225,72 @@ class WorkerThread(threading.Thread):
 
             logging.debug("URL: %s, Status: %s (%d), Round-Trip Time: %dms -> %s", item['url'], status, code, rtt, event)
 
-            alertid = str(uuid.uuid4()) # random UUID
+            # Set necessary state variables if currentState is unknown
+            res = (item['environment'] + '.' + item['service'] + '.' + item['resource']).lower()
+            if (res, event) not in currentState:
+                currentState[(res, event)] = severity
+                currentCount[(res, event, severity)] = 0
+                previousSeverity[(res, event)] = severity
 
-            headers = dict()
-            headers['type']           = "serviceAlert"
-            headers['correlation-id'] = alertid
-            headers['persistent']     = 'true'
-            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+            if currentState[(res, event)] != severity:                                                          # Change of threshold state
+                currentCount[(res, event, severity)] = currentCount.get((res, event, severity), 0) + 1
+                currentCount[(res, event, currentState[(res, event)])] = 0                                      # zero-out previous sev counter
+                currentState[(res, event)] = severity
+            elif currentState[(res, event)] == severity:                                                        # Threshold state has not changed
+                currentCount[(res, event, severity)] += 1
 
-            # standard alert info
-            alert = dict()
-            alert['id']               = alertid
-            alert['resource']         = (item['environment'] + '.' + item['service'] + '.' + item['resource']).lower()
-            alert['event']            = event
-            alert['group']            = 'Web'
-            alert['value']            = value
-            alert['severity']         = severity
-            alert['severityCode']     = SEVERITY_CODE[severity]
-            alert['environment']      = item['environment']
-            alert['service']          = item['service']
-            alert['text']             = descrStr
-            alert['type']             = 'serviceAlert'
-            alert['tags']             = list()
-            alert['summary']          = '%s - %s %s is %s on %s %s' % (item['environment'], severity, event, value, item['service'], item['resource'])
-            alert['createTime']       = datetime.datetime.utcnow().isoformat()+'Z'
-            alert['origin']           = "alert-urlmon/%s" % os.uname()[1]
-            alert['thresholdInfo']    = "%s: RT > %d RT > %d x 1" % (item['url'], warn_thold, crit_thold)
-            alert['correlatedEvents'] = HTTP_ALERTS
+            logging.debug('currentState = %s, currentCount = %d', currentState[(res, event)], currentCount[(res, event, severity)])
 
-            logging.info('%s : %s', alertid, json.dumps(alert))
+            # Determine if should send a repeat alert
+            repeat = (currentCount[(res, event, severity)] - item.get('count', 1)) % item.get('repeat', 1) == 0
 
-            try:
-                conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
-            except Exception, e:
-                logging.error('Failed to send alert to broker %s', e)
-                sys.exit(1) # XXX - do I really want to exit here???
-            broker = conn.get_host_and_port()
-            logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
+            logging.debug('Send alert if prevSev %s != %s AND thresh %d == %s', previousSeverity[(res, event)], severity, currentCount[(res, event, severity)], item.get('count', 1))
+            logging.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, currentCount[(res, event, severity)], item.get('count', 1), item.get('repeat', 1))
+
+            # Determine if current threshold count requires an alert
+            if ((previousSeverity[(res, event)] != severity and currentCount[(res, event, severity)] == item.get('count', 1))
+                or (previousSeverity[(res, event)] == severity and repeat)):
+
+                alertid = str(uuid.uuid4()) # random UUID
+
+                headers = dict()
+                headers['type']           = "serviceAlert"
+                headers['correlation-id'] = alertid
+                headers['persistent']     = 'true'
+                headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+
+                # standard alert info
+                alert = dict()
+                alert['id']               = alertid
+                alert['resource']         = (item['environment'] + '.' + item['service'] + '.' + item['resource']).lower()
+                alert['event']            = event
+                alert['group']            = 'Web'
+                alert['value']            = value
+                alert['severity']         = severity
+                alert['severityCode']     = SEVERITY_CODE[severity]
+                alert['environment']      = item['environment']
+                alert['service']          = item['service']
+                alert['text']             = descrStr
+                alert['type']             = 'serviceAlert'
+                alert['tags']             = list()
+                alert['summary']          = '%s - %s %s is %s on %s %s' % (item['environment'], severity, event, value, item['service'], item['resource'])
+                alert['createTime']       = datetime.datetime.utcnow().isoformat()+'Z'
+                alert['origin']           = "alert-urlmon/%s" % os.uname()[1]
+                alert['thresholdInfo']    = "%s: RT > %d RT > %d x 1" % (item['url'], warn_thold, crit_thold)
+                alert['correlatedEvents'] = HTTP_ALERTS
+
+                logging.info('%s : %s', alertid, json.dumps(alert))
+
+                try:
+                    conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
+                except Exception, e:
+                    logging.error('Failed to send alert to broker %s', e)
+                    sys.exit(1) # XXX - do I really want to exit here???
+                broker = conn.get_host_and_port()
+                logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
+
+                # Keep track of previous severity
+                previousSeverity[(res, event)] = severity
 
             self.input_queue.task_done()
 
