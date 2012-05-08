@@ -57,9 +57,9 @@ ORDERBY = {
     'severity':        ('history.severityCode', pymongo.DESCENDING),
     'text':            ('history.text', pymongo.DESCENDING),
     'type':            ('type', pymongo.DESCENDING),
-    'createTime':      ('history.createTime', pymongo.DESCENDING),
-    'receiveTime':     ('history.receiveTime', pymongo.DESCENDING),
-    'lastReceiveTime': ('lastReceiveTime', pymongo.DESCENDING),
+    'createTime':      ('history.createTime', pymongo.ASCENDING),
+    'receiveTime':     ('history.receiveTime', pymongo.ASCENDING),
+    'lastReceiveTime': ('lastReceiveTime', pymongo.ASCENDING),
     'origin':          ('origin', pymongo.DESCENDING),
     'thresholdInfo':   ('thresholdInfo', pymongo.DESCENDING)
 }
@@ -247,9 +247,11 @@ def main():
         "resource": 1, "event": 1, "group": 1,
         "type": 1, "tags": 1, "origin": 1,
         "thresholdInfo": 1, "lastReceiveId": 1,
-        "lastReceiveTime": 1 }
+        "lastReceiveTime": 1 , "correlatedEvents": 1 }
+
     if 'history' in options.show:
         fields['history'] = 1
+        options.orderby = 'createTime'
     else:
         fields['history'] = { '$slice': -1 }
 
@@ -257,7 +259,7 @@ def main():
     if options.orderby:
         orderby.append(ORDERBY[options.orderby])
     else:
-        orderby.append(('history.createTime', pymongo.DESCENDING))
+        orderby.append(ORDERBY['lastReceiveTime'])
 
     if options.limit:
         LIMIT = options.limit
@@ -277,7 +279,7 @@ def main():
                 alert['environment'],
                 alert['service'],
                 alert['resource'],
-                alert['event'],
+                hist.get('event', 'n/a'),
                 alert['group'],
                 hist.get('value', 'n/a'),
                 hist['severity'],
@@ -288,7 +290,8 @@ def main():
                 hist['receiveTime'].replace(tzinfo=pytz.utc),
                 alert['lastReceiveTime'].replace(tzinfo=pytz.utc),
                 alert['origin'],
-                alert.get('thresholdInfo', 'n/a')))
+                alert.get('thresholdInfo', 'n/a'),
+                alert.get('correlatedEvents', ['n/a'])))
 
     if not options.timezone:
         user_tz = TIMEZONE
@@ -343,35 +346,35 @@ def main():
         end_color = ENDC
 
     count = 0
-    results.reverse()
     for r in results:
-        objectid        = r[0]
-        alertid         = r[1]
-        lastReceiveId   = r[2]
-        environment     = r[3]
-        service         = r[4]
-        resource        = r[5]
-        event           = r[6]
-        group           = r[7]
-        value           = r[8]
-        severity        = r[9]
-        text            = r[10]
-        type            = r[11]
-        tags            = r[12]
-        createTime      = r[13]
-        receiveTime     = r[14]
-        latency         = receiveTime - createTime
-        lastReceiveTime = r[15]
-        origin          = r[16]
-        thresholdInfo   = r[17]
+        objectid         = r[0]
+        alertid          = r[1]
+        lastReceiveId    = r[2]
+        environment      = r[3]
+        service          = r[4]
+        resource         = r[5]
+        event            = r[6]
+        group            = r[7]
+        value            = r[8]
+        severity         = r[9]
+        text             = r[10]
+        type             = r[11]
+        tags             = r[12]
+        createTime       = r[13]
+        receiveTime      = r[14]
+        latency          = receiveTime - createTime
+        lastReceiveTime  = r[15]
+        origin           = r[16]
+        thresholdInfo    = r[17]
+        correlatedEvents = r[18]
         count += 1
 
-        if options.orderby == 'receiveTime':
-            displayTime = receiveTime
-        elif options.orderby == 'lastReceiveTime':
-            displayTime = lastReceiveTime
-        else:
+        if options.orderby == 'createTime':
             displayTime = createTime
+        elif options.orderby == 'receiveTime':
+            displayTime = receiveTime
+        else:
+            displayTime = lastReceiveTime
 
         if 'color' in options.show or options.color:
             line_color = COLOR[severity]
@@ -402,6 +405,7 @@ def main():
             print(line_color + '        type         | %s' % (type) + end_color)
             print(line_color + '        origin       | %s' % (origin) + end_color)
             print(line_color + '        threshold    | %s' % (thresholdInfo) + end_color)
+            print(line_color + '        correlate    | %s' % (','.join(correlatedEvents)) + end_color)
 
         if 'tags' in options.show and tags:
             for t in tags:
