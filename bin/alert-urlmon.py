@@ -27,7 +27,7 @@ import re
 from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
-__version__ = '1.2'
+__version__ = '1.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -38,8 +38,10 @@ LOGFILE = '/var/log/alerta/alert-urlmon.log'
 PIDFILE = '/var/run/alerta/alert-urlmon.pid'
 
 NUM_THREADS = 5
+
+GMETRIC_SEND = True
 GMETRIC_CMD = '/usr/bin/gmetric'
-GMETRIC_OPTIONS = '--spoof urlmon:urlmon --conf /etc/ganglia/alerta/gmond-alerta.conf'
+GMETRIC_OPTIONS = '--spoof 10.1.1.1:urlmon --conf /etc/ganglia/alerta/gmond-alerta.conf'
 
 os.environ['http_proxy'] = 'http://proxy.gul3.gnl:3128/'
 os.environ['https_proxy'] = 'http://proxy.gul3.gnl:3128/'
@@ -128,7 +130,21 @@ class WorkerThread(threading.Thread):
             if 'headers' in item:
                 headers = dict(item['headers'])
 
-            opener = urllib2.build_opener(NoRedirection())
+            username = item.get('username', None)
+            password = item.get('password', None)
+            realm = item.get('realm', None)
+            uri = item.get('uri', None)
+
+            if username and password:
+                auth_handler = urllib2.HTTPBasicAuthHandler()
+                auth_handler.add_password(realm = realm,
+                    uri = uri,
+                    user = username,
+                    passwd = password)
+                opener = urllib2.build_opener(auth_handler)
+            else:
+                redir_handler = NoRedirection()
+                opener = urllib2.build_opener(redir_handler)
             urllib2.install_opener(opener)
 
             try:
@@ -233,15 +249,16 @@ class WorkerThread(threading.Thread):
             else:
                 avail = 0.0
 
-            gmetric_cmd = "%s --name availability-%s --value %.1f --type float --units \" \" --slope both --group %s %s" % (
-                GMETRIC_CMD, item['resource'], avail, item['service'], GMETRIC_OPTIONS)
-            logging.debug("%s", gmetric_cmd)
-            os.system("%s" % gmetric_cmd)
+            if GMETRIC_SEND:
+                gmetric_cmd = "%s --name availability-%s --value %.1f --type float --units \" \" --slope both --group %s %s" % (
+                    GMETRIC_CMD, item['resource'], avail, item['service'], GMETRIC_OPTIONS)
+                logging.debug("%s", gmetric_cmd)
+                os.system("%s" % gmetric_cmd)
 
-            gmetric_cmd = "%s --name response_time-%s --value %d --type uint16 --units ms --slope both --group %s %s" % (
-                GMETRIC_CMD, item['resource'], rtt, item['service'], GMETRIC_OPTIONS)
-            logging.debug("%s", gmetric_cmd)
-            os.system("%s" % gmetric_cmd)
+                gmetric_cmd = "%s --name response_time-%s --value %d --type uint16 --units ms --slope both --group %s %s" % (
+                    GMETRIC_CMD, item['resource'], rtt, item['service'], GMETRIC_OPTIONS)
+                logging.debug("%s", gmetric_cmd)
+                os.system("%s" % gmetric_cmd)
 
             # Set necessary state variables if currentState is unknown
             res = (item['environment'] + '.' + item['service'] + '.' + item['resource']).lower()
