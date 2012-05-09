@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Alerta version 1.1.2
+--------------------
+
+* Added disable flags for alert mailer and ircbot
+* New URL monitoring component
+* Added simple event correlation to alerta
+* Minor Alert console enhancements
+
 Alerta version 1.1.1
 --------------------
 
