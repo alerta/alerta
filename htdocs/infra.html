@@ -151,17 +151,17 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="Hardware" data-label="Hardware">
+            <table class="table table-bordered table-condensed summary" id="Web" data-label="Web">
               <thead>
-                <tr> <th colspan="6" id="Hardware-status">Hardware</th> </tr> 
+                <tr> <th colspan="6" id="Web-status">Web</th> </tr>
               </thead>
               <tbody>
-                <tr id="Hardware-warnings" class="warnings">
-                  <td id="Hardware-critical">0</td>
-                  <td id="Hardware-major">0</td>
-                  <td id="Hardware-minor">0</td>
-                  <td id="Hardware-warning">0</td>
-                  <td id="Hardware-normal">0</td>
+                <tr id="Web-warnings" class="warnings">
+                  <td id="Web-critical">0</td>
+                  <td id="Web-major">0</td>
+                  <td id="Web-minor">0</td>
+                  <td id="Web-warning">0</td>
+                  <td id="Web-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -206,7 +206,7 @@
             </tbody>
             <tbody id="Database-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="Hardware-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="Web-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="Ganglia-alerts" class="serviceAlerts initially-hidden">
             </tbody>
@@ -233,7 +233,7 @@
                          'EC2':      'environment=INFRA&service=EC2',
                          'OS':       'group=OS',
                          'Database': 'group=Database',
-                         'Hardware': 'group=Hardware',
+                         'Web':      'group=Web',
                          'Ganglia':  'group=Ganglia',
                          'Puppet':   'group=Puppet' };
 
