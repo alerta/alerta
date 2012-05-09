@@ -146,9 +146,10 @@ class WorkerThread(threading.Thread):
                 elif hasattr(e, 'code'):
                     code = e.code
             else:
-                rtt = int((time.time() - start) * 1000)
                 code = response.getcode()
                 body = response.read()
+
+            rtt = int((time.time() - start) * 1000) # round-trip time
 
             try:
                 status = HTTP_RESPONSES[code]
