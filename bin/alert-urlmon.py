@@ -5,9 +5,6 @@
 #
 ########################################
 
-# TODO
-# 1. add basic auth support
-
 import os
 import sys
 import time
@@ -27,7 +24,7 @@ import re
 from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
-__version__ = '1.3'
+__version__ = '1.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -37,7 +34,8 @@ URLFILE = '/opt/alerta/conf/alert-urlmon.yaml'
 LOGFILE = '/var/log/alerta/alert-urlmon.log'
 PIDFILE = '/var/run/alerta/alert-urlmon.pid'
 
-NUM_THREADS = 5
+REQUEST_TIMEOUT = 15 # seconds
+NUM_THREADS = 10
 
 GMETRIC_SEND = True
 GMETRIC_CMD = '/usr/bin/gmetric'
@@ -107,15 +105,26 @@ class WorkerThread(threading.Thread):
         global conn
 
         while True:
-            item = self.input_queue.get()
-            if item is None:
+            flag,item = self.input_queue.get()
+            if flag == 'stop':
+                logging.info('%s is shutting down.', self.getName())
                 break
+            if flag == 'timestamp':
+                urlmon_cycletime = time.time() - item
+                logging.info('Took %d seconds to schedule all checks.', urlmon_cycletime)
+                if GMETRIC_SEND:
+                    gmetric_cmd = "%s --name urlmon_cycletime --value %d --type uint16 --units seconds --slope both --group urlmon %s" % (
+                        GMETRIC_CMD, urlmon_cycletime, GMETRIC_OPTIONS)
+                    logging.debug("%s", gmetric_cmd)
+                    os.system("%s" % gmetric_cmd)
+                self.input_queue.task_done()
+                continue
 
             # defaults
             search_string = item.get('search', None)
             rule = item.get('rule', None)
-            warn_thold = item.get('warning', 5000)  # ms
-            crit_thold = item.get('critical', 10000) # ms
+            warn_thold = item.get('warning', 1000)  # ms
+            crit_thold = item.get('critical', 2000) # ms
             post = item.get('post', None)
 
             logging.info('%s checking %s', self.getName(), item['url'])
@@ -152,13 +161,13 @@ class WorkerThread(threading.Thread):
                     req = urllib2.Request(item['url'], json.dumps(post), headers=headers)
                 else: 
                     req = urllib2.Request(item['url'], headers=headers)
-                response = urllib2.urlopen(req)
+                response = urllib2.urlopen(req, None, REQUEST_TIMEOUT)
             except ValueError, e:
                 logging.error('Request failed: %s', e)
                 continue
             except urllib2.URLError, e:
                 if hasattr(e, 'reason'):
-                    reason = e.reason
+                    reason = str(e.reason)
                 elif hasattr(e, 'code'):
                     code = e.code
             else:
@@ -170,13 +179,13 @@ class WorkerThread(threading.Thread):
             try:
                 status = HTTP_RESPONSES[code]
             except KeyError:
-                status = 'unused'
+                status = 'undefined'
 
             if code is None:
                 event = 'HttpConnectionError'
                 severity = 'MAJOR'
                 value = reason
-                descrStr = 'Connection error of %s to %s' % (value, item['url'])
+                descrStr = 'Error during connection or data transfer (timeout=%d).' % (REQUEST_TIMEOUT)
             elif code >= 500:
                 event = 'HttpServerError'
                 severity = 'MAJOR'
@@ -241,10 +250,10 @@ class WorkerThread(threading.Thread):
                 value = '%s (%d)' % (status, code)
                 descrStr = 'HTTP server responded with status code %d in %dms' % (code, rtt)
 
-            logging.debug("URL: %s, Status: %s (%d), Round-Trip Time: %dms -> %s", item['url'], status, code, rtt, event)
+            logging.debug("URL: %s, Status: %s (%s), Round-Trip Time: %dms -> %s", item['url'], status, code, rtt, event)
 
             # Forward metric data to Ganglia
-            if code < 300:
+            if code and code < 300:
                 avail = 100.0   # 1xx, 2xx -> 100% available
             else:
                 avail = 0.0
@@ -328,6 +337,7 @@ class WorkerThread(threading.Thread):
                 previousSeverity[(res, event)] = severity
 
             self.input_queue.task_done()
+            logging.info('%s check complete.', self.getName())
 
         self.input_queue.task_done()
         return
@@ -345,7 +355,7 @@ def init_urls():
 def main():
     global urls, conn
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-urlmon[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-urlmon[%(process)d] %(threadName)s %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up URL monitor version %s', __version__)
 
     # Write pid file
@@ -383,20 +393,26 @@ def main():
                 url_mod_time = os.path.getmtime(URLFILE)
 
             for url in urls:
-                queue.put(url)
+                queue.put(('url',url))
+            queue.put(('timestamp', time.time()))
 
-            # XXX - uncomment following line if we should wait the on queue until everything has been processed
-            # queue.join()
-
-            logging.info('URL check is sleeping %d seconds', _check_rate)
             time.sleep(_check_rate)
+            urlmon_qsize = queue.qsize()
+            logging.info('URL check queue length is %d', urlmon_qsize)
+            if GMETRIC_SEND:
+                gmetric_cmd = "%s --name urlmon_qsize --value %d --type uint16 --units \" \" --slope both --group urlmon %s" % (
+                    GMETRIC_CMD, urlmon_qsize, GMETRIC_OPTIONS)
+                logging.debug("%s", gmetric_cmd)
+                os.system("%s" % gmetric_cmd)
+
 
         except (KeyboardInterrupt, SystemExit):
             conn.disconnect()
             for i in range(NUM_THREADS):
-                queue.put(None)
+                queue.put(('stop',None))
             w.join()
             os.unlink(PIDFILE)
+            logging.info('Graceful exit.')
             sys.exit(0)
 
 if __name__ == '__main__':
