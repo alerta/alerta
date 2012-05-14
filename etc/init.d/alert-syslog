@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# alert-syslog	Start/stop the Alert Syslog receiver.
+#
+# chkconfig: 2345 90 60
+# description: Alert Syslog receiver daemon for the alerting system.
+
+# Source function library.
+. /etc/init.d/functions
+
+RETVAL=0
+prog="alert-syslog"
+binary=/opt/alerta/bin/alert-syslog.py
+pidfile=/var/run/alerta/$prog.pid
+lockfile=/var/lock/subsys/$prog
+
+# Source config
+if [ -f /etc/sysconfig/$prog ] ; then
+    . /etc/sysconfig/$prog
+fi
+
+start() {
+	[ -x $binary ] || exit 5
+
+        # Start daemons.
+        echo -n $"Starting $prog: "
+        daemon "$binary $OPTIONS >/dev/null 2>&1 &"
+	RETVAL=$?
+        echo
+	[ $RETVAL -eq 0 ] && touch $lockfile
+	return $RETVAL
+}
+
+stop() {
+        echo -n $"Shutting down $prog: "
+	killproc -p $pidfile $binary
+	RETVAL=$?
+        echo
+	[ $RETVAL -eq 0 ] && rm -f $lockfile
+	return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	stop
+	start
+	;;
+  status)
+	status -p $pidfile $prog
+	;;
+  try-restart|condrestart)
+	if status $prog > /dev/null; then
+	    stop
+	    start
+	fi
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart|condrestart|try-restart|status}"
+	exit 2
+esac
+
+exit $?
