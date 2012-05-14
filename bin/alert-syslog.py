@@ -100,28 +100,49 @@ SYSLOG_TCP_PORT             = 514
 def send_syslog(data):
     global conn
 
-    # May 14 07:52:53 WEBSYSUNS rsyslogd: [origin software="rsyslogd" swVersion="4.2.0" x-pid="589" x-info="http://www.rsyslog.com"] rsyslogd was HUPed, type 'lightweight'.
+    if re.match('<\d+>1', data):
+        # Parse RFC 5424 compliant message
+        m = re.match(r'<(\d+)>1 (\S+) (\S+) (\S+) (\S+) (\S+) (.*)', data)
+        if m:
+            PRI = int(m.group(1))
+            ISOTIMESTAMP = m.group(2)
+            LOGHOST = m.group(3)
+            APPNAME = m.group(4)
+            PROCID = m.group(5)
+            MSGID = m.group(6)
+            TAG = '%s[%s] %s' % (APPNAME, PROCID, MSGID)
+            MSG = m.group(7) 
+            logging.info("Parsed RFC 5424 message OK")
+        else:
+            logging.error("Could not parse syslog RFC 5424 message: %s", data)
+            return
 
-    m = re.match(r'<(\d+)>(\S{3}) (\d+) (\d+:\d+:\d+) (\S+) (\S+): (.*)', data)
-    if m:
-        PRI = int(m.group(1))
-        LOGHOST = m.group(5)
-        TAG = m.group(6)
-        MSG = m.group(7)
-        fac = PRI >> 3
-        sev = PRI & 7
-        facility = SYSLOG_FACILITY_NAMES[fac]
-        severity = SYSLOG_SEVERITY_NAMES[sev]
     else:
-        logging.error("Could not decode syslog message: %s", data)
-        return
+        # Parse RFC 3164 compliant message
+        m = re.match(r'<(\d+)>(\S{3}) (\d+) (\d+:\d+:\d+) (\S+) (\S+): (.*)', data)
+        if m:
+            PRI = int(m.group(1))
+            LOGHOST = m.group(5)
+            TAG = m.group(6)
+            MSG = m.group(7)
+            logging.info("Parsed RFC 3164 message OK")
+        else:
+            logging.error("Could not parse syslog RFC 3164 message: %s", data)
+            return
 
+    # Decode syslog PRI
+    fac = PRI >> 3
+    sev = PRI & 7
+    facility = SYSLOG_FACILITY_NAMES[fac]
+    severity = SYSLOG_SEVERITY_NAMES[sev]
+
+    # Assign alert attributes
     environment = 'INFRA'
     service = 'Servers'
     resource =  LOGHOST
     event = '%s%s' % (facility.capitalize(), severity.capitalize())
     group = 'Syslog'
-    value = TAG
+    value = TAG or MSGID
     text = MSG
     tags = [ '%s.%s' % (facility, severity) ]
 
@@ -153,14 +174,6 @@ def send_syslog(data):
 
     logging.info('%s : %s', alertid, json.dumps(alert))
 
-    try:
-        conn = stomp.Connection(BROKER_LIST)
-        conn.start()
-        conn.connect(wait=True)
-    except Exception, e:
-        print >>sys.stderr, "ERROR: Could not connect to broker - %s" % e
-        logging.error('Could not connect to broker %s', e)
-        sys.exit(1)
     try:
         conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
     except Exception, e:
@@ -196,7 +209,7 @@ def main():
     except socket.error, e:
         logging.error('Syslog UDP error: %s', e)
         sys.exit(2)
-    logging.info('Listening on syslog port 514/udp...')
+    logging.info('Listening on syslog port 514/udp')
 
     # Set up syslog TCP listener
     try:
@@ -206,7 +219,7 @@ def main():
     except socket.error, e:
         logging.error('Syslog TCP error: %s', e)
         sys.exit(2)
-    logging.info('Listening on syslog port 514/tcp...')
+    logging.info('Listening on syslog port 514/tcp')
 
     # Connect to message broker
     try:
