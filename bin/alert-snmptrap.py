@@ -46,7 +46,6 @@ def main():
 
     trapvars = dict()
     trapvars['$$'] = '$'
-    # FIXME trapvars['$*'] = list()
 
     recv = sys.stdin.read().splitlines()
     logging.info('snmptrapd -> %s', json.dumps(recv))
@@ -62,11 +61,12 @@ def main():
             value = value[1:-1]
         varbinds[oid] = value
         trapvars['$'+str(idx)] = value # $n
-        # FIXME trapvars['$*'].append(value)
-    # FIXME trapvars['$#'] = idx
 
     trapoid = trapvars['$O'] = trapvars['$2']
-    enterprise,trapnumber = trapoid.rsplit('.',1)
+    try:
+        enterprise,trapnumber = trapoid.rsplit('.',1)
+    except:
+        enterprise,trapnumber = trapoid.rsplit('::',1)
     enterprise = enterprise.strip('.0')
 
     # Get sysUpTime
@@ -111,9 +111,10 @@ def main():
     severity    = 'NORMAL'
     group       = 'SNMP'
     value       = trapnumber
-    text        = trapvars['$3'] # ie. whatever is in varbind #3
+    text        = trapvars['$3'] # ie. whatever is in varbind 3
     environment = 'INFRA'
     service     = 'Network'
+    tags        = list()
     correlate   = list()
 
     # Match trap to specific config and load any parsers
@@ -124,10 +125,19 @@ def main():
         trapconf = yaml.load(open(TRAPCONF))
     except Exception, e:
         logging.error('Failed to load SNMP Trap configuration: %s', e)
+        sys.exit(1)
     logging.info('Loaded %d SNMP Trap configurations OK', len(trapconf))
 
     for t in trapconf:
         if re.match(t['trapoid'], trapoid):
+            if 'parser' in t:
+                print 'Loading parser %s' % t['parser']
+                try:
+                    exec(open('./parsers/%s.py' % t['parser']))
+                    logging.info('Parser %s exec OK', t['parser'])
+                except Exception, e:
+                    print 'Parser %s failed: %s' % (t['parser'], e)
+                    logging.warning('Parser %s failed', t['parser'])
             if 'event' in t:
                 event = t['event']
             if 'resource' in t:
@@ -144,20 +154,23 @@ def main():
                 environment = t['environment']
             if 'service' in t:
                 service = t['service']
+            if 'tags' in t:
+                tags = t['tags']
             if 'correlatedEvents' in t:
                 correlate = t['correlatedEvents']
 
     # Trap variable substitution
     for v in trapvars:
-        print "sub %s %s" % ('\\'+v, trapvars[v])
-        event = re.sub('\\'+v, trapvars[v], event)
-        resource = re.sub('\\'+v, trapvars[v], resource)
-        severity = re.sub('\\'+v, trapvars[v], severity)
-        group = re.sub('\\'+v, trapvars[v], group)
-        value = re.sub('\\'+v, trapvars[v], value)
-        text = re.sub('\\'+v, trapvars[v], text)
-        environment = re.sub('\\'+v, trapvars[v], environment)
-        service = re.sub('\\'+v, trapvars[v], service)
+        print "sub %s %s" % (v, trapvars[v])
+        event = event.replace(v, trapvars[v])
+        resource = resource.replace(v, trapvars[v])
+        severity = severity.replace(v, trapvars[v])
+        group = group.replace(v, trapvars[v])
+        value = value.replace(v, trapvars[v])
+        text = text.replace(v, trapvars[v])
+        environment = environment.replace(v, trapvars[v])
+        service = service.replace(v, trapvars[v])
+        tags[:] = [s.replace(v, trapvars[v]) for s in tags]
 
     alertid = str(uuid.uuid4()) # random UUID
 
@@ -179,7 +192,7 @@ def main():
     alert['service']          = service
     alert['text']             = text
     alert['type']             = 'snmptrapAlert'
-    alert['tags']             = list() # FIXME - should be set somewhere above
+    alert['tags']             = tags
     alert['summary']          = '%s - %s %s is %s on %s %s' % (environment, severity.upper(), event, value, service, resource)
     alert['createTime']       = datetime.datetime.utcnow().isoformat()+'Z'
     alert['origin']           = 'alert-snmptrap/%s' % os.uname()[1]
