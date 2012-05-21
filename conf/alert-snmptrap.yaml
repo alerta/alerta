@@ -4,15 +4,13 @@
 # $$ = dollar sign
 # $T = sysUpTime
 # $A = agent-addr
-# $a = agent-addr (as IP)
-# $R = snmpTrapAddress
+# $a = agent-addr (IP)
+# $R = true source
 # $O = trap oid
 # $E = enterprise oid
+# $C = community string
 # $G = generic trap
 # $S = specific trap
-# $C = community string
-# $# = number of varbinds
-# $* = all varbinds
 # $n = varbind 'n'
 
 # Defaults
@@ -27,4 +25,14 @@
 # text: $3
 # environment: INFRA
 # service: Network
+
+- trapoid: ZXTM-MIB
+  parser: ZxtmParser
+  resource: $4
+  group: ZXTM
+
+- trapoid: NETAPP-MIB
+  value: $S
+  group: NetApp
+  tags: [ serial_num=$4 ]
 
