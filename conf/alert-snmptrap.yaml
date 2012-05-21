@@ -1,0 +1,30 @@
+
+# Standard variables found in the trap
+#
+# $$ = dollar sign
+# $T = sysUpTime
+# $A = agent-addr
+# $a = agent-addr (as IP)
+# $R = snmpTrapAddress
+# $O = trap oid
+# $E = enterprise oid
+# $G = generic trap
+# $S = specific trap
+# $C = community string
+# $# = number of varbinds
+# $* = all varbinds
+# $n = varbind 'n'
+
+# Defaults
+#
+# event: $O
+# resource: $A
+# severity: NORMAL
+# group: SNMP
+# count: 1
+# repeat: 1
+# value: Trap=[$G|$S]
+# text: $3
+# environment: INFRA
+# service: Network
+

@@ -6,14 +6,13 @@
 #
 ########################################
 
-# See http://pysnmp.sourceforge.net/examples/2.x/snmptrap.html
-
 import os
 import sys
 try:
     import json
 except ImportError:
     import simplejson as json
+import yaml
 import stomp
 import time
 import datetime
@@ -21,13 +20,14 @@ import logging
 import uuid
 import re
 
-__version__ = '1.0.1'
+__version__ = '1.1.0'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-snmptrap.log'
+TRAPCONF = '/opt/alerta/conf/alert-snmptrap.yaml'
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -40,188 +40,124 @@ SEVERITY_CODE = {
     'DEBUG':          7, # Debug
 }
 
-def get_env(line):
-
-    env = {
-        # '': 'PROD',
-        'rel': 'REL',
-        'qa' : 'QA',
-        'tst': 'TEST',
-        'cod': 'CODE',
-        'stg': 'STAGE',
-        'dev': 'DEV',
-        'lwp': 'LWP'
-    }
-
-    m = re.match(r'.*(pools|monitors)/(?P<env>rel|qa|tst|cod|stg|dev|lwp)', line)
-    if m:
-        return env[m.group('env')]
-    m = re.match(r'.*[N|n]ode \'?(?P<env>rel|qa|tst|cod|stg|dev|lwp)', line)
-    if m:
-        return env[m.group('env')]
-    m = re.match(r'.*servers/vs_\w+.gu(?P<env>rel|qa|tst|cod|stg|dev|lwp)', line)
-    if m:
-        return env[m.group('env')]
-
-    return 'INFRA'
-        
 def main():
 
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-snmptrap[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
 
-    rawData = sys.stdin.read()
-    recv = rawData.split('\n')
-    logging.info('trap -> %s', json.dumps(recv))
+    trapvars = dict()
+    trapvars['$$'] = '$'
+    # FIXME trapvars['$*'] = list()
 
-    # Parse the trap info
-    agent      = recv[0].strip().split('.')[0]
-    ip         = recv[1].strip()
-    uptime     = recv[2].strip()
-    trapoid    = recv[3].strip().split()[1]
-    trapnumber = trapoid.rpartition('.')[2]
-    payload    = recv[4].partition(' ')[2].strip().lstrip('\"').rstrip('\"')
-    logging.info('agent=%s, ip=%s, uptime=%s, trapoid=%s, trapnumber=%s, payload=%s', agent, ip, uptime, trapoid, trapnumber, payload)
+    recv = sys.stdin.read().splitlines()
+    logging.info('snmptrapd -> %s', json.dumps(recv))
+
+    agent     = recv.pop(0)
+    transport = recv.pop(0)
+
+    # Get varbinds
+    varbinds = dict()
+    for idx, line in enumerate(recv, start=1):
+        oid,value = line.split(None, 1)
+        if value.startswith('"'):
+            value = value[1:-1]
+        varbinds[oid] = value
+        trapvars['$'+str(idx)] = value # $n
+        # FIXME trapvars['$*'].append(value)
+    # FIXME trapvars['$#'] = idx
+
+    trapoid = trapvars['$O'] = trapvars['$2']
+    enterprise,trapnumber = trapoid.rsplit('.',1)
+    enterprise = enterprise.strip('.0')
+
+    # Get sysUpTime
+    if 'DISMAN-EVENT-MIB::sysUpTimeInstance' in varbinds:
+        trapvars['$T'] = varbinds['DISMAN-EVENT-MIB::sysUpTimeInstance']
+    else:
+        trapvars['$T'] = trapvars['$1']  # assume 1st varbind is sysUpTime
+
+    # Get agent address and IP
+    trapvars['$A'] = agent
+    m = re.match('UDP: \[(\d+\.\d+\.\d+\.\d+)]', transport)
+    if m:
+        trapvars['$a'] = m.group(1)
+    if 'SNMP-COMMUNITY-MIB::snmpTrapAddress.0' in varbinds:
+        trapvars['$R'] = varbinds['SNMP-COMMUNITY-MIB::snmpTrapAddress.0'] # snmpTrapAddress
+
+    # Get enterprise, specific and generic trap numbers
+    if trapvars['$2'].startswith('SNMPv2-MIB') or trapvars['$2'].startswith('IF-MIB'): # snmp generic traps
+        if 'SNMPv2-MIB::snmpTrapEnterprise.0' in varbinds: # snmpTrapEnterprise.0
+            trapvars['$E'] = varbinds['SNMPv2-MIB::snmpTrapEnterprise.0']
+        else:
+            trapvars['$E'] = '1.3.6.1.6.3.1.1.5'
+        trapvars['$G'] = str(int(trapnumber) - 1)
+        trapvars['$S'] = '0'
+    else:
+        trapvars['$E'] = enterprise
+        trapvars['$G'] = '6'
+        trapvars['$S'] = trapnumber
+
+    # Get community string
+    if 'SNMP-COMMUNITY-MIB::snmpTrapCommunity.0' in varbinds: # snmpTrapCommunity
+        trapvars['$C'] = varbinds['SNMP-COMMUNITY-MIB::snmpTrapCommunity.0']
+    else:
+        trapvars['$C'] = '<UNKNOWN>'
+
+    logging.info('agent=%s, ip=%s, uptime=%s, enterprise=%s, generic=%s, specific=%s', trapvars['$A'], trapvars['$a'], trapvars['$T'], trapvars['$E'], trapvars['$G'], trapvars['$S'])
+    logging.debug('trapvars = %s', trapvars)
 
     # Defaults
+    event       = trapoid
+    resource    = agent.split('.')[0]
+    severity    = 'NORMAL'
+    group       = 'SNMP'
+    value       = trapnumber
+    text        = trapvars['$3'] # ie. whatever is in varbind #3
     environment = 'INFRA'
     service     = 'Network'
-    resource    = agent
-    event       = trapoid
-    group       = 'SNMP'
-    severity    = 'WARNING'
-    value       = 'unmatched'
-    text        = payload
+    correlate   = list()
 
-    # ZXTM Lookup (this will go into a config file eventually)
-    zxtmTraps = {
-         # Test Action
-         "1":   { "event": "ZxtmTrap", "value": "TestAction", "severity": "NORMAL" }, # testaction
-         # General
-         "2":   { "event": "ZxtmSoftware", "value": "Running", "severity": "NORMAL" }, # running
-         "3":   { "event": "ZxtmFreeFds", "value": "Not Many", "severity": "MINOR" }, # fewfreefds
-         "4":   { "event": "ZxtmSoftware", "value": "Restart Required", "severity": "WARNING" }, # restartrequired
-         "5":   { "event": "ZxtmTime", "value": "Moved Back", "severity": "WARNING" }, # timemovedback
-         "6":   { "event": "ZxtmSSL", "value": "Failed", "severity": "WARNING" }, # sslfail     XXX - prod alert
-         "7":   { "event": "ZxtmHardware", "value": "Notification", "severity": "WARNING" }, # hardware
-         "8":   { "event": "ZxtmSoftware", "value": "Error", "severity": "WARNING" }, # zxtmswerror
-         "9":   { "event": "ZxtmEvent", "value": "Custom", "severity": "WARNING" }, # customevent -- FIXME customEventName contained in trap payload
-         "10":  { "event": "ZxtmSoftware", "value": "Version Mismatch", "severity": "WARNING" }, # versionmismatch
-         "114": { "event": "ZxtmAuth", "value": "Error", "severity": "WARNING" }, # autherror
-         # Fault Tolerance
-         "11": { "event": "ZxtmMachine", "value": "OK", "severity": "NORMAL" },    # machineok
-         "12": { "event": "ZxtmMachine", "value": "Timeout", "severity": "MAJOR" },    # machinetimeout      XXX - prod alert
-         "13": { "event": "ZxtmMachine", "value": "Fail", "severity": "CRITICAL" },    # machinefail         XXX - prod alert
-         "14": { "event": "ZxtmMachine", "value": "All OK", "severity": "NORMAL" },    # allmachinesok
-         "15": { "event": "ZxtmFlipper", "value": "Backends Working", "severity": "NORMAL" },    # flipperbackendsworking
-         "16": { "event": "ZxtmFlipper", "value": "Frontends Working", "severity": "NORMAL" },    # flipperfrontendsworking
-         "17": { "event": "ZxtmPing", "value": "Backend Fail", "severity": "MINOR" },    # pingbackendfail     XXX - prod alert
-         "18": { "event": "ZxtmPing", "value": "Frontend Fail", "severity": "MINOR" },    # pingfrontendfail   XXX - prod alert
-         "19": { "event": "ZxtmPing", "value": "Gateway Fail", "severity": "MINOR" },    # pinggwfail          XXX - prod alert
-         "20": { "event": "ZxtmState", "value": "Bad Data", "severity": "WARNING" },    # statebaddata         XXX - prod alert
-         "21": { "event": "ZxtmState", "value": "Connection Failed", "severity": "MINOR" },    # stateconnfail XXX - prod alert
-         "22": { "event": "ZxtmState", "value": "OK", "severity": "NORMAL" },    # stateok
-         "23": { "event": "ZxtmState", "value": "Read Failed", "severity": "WARNING" },    # statereadfail     XXX - prod alert
-         "24": { "event": "ZxtmState", "value": "Timeout", "severity": "WARNING" },    # statetimeout          XXX - prod alert
-         "25": { "event": "ZxtmState", "value": "Unexpected", "severity": "WARNING" },    # stateunexpected    XXX - prod alert
-         "26": { "event": "ZxtmState", "value": "Write Failed", "severity": "WARNING" },    # statewritefail   XXX - prod alert
+    # Match trap to specific config and load any parsers
+    # Note: any of these variables could have been modified by a parser
 
-         "107": { "event": "ZxtmActivate", "value": "All Dead", "severity": "CRITICAL" },    # activatealldead
-         "108": { "event": "ZxtmMachine", "value": "Recovered", "severity": "NORMAL" },    # machinerecovered
-         "109": { "event": "ZxtmFlipper", "value": "Recovered", "severity": "NORMAL" },    # flipperrecovered
-         "110": { "event": "ZxtmActivate", "value": "Automatic", "severity": "WARNING" },    # activedautomatically
-         "111": { "event": "ZxtmCluster", "value": "Module Error", "severity": "WARNING" },    # zclustermoderr  XXX - prod alert
-         # XXX - skip EC2 traps 112-113,130-132
-         "133": { "event": "ZxtmHostLoad", "value": "Changed", "severity": "WARNING" },    # multihostload
-         # SSL hardware
-         # XXX - skipped
-         # Configuration files
-         "30": { "event": "ZxtmConfig", "value": "File Deleted", "severity": "WARNING" },    # confdel
-         "31": { "event": "ZxtmConfig", "value": "File Modified", "severity": "WARNING" },    # confmod
-         "32": { "event": "ZxtmConfig", "value": "File Added", "severity": "WARNING" },    # confadd
-         "33": { "event": "ZxtmConfig", "value": "File OK", "severity": "NORMAL" },    # confok
-         "178": { "event": "ZxtmConfigRepl", "value": "Timeout", "severity": "WARNING" },    # confreptimeout
-         "179": { "event": "ZxtmConfigRepl", "value": "Failed", "severity": "MINOR" },    # confrepfailed
-         # Java
-         # XXX - skipped
-         # Monitors
-         "41": { "event": "ZxtmMonitor", "value": "Failed", "severity": "WARNING" },    # monitorfail
-         "42": { "event": "ZxtmMonitor", "value": "OK", "severity": "NORMAL" },    # monitorok
-         # Rules
-         # XXX - skipped
-         "51": { "event": "ZxtmRule", "value": "Info", "severity": "NORMAL" },    # rulemsginfo
-         # XXX - skipped
-         # GLB Service Rules
-         # XXX - skipped
-         # License keys
-         # XXX - skipped
-         # Pools
-         "64": { "event": "ZxtmPool", "value": "No Nodes", "severity": "CRITICAL" },    # poolnonodes
-         "65": { "event": "ZxtmPool", "value": "OK", "severity": "NORMAL" } ,        # poolok
-         "66": { "event": "ZxtmPool", "value": "Dead", "severity": "MAJOR" } ,      # pooldied                 XXX - prod alert
-         # XXX - skipped
-         # Traffic IPs
-         "78": { "event": "ZxtmTIP", "value": "Drop IP", "severity": "WARNING" } ,      # dropipwarn                 XXX - prod alert
-         "80": { "event": "ZxtmFlipper", "value": "IP Exists", "severity": "WARNING" } ,      # flipperipexists            XXX - prod alert
-         # XXX - skipped
-         # Service protection
-         # XXX - skipped
-         # SLM
-         # XXX - skipped
-         # Virtual servers
-         "91": { "event": "ZxtmSSL", "value": "Drop", "severity": "MAJOR" } ,      # ssldrop                 XXX - prod alert
-         # XXX - skipped
-         # GLB
-         # XXX - skipped
-         # Other
-         "104": { "event": "ZxtmConn", "value": "Error", "severity": "MINOR" } ,      # connerror                 XXX - prod alert
-         "105": { "event": "ZxtmConn", "value": "Fail", "severity": "MAJOR" } ,      # connfail                 XXX - prod alert
-         # XXX - skipped
-    }
+    trapconf = dict()
+    try:
+        trapconf = yaml.load(open(TRAPCONF))
+    except Exception, e:
+        logging.error('Failed to load SNMP Trap configuration: %s', e)
+    logging.info('Loaded %d SNMP Trap configurations OK', len(trapconf))
 
-    #
-    # Generic Traps
-    #
-    if trapoid.startswith('SNMPv2-MIB::coldStart'):
-        event = 'AgentStatus'
-        value = 'ColdStart'
-        severity = 'WARNING'
-    elif trapoid.startswith('SNMPv2-MIB::warmStart'):
-        event = 'AgentStatus'
-        value = 'WarmStart'
-        severity = 'MINOR'
-    elif trapoid.startswith('IF-MIB::linkDown'):
-        event = 'LinkStatus'
-        value = 'LinkDown'
-        severity = 'MAJOR'
-    elif trapoid.startswith('IF-MIB::linkUp'):
-        event = 'LinkStatus'
-        value = 'LinkUp'
-        severity = 'NORMAL'
-    elif trapoid.startswith('SNMPv2-MIB::authenticationFailure'):
-        event = 'AuthStatus'
-        value = 'Failure'
-        severity = 'CRITICAL'
+    for t in trapconf:
+        if re.match(t['trapoid'], trapoid):
+            if 'event' in t:
+                event = t['event']
+            if 'resource' in t:
+                resource = t['resource']
+            if 'severity' in t:
+                severity = t['severity']
+            if 'group' in t:
+                group = t['group']
+            if 'value' in t:
+                value = t['value']
+            if 'text' in t:
+                text = t['text']
+            if 'environment' in t:
+                environment = t['environment']
+            if 'service' in t:
+                service = t['service']
+            if 'correlatedEvents' in t:
+                correlate = t['correlatedEvents']
 
-    #
-    # Zeus ZXTM
-    #
-    if trapoid.startswith('SNMPv2-SMI::enterprises.7146'):
-        group = 'ZXTM'
-        if trapnumber in zxtmTraps:
-            event = zxtmTraps[trapnumber]['event']
-            value = zxtmTraps[trapnumber]['value']
-            severity = zxtmTraps[trapnumber]['severity']
-        else:
-            event = 'ZxtmTrap'+trapnumber
-            value = 'unmatched'
-            if payload.startswith('INFO'):
-                severity = 'NORMAL'
-            elif payload.startswith('WARN'):
-                severity = 'WARNING'
-            elif payload.startswith('SERIOUS'):
-                severity = 'MAJOR'
-        environment = get_env(payload)
-        service = 'Network' # XXX - could we programatically determine the specific service eg. R1, R2, etc? do we care?
+    # Trap variable substitution
+    for v in trapvars:
+        print "sub %s %s" % ('\\'+v, trapvars[v])
+        event = re.sub('\\'+v, trapvars[v], event)
+        resource = re.sub('\\'+v, trapvars[v], resource)
+        severity = re.sub('\\'+v, trapvars[v], severity)
+        group = re.sub('\\'+v, trapvars[v], group)
+        value = re.sub('\\'+v, trapvars[v], value)
+        text = re.sub('\\'+v, trapvars[v], text)
+        environment = re.sub('\\'+v, trapvars[v], environment)
+        service = re.sub('\\'+v, trapvars[v], service)
 
     alertid = str(uuid.uuid4()) # random UUID
 
@@ -232,23 +168,23 @@ def main():
     headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
     alert = dict()
-    alert['id']            = alertid
-    alert['resource']      = (environment + '.' + service + '.' + resource).lower()
-    alert['event']         = event
-    alert['group']         = group
-    alert['value']         = value
-    alert['severity']      = severity.upper()
-    alert['severityCode']  = SEVERITY_CODE[alert['severity']]
-    alert['environment']   = environment.upper()
-    alert['service']       = service
-    alert['text']          = text
-    alert['type']          = 'snmptrapAlert'
-    alert['tags']          = list() # FIXME - should be set somewhere above
-    alert['summary']       = '%s - %s %s is %s on %s %s' % (environment, severity.upper(), event, value, service, resource)
-    alert['createTime']    = datetime.datetime.utcnow().isoformat()+'Z'
-    alert['origin']        = 'alert-snmptrap/%s' % os.uname()[1]
-    alert['thresholdInfo'] = 'n/a'
-    alert['rawData']       = rawData
+    alert['id']               = alertid
+    alert['resource']         = (environment + '.' + service + '.' + resource).lower()
+    alert['event']            = event
+    alert['group']            = group
+    alert['value']            = value
+    alert['severity']         = severity.upper()
+    alert['severityCode']     = SEVERITY_CODE[alert['severity']]
+    alert['environment']      = environment.upper()
+    alert['service']          = service
+    alert['text']             = text
+    alert['type']             = 'snmptrapAlert'
+    alert['tags']             = list() # FIXME - should be set somewhere above
+    alert['summary']          = '%s - %s %s is %s on %s %s' % (environment, severity.upper(), event, value, service, resource)
+    alert['createTime']       = datetime.datetime.utcnow().isoformat()+'Z'
+    alert['origin']           = 'alert-snmptrap/%s' % os.uname()[1]
+    alert['thresholdInfo']    = 'n/a'
+    alert['correlatedEvents'] = correlate
 
     logging.info('%s : %s', alertid, json.dumps(alert))
 
