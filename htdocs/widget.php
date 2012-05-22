@@ -1,7 +1,24 @@
 <?php
   $env = $_GET['environment'];
   $svc = $_GET['service'];
-  $tag = $env."-".$svc;
+
+  if (isset($_GET['environment'])) {
+      $env = $_GET['environment'];
+      $tag_arr[] = $env;
+  }
+  if (isset($_GET['service'])) {
+      $svc = $_GET['service'];
+      $tag_arr[] = $svc;
+  }
+  if (isset($_GET['group'])) {
+      $grp = $_GET['group'];
+      $tag_arr[] = $grp;
+  }
+  $tag = implode('-', $tag_arr);
+  if (isset($_GET['label']))
+      $label = $_GET['label'];
+  else
+      $label = implode(' ', $tag_arr);
 ?>
 
 <html lang="en">
@@ -15,7 +32,7 @@
      <div class="span3">
        <table class="table table-bordered table-condensed summary" id="<?php echo $tag; ?>" data-label="<?php echo $tag; ?>">
          <thead>
-           <tr> <th colspan="6" id="<?php echo $tag; ?>-status"><?php echo $env." ".$svc; ?></th> </tr>
+           <tr> <th colspan="6" id="<?php echo $tag; ?>-status"><?php echo $label; ?></th> </tr>
          </thead>
          <tbody>
            <tr id="<?php echo $tag; ?>-warnings" class="warnings">
@@ -34,7 +51,7 @@
    <script src="js/console.js"></script>
    <script>
      $(document).ready(function() {
-       var services = { '<?php echo $tag; ?>': 'environment=<?php echo $env; ?>&service=<?php echo $svc; ?>' };
+       var services = { '<?php echo $tag; ?>': 'sort-by=lastReceiveTime<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?>' };
        loadAlerts(services, true);
      });
    </script>
