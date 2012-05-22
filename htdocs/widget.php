@@ -2,23 +2,29 @@
   $env = $_GET['environment'];
   $svc = $_GET['service'];
 
+  $query = "sort-by=lastReceiveTime";
+
   if (isset($_GET['environment'])) {
       $env = $_GET['environment'];
       $tag_arr[] = $env;
+      $query = $query."&environment=".$env;
   }
   if (isset($_GET['service'])) {
       $svc = $_GET['service'];
       $tag_arr[] = $svc;
+      $query = $query."&service=".$svc;
   }
   if (isset($_GET['group'])) {
       $grp = $_GET['group'];
       $tag_arr[] = $grp;
+      $query = $query."&group=".$grp;
   }
   $tag = implode('-', $tag_arr);
-  if (isset($_GET['label']))
+  if (isset($_GET['label'])) {
       $label = $_GET['label'];
-  else
+  } else {
       $label = implode(' ', $tag_arr);
+  }
 ?>
 
 <html lang="en">
@@ -30,6 +36,7 @@
  <body>
    <div class="row show-grid">
      <div class="span3">
+       <a href="./details.php?<?php echo $query; ?><?php if ($label !="") echo "&label=".$label; ?>" target="_blank">
        <table class="table table-bordered table-condensed summary" id="<?php echo $tag; ?>" data-label="<?php echo $tag; ?>">
          <thead>
            <tr> <th colspan="6" id="<?php echo $tag; ?>-status"><?php echo $label; ?></th> </tr>
@@ -44,6 +51,7 @@
            </tr>
          </tbody>
        </table>
+       </a>
      </div>
    </div>
    <script src="js/jquery-1.7.1.min.js"></script>
@@ -51,7 +59,7 @@
    <script src="js/console.js"></script>
    <script>
      $(document).ready(function() {
-       var services = { '<?php echo $tag; ?>': 'sort-by=lastReceiveTime<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?>' };
+       var services = { '<?php echo $tag; ?>': '<?php echo $query; ?>' };
        loadAlerts(services, true);
      });
    </script>
