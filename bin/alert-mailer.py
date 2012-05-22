@@ -106,7 +106,6 @@ class MessageHandler(object):
             text += 'Duplicate Count: %s\n' % (alert['duplicateCount'])
         if 'moreInfo' in alert:
             text += 'More Info: %s\n' % (alert['moreInfo'])
-        text += 'Tokens: %d left\n' % (tokens)
         text += 'Historical Data\n'
         if 'graphs' in alert:
             for g in alert['graphs']:
