@@ -123,8 +123,8 @@ class WorkerThread(threading.Thread):
             # defaults
             search_string = item.get('search', None)
             rule = item.get('rule', None)
-            warn_thold = item.get('warning', 1000)  # ms
-            crit_thold = item.get('critical', 2000) # ms
+            warn_thold = item.get('warning', 2000)  # ms
+            crit_thold = item.get('critical', 5000) # ms
             post = item.get('post', None)
 
             logging.info('%s checking %s', self.getName(), item['url'])
