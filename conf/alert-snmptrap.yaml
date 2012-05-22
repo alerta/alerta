@@ -26,10 +26,71 @@
 # environment: INFRA
 # service: Network
 
+# ZXTM Pool Traps
+
+- trapoid: ZXTM-MIB::pooldied
+  parser: ZxtmParser
+  event: ZxtmPoolStatus
+  value: Died
+  resource: $4
+  group: ZXTM
+
+- trapoid: ZXTM-MIB::poolok
+  parser: ZxtmParser
+  event: ZxtmPoolStatus
+  value: OK
+  resource: $4
+  group: ZXTM
+
+# ZXTM Node Traps
+
+- trapoid: ZXTM-MIB::nodefail
+  parser: ZxtmParser
+  event: ZxtmNodeStatus
+  value: Fail
+  resource: $4
+  group: ZXTM
+
+- trapoid: ZXTM-MIB::nodeworking
+  parser: ZxtmParser
+  event: ZxtmNodeStatus
+  value: Working
+  resource: $4
+  group: ZXTM
+
+# ZXTM Monitor Traps
+
+- trapoid: ZXTM-MIB::monitorfail
+  parser: ZxtmParser
+  event: ZxtmMonitorStatus
+  value: Fail
+  resource: $4
+  group: ZXTM
+
+- trapoid: ZXTM-MIB::monitorok
+  parser: ZxtmParser
+  event: ZxtmMonitorStatus
+  value: OK
+  resource: $4
+  group: ZXTM
+
+# ZXTM Rule Msg Traps
+
+- trapoid: ZXTM-MIB::rulelogmsginfo
+  parser: ZxtmParser
+  event: ZxtmRuleMsg
+  value: Info
+  resource: $4
+  group: ZXTM
+
+# ZXTM Trap catch-all
+
 - trapoid: ZXTM-MIB
   parser: ZxtmParser
   resource: $4
   group: ZXTM
+
+# NetApp Traps
 
 - trapoid: NETAPP-MIB
   value: $S

@@ -28,6 +28,7 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-snmptrap.log'
 TRAPCONF = '/opt/alerta/conf/alert-snmptrap.yaml'
+PARSERDIR = '/opt/alerta/bin/parsers'
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -133,8 +134,8 @@ def main():
             if 'parser' in t:
                 print 'Loading parser %s' % t['parser']
                 try:
-                    exec(open('./parsers/%s.py' % t['parser']))
-                    logging.info('Parser %s exec OK', t['parser'])
+                    exec(open('%s/%s.py' % (PARSERDIR, t['parser'])))
+                    logging.info('Parser %s/%s exec OK', PARSERDIR, t['parser'])
                 except Exception, e:
                     print 'Parser %s failed: %s' % (t['parser'], e)
                     logging.warning('Parser %s failed', t['parser'])

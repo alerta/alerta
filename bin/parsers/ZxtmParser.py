@@ -1,9 +1,21 @@
+#
+# ZxtmParser.py
+#
+# @param dict trapvars
+#   $3 is the SNMP trap text
+#
+# @return string severity
+#   MAJOR, WARNING, NORMAL
+# @return string environment
+#   REL, QA, TEST, CODE, STAGE, DEV, LWP
 
 # Set severity
 if trapvars['$3'].startswith('SERIOUS'):
     severity = 'MAJOR'
 elif trapvars['$3'].startswith('WARN'):
     severity = 'WARNING'
+else:
+    severity = 'NORMAL'
     
 # Set environment
 env = {
