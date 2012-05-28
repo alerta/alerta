@@ -139,7 +139,6 @@ class MessageHandler(object):
             html += '<tr><td><b>Duplicate Count:</b></td><td>%s</td></tr>\n' % (alert['duplicateCount'])
         if 'moreInfo' in alert:
             html += '<tr><td><b>More Info:</b></td><td><a href="%s">ganglia</a></td></tr>\n' % (alert['moreInfo'])
-        html += '<tr><td><b>Tokens:</b></td><td>%d left</td></tr>\n' % (tokens)
         html += '</table>\n'
         html += '</td></tr>\n'
         html += '<tr><td><p align="left" style="font-size:18px;line-height:22px;color:#c25130;font-weight:bold;">Historical Data</p>\n'
