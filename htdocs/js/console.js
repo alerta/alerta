@@ -191,16 +191,20 @@ $(document).ready(function() {
     });
 
     $('tbody').on('click', '.delete-alert', function() {
-      /* $.ajax({
-        type: 'DELETE',
-        url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
-      }); */
-      $.ajax({
-        type: 'POST',
-        url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
-        data: { _method: 'delete' }
-      });
-      $(this).parent().parent().next().remove(); // delete drop-down
-      $(this).parent().parent().remove();  // delete alert
+      if (confirm('IMPORTANT: Deleting this alert is a permanent operation that will '
+                + 'remove the alert from all user consoles.\n\n'
+                + 'Cancel to return to the console or OK to delete.')) {
+        /* $.ajax({
+          type: 'DELETE',
+          url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
+        }); */
+        $.ajax({
+          type: 'POST',
+          url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
+          data: { _method: 'delete' }
+        });
+        $(this).parent().parent().next().remove(); // delete drop-down
+        $(this).parent().parent().remove();  // delete alert
+      }
     });
 });
