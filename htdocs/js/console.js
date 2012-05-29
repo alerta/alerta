@@ -42,6 +42,8 @@ function getAlerts(service, filter, refresh) {
 
       var sev_id = '#' + service;
 
+      val.severityCounts.normal = val.severityCounts.normal + val.severityCounts.inform;
+
       $.each(val.severityCounts, function(sev, count) {
         $(sev_id + "-" + sev).text(count);
 
