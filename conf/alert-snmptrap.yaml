@@ -26,6 +26,13 @@
 # environment: INFRA
 # service: Network
 
+# Oracle Enterprise Manager
+
+- trapoid: ORACLE-ENTERPRISE-MANAGER-4-MIB
+  parser: OracleEMParser
+  group: Database
+  service: R2
+
 # ZXTM Pool Traps
 
 - trapoid: ZXTM-MIB::pooldied

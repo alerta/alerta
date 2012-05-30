@@ -116,6 +116,7 @@ def main():
     environment = 'INFRA'
     service     = 'Network'
     tags        = list()
+    threshold   = list()
     correlate   = list()
 
     # Match trap to specific config and load any parsers
@@ -159,6 +160,8 @@ def main():
                 tags = t['tags']
             if 'correlatedEvents' in t:
                 correlate = t['correlatedEvents']
+            if 'thresholdInfo' in t:
+                threshold = t['thresholdInfo']
 
     # Trap variable substitution
     for v in trapvars:
@@ -172,6 +175,8 @@ def main():
         environment = environment.replace(v, trapvars[v])
         service = service.replace(v, trapvars[v])
         tags[:] = [s.replace(v, trapvars[v]) for s in tags]
+        service = service.replace(v, trapvars[v])
+        threshold = threshold.replace(v, trapvars[v])
 
     alertid = str(uuid.uuid4()) # random UUID
 
@@ -197,7 +202,7 @@ def main():
     alert['summary']          = '%s - %s %s is %s on %s %s' % (environment, severity.upper(), event, value, service, resource)
     alert['createTime']       = datetime.datetime.utcnow().isoformat()+'Z'
     alert['origin']           = 'alert-snmptrap/%s' % os.uname()[1]
-    alert['thresholdInfo']    = 'n/a'
+    alert['thresholdInfo']    = threshold
     alert['correlatedEvents'] = correlate
 
     logging.info('%s : %s', alertid, json.dumps(alert))
