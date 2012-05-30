@@ -24,13 +24,13 @@ import logging
 import uuid
 import re
 
-__version__ = '1.5'
+__version__ = '1.5.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
-API_SERVER = 'ganglia.gul3.gnl:80'
+API_SERVER = 'ganglia.guprod.gnl:80'
 API_VERSION = 'latest'
 # METRIC_API = 'http://%s/ganglia/api/%s/metric-data' % (API_SERVER, API_VERSION)
 METRIC_API = 'http://%s/ganglia/api/snapshot.py' % (API_SERVER)
