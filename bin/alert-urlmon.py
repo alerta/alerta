@@ -83,7 +83,7 @@ queue = Queue()
 
 currentCount  = dict()
 currentState  = dict()
-previousSeverity = dict()
+previousEvent = dict()
 
 # Do not follow redirects
 class NoRedirection(urllib2.HTTPRedirectHandler):
@@ -274,29 +274,33 @@ class WorkerThread(threading.Thread):
 
             # Set necessary state variables if currentState is unknown
             res = (item['environment'] + '.' + item['service'] + '.' + item['resource']).lower()
-            if (res, event) not in currentState:
-                currentState[(res, event)] = severity
-                currentCount[(res, event, severity)] = 0
-                previousSeverity[(res, event)] = severity
+            if (res) not in currentState:
+                currentState[(res)] = event
+                currentCount[(res, event)] = 0
+                previousEvent[(res)] = event
 
-            if currentState[(res, event)] != severity:                                                          # Change of threshold state
-                currentCount[(res, event, severity)] = currentCount.get((res, event, severity), 0) + 1
-                currentCount[(res, event, currentState[(res, event)])] = 0                                      # zero-out previous sev counter
-                currentState[(res, event)] = severity
-            elif currentState[(res, event)] == severity:                                                        # Threshold state has not changed
-                currentCount[(res, event, severity)] += 1
+            if currentState[(res)] != event:                                                          # Change of threshold state
+                currentCount[(res, event)] = currentCount.get((res, event), 0) + 1
+                currentCount[(res, currentState[(res)])] = 0                                          # zero-out previous event counter
+                currentState[(res)] = event
+            elif currentState[(res)] == event:                                                        # Threshold state has not changed
+                currentCount[(res, event)] += 1
 
-            logging.debug('currentState = %s, currentCount = %d', currentState[(res, event)], currentCount[(res, event, severity)])
+            logging.debug('currentState = %s, currentCount = %d', currentState[(res)], currentCount[(res, event)])
 
             # Determine if should send a repeat alert
-            repeat = (currentCount[(res, event, severity)] - item.get('count', 1)) % item.get('repeat', 1) == 0
+            if currentCount[(res, event)] < item.get('count', 1):
+                repeat = False
+                logging.debug('Send repeat alert = %s (curr %s < threshold %s)', repeat, currentCount[(res, event)], item.get('count', 1))
+            else:
+                repeat = (currentCount[(res, event)] - item.get('count', 1)) % item.get('repeat', 1) == 0
+                logging.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, currentCount[(res, event)], item.get('count', 1), item.get('repeat', 1))
 
-            logging.debug('Send alert if prevSev %s != %s AND thresh %d == %s', previousSeverity[(res, event)], severity, currentCount[(res, event, severity)], item.get('count', 1))
-            logging.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, currentCount[(res, event, severity)], item.get('count', 1), item.get('repeat', 1))
+            logging.debug('Send alert if prevEvent %s != %s AND thresh %d == %s', previousEvent[(res)], event, currentCount[(res, event)], item.get('count', 1))
 
             # Determine if current threshold count requires an alert
-            if ((previousSeverity[(res, event)] != severity and currentCount[(res, event, severity)] == item.get('count', 1))
-                or (previousSeverity[(res, event)] == severity and repeat)):
+            if ((previousEvent[(res)] != event and currentCount[(res, event)] == item.get('count', 1))
+                or (previousEvent[(res)] == event and repeat)):
 
                 alertid = str(uuid.uuid4()) # random UUID
 
@@ -336,8 +340,8 @@ class WorkerThread(threading.Thread):
                 broker = conn.get_host_and_port()
                 logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
 
-                # Keep track of previous severity
-                previousSeverity[(res, event)] = severity
+                # Keep track of previous event
+                previousEvent[(res)] = event
 
             self.input_queue.task_done()
             logging.info('%s check complete.', self.getName())
