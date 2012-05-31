@@ -323,7 +323,7 @@ class WorkerThread(threading.Thread):
                 alert['service']          = item['service']
                 alert['text']             = descrStr
                 alert['type']             = 'serviceAlert'
-                alert['tags']             = item['tags']
+                alert['tags']             = item.get('tags', list())
                 alert['summary']          = '%s - %s %s is %s on %s %s' % (item['environment'], severity, event, value, item['service'], item['resource'])
                 alert['createTime']       = datetime.datetime.utcnow().isoformat()+'Z'
                 alert['origin']           = "alert-urlmon/%s" % os.uname()[1]
