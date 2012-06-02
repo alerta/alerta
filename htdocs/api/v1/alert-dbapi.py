@@ -124,6 +124,9 @@ def main():
                 del form['callback']
             if '_' in form:
                 del form['_']
+            if 'id' in form:
+                form['_id'] = form['id']
+                del form['id']
 
             sortby = list()
             if 'sort-by' in form:

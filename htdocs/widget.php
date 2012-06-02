@@ -1,7 +1,4 @@
 <?php
-  $env = $_GET['environment'];
-  $svc = $_GET['service'];
-
   $query = "sort-by=lastReceiveTime";
 
   if (isset($_GET['environment'])) {

@@ -1,7 +1,4 @@
 <?php
-  $env = $_GET['environment'];
-  $svc = $_GET['service'];
-
   if (isset($_GET['environment'])) {
       $env = $_GET['environment'];
       $tag_arr[] = $env;
@@ -13,6 +10,11 @@
   if (isset($_GET['group'])) {
       $grp = $_GET['group'];
       $tag_arr[] = $grp;
+  }
+  if (isset($_GET['id'])) {
+      $id = $_GET['id'];
+      $tag_arr[] = $id;
+      $_GET['label'] = $id;
   }
   $tag = implode('-', $tag_arr);
   if (isset($_GET['label']))
@@ -62,7 +64,7 @@
     <script>
       $(document).ready(function() {
 
-        var services = { '<?php echo $tag; ?>': 'sort-by=lastReceiveTime<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?>' };
+        var services = { '<?php echo $tag; ?>': 'sort-by=lastReceiveTime<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?><?php if ($id != "") echo "&id=".$id; ?>' };
         loadAlerts(services, true);
 
         $('#refresh-all').click(function() {
