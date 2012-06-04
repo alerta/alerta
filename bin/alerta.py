@@ -101,6 +101,8 @@ class MessageHandler(object):
             if alert.get('status', 'active') == 'active':
                 logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
                 conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            else:
+                logging.info('%s : Suppress notification of inactive alert', alertid)
             logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
@@ -135,6 +137,8 @@ class MessageHandler(object):
             if alert.get('status', 'active') == 'active':
                 logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
                 conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            else:
+                logging.info('%s : Suppress notification of inactive alert', alertid)
             logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
@@ -172,6 +176,8 @@ class MessageHandler(object):
             if alert.get('status', 'active') == 'active':
                 logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
                 conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            else:
+                logging.info('%s : Suppress notification of inactive alert', alertid)
             logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
