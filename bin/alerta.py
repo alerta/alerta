@@ -98,8 +98,9 @@ class MessageHandler(object):
             alert['id'] = alert['_id']
             del alert['_id']
 
-            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            if alert.get('status', 'active') == 'active':
+                logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+                conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
             logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
@@ -131,8 +132,9 @@ class MessageHandler(object):
             alert['id'] = alert['_id']
             del alert['_id']
 
-            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            if alert.get('status', 'active') == 'active':
+                logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+                conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
             logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
@@ -167,8 +169,9 @@ class MessageHandler(object):
 
             alert['id'] = alertid
 
-            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            if alert.get('status', 'active') == 'active':
+                logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+                conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
             logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 

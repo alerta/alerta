@@ -113,6 +113,10 @@ function getAlerts(service, filter, refresh) {
           default: label='label-success';
         }
 
+        if (ad.status == 'inactive') {
+          ad.text = ad.text + ' [inactive]';
+        }
+
         rows += '<tr class="' + service + ' latest ' + ad.severity + '">' +
                   '<td class="ad-more"><a id="' + service + 'details' + i + '" class="show-details"><span class="show-d"><i class="icon-chevron-up icon-chevron-down"></i></span></a></td>' +
                   '<td class="ad-sev-td">' + sev2label(ad.severity) + '</td>' +
