@@ -114,7 +114,7 @@ function getAlerts(service, filter, refresh) {
         }
 
         if (ad.status == 'inactive') {
-          ad.text = ad.text + ' [inactive]';
+          ad.text = '[inactive] ' + ad.text;
         }
 
         rows += '<tr class="' + service + ' latest ' + ad.severity + '">' +
@@ -125,7 +125,10 @@ function getAlerts(service, filter, refresh) {
                   '<td>' + ad.resource + '</td>' +
                   '<td>' + ad.event + '</td>' +
                   '<td>' + ad.value + '</td>' +
-                  '<td class="alert-text">' + ad.text + '<a id="' + ad.lastReceiveId + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a></td>' +
+                  '<td class="alert-text">' + ad.text +
+                    '<a id="' + ad.lastReceiveId + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>' +
+                    '<a id="' + ad.lastReceiveId + '" class="inactive-alert" rel="tooltip" title="Make Inactive"><i class="icon-volume-off"></i></a>' +
+                  '</td>' +
                 '</tr>' +
                 '<tr id="' + service + 'details' + i +'data" class="initially-hidden">' +
                   '<td colspan="10" class="alert-more"><table class="table table-bordered table-condensed alert-more-table">' +
@@ -209,6 +212,19 @@ $(document).ready(function() {
         });
         $(this).parent().parent().next().remove(); // delete drop-down
         $(this).parent().parent().remove();  // delete alert
+      }
+    });
+
+    $('tbody').on('click', '.inactive-alert', function() {
+      if (confirm('IMPORTANT: Making this alert inactive prevents any future updates '
+                + 'of this alert from triggering external notifications.\n\n'
+                + 'Cancel to return to the console or OK to make inactive.')) {
+        $.ajax({
+          type: 'PUT',
+          url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
+          data: { status: 'inactive' }
+        });
+        $(this).parent().prepend('[inactive] ');
       }
     });
 });

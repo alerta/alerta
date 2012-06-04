@@ -91,6 +91,25 @@ def main():
                     { '$inc': { "count": 1, "totalTime": diff}},
                     True)
 
+            elif os.environ['REQUEST_METHOD'] == 'PUT':
+
+                logging.info('PUT %s', cgiform.getvalue("id"))
+                form = dict()
+                form['lastReceiveId'] = cgiform.getvalue("id")
+
+                logging.debug('MongoDB MODIFY -> alerts.update(%s)', form)
+                status['response']['status'] = alerts.update(form, { '$set': { 'status': 'inactive' }})
+
+                diff = time.time() - start
+                status['response']['time'] = "%.3f" % diff
+                status['response']['localTime'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+                diff = int(diff * 1000) # XXX - management status needs time in milliseconds
+                mgmt.update(
+                    { "group": "requests", "name": "update", "type": "timer", "title": "PUT requests", "description": "Requests to update alerts via the API" },
+                    { '$inc': { "count": 1, "totalTime": diff}},
+                    True)
+
             # elif os.environ['REQUEST_METHOD'] == 'DELETE':
             elif os.environ['REQUEST_METHOD'] == 'POST' and cgiform.getvalue("_method") == 'delete':
 
