@@ -84,7 +84,7 @@ def main():
                 status['response']['time'] = "%.3f" % diff
                 status['response']['total'] = total
                 status['response']['localTime'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    
+
                 diff = int(diff * 1000) # XXX - management status needs time in milliseconds
                 mgmt.update(
                     { "group": "requests", "name": "simple_get", "type": "counter", "title": "Simple GET requests", "description": "Requests to the alert status API" },
@@ -95,10 +95,15 @@ def main():
 
                 logging.info('PUT %s', cgiform.getvalue("id"))
                 form = dict()
-                form['lastReceiveId'] = cgiform.getvalue("id")
+                update = dict()
+                for field in cgiform.keys():
+                    if field == 'id':
+                        form['lastReceiveId'] = cgiform.getvalue("id")
+                    else:
+                        update[field] = cgiform.getvalue(field)
 
-                logging.debug('MongoDB MODIFY -> alerts.update(%s)', form)
-                status['response']['status'] = alerts.update(form, { '$set': { 'status': 'inactive' }})
+                logging.debug('MongoDB MODIFY -> alerts.update(%s { $set: %s })', form, update)
+                status['response']['status'] = alerts.update(form, { '$set': update })
 
                 diff = time.time() - start
                 status['response']['time'] = "%.3f" % diff
