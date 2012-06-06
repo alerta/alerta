@@ -183,6 +183,72 @@
             </table>
           </div>
         </div>
+        <div class="row show-grid">
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Alerta" data-label="Alerta">
+              <thead>
+                <tr> <th colspan="6" id="Alerta-status">Alerta</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="Alerta-warnings" class="warnings">
+                  <td id="Alerta-critical">0</td>
+                  <td id="Alerta-major">0</td>
+                  <td id="Alerta-minor">0</td>
+                  <td id="Alerta-warning">0</td>
+                  <td id="Alerta-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Inactive" data-label="Inactive">
+              <thead>
+                <tr> <th colspan="6" id="Inactive-status">Inactive</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="Inactive-warnings" class="warnings">
+                  <td id="Inactive-critical">0</td>
+                  <td id="Inactive-major">0</td>
+                  <td id="Inactive-minor">0</td>
+                  <td id="Inactive-warning">0</td>
+                  <td id="Inactive-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="None" data-label="None">
+              <thead>
+                <tr> <th colspan="6" id="None-status">-</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="None-warnings" class="warnings">
+                  <td id="None-critical">0</td>
+                  <td id="None-major">0</td>
+                  <td id="None-minor">0</td>
+                  <td id="None-warning">0</td>
+                  <td id="None-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="None" data-label="None">
+              <thead>
+                <tr> <th colspan="6" id="None-status">-</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="None-warnings" class="warnings">
+                  <td id="None-critical">0</td>
+                  <td id="None-major">0</td>
+                  <td id="None-minor">0</td>
+                  <td id="None-warning">0</td>
+                  <td id="None-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
         </div>
       </div>
 
@@ -212,6 +278,10 @@
             </tbody>
             <tbody id="Puppet-alerts" class="serviceAlerts initially-hidden">
             </tbody>
+            <tbody id="Alerta-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Inactive-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
           </table>
 
         </div>
@@ -235,7 +305,10 @@
                          'Database': 'group=Database',
                          'Web':      'group=Web',
                          'Ganglia':  'group=Ganglia',
-                         'Puppet':   'group=Puppet' };
+                         'Puppet':   'group=Puppet',
+                         'Alerta':   'group=Alerta',
+                         'Inactive': 'status=INACTIVE',
+                       };
 
         loadAlerts(services, true);
 

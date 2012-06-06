@@ -113,7 +113,7 @@ function getAlerts(service, filter, refresh) {
           default: label='label-success';
         }
 
-        if (ad.status == 'inactive') {
+        if (ad.status == 'INACTIVE') {
           ad.text = '[inactive] ' + ad.text;
         }
 
@@ -126,9 +126,11 @@ function getAlerts(service, filter, refresh) {
                   '<td>' + ad.event + '</td>' +
                   '<td>' + ad.value + '</td>' +
                   '<td class="alert-text">' + ad.text +
-                    '<a id="' + ad.lastReceiveId + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>' +
-                    '<a id="' + ad.lastReceiveId + '" class="inactive-alert" rel="tooltip" title="Make Inactive"><i class="icon-volume-off"></i></a>' +
-                  '</td>' +
+                    '<a id="' + ad.lastReceiveId + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>';
+        if (ad.status != 'INACTIVE') {
+          rows +=     '<a id="' + ad.lastReceiveId + '" class="inactive-alert" rel="tooltip" title="Make Inactive"><i class="icon-volume-off"></i></a>';
+        }
+        rows +=  '</td>' +
                 '</tr>' +
                 '<tr id="' + service + 'details' + i +'data" class="initially-hidden">' +
                   '<td colspan="10" class="alert-more"><table class="table table-bordered table-condensed alert-more-table">' +
@@ -222,7 +224,7 @@ $(document).ready(function() {
         $.ajax({
           type: 'PUT',
           url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
-          data: { status: 'inactive' }
+          data: { status: 'INACTIVE' }
         });
         $(this).parent().prepend('[inactive] ');
       }
