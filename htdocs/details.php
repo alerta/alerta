@@ -36,6 +36,15 @@
 
   <body>
     <div class="container">
+
+      <div align="right">
+        <button class="btn" id="toggle-INACTIVE" class="toggle-INACTIVE"><span><i class="icon-minus"></i> Hide</span><span class="initially-hidden"><i class="icon-plus"></i> Show</span> Inactives</button>
+        <button class="btn" id="toggle-NORMAL" class="toggle-NORMAL"><span><i class="icon-minus"></i> Hide</span><span class="initially-hidden"><i class="icon-plus"></i> Show</span> Normals</button>
+        <!-- button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh</button -->
+        <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh Now</button>
+      </div>
+      <!-- div><a id="refresh-all" class="btn btn-success" href="#"><i class="icon-shopping-cart icon-white"></i> Refresh</a></div -->
+
       
       <!-- Alert Details -->
       <div class="row show-grid">
