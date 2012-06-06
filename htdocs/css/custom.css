@@ -92,6 +92,10 @@ caption {
 	font-weight: bold;
 }
 
+.actives .INACTIVE {
+	display: none;
+}
+
 .priority .NORMAL {
 	display: none;
 }

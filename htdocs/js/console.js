@@ -113,11 +113,13 @@ function getAlerts(service, filter, refresh) {
           default: label='label-success';
         }
 
+        var alertstatus = '';
         if (ad.status == 'INACTIVE') {
           ad.text = '[inactive] ' + ad.text;
+          alertstatus = 'INACTIVE';
         }
 
-        rows += '<tr class="' + service + ' latest ' + ad.severity + '">' +
+        rows += '<tr class="' + service + ' latest ' + ad.severity + ' ' + alertstatus + '">' +
                   '<td class="ad-more"><a id="' + service + 'details' + i + '" class="show-details"><span class="show-d"><i class="icon-chevron-up icon-chevron-down"></i></span></a></td>' +
                   '<td class="ad-sev-td">' + sev2label(ad.severity) + '</td>' +
                   '<td>'+ date2str(ad.lastReceiveTime) + '</td>' +
@@ -185,6 +187,12 @@ $(document).ready(function() {
     });
 
     $('a[rel=tooltip]').tooltip();
+
+    $('#toggle-INACTIVE').click(function() {
+      $('#alert-details').toggleClass('actives');
+      $('.open-details').click();
+      $(this).find('span').toggle();
+    });
 
     $('#toggle-NORMAL').click(function() {
       $('#alert-details').toggleClass('priority');
