@@ -60,18 +60,21 @@ def main():
             if os.environ['REQUEST_METHOD'] == 'GET':
 
                 # REQUEST_URI: /alerta/api/v1/alerts/alert/3bfd0f9d-2843-419d-9d4d-c99079a39d36
-                # QUERY_STRING: _id=3bfd0f9d-2843-419d-9d4d-c99079a39d36 (after RewriteRule applied)
+                # QUERY_STRING: id=3bfd0f9d-2843-419d-9d4d-c99079a39d36 (after RewriteRule applied)
 
                 queryStr = os.environ['QUERY_STRING']
                 form = dict([queryParam.split('=') for queryParam in queryStr.split('&')])
+                form['_id'] = form['id']
+                del form['id'] 
                 logging.info('form %s', json.dumps(form))
 
                 status['response']['alert'] = list()
 
-                logging.debug('MongoDB GET -> alerts.find_one(%s, {"_id": 0})', form)
-                alert = alerts.find_one(form, {"_id": 0})
+                logging.debug('MongoDB GET -> alerts.find_one(%s)', form)
+                alert = alerts.find_one(form)
                 if alert:
-                    alert['id'] = form['_id']
+                    alert['id'] = alert['_id']
+                    del alert['_id']
                     status['response']['alert'] = alert
                     status['response']['status'] = 'ok'
                     total = 1
@@ -98,7 +101,7 @@ def main():
                 update = dict()
                 for field in cgiform.keys():
                     if field == 'id':
-                        form['lastReceiveId'] = cgiform.getvalue("id")
+                        form['_id'] = cgiform.getvalue("id")
                     else:
                         update[field] = cgiform.getvalue(field)
 
@@ -120,7 +123,7 @@ def main():
 
                 logging.info('DELETE %s', cgiform.getvalue("id"))
                 form = dict()
-                form['lastReceiveId'] = cgiform.getvalue("id")
+                form['_id'] = cgiform.getvalue("id")
                 
                 logging.debug('MongoDB DELETE -> alerts.remove(%s)', form)
                 status['response']['status'] = alerts.remove(form, safe=True)
@@ -167,9 +170,11 @@ def main():
             logging.info('%s', json.dumps(form))
     
             alertDetails = list()
-            logging.debug('MongoDB -> alerts.find(%s, {"_id": 0}, sort=%s)', form, sortby)
-            for alert in alerts.find(form, {"_id": 0}, sort=sortby):
+            logging.debug('MongoDB -> alerts.find(%s, sort=%s)', form, sortby)
+            for alert in alerts.find(form, sort=sortby):
                 if not hide_details:
+                    alert['id'] = alert['_id']
+                    del alert['_id']
                     alertDetails.append(alert)
 
             form['severity'] = 'CRITICAL'

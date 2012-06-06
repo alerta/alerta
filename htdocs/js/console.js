@@ -128,9 +128,9 @@ function getAlerts(service, filter, refresh) {
                   '<td>' + ad.event + '</td>' +
                   '<td>' + ad.value + '</td>' +
                   '<td class="alert-text">' + ad.text +
-                    '<a id="' + ad.lastReceiveId + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>';
+                    '<a id="' + ad.id + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>';
         if (ad.status != 'INACTIVE') {
-          rows +=     '<a id="' + ad.lastReceiveId + '" class="inactive-alert" rel="tooltip" title="Make Inactive"><i class="icon-volume-off"></i></a>';
+          rows +=     '<a id="' + ad.id + '" class="inactive-alert" rel="tooltip" title="Make Inactive"><i class="icon-volume-off"></i></a>';
         }
         rows +=  '</td>' +
                 '</tr>' +
@@ -138,7 +138,8 @@ function getAlerts(service, filter, refresh) {
                   '<td colspan="10" class="alert-more"><table class="table table-bordered table-condensed alert-more-table">' +
                      '<tr><td>' + 
                         '<table class="table table-condensed table-striped">' +
-                        '<tr><td><b>Alert ID</b></td><td>' + ad.lastReceiveId + '</td></tr>' +
+                        '<tr><td><b>Alert ID</b></td><td>' + ad.id + '</td></tr>' +
+                        '<tr><td><b>Last Receive Alert ID</b></td><td>' + ad.lastReceiveId + '</td></tr>' +
                         '<tr><td><b>Create Time</b></td><td>' + date2str(ad.createTime) + '</td></tr>' +
                         '<tr><td><b>Receive Time</b></td><td>' + date2str(ad.receiveTime) + '</td></tr>' +
                         '<tr><td><b>Last Receive Time</b></td><td>' + date2str(ad.lastReceiveTime) + '</td></tr>' +
