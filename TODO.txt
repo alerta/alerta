@@ -1,8 +1,4 @@
-Version 1.0
-===========
-- run all python code through pylint
-
-Version 1.1
+Version 1.x
 ===========
 - components should automatically reconnect if broker restarts
 - scripts should use YAML-based configuration files
@@ -12,3 +8,4 @@ Version 2.0
 ===========
 - sort-able and search-able alert console
 - add event correlation using ESPER or some such tool
+- divert alerts and make inactive based on suppression rules
