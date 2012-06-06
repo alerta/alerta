@@ -146,6 +146,11 @@ def main():
             if 'callback' in form:
                 callback = form['callback']
                 del form['callback']
+            if 'hide-alert-details' in form:
+                hide_details = form['hide-alert-details'] == 'true'
+                del form['hide-alert-details']
+            else:
+                hide_details = False
             if '_' in form:
                 del form['_']
             if 'id' in form:
@@ -164,7 +169,8 @@ def main():
             alertDetails = list()
             logging.debug('MongoDB -> alerts.find(%s, {"_id": 0}, sort=%s)', form, sortby)
             for alert in alerts.find(form, {"_id": 0}, sort=sortby):
-                alertDetails.append(alert)
+                if not hide_details:
+                    alertDetails.append(alert)
 
             form['severity'] = 'CRITICAL'
             critical = alerts.find(form).count()

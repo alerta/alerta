@@ -56,7 +56,7 @@
    <script src="js/console.js"></script>
    <script>
      $(document).ready(function() {
-       var services = { '<?php echo $tag; ?>': '<?php echo $query; ?>' };
+       var services = { '<?php echo $tag; ?>': 'hide-alert-details=true&<?php echo $query; ?>' };
        loadAlerts(services, true);
      });
    </script>
