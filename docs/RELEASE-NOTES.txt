@@ -1,6 +1,23 @@
 Release Notes
 =============
 
+Alerta version 1.1.4
+--------------------
+
+* Add confirm dialog when deleting alerts
+* Inform alerts contribute to Normal count
+* Add Oracle EM SNMP trap parser
+* Numerous urlmon fixes and enhancements
+* Share alert URLs using alert id
+* New alert attribute called 'status'
+* Alerts can be updated via DB API
+* Add show/hide INACTIVE alerts button
+* Buttons added to widget alert details
+* New hide-alert-details API option
+* Alert console now displays canonical alert id
+* API now requires alert id not lastReceiveId
+* CSS consolidation and twitter bootstrap update
+
 Alerta version 1.1.3
 --------------------
 
