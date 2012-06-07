@@ -24,7 +24,7 @@ import re
 from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
-__version__ = '1.5.0'
+__version__ = '1.5.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -303,6 +303,7 @@ class WorkerThread(threading.Thread):
                 or (previousEvent[(res)] == event and repeat)):
 
                 alertid = str(uuid.uuid4()) # random UUID
+                createTime = datetime.datetime.utcnow()
 
                 headers = dict()
                 headers['type']           = "serviceAlert"
@@ -325,7 +326,7 @@ class WorkerThread(threading.Thread):
                 alert['type']             = 'serviceAlert'
                 alert['tags']             = item.get('tags', list())
                 alert['summary']          = '%s - %s %s is %s on %s %s' % (item['environment'], severity, event, value, item['service'], item['resource'])
-                alert['createTime']       = datetime.datetime.utcnow().isoformat()+'Z'
+                alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%06dZ" % createTime.microsecond
                 alert['origin']           = "alert-urlmon/%s" % os.uname()[1]
                 alert['thresholdInfo']    = "%s : RT > %d RT > %d x %s" % (item['url'], warn_thold, crit_thold, item.get('count', 1))
                 alert['correlatedEvents'] = HTTP_ALERTS

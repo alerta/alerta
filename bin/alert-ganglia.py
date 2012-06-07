@@ -24,7 +24,7 @@ import logging
 import uuid
 import re
 
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -279,6 +279,7 @@ def main():
                                     valueStr += '[FAILED TO PARSE]'
 
                             alertid = str(uuid.uuid4()) # random UUID
+                            createTime = datetime.datetime.utcnow()
 
                             headers = dict()
                             headers['type']           = "gangliaAlert"
@@ -301,7 +302,7 @@ def main():
                             alert['type']             = 'gangliaAlert'
                             alert['tags']             = r['tags'] + [ "location:"+host_info[h]['location'], "cluster:"+host_info[h]['cluster'] ]
                             alert['summary']          = '%s - %s %s is %s on %s %s' % (host_info[h]['environment'], r['severity'], r['event'], valueStr, host_info[h]['grid'], h)
-                            alert['createTime']       = datetime.datetime.utcnow().isoformat()+'Z'
+                            alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%06dZ" % createTime.microsecond
                             alert['origin']           = "alert-ganglia/%s" % os.uname()[1]
                             alert['thresholdInfo']    = "%s: %s x %s" % (r['resource'], r['rule'], r['count'])
                             alert['moreInfo']         = host_info[h]['graphUrl']
