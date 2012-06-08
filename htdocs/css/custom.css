@@ -12,8 +12,16 @@ hr {
 	margin: 9px 0;
 }
 
+i {
+	cursor: pointer;
+}
+
 .table {
 	margin-bottom: 0;
+}
+
+table.summary {
+	cursor: pointer;
 }
 
 .navbar-fixed-top .brand {

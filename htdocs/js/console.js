@@ -120,7 +120,8 @@ function getAlerts(service, filter, refresh) {
         }
 
         rows += '<tr class="' + service + ' latest ' + ad.severity + ' ' + alertstatus + '">' +
-                  '<td class="ad-more"><a id="' + service + 'details' + i + '" class="show-details"><span class="show-d"><i class="icon-chevron-up icon-chevron-down"></i></span></a></td>' +
+                  '<td class="ad-more"><a id="' + service + 'details' + i + '" class="show-details">' +
+                    '<span class="show-d"><i class="icon-chevron-up icon-chevron-down"></i></span></a></td>' +
                   '<td class="ad-sev-td">' + sev2label(ad.severity) + '</td>' +
                   '<td>'+ date2str(ad.lastReceiveTime) + '</td>' +
                   '<td>' + ad.duplicateCount + '</td>' +
@@ -138,7 +139,8 @@ function getAlerts(service, filter, refresh) {
                   '<td colspan="10" class="alert-more"><table class="table table-bordered table-condensed alert-more-table">' +
                      '<tr><td>' + 
                         '<table class="table table-condensed table-striped">' +
-                        '<tr><td><b>Alert ID</b></td><td>' + ad.id + '</td></tr>' +
+                        '<tr><td><b>Alert ID</b></td><td>' + ad.id +
+                          ' <a href="/alerta/details.php?id=' + ad.id + '" target="_blank"><i class="icon-share"></i></a></td></tr>' +
                         '<tr><td><b>Last Receive Alert ID</b></td><td>' + ad.lastReceiveId + '</td></tr>' +
                         '<tr><td><b>Create Time</b></td><td>' + date2str(ad.createTime) + '</td></tr>' +
                         '<tr><td><b>Receive Time</b></td><td>' + date2str(ad.receiveTime) + '</td></tr>' +
