@@ -24,7 +24,7 @@ import logging
 import uuid
 import re
 
-__version__ = '1.5.2'
+__version__ = '1.5.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -219,7 +219,10 @@ def main():
                     try:
                         result = eval (evalStr)
                     except KeyError, e:
-                        # logging.warning('WARNING: host %s does not have metric values to evaluate rule %s', h, evalStr)
+                        logging.debug('Host %s does not have metric values to evaluate rule %s', h, evalStr)
+                        continue
+                    except ZeroDivisionError, e:
+                        logging.debug('Host %s rule eval generated a ZeroDivisionError on %s', h, evalStr)
                         continue
                         
                     if result:
@@ -309,7 +312,10 @@ def main():
 
                             alert['graphs']           = list()
                             for g in r['graphs']:
-                                alert['graphs'].append(host_metrics[h][g]['graphUrl'])
+                                try:
+                                    alert['graphs'].append(host_metrics[h][g]['graphUrl'])
+                                except KeyError:
+                                    continue
 
                             logging.info('%s : %s', alertid, json.dumps(alert))
 

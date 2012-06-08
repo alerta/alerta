@@ -217,17 +217,17 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="None" data-label="None">
+            <table class="table table-bordered table-condensed summary" id="SLM" data-label="SLM">
               <thead>
-                <tr> <th colspan="6" id="None-status">-</th> </tr>
+                <tr> <th colspan="6" id="SLM-status">SLM</th> </tr>
               </thead>
               <tbody>
-                <tr id="None-warnings" class="warnings">
-                  <td id="None-critical">0</td>
-                  <td id="None-major">0</td>
-                  <td id="None-minor">0</td>
-                  <td id="None-warning">0</td>
-                  <td id="None-normal">0</td>
+                <tr id="SLM-warnings" class="warnings">
+                  <td id="SLM-critical">0</td>
+                  <td id="SLM-major">0</td>
+                  <td id="SLM-minor">0</td>
+                  <td id="SLM-warning">0</td>
+                  <td id="SLM-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -274,6 +274,8 @@
             </tbody>
             <tbody id="Web-alerts" class="serviceAlerts initially-hidden">
             </tbody>
+            <tbody id="SLM-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
             <tbody id="Ganglia-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="Puppet-alerts" class="serviceAlerts initially-hidden">
@@ -304,6 +306,7 @@
                          'OS':       'group=OS',
                          'Database': 'group=Database',
                          'Web':      'group=Web',
+                         'SLM':      'group=SLM',
                          'Ganglia':  'group=Ganglia',
                          'Puppet':   'group=Puppet',
                          'Alerta':   'group=Alerta',

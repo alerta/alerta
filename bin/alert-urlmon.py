@@ -24,7 +24,7 @@ import re
 from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -316,7 +316,7 @@ class WorkerThread(threading.Thread):
                 alert['id']               = alertid
                 alert['resource']         = (item['environment'] + '.' + item['service'] + '.' + item['resource']).lower()
                 alert['event']            = event
-                alert['group']            = 'Web'
+                alert['group']            = 'SLM'  # Service Level Monitoring
                 alert['value']            = value
                 alert['severity']         = severity
                 alert['severityCode']     = SEVERITY_CODE[severity]
