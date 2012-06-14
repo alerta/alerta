@@ -75,13 +75,19 @@ class MessageHandler(object):
         createTime = datetime.datetime.strptime(alert['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
         createTime = createTime.replace(tzinfo=pytz.utc)
 
+        # Add expire timestamp
+        if 'timeout' in alert and alert['timeout'] > 0:
+            expireTime = createTime + datetime.timedelta(seconds=alert['timeout'])
+        else:
+            expireTime = None
+
         if alerts.find_one({"resource": alert['resource'], "event": alert['event'], "severity": alert['severity']}):
             logging.info('%s : Duplicate alert -> update dup count', alertid)
             # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary, value, tags and origin
             #                    2. increment duplicate count
             alerts.update(
                 { "resource": alert['resource'], "event": alert['event']},
-                { '$set': { "lastReceiveTime": receiveTime,
+                { '$set': { "lastReceiveTime": receiveTime, "expireTime": expireTime,
                             "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "repeat": True, "origin": alert['origin'] },
                   '$inc': { "duplicateCount": 1 }})
@@ -116,7 +122,7 @@ class MessageHandler(object):
             alerts.update(
                 { "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
                 { '$set': { "event": alert['event'], "severity": alert['severity'], "severityCode": alert['severityCode'],
-                            "createTime": createTime, "receiveTime": receiveTime, "lastReceiveTime": receiveTime,
+                            "createTime": createTime, "receiveTime": receiveTime, "lastReceiveTime": receiveTime, "expireTime": expireTime,
                             "previousSeverity": previousSeverity, "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "repeat": False, "origin": alert['origin'], "thresholdInfo": alert['thresholdInfo'], "duplicateCount": 0 },
                   '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "event": alert['event'],
@@ -152,6 +158,7 @@ class MessageHandler(object):
             alert['createTime']       = createTime
             alert['receiveTime']      = receiveTime
             alert['lastReceiveTime']  = receiveTime
+            alert['expireTime']       = expireTime
             alert['previousSeverity'] = 'UNKNOWN'
             alert['repeat']           = False
 

@@ -308,6 +308,10 @@ def main():
                             alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%06dZ" % createTime.microsecond
                             alert['origin']           = "alert-ganglia/%s" % os.uname()[1]
                             alert['thresholdInfo']    = "%s: %s x %s" % (r['resource'], r['rule'], r['count'])
+                            if r['severity'] == 'NORMAL':
+                                alert['timeout'] = 600    # expire NORMAL alerts after 10 minutes
+                            else:
+                                alert['timeout'] = 86400  # expire non-NORMAL alerts after 1 day
                             alert['moreInfo']         = host_info[h]['graphUrl']
 
                             alert['graphs']           = list()
