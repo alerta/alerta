@@ -20,7 +20,7 @@ import logging
 import uuid
 import re
 
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -43,7 +43,7 @@ SEVERITY_CODE = {
 
 def main():
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-snmptrap[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-snmptrap[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
 
     trapvars = dict()
     trapvars['$$'] = '$'
@@ -116,8 +116,8 @@ def main():
     environment = 'INFRA'
     service     = 'Network'
     tags        = list()
-    threshold   = list()
     correlate   = list()
+    threshold   = ''
 
     # Match trap to specific config and load any parsers
     # Note: any of these variables could have been modified by a parser
@@ -131,6 +131,7 @@ def main():
     logging.info('Loaded %d SNMP Trap configurations OK', len(trapconf))
 
     for t in trapconf:
+        logging.debug('trapconf: %s', t)
         if re.match(t['trapoid'], trapoid):
             if 'parser' in t:
                 print 'Loading parser %s' % t['parser']
@@ -164,19 +165,20 @@ def main():
                 threshold = t['thresholdInfo']
 
     # Trap variable substitution
-    for v in trapvars:
-        print "sub %s %s" % (v, trapvars[v])
-        event = event.replace(v, trapvars[v])
-        resource = resource.replace(v, trapvars[v])
-        severity = severity.replace(v, trapvars[v])
-        group = group.replace(v, trapvars[v])
-        value = value.replace(v, trapvars[v])
-        text = text.replace(v, trapvars[v])
-        environment = environment.replace(v, trapvars[v])
-        service = service.replace(v, trapvars[v])
-        tags[:] = [s.replace(v, trapvars[v]) for s in tags]
-        service = service.replace(v, trapvars[v])
-        threshold = threshold.replace(v, trapvars[v])
+    logging.debug('trapvars: %s', trapvars)
+    for k,v in trapvars.iteritems():
+        logging.debug('replace: %s -> %s', k, v)
+        event = event.replace(k, v)
+        resource = resource.replace(k, v)
+        severity = severity.replace(k, v)
+        group = group.replace(k, v)
+        value = value.replace(k, v)
+        text = text.replace(k, v)
+        environment = environment.replace(k, v)
+        service = service.replace(k, v)
+        tags[:] = [s.replace(k, v) for s in tags]
+        service = service.replace(k, v)
+        threshold = threshold.replace(k, v)
 
     alertid = str(uuid.uuid4()) # random UUID
     createTime = datetime.datetime.utcnow()
