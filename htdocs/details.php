@@ -16,6 +16,12 @@
       $tag_arr[] = $id;
       $_GET['label'] = $id;
   }
+  if (isset($_GET['resource'])) {
+      $res = $_GET['resource'];
+      // $tag_arr[] = $res;
+      $tag_arr[] = 'resource';
+      $_GET['label'] = $res;
+  }
   $tag = implode('-', $tag_arr);
   if (isset($_GET['label']))
       $label = $_GET['label'];
@@ -43,7 +49,6 @@
         <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh Now</button>
       </div>
       <!-- div><a id="refresh-all" class="btn btn-success" href="#"><i class="icon-shopping-cart icon-white"></i> Refresh</a></div -->
-
       
       <!-- Alert Details -->
       <div class="row show-grid">
@@ -72,7 +77,7 @@
     <script>
       $(document).ready(function() {
 
-        var services = { '<?php echo $tag; ?>': 'sort-by=lastReceiveTime<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?><?php if ($id != "") echo "&id=".$id; ?>' };
+        var services = { '<?php echo $tag; ?>': 'sort-by=lastReceiveTime<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?><?php if ($id != "") echo "&id=".$id; ?><?php if ($res != "") echo "&resource=".$res; ?>' };
         loadAlerts(services, true);
 
         $('#refresh-all').click(function() {
