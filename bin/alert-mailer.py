@@ -27,10 +27,11 @@ import pytz
 import logging
 import uuid
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
+ALERTA_URL  = 'http://monitoring.guprod.gnl'
 SMTP_SERVER  = 'mx'
 ALERTER_MAIL = 'alerta@guardian.co.uk'
 # MAILING_LIST = ['nick.satterly@guardian.co.uk', 'simon.huggins@guardian.co.uk']
@@ -90,7 +91,7 @@ class MessageHandler(object):
         text = ''
         text += '%s\n' % (alert['summary'])
         text += 'Alert Details\n'
-        text += 'Alert ID: %s\n' % (alert['lastReceiveId'])
+        text += 'Alert ID: %s\n' % (alert['id'])
         text += 'Create Time: %s\n' % (localTime.strftime('%d/%m/%Y %H:%M:%S'))
         text += 'Resource: %s\n' % (alert['resource'])
         text += 'Environment: %s\n' % (alert['environment'])
@@ -123,7 +124,7 @@ class MessageHandler(object):
 
         html += '<tr><td><p align="left" style="font-size:18px;line-height:22px;color:#c25130;font-weight:bold;">Alert Details</p>\n'
         html += '<table>\n'
-        html += '<tr><td><b>Alert ID:</b></td><td>%s</td></tr>\n' % (alert['lastReceiveId'])
+        html += '<tr><td><b>Alert ID:</b></td><td><a href="%s/alerta/details.php?id=%s" target="_blank">%s</a></td></tr>\n' % (ALERTA_URL, alert['id'], alert['id'])
         html += '<tr><td><b>Create Time:</b></td><td>%s</td></tr>\n' % (localTime.strftime('%d/%m/%Y %H:%M:%S'))
         html += '<tr><td><b>Resource:</b></td><td>%s</td></tr>\n' % (alert['resource'])
         html += '<tr><td><b>Environment:</b></td><td>%s</td></tr>\n' % (alert['environment'])
