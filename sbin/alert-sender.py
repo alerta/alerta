@@ -32,6 +32,7 @@ LOGFILE = '/var/log/alerta/alert-sender.log'
 parser = optparse.OptionParser(version="%prog " + __version__, description="Alert Command-Line Tool - sends an alert to the alerting system. Alerts must have a resource (including service and environment), event name, value and text. A severity of 'normal' is used if none given. Tags and group are optional.", epilog="alert-sender.py --resource myCoolApp --event AppStatus --group Application --value Down --severity critical --env PROD --svc MicroApp --tag release:134 --tag build:1005 --text 'Micro App X is down.'")
 parser.add_option("-r", "--resource", dest="resource", help="Resource under alarm eg. hostname, network device, application. Note: ENVIRONMENT and SERVICE are prepended to the supplied RESOURCE")
 parser.add_option("-e", "--event", dest="event", help="Event name eg. HostAvail, PingResponse, AppStatus")
+parser.add_option("-c", "--correlate", dest="correlate", help="Comma-separated list of events to correlate together eg. NodeUp,NodeDown")
 parser.add_option("-g", "--group", dest="group", help="Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security")
 parser.add_option("-v", "--value", dest="value", help="Event value eg. 100%, Down, PingFail, 55tps, ORA-1664")
 parser.add_option("-s", "--severity", dest="severity", help="Severity eg. Critical, Major, Minor, Warning, Normal, Inform")
@@ -107,6 +108,8 @@ def main():
     alert['id']            = alertid
     alert['resource']      = (options.environment + '.' + options.service + '.' + options.resource).lower()
     alert['event']         = options.event
+    if options.correlate:
+        alert['correlatedEvents'] = options.correlate.split(',')
     alert['group']         = options.group
     alert['value']         = options.value
     alert['severity']      = options.severity.upper()
