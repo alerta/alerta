@@ -27,9 +27,9 @@
               <li class=""><a href="./qa.html">QA</a></li>
               <li class=""><a href="./test.html">Test</a></li>
               <li class=""><a href="./code.html">Code</a></li>
-              <li class="active"><a href="./dev.html">Development</a></li>
+              <li class=""><a href="./dev.html">Development</a></li>
               <li class=""><a href="./stage.html">Stage</a></li>
-              <li class=""><a href="./lwp.html">LWP</a></li>
+              <li class="active"><a href="./lwp.html">LWP</a></li>
               <li class=""><a href="./infra.html">Infrastructure</a></li>
               <li class=""><a href="./treemap.html">Treemap</a></li>
               <li class=""><a href="/Kibana">History</a></li>
@@ -218,17 +218,17 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="EC2" data-label="EC2">
+            <table class="table table-bordered table-condensed summary" id="none" data-label="none">
               <thead>
-                <tr> <th colspan="6" id="EC2-status">EC2 Servers</th> </tr> 
+                <tr> <th colspan="6" id="none-status">-</th> </tr> 
               </thead>
               <tbody>
-                <tr id="EC2-warnings" class="warnings">
-                  <td id="EC2-critical">0</td>
-                  <td id="EC2-major">0</td>
-                  <td id="EC2-minor">0</td>
-                  <td id="EC2-warning">0</td>
-                  <td id="EC2-normal">0</td>
+                <tr id="none-warnings" class="warnings">
+                  <td id="none-critical">0</td>
+                  <td id="none-major">0</td>
+                  <td id="none-minor">0</td>
+                  <td id="none-warning">0</td>
+                  <td id="none-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -258,7 +258,7 @@
         <div class="span12">
           <table class="table table-bordered table-condensed" id="alert-details">
             <caption class="alerts-caption">
-              Development - <span id="alert-details-caption">R2</span> alert details
+              LWP - <span id="alert-details-caption">R2</span> alert details
             </caption>
             <thead>
               <tr> <th></th><th>Severity</th><th>Last Receive Time</th><th>Dupl. Count</th><th>Resource</th><th>Event</th><th>Value</th><th>Text</th></tr> 
@@ -283,8 +283,6 @@
             </tbody>
             <tbody id="Mutualisation-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="EC2-alerts" class="serviceAlerts initially-hidden">
-            </tbody>
             <tbody id="Network-alerts" class="serviceAlerts initially-hidden">
             </tbody>
           </table>
@@ -302,7 +300,7 @@
     <script>
       $(document).ready(function() {
 
-        var env = "DEV";
+        var env = "LWP";
         var services = { 'R2':              'environment='+env+'&service=R2',
                          'Discussion':      'environment='+env+'&service=Discussion',
                          'ContentAPI':      'environment='+env+'&service=ContentAPI',
@@ -313,7 +311,6 @@
                          'SharedSvcs':      'environment='+env+'&service=SharedSvcs',
                          'MicroApp':        'environment='+env+'&service=MicroApp',
                          'Mutualisation':   'environment='+env+'&service=Mutualisation',
-                         'EC2':             'environment='+env+'&service=EC2',
                          'Network':         'environment='+env+'&service=Network' };
 
         loadAlerts(services, true);
