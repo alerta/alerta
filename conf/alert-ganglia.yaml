@@ -1,3 +1,15 @@
+# Server reboots within last 2 hours
+- resource: .*
+  rule: $boottime > ($now - 7200)
+  event: ServerReboot
+  severity: INFORM
+  group: Server
+  count: 1
+  value: $boottime
+  description: Server rebooted less than 2 hours ago
+  graphs: []
+  tags: []
+
 # Puppet Resource alert
 - resource: .*
   rule: $pup_res_failed > 0

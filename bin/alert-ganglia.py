@@ -274,7 +274,7 @@ def main():
                                 name = m.lstrip('$')
                                 m = '\\' + m
                                 try:
-                                    if host_metrics[h][name]['units'] == 'timestamp':
+                                    if host_metrics[h][name]['units'] == 'timestamp' or name == 'boottime':
                                         valueStr = re.sub(m, time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(host_metrics[h][name]['value'])), valueStr)
                                     else:
                                         valueStr = re.sub(m, str(host_metrics[h][name]['value']), valueStr)
