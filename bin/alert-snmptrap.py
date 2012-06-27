@@ -20,7 +20,7 @@ import logging
 import uuid
 import re
 
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -203,7 +203,7 @@ def main():
     alert['type']             = 'snmptrapAlert'
     alert['tags']             = tags
     alert['summary']          = '%s - %s %s is %s on %s %s' % (environment, severity.upper(), event, value, service, resource)
-    alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%06dZ" % createTime.microsecond
+    alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']           = 'alert-snmptrap/%s' % os.uname()[1]
     alert['thresholdInfo']    = threshold
     alert['correlatedEvents'] = correlate

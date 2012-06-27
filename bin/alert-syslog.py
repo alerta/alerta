@@ -24,7 +24,7 @@ import select
 import uuid
 import re
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -169,7 +169,7 @@ def send_syslog(data):
     alert['type']          = 'syslogAlert'
     alert['tags']          = tags
     alert['summary']       = '%s - %s %s is %s on %s %s' % (environment, alert['severity'].upper(), event, value, service, resource)
-    alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%06dZ" % createTime.microsecond
+    alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']        = 'alert-syslog/%s' % os.uname()[1]
     alert['thresholdInfo'] = 'n/a'
 

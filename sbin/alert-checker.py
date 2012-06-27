@@ -22,7 +22,7 @@ import logging
 import uuid
 import re
 
-__version__ = '1.1'
+__version__ = '1.1.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -111,7 +111,7 @@ def main():
     text = stdout.strip()
 
     alertid = str(uuid.uuid4()) # random UUID
-    logging.info('%s : Nagios plugin %s => %s (rc=%d)', alertid, options.nagios, text, rc)
+    createTime = datetime.datetime.utcnow()
 
     headers = dict()
     headers['type']           = "exceptionAlert"
@@ -133,10 +133,11 @@ def main():
     alert['type']          = 'exceptionAlert'
     alert['tags']          = options.tags
     alert['summary']       = '%s - %s %s is %s on %s %s' % (options.environment, severity, options.event, value, options.service, options.resource)
-    alert['createTime']    = datetime.datetime.utcnow().isoformat()+'Z'
+    alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']        = 'alert-checker/%s' % os.uname()[1]
     alert['thresholdInfo'] = options.nagios
 
+    logging.info('%s : Nagios plugin %s => %s (rc=%d)', alertid, options.nagios, text, rc)
     logging.info('%s : %s', alertid, json.dumps(alert))
 
     if (not options.dry_run):

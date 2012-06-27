@@ -24,7 +24,7 @@ import logging
 import uuid
 import re
 
-__version__ = '1.5.3'
+__version__ = '1.5.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -305,7 +305,7 @@ def main():
                             alert['type']             = 'gangliaAlert'
                             alert['tags']             = r['tags'] + [ "location:"+host_info[h]['location'], "cluster:"+host_info[h]['cluster'] ]
                             alert['summary']          = '%s - %s %s is %s on %s %s' % (host_info[h]['environment'], r['severity'], r['event'], valueStr, host_info[h]['grid'], h)
-                            alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%06dZ" % createTime.microsecond
+                            alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
                             alert['origin']           = "alert-ganglia/%s" % os.uname()[1]
                             alert['thresholdInfo']    = "%s: %s x %s" % (r['resource'], r['rule'], r['count'])
                             if r['severity'] == 'NORMAL':

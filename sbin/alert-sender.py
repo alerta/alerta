@@ -20,7 +20,7 @@ import datetime
 import logging
 import uuid
 
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -95,6 +95,7 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-sender[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
 
     alertid = str(uuid.uuid4()) # random UUID
+    createTime = datetime.datetime.utcnow()
 
     headers = dict()
     headers['type']           = "exceptionAlert"
@@ -116,7 +117,7 @@ def main():
     alert['type']          = 'exceptionAlert'
     alert['tags']          = options.tags
     alert['summary']       = '%s - %s %s is %s on %s %s' % (options.environment, options.severity.upper(), options.event, options.value, options.service, options.resource)
-    alert['createTime']    = datetime.datetime.utcnow().isoformat()+'Z'
+    alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']        = 'alert-sender/%s' % os.uname()[1]
     alert['thresholdInfo'] = 'n/a'
 
