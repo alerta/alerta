@@ -222,7 +222,7 @@ $(document).ready(function() {
         $.ajax({
           type: 'POST',
           url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
-          data: { _method: 'delete' }
+          data: JSON.stringify({ _method: 'delete' })
         });
         $(this).parent().parent().next().remove(); // delete drop-down
         $(this).parent().parent().remove();  // delete alert
@@ -236,7 +236,7 @@ $(document).ready(function() {
         $.ajax({
           type: 'PUT',
           url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
-          data: { status: 'INACTIVE' }
+          data: JSON.stringify({ status: 'INACTIVE' })
         });
         $(this).parent().prepend('[inactive] ');
       }
