@@ -8,12 +8,17 @@
 import os
 import sys
 from optparse import OptionParser
+import time
 import datetime
-import pymongo
+try:
+    import json
+except ImportError:
+    import simplejson
+import urllib2
 import operator
 import pytz
 
-__version__ = '1.0.4'
+__version__ = '1.1.0'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -47,26 +52,9 @@ COLOR = {
 }
 ENDC     = '\033[0m'
 
-ORDERBY = {
-    'environment':     ('environment', pymongo.DESCENDING),
-    'service':         ('service', pymongo.DESCENDING),
-    'resource':        ('resource', pymongo.DESCENDING),
-    'event':           ('event', pymongo.DESCENDING),
-    'group':           ('group', pymongo.DESCENDING),
-    'value':           ('history.value', pymongo.DESCENDING),
-    'severity':        ('history.severityCode', pymongo.DESCENDING),
-    'text':            ('history.text', pymongo.DESCENDING),
-    'type':            ('type', pymongo.DESCENDING),
-    'createTime':      ('history.createTime', pymongo.ASCENDING),
-    'receiveTime':     ('history.receiveTime', pymongo.ASCENDING),
-    'lastReceiveTime': ('lastReceiveTime', pymongo.ASCENDING),
-    'origin':          ('origin', pymongo.DESCENDING),
-    'thresholdInfo':   ('thresholdInfo', pymongo.DESCENDING)
-}
-
 # Defaults
 PGM='alert-query.py'
-SERVER='localhost'
+SERVER = 'monitoring.guprod.gnl'
 TIMEZONE='Europe/London'
 DATE_FORMAT = '%d/%m/%y %H:%M:%S'
 
@@ -80,7 +68,7 @@ def main():
     parser.add_option("-m",
                       "--server",
                       dest="server",
-                      help="MongoDB server (default: localhost)")
+                      help="Alerta server (default: %s)" % SERVER)
     parser.add_option("-z",
                       "--timezone",
                       dest="timezone",
@@ -139,12 +127,12 @@ def main():
                       action="append",
                       dest="show",
                       default=[],
-                      help="Show 'text', 'times', 'details', 'tags' and 'color'")
+                      help="Show 'text', 'times', 'state', 'attributes', 'details', 'tags', 'counts' and 'color'")
     parser.add_option("-o",
                       "--orderby",
-                      "--sort",
-                      dest="orderby",
-                      help="Order by attribute (default: createTime)")
+                      "--sortby",
+                      dest="sortby",
+                      help="Sort by attribute (default: createTime)")
     parser.add_option("-c",
                       "--count",
                       "--limit",
@@ -173,125 +161,74 @@ def main():
         server = options.server
     else:
         server = SERVER
+    API_URL = 'http://%s/alerta/api/v1/alerts' % server
 
-    # Connect to MongoDB
-    try:
-        mongo = pymongo.Connection(server)
-        db = mongo.monitoring
-        alerts = db.alerts
-    except pymongo.errors.ConnectionFailure, e:
-        print >>sys.stderr, "ERROR: Connection to MongoDB %s failed" % server
-        sys.exit(1)
-
-    query = dict()
+    query = list()
     minutes = 0
     hours = 0
     days = 0
-    num_regex = 0
-    if options.minutes:
-        minutes = options.minutes
-    if options.hours:
-        hours = options.minutes
-    if options.days:
-        days = options.days
+
+#     num_regex = 0
+
     if options.alertid:
-        # Example - db.alerts.findOne({$or: [{'lastReceiveId': {'$regex': '^b8d05b47'}}, { 'history.id': {'$regex': '^b8d05b47'}} ] });
-        query['$or'] = list()
-        query['$or'].append({ 'history.id': { '$regex': '^'+options.alertid } } )
-        query['$or'].append({ 'lastReceiveId': { '$regex': '^'+options.alertid } } )
-        num_regex += 2
+        for o in options.alertid.split(','):
+            query.append('id=%s' % o)
+            # num_regex += 1
+
     if options.environment:
-        query['environment'] = { '$regex': options.environment }
-        num_regex += 1
+        for o in options.environment.split(','):
+            query.append('environment=%s' % o)
+
     if options.service:
-        query['service'] = { '$regex': options.service }
-        num_regex += 1
+        for o in options.service.split(','):
+            query.append('service=%s' % o)
+
     if options.resource:
-        query['resource'] = { '$regex': options.resource }
-        num_regex += 1
+        for o in options.resource.split(','):
+            query.append('resource=%s' % o)
+            # num_regex += 1
+
     if options.severity:
-        m = options.severity.split('..')
-        if len(m) > 1:
-            query['severityCode'] = { '$lte': SEVERITY_CODE[m[0].upper()], '$gte': SEVERITY_CODE[m[1].upper()] }
-        else:
-            query['severityCode'] = SEVERITY_CODE[options.severity.upper()]
+        for o in options.severity.split(','):
+            query.append('severity=%s' % o)
+#         m = options.severity.split('..')
+#         if len(m) > 1:
+#             query['severityCode'] = { '$lte': SEVERITY_CODE[m[0].upper()], '$gte': SEVERITY_CODE[m[1].upper()] }
+#         else:
+#             query['severityCode'] = SEVERITY_CODE[options.severity.upper()]
+
     if options.event:
-        query['event'] = { '$regex': options.event }
-        num_regex += 1
+        for o in options.event.split(','):
+            query.append('event=%s' % o)
+            # num_regex += 1
+
     if options.group:
-        query['group'] = { '$regex': options.group }
-        num_regex += 1
+        for o in options.group.split(','):
+            query.append('group=%s' % o)
+
     if options.value:
-        query['history.value'] = { '$regex': options.value }
-        num_regex += 1
+        for o in options.value.split(','):
+            query.append('value=%s' % o)
+            # num_regex += 1
+
     if options.text:
-        query['history.text'] = { '$regex': options.text }
-        num_regex += 1
+        for o in options.text.split(','):
+            query.append('text=%s' % o)
+            # num_regex += 1
 
-    if num_regex > 4:
-        print "ERROR: Too many regexes in query (limit is 4 until v2.1.0)"
-        # see https://jira.mongodb.org/browse/SERVER-969
-        sys.exit(1)
+#     if num_regex > 4:
+#         print "ERROR: Too many regexes in query (limit is 4 until v2.1.0)"
+#         # see https://jira.mongodb.org/browse/SERVER-969
+#         sys.exit(1)
+# 
+    if options.sortby:
+        query.append('sort-by=%s' % options.sortby)
 
-    if minutes or hours or days:
-        end = datetime.datetime.utcnow()
-        end = end.replace(tzinfo=pytz.utc)
-        start = end - datetime.timedelta(days=days, minutes=minutes+hours*60)
-        start = start.replace(tzinfo=pytz.utc)
-        if options.orderby in ['createTime', 'receiveTime', 'lastReceiveTime']:
-            query[options.orderby] = {'$gte': start, '$lt': end}
-        else:
-            query['createTime'] = {'$gte': start, '$lt': end}
-
-    fields = { "environment": 1, "service": 1,
-        "resource": 1, "event": 1, "group": 1,
-        "type": 1, "tags": 1, "origin": 1,
-        "thresholdInfo": 1, "lastReceiveId": 1,
-        "lastReceiveTime": 1 , "correlatedEvents": 1 }
-
-    if 'history' in options.show:
-        fields['history'] = 1
-        options.orderby = 'createTime'
-    else:
-        fields['history'] = { '$slice': -1 }
-
-    orderby = list()
-    if options.orderby:
-        orderby.append(ORDERBY[options.orderby])
-    else:
-        orderby.append(ORDERBY['lastReceiveTime'])
-
-    if options.limit:
-        LIMIT = options.limit
-    else:
-        LIMIT = 0
+    url = "%s?%s" % (API_URL, '&'.join(query))
 
     if options.dry_run:
-        print "DEBUG: monitoring.alerts { $query: %s, $orderby: %s }" % (query, orderby)
+        print "DEBUG: %s" % (url)
         sys.exit(0)
-
-    results = list()
-    for alert in alerts.find(query, fields).sort(orderby).limit(LIMIT):
-        for hist in alert['history']:
-            results.append((alert['_id'],
-                hist['id'],
-                alert['lastReceiveId'],
-                alert['environment'],
-                alert['service'],
-                alert['resource'],
-                hist.get('event', 'n/a'),
-                alert['group'],
-                hist.get('value', 'n/a'),
-                hist['severity'],
-                hist['text'],
-                alert['type'],
-                alert['tags'],
-                hist['createTime'].replace(tzinfo=pytz.utc),
-                hist['receiveTime'].replace(tzinfo=pytz.utc),
-                alert['lastReceiveTime'].replace(tzinfo=pytz.utc),
-                alert['origin'],
-                alert.get('thresholdInfo', 'n/a'),
-                alert.get('correlatedEvents', ['n/a'])))
 
     if not options.timezone:
         user_tz = TIMEZONE
@@ -307,8 +244,8 @@ def main():
             print "    interval: %s - %s" % (start.astimezone(tz).strftime(DATE_FORMAT), end.astimezone(tz).strftime(DATE_FORMAT))
         if options.show:
             print "        show: %s" % ', '.join(options.show)
-        if options.orderby:
-            print "    order by: %s" % options.orderby
+        if options.sortby:
+            print "    sort by: %s" % options.sortby
         if options.alertid:
             print "    alert id: ^%s" % options.alertid
         if options.environment:
@@ -337,6 +274,7 @@ def main():
     elif 'all' in options.show:
         options.show.append('text')
         options.show.append('times')
+        options.show.append('attributes')
         options.show.append('details')
         options.show.append('tags')
 
@@ -345,77 +283,148 @@ def main():
     if 'color' in options.show or options.color:
         end_color = ENDC
 
+    # Query API for alerts
+    start = time.time()
+    try:
+        output = urllib2.urlopen(url).read()
+        response = json.loads(output)['response']
+    except urllib2.URLError, e:
+        print "ERROR: Alert query %s failed - %s" % (url, e)
+        sys.exit(1)
+    end = time.time()
+
     count = 0
-    for r in results:
-        objectid         = r[0]
-        alertid          = r[1]
-        lastReceiveId    = r[2]
-        environment      = r[3]
-        service          = r[4]
-        resource         = r[5]
-        event            = r[6]
-        group            = r[7]
-        value            = r[8]
-        severity         = r[9]
-        text             = r[10]
-        type             = r[11]
-        tags             = r[12]
-        createTime       = r[13]
-        receiveTime      = r[14]
-        latency          = receiveTime - createTime
-        lastReceiveTime  = r[15]
-        origin           = r[16]
-        thresholdInfo    = r[17]
-        correlatedEvents = r[18]
+    for alert in response['alerts'][0]['alertDetails']: # FIXME - what's that [0] doing there???
+        alertid          = alert['id']
+        correlatedEvents = alert.get('correlatedEvents', ['n/a'])
+        createTime       = datetime.datetime.strptime(alert['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        createTime       = createTime.replace(tzinfo=pytz.utc)
+        environment      = alert['environment']
+        event            = alert['event']
+        graphs           = alert.get('graphs', ['n/a'])
+        group            = alert['group']
+        moreInfo         = alert.get('moreInfo', 'n/a')
+        origin           = alert['origin']
+        resource         = alert['resource']
+        service          = alert['service']
+        severity         = alert['severity']
+        severityCode     = int(alert['severityCode'])
+        summary          = alert['summary']
+        tags             = alert['tags']
+        text             = alert['text']
+        thresholdInfo    = alert.get('thresholdInfo', 'n/a')
+        timeout          = alert.get('timeout', '0')
+        type             = alert['type']
+        value            = alert['value']
+
+        duplicateCount   = int(alert['duplicateCount'])
+        expireTime       = alert.get('expireTime', 'never')
+        lastReceiveId    = alert['lastReceiveId']
+        lastReceiveTime  = datetime.datetime.strptime(alert['lastReceiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        lastReceiveTime  = lastReceiveTime.replace(tzinfo=pytz.utc)
+        previousSeverity = alert['previousSeverity']
+        receiveTime      = datetime.datetime.strptime(alert['receiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        receiveTime      = receiveTime.replace(tzinfo=pytz.utc)
+        repeat           = alert['repeat']
+        delta            = receiveTime - createTime
+        latency          = int(delta.days * 24 * 60 * 60 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000)
+
         count += 1
 
-        if options.orderby == 'createTime':
+        if options.sortby == 'createTime':
             displayTime = createTime
-        elif options.orderby == 'receiveTime':
+        elif options.sortby == 'receiveTime':
             displayTime = receiveTime
         else:
             displayTime = lastReceiveTime
 
         if 'color' in options.show or options.color:
             line_color = COLOR[severity]
-        print(line_color + '%s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
-            displayTime.astimezone(tz).strftime(DATE_FORMAT),
-            SEV[severity],
-            resource.split('.')[-1],
-            group,
-            event,
-            value) + end_color)
+
+        if 'summary' in options.show:
+            print(line_color + '%s' % summary + end_color)
+        else:
+            print(line_color + '%s|%s|%s|%5d|%-18s|%12s|%16s|%12s' % (alertid[0:8],
+                displayTime.astimezone(tz).strftime(DATE_FORMAT),
+                SEV[severity],
+                duplicateCount,
+                resource.split('.')[-1],
+                group,
+                event,
+                value) + end_color)
 
         if 'text' in options.show:
             print(line_color + '   |%s' % (text) + end_color)
 
+        if 'state' in options.show:
+            print(line_color + '    state | %s -> %s' % (previousSeverity, severity) + end_color)
+
+        if 'attributes' in options.show:
+            print(line_color + '    severity | %s (%s)' % (severity, severityCode) + end_color)
+            print(line_color + '    resource | %s' % (resource) + end_color)
+            print(line_color + '    group    | %s' % (group) + end_color)
+            print(line_color + '    event    | %s' % (event) + end_color)
+            print(line_color + '    value    | %s' % (value) + end_color)
+
         if 'times' in options.show:
-            print(line_color + '    time created  | %s' % (createTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
-            print(line_color + '    time received | %s' % (receiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
-            print(line_color + '    last received | %s' % (lastReceiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
-            print(line_color + '    latency       | %s' % (latency) + end_color)
+            print(line_color + '      time created  | %s' % (createTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
+            print(line_color + '      time received | %s' % (receiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
+            print(line_color + '      last received | %s' % (lastReceiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
+            print(line_color + '      latency       | %sms' % (latency) + end_color)
 
         if 'details' in options.show:
-            print(line_color + '        object id    | %s' % (objectid) + end_color)
-            print(line_color + '        alert id     | %s' % (alertid) + end_color)
-            print(line_color + '        last recv id | %s' % (lastReceiveId) + end_color)
-            print(line_color + '        environment  | %s' % (environment) + end_color)
-            print(line_color + '        service      | %s' % (service) + end_color)
-            print(line_color + '        resource     | %s' % (resource) + end_color)
-            print(line_color + '        type         | %s' % (type) + end_color)
-            print(line_color + '        origin       | %s' % (origin) + end_color)
-            print(line_color + '        threshold    | %s' % (thresholdInfo) + end_color)
-            print(line_color + '        correlate    | %s' % (','.join(correlatedEvents)) + end_color)
+            print(line_color + '          alert id     | %s' % (alertid) + end_color)
+            print(line_color + '          last recv id | %s' % (lastReceiveId) + end_color)
+            print(line_color + '          environment  | %s' % (environment) + end_color)
+            print(line_color + '          service      | %s' % (service) + end_color)
+            print(line_color + '          resource     | %s' % (resource) + end_color)
+            print(line_color + '          type         | %s' % (type) + end_color)
+            print(line_color + '          origin       | %s' % (origin) + end_color)
+            print(line_color + '          more info    | %s' % (moreInfo) + end_color)
+            print(line_color + '          threshold    | %s' % (thresholdInfo) + end_color)
+            print(line_color + '          correlate    | %s' % (','.join(correlatedEvents)) + end_color)
 
         if 'tags' in options.show and tags:
             for t in tags:
                 print(line_color + '            tag | %s' % (t) + end_color)
 
+        if 'history' in options.show:
+            for hist in alert['history']:
+                alertid     = hist['id']
+                createTime  = datetime.datetime.strptime(hist['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                createTime  = createTime.replace(tzinfo=pytz.utc)
+                event       = hist['event']
+                receiveTime = datetime.datetime.strptime(hist['receiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                receiveTime = receiveTime.replace(tzinfo=pytz.utc)
+                severity    = hist['severity']
+                value       = hist['value']
+                text        = hist['text']
+                print(line_color + '/ %s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
+                    receiveTime.astimezone(tz).strftime(DATE_FORMAT),
+                    SEV[severity],
+                    resource.split('.')[-1],
+                    group,
+                    event,
+                    value) + end_color)
+                print(line_color + '\   |%s' % (text) + end_color)
+
+    if 'counts' in options.show:
+        print
+        print('Crit|Majr|Minr|Warn|Norm|Info|Dbug')
+        print(
+            COLOR['CRITICAL'] + '%4d' % response['alerts'][0]['severityCounts']['critical'] + ENDC + ' ' +
+            COLOR['MAJOR']    + '%4d' % response['alerts'][0]['severityCounts']['major']    + ENDC + ' ' +
+            COLOR['MINOR']    + '%4d' % response['alerts'][0]['severityCounts']['minor']    + ENDC + ' ' +
+            COLOR['WARNING']  + '%4d' % response['alerts'][0]['severityCounts']['warning']  + ENDC + ' ' +
+            COLOR['NORMAL']   + '%4d' % response['alerts'][0]['severityCounts']['normal']   + ENDC + ' ' +
+            COLOR['INFORM']   + '%4d' % response['alerts'][0]['severityCounts']['inform']   + ENDC + ' ' +
+            COLOR['DEBUG']    + '%4d' % response['alerts'][0]['severityCounts']['debug']    + ENDC)
+
     if not options.nofooter:
         now = datetime.datetime.utcnow()
         now = now.replace(tzinfo=pytz.utc)
         print
-        print "Total: %d (produced on %s at %s by %s,v%s on %s)" % (count, now.astimezone(tz).strftime("%d/%m/%y"), now.astimezone(tz).strftime("%H:%M:%S %Z"), PGM, __version__, os.uname()[1])
+        print "Total: %d (produced on %s at %s by %s,v%s on %s in %sms)" % (count, now.astimezone(tz).strftime("%d/%m/%y"), now.astimezone(tz).strftime("%H:%M:%S %Z"), PGM, __version__, os.uname()[1], int((end - start) * 1000))
 
 if __name__ == '__main__':
     main()
