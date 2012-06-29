@@ -19,7 +19,7 @@ import cgi, cgitb
 import logging
 import re
 
-__version__ = '1.4.1'
+__version__ = '1.4.2'
 
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
 
@@ -107,7 +107,7 @@ def main():
 
         query = dict()
         for field in form:
-            if field in ['callback', '_', 'sort-by', 'hide-alert-details']:
+            if field in ['callback', '_', 'sort-by', 'hide-alert-details', 'limit']:
                 continue
             if field == 'id':
                 query['_id'] = dict()
@@ -124,6 +124,11 @@ def main():
             hide_details = form['hide-alert-details'][0] == 'true'
         else:
             hide_details = False
+
+        if 'limit' in form:
+            limit = int(form['limit'][0])
+        else:
+            limit = 0
 
         sortby = list()
         if 'sort-by' in form:
@@ -142,8 +147,8 @@ def main():
         debug = 0
 
         alertDetails = list()
-        logging.info('MongoDB GET all -> alerts.find(%s, sort=%s)', query, sortby)
-        for alert in alerts.find(query, sort=sortby):
+        logging.info('MongoDB GET all -> alerts.find(%s, sort=%s).limit(%s)', query, sortby, limit)
+        for alert in alerts.find(query, sort=sortby).limit(limit):
             if not hide_details:
                 alert['id'] = alert['_id']
                 del alert['_id']

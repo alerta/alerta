@@ -212,6 +212,9 @@ def main():
     if options.sortby:
         query.append('sort-by=%s' % options.sortby)
 
+    if options.limit:
+        query.append('limit=%s' % options.limit)
+
     url = "%s?%s" % (API_URL, '&'.join(query))
 
     if options.dry_run:
@@ -253,7 +256,7 @@ def main():
         if options.text:
             print "        text: %s" % options.text
         if options.limit:
-            print "       count: %d" % LIMIT
+            print "       count: %d" % options.limit
         print
 
     if 'some' in options.show:
