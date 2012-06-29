@@ -19,7 +19,7 @@ import cgi, cgitb
 import logging
 import re
 
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
 
@@ -111,7 +111,11 @@ def main():
                 continue
             if field == 'id':
                 query['_id'] = dict()
-                query['_id']['$in'] = form['id']
+                query['_id']['$regex'] = '^'+form['id'][0]
+            elif len(form[field]) == 1:
+                query[field] = dict()
+                query[field]['$regex'] = form[field][0]
+                query[field]['$options'] = 'i'  # case insensitive search
             else:
                 query[field] = dict()
                 query[field]['$in'] = form[field]

@@ -168,12 +168,9 @@ def main():
     hours = 0
     days = 0
 
-#     num_regex = 0
-
     if options.alertid:
         for o in options.alertid.split(','):
             query.append('id=%s' % o)
-            # num_regex += 1
 
     if options.environment:
         for o in options.environment.split(','):
@@ -186,7 +183,6 @@ def main():
     if options.resource:
         for o in options.resource.split(','):
             query.append('resource=%s' % o)
-            # num_regex += 1
 
     if options.severity:
         for o in options.severity.split(','):
@@ -200,7 +196,6 @@ def main():
     if options.event:
         for o in options.event.split(','):
             query.append('event=%s' % o)
-            # num_regex += 1
 
     if options.group:
         for o in options.group.split(','):
@@ -209,18 +204,11 @@ def main():
     if options.value:
         for o in options.value.split(','):
             query.append('value=%s' % o)
-            # num_regex += 1
 
     if options.text:
         for o in options.text.split(','):
             query.append('text=%s' % o)
-            # num_regex += 1
 
-#     if num_regex > 4:
-#         print "ERROR: Too many regexes in query (limit is 4 until v2.1.0)"
-#         # see https://jira.mongodb.org/browse/SERVER-969
-#         sys.exit(1)
-# 
     if options.sortby:
         query.append('sort-by=%s' % options.sortby)
 
