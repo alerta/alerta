@@ -15,7 +15,6 @@ import time
 import datetime
 import pymongo
 import urlparse
-import cgi, cgitb
 import logging
 import pytz
 import re
