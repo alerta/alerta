@@ -38,13 +38,11 @@ function getAlerts(service, filter, refresh) {
 
   $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&' + filter, function(data) {
 
-    $.each(data.response.alerts, function(key, val) {
-
       var sev_id = '#' + service;
 
-      val.severityCounts.normal += val.severityCounts.inform;
+      data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.inform;
 
-      $.each(val.severityCounts, function(sev, count) {
+      $.each(data.response.alerts.severityCounts, function(sev, count) {
         $(sev_id + "-" + sev).text(count);
 
         switch (count) {
@@ -54,13 +52,13 @@ function getAlerts(service, filter, refresh) {
 
       });
 
-        if (val.severityCounts.critical > 0) {
+        if (data.response.alerts.severityCounts.critical > 0) {
           scolor = 'red';
-        } else if (val.severityCounts.major > 0) {
+        } else if (data.response.alerts.severityCounts.major > 0) {
           scolor = 'orange';
-        } else if (val.severityCounts.minor > 0) {
+        } else if (data.response.alerts.severityCounts.minor > 0) {
           scolor = 'yellow';
-        } else if (val.severityCounts.warning > 0) {
+        } else if (data.response.alerts.severityCounts.warning > 0) {
           scolor = 'dodgerblue';
         } else {
           scolor = 'lime';
@@ -68,7 +66,7 @@ function getAlerts(service, filter, refresh) {
       $(sev_id + "-status").css('background-color',scolor);
 
       var rows ='';
-      $.each(val.alertDetails, function(i, ad) {  
+      $.each(data.response.alerts.alertDetails, function(i, ad) {
 
         var historydata = '<td colspan="2"><b>History </b>', graphsdata = tagsdata = '';
 
@@ -173,8 +171,6 @@ function getAlerts(service, filter, refresh) {
 
       $('#' + service + '-alerts').html(rows);
       $('#' + service + ' th').removeClass('loader');
-
-    });
 
     if (refresh) {
       timer = setTimeout(function() { getAlerts(service, filter, refresh); }, 120000);

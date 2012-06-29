@@ -18,7 +18,7 @@ import urllib2
 import operator
 import pytz
 
-__version__ = '1.1.0'
+__version__ = '1.2.0'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -294,7 +294,7 @@ def main():
     end = time.time()
 
     count = 0
-    for alert in response['alerts'][0]['alertDetails']: # FIXME - what's that [0] doing there???
+    for alert in response['alerts']['alertDetails']:
         alertid          = alert['id']
         correlatedEvents = alert.get('correlatedEvents', ['n/a'])
         createTime       = datetime.datetime.strptime(alert['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -412,13 +412,13 @@ def main():
         print
         print('Crit|Majr|Minr|Warn|Norm|Info|Dbug')
         print(
-            COLOR['CRITICAL'] + '%4d' % response['alerts'][0]['severityCounts']['critical'] + ENDC + ' ' +
-            COLOR['MAJOR']    + '%4d' % response['alerts'][0]['severityCounts']['major']    + ENDC + ' ' +
-            COLOR['MINOR']    + '%4d' % response['alerts'][0]['severityCounts']['minor']    + ENDC + ' ' +
-            COLOR['WARNING']  + '%4d' % response['alerts'][0]['severityCounts']['warning']  + ENDC + ' ' +
-            COLOR['NORMAL']   + '%4d' % response['alerts'][0]['severityCounts']['normal']   + ENDC + ' ' +
-            COLOR['INFORM']   + '%4d' % response['alerts'][0]['severityCounts']['inform']   + ENDC + ' ' +
-            COLOR['DEBUG']    + '%4d' % response['alerts'][0]['severityCounts']['debug']    + ENDC)
+            COLOR['CRITICAL'] + '%4d' % response['alerts']['severityCounts']['critical'] + ENDC + ' ' +
+            COLOR['MAJOR']    + '%4d' % response['alerts']['severityCounts']['major']    + ENDC + ' ' +
+            COLOR['MINOR']    + '%4d' % response['alerts']['severityCounts']['minor']    + ENDC + ' ' +
+            COLOR['WARNING']  + '%4d' % response['alerts']['severityCounts']['warning']  + ENDC + ' ' +
+            COLOR['NORMAL']   + '%4d' % response['alerts']['severityCounts']['normal']   + ENDC + ' ' +
+            COLOR['INFORM']   + '%4d' % response['alerts']['severityCounts']['inform']   + ENDC + ' ' +
+            COLOR['DEBUG']    + '%4d' % response['alerts']['severityCounts']['debug']    + ENDC)
 
     if not options.nofooter:
         now = datetime.datetime.utcnow()

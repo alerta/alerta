@@ -19,7 +19,7 @@ import cgi, cgitb
 import logging
 import re
 
-__version__ = '1.3.0'
+__version__ = '1.4.0'
 
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
 
@@ -124,7 +124,9 @@ def main():
         sortby = list()
         if 'sort-by' in form:
             for s in form['sort-by']:
-                sortby.append((s,-1)) # sort by newest first
+                sortby.append((s,1)) # sort by newest first
+        else:
+            sortby.append(('lastReceiveTime',1))
 
         # Init severity counts
         critical = 0
@@ -167,9 +169,7 @@ def main():
         }
         logging.info('severityCounts %s', sev)
 
-        a = { 'severityCounts': sev , 'alertDetails': list(alertDetails) }
-        status['response']['alerts'] = list()
-        status['response']['alerts'].append(a)
+        status['response']['alerts'] = { 'severityCounts': sev , 'alertDetails': list(alertDetails) }
 
         diff = time.time() - start
         status['response']['status'] = 'ok'
