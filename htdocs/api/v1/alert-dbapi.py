@@ -17,9 +17,10 @@ import pymongo
 import urlparse
 import cgi, cgitb
 import logging
+import pytz
 import re
 
-__version__ = '1.4.2'
+__version__ = '1.4.3'
 
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
 
@@ -107,7 +108,7 @@ def main():
 
         query = dict()
         for field in form:
-            if field in ['callback', '_', 'sort-by', 'hide-alert-details', 'limit']:
+            if field in ['callback', '_', 'sort-by', 'hide-alert-details', 'limit', 'from-date']:
                 continue
             if field == 'id':
                 query['_id'] = dict()
@@ -129,6 +130,13 @@ def main():
             limit = int(form['limit'][0])
         else:
             limit = 0
+
+        if 'from-date' in form:
+            from_date = datetime.datetime.strptime(form['from-date'][0], '%Y-%m-%dT%H:%M:%S.%fZ')
+            from_date = from_date.replace(tzinfo=pytz.utc)
+            to_date = datetime.datetime.utcnow()
+            to_date = to_date.replace(tzinfo=pytz.utc)
+            query['lastReceiveTime'] = {'$gte': from_date, '$lt': to_date }
 
         sortby = list()
         if 'sort-by' in form:

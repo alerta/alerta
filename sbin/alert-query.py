@@ -64,7 +64,7 @@ def main():
     parser = OptionParser(
                       version="%prog " + __version__, 
                       description="Alert database query tool - show alerts filtered by attributes",
-                      epilog="alert-query.py --color --env 'QA|REL' --group Puppet --count 10 --show all")
+                      epilog="alert-query.py --color --env QA,REL --group Puppet --count 10 --show all")
     parser.add_option("-m",
                       "--server",
                       dest="server",
@@ -77,15 +77,18 @@ def main():
                       "--mins",
                       type="int",
                       dest="minutes",
+                      default=0,
                       help="Show alerts for last <x> minutes")
     parser.add_option("--hours",
                       "--hrs",
                       type="int",
                       dest="hours",
+                      default=0,
                       help="Show alerts for last <x> hours")
     parser.add_option("--days",
                       type="int",
                       dest="days",
+                      default=0,
                       help="Show alerts for last <x> days")
     parser.add_option("-i",
                       "--id",
@@ -164,9 +167,13 @@ def main():
     API_URL = 'http://%s/alerta/api/v1/alerts' % server
 
     query = list()
-    minutes = 0
-    hours = 0
-    days = 0
+
+    if options.minutes or options.hours or options.days:
+        now = datetime.datetime.utcnow()
+        fromTime = now - datetime.timedelta(days=options.days, minutes=options.minutes+options.hours*60)
+        query.append('from-date=%s' % fromTime.replace(microsecond=0).isoformat() + ".%03dZ" % (fromTime.microsecond//1000))
+        now = now.replace(tzinfo=pytz.utc)
+        fromTime = fromTime.replace(tzinfo=pytz.utc)
 
     if options.alertid:
         for o in options.alertid.split(','):
@@ -231,12 +238,12 @@ def main():
         print "Alerta Report Tool"
         print "    database: %s" % server
         print "    timezone: %s" % user_tz
-        if minutes or hours or days:
-            print "    interval: %s - %s" % (start.astimezone(tz).strftime(DATE_FORMAT), end.astimezone(tz).strftime(DATE_FORMAT))
+        if options.minutes or options.hours or options.days:
+            print "    interval: %s - %s" % (fromTime.astimezone(tz).strftime(DATE_FORMAT), now.astimezone(tz).strftime(DATE_FORMAT))
         if options.show:
             print "        show: %s" % ', '.join(options.show)
         if options.sortby:
-            print "    sort by: %s" % options.sortby
+            print "     sort by: %s" % options.sortby
         if options.alertid:
             print "    alert id: ^%s" % options.alertid
         if options.environment:
