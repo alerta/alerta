@@ -160,6 +160,8 @@ def main():
                 alert['id'] = alert['_id']
                 del alert['_id']
                 alertDetails.append(alert)
+            if 'status' not in query and alert['status'] != 'OPEN':
+                continue
             if alert['severity'] == 'CRITICAL':
                 critical += 1
             elif alert['severity'] == 'MAJOR':
@@ -208,6 +210,11 @@ def main():
         error = alerts.update(query, { '$set': update }, safe=True)
         if error['ok'] == 1:
             status['response']['status'] = 'ok'
+
+        if 'status' in update:
+            updateTime = datetime.datetime.utcnow()
+            updateTime = updateTime.replace(tzinfo=pytz.utc)
+            alerts.update(query, { '$push': { "history": { "status": update['status'], "updateTime": updateTime } }})
 
         diff = time.time() - start
         status['response']['time'] = "%.3f" % diff

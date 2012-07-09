@@ -42,12 +42,10 @@
     <div class="container">
       
       <div align="right">
-        <button class="btn" id="toggle-INACTIVE" class="toggle-INACTIVE"><span><i class="icon-minus"></i> Hide</span><span class="initially-hidden"><i class="icon-plus"></i> Show</span> Inactives</button>
+        <button class="btn" id="toggle-ACK" class="toggle-ACK"><span><i class="icon-minus"></i> Hide</span><span class="initially-hidden"><i class="icon-plus"></i> Show</span> Acknowledged</button>
         <button class="btn" id="toggle-NORMAL" class="toggle-NORMAL"><span><i class="icon-minus"></i> Hide</span><span class="initially-hidden"><i class="icon-plus"></i> Show</span> Normals</button>
-        <!-- button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh</button -->
         <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh Now</button>
       </div>
-      <!-- div><a id="refresh-all" class="btn btn-success" href="#"><i class="icon-shopping-cart icon-white"></i> Refresh</a></div -->
 
       <div class="row show-grid">
         <div class="span12">
@@ -202,17 +200,17 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="Inactive" data-label="Inactive">
+            <table class="table table-bordered table-condensed summary" id="Acknowledged" data-label="Acknowledged">
               <thead>
-                <tr> <th colspan="6" id="Inactive-status">Inactive</th> </tr>
+                <tr> <th colspan="6" id="Acknowledged-status">Acknowledged</th> </tr>
               </thead>
               <tbody>
-                <tr id="Inactive-warnings" class="warnings">
-                  <td id="Inactive-critical">0</td>
-                  <td id="Inactive-major">0</td>
-                  <td id="Inactive-minor">0</td>
-                  <td id="Inactive-warning">0</td>
-                  <td id="Inactive-normal">0</td>
+                <tr id="Acknowledged-warnings" class="warnings">
+                  <td id="Acknowledged-critical">0</td>
+                  <td id="Acknowledged-major">0</td>
+                  <td id="Acknowledged-minor">0</td>
+                  <td id="Acknowledged-warning">0</td>
+                  <td id="Acknowledged-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -261,7 +259,7 @@
               Infrastructure - <span id="alert-details-caption">R2</span> alert details
             </caption>
             <thead>
-              <tr> <th></th><th>Severity</th><th>Last Receive Time</th><th>Dupl. Count</th><th>Resource</th><th>Event</th><th>Value</th><th>Text</th></tr> 
+              <tr> <th></th><th>Severity</th><th>Status</th><th>Last Receive Time</th><th>Dupl. Count</th><th>Resource</th><th>Event</th><th>Value</th><th>Text</th></tr> 
             </thead>
             <tbody id="Servers-alerts" class="serviceAlerts initially-hidden">
             </tbody>
@@ -281,7 +279,7 @@
             </tbody>
             <tbody id="Alerta-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="Inactive-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="Acknowledged-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="SLM-alerts" class="serviceAlerts initially-hidden">
             </tbody>
@@ -313,7 +311,7 @@
                          'Ganglia':  'group=Ganglia',
                          'Puppet':   'group=Puppet',
                          'Alerta':   'group=Alerta',
-                         'Inactive': 'status=INACTIVE',
+                         'Acknowledged': 'status=ACK',
                        };
 
         loadAlerts(services, true);

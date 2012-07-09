@@ -24,6 +24,11 @@ table.summary {
 	cursor: pointer;
 }
 
+.table#alert-details tbody tr:hover td,
+.table#alert-details tbody tr:hover th {
+  background-color: transparent;
+}
+
 .navbar-fixed-top .brand {
   padding-right: 0;
   padding-left: 0;
@@ -144,8 +149,12 @@ caption {
 	font-weight: bold;
 }
 
-.actives .INACTIVE {
+.acked .ACK {
 	display: none;
+}
+
+.table#alert-details tbody tr.ACK td {
+  background-color: rgba(255, 250, 240, 0.5);
 }
 
 .priority .NORMAL {
@@ -156,23 +165,3 @@ caption {
 	background: #fff;
 }
 
-/*
-.table tbody tr:hover td, .table tbody tr:hover th {
-  background-color: #f5f5f5;
-} */
-
-/* .table tbody tr:hover td {
-  background-color: rgba(255, 250, 240, 0.5);   
-}
-*/
-
-/* .table.summary tbody tr:hover td {
-  background-color: #f5f5f5;
-} */
-/*
-.table tbody tr:hover td, .table tbody tr:hover th {
-    background-color: transparent;
-}*/
-.table#alert-details tbody tr:hover td {
-  background-color: rgba(255, 250, 240, 0.5);
-}

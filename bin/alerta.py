@@ -104,11 +104,8 @@ class MessageHandler(object):
             alert['id'] = alert['_id']
             del alert['_id']
 
-            if alert.get('status', 'ACTIVE') == 'ACTIVE':
-                logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-                conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
-            else:
-                logging.info('%s : Suppress notification of inactive alert', alertid)
+            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
             logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
@@ -119,6 +116,7 @@ class MessageHandler(object):
             #                        severityCode, lastReceiveId, text, summary, value, tags and origin
             #                    2. set duplicate count to zero
             #                    3. push history
+
             alerts.update(
                 { "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
                 { '$set': { "event": alert['event'], "severity": alert['severity'], "severityCode": alert['severityCode'],
@@ -127,6 +125,31 @@ class MessageHandler(object):
                             "tags": alert['tags'], "repeat": False, "origin": alert['origin'], "thresholdInfo": alert['thresholdInfo'], "duplicateCount": 0 },
                   '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "event": alert['event'],
                              "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }}})
+
+            # Update alert status
+            status = None
+            if alert['severity'] == 'NORMAL':
+                status = 'CLOSED'
+            elif alert['severity'] == 'WARNING':
+                if previousSeverity in ['NORMAL']:
+                    status = 'OPEN'
+            elif alert['severity'] == 'MINOR':
+                if previousSeverity in ['NORMAL','WARNING']:
+                    status = 'OPEN'
+            elif alert['severity'] == 'MAJOR':
+                if previousSeverity in ['NORMAL','WARNING','MINOR']:
+                    status = 'OPEN'
+            elif alert['severity'] == 'CRITICAL':
+                if previousSeverity in ['NORMAL','WARNING','MINOR','MAJOR']:
+                    status = 'OPEN'
+
+            if status:
+                updateTime = datetime.datetime.utcnow()
+                updateTime = updateTime.replace(tzinfo=pytz.utc)
+                alerts.update(
+                    { "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
+                    { '$set': { "status": status },
+                      '$push': { "history": { "status": status, "updateTime": updateTime } }})
 
             # Forward alert to notify topic and logger queue
             alert = alerts.find_one({"lastReceiveId": alertid}, {"history": 0})
@@ -140,11 +163,8 @@ class MessageHandler(object):
             alert['id'] = alert['_id']
             del alert['_id']
 
-            if alert.get('status', 'ACTIVE') == 'ACTIVE':
-                logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-                conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
-            else:
-                logging.info('%s : Suppress notification of inactive alert', alertid)
+            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
             logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 
@@ -161,6 +181,7 @@ class MessageHandler(object):
             alert['expireTime']       = expireTime
             alert['previousSeverity'] = 'UNKNOWN'
             alert['repeat']           = False
+            alert['status']           = 'OPEN'
 
             alerts.insert(alert)
             alerts.update(
@@ -168,6 +189,13 @@ class MessageHandler(object):
                 { '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "event": alert['event'],
                              "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }},
                   '$set': { "duplicateCount": 0 }})
+
+            updateTime = datetime.datetime.utcnow()
+            updateTime = updateTime.replace(tzinfo=pytz.utc)
+            alerts.update(
+                { "resource": alert['resource'], "event": alert['event'] },
+                { '$set': { "status": alert['status'] },
+                  '$push': { "history": { "status": alert['status'], "updateTime": updateTime } }})
 
             # Forward alert to notify topic and logger queue
             alert = alerts.find_one({"_id": alertid}, {"_id": 0, "history": 0})
@@ -180,11 +208,8 @@ class MessageHandler(object):
 
             alert['id'] = alertid
 
-            if alert.get('status', 'ACTIVE') == 'ACTIVE':
-                logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-                conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
-            else:
-                logging.info('%s : Suppress notification of inactive alert', alertid)
+            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
             logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
 

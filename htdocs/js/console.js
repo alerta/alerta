@@ -73,17 +73,27 @@ function getAlerts(service, filter, refresh) {
         if (ad.history) {
           var reverseHistory = ad.history.reverse();
           $.each(reverseHistory, function (y, hist) {
-            historydata += '<hr/>' +
+            if (hist.event) {
+              historydata += '<hr/>' +
                           '<table class="table table-condensed table-striped">' +
                           '<tr><td><b>Event</b></td><td>' + hist.event + '</td></tr>' +
                           '<tr><td><b>Severity</b></td><td>' + sev2label(hist.severity) + '</td></tr>' +
                           '<tr><td><b>Alert ID</b></td><td>' + hist.id + '</td></tr>' +
-                          '<tr><td><b>Create time</b></td><td>' + date2str(hist.createTime) + '</td></tr>' +
-                          '<tr><td><b>Receive time</b></td><td>' + date2str(hist.receiveTime) + '</td></tr>' +
+                          '<tr><td><b>Create Time</b></td><td>' + date2str(hist.createTime) + '</td></tr>' +
+                          '<tr><td><b>Receive Time</b></td><td>' + date2str(hist.receiveTime) + '</td></tr>' +
                           '<tr><td><b>Text</b></td><td>' + hist.text + '</td></tr>' +
                           '<tr><td><b>Value</b></td><td>' + hist.value + '</td></tr>' +
                           '</table>' +
                         '';
+            }
+            if (hist.status) {
+              historydata += '<hr/>' +
+                          '<table class="table table-condensed table-striped">' +
+                          '<tr><td><b>Status</b></td><td><span class="label">' + hist.status + '</span></td></tr>' +
+                          '<tr><td><b>Update Time</b></td><td>' + date2str(hist.updateTime) + '</td></tr>' +
+                          '</table>' +
+                        '';
+            }
           });
           historydata += '</td>'
         }
@@ -111,27 +121,25 @@ function getAlerts(service, filter, refresh) {
           default: label='label-success';
         }
 
-        var alertstatus = '';
-        if (ad.status == 'INACTIVE') {
-          ad.text = '[inactive] ' + ad.text;
-          alertstatus = 'INACTIVE';
-        }
-
-        rows += '<tr class="' + service + ' latest ' + ad.severity + ' ' + alertstatus + '">' +
+        rows += '<tr class="' + service + ' latest ' + ad.severity + ' ' + ad.status + '">' +
                   '<td class="ad-more"><a id="' + service + 'details' + i + '" class="show-details">' +
                     '<span class="show-d"><i class="icon-chevron-up icon-chevron-down"></i></span></a></td>' +
                   '<td class="ad-sev-td">' + sev2label(ad.severity) + '</td>' +
+                  '<td class="ad-stat-td"><span class="label">' + ad.status + '</span></td>' +
                   '<td>'+ date2str(ad.lastReceiveTime) + '</td>' +
                   '<td>' + ad.duplicateCount + '</td>' +
                   '<td>' + ad.resource + '</td>' +
                   '<td>' + ad.event + '</td>' +
                   '<td>' + ad.value + '</td>' +
-                  '<td class="alert-text">' + ad.text +
-                    '<a id="' + ad.id + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>';
-        if (ad.status != 'INACTIVE') {
-          rows +=     '<a id="' + ad.id + '" class="inactive-alert" rel="tooltip" title="Make Inactive"><i class="icon-volume-off"></i></a>';
+                  '<td class="alert-text">' + ad.text;
+        if (ad.status == 'OPEN') {
+          rows +=     '<a id="' + ad.id + '" class="ack-alert" rel="tooltip" title="Acknowledge"><i class="icon-star-empty"></i></a>';
+        }
+        if (ad.status == 'ACK') {
+          rows +=     '<a id="' + ad.id + '" class="unack-alert" rel="tooltip" title="Unacknowledge"><i class="icon-star"></i></a>';
         }
         rows += '<a id="' + ad.id + '" href="mailto:?subject=' + ad.summary + '&body=' + ad.text + '%0D%0A%0D%0ASee http://' + document.domain + '/alerta/details.php?id=' + ad.id + '" class="email-alert" rel="tooltip" title="Email Alert" target="_blank"><i class="icon-envelope"></i></a>';
+        rows +=  '<a id="' + ad.id + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>';
         rows +=  '</td>' +
                 '</tr>' +
                 '<tr id="' + service + 'details' + i +'data" class="initially-hidden">' +
@@ -149,7 +157,8 @@ function getAlerts(service, filter, refresh) {
                         '<tr><td><b>Service</b></td><td>' + ad.service + '</td></tr>' +
                         '<tr><td><b>Event</b></td><td>' + ad.event + '</td></tr>' +
                         '<tr><td><b>Group</b></td><td>' + ad.group + '</td></tr>' +
-                        '<tr><td><b>State</b></td><td>' + sev2label(ad.previousSeverity) + ' -> ' + sev2label(ad.severity) + '</td></tr>' +
+                        '<tr><td><b>Severity</b></td><td>' + sev2label(ad.previousSeverity) + ' -> ' + sev2label(ad.severity) + '</td></tr>' +
+                        '<tr><td><b>Status</b></td><td><span class="label">' + ad.status + '</span></td></tr>' +
                         '<tr><td><b>Value</b></td><td>' + ad.value + '</td></tr>' +
                         '<tr><td><b>Text</b></td><td>' + ad.text + '</td></tr>' +
                         '<tr><td><b>Threshold Info</b></td><td>' + ad.thresholdInfo + '</td></tr>' +
@@ -160,7 +169,7 @@ function getAlerts(service, filter, refresh) {
                         '<tr><td><b>Origin</b></td><td>' + ad.origin + '</td></tr>' +
                         '<tr><td><b>Tags</b></td><td>' + tagsdata + '</td></tr>' +
                         '<tr><td><b>Graphs</b></td><td>' + graphsdata + '</td></tr>' +
-                        '<tr><td><a class="btn" href="' + ad.moreInfo + '" target="_blank">More Info</td></tr>' +
+                        '<tr><td><b>More Info</b></td><td><a href="' + ad.moreInfo + '" target="_blank">' + ad.moreInfo + '</a></td></tr>' +
                         '</table>' +
                       '</td>' +
                     historydata +
@@ -188,11 +197,11 @@ $(document).ready(function() {
 
     $('a[rel=tooltip]').tooltip();
 
-    $('#toggle-INACTIVE').click(function() {
-      $('#alert-details').toggleClass('actives');
-      $('.open-details').click();
-      $(this).find('span').toggle();
-    });
+   $('#toggle-ACK').click(function() {
+     $('#alert-details').toggleClass('acked');
+     $('.open-details').click();
+     $(this).find('span').toggle();
+   });
 
     $('#toggle-NORMAL').click(function() {
       $('#alert-details').toggleClass('priority');
@@ -225,16 +234,21 @@ $(document).ready(function() {
       }
     });
 
-    $('tbody').on('click', '.inactive-alert', function() {
-      if (confirm('IMPORTANT: Making this alert inactive prevents any future updates '
-                + 'of this alert from triggering external notifications.\n\n'
-                + 'Cancel to return to the console or OK to make inactive.')) {
+    $('tbody').on('click', '.ack-alert', function() {
         $.ajax({
           type: 'PUT',
           url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
-          data: JSON.stringify({ status: 'INACTIVE' })
+          data: JSON.stringify({ status: 'ACK' })
         });
-        $(this).parent().prepend('[inactive] ');
-      }
+        $(this).parent().parent().find('.ad-stat-td').html('<span class="label">ACK</td>');
+    });
+
+    $('tbody').on('click', '.unack-alert', function() {
+        $.ajax({
+          type: 'PUT',
+          url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id,
+          data: JSON.stringify({ status: 'OPEN' })
+        });
+        $(this).parent().parent().find('.ad-stat-td').html('<span class="label">OPEN</td>');
     });
 });
