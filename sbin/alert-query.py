@@ -126,6 +126,9 @@ def main():
                       "--value",
                       dest="value",
                       help="Event value eg. 100%, Down, PingFail, 55tps, ORA-1664")
+    parser.add_option("-T",
+                      "--tags",
+                      dest="tags")
     parser.add_option("-t",
                       "--text",
                       dest="text")
@@ -218,6 +221,10 @@ def main():
     if options.value:
         for o in options.value.split(','):
             query.append('value=%s' % o)
+
+    if options.tags:
+        for o in options.tags.split(','):
+            query.append('tags=%s' % o)
 
     if options.text:
         for o in options.text.split(','):
