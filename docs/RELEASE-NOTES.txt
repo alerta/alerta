@@ -1,6 +1,22 @@
 Release Notes
 =============
 
+ALerta version 1.1.5
+--------------------
+
+* Replace ACTIVE/INACTIVE with OPEN/ACK/CLOSE
+* Add Status column to alert console
+* Ack'ed alerts are lighter shade
+* Add alert share link to console
+* Bug fix SNMP trap variable substitution
+* Add email icon to alert console
+* Link back to alert console from emails
+* Times now accurate to milliseconds
+* Show all alerts for a resource
+* Alert query CLI now uses REST API
+* Minor bug fix to alert API response
+* Alert API response be date range or limited
+
 Alerta version 1.1.4
 --------------------
 
