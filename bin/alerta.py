@@ -19,7 +19,7 @@ import pytz
 import logging
 import re
 
-__version__ = '1.3.0'
+__version__ = '1.4.0'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound

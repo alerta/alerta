@@ -8,4 +8,4 @@ Version 2.0
 ===========
 - sort-able and search-able alert console
 - add event correlation using ESPER or some such tool
-- divert alerts and make inactive based on suppression rules
+- divert alerts and make blackout based on suppression rules

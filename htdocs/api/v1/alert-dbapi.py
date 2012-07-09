@@ -19,7 +19,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.4.3'
+__version__ = '1.5.0'
 
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
 
