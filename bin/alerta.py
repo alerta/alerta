@@ -19,7 +19,7 @@ import pytz
 import logging
 import re
 
-__version__ = '1.4.0'
+__version__ = '1.4.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -181,7 +181,10 @@ class MessageHandler(object):
             alert['expireTime']       = expireTime
             alert['previousSeverity'] = 'UNKNOWN'
             alert['repeat']           = False
-            alert['status']           = 'OPEN'
+            if alert['severity'] != 'NORMAL':
+                alert['status'] = 'OPEN'
+            else:
+                alert['status'] = 'CLOSED'
 
             alerts.insert(alert)
             alerts.update(
