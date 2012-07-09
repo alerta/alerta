@@ -304,14 +304,15 @@
         var services = { 'Servers':  'environment=INFRA&service=Servers',
                          'Network':  'environment=INFRA&service=Network',
                          'EC2':      'environment=INFRA&service=EC2',
+                         'Puppet':   'group=Puppet',
                          'OS':       'group=OS',
                          'Database': 'group=Database',
                          'Web':      'group=Web',
-                         'SLM':      'group=SLM',
                          'Ganglia':  'group=Ganglia',
-                         'Puppet':   'group=Puppet',
                          'Alerta':   'group=Alerta',
                          'Acknowledged': 'status=ACK',
+                         'SLM':      'group=SLM',
+                         'Reboot':   'event=ServerReboot',
                        };
 
         loadAlerts(services, true);
