@@ -19,7 +19,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.5.0'
+__version__ = '1.5.1'
 
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
 
@@ -71,7 +71,7 @@ def main():
     mgmt = db.status
     query = dict()
 
-    m = re.search(r'GET /alerta/api/v1/alerts/alert/(?P<id>\S+)$', request)
+    m = re.search(r'GET /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
     if m:
         query['_id'] = m.group('id')
 
@@ -201,7 +201,7 @@ def main():
             { '$inc': { "count": 1, "totalTime": diff}},
             True)
 
-    m = re.search(r'PUT /alerta/api/v1/alerts/alert/(?P<id>\S+)$', request)
+    m = re.search(r'PUT /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
     if m:
         query['_id'] = m.group('id')
         update = data
@@ -215,6 +215,26 @@ def main():
             updateTime = datetime.datetime.utcnow()
             updateTime = updateTime.replace(tzinfo=pytz.utc)
             alerts.update(query, { '$push': { "history": { "status": update['status'], "updateTime": updateTime } }})
+
+        diff = time.time() - start
+        status['response']['time'] = "%.3f" % diff
+        status['response']['localTime'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+        diff = int(diff * 1000) # management status needs time in milliseconds
+        mgmt.update(
+            { "group": "requests", "name": "update", "type": "timer", "title": "PUT requests", "description": "Requests to update alerts via the API" },
+            { '$inc': { "count": 1, "totalTime": diff}},
+            True)
+
+    m = re.search(r'PUT /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)/tag$', request)
+    if m:
+        query['_id'] = m.group('id')
+        tag = data
+
+        logging.info('MongoDB TAG -> alerts.update(%s, { $push: %s })', query, tag)
+        error = alerts.update(query, { '$push': tag }, safe=True)
+        if error['ok'] == 1:
+            status['response']['status'] = 'ok'
 
         diff = time.time() - start
         status['response']['time'] = "%.3f" % diff

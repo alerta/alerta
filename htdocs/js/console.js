@@ -139,6 +139,7 @@ function getAlerts(service, filter, refresh) {
           rows +=     '<a id="' + ad.id + '" class="unack-alert" rel="tooltip" title="Unacknowledge"><i class="icon-star"></i></a>';
         }
         rows += '<a id="' + ad.id + '" href="mailto:?subject=' + ad.summary + '&body=' + ad.text + '%0D%0A%0D%0ASee http://' + document.domain + '/alerta/details.php?id=' + ad.id + '" class="email-alert" rel="tooltip" title="Email Alert" target="_blank"><i class="icon-envelope"></i></a>';
+        rows +=  '<a id="' + ad.id + '" class="tag-alert" rel="tooltip" title="Tag Alert"><i class="icon-tags"></i></a>';
         rows +=  '<a id="' + ad.id + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>';
         rows +=  '</td>' +
                 '</tr>' +
@@ -251,4 +252,16 @@ $(document).ready(function() {
         });
         $(this).parent().parent().find('.ad-stat-td').html('<span class="label">OPEN</td>');
     });
+
+    $('tbody').on('click', '.tag-alert', function() {
+      var tag = prompt("Enter tag eg. london, location:london, datacentre:location=london");
+      if (tag != null && tag != "") {
+        $.ajax({
+          type: 'PUT',
+          url: 'http://' + document.domain + '/alerta/api/v1/alerts/alert/' + this.id + '/tag',
+          data: JSON.stringify({ tags: tag })
+        });
+      }
+    });
+
 });
