@@ -18,7 +18,7 @@ import urllib2
 import operator
 import pytz
 
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -229,6 +229,9 @@ def main():
     if options.limit:
         query.append('limit=%s' % options.limit)
 
+    if options.show == ['counts']:
+        query.append('hide-alert-details=true')
+
     url = "%s?%s" % (API_URL, '&'.join(query))
 
     if options.dry_run:
@@ -326,7 +329,11 @@ def main():
         value            = alert['value']
 
         duplicateCount   = int(alert['duplicateCount'])
-        expireTime       = alert.get('expireTime', 'never')
+        if alert['expireTime'] is not None:
+            expireTime   = datetime.datetime.strptime(alert['expireTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            expireTime   = expireTime.replace(tzinfo=pytz.utc)
+        else:
+            expireTime   = None
         lastReceiveId    = alert['lastReceiveId']
         lastReceiveTime  = datetime.datetime.strptime(alert['lastReceiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
         lastReceiveTime  = lastReceiveTime.replace(tzinfo=pytz.utc)
@@ -377,6 +384,9 @@ def main():
             print(line_color + '      time received | %s' % (receiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
             print(line_color + '      last received | %s' % (lastReceiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
             print(line_color + '      latency       | %sms' % (latency) + end_color)
+            print(line_color + '      timeout       | %ss' % (timeout) + end_color)
+            if expireTime:
+                print(line_color + '      expire time   | %s' % (expireTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
 
         if 'details' in options.show:
             print(line_color + '          alert id     | %s' % (alertid) + end_color)
@@ -396,23 +406,29 @@ def main():
 
         if 'history' in options.show:
             for hist in alert['history']:
-                alertid     = hist['id']
-                createTime  = datetime.datetime.strptime(hist['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-                createTime  = createTime.replace(tzinfo=pytz.utc)
-                event       = hist['event']
-                receiveTime = datetime.datetime.strptime(hist['receiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-                receiveTime = receiveTime.replace(tzinfo=pytz.utc)
-                severity    = hist['severity']
-                value       = hist['value']
-                text        = hist['text']
-                print(line_color + '/ %s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
-                    receiveTime.astimezone(tz).strftime(DATE_FORMAT),
-                    SEV[severity],
-                    resource.split('.')[-1],
-                    group,
-                    event,
-                    value) + end_color)
-                print(line_color + '\   |%s' % (text) + end_color)
+                if 'event' in hist:
+                    alertid     = hist['id']
+                    createTime  = datetime.datetime.strptime(hist['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                    createTime  = createTime.replace(tzinfo=pytz.utc)
+                    event       = hist['event']
+                    receiveTime = datetime.datetime.strptime(hist['receiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                    receiveTime = receiveTime.replace(tzinfo=pytz.utc)
+                    severity    = hist['severity']
+                    value       = hist['value']
+                    text        = hist['text']
+                    print(line_color + '/ %s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
+                        receiveTime.astimezone(tz).strftime(DATE_FORMAT),
+                        SEV[severity],
+                        resource.split('.')[-1],
+                        group,
+                        event,
+                        value) + end_color)
+                    print(line_color + '\   |%s' % (text) + end_color)
+                if 'status' in hist:
+                    updateTime  = datetime.datetime.strptime(hist['updateTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                    updateTime  = updateTime.replace(tzinfo=pytz.utc)
+                    status      = hist['status']
+                    print(line_color + '+ %s|%s' % (updateTime.astimezone(tz).strftime(DATE_FORMAT), status) + end_color)
 
     if 'counts' in options.show:
         print
