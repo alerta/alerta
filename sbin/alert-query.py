@@ -18,7 +18,7 @@ import urllib2
 import operator
 import pytz
 
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -111,6 +111,9 @@ def main():
                       "--severity",
                       dest="severity",
                       help="Severity or range eg. major, warning..critical")
+    parser.add_option( "--status",
+                      dest="status",
+                      help="Status eg. OPEN, ACK, CLOSED")
     parser.add_option("-e",
                       "--event",
                       dest="event",
@@ -200,6 +203,10 @@ def main():
 #         else:
 #             query['severityCode'] = SEVERITY_CODE[options.severity.upper()]
 
+    if options.status:
+        for o in options.status.split(','):
+            query.append('status=%s' % o)
+
     if options.event:
         for o in options.event.split(','):
             query.append('event=%s' % o)
@@ -254,6 +261,8 @@ def main():
             print "    resource: %s" % options.resource
         if options.severity:
             print "    severity: %s" % options.severity
+        if options.status:
+            print "      status: %s" % options.status
         if options.event:
             print "       event: %s" % options.event
         if options.group:
@@ -271,8 +280,8 @@ def main():
         options.show.append('details')
     elif 'all' in options.show:
         options.show.append('text')
-        options.show.append('times')
         options.show.append('attributes')
+        options.show.append('times')
         options.show.append('details')
         options.show.append('tags')
 
@@ -307,6 +316,7 @@ def main():
         service          = alert['service']
         severity         = alert['severity']
         severityCode     = int(alert['severityCode'])
+        status           = alert['status']
         summary          = alert['summary']
         tags             = alert['tags']
         text             = alert['text']
@@ -354,11 +364,9 @@ def main():
         if 'text' in options.show:
             print(line_color + '   |%s' % (text) + end_color)
 
-        if 'state' in options.show:
-            print(line_color + '    state | %s -> %s' % (previousSeverity, severity) + end_color)
-
         if 'attributes' in options.show:
-            print(line_color + '    severity | %s (%s)' % (severity, severityCode) + end_color)
+            print(line_color + '    severity | %s -> %s (%s)' % (previousSeverity, severity, severityCode) + end_color)
+            print(line_color + '    status   | %s' % (status) + end_color)
             print(line_color + '    resource | %s' % (resource) + end_color)
             print(line_color + '    group    | %s' % (group) + end_color)
             print(line_color + '    event    | %s' % (event) + end_color)
