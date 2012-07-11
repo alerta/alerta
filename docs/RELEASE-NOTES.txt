@@ -1,7 +1,16 @@
 Release Notes
 =============
 
-ALerta version 1.1.5
+Alerta version 1.1.6
+--------------------
+
+* Fix alert status for new NORMAL alerts
+* Enhancements to alert-query CLI tool
+* Fix ServerReboot in alert console
+* Users can now tag alerts in the console
+* Add drop down for date range filtering
+
+Alerta version 1.1.5
 --------------------
 
 * Replace ACTIVE/INACTIVE with OPEN/ACK/CLOSE
