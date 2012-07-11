@@ -69,6 +69,10 @@ table.summary {
   background-color: #ccc;
 }
 
+#from-date-select {
+  width: 150px;
+}
+
 .loader {
 	background-image: url(../img/loading.gif);
 	background-position: right top;

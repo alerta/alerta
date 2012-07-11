@@ -1,12 +1,22 @@
 // Fill-in Alert Details Template
 var logger = 0,
+    fromDate = "",
     timer;
 
-function loadAlerts(services, refresh) {
+function updateFromDate(seconds) {
+  if (seconds > 0) {
+    fromDate = '&from-date=' + new Date(new Date() - seconds * 1000).toISOString();
+  } else {
+    fromDate = '';
+  }
+  $('#refresh-all').trigger('click');
+}
+
+function loadAlerts(services, fromDate, refresh) {
   var delayer = 0;
   $.each(services, function(service, filter) {
     setTimeout(function() { 
-      getAlerts(service, filter, refresh);
+      getAlerts(service, filter + fromDate, refresh);
     }, delayer);
     delayer += 100;
   });
@@ -183,7 +193,7 @@ function getAlerts(service, filter, refresh) {
       $('#' + service + ' th').removeClass('loader');
 
     if (refresh) {
-      timer = setTimeout(function() { getAlerts(service, filter, refresh); }, 120000);
+      timer = setTimeout(function() { getAlerts(service, filter + fromDate, refresh); }, 120000);
     }
   });
 };
