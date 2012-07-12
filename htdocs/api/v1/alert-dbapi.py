@@ -19,7 +19,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.5.2'
+__version__ = '1.6.0'
 
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
 
@@ -147,7 +147,11 @@ def main():
         else:
             sortby.append(('lastReceiveTime',-1))
 
-        # Init severity counts
+        # Init status and severity counts
+        total = 0
+        open = 0
+        ack = 0
+        closed = 0
         critical = 0
         major = 0
         minor = 0
@@ -163,6 +167,16 @@ def main():
                 alert['id'] = alert['_id']
                 del alert['_id']
                 alertDetails.append(alert)
+
+            total += 1
+            if alert['status'] == 'OPEN':
+                open += 1
+            if alert['status'] == 'ACK':
+                ack += 1
+            if alert['status'] == 'CLOSED':
+                closed += 1
+
+            # Only OPEN alerts contribute to the severity counts
             if 'status' not in query and alert['status'] != 'OPEN':
                 continue
             if alert['severity'] == 'CRITICAL':
@@ -180,6 +194,12 @@ def main():
             elif alert['severity'] == 'DEBUG':
                 debug += 1
 
+        stat = { 'open': open,
+                   'ack': ack,
+                   'closed': closed
+        }
+        logging.info('statusCounts %s', stat)
+
         sev = { 'critical': critical,
                 'major': major,
                 'minor': minor,
@@ -190,12 +210,12 @@ def main():
         }
         logging.info('severityCounts %s', sev)
 
-        status['response']['alerts'] = { 'severityCounts': sev , 'alertDetails': list(alertDetails) }
+        status['response']['alerts'] = { 'statusCounts': stat, 'severityCounts': sev, 'alertDetails': list(alertDetails) }
 
         diff = time.time() - start
         status['response']['status'] = 'ok'
         status['response']['time'] = "%.3f" % diff
-        status['response']['total'] = critical + major + minor + warning + normal + inform + debug
+        status['response']['total'] = total
         status['response']['localTime'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
         diff = int(diff * 1000) # management status needs time in milliseconds
