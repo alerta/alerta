@@ -12,6 +12,12 @@ function updateFromDate(seconds) {
   $('#refresh-all').trigger('click');
 }
 
+function loadStatus(statusfilter, refresh) {
+    setTimeout(function() {
+      getStatus(statusfilter, refresh);
+    }, 0);
+}
+
 function loadAlerts(services, refresh) {
   var delayer = 0;
   $.each(services, function(service, filter) {
@@ -40,6 +46,19 @@ function date2str(datetime) {
         var d = new Date(datetime);
         return d.toLocaleString();
 }
+
+function getStatus(statusfilter, refresh) {
+
+  $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&' + statusfilter + fromDate, function(data) {
+
+    $.each(data.response.alerts.statusCounts, function(stat, count) {
+      $("#alert-" + stat).text(count);
+    });
+    if (refresh) {
+      timer = setTimeout(function() { getStatus(statusfilter, refresh); }, 120000);
+    }
+  });
+};
 
 // Update Alert Summaries
 function getAlerts(service, filter, refresh) {

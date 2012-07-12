@@ -41,6 +41,16 @@
 
     <div class="container">
       <div align="right">
+        <table class="table table-bordered table-condensed span3" id="status-counts">
+          <tr id="Alert-status" class="status">
+            <td><span class="label">OPEN</span></td>
+            <td id="alert-open">0</td>
+            <td><span class="label">ACK</span></td>
+            <td id="alert-ack">0</td>
+            <td><span class="label">CLOSED</span></td>
+            <td id="alert-closed">0</td>
+          </tr>
+        </table>
         <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)">
           <option value="0">All alerts</option>
           <option value="120">Last 2 minutes</option>
@@ -308,6 +318,7 @@
       $(document).ready(function() {
 
         var env = "STAGE";
+        var statusfilter = 'hide-alert-details=true&environment='+env;
         var services = { 'R2':              'environment='+env+'&service=R2',
                          'Discussion':      'environment='+env+'&service=Discussion',
                          'ContentAPI':      'environment='+env+'&service=ContentAPI',
@@ -321,9 +332,11 @@
                          'EC2':             'environment='+env+'&service=EC2',
                          'Network':         'environment='+env+'&service=Network' };
 
+        loadStatus(statusfilter, true);
         loadAlerts(services, true);
 
         $('#refresh-all').click(function() {
+          loadStatus(statusfilter, false);
           loadAlerts(services, false)
         });
       });
