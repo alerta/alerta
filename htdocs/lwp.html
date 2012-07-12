@@ -318,10 +318,10 @@
                          'Mutualisation':   'environment='+env+'&service=Mutualisation',
                          'Network':         'environment='+env+'&service=Network' };
 
-        loadAlerts(services, fromDate, fromDate, true);
+        loadAlerts(services, true);
 
         $('#refresh-all').click(function() {
-          loadAlerts(services, fromDate, fromDate, false)
+          loadAlerts(services, false)
         });
       });
     </script>

@@ -322,10 +322,10 @@
                          'Reboot':   'event=ServerReboot',
                        };
 
-        loadAlerts(services, fromDate, true);
+        loadAlerts(services, true);
 
         $('#refresh-all').click(function() {
-          loadAlerts(services, fromDate, false)
+          loadAlerts(services, false)
         });
       });
     </script>

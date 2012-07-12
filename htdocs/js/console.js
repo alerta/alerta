@@ -12,11 +12,11 @@ function updateFromDate(seconds) {
   $('#refresh-all').trigger('click');
 }
 
-function loadAlerts(services, fromDate, refresh) {
+function loadAlerts(services, refresh) {
   var delayer = 0;
   $.each(services, function(service, filter) {
     setTimeout(function() { 
-      getAlerts(service, filter + fromDate, refresh);
+      getAlerts(service, filter, refresh);
     }, delayer);
     delayer += 100;
   });
@@ -46,7 +46,7 @@ function getAlerts(service, filter, refresh) {
 
   $('#' + service +' th').addClass('loader');
 
-  $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&' + filter, function(data) {
+  $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&' + filter + fromDate, function(data) {
 
       var sev_id = '#' + service;
 
@@ -193,7 +193,7 @@ function getAlerts(service, filter, refresh) {
       $('#' + service + ' th').removeClass('loader');
 
     if (refresh) {
-      timer = setTimeout(function() { getAlerts(service, filter + fromDate, refresh); }, 120000);
+      timer = setTimeout(function() { getAlerts(service, filter, refresh); }, 120000);
     }
   });
 };
