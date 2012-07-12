@@ -19,7 +19,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
 
@@ -140,9 +140,12 @@ def main():
         sortby = list()
         if 'sort-by' in form:
             for s in form['sort-by']:
-                sortby.append((s,1)) # sort by newest first
+                if s in ['createTime', 'receiveTime', 'lastReceiveTime']:
+                    sortby.append((s,-1)) # sort by newest first
+                else:
+                    sortby.append((s,1)) # sort by newest first
         else:
-            sortby.append(('lastReceiveTime',1))
+            sortby.append(('lastReceiveTime',-1))
 
         # Init severity counts
         critical = 0
