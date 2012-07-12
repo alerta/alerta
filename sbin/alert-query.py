@@ -140,7 +140,9 @@ def main():
     parser.add_option("-o",
                       "--orderby",
                       "--sortby",
+                      "--sort-by",
                       dest="sortby",
+                      default='lastReceiveTime',
                       help="Sort by attribute (default: createTime)")
     parser.add_option("-c",
                       "--count",
@@ -310,8 +312,13 @@ def main():
         sys.exit(1)
     end = time.time()
 
+    if options.sortby in ['createTime', 'receiveTime', 'lastReceiveTime']:
+        alertDetails = reversed(response['alerts']['alertDetails'])
+    else:
+        alertDetails = response['alerts']['alertDetails']
+
     count = 0
-    for alert in response['alerts']['alertDetails']:
+    for alert in alertDetails:
         alertid          = alert['id']
         correlatedEvents = alert.get('correlatedEvents', ['n/a'])
         createTime       = datetime.datetime.strptime(alert['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -366,10 +373,12 @@ def main():
         if 'summary' in options.show:
             print(line_color + '%s' % summary + end_color)
         else:
-            print(line_color + '%s|%s|%s|%5d|%-18s|%12s|%16s|%12s' % (alertid[0:8],
+            print(line_color + '%s|%s|%s|%5d|%-5s|%-10s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
                 displayTime.astimezone(tz).strftime(DATE_FORMAT),
                 SEV[severity],
                 duplicateCount,
+                environment,
+                service,
                 resource.split('.')[-1],
                 group,
                 event,
