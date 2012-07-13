@@ -21,7 +21,7 @@ import logging
 import uuid
 import re
 
-__version__ = '1.6.1'
+__version__ = '1.6.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -87,9 +87,6 @@ def get_metrics(env,svc):
         return
 
     logging.info('%s metrics retreived at %s local time', response['total'], response['localTime'])
-
-    host_info = {}
-    host_metrics = {}
 
     hosts = [host for host in response['hosts']]
     for h in hosts:
@@ -176,6 +173,11 @@ def main():
     rules_mod_time = os.path.getmtime(RULESFILE)
 
     while True:
+
+        # Zero-out metric store
+        host_info = {}
+        host_metrics = {}
+
         # Get metric data for all environments and services
         for env in ENVIRONMENTS:
             for svc in SERVICES:
@@ -301,7 +303,6 @@ def main():
                             alert['tags'].append("location:"+host_info[h]['location'])
                             alert['tags'].append("cluster:"+host_info[h]['cluster'])
                             alert['tags'].append("os:"+host_metrics[h]['os_name']['value'].lower())
-                            alert['tags'].append("os_distrib:" + host_metrics[h]['os_distrib']['value'].split()[0])
 
                             alert['graphs']           = list()
                             for g in r['graphs']:
