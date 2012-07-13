@@ -21,13 +21,13 @@ import logging
 import uuid
 import re
 
-__version__ = '1.6.0'
+__version__ = '1.6.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
-API_SERVER = 'ganglia.gul3.gnl'
+API_SERVER = 'ganglia.guprod.gnl'
 
 RULESFILE = '/opt/alerta/conf/alert-ganglia.yaml'
 LOGFILE = '/var/log/alerta/alert-ganglia.log'
