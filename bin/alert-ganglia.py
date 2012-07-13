@@ -5,9 +5,6 @@
 #
 ########################################
 
-# TODO
-# 1. query for cluster metrics so can alert off them too
-
 import os
 import sys
 import optparse
@@ -24,16 +21,13 @@ import logging
 import uuid
 import re
 
-__version__ = '1.5.4'
+__version__ = '1.6.0'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
-API_SERVER = 'ganglia.guprod.gnl:80'
-API_VERSION = 'latest'
-# METRIC_API = 'http://%s/ganglia/api/%s/metric-data' % (API_SERVER, API_VERSION)
-METRIC_API = 'http://%s/ganglia/api/snapshot.py' % (API_SERVER)
+API_SERVER = 'ganglia.guprod.gnl'
 
 RULESFILE = '/opt/alerta/conf/alert-ganglia.yaml'
 LOGFILE = '/var/log/alerta/alert-ganglia.log'
@@ -53,8 +47,6 @@ SEVERITY_CODE = {
 _check_rate   = 120             # Check rate of alerts
 
 # Global variables
-environment = None
-
 host_info = dict()
 host_metrics = dict()
 rules = dict()
@@ -62,6 +54,10 @@ rules = dict()
 currentCount  = dict()
 currentState  = dict()
 previousSeverity = dict()
+
+# XXX - Replace this with /ganglia/api/v1/grids? API query
+ENVIRONMENTS = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'DEV', 'STAGE', 'LWP', 'INFRA' ]
+SERVICES = [ 'ContentAPI', 'Discussion', 'EC2', 'FlexibleContent', 'Identity', 'MicroApp', 'Mutual', 'R1', 'R2', 'SharedSvcs', 'Soulmates', 'SLM' ]
 
 # Convert string to number
 def num(value):
@@ -74,28 +70,28 @@ def num(value):
     except:
         return value
 
-# Query Ganglia Snapshot API for metric data
-def get_metrics():
-    global _refresh_rate, environment, host_info, host_metrics
+# Query Ganglia metric API
+def get_metrics(env,svc):
+    global host_info, host_metrics
 
     now = time.time()
 
-    url = "%s?environment=%s" % (METRIC_API, environment)
+    url = "http://%s/ganglia-%s-%s/api/v1/metrics" % (API_SERVER, env, svc)
     logging.info('Getting metrics from %s', url)
 
     try:
         output = urllib2.urlopen(url).read()
-        response = json.loads(output)
+        response = json.loads(output)['response']
     except urllib2.URLError, e:
-        logging.error('Could not retrieve data from %s - %s', url, e)
+        logging.error('Could not retrieve data and/or parse metric data from %s - %s', url, e)
         return
 
-    logging.info('Snapshot taken at %s', response['response']['localTime'])
+    logging.info('%s metrics retreived at %s local time', response['total'], response['localTime'])
 
     host_info = {}
     host_metrics = {}
 
-    hosts = [host for host in response['response']['hosts']]
+    hosts = [host for host in response['hosts']]
     for h in hosts:
         host_info[h['host']] = dict()
         host_info[h['host']] = {
@@ -111,9 +107,7 @@ def get_metrics():
 
         host_metrics[h['host']] = dict()
 
-    # logging.debug('%s', json.dumps(host_info))
-
-    metrics = [metric for metric in response['response']['metrics'] if metric.has_key('value') and (metric['slope'] == u'both' or metric['slope'] == u'zero' or metric['units'] == u'timestamp')]
+    metrics = [metric for metric in response['metrics'] if metric.has_key('value')]
     for m in metrics:
         host_metrics[m['host']][m['metric']] = {
             'id':          m['id'],
@@ -125,16 +119,13 @@ def get_metrics():
             'value':       num(m['value']),
             'age':         m['age'],
             'type':        'TBC',
-            'slope':       m['slope'],
             'units':       m['units'],
             'group':       m['group'],
             'graphUrl':    m.get('graphUrl', 'none')
         }
 
-    # logging.debug('%s', json.dumps(host_metrics))
-
     diff = time.time() - now
-    logging.info('Updated %d host info and %d host metrics and it took %.2f seconds', len(host_info), len(host_metrics), diff)
+    logging.info('Updated %s %s host info for %s servers and %s host metrics in %.2f seconds', env, svc, len(host_info), len(host_metrics), diff)
 
 # Initialise Rules
 def init_rules():
@@ -159,21 +150,10 @@ def check_rule(rule):
         sys.exit(3)
 
 def main():
-    global environment, host_info, host_metrics, rules
+    global host_info, host_metrics, rules
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-ganglia[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alert Ganglia version %s', __version__)
-
-    # Command line options
-    parser = optparse.OptionParser(version='%prog '+__version__)
-    parser.add_option("-E", "--environment", dest="environment", help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA")
-    parser.add_option("-p", "--pid-file", dest="pidfile", help="Pidfile")
-
-    options, args = parser.parse_args()
-    environment = options.environment
-
-    if options.pidfile:
-        PIDFILE = options.pidfile
 
     # Write pid file
     if os.path.isfile(PIDFILE):
@@ -196,9 +176,12 @@ def main():
     rules_mod_time = os.path.getmtime(RULESFILE)
 
     while True:
-        try:
-            get_metrics()
+        # Get metric data for all environments and services
+        for env in ENVIRONMENTS:
+            for svc in SERVICES:
+                get_metrics(env,svc)
 
+        try:
             # Read (or re-read) rules as necessary
             if os.path.getmtime(RULESFILE) != rules_mod_time:
                 init_rules()
