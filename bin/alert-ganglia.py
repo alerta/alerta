@@ -27,7 +27,7 @@ BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
-API_SERVER = 'ganglia.guprod.gnl'
+API_SERVER = 'ganglia.gul3.gnl'
 
 RULESFILE = '/opt/alerta/conf/alert-ganglia.yaml'
 LOGFILE = '/var/log/alerta/alert-ganglia.log'
@@ -286,7 +286,7 @@ def main():
                             alert['service']          = host_info[h]['grid']
                             alert['text']             = descrStr
                             alert['type']             = 'gangliaAlert'
-                            alert['tags']             = r['tags'] + [ "location:"+host_info[h]['location'], "cluster:"+host_info[h]['cluster'] ]
+                            alert['tags']             = list(r['tags'])
                             alert['summary']          = '%s - %s %s is %s on %s %s' % (host_info[h]['environment'], r['severity'], r['event'], valueStr, host_info[h]['grid'], h)
                             alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
                             alert['origin']           = "alert-ganglia/%s" % os.uname()[1]
@@ -296,6 +296,12 @@ def main():
                             else:
                                 alert['timeout'] = 86400  # expire non-NORMAL alerts after 1 day
                             alert['moreInfo']         = host_info[h]['graphUrl']
+
+                            # Add machine tags
+                            alert['tags'].append("location:"+host_info[h]['location'])
+                            alert['tags'].append("cluster:"+host_info[h]['cluster'])
+                            alert['tags'].append("os:"+host_metrics[h]['os_name']['value'].lower())
+                            alert['tags'].append("os_distrib:" + host_metrics[h]['os_distrib']['value'].split()[0])
 
                             alert['graphs']           = list()
                             for g in r['graphs']:
