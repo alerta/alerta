@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Alerta version 1.1.7
+--------------------
+
+* Alert console and CLI tool date order fix
+* Bug fixes due to fromDate enhancement
+* Status counts added to API and console
+
 Alerta version 1.1.6
 --------------------
 
