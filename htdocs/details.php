@@ -47,8 +47,10 @@
 
   <body>
     <div class="container">
-      <div align="right">
-        <table class="table table-bordered table-condensed span3" id="status-counts">
+      <table width="100%">
+        <td>
+        <table class="table table-bordered table-condensed" id="status-counts">
+          <tbody>
           <tr id="Alert-status" class="status">
             <td><span class="label">OPEN</span></td>
             <td id="alert-open">0</td>
@@ -57,7 +59,10 @@
             <td><span class="label">CLOSED</span></td>
             <td id="alert-closed">0</td>
           </tr>
+          </tbody>
         </table>
+      </td><td>
+        <div align="right">
         <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)">
           <option value="0">All alerts</option>
           <option value="120">Last 2 minutes</option>
@@ -69,7 +74,9 @@
         <button class="btn" id="toggle-ACK" class="toggle-ACK"><span><i class="icon-minus"></i> Hide</span><span class="initially-hidden"><i class="icon-plus"></i> Show</span> Acknowledged</button>
         <button class="btn" id="toggle-NORMAL" class="toggle-NORMAL"><span><i class="icon-minus"></i> Hide</span><span class="initially-hidden"><i class="icon-plus"></i> Show</span> Normals</button>
         <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh Now</button>
-      </div>
+        </div>
+      </td>
+      </table>
 
       <!-- Alert Details -->
       <div class="row show-grid">
