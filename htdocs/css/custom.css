@@ -73,6 +73,10 @@ table.summary {
   width: 150px;
 }
 
+#limit-select {
+  width: 100px;
+}
+
 .loader {
 	background-image: url(../img/loading.gif);
 	background-position: right top;

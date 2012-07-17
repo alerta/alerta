@@ -1,7 +1,17 @@
 // Fill-in Alert Details Template
 var logger = 0,
     fromDate = "",
+    limit = "",
     timer;
+
+function updateLimit(lim) {
+  if (lim > 0) {
+    limit = '&limit=' + lim
+  } else {
+    limit = '';
+  }
+  $('#refresh-all').trigger('click');
+}
 
 function updateFromDate(seconds) {
   if (seconds > 0) {
@@ -49,7 +59,7 @@ function date2str(datetime) {
 
 function getStatus(statusfilter, refresh) {
 
-  $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&' + statusfilter + fromDate, function(data) {
+  $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&' + statusfilter + limit + fromDate, function(data) {
 
     if (data.response.warning) {
       $('#warning-text').text(data.response.warning);
@@ -70,7 +80,7 @@ function getAlerts(service, filter, refresh) {
 
   $('#' + service +' th').addClass('loader');
 
-  $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&' + filter + fromDate, function(data) {
+  $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&' + filter + limit + fromDate, function(data) {
 
       var sev_id = '#' + service;
 
