@@ -19,7 +19,7 @@ import cgi, cgitb
 import logging
 import re
 
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 LOGFILE = '/var/log/alerta/alert-mgmt.log'
 
@@ -27,7 +27,7 @@ LOGFILE = '/var/log/alerta/alert-mgmt.log'
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.isoformat()+'Z'
+            return obj.replace(microsecond=0).isoformat() + ".%03dZ" % (obj.microsecond//1000)
         else:
             return json.JSONEncoder.default(self, obj)
 

@@ -19,7 +19,7 @@ import pymongo
 import cgi, cgitb
 import logging
 
-__version__ = '1.2'
+__version__ = '1.2.1'
 
 LOGFILE = '/var/log/alerta/alert-treemap.log'
 
@@ -27,7 +27,7 @@ LOGFILE = '/var/log/alerta/alert-treemap.log'
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.isoformat()+'Z'
+            return obj.replace(microsecond=0).isoformat() + ".%03dZ" % (obj.microsecond//1000)
         else:
             return json.JSONEncoder.default(self, obj)
 
