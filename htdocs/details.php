@@ -67,6 +67,13 @@
         </table>
       </td><td>
         <div align="right">
+        <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)">
+          <option value="0">No limit</option>
+          <option value="100">Only 100</option>
+          <option value="500">Only 500</option>
+          <option value="1000">Only 1000</option>
+          <option value="5000">Only 5000</option>
+        </select>
         <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)">
           <option value="0">All alerts</option>
           <option value="120">Last 2 minutes</option>
