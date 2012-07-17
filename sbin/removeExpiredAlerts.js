@@ -4,4 +4,4 @@ now = new Date();
 db.alerts.update({ status: 'OPEN', expireTime: { $lt: now }}, { $set: { status: 'EXPIRED' }, $push: { history: {status: 'EXPIRED', updateTime: now }}});
 
 ago = new Date(new Date() - 2*60*60*1000);
-db.alerts.update({ status: 'CLOSED', lastReceiveTime: { $lt: ago }}, { $set: { status: 'DELETED' }, $push: { history: {status: 'EXPIRED', updateTime: now }}});
+db.alerts.update({ status: 'CLOSED', lastReceiveTime: { $lt: ago }}, { $set: { status: 'DELETED' }, $push: { history: {status: 'DELETED', updateTime: now }}});
