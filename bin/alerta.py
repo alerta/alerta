@@ -78,7 +78,9 @@ class MessageHandler(object):
         createTime = createTime.replace(tzinfo=pytz.utc)
 
         # Add expire timestamp
-        if 'timeout' in alert and alert['timeout'] > 0:
+        if 'timeout' in alert and alert['timeout'] == 0:
+            expireTime = ''
+        elif 'timeout' in alert and alert['timeout'] > 0:
             expireTime = createTime + datetime.timedelta(seconds=alert['timeout'])
         else:
             expireTime = createTime + datetime.timedelta(seconds=DEFAULT_TIMEOUT)
