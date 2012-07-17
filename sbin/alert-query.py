@@ -136,7 +136,7 @@ def main():
                       action="append",
                       dest="show",
                       default=[],
-                      help="Show 'text', 'times', 'state', 'attributes', 'details', 'tags', 'counts' and 'color'")
+                      help="Show 'text', 'times', 'attributes', 'details', 'tags', 'counts' and 'color'")
     parser.add_option("-o",
                       "--orderby",
                       "--sortby",
