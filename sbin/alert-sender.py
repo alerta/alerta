@@ -20,27 +20,74 @@ import datetime
 import logging
 import uuid
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
+
+DEFAULT_TIMEOUT = 86400
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-sender.log'
 
 # Command-line options
-parser = optparse.OptionParser(version="%prog " + __version__, description="Alert Command-Line Tool - sends an alert to the alerting system. Alerts must have a resource (including service and environment), event name, value and text. A severity of 'normal' is used if none given. Tags and group are optional.", epilog="alert-sender.py --resource myCoolApp --event AppStatus --group Application --value Down --severity critical --env PROD --svc MicroApp --tag release:134 --tag build:1005 --text 'Micro App X is down.'")
-parser.add_option("-r", "--resource", dest="resource", help="Resource under alarm eg. hostname, network device, application. Note: ENVIRONMENT and SERVICE are prepended to the supplied RESOURCE")
-parser.add_option("-e", "--event", dest="event", help="Event name eg. HostAvail, PingResponse, AppStatus")
-parser.add_option("-c", "--correlate", dest="correlate", help="Comma-separated list of events to correlate together eg. NodeUp,NodeDown")
-parser.add_option("-g", "--group", dest="group", help="Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security")
-parser.add_option("-v", "--value", dest="value", help="Event value eg. 100%, Down, PingFail, 55tps, ORA-1664")
-parser.add_option("-s", "--severity", dest="severity", help="Severity eg. Critical, Major, Minor, Warning, Normal, Inform")
-parser.add_option("-E", "--environment", dest="environment", help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA")
-parser.add_option("-S", "--svc", "--service", dest="service", help="Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, Mutualisation, SharedSvcs")
-parser.add_option("-T", "--tag", action="append", dest="tags", help="Tag the event with anything and everything.")
-parser.add_option("-t", "--text", dest="text", help="Freeform alert text eg. Host not responding to ping.")
-parser.add_option("-d", "--dry-run", action="store_true", default=False, help="Do not send alert.")
+parser = optparse.OptionParser(
+                  version="%prog " + __version__,
+                  description="Alert Command-Line Tool - sends an alert to the alerting system. Alerts must have a resource (including service and environment), event name, value and text. A severity of 'normal' is used if none given. Tags and group are optional.",
+                  epilog="alert-sender.py --resource myCoolApp --event AppStatus --group Application --value Down --severity critical --env PROD --svc MicroApp --tag release:134 --tag build:1005 --text 'Micro App X is down.'")
+parser.add_option("-r",
+                  "--resource",
+                  dest="resource",
+                  help="Resource under alarm eg. hostname, network device, application. Note: ENVIRONMENT and SERVICE are prepended to the supplied RESOURCE")
+parser.add_option("-e",
+                  "--event",
+                  dest="event",
+                  help="Event name eg. HostAvail, PingResponse, AppStatus")
+parser.add_option("-c",
+                  "--correlate",
+                  dest="correlate",
+                  help="Comma-separated list of events to correlate together eg. NodeUp,NodeDown")
+parser.add_option("-g",
+                  "--group",
+                  dest="group",
+                  help="Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security")
+parser.add_option("-v",
+                  "--value",
+                  dest="value",
+                  help="Event value eg. 100%, Down, PingFail, 55tps, ORA-1664")
+parser.add_option("-s",
+                  "--severity",
+                  dest="severity",
+                  help="Severity eg. Critical, Major, Minor, Warning, Normal, Inform")
+parser.add_option("-E",
+                  "--environment",
+                  dest="environment",
+                  help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA")
+parser.add_option("-S",
+                  "--svc",
+                  "--service",
+                  dest="service",
+                  help="Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, Mutualisation, SharedSvcs")
+parser.add_option("-T",
+                  "--tag",
+                  action="append",
+                  dest="tags",
+                  help="Tag the event with anything and everything.")
+parser.add_option("-t",
+                  "--text",
+                  dest="text",
+                  help="Freeform alert text eg. Host not responding to ping.")
+parser.add_option("-o",
+                  "--timeout",
+                  type=int,
+                  dest="timeout",
+                  default=DEFAULT_TIMEOUT,
+                  help="Timeout in seconds that OPEN alert will persist in console.")
+parser.add_option("-d",
+                  "--dry-run",
+                  action="store_true",
+                  default=False,
+                  help="Do not send alert.")
 
 VALID_SEVERITY    = [ 'CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'NORMAL', 'INFORM', 'DEBUG' ]
 VALID_ENVIRONMENT = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP','INFRA' ]
@@ -123,6 +170,7 @@ def main():
     alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']        = 'alert-sender/%s' % os.uname()[1]
     alert['thresholdInfo'] = 'n/a'
+    alert['timeout']       = options.timeout
 
     logging.info('%s : %s', alertid, json.dumps(alert))
 
