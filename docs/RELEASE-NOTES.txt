@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Alerta version 1.1.9
+--------------------
+
+* Add timeout support to all components
+* Set default timeout if none given
+* Alerts set to EXPIRED or DELETED by cronjob
+* Add alert count limit drop-down to console
+* Add support for warning banner in console
+* Bug fix for alert details PHP script
+* Apache rewrite rule fix for treemap
+
 Alerta version 1.1.8
 --------------------
 
