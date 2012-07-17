@@ -25,6 +25,8 @@ BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
 NOTIFY_TOPIC = '/topic/notify' # outbound
 LOGGER_QUEUE = '/queue/logger' # outbound
+
+DEFAULT_TIMEOUT = 86400 # expire OPEN alerts after 1 day
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alerta.log'
@@ -79,7 +81,7 @@ class MessageHandler(object):
         if 'timeout' in alert and alert['timeout'] > 0:
             expireTime = createTime + datetime.timedelta(seconds=alert['timeout'])
         else:
-            expireTime = None
+            expireTime = createTime + datetime.timedelta(seconds=DEFAULT_TIMEOUT)
 
         if alerts.find_one({"resource": alert['resource'], "event": alert['event'], "severity": alert['severity']}):
             logging.info('%s : Duplicate alert -> update dup count', alertid)
