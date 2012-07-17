@@ -22,25 +22,64 @@ import logging
 import uuid
 import re
 
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
+
+DEFAULT_TIMEOUT = 86400
 EXPIRATION_TIME = 600 # seconds = 10 minutes
+
 NAGIOS_PLUGINS = '/usr/lib64/nagios/plugins'
 
 LOGFILE = '/var/log/alerta/alert-checker.log'
 
 # Command-line options
-parser = optparse.OptionParser(version="%prog " + __version__, description="Alert Nagios Check - runs a Nagios plug-in and sends the result to the alerting system. Alerts have a resource (including service and environment), event name, value and text. A severity of 'normal' is used if none given. Tags and group are optional.", epilog='alert-checker.py --nagios "check_procs -w 10 -c 20 --metric=CPU" --resource Sever1 --event ProcStatus --group OS --env PROD --svc Discussion')
-parser.add_option("-n", "--nagios", dest="nagios", help="Nagios check command line")
-parser.add_option("-r", "--resource", dest="resource", help="Resource under alarm eg. hostname, network device, application. Note: ENVIRONMENT and SERVICE are prepended to the supplied RESOURCE")
-parser.add_option("-e", "--event", dest="event", help="Event name eg. HostAvail, PingResponse, AppStatus")
-parser.add_option("-g", "--group", dest="group", help="Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security")
-parser.add_option("-E", "--environment", dest="environment", help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA")
-parser.add_option("-S", "--svc", "--service", dest="service", help="Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, Mutualisation, SharedSvcs")
-parser.add_option("-T", "--tag", action="append", dest="tags", help="Tag the event with anything and everything.")
-parser.add_option("-d", "--dry-run", action="store_true", default=False, help="Do not send alert.")
+parser = optparse.OptionParser(
+                  version="%prog " + __version__,
+                  description="Alert Nagios Check - runs a Nagios plug-in and sends the result to the alerting system. Alerts have a resource (including service and environment), event name, value and text. A severity of 'normal' is used if none given. Tags and group are optional.",
+                  epilog='alert-checker.py --nagios "check_procs -w 10 -c 20 --metric=CPU" --resource Sever1 --event ProcStatus --group OS --env PROD --svc Discussion')
+parser.add_option("-n",
+                  "--nagios",
+                  dest="nagios",
+                  help="Nagios check command line")
+parser.add_option("-r",
+                  "--resource",
+                  dest="resource",
+                  help="Resource under alarm eg. hostname, network device, application. Note: ENVIRONMENT and SERVICE are prepended to the supplied RESOURCE")
+parser.add_option("-e",
+                  "--event",
+                  dest="event",
+                  help="Event name eg. HostAvail, PingResponse, AppStatus")
+parser.add_option("-g",
+                  "--group",
+                  dest="group",
+                  help="Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security")
+parser.add_option("-E",
+                  "--environment",
+                  dest="environment",
+                  help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA")
+parser.add_option("-S",
+                  "--svc",
+                  "--service",
+                  dest="service",
+                  help="Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, Mutualisation, SharedSvcs")
+parser.add_option("-T",
+                  "--tag",
+                  action="append",
+                  dest="tags",
+                  help="Tag the event with anything and everything.")
+parser.add_option("-o",
+                  "--timeout",
+                  type=int,
+                  dest="timeout",
+                  default=DEFAULT_TIMEOUT,
+                  help="Timeout in seconds that OPEN alert will persist in console.")
+parser.add_option("-d",
+                  "--dry-run",
+                  action="store_true",
+                  default=False,
+                  help="Do not send alert.")
 
 VALID_SEVERITY    = [ 'CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'NORMAL', 'INFORM', 'DEBUG' ]
 VALID_ENVIRONMENT = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP','INFRA' ]
@@ -136,6 +175,7 @@ def main():
     alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']        = 'alert-checker/%s' % os.uname()[1]
     alert['thresholdInfo'] = options.nagios
+    alert['timeout']       = options.timeout
 
     logging.info('%s : Nagios plugin %s => %s (rc=%d)', alertid, options.nagios, text, rc)
     logging.info('%s : %s', alertid, json.dumps(alert))

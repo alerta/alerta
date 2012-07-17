@@ -24,10 +24,12 @@ import select
 import uuid
 import re
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
+
+DEFAULT_TIMEOUT = 86400
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-syslog.log'
@@ -172,6 +174,7 @@ def send_syslog(data):
     alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']        = 'alert-syslog/%s' % os.uname()[1]
     alert['thresholdInfo'] = 'n/a'
+    alert['timeout']       = DEFAULT_TIMEOUT
 
     logging.info('%s : %s', alertid, json.dumps(alert))
 

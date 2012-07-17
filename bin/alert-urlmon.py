@@ -24,10 +24,12 @@ import re
 from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
-__version__ = '1.5.3'
+__version__ = '1.5.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
+
+DEFAULT_TIMEOUT = 86400
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 URLFILE = '/opt/alerta/conf/alert-urlmon.yaml'
@@ -329,6 +331,7 @@ class WorkerThread(threading.Thread):
                 alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
                 alert['origin']           = "alert-urlmon/%s" % os.uname()[1]
                 alert['thresholdInfo']    = "%s : RT > %d RT > %d x %s" % (item['url'], warn_thold, crit_thold, item.get('count', 1))
+                alert['timeout']          = DEFAULT_TIMEOUT
                 alert['correlatedEvents'] = HTTP_ALERTS
 
                 logging.info('%s : %s', alertid, json.dumps(alert))

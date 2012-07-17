@@ -20,10 +20,12 @@ import logging
 import uuid
 import re
 
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
+
+DEFAULT_TIMEOUT = 86400
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-snmptrap.log'
@@ -206,6 +208,7 @@ def main():
     alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']           = 'alert-snmptrap/%s' % os.uname()[1]
     alert['thresholdInfo']    = threshold
+    alert['timeout']          = DEFAULT_TIMEOUT
     alert['correlatedEvents'] = correlate
 
     logging.info('%s : %s', alertid, json.dumps(alert))

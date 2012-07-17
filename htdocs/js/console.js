@@ -207,6 +207,7 @@ function getAlerts(service, filter, refresh) {
                         '<tr><td><b>Value</b></td><td>' + ad.value + '</td></tr>' +
                         '<tr><td><b>Text</b></td><td>' + ad.text + '</td></tr>' +
                         '<tr><td><b>Threshold Info</b></td><td>' + ad.thresholdInfo + '</td></tr>' +
+                        '<tr><td><b>Timeout</b></td><td>' + ad.timeout + ' seconds</td></tr>' +
                         '<tr><td><b>Type</b></td><td>' + ad.type + '</td></tr>' +
                         '<tr><td><b>Repeat</b></td><td>' + ad.repeat + '</td></tr>' +
                         '<tr><td><b>Duplicate Count</b></td><td>' + ad.duplicateCount + '</td></tr>' +

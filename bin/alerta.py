@@ -83,7 +83,8 @@ class MessageHandler(object):
         elif 'timeout' in alert and alert['timeout'] > 0:
             expireTime = createTime + datetime.timedelta(seconds=alert['timeout'])
         else:
-            expireTime = createTime + datetime.timedelta(seconds=DEFAULT_TIMEOUT)
+            alert['timeout'] = DEFAULT_TIMEOUT
+            expireTime = createTime + datetime.timedelta(seconds=alert['timeout'])
 
         if alerts.find_one({"resource": alert['resource'], "event": alert['event'], "severity": alert['severity']}):
             logging.info('%s : Duplicate alert -> update dup count', alertid)
