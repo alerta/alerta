@@ -18,7 +18,7 @@ import urllib2
 import operator
 import pytz
 
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -432,19 +432,19 @@ def main():
                     severity    = hist['severity']
                     value       = hist['value']
                     text        = hist['text']
-                    print(line_color + '/ %s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
+                    print(line_color + '  %s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
                         receiveTime.astimezone(tz).strftime(DATE_FORMAT),
                         SEV[severity],
                         resource.split('.')[-1],
                         group,
                         event,
                         value) + end_color)
-                    print(line_color + '\   |%s' % (text) + end_color)
+                    print(line_color + '    |%s' % (text) + end_color)
                 if 'status' in hist:
                     updateTime  = datetime.datetime.strptime(hist['updateTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
                     updateTime  = updateTime.replace(tzinfo=pytz.utc)
                     status      = hist['status']
-                    print(line_color + '+ %s|%s' % (updateTime.astimezone(tz).strftime(DATE_FORMAT), status) + end_color)
+                    print(line_color + '    %s|%s' % (updateTime.astimezone(tz).strftime(DATE_FORMAT), status) + end_color)
 
     if 'counts' in options.show:
         print
