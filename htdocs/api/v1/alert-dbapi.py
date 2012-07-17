@@ -13,14 +13,16 @@ except ImportError:
     import simplejson as json
 import time
 import datetime
+import yaml
 import pymongo
 import urlparse
 import logging
 import pytz
 import re
 
-__version__ = '1.6.0'
+__version__ = '1.6.1'
 
+CONFIGFILE = '/opt/alerta/conf/alerta-global.yaml'
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
 
 # Extend JSON Encoder to support ISO 8601 format dates
@@ -70,6 +72,14 @@ def main():
     alerts = db.alerts
     mgmt = db.status
     query = dict()
+
+    # Read in config file
+    try:
+        config = yaml.load(open(CONFIGFILE,'r'))
+    except IOError, e:
+        logging.error('Failed to load config file %s: %s', CONFIGFILE, e)
+    if 'warning' in config:
+        status['response']['warning'] = config['warning']
 
     m = re.search(r'GET /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
     if m:
@@ -149,7 +159,7 @@ def main():
 
         # Init status and severity counts
         total = 0
-        open = 0
+        opened = 0
         ack = 0
         closed = 0
         critical = 0
@@ -170,7 +180,7 @@ def main():
 
             total += 1
             if alert['status'] == 'OPEN':
-                open += 1
+                opened += 1
             if alert['status'] == 'ACK':
                 ack += 1
             if alert['status'] == 'CLOSED':
@@ -194,7 +204,7 @@ def main():
             elif alert['severity'] == 'DEBUG':
                 debug += 1
 
-        stat = { 'open': open,
+        stat = { 'open': opened,
                    'ack': ack,
                    'closed': closed
         }

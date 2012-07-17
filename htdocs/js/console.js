@@ -51,6 +51,11 @@ function getStatus(statusfilter, refresh) {
 
   $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&' + statusfilter + fromDate, function(data) {
 
+    if (data.response.warning) {
+      $('#warning-text').text(data.response.warning);
+      $('#console-alert').toggle();
+    }
+
     $.each(data.response.alerts.statusCounts, function(stat, count) {
       $("#alert-" + stat).text(count);
     });
