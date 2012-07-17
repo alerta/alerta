@@ -336,19 +336,20 @@
     <script>
       $(document).ready(function() {
 
-        var statusfilter = 'hide-alert-details=true';
-        var services = { 'Servers':  'environment=INFRA&service=Servers',
-                         'Linux':    'tags=os:linux',
-                         'Solaris':  'tags=os:sunos',
-                         'Network':  'environment=INFRA&service=Network',
-                         'EC2':      'environment=INFRA&service=EC2',
-                         'Puppet':   'group=Puppet',
-                         'Database': 'group=Database',
-                         'Web':      'group=Web',
-                         'Ganglia':  'group=Ganglia',
+        var env = "INFRA";
+        var statusfilter = 'environment='+env+'&status=OPEN|ACK|CLOSED';
+        var services = { 'Servers':  statusfilter+'&service=Servers',
+                         'Linux':    'status=OPEN|ACK|CLOSED&tags=os:linux',
+                         'Solaris':  'status=OPEN|ACK|CLOSED&tags=os:sunos',
+                         'Network':  statusfilter+'&service=Network',
+                         'EC2':      statusfilter+'&service=EC2',
+                         'Puppet':   'status=OPEN|ACK|CLOSED&group=Puppet',
+                         'Database': 'status=OPEN|ACK|CLOSED&group=Database',
+                         'Web':      'status=OPEN|ACK|CLOSED&group=Web',
+                         'Ganglia':  'status=OPEN|ACK|CLOSED&group=Ganglia',
                          'Acknowledged': 'status=ACK',
-                         'SLM':      'group=SLM',
-                         'Reboot':   'event=ServerReboot',
+                         'SLM':      'status=OPEN|ACK|CLOSED&group=SLM',
+                         'Reboot':   'status=OPEN|ACK|CLOSED&event=ServerReboot',
                        };
 
         loadStatus(statusfilter, true);

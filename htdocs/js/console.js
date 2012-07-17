@@ -59,7 +59,7 @@ function date2str(datetime) {
 
 function getStatus(statusfilter, refresh) {
 
-  $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&' + statusfilter + limit + fromDate, function(data) {
+  $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&hide-alert-details=true&' + statusfilter + limit + fromDate, function(data) {
 
     if (data.response.warning) {
       $('#warning-text').text(data.response.warning);

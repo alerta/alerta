@@ -187,7 +187,7 @@ def main():
                 closed += 1
 
             # Only OPEN alerts contribute to the severity counts
-            if 'status' not in query and alert['status'] != 'OPEN':
+            if alert['status'] != 'OPEN':
                 continue
             if alert['severity'] == 'CRITICAL':
                 critical += 1

@@ -116,9 +116,9 @@
     <script>
       $(document).ready(function() {
 
-        var statusfilter = 'hide-alert-details=true<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?><?php if ($id != "") echo "&id=".$id; ?><?php if ($res != "") echo "&resource=".$res; ?>';
+        var statusfilter = '<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?><?php if ($id != "") echo "&id=".$id; ?><?php if ($res != "") echo "&resource=".$res; ?>';
 
-        var services = { '<?php echo $tag; ?>': 'sort-by=lastReceiveTime<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?><?php if ($id != "") echo "&id=".$id; ?><?php if ($res != "") echo "&resource=".$res; ?>' };
+        var services = { '<?php echo $tag; ?>': 'e<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?><?php if ($id != "") echo "&id=".$id; ?><?php if ($res != "") echo "&resource=".$res; ?>' };
         loadStatus(statusfilter, true);
         loadAlerts(services, true);
 

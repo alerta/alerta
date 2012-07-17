@@ -336,19 +336,19 @@
       $(document).ready(function() {
 
         var env = "QA";
-        var statusfilter = 'hide-alert-details=true&environment='+env;
-        var services = { 'R2':              'environment='+env+'&service=R2',
-                         'Discussion':      'environment='+env+'&service=Discussion',
-                         'ContentAPI':      'environment='+env+'&service=ContentAPI',
-                         'Identity':        'environment='+env+'&service=Identity',
-                         'R1':              'environment='+env+'&service=R1',
-                         'FlexibleContent': 'environment='+env+'&service=FlexibleContent',
-                         'Soulmates':       'environment='+env+'&service=Soulmates',
-                         'SharedSvcs':      'environment='+env+'&service=SharedSvcs',
-                         'MicroApp':        'environment='+env+'&service=MicroApp',
-                         'Mutualisation':   'environment='+env+'&service=Mutualisation',
-                         'EC2':             'environment='+env+'&service=EC2',
-                         'Network':         'environment='+env+'&service=Network' };
+        var statusfilter = 'environment='+env+'&status=OPEN|ACK|CLOSED';
+        var services = { 'R2':              statusfilter+'&service=R2',
+                         'Discussion':      statusfilter+'&service=Discussion',
+                         'ContentAPI':      statusfilter+'&service=ContentAPI',
+                         'Identity':        statusfilter+'&service=Identity',
+                         'R1':              statusfilter+'&service=R1',
+                         'FlexibleContent': statusfilter+'&service=FlexibleContent',
+                         'Soulmates':       statusfilter+'&service=Soulmates',
+                         'SharedSvcs':      statusfilter+'&service=SharedSvcs',
+                         'MicroApp':        statusfilter+'&service=MicroApp',
+                         'Mutualisation':   statusfilter+'&service=Mutualisation',
+                         'EC2':             statusfilter+'&service=EC2',
+                         'Network':         statusfilter+'&service=Network' };
 
         loadStatus(statusfilter, true);
         loadAlerts(services, true);
