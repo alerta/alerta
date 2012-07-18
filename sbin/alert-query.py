@@ -18,7 +18,7 @@ import urllib2
 import operator
 import pytz
 
-__version__ = '1.2.3'
+__version__ = '1.2.4'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -113,6 +113,7 @@ def main():
                       help="Severity or range eg. major, warning..critical")
     parser.add_option( "--status",
                       dest="status",
+                      default="OPEN|ACK|CLOSED",
                       help="Status eg. OPEN, ACK, CLOSED")
     parser.add_option("-e",
                       "--event",
@@ -136,7 +137,7 @@ def main():
                       action="append",
                       dest="show",
                       default=[],
-                      help="Show 'text', 'times', 'attributes', 'details', 'tags', 'counts' and 'color'")
+                      help="Show 'text', 'summary', 'times', 'attributes', 'details', 'tags', 'history', 'counts' and 'color'")
     parser.add_option("-o",
                       "--orderby",
                       "--sortby",
@@ -448,7 +449,12 @@ def main():
 
     if 'counts' in options.show:
         print
+        print('OPEN|ACK|CLOSED' + '  '),
         print('Crit|Majr|Minr|Warn|Norm|Info|Dbug')
+        print(
+            '%4d' % response['alerts']['statusCounts']['open'] + ' ' +
+            '%3d' % response['alerts']['statusCounts']['ack'] + ' ' +
+            '%6d' % response['alerts']['statusCounts']['closed'] + '  '),
         print(
             COLOR['CRITICAL'] + '%4d' % response['alerts']['severityCounts']['critical'] + ENDC + ' ' +
             COLOR['MAJOR']    + '%4d' % response['alerts']['severityCounts']['major']    + ENDC + ' ' +
