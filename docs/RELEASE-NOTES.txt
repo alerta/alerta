@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Alerta version 1.1.10
+---------------------
+
+* Filter on OPEN, ACK and CLOSED alerts by default
+* Bug fix for remove expired alerts cronjob
+
 Alerta version 1.1.9
 --------------------
 
