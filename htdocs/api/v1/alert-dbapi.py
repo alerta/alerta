@@ -20,7 +20,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.6.1'
+__version__ = '1.6.2'
 
 CONFIGFILE = '/opt/alerta/conf/alerta-global.yaml'
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
@@ -78,7 +78,7 @@ def main():
         config = yaml.load(open(CONFIGFILE,'r'))
     except IOError, e:
         logging.error('Failed to load config file %s: %s', CONFIGFILE, e)
-    if 'warning' in config:
+    if config and 'warning' in config:
         status['response']['warning'] = config['warning']
 
     m = re.search(r'GET /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
