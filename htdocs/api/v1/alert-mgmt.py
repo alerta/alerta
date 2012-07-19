@@ -72,19 +72,6 @@ def main():
         for hb in hb.find({}, {"_id": 0, "type": 0}):
             status['heartbeats'].append(hb)
 
-<<<<<<< HEAD
-    for stat in ['OPEN', 'ACK', 'CLOSED', 'DELETED', 'EXPIRED']:
-        stat_count = dict()
-        stat_count['group'] = "alerts"
-        stat_count['name'] = stat.lower()
-        stat_count['type'] = "gauge"
-        stat_count['title'] = stat + " alerts"
-        stat_count['description'] = "Total number of " + stat + " alerts"
-        stat_count['value'] = alerts.find({"status": stat}).count()
-        status['metrics'].append(stat_count)
-
-    content = json.dumps(status, cls=DateEncoder)
-=======
     m = re.search(r'GET /alerta/management/status$', request)
     if m:
         status['metrics'] = list()
@@ -92,7 +79,6 @@ def main():
         for stat in mgmt.find({}, {"_id": 0}):
             logging.debug('%s', json.dumps(stat))
             status['metrics'].append(stat)
->>>>>>> Add component heartbeats
 
         for sev in ['CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'NORMAL', 'INFORM', 'DEBUG']:
             sev_count = dict()
