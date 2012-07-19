@@ -19,7 +19,8 @@ import pytz
 import logging
 import re
 
-__version__ = '1.4.3'
+__program__ = 'alerta'
+__version__ = '1.4.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -241,6 +242,13 @@ class MessageHandler(object):
             { "group": "alerts", "name": "received", "type": "timer", "title": "Alert receive rate and latency", "description": "Time taken for alert to be received by the server" },
             { '$inc': { "count": 1, "totalTime": diff}},
            True)
+
+        heartbeatTime = datetime.datetime.utcnow()
+        heartbeatTime = heartbeatTime.replace(tzinfo=pytz.utc)
+        hb.update(
+            { "origin": "%s/%s" % (__program__, os.uname()[1]) },
+            { "origin": "%s/%s" % (__program__, os.uname()[1]), "version": __version__, "createTime": heartbeatTime, "receiveTime": heartbeatTime },
+            True)
 
     def on_disconnected(self):
         global conn
