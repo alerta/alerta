@@ -24,7 +24,8 @@ import select
 import uuid
 import re
 
-__version__ = '1.0.3'
+__program__ = 'alert-syslog'
+__version__ = '1.0.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -172,7 +173,7 @@ def send_syslog(data):
     alert['tags']          = tags
     alert['summary']       = '%s - %s %s is %s on %s %s' % (environment, alert['severity'].upper(), event, value, service, resource)
     alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
-    alert['origin']        = 'alert-syslog/%s' % os.uname()[1]
+    alert['origin']        = "%s/%s" % (__program__, os.uname()[1])
     alert['thresholdInfo'] = 'n/a'
     alert['timeout']       = DEFAULT_TIMEOUT
 
@@ -188,6 +189,32 @@ def send_syslog(data):
     logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
 
     return
+
+def send_heartbeat():
+    global conn
+
+    heartbeatid = str(uuid.uuid4()) # random UUID
+    createTime = datetime.datetime.utcnow()
+
+    headers = dict()
+    headers['type']           = "heartbeatAlert"
+    headers['correlation-id'] = heartbeatid
+    # headers['persistent']     = 'false'
+    # headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+
+    heartbeat = dict()
+    heartbeat['id']         = heartbeatid
+    heartbeat['type']       = "heartbeatAlert"
+    heartbeat['createTime'] = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
+    heartbeat['origin']     = "%s/%s" % (__program__,os.uname()[1])
+    heartbeat['version']    = __version__
+
+    try:
+        conn.send(json.dumps(heartbeat), headers, destination=ALERT_QUEUE)
+    except Exception, e:
+        logging.error('Failed to send heartbeat to broker %s', e)
+    broker = conn.get_host_and_port()
+    logging.info('%s : Heartbeat sent to %s:%s', heartbeatid, broker[0], str(broker[1]))
 
 def main():
     global conn
@@ -248,6 +275,7 @@ def main():
                     logging.debug('Syslog TCP: %s', data)
                     send_syslog(data)
 
+            send_heartbeat()
             time.sleep(0.01)
         except (KeyboardInterrupt, SystemExit):
             conn.disconnect()

@@ -21,7 +21,8 @@ import logging
 import uuid
 import re
 
-__version__ = '1.6.3'
+__program__ = 'alert-ganglia'
+__version__ = '1.6.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -255,7 +256,7 @@ def eval_rule(r,h):
             alert['tags']             = list(r['tags'])
             alert['summary']          = '%s - %s %s is %s on %s %s' % (host_info[h]['environment'], r['severity'], r['event'], valueStr, host_info[h]['grid'], h)
             alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
-            alert['origin']           = "alert-ganglia/%s" % os.uname()[1]
+            alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
             alert['thresholdInfo']    = "%s: %s x %s" % (r['resource'], r['rule'], r['count'])
             alert['timeout']          = 86400  # expire alerts after 1 day
             alert['moreInfo']         = host_info[h]['graphUrl']
@@ -287,6 +288,32 @@ def eval_rule(r,h):
 
     else:
         logging.debug('%s %s %s: Rule %s %s is False', h, r['event'], r['severity'], r['resource'], r['rule'])
+
+def send_heartbeat():
+    global conn
+
+    heartbeatid = str(uuid.uuid4()) # random UUID
+    createTime = datetime.datetime.utcnow()
+
+    headers = dict()
+    headers['type']           = "heartbeatAlert"
+    headers['correlation-id'] = heartbeatid
+    # headers['persistent']     = 'false'
+    # headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+
+    heartbeat = dict()
+    heartbeat['id']         = heartbeatid
+    heartbeat['type']       = "heartbeatAlert"
+    heartbeat['createTime'] = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
+    heartbeat['origin']     = "%s/%s" % (__program__,os.uname()[1])
+    heartbeat['version']    = __version__
+
+    try:
+        conn.send(json.dumps(heartbeat), headers, destination=ALERT_QUEUE)
+    except Exception, e:
+        logging.error('Failed to send heartbeat to broker %s', e)
+    broker = conn.get_host_and_port()
+    logging.info('%s : Heartbeat sent to %s:%s', heartbeatid, broker[0], str(broker[1]))
 
 def main():
     global conn, host_info, host_metrics, rules
@@ -332,6 +359,7 @@ def main():
                         for host in host_info:
                             eval_rule(rule,host)
 
+            send_heartbeat()
             logging.info('Rule check is sleeping %d seconds', _check_rate)
             time.sleep(_check_rate)
 

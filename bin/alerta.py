@@ -19,7 +19,7 @@ import pytz
 import logging
 import re
 
-__version__ = '1.4.2'
+__version__ = '1.4.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -51,7 +51,7 @@ class MessageHandler(object):
         logging.error('Received an error %s', body)
 
     def on_message(self, headers, body):
-        global alerts, mgmt, conn
+        global alerts, mgmt, hb, conn
 
         start = time.time()
         logging.debug("Received alert : %s", body)
@@ -68,14 +68,23 @@ class MessageHandler(object):
         alert['_id'] = alertid
         del alert['id']
 
-        logging.info('%s : %s', alertid, alert['summary'])
-
         # Add receive timestamp
         receiveTime = datetime.datetime.utcnow()
         receiveTime = receiveTime.replace(tzinfo=pytz.utc)
 
         createTime = datetime.datetime.strptime(alert['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
         createTime = createTime.replace(tzinfo=pytz.utc)
+
+        # Handle heartbeats
+        if alert['type'] == 'heartbeatAlert':
+            hb.update(
+                { "origin": alert['origin'] },
+                { "origin": alert['origin'], "version": alert['version'], "createTime": createTime, "receiveTime": receiveTime },
+                True)
+            logging.info('%s : heartbeat from %s', alertid, alert['origin'])
+            return
+
+        logging.info('%s : %s', alertid, alert['summary'])
 
         # Add expire timestamp
         if 'timeout' in alert and alert['timeout'] == 0:
@@ -242,7 +251,7 @@ class MessageHandler(object):
         conn.subscribe(destination=ALERT_QUEUE, ack='auto')
 
 def main():
-    global alerts, mgmt, conn
+    global alerts, mgmt, hb, conn
 
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alerta[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alerta version %s', __version__)
@@ -260,6 +269,7 @@ def main():
         db = mongo.monitoring
         alerts = db.alerts
         mgmt = db.status
+        hb = db.heartbeats
     except pymongo.errors.ConnectionFailure, e:
         logging.error('Mongo connection failure: %s', e)
         sys.exit(1)

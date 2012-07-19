@@ -24,7 +24,8 @@ import re
 from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
-__version__ = '1.5.4'
+__program__ = 'alert-urlmon'
+__version__ = '1.5.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -329,7 +330,7 @@ class WorkerThread(threading.Thread):
                 alert['tags']             = item.get('tags', list())
                 alert['summary']          = '%s - %s %s is %s on %s %s' % (item['environment'], severity, event, value, item['service'], item['resource'])
                 alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
-                alert['origin']           = "alert-urlmon/%s" % os.uname()[1]
+                alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
                 alert['thresholdInfo']    = "%s : RT > %d RT > %d x %s" % (item['url'], warn_thold, crit_thold, item.get('count', 1))
                 alert['timeout']          = DEFAULT_TIMEOUT
                 alert['correlatedEvents'] = HTTP_ALERTS
@@ -352,6 +353,32 @@ class WorkerThread(threading.Thread):
 
         self.input_queue.task_done()
         return
+
+def send_heartbeat():
+    global conn
+
+    heartbeatid = str(uuid.uuid4()) # random UUID
+    createTime = datetime.datetime.utcnow()
+
+    headers = dict()
+    headers['type']           = "heartbeatAlert"
+    headers['correlation-id'] = heartbeatid
+    # headers['persistent']     = 'false'
+    # headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+
+    heartbeat = dict()
+    heartbeat['id']         = heartbeatid
+    heartbeat['type']       = "heartbeatAlert"
+    heartbeat['createTime'] = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
+    heartbeat['origin']     = "%s/%s" % (__program__, os.uname()[1])
+    heartbeat['version']    = __version__
+
+    try:
+        conn.send(json.dumps(heartbeat), headers, destination=ALERT_QUEUE)
+    except Exception, e:
+        logging.error('Failed to send heartbeat to broker %s', e)
+    broker = conn.get_host_and_port()
+    logging.info('%s : Heartbeat sent to %s:%s', heartbeatid, broker[0], str(broker[1]))
 
 # Initialise Rules
 def init_urls():
@@ -407,7 +434,9 @@ def main():
                 queue.put(('url',url))
             queue.put(('timestamp', time.time()))
 
+            send_heartbeat()
             time.sleep(_check_rate)
+
             urlmon_qsize = queue.qsize()
             logging.info('URL check queue length is %d', urlmon_qsize)
             if GMETRIC_SEND:
@@ -415,7 +444,6 @@ def main():
                     GMETRIC_CMD, urlmon_qsize, GMETRIC_OPTIONS)
                 logging.debug("%s", gmetric_cmd)
                 os.system("%s" % gmetric_cmd)
-
 
         except (KeyboardInterrupt, SystemExit):
             conn.disconnect()
