@@ -60,6 +60,16 @@ def main():
         sev_count['value'] = alerts.find({"severity": sev}).count()
         status['metrics'].append(sev_count)
 
+    for stat in ['OPEN', 'ACK', 'CLOSED', 'DELETED', 'EXPIRED']:
+        stat_count = dict()
+        stat_count['group'] = "alerts"
+        stat_count['name'] = stat.lower()
+        stat_count['type'] = "gauge"
+        stat_count['title'] = stat + " alerts"
+        stat_count['description'] = "Total number of " + stat + " alerts"
+        stat_count['value'] = alerts.find({"status": stat}).count()
+        status['metrics'].append(stat_count)
+
     content = json.dumps(status, cls=DateEncoder)
 
     # logging.debug('API >>> %s', content)
