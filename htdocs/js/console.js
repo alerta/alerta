@@ -4,6 +4,8 @@ var logger = 0,
     limit = "",
     timer;
 
+var hb_threshold = 300; // 5 minutes
+
 function updateLimit(lim) {
   if (lim > 0) {
     limit = '&limit=' + lim
@@ -57,6 +59,70 @@ function date2str(datetime) {
         return d.toLocaleString();
 }
 
+// Update Register Components
+function heartbeatAlerts() {
+
+  $.getJSON('http://'+ document.domain + '/alerta/management/healthcheck?callback=?', function(data) {
+
+      var hbalerts ='';
+      $.each(data.heartbeats, function(i, hb) {
+
+        var diff = (new Date().getTime() - new Date(hb.receiveTime).getTime()) / 1000;
+        var mins = Math.round(diff / 60);
+        var secs = Math.round(diff % 60);
+
+        var since = '';
+        if (mins > 0) {
+            since = mins + ' minutes ' + secs + ' seconds';
+        } else {
+            since = secs + ' seconds';
+        }
+
+        if (diff > hb_threshold) {
+          hbalerts += '<div class="alert alert-error">' +
+                      '<button class="close" data-dismiss="alert" onclick="">&times;</button>' +
+                      '<strong>Important!</strong> ' + hb.origin + ' has not sent a heartbeat for ' + since +
+                      '</div>';
+        }
+      });
+      $('#heartbeat-alerts').html(hbalerts);
+  });
+};
+
+function getHeartbeats(refresh) {
+
+  $.getJSON('http://'+ document.domain + '/alerta/management/healthcheck?callback=?', function(data) {
+
+      var rows ='';
+      $.each(data.heartbeats, function(i, hb) {
+
+        var diff = (new Date().getTime() - new Date(hb.receiveTime).getTime()) / 1000;
+        var mins = Math.round(diff / 60);
+        var secs = Math.round(diff % 60);
+
+        var since = '';
+        if (mins > 0) {
+            since = mins + ' minutes ' + secs + ' seconds';
+        } else {
+            since = secs + ' seconds';
+        }
+
+        rows += '<tr class="">' +
+                  '<td>' + hb.origin + '</td>' +
+                  '<td>' + hb.version + '</td>' +
+                  '<td>' + date2str(hb.createTime) + '</td>' +
+                  '<td>' + since + '</td>' +
+                '</tr>';
+      });
+      $('#heartbeat-info').html(rows);
+
+    if (refresh) {
+      timer = setTimeout(function() { getHeartbeats(refresh); }, 120000);
+    }
+  });
+};
+
+// Update Alert Status
 function getStatus(statusfilter, refresh) {
 
   $.getJSON('http://'+ document.domain + '/alerta/api/v1/alerts?callback=?&hide-alert-details=true&' + statusfilter + limit + fromDate, function(data) {
