@@ -47,6 +47,7 @@
 
   <body>
     <div class="container">
+      <span id="heartbeat-alerts"></span>
       <div id="console-alert" class="alert alert-info initially-hidden">
         <button class="close" data-dismiss="alert" onclick="">&times;</button>
         <strong>Warning!</strong> <span id="warning-text"></span>
@@ -115,6 +116,8 @@
 
     <script>
       $(document).ready(function() {
+
+        heartbeatAlerts();
 
         var statusfilter = '<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?><?php if ($id != "") echo "&id=".$id; ?><?php if ($res != "") echo "&resource=".$res; ?>';
 
