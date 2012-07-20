@@ -20,7 +20,8 @@ import datetime
 import logging
 import uuid
 
-__version__ = '1.0.3'
+__program__ = 'alert-sender'
+__version__ = '1.0.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -83,6 +84,11 @@ parser.add_option("-o",
                   dest="timeout",
                   default=DEFAULT_TIMEOUT,
                   help="Timeout in seconds that OPEN alert will persist in console.")
+parser.add_option("-q",
+                  "--quiet",
+                  action="store_true",
+                  default=False,
+                  help="Do not display alert id.")
 parser.add_option("-d",
                   "--dry-run",
                   action="store_true",
@@ -168,7 +174,7 @@ def main():
     alert['tags']          = options.tags
     alert['summary']       = '%s - %s %s is %s on %s %s' % (options.environment, options.severity.upper(), options.event, options.value, options.service, options.resource)
     alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
-    alert['origin']        = 'alert-sender/%s' % os.uname()[1]
+    alert['origin']        = "%s/%s" % (__program__, os.uname()[1])
     alert['thresholdInfo'] = 'n/a'
     alert['timeout']       = options.timeout
 
@@ -192,7 +198,8 @@ def main():
         broker = conn.get_host_and_port()
         logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
         conn.disconnect()
-        print alertid
+        if not options.quiet:
+            print alertid
         sys.exit(0)
     else:
         print "%s %s" % (json.dumps(headers, indent=4), json.dumps(alert, indent=4))
