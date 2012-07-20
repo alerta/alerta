@@ -68,8 +68,8 @@ function heartbeatAlerts() {
       $.each(data.heartbeats, function(i, hb) {
 
         var diff = (new Date().getTime() - new Date(hb.receiveTime).getTime()) / 1000;
-        var mins = Math.round(diff / 60);
-        var secs = Math.round(diff % 60);
+        var mins = Math.floor(diff / 60);
+        var secs = Math.floor(diff % 60);
 
         var since = '';
         if (mins > 0) {
@@ -97,8 +97,8 @@ function getHeartbeats(refresh) {
       $.each(data.heartbeats, function(i, hb) {
 
         var diff = (new Date().getTime() - new Date(hb.receiveTime).getTime()) / 1000;
-        var mins = Math.round(diff / 60);
-        var secs = Math.round(diff % 60);
+        var mins = Math.floor(diff / 60);
+        var secs = Math.floor(diff % 60);
 
         var since = '';
         if (mins > 0) {
