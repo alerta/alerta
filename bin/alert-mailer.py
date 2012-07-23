@@ -27,7 +27,7 @@ import pytz
 import logging
 import uuid
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -60,7 +60,7 @@ class MessageHandler(object):
         alert = dict()
         alert = json.loads(body)
 
-        logging.info('%s : %s', alert['lastReceiveId'], alert['summary'])
+        logging.info('%s : [%s] %s', alert['lastReceiveId'], alert['status'],alert['summary'])
 
         # Only send a NORMAL email for alerts that have cleared
         if alert['severity'] == 'NORMAL' and alert['previousSeverity'] == 'UNKNOWN':
@@ -89,7 +89,7 @@ class MessageHandler(object):
         localTime = createTime.astimezone(tz)
    
         text = ''
-        text += '%s\n' % (alert['summary'])
+        text += '[%s] %s\n' % (alert['status'], alert['summary'])
         text += 'Alert Details\n'
         text += 'Alert ID: %s\n' % (alert['id'])
         text += 'Create Time: %s\n' % (localTime.strftime('%d/%m/%Y %H:%M:%S'))
@@ -99,7 +99,8 @@ class MessageHandler(object):
         text += 'Event Name: %s\n' % (alert['event'])
         text += 'Event Group: %s\n' % (alert['group'])
         text += 'Event Value: %s\n' % (alert['value'])
-        text += 'State: %s -> %s\n' % (alert['previousSeverity'], alert['severity'])
+        text += 'Severity: %s -> %s\n' % (alert['previousSeverity'], alert['severity'])
+        text += 'Status: %s\n' % (alert['status'])
         text += 'Text: %s\n' % (alert['text'])
         if 'thresholdInfo' in alert:
             text += 'Threshold Info: %s\n' % (alert['thresholdInfo'])
@@ -120,7 +121,7 @@ class MessageHandler(object):
         html = '<p><table border="0" cellpadding="0" cellspacing="0" width="100%">\n'  # table used to center email
         html += '<tr><td bgcolor="#ffffff" align="center">\n'
         html += '<table border="0" cellpadding="0" cellspacing="0" width="700">\n'     # table used to set width of email
-        html += '<tr><td bgcolor="#425470"><p align="center" style="font-size:24px;color:#d9fffd;font-weight:bold;"><strong>%s</strong></p>\n' % (alert['summary'])
+        html += '<tr><td bgcolor="#425470"><p align="center" style="font-size:24px;color:#d9fffd;font-weight:bold;"><strong>[%s] %s</strong></p>\n' % (alert['status'], alert['summary'])
 
         html += '<tr><td><p align="left" style="font-size:18px;line-height:22px;color:#c25130;font-weight:bold;">Alert Details</p>\n'
         html += '<table>\n'
@@ -132,7 +133,8 @@ class MessageHandler(object):
         html += '<tr><td><b>Event Name:</b></td><td>%s</td></tr>\n' % (alert['event'])
         html += '<tr><td><b>Event Group:</b></td><td>%s</td></tr>\n' % (alert['group'])
         html += '<tr><td><b>Event Value:</b></td><td>%s</td></tr>\n' % (alert['value'])
-        html += '<tr><td><b>State:</b></td><td>%s -> %s</td></tr>\n' % (alert['previousSeverity'], alert['severity'])
+        html += '<tr><td><b>Severity:</b></td><td>%s -> %s</td></tr>\n' % (alert['previousSeverity'], alert['severity'])
+        html += '<tr><td><b>Status:</b></td><td>%s</td></tr>\n' % (alert['status'])
         html += '<tr><td><b>Text:</b></td><td>%s</td></tr>\n' % (alert['text'])
         if 'thresholdInfo' in alert:
             html += '<tr><td><b>Threshold Info:</b></td><td>%s</td></tr>\n' % (alert['thresholdInfo'])
@@ -158,7 +160,7 @@ class MessageHandler(object):
         logging.debug('HTML Text %s', html)
         
         msg_root = MIMEMultipart('related')
-        msg_root['Subject'] = alert['summary']
+        msg_root['Subject'] = '[%s] %s' % (alert['status'], alert['summary'])
         msg_root['From']    = ALERTER_MAIL
         msg_root['To']      = ','.join(MAILING_LIST)
         msg_root.preamble   = 'This is a multi-part message in MIME format.'

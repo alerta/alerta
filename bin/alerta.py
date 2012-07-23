@@ -20,7 +20,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.4.4'
+__version__ = '1.4.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -107,6 +107,25 @@ class MessageHandler(object):
                             "tags": alert['tags'], "repeat": True, "origin": alert['origin'] },
                   '$inc': { "duplicateCount": 1 }})
 
+            if alerts.find_one({"resource": alert['resource'], "event": alert['event']}, {"status": 1, "_id": 0})['status'] not in ['OPEN','ACK','CLOSED']:
+                if alert['severity'] != 'NORMAL':
+                    status = 'OPEN'
+                else:
+                    status = 'CLOSED'
+            else:
+                status = None
+
+            if status:
+                updateTime = datetime.datetime.utcnow()
+                updateTime = updateTime.replace(tzinfo=pytz.utc)
+                alerts.update(
+                    { "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
+                    { '$set': { "status": status },
+                      '$push': { "history": { "status": status, "updateTime": updateTime } }})
+                logging.info('%s : Alert status for duplicate %s %s alert changed to %s', alertid, alert['severity'], alert['event'], status)
+            else:
+                logging.info('%s : Alert status for duplicate %s %s alert unchanged because either OPEN, ACK or CLOSED', alertid, alert['severity'], alert['event'])
+
             # Forward alert to notify topic and logger queue
             alert = alerts.find_one({"lastReceiveId": alertid}, {"history": 0})
 
@@ -165,6 +184,7 @@ class MessageHandler(object):
                     { "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
                     { '$set': { "status": status },
                       '$push': { "history": { "status": status, "updateTime": updateTime } }})
+                logging.info('%s : Alert status for %s %s alert with diff event/severity changed to %s', alertid, alert['severity'], alert['event'], status)
 
             # Forward alert to notify topic and logger queue
             alert = alerts.find_one({"lastReceiveId": alertid}, {"history": 0})
@@ -197,9 +217,10 @@ class MessageHandler(object):
             alert['previousSeverity'] = 'UNKNOWN'
             alert['repeat']           = False
             if alert['severity'] != 'NORMAL':
-                alert['status'] = 'OPEN'
+                status = 'OPEN'
             else:
-                alert['status'] = 'CLOSED'
+                status = 'CLOSED'
+            alert['status'] = status
 
             alerts.insert(alert)
             alerts.update(
@@ -212,8 +233,9 @@ class MessageHandler(object):
             updateTime = updateTime.replace(tzinfo=pytz.utc)
             alerts.update(
                 { "resource": alert['resource'], "event": alert['event'] },
-                { '$set': { "status": alert['status'] },
-                  '$push': { "history": { "status": alert['status'], "updateTime": updateTime } }})
+                { '$set': { "status": status },
+                  '$push': { "history": { "status": status, "updateTime": updateTime } }})
+            logging.info('%s : Alert status for new %s %s alert set to %s', alertid, alert['severity'], alert['event'], status)
 
             # Forward alert to notify topic and logger queue
             alert = alerts.find_one({"_id": alertid}, {"_id": 0, "history": 0})

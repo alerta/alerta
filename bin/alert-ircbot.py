@@ -18,7 +18,7 @@ except ImportError:
 import stomp
 import logging
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -52,7 +52,7 @@ class MessageHandler(object):
         alert = dict()
         alert = json.loads(body)
 
-        logging.info('%s : %s', alert['lastReceiveId'], alert['summary'])
+        logging.info('%s : [%s] %s', alert['lastReceiveId'], alert['status'], alert['summary'])
 
         if tokens:
             _Lock.acquire()
@@ -65,7 +65,7 @@ class MessageHandler(object):
 
         try:
             logging.info('%s : IRC message to %s', alert['lastReceiveId'], IRC_CHANNEL)
-            irc.send('PRIVMSG '+IRC_CHANNEL+' :'+alert['summary']+'\r\n')
+            irc.send('PRIVMSG %s :[%s] %s\r\n' % (IRC_CHANNEL, alert['status'], alert['summary']))
         except Exception, e:
             logging.error('%s : IRC send failed - %s', alert['lastReceiveId'], e)
 

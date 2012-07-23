@@ -13,6 +13,7 @@ except ImportError:
     import simplejson as json
 import time
 import datetime
+import stomp
 import yaml
 import pymongo
 import urlparse
@@ -20,7 +21,11 @@ import logging
 import pytz
 import re
 
-__version__ = '1.6.2'
+__version__ = '1.7.0'
+
+BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
+NOTIFY_TOPIC = '/topic/notify'
+EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 CONFIGFILE = '/opt/alerta/conf/alerta-global.yaml'
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
@@ -236,7 +241,8 @@ def main():
 
     m = re.search(r'PUT /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
     if m:
-        query['_id'] = m.group('id')
+        alertid = m.group('id')
+        query['_id'] = alertid
         update = data
 
         logging.info('MongoDB MODIFY -> alerts.update(%s, { $set: %s })', query, update)
@@ -248,6 +254,35 @@ def main():
             updateTime = datetime.datetime.utcnow()
             updateTime = updateTime.replace(tzinfo=pytz.utc)
             alerts.update(query, { '$push': { "history": { "status": update['status'], "updateTime": updateTime } }})
+
+            # Forward status update to notify topic and logger queue
+            alert = alerts.find_one({"_id": alertid}, {"_id": 0, "history": 0})
+
+            headers = dict()
+            headers['type']           = alert['type']
+            headers['correlation-id'] = alertid
+            headers['persistent']     = 'true'
+            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+            headers['repeat']         = 'false'
+
+            alert['id'] = alertid
+
+            try:
+                conn = stomp.Connection(BROKER_LIST)
+                conn.start()
+                conn.connect(wait=True)
+            except Exception, e:
+                print >>sys.stderr, "ERROR: Could not connect to broker - %s" % e
+                logging.error('Could not connect to broker %s', e)
+            try:
+                logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+                conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            except Exception, e:
+                print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
+                logging.error('Failed to send alert to broker %s', e)
+            broker = conn.get_host_and_port()
+            logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
+            conn.disconnect()
 
         diff = time.time() - start
         status['response']['time'] = "%.3f" % diff

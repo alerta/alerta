@@ -16,7 +16,7 @@ import stomp
 import logging
 import urllib2
 
-__version__ = '1.0'
+__version__ = '1.0.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 LOGGER_QUEUE = '/queue/logger' # XXX note use of queue not topic because all alerts should be logged
@@ -37,7 +37,7 @@ class MessageHandler(object):
         alert = dict()
         alert = json.loads(body)
 
-        logging.info('%s : %s', alert['lastReceiveId'], alert['summary'])
+        logging.info('%s : [%s] %s', alert['lastReceiveId'], alert['status'], alert['summary'])
 
         if 'tags' not in alert or not alert['tags']:           # Kibana GUI borks if tags are null
             alert['tags'] = 'none'
