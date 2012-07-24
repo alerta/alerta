@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+Alerta version 1.1.12
+---------------------
+
+* Bug fixes to alerta and alert-ganglia
+
 Alerta version 1.1.11
 ---------------------
 
