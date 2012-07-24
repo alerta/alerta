@@ -22,7 +22,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.6.4'
+__version__ = '1.6.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -262,9 +262,12 @@ def eval_rule(r,h):
             alert['moreInfo']         = host_info[h]['graphUrl']
 
             # Add machine tags
-            alert['tags'].append("location:"+host_info[h]['location'])
-            alert['tags'].append("cluster:"+host_info[h]['cluster'])
-            alert['tags'].append("os:"+host_metrics[h]['os_name']['value'].lower())
+            if 'location' in host_info[h]:
+                alert['tags'].append("location:"+host_info[h]['location'])
+            if 'cluster' in host_info[h]:
+                alert['tags'].append("cluster:"+host_info[h]['cluster'])
+            if 'os_name' in host_metrics[h]:
+                alert['tags'].append("os:"+host_metrics[h]['os_name']['value'].lower())
 
             alert['graphs']           = list()
             for g in r['graphs']:
