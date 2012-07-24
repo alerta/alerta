@@ -18,7 +18,7 @@ import urllib2
 import operator
 import pytz
 
-__version__ = '1.2.4'
+__version__ = '1.2.5'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -123,6 +123,9 @@ def main():
                       "--group",
                       dest="group",
                       help="Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security")
+    parser.add_option("--origin",
+                      dest="origin",
+                      help="Origin of the alert eg. alert-sender, alert-ganglia")
     parser.add_option("-v",
                       "--value",
                       dest="value",
@@ -224,6 +227,10 @@ def main():
     if options.value:
         for o in options.value.split(','):
             query.append('value=%s' % o)
+
+    if options.origin:
+        for o in options.origin.split(','):
+            query.append('origin=%s' % o)
 
     if options.tags:
         for o in options.tags.split(','):
