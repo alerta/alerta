@@ -20,7 +20,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.4.5'
+__version__ = '1.4.6'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -35,6 +35,7 @@ PIDFILE = '/var/run/alerta/alerta.pid'
 
 # Global variables
 conn = None
+db = None
 alerts = None
 mgmt = None
 
@@ -52,7 +53,7 @@ class MessageHandler(object):
         logging.error('Received an error %s', body)
 
     def on_message(self, headers, body):
-        global alerts, mgmt, hb, conn
+        global db, alerts, mgmt, hb, conn
 
         start = time.time()
         logging.debug("Received alert : %s", body)
@@ -100,14 +101,20 @@ class MessageHandler(object):
             logging.info('%s : Duplicate alert -> update dup count', alertid)
             # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary, value, tags and origin
             #                    2. increment duplicate count
-            alerts.update(
-                { "resource": alert['resource'], "event": alert['event']},
-                { '$set': { "lastReceiveTime": receiveTime, "expireTime": expireTime,
+
+            # FIXME - no native find_and_modify method in this version of pymongo
+            no_obj_error = "No matching object found"
+            alert = db.command("findAndModify", 'alerts',
+                allowable_errors=[no_obj_error],
+                query={ "resource": alert['resource'], "event": alert['event'] },
+                update={ '$set': { "lastReceiveTime": receiveTime, "expireTime": expireTime,
                             "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                             "tags": alert['tags'], "repeat": True, "origin": alert['origin'] },
-                  '$inc': { "duplicateCount": 1 }})
+                  '$inc': { "duplicateCount": 1 }},
+                new=True,
+                fields={ "history": 0 })['value']
 
-            if alerts.find_one({"resource": alert['resource'], "event": alert['event']}, {"status": 1, "_id": 0})['status'] not in ['OPEN','ACK','CLOSED']:
+            if alert['status'] not in ['OPEN','ACK','CLOSED']:
                 if alert['severity'] != 'NORMAL':
                     status = 'OPEN'
                 else:
@@ -116,6 +123,7 @@ class MessageHandler(object):
                 status = None
 
             if status:
+                alert['status'] = status
                 updateTime = datetime.datetime.utcnow()
                 updateTime = updateTime.replace(tzinfo=pytz.utc)
                 alerts.update(
@@ -127,8 +135,6 @@ class MessageHandler(object):
                 logging.info('%s : Alert status for duplicate %s %s alert unchanged because either OPEN, ACK or CLOSED', alertid, alert['severity'], alert['event'])
 
             # Forward alert to notify topic and logger queue
-            alert = alerts.find_one({"lastReceiveId": alertid}, {"history": 0})
-
             headers['type']           = alert['type']
             headers['correlation-id'] = alertid
             headers['persistent']     = 'true'
@@ -151,14 +157,19 @@ class MessageHandler(object):
             #                    2. set duplicate count to zero
             #                    3. push history
 
-            alerts.update(
-                { "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
-                { '$set': { "event": alert['event'], "severity": alert['severity'], "severityCode": alert['severityCode'],
-                            "createTime": createTime, "receiveTime": receiveTime, "lastReceiveTime": receiveTime, "expireTime": expireTime,
-                            "previousSeverity": previousSeverity, "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
-                            "tags": alert['tags'], "repeat": False, "origin": alert['origin'], "thresholdInfo": alert['thresholdInfo'], "duplicateCount": 0 },
-                  '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "event": alert['event'],
-                             "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }}})
+            # FIXME - no native find_and_modify method in this version of pymongo
+            no_obj_error = "No matching object found"
+            alert = db.command("findAndModify", 'alerts',
+                allowable_errors=[no_obj_error],
+                query={ "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
+                update={ '$set': { "event": alert['event'], "severity": alert['severity'], "severityCode": alert['severityCode'],
+                           "createTime": createTime, "receiveTime": receiveTime, "lastReceiveTime": receiveTime, "expireTime": expireTime,
+                           "previousSeverity": previousSeverity, "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
+                           "tags": alert['tags'], "repeat": False, "origin": alert['origin'], "thresholdInfo": alert['thresholdInfo'], "duplicateCount": 0 },
+                         '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "event": alert['event'],
+                           "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }}},
+                new=True,
+                fields={ "history": 0 })['value']
 
             # Update alert status
             status = None
@@ -178,6 +189,7 @@ class MessageHandler(object):
                     status = 'OPEN'
 
             if status:
+                alert['status'] = status
                 updateTime = datetime.datetime.utcnow()
                 updateTime = updateTime.replace(tzinfo=pytz.utc)
                 alerts.update(
@@ -187,8 +199,6 @@ class MessageHandler(object):
                 logging.info('%s : Alert status for %s %s alert with diff event/severity changed to %s', alertid, alert['severity'], alert['event'], status)
 
             # Forward alert to notify topic and logger queue
-            alert = alerts.find_one({"lastReceiveId": alertid}, {"history": 0})
-
             headers['type']           = alert['type']
             headers['correlation-id'] = alertid
             headers['persistent']     = 'true'
@@ -281,7 +291,7 @@ class MessageHandler(object):
         conn.subscribe(destination=ALERT_QUEUE, ack='auto')
 
 def main():
-    global alerts, mgmt, hb, conn
+    global db, alerts, mgmt, hb, conn
 
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alerta[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alerta version %s', __version__)
