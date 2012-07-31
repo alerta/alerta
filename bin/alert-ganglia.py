@@ -22,7 +22,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.6.5'
+__version__ = '1.6.6'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -194,7 +194,10 @@ def eval_rule(r,h):
         logging.debug('currentState = %s, currentCount = %d', currentState[(h, r['event'])], currentCount[(h, r['event'], r['severity'])])
 
         # Determine if should send a repeat alert
-        repeat = (currentCount[(h, r['event'], r['severity'])] - r.get('count', 1)) % r.get('repeat', 1) == 0
+        try:
+            repeat = (currentCount[(h, r['event'], r['severity'])] - r.get('count', 1)) % r.get('repeat', 1) == 0
+        except:
+            repeat = False
 
         logging.debug('Send alert if prevSev %s != %s AND thresh %d == %s', previousSeverity[(h, r['event'])], r['severity'], currentCount[(h, r['event'], r['severity'])], r.get('count', 1))
         logging.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, currentCount[(h, r['event'], r['severity'])], r.get('count', 1), r.get('repeat', 1))
