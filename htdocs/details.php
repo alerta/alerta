@@ -1,37 +1,22 @@
 <?php
-  $env = "";
-  $svc = "";
-  $grp = "";
-  $res = "";
+  $label = '';
+  $tag = '';
+  $query = '';
 
-  if (isset($_GET['environment'])) {
-      $env = $_GET['environment'];
-      $tag_arr[] = $env;
+  foreach ($_GET as $key => $value) {
+      if ($key != 'label') {
+          $query_arr[] = $key . '=' . $value;
+          $label_arr[] = $value;
+      }
   }
-  if (isset($_GET['service'])) {
-      $svc = $_GET['service'];
-      $tag_arr[] = $svc;
-  }
-  if (isset($_GET['group'])) {
-      $grp = $_GET['group'];
-      $tag_arr[] = $grp;
-  }
-  if (isset($_GET['id'])) {
-      $id = $_GET['id'];
-      $tag_arr[] = $id;
-      $_GET['label'] = $id;
-  }
-  if (isset($_GET['resource'])) {
-      $res = $_GET['resource'];
-      $tag_arr[] = $res;
-      $_GET['label'] = $res;
-  }
-  $tag = implode('-', $tag_arr);
-  $tag = preg_replace('/\./', '', $tag);
-  if (isset($_GET['label']))
+  if (isset($_GET['label'])) {
       $label = $_GET['label'];
-  else
-      $label = implode(' ', $tag_arr);
+  } else {
+      $label = implode(' ', $label_arr);
+  }
+  $query = implode('&', $query_arr);
+  $tag = implode('-', $label_arr);
+  $tag = preg_replace("/[^a-zA-Z-]/", "", $tag);
 ?>
 
 <!DOCTYPE html>
@@ -119,9 +104,9 @@
 
         heartbeatAlerts();
 
-        var statusfilter = '<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?><?php if ($id != "") echo "&id=".$id; ?><?php if ($res != "") echo "&resource=".$res; ?>';
+        var statusfilter = '<?php echo $query; ?>&status=OPEN|ACK|CLOSED';
 
-        var services = { '<?php echo $tag; ?>': 'e<?php if ($env != "") echo "&environment=".$env; ?><?php if ($svc != "") echo "&service=".$svc; ?><?php if ($grp != "") echo "&group=".$grp; ?><?php if ($id != "") echo "&id=".$id; ?><?php if ($res != "") echo "&resource=".$res; ?>' };
+        var services = { '<?php echo $tag; ?>': statusfilter };
         loadStatus(statusfilter, true);
         loadAlerts(services, true);
 

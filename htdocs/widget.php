@@ -1,27 +1,22 @@
 <?php
-  $query = "sort-by=lastReceiveTime";
+  $label = '';
+  $tag = '';
+  $query = '';
 
-  if (isset($_GET['environment'])) {
-      $env = $_GET['environment'];
-      $tag_arr[] = $env;
-      $query = $query."&environment=".$env;
+  foreach ($_GET as $key => $value) {
+      if ($key != 'label') {
+          $query_arr[] = $key . '=' . $value;
+          $label_arr[] = $value;
+      }
   }
-  if (isset($_GET['service'])) {
-      $svc = $_GET['service'];
-      $tag_arr[] = $svc;
-      $query = $query."&service=".$svc;
-  }
-  if (isset($_GET['group'])) {
-      $grp = $_GET['group'];
-      $tag_arr[] = $grp;
-      $query = $query."&group=".$grp;
-  }
-  $tag = implode('-', $tag_arr);
   if (isset($_GET['label'])) {
       $label = $_GET['label'];
   } else {
-      $label = implode(' ', $tag_arr);
+      $label = implode(' ', $label_arr);
   }
+  $query = implode('&', $query_arr);
+  $tag = implode('-', $label_arr);
+  $tag = preg_replace("/[^a-zA-Z-]/", "", $tag);
 ?>
 
 <html lang="en">
@@ -33,7 +28,7 @@
  <body class="widget">
    <div class="row show-grid">
      <div class="span3">
-       <a href="./details.php?<?php echo $query; ?><?php if ($label !="") echo "&label=".$label; ?>" target="_blank">
+       <a href="./details.php?<?php echo $query; ?><?php if ($label != "") echo "&label=".$label; ?>" target="_blank">
        <table class="table table-bordered table-condensed summary" id="<?php echo $tag; ?>" data-label="<?php echo $tag; ?>">
          <thead>
            <tr> <th colspan="6" id="<?php echo $tag; ?>-status"><?php echo $label; ?></th> </tr>
@@ -56,7 +51,7 @@
    <script src="js/console.js"></script>
    <script>
      $(document).ready(function() {
-       var services = { '<?php echo $tag; ?>': 'hide-alert-details=true&<?php echo $query; ?>' };
+       var services = { '<?php echo $tag; ?>': 'sort-by=lastReceiveTime&hide-alert-details=true&<?php echo $query; ?>' };
        loadAlerts(services, true);
      });
    </script>
