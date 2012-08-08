@@ -18,7 +18,7 @@ import urllib2
 import operator
 import pytz
 
-__version__ = '1.2.5'
+__version__ = '1.2.6'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -279,6 +279,8 @@ def main():
             print "     service: %s" % options.service
         if options.resource:
             print "    resource: %s" % options.resource
+        if options.origin:
+            print "      origin: %s" % options.origin
         if options.severity:
             print "    severity: %s" % options.severity
         if options.status:
