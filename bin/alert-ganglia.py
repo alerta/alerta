@@ -88,7 +88,11 @@ def get_metrics(env,svc):
         logging.error('Could not retrieve data and/or parse metric data from %s - %s', url, e)
         return 1
 
-    logging.info('%s metrics retreived at %s local time', response['total'], response['localTime'])
+    if response['status'] == 'error':
+        logging.error('No metrics retreived - %s', response['message'])
+        return 1
+    else:
+        logging.info('%s metrics retreived at %s local time', response['total'], response['localTime'])
 
     host_info = {}
     host_metrics = {}
