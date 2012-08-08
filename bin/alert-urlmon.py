@@ -361,14 +361,14 @@ def send_heartbeat():
     createTime = datetime.datetime.utcnow()
 
     headers = dict()
-    headers['type']           = "heartbeatAlert"
+    headers['type']           = "heartbeat"
     headers['correlation-id'] = heartbeatid
     # headers['persistent']     = 'false'
     # headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
     heartbeat = dict()
     heartbeat['id']         = heartbeatid
-    heartbeat['type']       = "heartbeatAlert"
+    heartbeat['type']       = "heartbeat"
     heartbeat['createTime'] = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     heartbeat['origin']     = "%s/%s" % (__program__, os.uname()[1])
     heartbeat['version']    = __version__

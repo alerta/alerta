@@ -78,7 +78,7 @@ class MessageHandler(object):
         createTime = createTime.replace(tzinfo=pytz.utc)
 
         # Handle heartbeats
-        if alert['type'] == 'heartbeatAlert':
+        if alert['type'] == 'heartbeat':
             hb.update(
                 { "origin": alert['origin'] },
                 { "origin": alert['origin'], "version": alert['version'], "createTime": createTime, "receiveTime": receiveTime },
