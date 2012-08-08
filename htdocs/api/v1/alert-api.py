@@ -156,7 +156,8 @@ def main():
 
         diff = time.time() - start
         status['response']['time'] = "%.3f" % diff
-        status['response']['status'] = error
+        status['response']['status'] = 'error'
+        status['response']['message'] = error
         status['response']['localTime'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
         diff = int(diff * 1000)
