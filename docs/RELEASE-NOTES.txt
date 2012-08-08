@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Alerta version 1.1.13
+---------------------
+
+* Fixed Alerta race condition under load
+* More Alert widget query params supported
+* Minor fixes to API and CLI tool
+
 Alerta version 1.1.12
 ---------------------
 
