@@ -22,7 +22,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.6.6'
+__version__ = '1.6.7'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -57,7 +57,7 @@ currentCount  = dict()
 currentState  = dict()
 previousSeverity = dict()
 
-# XXX - Replace this with /ganglia/api/v1/grids? API query
+# XXX - Replace this with /ganglia/api/v1/services? API query
 ENVIRONMENTS = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'DEV', 'STAGE', 'LWP', 'INFRA' ]
 SERVICES = [ 'ContentAPI', 'Discussion', 'EC2', 'FlexibleContent', 'Identity', 'MicroApp', 'Mutual', 'R1', 'R2', 'SharedSvcs', 'Soulmates', 'SLM', 'Servers', 'Network' ]
 
@@ -99,7 +99,7 @@ def get_metrics(env,svc):
         host_info[h['host']] = {
             'id':          h['id'],
             'environment': h['environment'],
-            'grid':        h['grid'],
+            'service':     h['service'],
             'cluster':     h['cluster'],
             'ipAddress':   h['ipAddress'],
             'location':    h['location'],
@@ -114,7 +114,7 @@ def get_metrics(env,svc):
         host_metrics[m['host']][m['metric']] = {
             'id':          m['id'],
             'environment': m['environment'],
-            'grid':        m['grid'], 
+            'service':     m['service'],
             'cluster':     m['cluster'], 
             'host':        m['host'],
             'metric':      m['metric'],
@@ -253,11 +253,11 @@ def eval_rule(r,h):
             alert['severity']         = r['severity']
             alert['severityCode']     = SEVERITY_CODE[r['severity']]
             alert['environment']      = host_info[h]['environment']
-            alert['service']          = host_info[h]['grid']
+            alert['service']          = host_info[h]['service']
             alert['text']             = descrStr
             alert['type']             = 'gangliaAlert'
             alert['tags']             = list(r['tags'])
-            alert['summary']          = '%s - %s %s is %s on %s %s' % (host_info[h]['environment'], r['severity'], r['event'], valueStr, host_info[h]['grid'], h)
+            alert['summary']          = '%s - %s %s is %s on %s %s' % (host_info[h]['environment'], r['severity'], r['event'], valueStr, host_info[h]['service'], h)
             alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
             alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
             alert['thresholdInfo']    = "%s: %s x %s" % (r['resource'], r['rule'], r['count'])
