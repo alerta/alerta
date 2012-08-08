@@ -22,7 +22,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.6.7'
+__version__ = '1.6.8'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
