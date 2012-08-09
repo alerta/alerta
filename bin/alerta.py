@@ -20,7 +20,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.4.6'
+__version__ = '1.4.7'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -296,13 +296,17 @@ def main():
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alerta[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alerta version %s', __version__)
 
-    # Write pid file
+    # Write pid file if not already running
     if os.path.isfile(PIDFILE):
-        logging.error('%s already exists, exiting', PIDFILE)
-        sys.exit(1)
-    else:
-        file(PIDFILE, 'w').write(str(os.getpid()))
-   
+        pid = open(PIDFILE).read()
+        try:
+            os.kill(int(pid), 0)
+            logging.error('Process with pid %s already exists, exiting', pid)
+            sys.exit(1)
+        except OSError:
+            pass
+    file(PIDFILE, 'w').write(str(os.getpid()))
+
     # Connection to MongoDB
     try:
         mongo = pymongo.Connection()

@@ -25,7 +25,7 @@ import uuid
 import re
 
 __program__ = 'alert-syslog'
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -222,12 +222,16 @@ def main():
     logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-syslog[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alert Syslog version %s', __version__)
 
-    # Write pid file
+    # Write pid file if not already running
     if os.path.isfile(PIDFILE):
-        logging.error('%s already exists, exiting', PIDFILE)
-        sys.exit(1)
-    else:
-        file(PIDFILE, 'w').write(str(os.getpid()))
+        pid = open(PIDFILE).read()
+        try:
+            os.kill(int(pid), 0)
+            logging.error('Process with pid %s already exists, exiting', pid)
+            sys.exit(1)
+        except OSError:
+            pass
+    file(PIDFILE, 'w').write(str(os.getpid()))
 
     while os.path.isfile(DISABLE):
         logging.warning('Disable flag exists (%s). Sleeping...', DISABLE)
