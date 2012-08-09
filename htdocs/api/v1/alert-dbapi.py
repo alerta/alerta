@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.7.0'
+__version__ = '1.8.0'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -92,7 +92,7 @@ def main():
 
         status['response']['alert'] = list()
 
-        logging.info('MongoDB GET -> alerts.find_one(%s)', query)
+        logging.debug('MongoDB GET -> alerts.find_one(%s)', query)
         alert = alerts.find_one(query)
         if alert:
             alert['id'] = alert['_id']
@@ -118,7 +118,7 @@ def main():
 
     m = re.search(r'GET /alerta/api/v1/alerts$', request)  # hide-alert-details, sort-by 
     if m:
-        logging.info('form %s' % form)
+        logging.debug('form %s' % form)
 
         query = dict()
         for field in form:
@@ -176,7 +176,7 @@ def main():
         debug = 0
 
         alertDetails = list()
-        logging.info('MongoDB GET all -> alerts.find(%s, sort=%s).limit(%s)', query, sortby, limit)
+        logging.debug('MongoDB GET all -> alerts.find(%s, sort=%s).limit(%s)', query, sortby, limit)
         for alert in alerts.find(query, sort=sortby).limit(limit):
             if not hide_details:
                 alert['id'] = alert['_id']
@@ -245,44 +245,48 @@ def main():
         query['_id'] = alertid
         update = data
 
-        logging.info('MongoDB MODIFY -> alerts.update(%s, { $set: %s })', query, update)
+        logging.debug('MongoDB MODIFY -> alerts.update(%s, { $set: %s })', query, update)
         error = alerts.update(query, { '$set': update }, safe=True)
-        if error['ok'] == 1:
+        logging.debug('MongoDB MODIFY -> error %s', error)
+        if error['updatedExisting'] == True:
             status['response']['status'] = 'ok'
 
-        if 'status' in update:
-            updateTime = datetime.datetime.utcnow()
-            updateTime = updateTime.replace(tzinfo=pytz.utc)
-            alerts.update(query, { '$push': { "history": { "status": update['status'], "updateTime": updateTime } }})
+            if 'status' in update:
+                updateTime = datetime.datetime.utcnow()
+                updateTime = updateTime.replace(tzinfo=pytz.utc)
+                alerts.update(query, { '$push': { "history": { "status": update['status'], "updateTime": updateTime } }})
 
-            # Forward status update to notify topic and logger queue
-            alert = alerts.find_one({"_id": alertid}, {"_id": 0, "history": 0})
+                # Forward status update to notify topic and logger queue
+                alert = alerts.find_one({"_id": alertid}, {"_id": 0, "history": 0})
 
-            headers = dict()
-            headers['type']           = alert['type']
-            headers['correlation-id'] = alertid
-            headers['persistent']     = 'true'
-            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
-            headers['repeat']         = 'false'
+                headers = dict()
+                headers['type']           = alert['type']
+                headers['correlation-id'] = alertid
+                headers['persistent']     = 'true'
+                headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+                headers['repeat']         = 'false'
 
-            alert['id'] = alertid
+                alert['id'] = alertid
 
-            try:
-                conn = stomp.Connection(BROKER_LIST)
-                conn.start()
-                conn.connect(wait=True)
-            except Exception, e:
-                print >>sys.stderr, "ERROR: Could not connect to broker - %s" % e
-                logging.error('Could not connect to broker %s', e)
-            try:
-                logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-                conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
-            except Exception, e:
-                print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
-                logging.error('Failed to send alert to broker %s', e)
-            broker = conn.get_host_and_port()
-            logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
-            conn.disconnect()
+                try:
+                    conn = stomp.Connection(BROKER_LIST)
+                    conn.start()
+                    conn.connect(wait=True)
+                except Exception, e:
+                    print >>sys.stderr, "ERROR: Could not connect to broker - %s" % e
+                    logging.error('Could not connect to broker %s', e)
+                try:
+                    logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
+                    conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+                except Exception, e:
+                    print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
+                    logging.error('Failed to send alert to broker %s', e)
+                broker = conn.get_host_and_port()
+                logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
+                conn.disconnect()
+        else:
+            status['response']['status'] = 'error'
+            status['response']['message'] = 'No exisitng alert with that ID found'
 
         diff = time.time() - start
         status['response']['time'] = "%.3f" % diff
