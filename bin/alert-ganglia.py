@@ -162,7 +162,7 @@ def eval_rule(r,h):
 
     m = re.search(r['resource'], host_info[h]['id'])
     if not m:
-        logging.debug('%s %s: Skip rule %s %s as no match for target %s', r['event'], r['severity'], r['resource'], r['rule'], h)
+        logging.debug('%s %s: Skip rule %s %s as no match for target %s (%s)', r['event'], r['severity'], r['resource'], r['rule'], h, host_info[h]['id'])
         return
 
     # Make substitutions to evaluate expression
