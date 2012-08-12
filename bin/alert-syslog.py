@@ -160,7 +160,7 @@ def send_syslog(data):
 
     alert = dict()
     alert['id']            = alertid
-    alert['resource']      = (environment + '.' + service + '.' + resource).lower()
+    alert['resource']      = resource
     alert['event']         = event
     alert['group']         = group
     alert['value']         = value

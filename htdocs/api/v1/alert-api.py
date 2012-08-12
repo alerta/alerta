@@ -116,7 +116,6 @@ def main():
             headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
             alert['id']            = alertid
-            alert['resource']      = (alert['environment'] + '.' + alert['service'] + '.' + alert['resource']).lower()
             alert['severity']      = alert['severity'].upper()
             alert['severityCode']  = SEVERITY_CODE[alert['severity']]
             alert['environment']   = alert['environment'].upper()

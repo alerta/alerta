@@ -389,7 +389,7 @@ def main():
                 duplicateCount,
                 environment,
                 service,
-                resource.split('.')[-1],
+                resource,
                 group,
                 event,
                 value) + end_color)
@@ -445,7 +445,7 @@ def main():
                     print(line_color + '  %s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
                         receiveTime.astimezone(tz).strftime(DATE_FORMAT),
                         SEV[severity],
-                        resource.split('.')[-1],
+                        resource,
                         group,
                         event,
                         value) + end_color)

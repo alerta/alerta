@@ -276,7 +276,7 @@ class WorkerThread(threading.Thread):
                 os.system("%s" % gmetric_cmd)
 
             # Set necessary state variables if currentState is unknown
-            res = (item['environment'] + '.' + item['service'] + '.' + item['resource']).lower()
+            res = item['resource']
             if (res) not in currentState:
                 currentState[(res)] = event
                 currentCount[(res, event)] = 0
@@ -317,7 +317,7 @@ class WorkerThread(threading.Thread):
                 # standard alert info
                 alert = dict()
                 alert['id']               = alertid
-                alert['resource']         = (item['environment'] + '.' + item['service'] + '.' + item['resource']).lower()
+                alert['resource']         = item['resource']
                 alert['event']            = event
                 alert['group']            = 'SLM'  # Service Level Monitoring
                 alert['value']            = value

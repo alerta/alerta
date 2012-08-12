@@ -46,7 +46,7 @@ parser.add_option("-n",
 parser.add_option("-r",
                   "--resource",
                   dest="resource",
-                  help="Resource under alarm eg. hostname, network device, application. Note: ENVIRONMENT and SERVICE are prepended to the supplied RESOURCE")
+                  help="Resource under alarm eg. hostname, network device, application.")
 parser.add_option("-e",
                   "--event",
                   dest="event",
@@ -160,7 +160,7 @@ def main():
 
     alert = dict()
     alert['id']            = alertid
-    alert['resource']      = (options.environment + '.' + options.service + '.' + options.resource).lower()
+    alert['resource']      = options.resource
     alert['event']         = options.event
     alert['group']         = options.group
     alert['value']         = value
