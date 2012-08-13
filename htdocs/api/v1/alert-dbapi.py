@@ -286,7 +286,7 @@ def main():
                 conn.disconnect()
         else:
             status['response']['status'] = 'error'
-            status['response']['message'] = 'No exisitng alert with that ID found'
+            status['response']['message'] = 'No existing alert with that ID found'
 
         diff = time.time() - start
         status['response']['time'] = "%.3f" % diff
