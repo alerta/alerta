@@ -2,6 +2,7 @@
 
 if [ "$1" = "" ]; then
     echo "Must supply alert ID to acknowledge"
+    exit 1
 else
     ALERTID=$1
 fi
