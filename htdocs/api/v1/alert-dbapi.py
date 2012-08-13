@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.8.0'
+__version__ = '1.9.0'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -242,7 +242,8 @@ def main():
     m = re.search(r'PUT /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
     if m:
         alertid = m.group('id')
-        query['_id'] = alertid
+        query['_id'] = dict()
+        query['_id']['$regex'] = '^'+alertid
         update = data
 
         logging.debug('MongoDB MODIFY -> alerts.update(%s, { $set: %s })', query, update)
@@ -257,7 +258,7 @@ def main():
                 alerts.update(query, { '$push': { "history": { "status": update['status'], "updateTime": updateTime } }})
 
                 # Forward status update to notify topic and logger queue
-                alert = alerts.find_one({"_id": alertid}, {"_id": 0, "history": 0})
+                alert = alerts.find_one(query, {"_id": 0, "history": 0})
 
                 headers = dict()
                 headers['type']           = alert['type']
@@ -300,7 +301,8 @@ def main():
 
     m = re.search(r'PUT /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)/tag$', request)
     if m:
-        query['_id'] = m.group('id')
+        query['_id'] = dict()
+        query['_id']['$regex'] = '^'+m.group('id')
         tag = data
 
         logging.info('MongoDB TAG -> alerts.update(%s, { $push: %s })', query, tag)
