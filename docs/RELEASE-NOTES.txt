@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Alerta version 1.1.14
+---------------------
+
+* Added script to ACK alerts from command line
+* No longer prepend env and service to resource
+* Rewrite pid files if daemon dies
+* Added tool to analyse RRD files against thresholds
+* Better error handling by DB API cgi script
+
 Alerta version 1.1.13
 ---------------------
 
