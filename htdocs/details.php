@@ -83,7 +83,7 @@
               Production - <span id="alert-details-caption"><?php echo $label; ?></span> alert details
             </caption>
             <thead>
-              <tr> <th></th><th>Severity</th><th>Status</th><th>Last Receive Time</th><th>Dupl. Count</th><th>Resource</th><th>Event</th><th>Value</th><th>Text</th></tr>
+              <tr> <th></th><th>Severity</th><th>Status</th><th>Last Receive Time</th><th>Dupl. Count</th><th>Env.</th><th>Service</th><th>Resource</th><th>Event</th><th>Value</th><th>Text</th></tr>
             </thead>
             <tbody id="<?php echo $tag; ?>-alerts" class="serviceAlerts">
             </tbody>

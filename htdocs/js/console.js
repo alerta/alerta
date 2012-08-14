@@ -238,6 +238,8 @@ function getAlerts(service, filter, refresh) {
                   '<td class="ad-stat-td"><span class="label">' + ad.status + '</span></td>' +
                   '<td>'+ date2str(ad.lastReceiveTime) + '</td>' +
                   '<td>' + ad.duplicateCount + '</td>' +
+                  '<td>' + ad.environment + '</td>' +
+                  '<td>' + ad.service + '</td>' +
                   '<td>' + ad.resource + '</td>' +
                   '<td>' + ad.event + '</td>' +
                   '<td>' + ad.value + '</td>' +
@@ -263,9 +265,9 @@ function getAlerts(service, filter, refresh) {
                         '<tr><td><b>Create Time</b></td><td>' + date2str(ad.createTime) + '</td></tr>' +
                         '<tr><td><b>Receive Time</b></td><td>' + date2str(ad.receiveTime) + '</td></tr>' +
                         '<tr><td><b>Last Receive Time</b></td><td>' + date2str(ad.lastReceiveTime) + '</td></tr>' +
-                        '<tr><td><b>Resource</b></td><td>' + ad.resource + '</td></tr>' +
                         '<tr><td><b>Environment</b></td><td>' + ad.environment + '</td></tr>' +
                         '<tr><td><b>Service</b></td><td>' + ad.service + '</td></tr>' +
+                        '<tr><td><b>Resource</b></td><td>' + ad.resource + '</td></tr>' +
                         '<tr><td><b>Event</b></td><td>' + ad.event + '</td></tr>' +
                         '<tr><td><b>Group</b></td><td>' + ad.group + '</td></tr>' +
                         '<tr><td><b>Severity</b></td><td>' + sev2label(ad.previousSeverity) + ' -> ' + sev2label(ad.severity) + '</td></tr>' +
