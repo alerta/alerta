@@ -14,16 +14,20 @@ try:
 except ImportError:
     import simplejson as json
 from optparse import OptionParser
-import stomp
+try:
+    import stomp
+except ImportError:
+    print >>sys.stderr, 'ERROR: You need to install the stomp python module'
+    sys.exit(1)
 import time
 import datetime
 import logging
 import uuid
 
 __program__ = 'alert-sender'
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
-BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
+BROKER_LIST  = [('monitoring.guprod.gnl', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 
 DEFAULT_TIMEOUT = 86400
