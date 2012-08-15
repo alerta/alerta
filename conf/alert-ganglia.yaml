@@ -1,87 +1,43 @@
 # Server reboots within last 2 hours
-- resource: .*
-  rule: $boottime > ($now - 7200)
-  event: ServerReboot
-  severity: INFORM
+- event: ServerReboot
+  filter: metric=boottime
+  value: $boottime > ($now - 7200)
+  thresholdInfo: [ 'INFORM:==:True' ]
+  text: [ 'Server rebooted less than 2 hours ago' ]
+  resource: $host
   group: Server
-  count: 1
-  value: $boottime
-  description: Server rebooted less than 2 hours ago
   graphs: []
-  tags: []
+  tags: [ 'owner:websys' ]
 
 # Puppet Resource alert
-- resource: .*
-  rule: $pup_res_failed > 0
-  event: PuppetResFailed
-  severity: WARNING
-  group: Puppet
-  count: 2
-  repeat: 4 
+- event: PuppetResFailed
+  filter: metric=pup_res_failed
   value: $pup_res_failed
-  description: Puppet agent failed to update $pup_res_failed out of $pup_res_total resources
-  graphs: [pup_res_failed]
-  tags: []
-
-- resource: .*
-  rule: $pup_res_failed == 0
-  event: PuppetResFailed
-  severity: NORMAL
+  thresholdInfo: [ 'WARNING:>:0','NORMAL:==:0' ]
+  text: [ 'Puppet agent failed to update $pup_res_failed out of $pup_res_total resources','Puppet is updating all $pup_res_total resources' ]
+  resource: $host
   group: Puppet
-  count: 2
-  repeat: 100
-  value: OK
-  description: Puppet is updating all $pup_res_total resources
   graphs: [pup_res_failed]
-  tags: []
+  tags: [ 'owner:websys' ]
 
 # Puppet Last Run alert
-- resource: .*
-  rule: $pup_last_run < ($now - 7200)
-  event: PuppetLastRun
-  severity: MINOR
-  group: Puppet
-  count: 2
-  repeat: 10
+- event: PuppetLastRun
+  filter: metric=pup_last_run
   value: $pup_last_run
-  description: Puppet agent has not run for at least 2 hours (last puppet run at $pup_last_run)
-  graphs: []
-  tags: []
-
-- resource: .*
-  rule: $pup_last_run > ($now - 7200)
-  event: PuppetLastRun
-  severity: NORMAL
+  thresholdInfo: [ 'MINOR:<:$now - 7200','NORMAL:>:$now - 7200' ]
+  text: ['Puppet agent has not run for at least 2 hours (last puppet run at $pup_last_run)','Puppet agent is OK (last puppet run at $pup_last_run).']
+  resource: $host
   group: Puppet
-  count: 2
-  repeat: 100
-  value: $pup_last_run
-  description: Puppet agent is OK (last puppet run at $pup_last_run).
   graphs: []
-  tags: []
+  tags: [ 'owner:websys' ]
 
 # Ganglia Heartbeat alert
-- resource: .*
-  rule: $heartbeat < ($now - 300)
-  event: GangliaHeartbeat
-  severity: WARNING
-  group: Ganglia
-  count: 2
-  repeat: 10
+- event: GangliaHeartbeat
+  filter: metric=heartbeat
   value: $heartbeat
-  description: No heartbeat from Ganglia agent for at least 5 minutes (last received at $heartbeat)
+  thresholdInfo: [ 'WARNING:<:$now - 300','NORMAL:>:$now - 300' ]
+  text: [ 'No heartbeat from Ganglia agent for at least 5 minutes (last received at $heartbeat)','Heartbeat from Ganglia agent OK (last received at $heartbeat)' ] 
+  resource: $host
+  group: Ganglia
   graphs: []
   tags: []
-
-- resource: .*
-  rule: $heartbeat > ($now - 300)
-  event: GangliaHeartbeat
-  severity: NORMAL
-  group: Ganglia
-  count: 2
-  repeat: 100
-  value: $heartbeat
-  description: Heartbeat from Ganglia agent OK (last received at $heartbeat)
-  graphs: []
-  tags: []
-
