@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.7.0'
+__version__ = '1.7.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -147,25 +147,28 @@ def main():
                 response = get_metrics(rule['filter'])
                 # logging.debug('%s', response)
 
+                env = dict()
+                svc = dict()
                 value = dict()
+                tags = dict()
                 for m in response:
                     if m['metric'] in rule['value']:
                         logging.debug('%s', m)
-
-                        if 'environment' not in rule:
-                            env = m['environment']
-                        else:
-                            env = rule['environment']
-                        if 'service' not in rule:
-                            svc = m['service']
-                        else:
-                            svc = m['service']
 
                         resource = re.sub('\$instance', m.get('instance','__NA__'), rule['resource'])
                         resource = re.sub('\$host', m.get('host','__NA__'), resource)
                         resource = re.sub('\$cluster', m.get('cluster','__NA__'), resource)
 
                         if '__NA__' in resource: continue
+
+                        if 'environment' not in rule:
+                            env[resource] = m['environment']
+                        else:
+                            env[resource] = rule['environment']
+                        if 'service' not in rule:
+                            svc[resource] = m['service']
+                        else:
+                            svc[resource] = m['service']
 
                         if 'value' in m:
                             v = m['value']
@@ -175,6 +178,8 @@ def main():
                         value[resource] = re.sub('\$now', str(time.time()), rule['value'])
                         value[resource] = re.sub('\$%s' % m['metric'], v, value[resource])
                         value[resource] = re.sub('\$%s' % m['metric'], v, value[resource])
+
+                        tags[resource] = 'cluster:%s' % m['cluster']
 
                 for resource in value:
                     index = 0
@@ -192,7 +197,7 @@ def main():
                         except SyntaxError:
                             result = False
                         if result:
-                            logging.debug('%s %s %s %s rule fired %s %s %s %s',env, svc, sev,rule['event'],resource,ti, rule['text'][index], calculated_value)
+                            logging.debug('%s %s %s %s rule fired %s %s %s %s',env[resource], svc[resource], sev,rule['event'],resource,ti, rule['text'][index], calculated_value)
                             alertid = str(uuid.uuid4()) # random UUID
                             createTime = datetime.datetime.utcnow()
 
@@ -211,18 +216,21 @@ def main():
                             alert['value']            = calculated_value
                             alert['severity']         = sev
                             alert['severityCode']     = SEVERITY_CODE[sev]
-                            alert['environment']      = env
-                            alert['service']          = svc
+                            alert['environment']      = env[resource]
+                            alert['service']          = svc[resource]
                             alert['text']             = rule['text'][index]
                             alert['type']             = 'gangliaAlert'
-                            alert['tags']             = ''
-                            alert['summary']          = '%s - %s %s is %s on %s %s' % (env, sev, rule['event'], calculated_value, svc, resource)
+                            alert['tags']             = list(rule['tags'])
+                            alert['summary']          = '%s - %s %s is %s on %s %s' % (env[resource], sev, rule['event'], calculated_value, svc[resource], resource)
                             alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
                             alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
                             alert['thresholdInfo']    = rule['thresholdInfo']
                             alert['timeout']          = 86400  # expire alerts after 1 day
                             alert['moreInfo']         = ''
                             alert['graphs']           = ''
+
+                            # Add machine tags
+                            alert['tags'].append(tags[resource])
 
                             logging.info('%s : %s', alertid, json.dumps(alert))
 
