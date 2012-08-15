@@ -166,9 +166,9 @@ def main():
                         else:
                             env[resource] = rule['environment']
                         if 'service' not in rule:
-                            svc[resource] = m['service']
+                            svc[resource] = '%s:%s' % (m['service'], m['cluster'].split('_',1)[0])
                         else:
-                            svc[resource] = m['service']
+                            svc[resource] = rule['service']
 
                         if 'value' in m:
                             v = m['value']
