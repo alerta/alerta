@@ -89,17 +89,17 @@
           <strong>Alert Summary</strong>
         <div class="row show-grid">
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="Servers" data-label="Servers">
+            <table class="table table-bordered table-condensed summary" id="OS" data-label="OS">
               <thead>
-                <tr> <th colspan="6" id="Servers-status">Infra Servers</th> </tr>
+                <tr> <th colspan="6" id="OS-status">OS</th> </tr>
               </thead>
               <tbody>
-                <tr id="Servers-warnings" class="warnings">
-                  <td id="Servers-critical">0</td>
-                  <td id="Servers-major">0</td>
-                  <td id="Servers-minor">0</td>
-                  <td id="Servers-warning">0</td>
-                  <td id="Servers-normal">0</td>
+                <tr id="OS-warnings" class="warnings">
+                  <td id="OS-critical">0</td>
+                  <td id="OS-major">0</td>
+                  <td id="OS-minor">0</td>
+                  <td id="OS-warning">0</td>
+                  <td id="OS-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -298,7 +298,7 @@
             <thead>
               <tr> <th></th><th>Severity</th><th>Status</th><th>Last Receive Time</th><th>Dupl. Count</th><th>Env.</th><th>Service</th><th>Resource</th><th>Event</th><th>Value</th><th>Text</th></tr> 
             </thead>
-            <tbody id="Servers-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="OS-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="Linux-alerts" class="serviceAlerts initially-hidden">
             </tbody>
@@ -342,7 +342,7 @@
 
         var env = "INFRA";
         var statusfilter = 'environment='+env+'&status=OPEN|ACK|CLOSED';
-        var services = { 'Servers':  statusfilter+'&service=Servers',
+        var services = { 'OS':       'status=OPEN|ACK|CLOSED&group=OS',
                          'Linux':    'status=OPEN|ACK|CLOSED&tags=os:linux',
                          'Solaris':  'status=OPEN|ACK|CLOSED&tags=os:sunos',
                          'Network':  statusfilter+'&service=Network',
