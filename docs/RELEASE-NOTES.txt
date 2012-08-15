@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Alerta version 1.1.15
+---------------------
+
+* Add environment and service to alert console
+* Several enhancements to alert-ganglia
+
 Alerta version 1.1.14
 ---------------------
 
