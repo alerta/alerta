@@ -212,10 +212,15 @@ function getAlerts(service, filter, refresh) {
           historydata += '</td>'
         }
 
+        var cluster = '';
         if (ad.tags) {
           tagsdata += '';
           $.each (ad.tags, function(y, tag) {
             tagsdata += '<span class="label">' + tag + '</span> ';
+            var t = tag.split(':')
+            if (t[0] == 'cluster') {
+              cluster = t[1];
+            }
           });
         }
 
@@ -244,6 +249,7 @@ function getAlerts(service, filter, refresh) {
                   '<td>' + ad.duplicateCount + '</td>' +
                   '<td>' + ad.environment + '</td>' +
                   '<td>' + ad.service + '</td>' +
+                  '<td>' + cluster + '</td>' +
                   '<td>' + ad.resource + '</td>' +
                   '<td>' + ad.event + '</td>' +
                   '<td>' + ad.value + '</td>' +
@@ -260,7 +266,7 @@ function getAlerts(service, filter, refresh) {
         rows +=  '</td>' +
                 '</tr>' +
                 '<tr id="' + service + 'details' + i +'data" class="initially-hidden">' +
-                  '<td colspan="11" class="alert-more"><table class="table table-bordered table-condensed alert-more-table">' +
+                  '<td colspan="12" class="alert-more"><table class="table table-bordered table-condensed alert-more-table">' +
                      '<tr><td>' + 
                         '<table class="table table-condensed table-striped">' +
                         '<tr><td><b>Alert ID</b></td><td>' + ad.id +
