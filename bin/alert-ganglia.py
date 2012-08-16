@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.7.2'
+__version__ = '1.7.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -254,7 +254,7 @@ def main():
                             alert['summary']          = '%s - %s %s is %s on %s %s' % (env[resource], sev, rule['event'], calculated_value, svc[resource], resource)
                             alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
                             alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
-                            alert['thresholdInfo']    = rule['thresholdInfo']
+                            alert['thresholdInfo']    = ','.join(rule['thresholdInfo'])
                             alert['timeout']          = 86400  # expire alerts after 1 day
                             alert['moreInfo']         = ''
                             alert['graphs']           = ''
