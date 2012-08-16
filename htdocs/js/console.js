@@ -54,6 +54,10 @@ function sev2label(severity) {
         return('<span class="label '+label+'">' + severity + '</span>');
 }
 
+function date2iso8601(datetime) {
+        var d = new Date(datetime);
+        return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' + d.toLocaleTimeString()
+}
 function date2str(datetime) {
         var d = new Date(datetime);
         return d.toLocaleString();
@@ -236,7 +240,7 @@ function getAlerts(service, filter, refresh) {
                     '<span class="show-d"><i class="icon-chevron-up icon-chevron-down"></i></span></a></td>' +
                   '<td class="ad-sev-td">' + sev2label(ad.severity) + '</td>' +
                   '<td class="ad-stat-td"><span class="label">' + ad.status + '</span></td>' +
-                  '<td>'+ date2str(ad.lastReceiveTime) + '</td>' +
+                  '<td>'+ date2iso8601(ad.lastReceiveTime) + '</td>' +
                   '<td>' + ad.duplicateCount + '</td>' +
                   '<td>' + ad.environment + '</td>' +
                   '<td>' + ad.service + '</td>' +
