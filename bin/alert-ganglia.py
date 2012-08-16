@@ -106,6 +106,13 @@ def init_rules():
     logging.info('Loaded %d rules OK', len(rules))
     return rules
 
+def subst_vars(text, subst):
+    # This could potentially also evaluate the expression
+    text = re.sub('\$now', str(time.time()), text)
+    for key in subst:
+      text = re.sub('\$%s' % key, subst[key], text)
+    return text
+
 def main():
     global conn
 
@@ -151,6 +158,14 @@ def main():
                 svc = dict()
                 value = dict()
                 tags = dict()
+                text_vars = dict()
+                text_params = dict()
+
+                for t in rule['text']:
+                  vars = re.findall('\$([a-z0-9A-Z_]+)', t)
+                  for v in vars:
+                    text_params[v] = 1
+
                 for m in response:
                     if m['metric'] in rule['value']:
                         logging.debug('%s', m)
@@ -177,9 +192,18 @@ def main():
 
                         value[resource] = re.sub('\$now', str(time.time()), rule['value'])
                         value[resource] = re.sub('\$%s' % m['metric'], v, value[resource])
-                        value[resource] = re.sub('\$%s' % m['metric'], v, value[resource])
-
                         tags[resource] = 'cluster:%s' % m['cluster']
+
+                    if m['metric'] in text_params:
+                        if 'value' in m:
+                            v = m['value']
+                        else:
+                            v = m['sum'] # FIXME - sum or sum/num or whatever
+
+                        if not resource in text_vars:
+                          text_vars[resource] = dict()
+                        # logging.debug(' setting text_vars[%s][%s] to %d', resource, m['metric'], v)
+                        text_vars[resource][m['metric']] = v
 
                 for resource in value:
                     index = 0
@@ -202,6 +226,11 @@ def main():
                             alertid = str(uuid.uuid4()) # random UUID
                             createTime = datetime.datetime.utcnow()
 
+                            if resource in text_vars:
+                              text = subst_vars(rule['text'][index], text_vars[resource])
+                            else:
+                              text = rule['text'][index]
+
                             headers = dict()
                             headers['type']           = "gangliaAlert"
                             headers['correlation-id'] = alertid
@@ -219,7 +248,7 @@ def main():
                             alert['severityCode']     = SEVERITY_CODE[sev]
                             alert['environment']      = env[resource]
                             alert['service']          = svc[resource]
-                            alert['text']             = rule['text'][index]
+                            alert['text']             = text
                             alert['type']             = 'gangliaAlert'
                             alert['tags']             = list(rule['tags'])
                             alert['summary']          = '%s - %s %s is %s on %s %s' % (env[resource], sev, rule['event'], calculated_value, svc[resource], resource)
