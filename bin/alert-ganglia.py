@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.7.1'
+__version__ = '1.7.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -185,8 +185,9 @@ def main():
                     index = 0
                     try:
                         calculated_value = eval(value[resource])
-                    except SyntaxError:
-                        calculated_value = 'unknown'
+                    except (SyntaxError,NameError):
+                        logging.error('Could not calculate value for %s => eval(%s)', resource, value[resource])
+                        continue
 
                     for ti in rule['thresholdInfo']:
                         sev,op,threshold = ti.split(':')
