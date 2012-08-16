@@ -256,7 +256,7 @@ function getAlerts(service, filter, refresh) {
         rows +=  '</td>' +
                 '</tr>' +
                 '<tr id="' + service + 'details' + i +'data" class="initially-hidden">' +
-                  '<td colspan="10" class="alert-more"><table class="table table-bordered table-condensed alert-more-table">' +
+                  '<td colspan="11" class="alert-more"><table class="table table-bordered table-condensed alert-more-table">' +
                      '<tr><td>' + 
                         '<table class="table table-condensed table-striped">' +
                         '<tr><td><b>Alert ID</b></td><td>' + ad.id +
