@@ -113,6 +113,15 @@ def subst_vars(text, subst):
       text = re.sub('\$%s' % key, subst[key], text)
     return text
 
+def find_vars_in(strings):
+    params = dict()
+    for t in strings:
+      vars = re.findall('\$([a-z0-9A-Z_]+)', t)
+      for v in vars:
+        if v != 'now':
+          params[v] = 1
+    return params
+
 def main():
     global conn
 
@@ -151,20 +160,25 @@ def main():
                 rules_mod_time = os.path.getmtime(RULESFILE)
 
             for rule in rules:
-                response = get_metrics(rule['filter'])
-                # logging.debug('%s', response)
-
                 env = dict()
                 svc = dict()
                 value = dict()
                 tags = dict()
                 text_vars = dict()
-                text_params = dict()
 
-                for t in rule['text']:
-                  vars = re.findall('\$([a-z0-9A-Z_]+)', t)
-                  for v in vars:
-                    text_params[v] = 1
+                # We want to filter on the metrics we need which are those used
+                # in text and in value and thresholdinfo
+                text_params = find_vars_in(rule['text'])
+                thrsh_params = find_vars_in(rule['thresholdInfo'])
+                value_params = find_vars_in([rule['value']])
+
+                filter_metrics = dict(text_params.items() + thrsh_params.items() + value_params.items())
+                if not rule['filter']:
+                  rule['filter'] = ''
+                filter = rule['filter'] + ''.join(map(lambda x: '&metric=' + x, filter_metrics.keys()))
+
+                response = get_metrics(filter)
+                # logging.debug('%s', response)
 
                 for m in response:
                     if m['metric'] in rule['value']:
