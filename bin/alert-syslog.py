@@ -219,7 +219,7 @@ def send_heartbeat():
 def main():
     global conn
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-syslog[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-syslog[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alert Syslog version %s', __version__)
 
     # Write pid file if not already running

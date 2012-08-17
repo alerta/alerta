@@ -293,7 +293,7 @@ class MessageHandler(object):
 def main():
     global db, alerts, mgmt, hb, conn
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alerta[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s alerta[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alerta version %s', __version__)
 
     # Write pid file if not already running

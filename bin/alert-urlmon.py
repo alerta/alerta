@@ -393,7 +393,7 @@ def init_urls():
 def main():
     global urls, conn
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-urlmon[%(process)d] %(threadName)s %(levelname)s - %(message)s", filename=LOGFILE)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-urlmon[%(process)d] %(threadName)s %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up URL monitor version %s', __version__)
 
     # Write pid file if not already running
