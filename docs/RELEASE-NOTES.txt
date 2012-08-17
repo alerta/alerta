@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+Alerta version 1.1.16
+---------------------
+
+* Substitue variables in text in alert-ganglia
+* Only pull metrics that are needed from metrics.py in alert-ganglia
+* Add cluster column to web console
+
 Alerta version 1.1.15
 ---------------------
 
