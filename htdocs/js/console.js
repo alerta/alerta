@@ -56,7 +56,7 @@ function sev2label(severity) {
 
 function date2iso8601(datetime) {
         var d = new Date(datetime);
-        return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' + d.toLocaleTimeString()
+        return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate() + ' ' + d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
 }
 function date2str(datetime) {
         var d = new Date(datetime);
