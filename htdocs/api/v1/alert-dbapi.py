@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.0'
+__version__ = '1.9.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -239,7 +239,7 @@ def main():
             { '$inc': { "count": 1, "totalTime": diff}},
             True)
 
-    m = re.search(r'PUT /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
+    m = re.search(r'[PUT|POST] /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
     if m:
         alertid = m.group('id')
         query['_id'] = dict()

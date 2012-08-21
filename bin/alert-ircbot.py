@@ -16,15 +16,18 @@ try:
 except ImportError:
     import simplejson as json
 import stomp
+import urllib2
 import logging
 
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
 IRC_SERVER   = 'irc.gudev.gnl:6667'
 IRC_CHANNEL  = '#alerts'
 IRC_USER     = 'alerta'
+
+API_SERVER = 'monitoring.guprod.gnl'
 
 DISABLE = '/opt/alerta/conf/alert-ircbot.disable'
 LOGFILE = '/var/log/alerta/alert-ircbot.log'
@@ -64,7 +67,7 @@ class MessageHandler(object):
             return
 
         try:
-            logging.info('%s : IRC message to %s', alert['lastReceiveId'], IRC_CHANNEL)
+            logging.info('%s : Send IRC message to %s', alert['lastReceiveId'], IRC_CHANNEL)
             irc.send('PRIVMSG %s :[%s] %s\r\n' % (IRC_CHANNEL, alert['status'], alert['summary']))
         except Exception, e:
             logging.error('%s : IRC send failed - %s', alert['lastReceiveId'], e)
@@ -107,6 +110,26 @@ class TokenTopUp(threading.Thread):
                 time.sleep(_token_rate)
 
         self.running = False
+
+def ack_alert(alertid):
+
+    url = "http://%s/alerta/api/v1/alerts/alert/%s" % (API_SERVER, alertid)
+    params = json.dumps({'status':'ACK'})
+    logging.info('ACK request %s', url)
+
+    try:
+        output = urllib2.urlopen(url, params).read()
+        response = json.loads(output)['response']
+    except urllib2.URLError, e:
+        logging.error('Could not post request and/or parse response from %s - %s', url, e)
+        return
+
+    if response['status'] == 'error':
+        logging.error('Message not ACKed - %s', response['message'])
+        return
+
+    logging.info('Successfully ACKed alert %s', alertid)
+    return
 
 def main():
     global irc, conn
@@ -165,9 +188,14 @@ def main():
             for i in ip:
                 if i == irc:
                     data = irc.recv(4096)
-                    if data.find('PING') != -1:
+                    if len(data) > 0:
+                        logging.debug('Received IRC message: %s', data)
+                    if 'PING' in data:
                         logging.info('IRC PING received -> PONG '+data.split()[1])
                         irc.send('PONG '+data.split()[1]+'\r\n')
+                    if 'ACK' in data:
+                        logging.info('Request to ACK %s by %s', data.split()[4], data.split()[0])
+                        ack_alert(data.split()[4])
                     if data.find('!alerta quit') != -1:
                         irc.send('QUIT\r\n')
 
