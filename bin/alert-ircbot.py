@@ -19,7 +19,7 @@ import stomp
 import urllib2
 import logging
 
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -68,7 +68,8 @@ class MessageHandler(object):
 
         try:
             logging.info('%s : Send IRC message to %s', alert['lastReceiveId'], IRC_CHANNEL)
-            irc.send('PRIVMSG %s :[%s] %s\r\n' % (IRC_CHANNEL, alert['status'], alert['summary']))
+            shortid = alert['id'].split('-')[0]
+            irc.send('PRIVMSG %s :%s [%s] %s\r\n' % (IRC_CHANNEL, shortid, alert['status'], alert['summary']))
         except Exception, e:
             logging.error('%s : IRC send failed - %s', alert['lastReceiveId'], e)
 
