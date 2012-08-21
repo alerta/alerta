@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.7.4'
+__version__ = '1.7.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -29,8 +29,8 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 WAIT_SECONDS = 120
 
-# API_SERVER = 'ganglia.guprod.gnl'
-API_SERVER='ganglia.gul3.gnl'
+API_SERVER = 'ganglia.guprod.gnl'
+REQUEST_TIMEOUT = 15
 
 RULESFILE = '/opt/alerta/conf/alert-ganglia.yaml'
 LOGFILE = '/var/log/alerta/alert-ganglia.log'
@@ -53,12 +53,16 @@ def get_metrics(filter):
     logging.info('Metric request %s', url)
 
     try:
-        output = urllib2.urlopen(url).read()
-        response = json.loads(output)['response']
+        r = urllib2.urlopen(url, None, REQUEST_TIMEOUT)
     except urllib2.URLError, e:
-        logging.error('Could not retrieve data and/or parse metric data from %s - %s', url, e)
+        logging.error('Could not retrieve metric data from %s - %s', url, e)
         return dict()
 
+    if r.getcode() is None:
+        logging.error('Error during connection or data transfer (timeout=%d)', REQUEST_TIMEOUT)
+        return dict()
+
+    response = json.loads(r.read())['response']
     if response['status'] == 'error':
         logging.error('No metrics retreived - %s', response['message'])
         return dict()
