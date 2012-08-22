@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.7.8'
+__version__ = '1.7.9'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -170,16 +170,20 @@ def main():
 
                 metric = dict()
                 for m in response:
-                    if m['metric'] in rule['value'] or m['metric'] in ''.join(rule['thresholdInfo']):
 
-                        resource = re.sub('\$instance', m.get('instance','__NA__'), rule['resource'])
-                        resource = re.sub('\$host', m.get('host','__NA__'), resource)
-                        resource = re.sub('\$cluster', m.get('cluster','__NA__'), resource)
+                    resource = re.sub('\$instance', m.get('instance','__NA__'), rule['resource'])
+                    resource = re.sub('\$host', m.get('host','__NA__'), resource)
+                    resource = re.sub('\$cluster', m.get('cluster','__NA__'), resource)
+                    if '__NA__' in resource: continue
 
-                        if '__NA__' in resource: continue
+                    if resource not in metric:
+                        metric[resource] = dict()
+                    if 'thresholdInfo' not in metric[resource]:
+                        metric[resource]['thresholdInfo'] = list(rule['thresholdInfo'])
+                    if 'text' not in metric[resource]:
+                        metric[resource]['text'] = list(rule['text'])
 
-                        if resource not in metric:
-                            metric[resource] = dict()
+                    if m['metric'] in rule['value']:
 
                         if 'environment' not in rule:
                             metric[resource]['environment'] = m['environment']
@@ -211,8 +215,18 @@ def main():
                         if 'graphUrl' in m:
                             metric[resource]['graphUrl'].append(m['graphUrl'])
 
-                        if 'thresholdInfo' not in metric[resource]:
-                            metric[resource]['thresholdInfo'] = list(rule['thresholdInfo'])
+                        metric[resource]['moreInfo'] = ''
+                        if '$host' in rule['resource'] and 'graphUrl' in m:
+                            metric[resource]['moreInfo'] = '/'.join(m['graphUrl'].rsplit('/',2)[0:2])+'/?c=%s&h=%s' % (m['cluster'], m['host'])
+                        if '$cluster' in rule['resource'] and 'graphUrl' in m:
+                            metric[resource]['moreInfo'] = '/'.join(m['graphUrl'].rsplit('/',2)[0:2])+'/?c=%s' % m['cluster']
+
+                    if m['metric'] in ''.join(rule['thresholdInfo']):
+
+                        if 'value' in m:
+                            v = m['value']
+                        else:
+                            v = m['sum'] # FIXME - sum or sum/num or whatever
 
                         idx = 0
                         for threshold in metric[resource]['thresholdInfo']:
@@ -220,22 +234,18 @@ def main():
                             metric[resource]['thresholdInfo'][idx] = re.sub('\$%s' % m['metric'], v, threshold)
                             idx += 1
 
-                        if 'text' not in metric[resource]:
-                            metric[resource]['text'] = list(rule['text'])
+                    if m['metric'] in ''.join(rule['text']):
+
+                        if 'value' in m:
+                            v = m['value']
+                        else:
+                            v = m['sum'] # FIXME - sum or sum/num or whatever
 
                         idx = 0
                         for text in metric[resource]['text']:
                             text = re.sub('\$now', time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(now)), text)
                             metric[resource]['text'][idx] = re.sub('\$%s' % m['metric'], v, text)
                             idx += 1
-
-                        metric[resource]['moreInfo'] = ''
-                        if '$host' in rule['resource'] and 'graphUrl' in m:
-                            metric[resource]['moreInfo'] = '/'.join(m['graphUrl'].rsplit('/',2)[0:2])+'/?c=%s&h=%s' % (m['cluster'], m['host'])
-                        if '$cluster' in rule['resource'] and 'graphUrl' in m:
-                            metric[resource]['moreInfo'] = '/'.join(m['graphUrl'].rsplit('/',2)[0:2])+'/?c=%s' % m['cluster']
-
-                        logging.debug('metric[%s] = %s', resource, metric[resource])
 
                 for resource in metric:
                     index = 0
