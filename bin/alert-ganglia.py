@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.7.7'
+__version__ = '1.7.8'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -149,7 +149,6 @@ def main():
                 rules_mod_time = os.path.getmtime(RULESFILE)
 
             for rule in rules:
-
                 # Get list of metrics required to evaluate each rule
                 params = dict()
                 if 'filter' in rule and rule['filter'] is not None:
@@ -171,8 +170,7 @@ def main():
 
                 metric = dict()
                 for m in response:
-                    if m['metric'] in rule['value']:
-                        logging.debug('%s', m)
+                    if m['metric'] in rule['value'] or m['metric'] in ''.join(rule['thresholdInfo']):
 
                         resource = re.sub('\$instance', m.get('instance','__NA__'), rule['resource'])
                         resource = re.sub('\$host', m.get('host','__NA__'), resource)
@@ -213,36 +211,49 @@ def main():
                         if 'graphUrl' in m:
                             metric[resource]['graphUrl'].append(m['graphUrl'])
 
+                        if 'thresholdInfo' not in metric[resource]:
+                            metric[resource]['thresholdInfo'] = list(rule['thresholdInfo'])
+
+                        idx = 0
+                        for threshold in metric[resource]['thresholdInfo']:
+                            threshold = re.sub('\$now', str(now), threshold)
+                            metric[resource]['thresholdInfo'][idx] = re.sub('\$%s' % m['metric'], v, threshold)
+                            idx += 1
+
                         if 'text' not in metric[resource]:
                             metric[resource]['text'] = list(rule['text'])
 
                         idx = 0
                         for text in metric[resource]['text']:
-                            text = re.sub('\$now', time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(now)), text) # FIXME make this human-readable
+                            text = re.sub('\$now', time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(now)), text)
                             metric[resource]['text'][idx] = re.sub('\$%s' % m['metric'], v, text)
                             idx += 1
 
-                        if '$host' in rule['resource']:
+                        metric[resource]['moreInfo'] = ''
+                        if '$host' in rule['resource'] and 'graphUrl' in m:
                             metric[resource]['moreInfo'] = '/'.join(m['graphUrl'].rsplit('/',2)[0:2])+'/?c=%s&h=%s' % (m['cluster'], m['host'])
-                        if '$cluster' in rule['resource']:
+                        if '$cluster' in rule['resource'] and 'graphUrl' in m:
                             metric[resource]['moreInfo'] = '/'.join(m['graphUrl'].rsplit('/',2)[0:2])+'/?c=%s' % m['cluster']
+
+                        logging.debug('metric[%s] = %s', resource, metric[resource])
 
                 for resource in metric:
                     index = 0
                     try:
                         calculated_value = eval(metric[resource]['value'])
                     except (SyntaxError,NameError):
-                        logging.error('Could not calculate value for %s => eval(%s)', resource, metric[resource]['value'])
+                        logging.error('Could not calculate %s value for %s => eval(%s)', rule['event'], resource, metric[resource]['value'])
                         continue
 
-                    for ti in rule['thresholdInfo']:
+                    for ti in metric[resource]['thresholdInfo']:
                         sev,op,threshold = ti.split(':')
-                        threshold = re.sub('\$now', str(time.time()), threshold)
                         rule_eval = '%s %s %s' % (calculated_value,op,threshold)
                         try:
                             result = eval(rule_eval)
                         except SyntaxError:
+                            logging.error('Could not evaluate %s threshold for %s => eval(%s)', rule['event'], resource, rule_eval)
                             result = False
+
                         if result:
                             logging.debug('%s %s %s %s rule fired %s %s %s %s',metric[resource]['environment'], metric[resource]['service'], sev,rule['event'],resource,ti, rule['text'][index], calculated_value)
                             alertid = str(uuid.uuid4()) # random UUID
