@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.7.6'
+__version__ = '1.7.7'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -29,7 +29,8 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 WAIT_SECONDS = 120
 
-API_SERVER = 'ganglia.guprod.gnl:8080'
+# API_SERVER = 'ganglia.guprod.gnl:8080'
+API_SERVER = 'localhost:8080'
 REQUEST_TIMEOUT = 30
 
 RULESFILE = '/opt/alerta/conf/alert-ganglia.yaml'
@@ -110,22 +111,6 @@ def init_rules():
     logging.info('Loaded %d rules OK', len(rules))
     return rules
 
-def subst_vars(text, subst):
-    # This could potentially also evaluate the expression
-    text = re.sub('\$now', str(time.time()), text)
-    for key in subst:
-      text = re.sub('\$%s' % key, subst[key], text)
-    return text
-
-def find_vars_in(strings):
-    params = dict()
-    for t in strings:
-      vars = re.findall('\$([a-z0-9A-Z_]+)', t)
-      for v in vars:
-        if v != 'now':
-          params[v] = 1
-    return params
-
 def main():
     global conn
 
@@ -164,24 +149,27 @@ def main():
                 rules_mod_time = os.path.getmtime(RULESFILE)
 
             for rule in rules:
-                metric = dict()
 
-                text_vars = dict() # FIXME
+                # Get list of metrics required to evaluate each rule
+                params = dict()
+                if 'filter' in rule and rule['filter'] is not None:
+                    params[rule['filter']] = 1
 
-                # We want to filter on the metrics we need which are those used
-                # in text and in value and thresholdinfo
-                text_params = find_vars_in(rule['text'])
-                thrsh_params = find_vars_in(rule['thresholdInfo'])
-                value_params = find_vars_in([rule['value']])
+                for s in (''.join(rule['text']), ''.join(rule['thresholdInfo']), rule['value']):
+                    matches = re.findall('\$([a-z0-9A-Z_]+)', s)
+                    for m in matches:
+                        if m != 'now':
+                            params['metric='+m] = 1
+                filter = '&'.join(params)
 
-                filter_metrics = dict(text_params.items() + thrsh_params.items() + value_params.items())
-                if not rule['filter']:
-                  rule['filter'] = ''
-                filter = rule['filter'] + ''.join(map(lambda x: '&metric=' + x, filter_metrics.keys()))
-
+                # Get metric data for each rule
                 response = get_metrics(filter)
-                # logging.debug('%s', response)
 
+                # Make non-metric substitutions
+                now = time.time()
+                rule['value'] = re.sub('\$now', str(now), rule['value'])
+
+                metric = dict()
                 for m in response:
                     if m['metric'] in rule['value']:
                         logging.debug('%s', m)
@@ -192,7 +180,8 @@ def main():
 
                         if '__NA__' in resource: continue
 
-                        metric[resource] = dict()
+                        if resource not in metric:
+                            metric[resource] = dict()
 
                         if 'environment' not in rule:
                             metric[resource]['environment'] = m['environment']
@@ -208,8 +197,9 @@ def main():
                         else:
                             v = m['sum'] # FIXME - sum or sum/num or whatever
 
-                        value = re.sub('\$now', str(time.time()), rule['value'])
-                        metric[resource]['value'] = re.sub('\$%s' % m['metric'], v, value)
+                        if 'value' not in metric[resource]:
+                            metric[resource]['value'] = rule['value']
+                        metric[resource]['value'] = re.sub('\$%s' % m['metric'], v, metric[resource]['value'])
 
                         metric[resource]['tags'] = list()
                         metric[resource]['tags'].extend(rule['tags'])
@@ -217,20 +207,25 @@ def main():
                         if 'tags' in m and m['tags'] is not None:
                             metric[resource]['tags'].extend(m['tags'])
 
-                        metric[resource]['graphUrl'] = list()
+                        # FIXME -- this should use the graphs alert definition to know what graphs to include
+                        if 'graphUrl' not in metric[resource]:
+                            metric[resource]['graphUrl'] = list()
                         if 'graphUrl' in m:
                             metric[resource]['graphUrl'].append(m['graphUrl'])
 
-                    if m['metric'] in text_params:
-                        if 'value' in m:
-                            v = m['value']
-                        else:
-                            v = m['sum'] # FIXME - sum or sum/num or whatever
+                        if 'text' not in metric[resource]:
+                            metric[resource]['text'] = list(rule['text'])
 
-                        if not resource in text_vars:
-                          text_vars[resource] = dict()
-                        # logging.debug(' setting text_vars[%s][%s] to %d', resource, m['metric'], v)
-                        text_vars[resource][m['metric']] = v
+                        idx = 0
+                        for text in metric[resource]['text']:
+                            text = re.sub('\$now', time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(now)), text) # FIXME make this human-readable
+                            metric[resource]['text'][idx] = re.sub('\$%s' % m['metric'], v, text)
+                            idx += 1
+
+                        if '$host' in rule['resource']:
+                            metric[resource]['moreInfo'] = '/'.join(m['graphUrl'].rsplit('/',2)[0:2])+'/?c=%s&h=%s' % (m['cluster'], m['host'])
+                        if '$cluster' in rule['resource']:
+                            metric[resource]['moreInfo'] = '/'.join(m['graphUrl'].rsplit('/',2)[0:2])+'/?c=%s' % m['cluster']
 
                 for resource in metric:
                     index = 0
@@ -253,11 +248,6 @@ def main():
                             alertid = str(uuid.uuid4()) # random UUID
                             createTime = datetime.datetime.utcnow()
 
-                            if resource in text_vars:
-                              text = subst_vars(rule['text'][index], text_vars[resource])
-                            else:
-                              text = rule['text'][index]
-
                             headers = dict()
                             headers['type']           = "gangliaAlert"
                             headers['correlation-id'] = alertid
@@ -275,7 +265,7 @@ def main():
                             alert['severityCode']     = SEVERITY_CODE[sev]
                             alert['environment']      = metric[resource]['environment']
                             alert['service']          = metric[resource]['service']
-                            alert['text']             = text
+                            alert['text']             = metric[resource]['text'][index]
                             alert['type']             = 'gangliaAlert'
                             alert['tags']             = metric[resource]['tags']
                             alert['summary']          = '%s - %s %s is %s on %s %s' % (metric[resource]['environment'], sev, rule['event'], calculated_value, metric[resource]['service'], resource)
@@ -283,7 +273,7 @@ def main():
                             alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
                             alert['thresholdInfo']    = ','.join(rule['thresholdInfo'])
                             alert['timeout']          = 86400  # expire alerts after 1 day
-                            alert['moreInfo']         = ''
+                            alert['moreInfo']         = metric[resource]['moreInfo']
                             alert['graphs']           = metric[resource]['graphUrl']
 
                             logging.info('%s : %s', alertid, json.dumps(alert))
