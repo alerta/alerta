@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.7.9'
+__version__ = '1.7.10'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -111,6 +111,13 @@ def init_rules():
     logging.info('Loaded %d rules OK', len(rules))
     return rules
 
+def quote(s):
+    try:
+        float(s)
+        return s
+    except ValueError:
+        return '"%s"' % s
+
 def main():
     global conn
 
@@ -167,6 +174,14 @@ def main():
                 # Make non-metric substitutions
                 now = time.time()
                 rule['value'] = re.sub('\$now', str(now), rule['value'])
+                idx = 0
+                for threshold in rule['thresholdInfo']:
+                    rule['thresholdInfo'][idx] = re.sub('\$now', str(now), threshold)
+                    idx += 1
+                idx = 0
+                for text in rule['text']:
+                    rule['text'][idx] = re.sub('\$now', time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(now)), text)
+                    idx += 1
 
                 metric = dict()
                 for m in response:
@@ -230,7 +245,6 @@ def main():
 
                         idx = 0
                         for threshold in metric[resource]['thresholdInfo']:
-                            threshold = re.sub('\$now', str(now), threshold)
                             metric[resource]['thresholdInfo'][idx] = re.sub('\$%s' % m['metric'], v, threshold)
                             idx += 1
 
@@ -243,21 +257,20 @@ def main():
 
                         idx = 0
                         for text in metric[resource]['text']:
-                            text = re.sub('\$now', time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(now)), text)
                             metric[resource]['text'][idx] = re.sub('\$%s' % m['metric'], v, text)
                             idx += 1
 
                 for resource in metric:
                     index = 0
                     try:
-                        calculated_value = eval(metric[resource]['value'])
+                        calculated_value = eval(quote(metric[resource]['value']))
                     except (SyntaxError,NameError):
                         logging.error('Could not calculate %s value for %s => eval(%s)', rule['event'], resource, metric[resource]['value'])
                         continue
 
                     for ti in metric[resource]['thresholdInfo']:
                         sev,op,threshold = ti.split(':')
-                        rule_eval = '%s %s %s' % (calculated_value,op,threshold)
+                        rule_eval = '%s %s %s' % (quote(calculated_value),op,threshold)
                         try:
                             result = eval(rule_eval)
                         except SyntaxError:
