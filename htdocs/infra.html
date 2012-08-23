@@ -171,17 +171,17 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="Database" data-label="Database">
+            <table class="table table-bordered table-condensed summary" id="Syslog" data-label="Syslog">
               <thead>
-                <tr> <th colspan="6" id="Database-status">Database</th> </tr> 
+                <tr> <th colspan="6" id="Syslog-status">Syslog</th> </tr>
               </thead>
               <tbody>
-                <tr id="Database-warnings" class="warnings">
-                  <td id="Database-critical">0</td>
-                  <td id="Database-major">0</td>
-                  <td id="Database-minor">0</td>
-                  <td id="Database-warning">0</td>
-                  <td id="Database-normal">0</td>
+                <tr id="Syslog-warnings" class="warnings">
+                  <td id="Syslog-critical">0</td>
+                  <td id="Syslog-major">0</td>
+                  <td id="Syslog-minor">0</td>
+                  <td id="Syslog-warning">0</td>
+                  <td id="Syslog-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -310,7 +310,7 @@
             </tbody>
             <tbody id="Puppet-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="Database-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="Syslog-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="Web-alerts" class="serviceAlerts initially-hidden">
             </tbody>
@@ -348,7 +348,7 @@
                          'Network':  statusfilter+'&service=Network',
                          'EC2':      statusfilter+'&service=EC2',
                          'Puppet':   'status=OPEN|ACK|CLOSED&group=Puppet',
-                         'Database': 'status=OPEN|ACK|CLOSED&group=Database',
+                         'Syslog':   'status=OPEN|ACK|CLOSED&group=Syslog',
                          'Web':      'status=OPEN|ACK|CLOSED&group=Web',
                          'Ganglia':  'status=OPEN|ACK|CLOSED&group=Ganglia',
                          'Acknowledged': 'status=ACK',
