@@ -224,11 +224,16 @@ def main():
                         if 'tags' in m and m['tags'] is not None:
                             metric[resource]['tags'].extend(m['tags'])
 
-                        # FIXME -- this should use the graphs alert definition to know what graphs to include
                         if 'graphUrl' not in metric[resource]:
                             metric[resource]['graphUrl'] = list()
                         if 'graphUrl' in m:
                             metric[resource]['graphUrl'].append(m['graphUrl'])
+
+                        for g in rule['graphs']:
+                            if '$host' in rule['resource'] and 'graphUrl' in m:
+                                metric[resource]['graphUrl'].append('/'.join(m['graphUrl'].rsplit('/',2)[0:2])+'/graph.php?c=%s&h=%s&m=%s&r=1day&v=0&z=default' % (m['cluster'], m['host'], g))
+                            if '$cluster' in rule['resource'] and 'graphUrl' in m:
+                                metric[resource]['graphUrl'].append('/'.join(m['graphUrl'].rsplit('/',2)[0:2])+'/graph.php?c=%s&m=%s&r=1day&v=0&z=default' % (m['cluster'], g))
 
                         metric[resource]['moreInfo'] = ''
                         if '$host' in rule['resource'] and 'graphUrl' in m:
