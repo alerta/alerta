@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.7.10'
+__version__ = '1.7.11'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -259,6 +259,9 @@ def main():
                             v = m['value']
                         else:
                             v = m['sum'] # FIXME - sum or sum/num or whatever
+
+                        if m['type'] == 'timestamp' or m['units'] == 'timestamp':
+                            v = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(float(v)))
 
                         idx = 0
                         for text in metric[resource]['text']:
