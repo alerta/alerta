@@ -25,7 +25,7 @@ import uuid
 import re
 
 __program__ = 'alert-syslog'
-__version__ = '1.0.6'
+__version__ = '1.0.7'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -192,6 +192,19 @@ def send_syslog(data):
 
     return
 
+class MessageHandler(object):
+
+    def on_error(self, headers, body):
+        logging.error('Received an error %s', body)
+
+    def on_disconnected(self):
+        global conn
+
+        logging.warning('Connection lost. Attempting auto-reconnect to %s', ALERT_QUEUE)
+        conn.start()
+        conn.connect(wait=True)
+        conn.subscribe(destination=ALERT_QUEUE, ack='auto')
+
 def send_heartbeat():
     global conn
 
@@ -260,7 +273,13 @@ def main():
 
     # Connect to message broker
     try:
-        conn = stomp.Connection(BROKER_LIST)
+        conn = stomp.Connection(
+                   BROKER_LIST,
+                   reconnect_sleep_increase = 5.0,
+                   reconnect_sleep_max = 120.0,
+                   reconnect_attempts_max = 20
+               )
+        conn.set_listener('', MessageHandler())
         conn.start()
         conn.connect(wait=True)
     except Exception, e:

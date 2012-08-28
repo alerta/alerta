@@ -19,7 +19,7 @@ import stomp
 import urllib2
 import logging
 
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -171,7 +171,12 @@ def main():
 
     # Connect to message broker
     try:
-        conn = stomp.Connection(BROKER_LIST)
+        conn = stomp.Connection(
+                   BROKER_LIST,
+                   reconnect_sleep_increase = 5.0,
+                   reconnect_sleep_max = 120.0,
+                   reconnect_attempts_max = 20
+               )
         conn.set_listener('', MessageHandler())
         conn.start()
         conn.connect(wait=True)

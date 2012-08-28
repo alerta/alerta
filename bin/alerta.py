@@ -20,7 +20,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.4.8'
+__version__ = '1.4.9'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -335,7 +335,12 @@ def main():
 
     # Connect to message broker
     try:
-        conn = stomp.Connection(BROKER_LIST)
+        conn = stomp.Connection(
+                   BROKER_LIST,
+                   reconnect_sleep_increase = 5.0,
+                   reconnect_sleep_max = 120.0,
+                   reconnect_attempts_max = 20
+               )
         conn.set_listener('', MessageHandler())
         conn.start()
         conn.connect(wait=True)
