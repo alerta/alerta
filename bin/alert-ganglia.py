@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.7.13'
+__version__ = '1.7.14'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -47,6 +47,10 @@ SEVERITY_CODE = {
     'INFORM':         6, # Informational
     'DEBUG':          7, # Debug
 }
+
+currentCount  = dict()
+currentState  = dict()
+previousSeverity = dict()
 
 def get_metrics(filter):
 
@@ -305,52 +309,84 @@ def main():
                             result = False
 
                         if result:
-                            logging.debug('%s %s %s %s rule fired %s %s %s %s',metric[resource]['environment'], metric[resource]['service'], sev,rule['event'],resource,ti, rule['text'][index], calculated_value)
-                            alertid = str(uuid.uuid4()) # random UUID
-                            createTime = datetime.datetime.utcnow()
 
-                            headers = dict()
-                            headers['type']           = "gangliaAlert"
-                            headers['correlation-id'] = alertid
-                            headers['persistent']     = 'true'
-                            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+                            # Set necessary state variables if currentState is unknown
+                            if (resource, rule['event']) not in currentState:
+                                currentState[(resource, rule['event'])] = sev
+                                currentCount[(resource, rule['event'], sev)] = 0
+                                previousSeverity[(resource, rule['event'])] = sev
 
-                            # standard alert info
-                            alert = dict()
-                            alert['id']               = alertid
-                            alert['resource']         = resource
-                            alert['event']            = rule['event']
-                            alert['group']            = rule['group']
-                            alert['value']            = calculated_value
-                            alert['severity']         = sev
-                            alert['severityCode']     = SEVERITY_CODE[sev]
-                            alert['environment']      = metric[resource]['environment']
-                            alert['service']          = metric[resource]['service']
-                            alert['text']             = metric[resource]['text'][index]
-                            alert['type']             = 'gangliaAlert'
-                            alert['tags']             = metric[resource]['tags']
-                            alert['summary']          = '%s - %s %s is %s on %s %s' % (metric[resource]['environment'], sev, rule['event'], calculated_value, metric[resource]['service'], resource)
-                            alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
-                            alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
-                            alert['thresholdInfo']    = ','.join(rule['thresholdInfo'])
-                            alert['timeout']          = 86400  # expire alerts after 1 day
-                            alert['moreInfo']         = metric[resource]['moreInfo']
-                            alert['graphs']           = metric[resource]['graphUrl']
+                            if currentState[(resource, rule['event'])] != sev:                                                          # Change of threshold state
+                                currentCount[(resource, rule['event'], sev)] = currentCount.get((resource, rule['event'], sev), 0) + 1
+                                currentCount[(resource, rule['event'], currentState[(resource, rule['event'])])] = 0                                        # zero-out previous sev counter
+                                currentState[(resource, rule['event'])] = sev
+                            elif currentState[(resource, rule['event'])] == sev:                                                        # Threshold state has not changed
+                                currentCount[(resource, rule['event'], sev)] += 1
 
-                            logging.info('%s : %s', alertid, json.dumps(alert))
+                            logging.debug('currentState = %s, currentCount = %d', currentState[(resource, rule['event'])], currentCount[(resource, rule['event'], sev)])
 
-                            while not conn.is_connected():
-                                logging.warning('Waiting for message broker to become available')
-                                time.sleep(1.0)
-
+                            # Determine if should send a repeat alert
                             try:
-                                conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
-                                broker = conn.get_host_and_port()
-                                logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
-                            except Exception, e:
-                                logging.error('Failed to send alert to broker %s', e)
+                                repeat = (currentCount[(resource, rule['event'], sev)] - rule.get('count', 1)) % rule.get('repeat', 1) == 0
+                            except:
+                                repeat = False
 
-                            break # First match wins
+                            logging.debug('Send alert if prevSev %s != %s AND thresh %d == %s', previousSeverity[(resource, rule['event'])], sev, currentCount[(resource, rule['event'], sev)], rule.get('count', 1))
+                            logging.debug('Repeat? %s (%d - %d %% %d)', repeat, currentCount[(resource, rule['event'], sev)], rule.get('count', 1), rule.get('repeat', 1))
+
+                            # Determine if current threshold count requires an alert
+                            if ((previousSeverity[(resource, rule['event'])] != sev and currentCount[(resource, rule['event'], sev)] == rule.get('count', 1))
+                                or (previousSeverity[(resource, rule['event'])] == sev and repeat)):
+
+                                logging.debug('%s %s %s %s rule fired %s %s %s %s',metric[resource]['environment'], metric[resource]['service'], sev,rule['event'],resource,ti, rule['text'][index], calculated_value)
+                                alertid = str(uuid.uuid4()) # random UUID
+                                createTime = datetime.datetime.utcnow()
+
+                                headers = dict()
+                                headers['type']           = "gangliaAlert"
+                                headers['correlation-id'] = alertid
+                                headers['persistent']     = 'true'
+                                headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
+
+                                # standard alert info
+                                alert = dict()
+                                alert['id']               = alertid
+                                alert['resource']         = resource
+                                alert['event']            = rule['event']
+                                alert['group']            = rule['group']
+                                alert['value']            = calculated_value
+                                alert['severity']         = sev
+                                alert['severityCode']     = SEVERITY_CODE[sev]
+                                alert['environment']      = metric[resource]['environment']
+                                alert['service']          = metric[resource]['service']
+                                alert['text']             = metric[resource]['text'][index]
+                                alert['type']             = 'gangliaAlert'
+                                alert['tags']             = metric[resource]['tags']
+                                alert['summary']          = '%s - %s %s is %s on %s %s' % (metric[resource]['environment'], sev, rule['event'], calculated_value, metric[resource]['service'], resource)
+                                alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
+                                alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
+                                alert['thresholdInfo']    = ','.join(rule['thresholdInfo'])
+                                alert['timeout']          = 86400  # expire alerts after 1 day
+                                alert['moreInfo']         = metric[resource]['moreInfo']
+                                alert['graphs']           = metric[resource]['graphUrl']
+
+                                logging.info('%s : %s', alertid, json.dumps(alert))
+
+                                while not conn.is_connected():
+                                    logging.warning('Waiting for message broker to become available')
+                                    time.sleep(1.0)
+
+                                try:
+                                    conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
+                                    broker = conn.get_host_and_port()
+                                    logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
+                                except Exception, e:
+                                    logging.error('Failed to send alert to broker %s', e)
+
+                                # Keep track of previous severity
+                                previousSeverity[(resource, rule['event'])] = sev
+
+                                break # First match wins
                         index += 1
 
             send_heartbeat()
