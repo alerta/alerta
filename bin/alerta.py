@@ -20,7 +20,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.4.7'
+__version__ = '1.4.8'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -135,6 +135,7 @@ class MessageHandler(object):
                 logging.info('%s : Alert status for duplicate %s %s alert unchanged because either OPEN, ACK or CLOSED', alertid, alert['severity'], alert['event'])
 
             # Forward alert to notify topic and logger queue
+            headers = dict()
             headers['type']           = alert['type']
             headers['correlation-id'] = alertid
             headers['persistent']     = 'true'
@@ -143,6 +144,10 @@ class MessageHandler(object):
 
             alert['id'] = alert['_id']
             del alert['_id']
+
+            while not conn.is_connected():
+                logging.warning('Waiting for message broker to become available')
+                time.sleep(1.0)
 
             logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
@@ -199,6 +204,7 @@ class MessageHandler(object):
                 logging.info('%s : Alert status for %s %s alert with diff event/severity changed to %s', alertid, alert['severity'], alert['event'], status)
 
             # Forward alert to notify topic and logger queue
+            headers = dict()
             headers['type']           = alert['type']
             headers['correlation-id'] = alertid
             headers['persistent']     = 'true'
@@ -207,6 +213,10 @@ class MessageHandler(object):
 
             alert['id'] = alert['_id']
             del alert['_id']
+
+            while not conn.is_connected():
+                logging.warning('Waiting for message broker to become available')
+                time.sleep(1.0)
 
             logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
@@ -250,6 +260,7 @@ class MessageHandler(object):
             # Forward alert to notify topic and logger queue
             alert = alerts.find_one({"_id": alertid}, {"_id": 0, "history": 0})
 
+            headers = dict()
             headers['type']           = alert['type']
             headers['correlation-id'] = alertid
             headers['persistent']     = 'true'
@@ -257,6 +268,10 @@ class MessageHandler(object):
             headers['repeat']         = 'false'
 
             alert['id'] = alertid
+
+            while not conn.is_connected():
+                logging.warning('Waiting for message broker to become available')
+                time.sleep(1.0)
 
             logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
             conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)

@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-snmptrap'
-__version__ = '1.1.5'
+__version__ = '1.1.6'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -222,16 +222,17 @@ def main():
         print >>sys.stderr, "ERROR: Could not connect to broker - %s" % e
         logging.error('Could not connect to broker %s', e)
         sys.exit(1)
+
     try:
         conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
+        broker = conn.get_host_and_port()
+        logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
     except Exception, e:
         print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
         logging.error('Failed to send alert to broker %s', e)
         sys.exit(1)
     conn.disconnect()
     sys.exit(0)
-    
-    logging.info('%s : Trap forwarded to %s', alertid, ALERT_QUEUE)
 
 if __name__ == '__main__':
     main()

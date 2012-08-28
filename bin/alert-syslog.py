@@ -25,7 +25,7 @@ import uuid
 import re
 
 __program__ = 'alert-syslog'
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -179,14 +179,16 @@ def send_syslog(data):
 
     logging.info('%s : %s', alertid, json.dumps(alert))
 
+    while not conn.is_connected():
+        logging.warning('Waiting for message broker to become available')
+        time.sleep(1.0)
+
     try:
         conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
+        broker = conn.get_host_and_port()
+        logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
     except Exception, e:
-        print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
         logging.error('Failed to send alert to broker %s', e)
-        sys.exit(1)
-    broker = conn.get_host_and_port()
-    logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
 
     return
 
@@ -211,10 +213,10 @@ def send_heartbeat():
 
     try:
         conn.send(json.dumps(heartbeat), headers, destination=ALERT_QUEUE)
+        broker = conn.get_host_and_port()
+        logging.info('%s : Heartbeat sent to %s:%s', heartbeatid, broker[0], str(broker[1]))
     except Exception, e:
         logging.error('Failed to send heartbeat to broker %s', e)
-    broker = conn.get_host_and_port()
-    logging.info('%s : Heartbeat sent to %s:%s', heartbeatid, broker[0], str(broker[1]))
 
 def main():
     global conn

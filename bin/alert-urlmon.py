@@ -25,7 +25,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
 __program__ = 'alert-urlmon'
-__version__ = '1.5.6'
+__version__ = '1.5.7'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -337,13 +337,16 @@ class WorkerThread(threading.Thread):
 
                 logging.info('%s : %s', alertid, json.dumps(alert))
 
+                while not conn.is_connected():
+                    logging.warning('Waiting for message broker to become available')
+                    time.sleep(1.0)
+
                 try:
                     conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
+                    broker = conn.get_host_and_port()
+                    logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
                 except Exception, e:
                     logging.error('Failed to send alert to broker %s', e)
-                    sys.exit(1) # XXX - do I really want to exit here???
-                broker = conn.get_host_and_port()
-                logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
 
                 # Keep track of previous event
                 previousEvent[(res)] = event
@@ -375,10 +378,10 @@ def send_heartbeat():
 
     try:
         conn.send(json.dumps(heartbeat), headers, destination=ALERT_QUEUE)
+        broker = conn.get_host_and_port()
+        logging.info('%s : Heartbeat sent to %s:%s', heartbeatid, broker[0], str(broker[1]))
     except Exception, e:
         logging.error('Failed to send heartbeat to broker %s', e)
-    broker = conn.get_host_and_port()
-    logging.info('%s : Heartbeat sent to %s:%s', heartbeatid, broker[0], str(broker[1]))
 
 # Initialise Rules
 def init_urls():
