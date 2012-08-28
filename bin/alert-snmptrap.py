@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-snmptrap'
-__version__ = '1.1.6'
+__version__ = '1.2.0'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -116,8 +116,8 @@ def main():
     group       = 'SNMP'
     value       = trapnumber
     text        = trapvars['$3'] # ie. whatever is in varbind 3
-    environment = 'INFRA'
-    service     = 'Network'
+    environment = list('INFRA')
+    service     = list('Network')
     tags        = list()
     correlate   = list()
     threshold   = ''
@@ -157,9 +157,9 @@ def main():
             if 'text' in t:
                 text = t['text']
             if 'environment' in t:
-                environment = t['environment']
+                environment = list(t['environment'])
             if 'service' in t:
-                service = t['service']
+                service = list(t['service'])
             if 'tags' in t:
                 tags = t['tags']
             if 'correlatedEvents' in t:
@@ -200,12 +200,12 @@ def main():
     alert['value']            = value
     alert['severity']         = severity.upper()
     alert['severityCode']     = SEVERITY_CODE[alert['severity']]
-    alert['environment']      = environment.upper()
+    alert['environment']      = environment
     alert['service']          = service
     alert['text']             = text
     alert['type']             = 'snmptrapAlert'
     alert['tags']             = tags
-    alert['summary']          = '%s - %s %s is %s on %s %s' % (environment, severity.upper(), event, value, service, resource)
+    alert['summary']          = '%s - %s %s is %s on %s %s' % (','.join(environment), severity.upper(), event, value, ','.join(service), resource)
     alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
     alert['thresholdInfo']    = threshold

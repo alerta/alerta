@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.7.14'
+__version__ = '1.8.0'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -224,13 +224,13 @@ def main():
                     if m['metric'] in rule['value']:
 
                         if 'environment' not in rule:
-                            metric[resource]['environment'] = m['environment']
+                            metric[resource]['environment'] = list(m['environment'])
                         else:
-                            metric[resource]['environment'] = rule['environment']
+                            metric[resource]['environment'] = list(rule['environment'])
                         if 'service' not in rule:
-                            metric[resource]['service'] = m['service']
+                            metric[resource]['service'] = list(m['service'])
                         else:
-                            metric[resource]['service'] = rule['service']
+                            metric[resource]['service'] = list(rule['service'])
 
                         if 'value' in m:
                             v = m['value']
@@ -338,7 +338,7 @@ def main():
                             if ((previousSeverity[(resource, rule['event'])] != sev and currentCount[(resource, rule['event'], sev)] == rule.get('count', 1))
                                 or (previousSeverity[(resource, rule['event'])] == sev and repeat)):
 
-                                logging.debug('%s %s %s %s rule fired %s %s %s %s',metric[resource]['environment'], metric[resource]['service'], sev,rule['event'],resource,ti, rule['text'][index], calculated_value)
+                                logging.debug('%s %s %s %s rule fired %s %s %s %s', ','.join(metric[resource]['environment']), ','.join(metric[resource]['service']), sev,rule['event'],resource,ti, rule['text'][index], calculated_value)
                                 alertid = str(uuid.uuid4()) # random UUID
                                 createTime = datetime.datetime.utcnow()
 
@@ -362,7 +362,7 @@ def main():
                                 alert['text']             = metric[resource]['text'][index]
                                 alert['type']             = 'gangliaAlert'
                                 alert['tags']             = metric[resource]['tags']
-                                alert['summary']          = '%s - %s %s is %s on %s %s' % (metric[resource]['environment'], sev, rule['event'], calculated_value, metric[resource]['service'], resource)
+                                alert['summary']          = '%s - %s %s is %s on %s %s' % (','.join(metric[resource]['environment']), sev, rule['event'], calculated_value, ','.join(metric[resource]['service']), resource)
                                 alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
                                 alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
                                 alert['thresholdInfo']    = ','.join(rule['thresholdInfo'])

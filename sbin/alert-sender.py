@@ -25,7 +25,7 @@ import logging
 import uuid
 
 __program__ = 'alert-sender'
-__version__ = '1.0.6'
+__version__ = '1.1.0'
 
 BROKER_LIST  = [('monitoring.guprod.gnl', 61613),('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -66,11 +66,13 @@ parser.add_option("-s",
                   help="Severity eg. Critical, Major, Minor, Warning, Normal, Inform")
 parser.add_option("-E",
                   "--environment",
+                  action="append",
                   dest="environment",
                   help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA")
 parser.add_option("-S",
                   "--svc",
                   "--service",
+                  action="append",
                   dest="service",
                   help="Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, Mutualisation, SharedSvcs")
 parser.add_option("-T",
@@ -101,7 +103,6 @@ parser.add_option("-d",
 
 VALID_SEVERITY    = [ 'CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'NORMAL', 'INFORM', 'DEBUG' ]
 VALID_ENVIRONMENT = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP','INFRA' ]
-VALID_SERVICES    = [ 'R1', 'R2', 'Discussion', 'Soulmates', 'ContentAPI', 'MicroApp', 'FlexibleContent', 'Mutualisation', 'SharedSvcs', 'Servers', 'Network' ]
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -128,6 +129,7 @@ if not options.group:
     options.group = 'Misc'
 
 if not options.value:
+    parser.print_help()
     parser.error("Must supply event value using -v or --value")
 
 if not options.severity:
@@ -136,13 +138,15 @@ elif options.severity.upper() not in VALID_SEVERITY:
     parser.print_help()
     parser.error("Severity must be one of %s" % ','.join(VALID_SEVERITY))
 
-if options.environment not in VALID_ENVIRONMENT:
+if not all(x in VALID_ENVIRONMENT for x in options.environment):
     parser.print_help()
-    parser.error("Environment must be one of %s" % ','.join(VALID_ENVIRONMENT))
+    parser.error("Must supply one or more environments from %s" % ','.join(VALID_ENVIRONMENT))
+else:
+    options.environment = [x.upper() for x in options.environment]
 
-if options.service not in VALID_SERVICES:
+if not options.service:
     parser.print_help()
-    parser.error("Service must be one of %s" % ','.join(VALID_SERVICES))
+    parser.error("Must supply one or more service using -S or --service")
 
 if not options.text:
     parser.print_help()
@@ -174,12 +178,12 @@ def main():
     alert['value']         = options.value
     alert['severity']      = options.severity.upper()
     alert['severityCode']  = SEVERITY_CODE[alert['severity']]
-    alert['environment']   = options.environment.upper()
+    alert['environment']   = options.environment
     alert['service']       = options.service
     alert['text']          = options.text
     alert['type']          = 'exceptionAlert'
     alert['tags']          = options.tags
-    alert['summary']       = '%s - %s %s is %s on %s %s' % (options.environment, options.severity.upper(), options.event, options.value, options.service, options.resource)
+    alert['summary']       = '%s - %s %s is %s on %s %s' % (','.join(options.environment), options.severity.upper(), options.event, options.value, ','.join(options.service), options.resource)
     alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']        = "%s/%s" % (__program__, os.uname()[1])
     alert['thresholdInfo'] = 'n/a'

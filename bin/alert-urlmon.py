@@ -328,7 +328,7 @@ class WorkerThread(threading.Thread):
                 alert['text']             = descrStr
                 alert['type']             = 'serviceAlert'
                 alert['tags']             = item.get('tags', list())
-                alert['summary']          = '%s - %s %s is %s on %s %s' % (item['environment'], severity, event, value, item['service'], item['resource'])
+                alert['summary']          = '%s - %s %s is %s on %s %s' % (','.join(item['environment']), severity, event, value, ','.join(item['service']), item['resource'])
                 alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
                 alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
                 alert['thresholdInfo']    = "%s : RT > %d RT > %d x %s" % (item['url'], warn_thold, crit_thold, item.get('count', 1))

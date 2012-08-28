@@ -25,7 +25,7 @@ import uuid
 import re
 
 __program__ = 'alert-syslog'
-__version__ = '1.0.7'
+__version__ = '1.1.0'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -140,8 +140,8 @@ def send_syslog(data):
     severity = SYSLOG_SEVERITY_NAMES[sev]
 
     # Assign alert attributes
-    environment = 'INFRA'
-    service = 'Servers'
+    environment = list('INFRA')
+    service = list('Servers')
     resource =  LOGHOST
     event = '%s%s' % (facility.capitalize(), severity.capitalize())
     group = 'Syslog'
@@ -166,12 +166,12 @@ def send_syslog(data):
     alert['value']         = value
     alert['severity']      = SYSLOG_SEVERITY_MAP[severity]
     alert['severityCode']  = SEVERITY_CODE[alert['severity']]
-    alert['environment']   = environment.upper()
+    alert['environment']   = environment
     alert['service']       = service
     alert['text']          = text
     alert['type']          = 'syslogAlert'
     alert['tags']          = tags
-    alert['summary']       = '%s - %s %s is %s on %s %s' % (environment, alert['severity'].upper(), event, value, service, resource)
+    alert['summary']       = '%s - %s %s is %s on %s %s' % (','.join(environment), alert['severity'].upper(), event, value, ','.join(service), resource)
     alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']        = "%s/%s" % (__program__, os.uname()[1])
     alert['thresholdInfo'] = 'n/a'

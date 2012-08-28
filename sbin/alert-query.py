@@ -14,11 +14,11 @@ try:
     import json
 except ImportError:
     import simplejson
-import urllib2
+import urllib2, urllib
 import operator
 import pytz
 
-__version__ = '1.2.6'
+__version__ = '1.3.0'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -92,49 +92,60 @@ def main():
                       help="Show alerts for last <x> days")
     parser.add_option("-i",
                       "--id",
+                      action="append",
                       dest="alertid",
                       help="Alert ID (can use 8-char abbrev id)")
     parser.add_option("-E",
                       "--environment",
+                      action="append",
                       dest="environment",
                       help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA")
     parser.add_option("-S",
                       "--svc",
                       "--service",
+                      action="append",
                       dest="service",
                       help="Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, Mutualisation, SharedSvcs")
     parser.add_option("-r",
                       "--resource",
+                      action="append",
                       dest="resource",
                       help="Resource under alarm eg. hostname, network device, application")
     parser.add_option("-s",
                       "--severity",
+                      action="append",
                       dest="severity",
                       help="Severity or range eg. major, warning..critical")
     parser.add_option( "--status",
+                      action="append",
                       dest="status",
-                      default="OPEN|ACK|CLOSED",
                       help="Status eg. OPEN, ACK, CLOSED")
     parser.add_option("-e",
                       "--event",
+                      action="append",
                       dest="event",
                       help="Event name eg. HostAvail, PingResponse, AppStatus")
     parser.add_option("-g",
                       "--group",
+                      action="append",
                       dest="group",
                       help="Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security")
     parser.add_option("--origin",
+                      action="append",
                       dest="origin",
                       help="Origin of the alert eg. alert-sender, alert-ganglia")
     parser.add_option("-v",
                       "--value",
+                      action="append",
                       dest="value",
                       help="Event value eg. 100%, Down, PingFail, 55tps, ORA-1664")
     parser.add_option("-T",
                       "--tags",
+                      action="append",
                       dest="tags")
     parser.add_option("-t",
                       "--text",
+                      action="append",
                       dest="text")
     parser.add_option("--show",
                       action="append",
@@ -188,68 +199,72 @@ def main():
         fromTime = fromTime.replace(tzinfo=pytz.utc)
 
     if options.alertid:
-        for o in options.alertid.split(','):
-            query.append('id=%s' % o)
+        for o in options.alertid:
+            query.append(('id', o))
 
     if options.environment:
-        for o in options.environment.split(','):
-            query.append('environment=%s' % o)
+        for o in options.environment:
+            query.append(('environment', o))
 
     if options.service:
-        for o in options.service.split(','):
-            query.append('service=%s' % o)
+        for o in options.service:
+            query.append(('service',o))
 
     if options.resource:
-        for o in options.resource.split(','):
-            query.append('resource=%s' % o)
+        for o in options.resource:
+            query.append(('resource', o))
 
     if options.severity:
-        for o in options.severity.split(','):
-            query.append('severity=%s' % o)
+        for o in options.severity:
+            query.append(('severity', o))
 #         m = options.severity.split('..')
 #         if len(m) > 1:
 #             query['severityCode'] = { '$lte': SEVERITY_CODE[m[0].upper()], '$gte': SEVERITY_CODE[m[1].upper()] }
 #         else:
 #             query['severityCode'] = SEVERITY_CODE[options.severity.upper()]
 
+    if not options.status:
+        query.append(('status','OPEN'))
+        query.append(('status','ACK'))
+        query.append(('status','CLOSED'))
     if options.status:
-        for o in options.status.split(','):
-            query.append('status=%s' % o)
+        for o in options.status:
+            query.append(('status',o))
 
     if options.event:
-        for o in options.event.split(','):
-            query.append('event=%s' % o)
+        for o in options.event:
+            query.append(('event', o))
 
     if options.group:
-        for o in options.group.split(','):
-            query.append('group=%s' % o)
+        for o in options.group:
+            query.append(('group', o))
 
     if options.value:
-        for o in options.value.split(','):
-            query.append('value=%s' % o)
+        for o in options.value:
+            query.append(('value', o))
 
     if options.origin:
-        for o in options.origin.split(','):
-            query.append('origin=%s' % o)
+        for o in options.origin:
+            query.append(('origin', o))
 
     if options.tags:
-        for o in options.tags.split(','):
-            query.append('tags=%s' % o)
+        for o in options.tags:
+            query.append(('tags', o))
 
     if options.text:
-        for o in options.text.split(','):
-            query.append('text=%s' % o)
+        for o in options.text:
+            query.append(('text', o))
 
     if options.sortby:
-        query.append('sort-by=%s' % options.sortby)
+        query.append(('sort-by', options.sortby))
 
     if options.limit:
         query.append('limit=%s' % options.limit)
 
     if options.show == ['counts']:
-        query.append('hide-alert-details=true')
+        query.append(('hide-alert-details','true'))
 
-    url = "%s?%s" % (API_URL, '&'.join(query))
+    url = "%s?%s" % (API_URL, urllib.urlencode(query))
 
     if options.dry_run:
         print "DEBUG: %s" % (url)
@@ -268,31 +283,31 @@ def main():
         if options.minutes or options.hours or options.days:
             print "    interval: %s - %s" % (fromTime.astimezone(tz).strftime(DATE_FORMAT), now.astimezone(tz).strftime(DATE_FORMAT))
         if options.show:
-            print "        show: %s" % ', '.join(options.show)
+            print "        show: %s" % ','.join(options.show)
         if options.sortby:
             print "     sort by: %s" % options.sortby
         if options.alertid:
-            print "    alert id: ^%s" % options.alertid
+            print "    alert id: ^%s" % ','.join(options.alertid)
         if options.environment:
-            print " environment: %s" % options.environment
+            print " environment: %s" % ','.join(options.environment)
         if options.service:
-            print "     service: %s" % options.service
+            print "     service: %s" % ','.join(options.service)
         if options.resource:
-            print "    resource: %s" % options.resource
+            print "    resource: %s" % ','.join(options.resource)
         if options.origin:
-            print "      origin: %s" % options.origin
+            print "      origin: %s" % ','.join(options.origin)
         if options.severity:
-            print "    severity: %s" % options.severity
+            print "    severity: %s" % ','.join(options.severity)
         if options.status:
-            print "      status: %s" % options.status
+            print "      status: %s" % ','.join(options.status)
         if options.event:
-            print "       event: %s" % options.event
+            print "       event: %s" % ','.join(options.event)
         if options.group:
-            print "       group: %s" % options.group
+            print "       group: %s" % ','.join(options.group)
         if options.value:
-            print "       value: %s" % options.value
+            print "       value: %s" % ','.join(options.value)
         if options.text:
-            print "        text: %s" % options.text
+            print "        text: %s" % ','.join(options.text)
         if options.limit:
             print "       count: %d" % options.limit
         print
@@ -387,8 +402,8 @@ def main():
                 displayTime.astimezone(tz).strftime(DATE_FORMAT),
                 SEV[severity],
                 duplicateCount,
-                environment,
-                service,
+                ','.join(environment),
+                ','.join(service),
                 resource,
                 group,
                 event,
@@ -417,8 +432,8 @@ def main():
         if 'details' in options.show:
             print(line_color + '          alert id     | %s' % (alertid) + end_color)
             print(line_color + '          last recv id | %s' % (lastReceiveId) + end_color)
-            print(line_color + '          environment  | %s' % (environment) + end_color)
-            print(line_color + '          service      | %s' % (service) + end_color)
+            print(line_color + '          environment  | %s' % (','.join(environment)) + end_color)
+            print(line_color + '          service      | %s' % (','.join(service)) + end_color)
             print(line_color + '          resource     | %s' % (resource) + end_color)
             print(line_color + '          type         | %s' % (type) + end_color)
             print(line_color + '          origin       | %s' % (origin) + end_color)
