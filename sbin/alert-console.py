@@ -24,9 +24,9 @@ import pytz
 
 __title__ = 'Alert Console'
 __program__ = 'alert-console'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
-BROKER_LIST  = [('monitoring.guprod.gnl', 61613)] # list of brokers for failover
+BROKER_LIST  = [('monitoring.guprod.gnl', 61613),('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
 
 # Minimum screen size

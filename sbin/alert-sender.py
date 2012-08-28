@@ -25,9 +25,9 @@ import logging
 import uuid
 
 __program__ = 'alert-sender'
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
-BROKER_LIST  = [('monitoring.guprod.gnl', 61613)] # list of brokers for failover
+BROKER_LIST  = [('monitoring.guprod.gnl', 61613),('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 
 DEFAULT_TIMEOUT = 86400
@@ -150,7 +150,10 @@ if not options.text:
 
 def main():
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-sender[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    try:
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-sender[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    except IOError:
+        pass
 
     alertid = str(uuid.uuid4()) # random UUID
     createTime = datetime.datetime.utcnow()

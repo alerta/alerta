@@ -22,9 +22,9 @@ import logging
 import uuid
 import re
 
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
-BROKER_LIST  = [('monitoring.guprod.gnl', 61613)] # list of brokers for failover
+BROKER_LIST  = [('monitoring.guprod.gnl', 61613),('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 
 DEFAULT_TIMEOUT = 86400
@@ -123,7 +123,10 @@ if not options.nagios:
 
 def main():
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-checker[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    try:
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-checker[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    except IOError:
+        pass
 
     # Run Nagios plugin check
     args = shlex.split(os.path.join(NAGIOS_PLUGINS, options.nagios))
