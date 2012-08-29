@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-snmptrap'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -177,10 +177,9 @@ def main():
         group = group.replace(k, v)
         value = value.replace(k, v)
         text = text.replace(k, v)
-        environment = environment.replace(k, v)
-        service = service.replace(k, v)
+        environment[:] = [s.replace(k, v) for s in environment]
+        service[:] = [s.replace(k, v) for s in service]
         tags[:] = [s.replace(k, v) for s in tags]
-        service = service.replace(k, v)
         threshold = threshold.replace(k, v)
 
     alertid = str(uuid.uuid4()) # random UUID
