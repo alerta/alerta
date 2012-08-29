@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Alerta version 1.2.1
+--------------------
+
+* Alerts can effect multiple services or environments
+* Human-readable timestamps in alert text
+* Components automatically reconnect after broker restart
+* Configurable count and repeat in alert-ganglia
+* Alert API port is configurable in alert console
+* Minor fixes to alert-sender
+* Tag counter script for reporting
+
 Alerta version 1.2.0
 --------------------
 
