@@ -140,8 +140,8 @@ def send_syslog(data):
     severity = SYSLOG_SEVERITY_NAMES[sev]
 
     # Assign alert attributes
-    environment = list('INFRA')
-    service = list('Servers')
+    environment = ['INFRA']
+    service = ['Servers']
     resource =  LOGHOST
     event = '%s%s' % (facility.capitalize(), severity.capitalize())
     group = 'Syslog'

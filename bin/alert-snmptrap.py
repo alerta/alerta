@@ -116,8 +116,8 @@ def main():
     group       = 'SNMP'
     value       = trapnumber
     text        = trapvars['$3'] # ie. whatever is in varbind 3
-    environment = list('INFRA')
-    service     = list('Network')
+    environment = ['INFRA']
+    service     = ['Network']
     tags        = list()
     correlate   = list()
     threshold   = ''
@@ -157,9 +157,9 @@ def main():
             if 'text' in t:
                 text = t['text']
             if 'environment' in t:
-                environment = list(t['environment'])
+                environment = [t['environment']]
             if 'service' in t:
-                service = list(t['service'])
+                service = [t['service']]
             if 'tags' in t:
                 tags = t['tags']
             if 'correlatedEvents' in t:

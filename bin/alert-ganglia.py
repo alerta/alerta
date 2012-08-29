@@ -224,13 +224,13 @@ def main():
                     if m['metric'] in rule['value']:
 
                         if 'environment' not in rule:
-                            metric[resource]['environment'] = list(m['environment'])
+                            metric[resource]['environment'] = [m['environment']]
                         else:
-                            metric[resource]['environment'] = list(rule['environment'])
+                            metric[resource]['environment'] = [rule['environment']]
                         if 'service' not in rule:
-                            metric[resource]['service'] = list(m['service'])
+                            metric[resource]['service'] = [m['service']]
                         else:
-                            metric[resource]['service'] = list(rule['service'])
+                            metric[resource]['service'] = [rule['service']]
 
                         if 'value' in m:
                             v = m['value']
