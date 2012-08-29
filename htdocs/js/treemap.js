@@ -1,6 +1,8 @@
 var w = 940,
     h = 500;
 
+var api_server = document.domain + ':80';
+
 function color(sev) {
     if (sev == "critical") {
       return "red";
@@ -31,7 +33,7 @@ var div = d3.select("#chart").append("div")
     .style("width", w + "px")
     .style("height", h + "px");
 
-d3.json('http://' + document.domain + '/alerta/api/v1/alert-treemap.py', function(json) {
+d3.json('http://' + api_server + '/alerta/api/v1/alert-treemap.py', function(json) {
   div.data([json.response.treemap]).selectAll("div")
       .data(treemap.nodes)
     .enter().append("div")
