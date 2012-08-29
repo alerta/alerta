@@ -27,7 +27,7 @@ import pytz
 import logging
 import uuid
 
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -59,6 +59,9 @@ class MessageHandler(object):
 
         alert = dict()
         alert = json.loads(body)
+
+        # RabbitMQ does not support SQL-92 selectors (unlike ActiveMQ)
+        if alert['repeat']: return
 
         logging.info('%s : [%s] %s', alert['lastReceiveId'], alert['status'],alert['summary'])
 
