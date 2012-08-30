@@ -20,7 +20,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.4.9'
+__version__ = '1.5.0'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -134,26 +134,6 @@ class MessageHandler(object):
             else:
                 logging.info('%s : Alert status for duplicate %s %s alert unchanged because either OPEN, ACK or CLOSED', alertid, alert['severity'], alert['event'])
 
-            # Forward alert to notify topic and logger queue
-            headers = dict()
-            headers['type']           = alert['type']
-            headers['correlation-id'] = alertid
-            headers['persistent']     = 'true'
-            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
-            headers['repeat']         = 'true'
-
-            alert['id'] = alert['_id']
-            del alert['_id']
-
-            while not conn.is_connected():
-                logging.warning('Waiting for message broker to become available')
-                time.sleep(1.0)
-
-            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
-            logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
-            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
-
         elif alerts.find_one({"resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]}):
             previousSeverity = alerts.find_one({"resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]}, { "severity": 1 , "_id": 0})['severity']
             logging.info('%s : Event and/or severity change %s %s -> %s update details', alertid, alert['event'], previousSeverity, alert['severity'])
@@ -207,9 +187,6 @@ class MessageHandler(object):
             headers = dict()
             headers['type']           = alert['type']
             headers['correlation-id'] = alertid
-            headers['persistent']     = 'true'
-            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
-            headers['repeat']         = 'false'
 
             alert['id'] = alert['_id']
             del alert['_id']
@@ -263,9 +240,6 @@ class MessageHandler(object):
             headers = dict()
             headers['type']           = alert['type']
             headers['correlation-id'] = alertid
-            headers['persistent']     = 'true'
-            headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
-            headers['repeat']         = 'false'
 
             alert['id'] = alertid
 

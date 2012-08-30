@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.1'
+__version__ = '1.9.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -258,16 +258,14 @@ def main():
                 alerts.update(query, { '$push': { "history": { "status": update['status'], "updateTime": updateTime } }})
 
                 # Forward status update to notify topic and logger queue
-                alert = alerts.find_one(query, {"_id": 0, "history": 0})
+                alert = alerts.find_one(query, {"history": 0})
+                alertid = alert['_id']
+                alert['id'] = alertid
+                del alert['_id']
 
                 headers = dict()
                 headers['type']           = alert['type']
                 headers['correlation-id'] = alertid
-                headers['persistent']     = 'true'
-                headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
-                headers['repeat']         = 'false'
-
-                alert['id'] = alertid
 
                 try:
                     conn = stomp.Connection(BROKER_LIST)

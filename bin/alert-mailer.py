@@ -27,7 +27,7 @@ import pytz
 import logging
 import uuid
 
-__version__ = '1.0.6'
+__version__ = '1.0.7'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -59,9 +59,6 @@ class MessageHandler(object):
 
         alert = dict()
         alert = json.loads(body)
-
-        # RabbitMQ does not support SQL-92 selectors (unlike ActiveMQ)
-        if alert['repeat']: return
 
         logging.info('%s : [%s] %s', alert['lastReceiveId'], alert['status'],alert['summary'])
 
@@ -204,7 +201,7 @@ class MessageHandler(object):
         logging.warning('Connection lost. Attempting auto-reconnect to %s', NOTIFY_TOPIC)
         conn.start()
         conn.connect(wait=True)
-        conn.subscribe(destination=NOTIFY_TOPIC, ack='auto', headers={'selector': "repeat = 'false'"})
+        conn.subscribe(destination=NOTIFY_TOPIC)
 
 class TokenTopUp(threading.Thread):
 
@@ -270,7 +267,7 @@ def main():
         conn.set_listener('', MessageHandler())
         conn.start()
         conn.connect(wait=True)
-        conn.subscribe(destination=NOTIFY_TOPIC, ack='auto', headers={'selector': "repeat = 'false'"})
+        conn.subscribe(destination=NOTIFY_TOPIC)
     except Exception, e:
         logging.error('Stomp connection error: %s', e)
 
