@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.8.0'
+__version__ = '1.8.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -295,6 +295,9 @@ def main():
                     index = 0
                     try:
                         calculated_value = eval(quote(metric[resource]['value']))
+                    except KeyError:
+                        logging.warning('Could not calculate %s value for %s because %s is not being reported', rule['event'], resource, rule['value'])
+                        continue
                     except (SyntaxError,NameError):
                         logging.error('Could not calculate %s value for %s => eval(%s)', rule['event'], resource, metric[resource]['value'])
                         continue
