@@ -21,11 +21,13 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.2'
+__version__ = '1.9.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
+
+MAX_HISTORY = -10 # maximum number of history log entries to return (0 = no history)
 
 CONFIGFILE = '/opt/alerta/conf/alerta-global.yaml'
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
@@ -120,9 +122,48 @@ def main():
     if m:
         logging.debug('form %s' % form)
 
+        if 'hide-alert-details' in form:
+            hide_details = form['hide-alert-details'][0] == 'true'
+            del form['hide-alert-details']
+        else:
+            hide_details = False
+
+        fields = dict()
+        if 'hide-alert-history' in form:
+            if form['hide-alert-history'][0] == 'true':
+                fields['history'] = 0
+            del form['hide-alert-history']
+        else:
+            fields['history'] = { '$slice': MAX_HISTORY }
+
+        if 'limit' in form:
+            limit = int(form['limit'][0])
+            del form['limit']
+        else:
+            limit = 0
+
+        if 'from-date' in form:
+            from_date = datetime.datetime.strptime(form['from-date'][0], '%Y-%m-%dT%H:%M:%S.%fZ')
+            from_date = from_date.replace(tzinfo=pytz.utc)
+            to_date = datetime.datetime.utcnow()
+            to_date = to_date.replace(tzinfo=pytz.utc)
+            query['lastReceiveTime'] = {'$gte': from_date, '$lt': to_date }
+            del form['from-date']
+
+        sortby = list()
+        if 'sort-by' in form:
+            for s in form['sort-by']:
+                if s in ['createTime', 'receiveTime', 'lastReceiveTime']:
+                    sortby.append((s,-1)) # sort by newest first
+                else:
+                    sortby.append((s,1)) # sort by newest first
+            del form['sort-by']
+        else:
+            sortby.append(('lastReceiveTime',-1))
+
         query = dict()
         for field in form:
-            if field in ['callback', '_', 'sort-by', 'hide-alert-details', 'limit', 'from-date']:
+            if field in ['callback', '_']:
                 continue
             if field == 'id':
                 query['_id'] = dict()
@@ -134,33 +175,6 @@ def main():
             else:
                 query[field] = dict()
                 query[field]['$in'] = form[field]
-
-        if 'hide-alert-details' in form:
-            hide_details = form['hide-alert-details'][0] == 'true'
-        else:
-            hide_details = False
-
-        if 'limit' in form:
-            limit = int(form['limit'][0])
-        else:
-            limit = 0
-
-        if 'from-date' in form:
-            from_date = datetime.datetime.strptime(form['from-date'][0], '%Y-%m-%dT%H:%M:%S.%fZ')
-            from_date = from_date.replace(tzinfo=pytz.utc)
-            to_date = datetime.datetime.utcnow()
-            to_date = to_date.replace(tzinfo=pytz.utc)
-            query['lastReceiveTime'] = {'$gte': from_date, '$lt': to_date }
-
-        sortby = list()
-        if 'sort-by' in form:
-            for s in form['sort-by']:
-                if s in ['createTime', 'receiveTime', 'lastReceiveTime']:
-                    sortby.append((s,-1)) # sort by newest first
-                else:
-                    sortby.append((s,1)) # sort by newest first
-        else:
-            sortby.append(('lastReceiveTime',-1))
 
         # Init status and severity counts
         total = 0
@@ -175,9 +189,11 @@ def main():
         inform = 0
         debug = 0
 
+        if not len(fields): fields = None
+        logging.debug('MongoDB GET all -> alerts.find(%s, %s, sort=%s).limit(%s)', query, fields, sortby, limit)
+
         alertDetails = list()
-        logging.debug('MongoDB GET all -> alerts.find(%s, sort=%s).limit(%s)', query, sortby, limit)
-        for alert in alerts.find(query, sort=sortby).limit(limit):
+        for alert in alerts.find(query, fields, sort=sortby).limit(limit):
             if not hide_details:
                 alert['id'] = alert['_id']
                 del alert['_id']
