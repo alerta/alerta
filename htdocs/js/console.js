@@ -131,7 +131,7 @@ function getHeartbeats(refresh) {
 // Update Alert Status
 function getStatus(statusfilter, refresh) {
 
-  $.getJSON('http://'+ api_server + '/alerta/api/v1/alerts?callback=?&hide-alert-details=true&' + statusfilter + limit + fromDate, function(data) {
+  $.getJSON('http://'+ api_server + '/alerta/api/v1/alerts?callback=?&hide-alert-details=true&hide-alert-repeats=NORMAL&' + statusfilter + limit + fromDate, function(data) {
 
     if (data.response.warning) {
       $('#warning-text').text(data.response.warning);
@@ -152,7 +152,7 @@ function getAlerts(service, filter, refresh) {
 
   $('#' + service +' th').addClass('loader');
 
-  $.getJSON('http://'+ api_server + '/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&' + filter + limit + fromDate, function(data) {
+  $.getJSON('http://'+ api_server + '/alerta/api/v1/alerts?callback=?&hide-alert-repeats=NORMAL&sort-by=lastReceiveTime&' + filter + limit + fromDate, function(data) {
 
       var sev_id = '#' + service;
 

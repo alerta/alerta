@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.3'
+__version__ = '1.9.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -128,6 +128,12 @@ def main():
         else:
             hide_details = False
 
+        if 'hide-alert-repeats' in form:
+            hide_repeats = form['hide-alert-repeats']
+            del form['hide-alert-repeats']
+        else:
+            hide_repeats = []
+
         fields = dict()
         if 'hide-alert-history' in form:
             if form['hide-alert-history'][0] == 'true':
@@ -194,6 +200,9 @@ def main():
 
         alertDetails = list()
         for alert in alerts.find(query, fields, sort=sortby).limit(limit):
+            if alert['severity'] in hide_repeats and alert['repeat']:
+                continue
+
             if not hide_details:
                 alert['id'] = alert['_id']
                 del alert['_id']
@@ -207,8 +216,8 @@ def main():
             if alert['status'] == 'CLOSED':
                 closed += 1
 
-            # Only OPEN alerts contribute to the severity counts
-            if alert['status'] != 'OPEN':
+            # Only OPEN or NORMAL alerts contribute to the severity counts
+            if alert['severity'] != 'NORMAL' and alert['status'] != 'OPEN':
                 continue
             if alert['severity'] == 'CRITICAL':
                 critical += 1
@@ -226,8 +235,8 @@ def main():
                 debug += 1
 
         stat = { 'open': opened,
-                   'ack': ack,
-                   'closed': closed
+                 'ack': ack,
+                 'closed': closed
         }
         logging.info('statusCounts %s', stat)
 
