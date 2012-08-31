@@ -21,10 +21,12 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.4'
+__version__ = '1.9.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
+LOGGER_QUEUE = '/queue/logger'
+
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 MAX_HISTORY = -10 # maximum number of history log entries to return (0 = no history)
@@ -269,7 +271,9 @@ def main():
         alertid = m.group('id')
         query['_id'] = dict()
         query['_id']['$regex'] = '^'+alertid
+
         update = data
+        update['repeat'] = False
 
         logging.debug('MongoDB MODIFY -> alerts.update(%s, { $set: %s })', query, update)
         error = alerts.update(query, { '$set': update }, safe=True)
@@ -281,13 +285,13 @@ def main():
                 updateTime = datetime.datetime.utcnow()
                 updateTime = updateTime.replace(tzinfo=pytz.utc)
                 alerts.update(query, { '$push': { "history": { "status": update['status'], "updateTime": updateTime } }})
-
-                # Forward status update to notify topic and logger queue
                 alert = alerts.find_one(query, {"history": 0})
+
                 alertid = alert['_id']
-                alert['id'] = alertid
+                alert['id'] = alert['_id']
                 del alert['_id']
 
+                # Forward status update to notify topic and logger queue
                 headers = dict()
                 headers['type']           = alert['type']
                 headers['correlation-id'] = alertid
@@ -302,6 +306,8 @@ def main():
                 try:
                     logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
                     conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+                    logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
+                    conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
                 except Exception, e:
                     print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
                     logging.error('Failed to send alert to broker %s', e)
