@@ -1,0 +1,371 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Alert Console</title>
+
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="css/custom.css" rel="stylesheet">
+  </head>
+
+  <body>
+   <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="./index.html">Alert Console</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class=""><a href="./index.html">Production</a></li>
+              <li class=""><a href="./release.html">Release</a></li>
+              <li class=""><a href="./qa.html">QA</a></li>
+              <li class=""><a href="./test.html">Test</a></li>
+              <li class=""><a href="./code.html">Code</a></li>
+              <li class=""><a href="./dev.html">Development</a></li>
+              <li class=""><a href="./stage.html">Stage</a></li>
+              <li class=""><a href="./lwp.html">LWP</a></li>
+              <li class="active"><a href="./infra.html">Infrastructure</a></li>
+              <li class=""><a href="/Kibana">History</a></li>
+              <li class=""><a href="./about.html">About</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <span id="heartbeat-alerts"></span>
+      <div id="console-alert" class="alert alert-info initially-hidden">
+        <button class="close" data-dismiss="alert" onclick="">&times;</button>
+        <strong>Warning!</strong> <span id="warning-text"></span>
+      </div>
+      <table width="100%">
+        <td>
+        <table class="table table-bordered table-condensed" id="status-counts">
+          <tbody>
+          <tr id="Alert-status" class="status">
+            <td><span class="label">OPEN</span></td>
+            <td id="alert-open">0</td>
+            <td><span class="label">ACK</span></td>
+            <td id="alert-ack">0</td>
+            <td><span class="label">CLOSED</span></td>
+            <td id="alert-closed">0</td>
+          </tr>
+          </tbody>
+        </table>
+      </td><td>
+        <div align="right">
+        <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)">
+          <option value="0">No limit</option>
+          <option value="100">Only 100</option>
+          <option value="500">Only 500</option>
+          <option value="1000">Only 1000</option>
+          <option value="5000">Only 5000</option>
+        </select>
+        <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)">
+          <option value="0">All alerts</option>
+          <option value="120">Last 2 minutes</option>
+          <option value="300">Last 5 minutes</option>
+          <option value="600">Last 10 minutes</option>
+          <option value="1800">Last 30 minutes</option>
+          <option value="3600">Last 1 hour</option>
+        </select>
+        <button class="btn" id="toggle-ACK" class="toggle-ACK"><span><i class="icon-minus"></i> Hide</span><span class="initially-hidden"><i class="icon-plus"></i> Show</span> Acknowledged</button>
+        <button class="btn" id="toggle-NORMAL" class="toggle-NORMAL"><span><i class="icon-minus"></i> Hide</span><span class="initially-hidden"><i class="icon-plus"></i> Show</span> Normals</button>
+        <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh Now</button>
+        </div>
+      </td>
+      </table>
+
+      <div class="row show-grid">
+        <div class="span12">
+          <strong>Alert Summary</strong>
+        <div class="row show-grid">
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="KPL" data-label="KPL">
+              <thead>
+                <tr> <th colspan="6" id="KPL-status">Kings Place</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="KPL-warnings" class="warnings">
+                  <td id="KPL-critical">0</td>
+                  <td id="KPL-major">0</td>
+                  <td id="KPL-minor">0</td>
+                  <td id="KPL-warning">0</td>
+                  <td id="KPL-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="BRK" data-label="BRK">
+              <thead>
+                <tr> <th colspan="6" id="BRK-status">Bracknell</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="BRK-warnings" class="warnings">
+                  <td id="BRK-critical">0</td>
+                  <td id="BRK-major">0</td>
+                  <td id="BRK-minor">0</td>
+                  <td id="BRK-warning">0</td>
+                  <td id="BRK-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="EC2" data-label="EC2">
+              <thead>
+                <tr> <th colspan="6" id="EC2-status">EC2</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="EC2-warnings" class="warnings">
+                  <td id="EC2-critical">0</td>
+                  <td id="EC2-major">0</td>
+                  <td id="EC2-minor">0</td>
+                  <td id="EC2-warning">0</td>
+                  <td id="EC2-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="GC2" data-label="GC2">
+              <thead>
+                <tr> <th colspan="6" id="GC2-status">GC2</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="GC2-warnings" class="warnings">
+                  <td id="GC2-critical">0</td>
+                  <td id="GC2-major">0</td>
+                  <td id="GC2-minor">0</td>
+                  <td id="GC2-warning">0</td>
+                  <td id="GC2-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="row show-grid">
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Physical" data-label="Physical">
+              <thead>
+                <tr> <th colspan="6" id="Physical-status">Physical</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="Physical-warnings" class="warnings">
+                  <td id="Physical-critical">0</td>
+                  <td id="Physical-major">0</td>
+                  <td id="Physical-minor">0</td>
+                  <td id="Physical-warning">0</td>
+                  <td id="Physical-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="VMware" data-label="VMware">
+              <thead>
+                <tr> <th colspan="6" id="VMware-status">VMware</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="VMware-warnings" class="warnings">
+                  <td id="VMware-critical">0</td>
+                  <td id="VMware-major">0</td>
+                  <td id="VMware-minor">0</td>
+                  <td id="VMware-warning">0</td>
+                  <td id="VMware-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Xen" data-label="Xen">
+              <thead>
+                <tr> <th colspan="6" id="Xen-status">Xen</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="Xen-warnings" class="warnings">
+                  <td id="Xen-critical">0</td>
+                  <td id="Xen-major">0</td>
+                  <td id="Xen-minor">0</td>
+                  <td id="Xen-warning">0</td>
+                  <td id="Xen-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="KVM" data-label="KVM">
+              <thead>
+                <tr> <th colspan="6" id="KVM-status">KVM</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="KVM-warnings" class="warnings">
+                  <td id="KVM-critical">0</td>
+                  <td id="KVM-major">0</td>
+                  <td id="KVM-minor">0</td>
+                  <td id="KVM-warning">0</td>
+                  <td id="KVM-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="row show-grid">
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Linux" data-label="Linux">
+              <thead>
+                <tr> <th colspan="6" id="Linux-status">Linux</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="Linux-warnings" class="warnings">
+                  <td id="Linux-critical">0</td>
+                  <td id="Linux-major">0</td>
+                  <td id="Linux-minor">0</td>
+                  <td id="Linux-warning">0</td>
+                  <td id="Linux-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Solaris" data-label="Solaris">
+              <thead>
+                <tr> <th colspan="6" id="Solaris-status">Solaris</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="Solaris-warnings" class="warnings">
+                  <td id="Solaris-critical">0</td>
+                  <td id="Solaris-major">0</td>
+                  <td id="Solaris-minor">0</td>
+                  <td id="Solaris-warning">0</td>
+                  <td id="Solaris-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Syslog" data-label="Syslog">
+              <thead>
+                <tr> <th colspan="6" id="Syslog-status">Syslog</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="Syslog-warnings" class="warnings">
+                  <td id="Syslog-critical">0</td>
+                  <td id="Syslog-major">0</td>
+                  <td id="Syslog-minor">0</td>
+                  <td id="Syslog-warning">0</td>
+                  <td id="Syslog-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Network" data-label="Network">
+              <thead>
+                <tr> <th colspan="6" id="Network-status">Network</th> </tr>
+              </thead>
+              <tbody>
+                <tr id="Network-warnings" class="warnings">
+                  <td id="Network-critical">0</td>
+                  <td id="Network-major">0</td>
+                  <td id="Network-minor">0</td>
+                  <td id="Network-warning">0</td>
+                  <td id="Network-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <!-- Alert Details -->
+      <div class="row show-grid">
+        <div class="span12">
+          <table class="table table-bordered table-condensed" id="alert-details">
+            <caption class="alerts-caption">
+              Infrastructure - <span id="alert-details-caption">R2</span> alert details
+            </caption>
+            <thead>
+              <tr> <th></th><th>Severity</th><th>Status</th><th>Last Receive Time</th><th>Dupl. Count</th><th>Env.</th><th>Service</th><th>Cluster</th><th>Resource</th><th>Event</th><th>Value</th><th>Text</th></tr> 
+            </thead>
+            <tbody id="KPL-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="BRK-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="EC2-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="GC2-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Physical-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="VMware-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Xen-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="KVM-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Linux-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Solaris-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Syslog-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Network-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+          </table>
+
+        </div>
+      </div>
+      <!-- end Alert Details -->
+
+    </div> <!-- end container -->
+    <script src="js/jquery-1.7.1.min.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="js/bootstrap-tooltip.js"></script>
+    <script src="js/console.js"></script>
+
+
+    <script>
+      $(document).ready(function() {
+
+        heartbeatAlerts();
+
+        var env = "";
+        var statusfilter = '&status=OPEN|ACK|CLOSED';
+        var services = { 'KPL':      statusfilter+'&tags=location:kpl',
+                         'BRK':      statusfilter+'&tags=location:brk',
+                         'EC2':      statusfilter+'&service=EC2',
+                         'GC2':      statusfilter+'&group=GC2',
+
+                         'Physical': statusfilter+'&tags=virtual:physical',
+                         'VMware':   statusfilter+'&tags=virtual:vmware',
+                         'Xen':      statusfilter+'&tags=virtual:xen',
+                         'KVM':      statusfilter+'&tags=virutal:kvm',
+
+                         'Linux':    statusfilter+'&tags=os:linux',
+                         'Solaris':  statusfilter+'&tags=os:sunos',
+                         'Syslog':   statusfilter+'&group=Syslog',
+                         'Network':  statusfilter+'&service=Network',
+                       };
+
+        loadStatus(statusfilter, true);
+        loadAlerts(services, true);
+
+        $('#refresh-all').click(function() {
+          loadStatus(statusfilter, false);
+          loadAlerts(services, false)
+        });
+      });
+    </script>
+    
+  </body>
+</html>
