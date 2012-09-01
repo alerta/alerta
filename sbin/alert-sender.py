@@ -79,6 +79,7 @@ parser.add_option("-T",
                   "--tag",
                   action="append",
                   dest="tags",
+                  default=list(),
                   help="Tag the event with anything and everything.")
 parser.add_option("-t",
                   "--text",
