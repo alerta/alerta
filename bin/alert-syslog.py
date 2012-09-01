@@ -25,7 +25,7 @@ import uuid
 import re
 
 __program__ = 'alert-syslog'
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -155,8 +155,6 @@ def send_syslog(data):
     headers = dict()
     headers['type']           = "syslogAlert"
     headers['correlation-id'] = alertid
-    headers['persistent']     = 'true'
-    headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
     alert = dict()
     alert['id']            = alertid
@@ -264,6 +262,7 @@ def main():
     # Set up syslog TCP listener
     try:
         tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         tcp.bind(('', SYSLOG_TCP_PORT))
         tcp.listen(5)
     except socket.error, e:
