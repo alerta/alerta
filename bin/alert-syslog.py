@@ -25,7 +25,7 @@ import uuid
 import re
 
 __program__ = 'alert-syslog'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -122,7 +122,7 @@ def send_syslog(data):
 
     else:
         # Parse RFC 3164 compliant message
-        m = re.match(r'<(\d+)>(\S{3}) (\d+) (\d+:\d+:\d+) (\S+) (\S+): (.*)', data)
+        m = re.match(r'<(\d+)>(\S{3})\s+(\d+) (\d+:\d+:\d+) (\S+) (\S+): (.*)', data)
         if m:
             PRI = int(m.group(1))
             LOGHOST = m.group(5)
