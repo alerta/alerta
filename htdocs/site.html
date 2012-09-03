@@ -30,7 +30,7 @@
               <li class=""><a href="./dev.html">Development</a></li>
               <li class=""><a href="./stage.html">Stage</a></li>
               <li class=""><a href="./lwp.html">LWP</a></li>
-              <li class="active"><a href="./infra.html">Infrastructure</a></li>
+              <li class=""><a href="./infra.html">Infrastructure</a></li>
               <li class=""><a href="/Kibana">History</a></li>
               <li class=""><a href="./about.html">About</a></li>
             </ul>
@@ -120,33 +120,33 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="EC2" data-label="EC2">
+            <table class="table table-bordered table-condensed summary" id="eu-west-1" data-label="eu-west-1">
               <thead>
-                <tr> <th colspan="6" id="EC2-status">EC2</th> </tr> 
+                <tr> <th colspan="6" id="eu-west-1-status">eu-west-1</th> </tr>
               </thead>
               <tbody>
-                <tr id="EC2-warnings" class="warnings">
-                  <td id="EC2-critical">0</td>
-                  <td id="EC2-major">0</td>
-                  <td id="EC2-minor">0</td>
-                  <td id="EC2-warning">0</td>
-                  <td id="EC2-normal">0</td>
+                <tr id="eu-west-1-warnings" class="warnings">
+                  <td id="eu-west-1-critical">0</td>
+                  <td id="eu-west-1-major">0</td>
+                  <td id="eu-west-1-minor">0</td>
+                  <td id="eu-west-1-warning">0</td>
+                  <td id="eu-west-1-normal">0</td>
                 </tr>
               </tbody>
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="GC2" data-label="GC2">
+            <table class="table table-bordered table-condensed summary" id="dev" data-label="dev">
               <thead>
-                <tr> <th colspan="6" id="GC2-status">GC2</th> </tr> 
+                <tr> <th colspan="6" id="dev-status">GUDEV</th> </tr>
               </thead>
               <tbody>
-                <tr id="GC2-warnings" class="warnings">
-                  <td id="GC2-critical">0</td>
-                  <td id="GC2-major">0</td>
-                  <td id="GC2-minor">0</td>
-                  <td id="GC2-warning">0</td>
-                  <td id="GC2-normal">0</td>
+                <tr id="dev-warnings" class="warnings">
+                  <td id="dev-critical">0</td>
+                  <td id="dev-major">0</td>
+                  <td id="dev-minor">0</td>
+                  <td id="dev-warning">0</td>
+                  <td id="dev-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -292,7 +292,7 @@
         <div class="span12">
           <table class="table table-bordered table-condensed" id="alert-details">
             <caption class="alerts-caption">
-              Infrastructure - <span id="alert-details-caption">R2</span> alert details
+              Infrastructure - <span id="alert-details-caption">KPL</span> alert details
             </caption>
             <thead>
               <tr> <th></th><th>Severity</th><th>Status</th><th>Last Receive Time</th><th>Dupl. Count</th><th>Env.</th><th>Service</th><th>Cluster</th><th>Resource</th><th>Event</th><th>Value</th><th>Text</th></tr> 
@@ -301,9 +301,9 @@
             </tbody>
             <tbody id="BRK-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="EC2-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="eu-west-1-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="GC2-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="dev-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="Physical-alerts" class="serviceAlerts initially-hidden">
             </tbody>
@@ -341,20 +341,20 @@
 
         var env = "";
         var statusfilter = '&status=OPEN|ACK|CLOSED';
-        var services = { 'KPL':      statusfilter+'&tags=location:kpl',
-                         'BRK':      statusfilter+'&tags=location:brk',
-                         'EC2':      statusfilter+'&service=EC2',
-                         'GC2':      statusfilter+'&group=GC2',
+        var services = { 'KPL':       statusfilter+'&tags=datacentre:dc1',
+                         'BRK':       statusfilter+'&tags=datacentre:dc2',
+                         'eu-west-1': statusfilter+'&tags=datacentre:eu-west-1',
+                         'dev':       statusfilter+'&tags=datacentre:dev',
 
-                         'Physical': statusfilter+'&tags=virtual:physical',
-                         'VMware':   statusfilter+'&tags=virtual:vmware',
-                         'Xen':      statusfilter+'&tags=virtual:xen',
-                         'KVM':      statusfilter+'&tags=virutal:kvm',
+                         'Physical':  statusfilter+'&tags=virtual:physical',
+                         'VMware':    statusfilter+'&tags=virtual:vmware',
+                         'Xen':       statusfilter+'&tags=virtual:xen',
+                         'KVM':       statusfilter+'&tags=virutal:kvm',
 
-                         'Linux':    statusfilter+'&tags=os:linux',
-                         'Solaris':  statusfilter+'&tags=os:sunos',
-                         'Syslog':   statusfilter+'&group=Syslog',
-                         'Network':  statusfilter+'&service=Network',
+                         'Linux':     statusfilter+'&tags=os:linux',
+                         'Solaris':   statusfilter+'&tags=os:sunos',
+                         'Syslog':    statusfilter+'&group=Syslog',
+                         'Network':   statusfilter+'&service=Network',
                        };
 
         loadStatus(statusfilter, true);
