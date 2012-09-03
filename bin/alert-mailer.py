@@ -27,7 +27,7 @@ import pytz
 import logging
 import uuid
 
-__version__ = '1.0.7'
+__version__ = '1.0.8'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -92,7 +92,7 @@ class MessageHandler(object):
         text += '[%s] %s\n' % (alert['status'], alert['summary'])
         text += 'Alert Details\n'
         text += 'Alert ID: %s\n' % (alert['id'])
-        text += 'Create Time: %s\n' % (localTime.strftime('%d/%m/%Y %H:%M:%S'))
+        text += 'Create Time: %s\n' % (localTime.strftime('%Y/%m/%d %H:%M:%S'))
         text += 'Resource: %s\n' % (alert['resource'])
         text += 'Environment: %s\n' % (','.join(alert['environment']))
         text += 'Service: %s\n' % (','.join(alert['service']))
@@ -126,7 +126,7 @@ class MessageHandler(object):
         html += '<tr><td><p align="left" style="font-size:18px;line-height:22px;color:#c25130;font-weight:bold;">Alert Details</p>\n'
         html += '<table>\n'
         html += '<tr><td><b>Alert ID:</b></td><td><a href="%s/alerta/details.php?id=%s" target="_blank">%s</a></td></tr>\n' % (ALERTA_URL, alert['id'], alert['id'])
-        html += '<tr><td><b>Create Time:</b></td><td>%s</td></tr>\n' % (localTime.strftime('%d/%m/%Y %H:%M:%S'))
+        html += '<tr><td><b>Create Time:</b></td><td>%s</td></tr>\n' % (localTime.strftime('%Y/%m/%d %H:%M:%S'))
         html += '<tr><td><b>Resource:</b></td><td>%s</td></tr>\n' % (alert['resource'])
         html += '<tr><td><b>Environment:</b></td><td>%s</td></tr>\n' % (','.join(alert['environment']))
         html += '<tr><td><b>Service:</b></td><td>%s</td></tr>\n' % (','.join(alert['service']))
