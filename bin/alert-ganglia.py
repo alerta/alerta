@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.8.1'
+__version__ = '1.8.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -179,12 +179,17 @@ def main():
                 rules_mod_time = os.path.getmtime(RULESFILE)
 
             for rule in rules:
+                # Check rule is valid
+                if len(rule['thresholdInfo']) != len(rule['text']):
+                    logging.error('Invalid rule for %s - must be an alert text for each threshold.', rule['event'])
+                    continue
+
                 # Get list of metrics required to evaluate each rule
                 params = dict()
                 if 'filter' in rule and rule['filter'] is not None:
                     params[rule['filter']] = 1
 
-                for s in (''.join(rule['text']), ''.join(rule['thresholdInfo']), rule['value']):
+                for s in (' '.join(rule['text']), ' '.join(rule['thresholdInfo']), rule['value']):
                     matches = re.findall('\$([a-z0-9A-Z_]+)', s)
                     for m in matches:
                         if m != 'now':
