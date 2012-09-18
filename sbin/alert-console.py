@@ -24,7 +24,7 @@ import pytz
 
 __title__ = 'Alert Console'
 __program__ = 'alert-console'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 BROKER_LIST  = [('monitoring.guprod.gnl', 61613),('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -179,6 +179,10 @@ class Screen():
                         value = lastReceiveTime.strftime('%T %d/%m/%y')
                     elif column['name'] == 'lastReceiveId':
                         value = alert['lastReceiveId'][0:8]
+                    elif column['name'] == 'environment':
+                        value = ','.join(alert['environment'])
+                    elif column['name'] == 'service':
+                        value = ','.join(alert['service'])
                     else:
                         value = str(alert[column['name']])
                     column_string = self._get_table_column_string(value, width, align)

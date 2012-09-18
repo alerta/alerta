@@ -22,7 +22,7 @@ import logging
 import uuid
 import re
 
-__version__ = '1.1.4'
+__version__ = '1.1.5'
 
 BROKER_LIST  = [('monitoring.guprod.gnl', 61613),('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -57,11 +57,13 @@ parser.add_option("-g",
                   help="Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security")
 parser.add_option("-E",
                   "--environment",
+                  action="append",
                   dest="environment",
                   help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA")
 parser.add_option("-S",
                   "--svc",
                   "--service",
+                  action="append",
                   dest="service",
                   help="Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, Mutualisation, SharedSvcs")
 parser.add_option("-T",
@@ -75,6 +77,11 @@ parser.add_option("-o",
                   dest="timeout",
                   default=DEFAULT_TIMEOUT,
                   help="Timeout in seconds that OPEN alert will persist in console.")
+parser.add_option("-q",
+                  "--quiet",
+                  action="store_true",
+                  default=False,
+                  help="Do not display alert id.")
 parser.add_option("-d",
                   "--dry-run",
                   action="store_true",
@@ -83,7 +90,6 @@ parser.add_option("-d",
 
 VALID_SEVERITY    = [ 'CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'NORMAL', 'INFORM', 'DEBUG' ]
 VALID_ENVIRONMENT = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP','INFRA' ]
-VALID_SERVICES    = [ 'R1', 'R2', 'Discussion', 'Soulmates', 'ContentAPI', 'MicroApp', 'FlexibleContent', 'Mutualisation', 'SharedSvcs' ]
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -109,13 +115,15 @@ if not options.event:
 if not options.group:
     options.group = 'Misc'
 
-if options.environment not in VALID_ENVIRONMENT:
+if not all(x in VALID_ENVIRONMENT for x in options.environment):
     parser.print_help()
-    parser.error("Environment must be one of %s" % ','.join(VALID_ENVIRONMENT))
+    parser.error("Must supply one or more environments from %s" % ','.join(VALID_ENVIRONMENT))
+else:
+    options.environment = [x.upper() for x in options.environment]
 
-if options.service not in VALID_SERVICES:
+if not options.service:
     parser.print_help()
-    parser.error("Service must be one of %s" % ','.join(VALID_SERVICES))
+    parser.error("Must supply one or more service using -S or --service")
 
 if not options.nagios:
     parser.print_help()
@@ -169,12 +177,12 @@ def main():
     alert['value']         = value
     alert['severity']      = severity
     alert['severityCode']  = SEVERITY_CODE[alert['severity']]
-    alert['environment']   = options.environment.upper()
+    alert['environment']   = options.environment
     alert['service']       = options.service
     alert['text']          = text
     alert['type']          = 'exceptionAlert'
     alert['tags']          = options.tags
-    alert['summary']       = '%s - %s %s is %s on %s %s' % (options.environment, severity, options.event, value, options.service, options.resource)
+    alert['summary']       = '%s - %s %s is %s on %s %s' % (','.join(options.environment), severity, options.event, value, ','.join(options.service), options.resource)
     alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
     alert['origin']        = 'alert-checker/%s' % os.uname()[1]
     alert['thresholdInfo'] = options.nagios
@@ -201,7 +209,8 @@ def main():
         broker = conn.get_host_and_port()
         logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
         conn.disconnect()
-        print alertid
+        if not options.quiet:
+            print alertid
         sys.exit(0)
     else:
         print "%s %s" % (json.dumps(headers, indent=4), json.dumps(alert, indent=4))
