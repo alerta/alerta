@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Alerta version 1.2.2
+--------------------
+
+* Improved alert console responsiveness
+* Bug fixes for sender, syslog and snmptrap
+* No longer forward repeats to logger queue
+* Better error handling in alert-ganglia
+
 Alerta version 1.2.1
 --------------------
 
