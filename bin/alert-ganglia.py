@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.8.3'
+__version__ = '1.8.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -241,12 +241,14 @@ def main():
 
                         if 'value' in m:
                             v = quote(m['value'])
+                        elif rule['value'].endswith('.sum'):
+                            v = quote(m['sum'])
                         else:
                             v = "%.1f" % (float(m['sum']) / float(m['num']))
 
                         if 'value' not in metric[resource]:
                             metric[resource]['value'] = rule['value']
-                        metric[resource]['value'] = re.sub('\$%s' % m['metric'], str(v), metric[resource]['value'])
+                        metric[resource]['value'] = re.sub('\$%s(\.sum)?' % m['metric'], str(v), metric[resource]['value'])
 
                         metric[resource]['tags'] = list()
                         metric[resource]['tags'].extend(rule['tags'])
@@ -275,18 +277,22 @@ def main():
 
                         if 'value' in m:
                             v = quote(m['value'])
+                        elif rule['value'].endswith('.sum'):
+                            v = quote(m['sum'])
                         else:
                             v = "%.1f" % (float(m['sum']) / float(m['num']))
 
                         idx = 0
                         for threshold in metric[resource]['thresholdInfo']:
-                            metric[resource]['thresholdInfo'][idx] = re.sub('\$%s' % m['metric'], str(v), threshold)
+                            metric[resource]['thresholdInfo'][idx] = re.sub('\$%s(\.sum)?' % m['metric'], str(v), threshold)
                             idx += 1
 
                     if m['metric'] in ''.join(rule['text']):
 
                         if 'value' in m:
                             v = quote(m['value'])
+                        elif rule['value'].endswith('.sum'):
+                            v = quote(m['sum'])
                         else:
                             v = "%.1f" % (float(m['sum']) / float(m['num']))
 
@@ -295,7 +301,7 @@ def main():
 
                         idx = 0
                         for text in metric[resource]['text']:
-                            metric[resource]['text'][idx] = re.sub('\$%s' % m['metric'], str(v), text)
+                            metric[resource]['text'][idx] = re.sub('\$%s(\.sum)?' % m['metric'], str(v), text)
                             idx += 1
 
                 for resource in metric:
