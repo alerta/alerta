@@ -98,8 +98,6 @@ def send_heartbeat():
     headers = dict()
     headers['type']           = "heartbeat"
     headers['correlation-id'] = heartbeatid
-    # headers['persistent']     = 'false'
-    # headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
     heartbeat = dict()
     heartbeat['id']         = heartbeatid
@@ -131,7 +129,7 @@ def init_rules():
 def quote(s):
     try:
         float(s)
-        return s
+        return "%.1f" % float(s)
     except ValueError:
         return '"%s"' % s
 
@@ -219,6 +217,10 @@ def main():
                     resource = re.sub('\$cluster', m.get('cluster','__NA__'), resource)
                     if '__NA__' in resource: continue
 
+                    # Dont generate cluster alerts from host-based metrics
+                    if 'host' in m and not '$host' in rule['resource']:
+                        continue
+
                     if resource not in metric:
                         metric[resource] = dict()
                     if 'thresholdInfo' not in metric[resource]:
@@ -238,13 +240,13 @@ def main():
                             metric[resource]['service'] = [rule['service']]
 
                         if 'value' in m:
-                            v = m['value']
+                            v = quote(m['value'])
                         else:
-                            v = m['sum'] # FIXME - sum or sum/num or whatever
+                            v = "%.1f" % (float(m['sum']) / float(m['num']))
 
                         if 'value' not in metric[resource]:
                             metric[resource]['value'] = rule['value']
-                        metric[resource]['value'] = re.sub('\$%s' % m['metric'], v, metric[resource]['value'])
+                        metric[resource]['value'] = re.sub('\$%s' % m['metric'], str(v), metric[resource]['value'])
 
                         metric[resource]['tags'] = list()
                         metric[resource]['tags'].extend(rule['tags'])
@@ -272,34 +274,34 @@ def main():
                     if m['metric'] in ''.join(rule['thresholdInfo']):
 
                         if 'value' in m:
-                            v = m['value']
+                            v = quote(m['value'])
                         else:
-                            v = m['sum'] # FIXME - sum or sum/num or whatever
+                            v = "%.1f" % (float(m['sum']) / float(m['num']))
 
                         idx = 0
                         for threshold in metric[resource]['thresholdInfo']:
-                            metric[resource]['thresholdInfo'][idx] = re.sub('\$%s' % m['metric'], v, threshold)
+                            metric[resource]['thresholdInfo'][idx] = re.sub('\$%s' % m['metric'], str(v), threshold)
                             idx += 1
 
                     if m['metric'] in ''.join(rule['text']):
 
                         if 'value' in m:
-                            v = m['value']
+                            v = quote(m['value'])
                         else:
-                            v = m['sum'] # FIXME - sum or sum/num or whatever
+                            v = "%.1f" % (float(m['sum']) / float(m['num']))
 
                         if m['type'] == 'timestamp' or m['units'] == 'timestamp':
                             v = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(float(v)))
 
                         idx = 0
                         for text in metric[resource]['text']:
-                            metric[resource]['text'][idx] = re.sub('\$%s' % m['metric'], v, text)
+                            metric[resource]['text'][idx] = re.sub('\$%s' % m['metric'], str(v), text)
                             idx += 1
 
                 for resource in metric:
                     index = 0
                     try:
-                        calculated_value = eval(quote(metric[resource]['value']))
+                        calculated_value = eval(metric[resource]['value'])
                     except KeyError:
                         logging.warning('Could not calculate %s value for %s because %s is not being reported', rule['event'], resource, rule['value'])
                         continue
