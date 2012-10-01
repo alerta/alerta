@@ -16,12 +16,10 @@ Installation
 
 The backend components are written in Python and the web frontend in JavaScript so there is nothing to compile.
 
-An RPM is available for Linux [here](/guardian/alerta/tree/master/rpm/). **TBC**
-
 Requirements
 ------------
 
-- [Apache ActiveMQ][1]
+- [STOMP-compliant message broker][1]
 - [MongoDB][2]
 - [elasticsearch][3]
 - [Kibana][4]
@@ -53,7 +51,7 @@ License
     See the License for the specific language governing permissions and
     limitations under the License.
 
-[1]: <http://activemq.apache.org/> "Apache ActiveMQ"
+[1]: <http://activemq.apache.org/> "Apache ActiveMQ" or <http://www.rabbitmq.com> "RabbitMQ"
 [2]: <http://www.10gen.com/> "10gen MongoDB"
 [3]: <http://www.elasticsearch.org/> "elasticsearch"
 [4]: <https://github.com/rashidkpc/Kibana> "Kibana"
