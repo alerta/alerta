@@ -19,7 +19,7 @@ The backend components are written in Python and the web frontend in JavaScript 
 Requirements
 ------------
 
-- [STOMP-compliant message broker][1]
+- message broker that support STOMP [ActiveMQ][1] or [RabbitMQ][2]
 - [MongoDB][2]
 - [elasticsearch][3]
 - [Kibana][4]
@@ -51,7 +51,8 @@ License
     See the License for the specific language governing permissions and
     limitations under the License.
 
-[1]: <http://activemq.apache.org/> "Apache ActiveMQ" or <http://www.rabbitmq.com> "RabbitMQ"
-[2]: <http://www.10gen.com/> "10gen MongoDB"
-[3]: <http://www.elasticsearch.org/> "elasticsearch"
-[4]: <https://github.com/rashidkpc/Kibana> "Kibana"
+[1]: <http://activemq.apache.org/> "Apache ActiveMQ"
+[2]: <http://www.rabbitmq.com> "RabbitMQ"
+[3]: <http://www.10gen.com/> "10gen MongoDB"
+[4]: <http://www.elasticsearch.org/> "elasticsearch"
+[5]: <https://github.com/rashidkpc/Kibana> "Kibana"
