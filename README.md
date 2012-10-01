@@ -19,7 +19,7 @@ The backend components are written in Python and the web frontend in JavaScript 
 Requirements
 ------------
 
-- message broker that support STOMP [ActiveMQ][1] or [RabbitMQ][2]
+- [ActiveMQ][1] or [RabbitMQ][2] ie. a message broker that supports STOMP
 - [MongoDB][2]
 - [elasticsearch][3]
 - [Kibana][4]
