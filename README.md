@@ -20,15 +20,20 @@ Requirements
 ------------
 
 - [ActiveMQ][1] or [RabbitMQ][2] ie. a message broker that supports STOMP
-- [MongoDB][2]
+- [MongoDB][3]
 
 Optional (for alert history)
 --------
 
-- [elasticsearch][3]
-- [Kibana][4]
+- [elasticsearch][4]
+- [Kibana][5]
 
 > Note: None of these packages require special configuration to work with Alerta.
+
+More Information
+----------------
+
+See the alerta [wiki][6]
 
 Contribute
 ----------
@@ -60,3 +65,4 @@ License
 [3]: <http://www.10gen.com/> "10gen MongoDB"
 [4]: <http://www.elasticsearch.org/> "elasticsearch"
 [5]: <https://github.com/rashidkpc/Kibana> "Kibana"
+[6]: <https://github.com/guardian/alerta/wiki> "Alerta wiki"
