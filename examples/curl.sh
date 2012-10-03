@@ -5,9 +5,14 @@ curl -XPOST http://${1:-'monitoring.gudev.gnl'}/alerta/api/v1/alerts/alert.json 
     "event": "HostAvail",
     "group": "Network",
     "value": "Down",
-    "severity": "Critical",
-    "environment": "REL",
-    "service": "SharedSvcs",
+    "severity": "MAJOR",
+    "environment": [
+        "REL",
+        "QA"
+    ],
+    "service": [
+        "SharedSvcs"
+    ],
     "tags": [
         "location=London",
         "region=EU"
