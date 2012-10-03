@@ -29,7 +29,6 @@ LOGFILE = '/var/log/alerta/alert-api.log'
 
 VALID_SEVERITY    = [ 'CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'NORMAL', 'INFORM', 'DEBUG' ]
 VALID_ENVIRONMENT = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP','INFRA' ]
-VALID_SERVICES    = [ 'R1', 'R2', 'Discussion', 'Soulmates', 'ContentAPI', 'MicroApp', 'FlexibleContent', 'Mutualisation', 'SharedSvcs' ]
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -99,10 +98,10 @@ def main():
             error = 'must supply event value'
         elif alert['severity'].upper() not in VALID_SEVERITY:
             error = 'severity must be one of %s' % ', '.join(VALID_SEVERITY)
-        elif 'environment' not in alert or alert['environment'] not in VALID_ENVIRONMENT:
-            error = 'environment must be one of %s' % ', '.join(VALID_ENVIRONMENT)
-        elif 'service' not in alert or alert['service'] not in VALID_SERVICES:
-            error = 'service must be one of %s' % ', '.join(VALID_SERVICES)
+        elif not all(x in VALID_ENVIRONMENT for x in alert['environment']):
+            error = 'must supply one or more environments from %s' % (','.join(VALID_ENVIRONMENT))
+        elif 'service' not in alert:
+            error = 'must supply one or more service'
         elif 'text' not in alert:
             error = 'must supply alert text'
         else:
@@ -118,9 +117,9 @@ def main():
             alert['id']            = alertid
             alert['severity']      = alert['severity'].upper()
             alert['severityCode']  = SEVERITY_CODE[alert['severity']]
-            alert['environment']   = alert['environment'].upper()
+            alert['environment']   = [x.upper() for x in alert['environment']]
             alert['type']          = 'exceptionAlert'
-            alert['summary']       = '%s - %s %s is %s on %s %s' % (alert['environment'], alert['severity'].upper(), alert['event'], alert['value'], alert['service'], alert['resource'])
+            alert['summary']       = '%s - %s %s is %s on %s %s' % (','.join(alert['environment']), alert['severity'].upper(), alert['event'], alert['value'], ','.join(alert['service']), alert['resource'])
             alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
             alert['origin']        = 'alert-api/%s' % os.uname()[1]
 
@@ -160,10 +159,6 @@ def main():
         status['response']['localTime'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
         diff = int(diff * 1000)
-        mgmt.update(
-            { "group": "requests", "name": "bad", "type": "timer", "title": "Bad requests", "description": "Failed requests to the API" },
-            { '$inc': { "count": 1, "totalTime": diff}},
-            True)
 
     content = json.dumps(status, cls=DateEncoder)
     if 'callback' in form:
