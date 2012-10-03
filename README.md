@@ -21,6 +21,10 @@ Requirements
 
 - [ActiveMQ][1] or [RabbitMQ][2] ie. a message broker that supports STOMP
 - [MongoDB][2]
+
+Optional (for alert history)
+--------
+
 - [elasticsearch][3]
 - [Kibana][4]
 
