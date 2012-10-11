@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.8.4'
+__version__ = '1.8.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -244,7 +244,10 @@ def main():
                         elif rule['value'].endswith('.sum'):
                             v = quote(m['sum'])
                         else:
-                            v = "%.1f" % (float(m['sum']) / float(m['num']))
+                            try:
+                                v = "%.1f" % (float(m['sum']) / float(m['num']))
+                            except ZeroDivisionError:
+                                v = 0.0
 
                         if 'value' not in metric[resource]:
                             metric[resource]['value'] = rule['value']
@@ -280,7 +283,10 @@ def main():
                         elif rule['value'].endswith('.sum'):
                             v = quote(m['sum'])
                         else:
-                            v = "%.1f" % (float(m['sum']) / float(m['num']))
+                            try:
+                                v = "%.1f" % (float(m['sum']) / float(m['num']))
+                            except ZeroDivisionError:
+                                v = 0.0
 
                         idx = 0
                         for threshold in metric[resource]['thresholdInfo']:
@@ -294,7 +300,10 @@ def main():
                         elif rule['value'].endswith('.sum'):
                             v = quote(m['sum'])
                         else:
-                            v = "%.1f" % (float(m['sum']) / float(m['num']))
+                            try:
+                                v = "%.1f" % (float(m['sum']) / float(m['num']))
+                            except ZeroDivisionError:
+                                v = 0.0
 
                         if m['type'] == 'timestamp' or m['units'] == 'timestamp':
                             v = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(float(v)))
