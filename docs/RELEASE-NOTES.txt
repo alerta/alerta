@@ -1,6 +1,12 @@
 Release Notes
 =============
 
+Alerta version 1.2.3
+--------------------
+
+* New alert-notify script and example configutarion. (support sms and email notifications)
+
+
 Alerta version 1.2.2
 --------------------
 
