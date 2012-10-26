@@ -90,13 +90,13 @@ def sms_notify(alertid, username, password, destination, url=API_URL):
 
     logging.info('Api call %s', url+'?'+data)
 
-    #req = urllib2.Request(url, data)
-    #f = urllib2.urlopen(req)
-    #response = f.read()
-    #f.close()
+    req = urllib2.Request(url, data)
+    f = urllib2.urlopen(req)
+    response = f.read()
+    f.close()
 
-    response = '0:1 SMS successfully queued'
-    #response='2:0 Authentication error'
+    #response = '0:1 SMS successfully queued'
+    #response = '2:0 Authentication error'
 
     # Api call response syntax.
     # <status no>:<no of credits used> <description>    
