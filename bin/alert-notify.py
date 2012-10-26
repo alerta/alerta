@@ -31,22 +31,12 @@ __version__ = '1.0.2'
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
 
-#DISABLE = '/opt/alerta/conf/alert-notify.disable'
-#LOGFILE = '/var/log/alerta/alert-notify.log'
-#PIDFILE = '/var/run/alerta/alert-notify.pid'
-#CONFIGFILE ='/home/dnanini/alerta/conf/alert-notify.yaml'
-#GRACEPERIOD = 300
-#API_SERVER = 'monitoring.guprod.gnl'
-#SMTP_SERVER  = 'mx'
-#ALERTER_MAIL = 'alerta@guardian.co.uk'
-#TIMEZONE = 'Europe/London'
-
 DISABLE = '/opt/alerta/conf/alert-notify.disable'
-LOGFILE = '/home/dnanini/alerta/experimental/alert-notify.log'
-PIDFILE = '/home/dnanini/alerta/experimental/alert-notify.pid'
-CONFIGFILE = '/home/dnanini/alerta/experimental/alert-notify.yaml'
-GRACEPERIOD = 20
-API_SERVER = 'monitoring.gudev.gnl'
+LOGFILE = '/var/log/alerta/alert-notify.log'
+PIDFILE = '/var/run/alerta/alert-notify.pid'
+CONFIGFILE ='/opt/alerta/conf/alert-notify.yaml'
+GRACEPERIOD = 300
+API_SERVER = 'monitoring.guprod.gnl'
 SMTP_SERVER  = 'mx'
 ALERTER_MAIL = 'alerta@guardian.co.uk'
 TIMEZONE = 'Europe/London'
@@ -478,13 +468,9 @@ def main():
 
             time.sleep(0.5)
         except (KeyboardInterrupt, SystemExit):
-            print "disconnecting stomp"
             conn.disconnect()
-            print "shutting down TokenThread"
             _TokenThread.shutdown()
-            print "shutting down NotifyThread"
             _NotifyThread.shutdown() 
-            print "removing pid file"
             os.unlink(PIDFILE)
             sys.exit(0)
 
