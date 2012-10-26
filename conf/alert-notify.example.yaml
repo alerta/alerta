@@ -1,0 +1,11 @@
+# Notify Config
+global:
+  USERNAME: username
+  PASSWORD: changeme
+owners:
+  cbabbage:
+    email: cbabbage@example.com
+    mobile: '4455555555'
+  aturing:
+    email: aturing@example.com     
+    mobile: '4455555555'
