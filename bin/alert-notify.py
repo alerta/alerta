@@ -22,7 +22,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 import smtplib
-from datetime import datetime
+import datetime
 import pytz
 import uuid
 
@@ -31,22 +31,12 @@ __version__ = '1.0.2'
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
 
-#DISABLE = '/opt/alerta/conf/alert-notify.disable'
-#LOGFILE = '/var/log/alerta/alert-notify.log'
-#PIDFILE = '/var/run/alerta/alert-notify.pid'
-#CONFIGFILE ='/home/dnanini/alerta/conf/alert-notify.yaml'
-#GRACEPERIOD = 300
-#API_SERVER = 'monitoring.guprod.gnl'
-#SMTP_SERVER  = 'mx'
-#ALERTER_MAIL = 'alerta@guardian.co.uk'
-#TIMEZONE = 'Europe/London'
-
 DISABLE = '/opt/alerta/conf/alert-notify.disable'
-LOGFILE = '/home/dnanini/alerta/experimental/alert-notify.log'
-PIDFILE = '/home/dnanini/alerta/experimental/alert-notify.pid'
-CONFIGFILE = '/home/dnanini/alerta/experimental/alert-notify.yaml'
-GRACEPERIOD = 20
-API_SERVER = 'monitoring.gudev.gnl'
+LOGFILE = '/var/log/alerta/alert-notify.log'
+PIDFILE = '/var/run/alerta/alert-notify.pid'
+CONFIGFILE ='/opt/alerta/conf/alert-notify.yaml'
+GRACEPERIOD = 300
+API_SERVER = 'monitoring.guprod.gnl'
 SMTP_SERVER  = 'mx'
 ALERTER_MAIL = 'alerta@guardian.co.uk'
 TIMEZONE = 'Europe/London'
@@ -100,13 +90,13 @@ def sms_notify(alertid, username, password, destination, url=API_URL):
 
     logging.info('Api call %s', url+'?'+data)
 
-    #req = urllib2.Request(url, data)
-    #f = urllib2.urlopen(req)
-    #response = f.read()
-    #f.close()
+    req = urllib2.Request(url, data)
+    f = urllib2.urlopen(req)
+    response = f.read()
+    f.close()
 
-    response = '0:1 SMS successfully queued'
-    #response='2:0 Authentication error'
+    #response = '0:1 SMS successfully queued'
+    #response = '2:0 Authentication error'
 
     # Api call response syntax.
     # <status no>:<no of credits used> <description>    
@@ -277,7 +267,7 @@ def send_notify(alertid):
                 who = who_to_notify(tag)
                 message = alert[alertid]['summary']
 
-                if tokens[who, 'sms'] > 0:
+                if tag.startswith('sms:') and tokens[who, 'sms'] > 0:
                     _Lock.acquire()
                     tokens[who, 'sms'] -= 1
                     _Lock.release()
@@ -478,13 +468,9 @@ def main():
 
             time.sleep(0.5)
         except (KeyboardInterrupt, SystemExit):
-            print "disconnecting stomp"
             conn.disconnect()
-            print "shutting down TokenThread"
             _TokenThread.shutdown()
-            print "shutting down NotifyThread"
             _NotifyThread.shutdown() 
-            print "removing pid file"
             os.unlink(PIDFILE)
             sys.exit(0)
 
