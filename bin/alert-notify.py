@@ -267,7 +267,7 @@ def send_notify(alertid):
                 who = who_to_notify(tag)
                 message = alert[alertid]['summary']
 
-                if tokens[who, 'sms'] > 0:
+                if tag.startswith('sms:') and tokens[who, 'sms'] > 0:
                     _Lock.acquire()
                     tokens[who, 'sms'] -= 1
                     _Lock.release()
