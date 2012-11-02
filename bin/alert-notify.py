@@ -110,7 +110,7 @@ def sms_notify(alertid, username, password, destination, url=API_URL):
 
 def email_notify(alertid, email):
 
-    MAILING_LIST = email
+    MAILING_LIST = [email]
 
     createTime = datetime.datetime.strptime(alert[alertid]['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
     createTime = createTime.replace(tzinfo=pytz.utc)
@@ -187,7 +187,7 @@ def email_notify(alertid, email):
     msg_root = MIMEMultipart('related')
     msg_root['Subject'] = '[%s] %s' % (alert[alertid]['status'], alert[alertid]['summary'])
     msg_root['From']    = ALERTER_MAIL
-    msg_root['To']      = MAILING_LIST
+    msg_root['To']      = ','.join(MAILING_LIST)
     msg_root.preamble   = 'This is a multi-part message in MIME format.'
         
     msg_alt = MIMEMultipart('alternative')
@@ -211,7 +211,7 @@ def email_notify(alertid, email):
                 pass
 
     try:
-        logging.info('%s : Send email to %s', alert[alertid]['lastReceiveId'], MAILING_LIST)
+        logging.info('%s : Send email to %s', alert[alertid]['lastReceiveId'], ','.join(MAILING_LIST))
         s = smtplib.SMTP(SMTP_SERVER)
         s.sendmail(ALERTER_MAIL, MAILING_LIST, msg_root.as_string())
         s.quit()
