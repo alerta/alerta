@@ -25,7 +25,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
 __program__ = 'alert-urlmon'
-__version__ = '1.5.8'
+__version__ = '1.5.9'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -319,7 +319,7 @@ class WorkerThread(threading.Thread):
                 alert['id']               = alertid
                 alert['resource']         = item['resource']
                 alert['event']            = event
-                alert['group']            = 'SLM'  # Service Level Monitoring
+                alert['group']            = 'Web'
                 alert['value']            = value
                 alert['severity']         = severity
                 alert['severityCode']     = SEVERITY_CODE[severity]
