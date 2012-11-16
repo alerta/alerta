@@ -169,6 +169,10 @@ caption {
 	display: none;
 }
 
+.priority .INFORM {
+	display: none;
+}
+
 .alert-more {
 	background: #fff;
 }
