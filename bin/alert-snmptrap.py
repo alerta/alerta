@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-snmptrap'
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -30,6 +30,7 @@ DEFAULT_TIMEOUT = 86400
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-snmptrap.log'
+DISABLE = '/opt/alerta/conf/alert-snmptrap.disable'
 TRAPCONF = '/opt/alerta/conf/alert-snmptrap.yaml'
 PARSERDIR = '/opt/alerta/bin/parsers'
 
@@ -47,6 +48,10 @@ SEVERITY_CODE = {
 def main():
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-snmptrap[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+
+    if os.path.isfile(DISABLE):
+        logging.warning('Disable flag exists (%s). Exiting...', DISABLE)
+        sys.exit(0)
 
     trapvars = dict()
     trapvars['$$'] = '$'
