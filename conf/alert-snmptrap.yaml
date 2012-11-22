@@ -29,21 +29,21 @@
 # Oracle Enterprise Manager
 
 - trapoid: ORACLE-ENTERPRISE-MANAGER-4-MIB
-  parser: OracleEMParser
+  parser: OracleEMTrapParser
   group: Database
   service: R2
 
 # ZXTM Pool Traps
 
 - trapoid: ZXTM-MIB::pooldied
-  parser: ZxtmParser
+  parser: ZxtmTrapParser
   event: ZxtmPoolStatus
   value: Died
   resource: $4
   group: ZXTM
 
 - trapoid: ZXTM-MIB::poolok
-  parser: ZxtmParser
+  parser: ZxtmTrapParser
   event: ZxtmPoolStatus
   value: OK
   resource: $4
@@ -52,14 +52,14 @@
 # ZXTM Node Traps
 
 - trapoid: ZXTM-MIB::nodefail
-  parser: ZxtmParser
+  parser: ZxtmTrapParser
   event: ZxtmNodeStatus
   value: Fail
   resource: $4
   group: ZXTM
 
 - trapoid: ZXTM-MIB::nodeworking
-  parser: ZxtmParser
+  parser: ZxtmTrapParser
   event: ZxtmNodeStatus
   value: Working
   resource: $4
@@ -68,14 +68,14 @@
 # ZXTM Monitor Traps
 
 - trapoid: ZXTM-MIB::monitorfail
-  parser: ZxtmParser
+  parser: ZxtmTrapParser
   event: ZxtmMonitorStatus
   value: Fail
   resource: $4
   group: ZXTM
 
 - trapoid: ZXTM-MIB::monitorok
-  parser: ZxtmParser
+  parser: ZxtmTrapParser
   event: ZxtmMonitorStatus
   value: OK
   resource: $4
@@ -84,7 +84,7 @@
 # ZXTM Rule Msg Traps
 
 - trapoid: ZXTM-MIB::rulelogmsginfo
-  parser: ZxtmParser
+  parser: ZxtmTrapParser
   event: ZxtmRuleMsg
   value: Info
   resource: $4
@@ -93,7 +93,7 @@
 # ZXTM Trap catch-all
 
 - trapoid: ZXTM-MIB
-  parser: ZxtmParser
+  parser: ZxtmTrapParser
   resource: $4
   group: ZXTM
 

@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-snmptrap'
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -48,6 +48,7 @@ SEVERITY_CODE = {
 def main():
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-snmptrap[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    logging.info('Starting up Alert SNMP Trap version %s', __version__)
 
     if os.path.isfile(DISABLE):
         logging.warning('Disable flag exists (%s). Exiting...', DISABLE)
@@ -193,8 +194,6 @@ def main():
     headers = dict()
     headers['type']           = "snmptrapAlert"
     headers['correlation-id'] = alertid
-    headers['persistent']     = 'true'
-    headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
     alert = dict()
     alert['id']               = alertid
