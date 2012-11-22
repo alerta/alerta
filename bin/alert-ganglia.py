@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.8.5'
+__version__ = '1.8.6'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -370,8 +370,6 @@ def main():
                                 headers = dict()
                                 headers['type']           = "gangliaAlert"
                                 headers['correlation-id'] = alertid
-                                headers['persistent']     = 'true'
-                                headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
                                 # standard alert info
                                 alert = dict()

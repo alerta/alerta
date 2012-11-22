@@ -25,7 +25,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
 __program__ = 'alert-urlmon'
-__version__ = '1.5.9'
+__version__ = '1.5.10'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -311,8 +311,6 @@ class WorkerThread(threading.Thread):
                 headers = dict()
                 headers['type']           = "serviceAlert"
                 headers['correlation-id'] = alertid
-                headers['persistent']     = 'true'
-                headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
                 # standard alert info
                 alert = dict()

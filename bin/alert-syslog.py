@@ -25,7 +25,7 @@ import uuid
 import re
 
 __program__ = 'alert-syslog'
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -212,8 +212,6 @@ def send_heartbeat():
     headers = dict()
     headers['type']           = "heartbeat"
     headers['correlation-id'] = heartbeatid
-    # headers['persistent']     = 'false'
-    # headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
     heartbeat = dict()
     heartbeat['id']         = heartbeatid
