@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-snmptrap'
-__version__ = '1.2.3'
+__version__ = '1.2.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -172,6 +172,7 @@ def main():
                 correlate = t['correlatedEvents']
             if 'thresholdInfo' in t:
                 threshold = t['thresholdInfo']
+            break
 
     # Trap variable substitution
     logging.debug('trapvars: %s', trapvars)
