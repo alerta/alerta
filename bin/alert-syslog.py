@@ -20,9 +20,10 @@ import socket
 import select
 import uuid
 import re
+import fnmatch
 
 __program__ = 'alert-syslog'
-__version__ = '1.1.4'
+__version__ = '1.1.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -146,7 +147,7 @@ def send_syslog(data):
     value       = TAG
     text        = MSG
     environment = ['INFRA']
-    service     = ['Network']
+    service     = ['Infrastructure']
     tags        = [ '%s.%s' % (facility, level) ]
     correlate   = list()
     threshold   = ''
@@ -160,7 +161,7 @@ def send_syslog(data):
 
     for s in syslogconf:
         logging.debug('syslogconf: %s', s)
-        if re.match(s['priority'], '%s.%s' % (facility, level)):
+        if fnmatch.fnmatch('%s.%s' % (facility, level), s['priority']):
             if 'parser' in s:
                 print 'Loading parser %s' % s['parser']
                 try:
@@ -191,6 +192,7 @@ def send_syslog(data):
                 correlate = s['correlatedEvents']
             if 'thresholdInfo' in s:
                 threshold = s['thresholdInfo']
+            break
 
     alertid = str(uuid.uuid4()) # random UUID
     createTime = datetime.datetime.utcnow()
