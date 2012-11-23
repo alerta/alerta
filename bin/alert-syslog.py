@@ -23,7 +23,7 @@ import re
 import fnmatch
 
 __program__ = 'alert-syslog'
-__version__ = '1.1.5'
+__version__ = '1.1.6'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -151,6 +151,7 @@ def send_syslog(data):
     tags        = [ '%s.%s' % (facility, level) ]
     correlate   = list()
     threshold   = ''
+    suppress    = False
 
     try:
         syslogconf = yaml.load(open(SYSLOGCONF))
@@ -192,7 +193,13 @@ def send_syslog(data):
                 correlate = s['correlatedEvents']
             if 'thresholdInfo' in s:
                 threshold = s['thresholdInfo']
+            if 'suppress' in s:
+                suppress = s['suppress']
             break
+
+    if suppress:
+        logging.info('Suppressing %s.%s syslog message from %s', facility, level, resource)
+        return
 
     alertid = str(uuid.uuid4()) # random UUID
     createTime = datetime.datetime.utcnow()

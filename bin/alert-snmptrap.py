@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-snmptrap'
-__version__ = '1.2.4'
+__version__ = '1.2.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -127,6 +127,7 @@ def main():
     tags        = list()
     correlate   = list()
     threshold   = ''
+    suppress    = False
 
     # Match trap to specific config and load any parsers
     # Note: any of these variables could have been modified by a parser
@@ -172,7 +173,13 @@ def main():
                 correlate = t['correlatedEvents']
             if 'thresholdInfo' in t:
                 threshold = t['thresholdInfo']
+            if 'suppress' in t:
+                suppress = t['suppress']
             break
+
+    if suppress:
+        logging.info('Suppressing %s SNMP trap from %s', trapoid, resource)
+        return
 
     # Trap variable substitution
     logging.debug('trapvars: %s', trapvars)
