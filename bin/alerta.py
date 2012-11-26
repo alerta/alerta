@@ -20,7 +20,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.5.0'
+__version__ = '1.5.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -158,7 +158,9 @@ class MessageHandler(object):
 
             # Update alert status
             status = None
-            if alert['severity'] == 'NORMAL':
+            if alert['severity'] in ['DEBUG','INFORM']:
+                status = 'OPEN'
+            elif alert['severity'] == 'NORMAL':
                 status = 'CLOSED'
             elif alert['severity'] == 'WARNING':
                 if previousSeverity in ['NORMAL']:
@@ -172,6 +174,8 @@ class MessageHandler(object):
             elif alert['severity'] == 'CRITICAL':
                 if previousSeverity in ['NORMAL','WARNING','MINOR','MAJOR']:
                     status = 'OPEN'
+            else:
+                status = 'UNKNOWN'
 
             if status:
                 alert['status'] = status
@@ -282,7 +286,7 @@ class MessageHandler(object):
 def main():
     global db, alerts, mgmt, hb, conn
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s alerta[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alerta[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alerta version %s', __version__)
 
     # Write pid file if not already running
