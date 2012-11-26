@@ -25,7 +25,7 @@ import logging
 import uuid
 
 __program__ = 'alert-sender'
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 BROKER_LIST  = [('monitoring.guprod.gnl', 61613),('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -220,6 +220,7 @@ if not options.text:
     except IOError:
         pass
 
+else:
     alertid = str(uuid.uuid4()) # random UUID
     createTime = datetime.datetime.utcnow()
 

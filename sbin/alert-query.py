@@ -18,7 +18,7 @@ import urllib2, urllib
 import operator
 import pytz
 
-__version__ = '1.3.0'
+__version__ = '1.3.1'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -259,7 +259,7 @@ def main():
         query.append(('sort-by', options.sortby))
 
     if options.limit:
-        query.append('limit=%s' % options.limit)
+        query.append(('limit', options.limit))
 
     if options.show == ['counts']:
         query.append(('hide-alert-details','true'))
