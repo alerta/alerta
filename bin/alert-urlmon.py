@@ -25,7 +25,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
 __program__ = 'alert-urlmon'
-__version__ = '1.5.10'
+__version__ = '1.5.11'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -266,12 +266,12 @@ class WorkerThread(threading.Thread):
 
             if GMETRIC_SEND:
                 gmetric_cmd = "%s --name availability-%s --value %.1f --type float --units \" \" --slope both --group %s %s" % (
-                    GMETRIC_CMD, item['resource'], avail, item['service'], GMETRIC_OPTIONS)
+                    GMETRIC_CMD, item['resource'], avail, ','.join(item['service']), GMETRIC_OPTIONS) # XXX - gmetric doesn't support multiple groups
                 logging.debug("%s", gmetric_cmd)
                 os.system("%s" % gmetric_cmd)
 
                 gmetric_cmd = "%s --name response_time-%s --value %d --type uint16 --units ms --slope both --group %s %s" % (
-                    GMETRIC_CMD, item['resource'], rtt, item['service'], GMETRIC_OPTIONS)
+                    GMETRIC_CMD, item['resource'], rtt, ','.join(item['service']), GMETRIC_OPTIONS)
                 logging.debug("%s", gmetric_cmd)
                 os.system("%s" % gmetric_cmd)
 
