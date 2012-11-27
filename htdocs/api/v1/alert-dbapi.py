@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.6'
+__version__ = '1.9.7'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -351,7 +351,8 @@ def main():
 
     m = re.search(r'DELETE /alerta/api/v1/alerts/alert/(?P<id>\S+)$', request)
     if m:
-        query['_id'] = m.group('id')
+        query['_id'] = dict()
+        query['_id']['$regex'] = '^'+m.group('id')
 
         logging.info('MongoDB DELETE -> alerts.remove(%s)', query)
         error = alerts.remove(query, safe=True)
