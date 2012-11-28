@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.7'
+__version__ = '1.9.8'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -198,7 +198,7 @@ def main():
         debug = 0
 
         if not len(fields): fields = None
-        logging.debug('MongoDB GET all -> alerts.find(%s, %s, sort=%s).limit(%s)', query, fields, sortby, limit)
+        logging.debug('MongoDB GET alerts -> alerts.find(%s, %s, sort=%s).limit(%s)', query, fields, sortby, limit)
 
         alertDetails = list()
         for alert in alerts.find(query, fields, sort=sortby).limit(limit):
@@ -366,6 +366,63 @@ def main():
         diff = int(diff * 1000) # management status needs time in milliseconds
         mgmt.update(
             { "group": "requests", "name": "delete", "type": "timer", "title": "DELETE requests", "description": "Requests to delete alerts via the API" },
+            { '$inc': { "count": 1, "totalTime": diff}},
+            True)
+
+    m = re.search(r'GET /alerta/api/v1/resources$', request)
+    if m:
+        logging.debug('form %s' % form)
+
+        fields = dict()
+        fields['environment'] = 1
+        fields['service'] = 1
+        fields['resource'] = 1
+
+        if 'limit' in form:
+            limit = int(form['limit'][0])
+            del form['limit']
+        else:
+            limit = 0
+
+        sortby = list()
+
+        query = dict()
+        for field in form:
+            if field in ['callback', '_']:
+                continue
+            if len(form[field]) == 1:
+                query[field] = dict()
+                query[field]['$regex'] = form[field][0]
+                query[field]['$options'] = 'i'  # case insensitive search
+            else:
+                query[field] = dict()
+                query[field]['$in'] = form[field]
+
+        if not len(fields): fields = None
+        logging.debug('MongoDB GET resources -> alerts.find(%s, %s, sort=%s).limit(%s)', query, fields, sortby, limit)
+
+        resources = dict()
+        for alert in alerts.find(query, fields, sort=sortby).limit(limit):
+            resources[alert['resource']] = { 'environment': alert['environment'], 'service': alert['service'], 'resource': alert['resource'] }
+
+        resourceDetails = list()
+        for resource in resources:
+            resourceDetails.append(resources[resource])
+
+        total = len(resourceDetails)
+        resourceDetails.sort()
+
+        status['response']['resources'] = { 'resourceDetails': list(resourceDetails) }
+
+        diff = time.time() - start
+        status['response']['status'] = 'ok'
+        status['response']['time'] = "%.3f" % diff
+        status['response']['total'] = total
+        status['response']['localTime'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+        diff = int(diff * 1000) # management status needs time in milliseconds
+        mgmt.update(
+            { "group": "requests", "name": "complex_get", "type": "timer", "title": "Complex GET requests", "description": "Requests to the alert status API" },
             { '$inc': { "count": 1, "totalTime": diff}},
             True)
 
