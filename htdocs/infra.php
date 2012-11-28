@@ -184,17 +184,17 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="SLM" data-label="SLM">
+            <table class="table table-bordered table-condensed summary" id="Deploys" data-label="Deploys">
               <thead>
-                <tr> <th colspan="6" id="SLM-status">SLM</th> </tr>
+                <tr> <th colspan="6" id="Deploys-status">Deploys</th> </tr>
               </thead>
               <tbody>
-                <tr id="SLM-warnings" class="warnings">
-                  <td id="SLM-critical">0</td>
-                  <td id="SLM-major">0</td>
-                  <td id="SLM-minor">0</td>
-                  <td id="SLM-warning">0</td>
-                  <td id="SLM-normal">0</td>
+                <tr id="Deploys-warnings" class="warnings">
+                  <td id="Deploys-critical">0</td>
+                  <td id="Deploys-major">0</td>
+                  <td id="Deploys-minor">0</td>
+                  <td id="Deploys-warning">0</td>
+                  <td id="Deploys-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -249,7 +249,7 @@
             </tbody>
             <tbody id="Acknowledged-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="SLM-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="Deploys-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="Reboot-alerts" class="serviceAlerts initially-hidden">
             </tbody>
@@ -272,14 +272,14 @@
         var services = { 'OS':       'status=OPEN|ACK|CLOSED&group=OS',
                          'Linux':    'status=OPEN|ACK|CLOSED&tags=os:linux',
                          'Solaris':  'status=OPEN|ACK|CLOSED&tags=os:sunos',
-                         'Network':  statusfilter+'&service=Network',
+                         'Network':  statusfilter+'&service=^Network',
                          'EC2':      statusfilter+'&service=EC2',
                          'Puppet':   'status=OPEN|ACK|CLOSED&group=Puppet',
                          'Syslog':   'status=OPEN|ACK|CLOSED&group=Syslog',
                          'Web':      'status=OPEN|ACK|CLOSED&group=Web',
                          'Ganglia':  'status=OPEN|ACK|CLOSED&group=Ganglia',
                          'Acknowledged': 'status=ACK',
-                         'SLM':      'status=OPEN|ACK|CLOSED&group=SLM',
+                         'Deploys':  'status=OPEN|ACK|CLOSED&event=Deploy',
                          'Reboot':   'status=OPEN|ACK|CLOSED&event=ServerReboot',
                        };
 

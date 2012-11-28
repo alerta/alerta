@@ -282,7 +282,7 @@
                          'Linux':     statusfilter+'&tags=os:linux',
                          'Solaris':   statusfilter+'&tags=os:sunos',
                          'Syslog':    statusfilter+'&group=Syslog',
-                         'Network':   statusfilter+'&service=Network',
+                         'Network':   statusfilter+'&service=^Network',
                        };
 
         loadStatus(statusfilter, true);
