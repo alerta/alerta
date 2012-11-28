@@ -4,6 +4,7 @@
   value: $boottime > ($now - 7200)
   thresholdInfo: [ 'INFORM:==:True' ]
   text: [ 'Server rebooted less than 2 hours ago' ]
+  service: Infrastucture
   resource: $host
   group: Server
   graphs: []
@@ -15,6 +16,7 @@
   value: $pup_res_failed
   thresholdInfo: [ 'WARNING:>:0','NORMAL:==:0' ]
   text: [ 'Puppet agent failed to update $pup_res_failed out of $pup_res_total resources','Puppet is updating all $pup_res_total resources' ]
+  service: Infrastucture
   resource: $host
   group: Puppet
   graphs: [pup_res_failed]
@@ -26,6 +28,7 @@
   value: $pup_last_run
   thresholdInfo: [ 'MINOR:<:$now - 7200','NORMAL:>:$now - 7200' ]
   text: ['Puppet agent has not run for at least 2 hours (last puppet run at $pup_last_run)','Puppet agent is OK (last puppet run at $pup_last_run).']
+  service: Infrastucture
   resource: $host
   group: Puppet
   graphs: []
