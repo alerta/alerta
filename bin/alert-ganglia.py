@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.8.6'
+__version__ = '1.8.7'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -128,6 +128,8 @@ def init_rules():
 
 def quote(s):
     try:
+        return int(s)
+    except TypeError:
         float(s)
         return "%.1f" % float(s)
     except ValueError:
@@ -172,9 +174,11 @@ def main():
     while True:
         try:
             # Read (or re-read) rules as necessary
-            if os.path.getmtime(RULESFILE) != rules_mod_time:
-                rules = init_rules()
-                rules_mod_time = os.path.getmtime(RULESFILE)
+            #if os.path.getmtime(RULESFILE) != rules_mod_time:
+            #    rules = init_rules()
+            #    rules_mod_time = os.path.getmtime(RULESFILE)
+
+            rules = init_rules() # re-read rule config each time
 
             for rule in rules:
                 # Check rule is valid
