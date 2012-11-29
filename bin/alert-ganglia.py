@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.8.7'
+__version__ = '1.8.8'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -256,6 +256,7 @@ def main():
                         if 'value' not in metric[resource]:
                             metric[resource]['value'] = rule['value']
                         metric[resource]['value'] = re.sub('\$%s(\.sum)?' % m['metric'], str(v), metric[resource]['value'])
+                        metric[resource]['units'] = m['units']
 
                         metric[resource]['tags'] = list()
                         metric[resource]['tags'].extend(rule['tags'])
@@ -368,6 +369,7 @@ def main():
                                 or (previousSeverity[(resource, rule['event'])] == sev and repeat)):
 
                                 logging.debug('%s %s %s %s rule fired %s %s %s %s', ','.join(metric[resource]['environment']), ','.join(metric[resource]['service']), sev,rule['event'],resource,ti, rule['text'][index], calculated_value)
+
                                 alertid = str(uuid.uuid4()) # random UUID
                                 createTime = datetime.datetime.utcnow()
 
@@ -381,7 +383,7 @@ def main():
                                 alert['resource']         = resource
                                 alert['event']            = rule['event']
                                 alert['group']            = rule['group']
-                                alert['value']            = calculated_value
+                                alert['value']            = str(calculated_value)+' '+metric[resource]['units']
                                 alert['severity']         = sev
                                 alert['severityCode']     = SEVERITY_CODE[sev]
                                 alert['environment']      = metric[resource]['environment']
@@ -389,7 +391,7 @@ def main():
                                 alert['text']             = metric[resource]['text'][index]
                                 alert['type']             = 'gangliaAlert'
                                 alert['tags']             = metric[resource]['tags']
-                                alert['summary']          = '%s - %s %s is %s on %s %s' % (','.join(metric[resource]['environment']), sev, rule['event'], calculated_value, ','.join(metric[resource]['service']), resource)
+                                alert['summary']          = '%s - %s %s is %s on %s %s' % (','.join(metric[resource]['environment']), sev, rule['event'], alert['value'], ','.join(metric[resource]['service']), resource)
                                 alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
                                 alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
                                 alert['thresholdInfo']    = ','.join(rule['thresholdInfo'])
