@@ -12,6 +12,8 @@ try:
     import json
 except ImportError:
     import simplejson as json
+import threading
+from Queue import Queue
 import stomp
 import pymongo
 import datetime
@@ -20,7 +22,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -38,6 +40,7 @@ conn = None
 db = None
 alerts = None
 mgmt = None
+queue = Queue()
 
 # Extend JSON Encoder to support ISO 8601 format dates
 class DateEncoder(json.JSONEncoder):
@@ -47,13 +50,55 @@ class DateEncoder(json.JSONEncoder):
         else:
             return json.JSONEncoder.default(self, obj)
 
+class WorkerThread(threading.Thread):
+
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.input_queue = queue
+
+    def run(self):
+        global conn
+
+        while True:
+            alert = self.input_queue.get()
+            if not alert:
+                logging.info('%s is shutting down.', self.getName())
+                break
+
+            while not conn.is_connected():
+                logging.warning('Waiting for message broker to become available')
+                time.sleep(1.0)
+
+            # Forward alert to notify topic and logger queue
+            headers = dict()
+            headers['type']           = alert['type']
+            headers['correlation-id'] = alert['id']
+
+            logging.info('%s : Fwd alert to %s', alert['id'], NOTIFY_TOPIC)
+            try:
+                conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
+            except Exception, e:
+                logging.error('Failed to send alert to broker %s', e)
+
+            logging.info('%s : Fwd alert to %s', alert['id'], LOGGER_QUEUE)
+            try:
+                conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
+            except Exception, e:
+                logging.error('Failed to send alert to broker %s', e)
+
+            self.input_queue.task_done()
+            logging.info('%s : Alert forwarded to %s and %s', alert['id'], NOTIFY_TOPIC, LOGGER_QUEUE)
+
+        self.input_queue.task_done()
+        return
+
 class MessageHandler(object):
 
     def on_error(self, headers, body):
         logging.error('Received an error %s', body)
 
     def on_message(self, headers, body):
-        global db, alerts, mgmt, hb, conn
+        global db, alerts, mgmt, hb, conn, queue
 
         start = time.time()
         logging.debug("Received alert : %s", body)
@@ -158,6 +203,7 @@ class MessageHandler(object):
 
             # Update alert status
             status = None
+
             if alert['severity'] in ['DEBUG','INFORM']:
                 status = 'OPEN'
             elif alert['severity'] == 'NORMAL':
@@ -187,22 +233,12 @@ class MessageHandler(object):
                       '$push': { "history": { "status": status, "updateTime": updateTime } }})
                 logging.info('%s : Alert status for %s %s alert with diff event/severity changed to %s', alertid, alert['severity'], alert['event'], status)
 
-            # Forward alert to notify topic and logger queue
-            headers = dict()
-            headers['type']           = alert['type']
-            headers['correlation-id'] = alertid
-
+            # Replace alertid with canonical alertid
             alert['id'] = alert['_id']
             del alert['_id']
 
-            while not conn.is_connected():
-                logging.warning('Waiting for message broker to become available')
-                time.sleep(1.0)
-
-            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
-            logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
-            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
+            # Forward alert to notify topic and logger queue
+            queue.put(alert)
 
         else:
             logging.info('%s : New alert -> insert', alertid)
@@ -223,38 +259,25 @@ class MessageHandler(object):
                 status = 'CLOSED'
             alert['status'] = status
 
-            alerts.insert(alert)
+            alerts.insert(alert, safe=True)
             alerts.update(
                 { "resource": alert['resource'], "event": alert['event'] },
                 { '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "event": alert['event'],
                              "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }},
-                  '$set': { "duplicateCount": 0 }})
+                  '$set': { "duplicateCount": 0 }}, safe=True)
 
             updateTime = datetime.datetime.utcnow()
             updateTime = updateTime.replace(tzinfo=pytz.utc)
             alerts.update(
                 { "resource": alert['resource'], "event": alert['event'] },
                 { '$set': { "status": status },
-                  '$push': { "history": { "status": status, "updateTime": updateTime } }})
+                  '$push': { "history": { "status": status, "updateTime": updateTime } }}, safe=True)
             logging.info('%s : Alert status for new %s %s alert set to %s', alertid, alert['severity'], alert['event'], status)
 
             # Forward alert to notify topic and logger queue
             alert = alerts.find_one({"_id": alertid}, {"_id": 0, "history": 0})
-
-            headers = dict()
-            headers['type']           = alert['type']
-            headers['correlation-id'] = alertid
-
             alert['id'] = alertid
-
-            while not conn.is_connected():
-                logging.warning('Waiting for message broker to become available')
-                time.sleep(1.0)
-
-            logging.info('%s : Fwd alert to %s', alertid, NOTIFY_TOPIC)
-            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=NOTIFY_TOPIC)
-            logging.info('%s : Fwd alert to %s', alertid, LOGGER_QUEUE)
-            conn.send(json.dumps(alert, cls=DateEncoder), headers, destination=LOGGER_QUEUE)
+            queue.put(alert)
 
         diff = int((time.time() - start) * 1000)
         mgmt.update(
@@ -286,7 +309,7 @@ class MessageHandler(object):
 def main():
     global db, alerts, mgmt, hb, conn
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alerta[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s alerta[%(process)d] %(threadName)s %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alerta version %s', __version__)
 
     # Write pid file if not already running
@@ -326,11 +349,17 @@ def main():
     except Exception, e:
         logging.error('Stomp connection error: %s', e)
 
+    # Start worker thread
+    w = WorkerThread(queue)
+    w.start()
+    logging.info('Starting alert forwarding thread: %s', w.getName())
+
     while True:
         try:
             time.sleep(0.01)
         except (KeyboardInterrupt, SystemExit):
             conn.disconnect()
+            queue.put(None)
             os.unlink(PIDFILE)
             sys.exit(0)
 
