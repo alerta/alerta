@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.9'
+__version__ = '1.9.10'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -137,6 +137,18 @@ def main():
             hide_repeats = []
 
         fields = dict()
+        if 'fields' in form:
+            if len(form['fields']) == 1:
+                for f in form['fields'][0].split(','):
+                    fields[f] = 1
+            else:
+                for f in form['fields']:
+                    fields[f] = 1
+            del form['fields']
+
+            fields['severity'] = 1 # always include severity and status
+            fields['status'] = 1
+
         if 'hide-alert-history' in form:
             if form['hide-alert-history'][0] == 'true':
                 fields['history'] = 0
