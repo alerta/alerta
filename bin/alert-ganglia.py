@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.8.8'
+__version__ = '1.8.9'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -135,6 +135,14 @@ def quote(s):
     except ValueError:
         return '"%s"' % s
 
+def format_units(units):
+
+    if units in ['seconds','s']:
+        return 's'
+    if units in ['percent','%']:
+        return '%'
+    return ' '+units
+
 def main():
     global conn
 
@@ -202,7 +210,7 @@ def main():
                 response = get_metrics(filter)
 
                 # Make non-metric substitutions
-                now = time.time()
+                now = int(time.time())
                 rule['value'] = re.sub('\$now', str(now), rule['value'])
                 idx = 0
                 for threshold in rule['thresholdInfo']:
@@ -383,7 +391,7 @@ def main():
                                 alert['resource']         = resource
                                 alert['event']            = rule['event']
                                 alert['group']            = rule['group']
-                                alert['value']            = str(calculated_value)+' '+metric[resource]['units']
+                                alert['value']            = "%s%s" % (calculated_value, format_units(metric[resource]['units']))
                                 alert['severity']         = sev
                                 alert['severityCode']     = SEVERITY_CODE[sev]
                                 alert['environment']      = metric[resource]['environment']
