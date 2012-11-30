@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.8'
+__version__ = '1.9.9'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -177,12 +177,20 @@ def main():
                 query['_id'] = dict()
                 query['_id']['$regex'] = '^'+form['id'][0]
             elif len(form[field]) == 1:
-                query[field] = dict()
-                query[field]['$regex'] = form[field][0]
-                query[field]['$options'] = 'i'  # case insensitive search
+                if field.startswith('-'):
+                    query[field[1:]] = dict()
+                    query[field[1:]]['$not'] = re.compile(form[field][0])
+                else:
+                    query[field] = dict()
+                    query[field]['$regex'] = form[field][0]
+                    query[field]['$options'] = 'i'  # case insensitive search
             else:
-                query[field] = dict()
-                query[field]['$in'] = form[field]
+                if field.startswith('-'):
+                    query[field[1:]] = dict()
+                    query[field[1:]]['$nin'] = form[field]
+                else:
+                    query[field] = dict()
+                    query[field]['$in'] = form[field]
 
         # Init status and severity counts
         total = 0
@@ -198,7 +206,7 @@ def main():
         debug = 0
 
         if not len(fields): fields = None
-        logging.debug('MongoDB GET alerts -> alerts.find(%s, %s, sort=%s).limit(%s)', query, fields, sortby, limit)
+        logging.debug('MongoDB GET all -> alerts.find(%s, %s, sort=%s).limit(%s)', query, fields, sortby, limit)
 
         alertDetails = list()
         for alert in alerts.find(query, fields, sort=sortby).limit(limit):
@@ -399,7 +407,7 @@ def main():
                 query[field]['$in'] = form[field]
 
         if not len(fields): fields = None
-        logging.debug('MongoDB GET resources -> alerts.find(%s, %s, sort=%s).limit(%s)', query, fields, sortby, limit)
+        logging.debug('MongoDB GET all -> alerts.find(%s, %s, sort=%s).limit(%s)', query, fields, sortby, limit)
 
         resources = dict()
         for alert in alerts.find(query, fields, sort=sortby).limit(limit):
