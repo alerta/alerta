@@ -18,7 +18,7 @@ import urllib2, urllib
 import operator
 import pytz
 
-__version__ = '1.3.1'
+__version__ = '1.3.2'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -100,53 +100,86 @@ def main():
                       action="append",
                       dest="environment",
                       help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA")
+    parser.add_option( "--not-environment",
+                      action="append",
+                      dest="not_environment")
     parser.add_option("-S",
                       "--svc",
                       "--service",
                       action="append",
                       dest="service",
                       help="Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, Mutualisation, SharedSvcs")
+    parser.add_option( "--not-service",
+                      action="append",
+                      dest="not_service")
     parser.add_option("-r",
                       "--resource",
                       action="append",
                       dest="resource",
                       help="Resource under alarm eg. hostname, network device, application")
+    parser.add_option("--not-resource",
+                      action="append",
+                      dest="not_resource")
     parser.add_option("-s",
                       "--severity",
                       action="append",
                       dest="severity",
-                      help="Severity or range eg. major, warning..critical")
+                      help="Severity eg. CRITICAL, MAJOR, MINOR, WARNING, NORMAL, INFORM, DEBUG")
+    parser.add_option("--not-severity",
+                      action="append",
+                      dest="not_severity")
     parser.add_option( "--status",
                       action="append",
                       dest="status",
-                      help="Status eg. OPEN, ACK, CLOSED")
+                      help="Status eg. OPEN, ACK, CLOSED, EXPIRED")
+    parser.add_option( "--not-status",
+                      action="append",
+                      dest="not_status")
     parser.add_option("-e",
                       "--event",
                       action="append",
                       dest="event",
                       help="Event name eg. HostAvail, PingResponse, AppStatus")
+    parser.add_option("--not-event",
+                      action="append",
+                      dest="not_event")
     parser.add_option("-g",
                       "--group",
                       action="append",
                       dest="group",
                       help="Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security")
+    parser.add_option("--not-group",
+                      action="append",
+                      dest="not_group")
     parser.add_option("--origin",
                       action="append",
                       dest="origin",
                       help="Origin of the alert eg. alert-sender, alert-ganglia")
+    parser.add_option("--not-origin",
+                      action="append",
+                      dest="not_origin")
     parser.add_option("-v",
                       "--value",
                       action="append",
                       dest="value",
                       help="Event value eg. 100%, Down, PingFail, 55tps, ORA-1664")
+    parser.add_option("--not-value",
+                      action="append",
+                      dest="not_value")
     parser.add_option("-T",
                       "--tags",
                       action="append",
                       dest="tags")
+    parser.add_option( "--not-tags",
+                      action="append",
+                      dest="not_tags")
     parser.add_option("-t",
                       "--text",
                       action="append",
                       dest="text")
+    parser.add_option("--not-text",
+                      action="append",
+                      dest="not_text")
     parser.add_option("--show",
                       action="append",
                       dest="show",
@@ -206,54 +239,99 @@ def main():
         for o in options.environment:
             query.append(('environment', o))
 
+    if options.not_environment:
+        for o in options.not_environment:
+            query.append(('-environment', o))
+
     if options.service:
         for o in options.service:
             query.append(('service',o))
+
+    if options.not_service:
+        for o in options.not_service:
+            query.append(('-service', o))
 
     if options.resource:
         for o in options.resource:
             query.append(('resource', o))
 
+    if options.not_resource:
+        for o in options.not_resource:
+            query.append(('-resource', o))
+
     if options.severity:
         for o in options.severity:
-            query.append(('severity', o))
+            query.append(('severity', o.upper()))
 #         m = options.severity.split('..')
 #         if len(m) > 1:
 #             query['severityCode'] = { '$lte': SEVERITY_CODE[m[0].upper()], '$gte': SEVERITY_CODE[m[1].upper()] }
 #         else:
 #             query['severityCode'] = SEVERITY_CODE[options.severity.upper()]
 
+    if options.not_severity:
+        for o in options.not_severity:
+            query.append(('-severity', o.upper()))
+
     if not options.status:
         query.append(('status','OPEN'))
         query.append(('status','ACK'))
         query.append(('status','CLOSED'))
+
     if options.status:
         for o in options.status:
             query.append(('status',o))
+
+    if options.not_status:
+        for o in options.not_status:
+            query.append(('-status', o))
 
     if options.event:
         for o in options.event:
             query.append(('event', o))
 
+    if options.not_event:
+        for o in options.not_event:
+            query.append(('-event', o))
+
     if options.group:
         for o in options.group:
             query.append(('group', o))
+
+    if options.not_group:
+        for o in options.not_group:
+            query.append(('-group', o))
 
     if options.value:
         for o in options.value:
             query.append(('value', o))
 
+    if options.not_value:
+        for o in options.not_value:
+            query.append(('-value', o))
+
     if options.origin:
         for o in options.origin:
             query.append(('origin', o))
+
+    if options.not_origin:
+        for o in options.not_origin:
+            query.append(('-origin', o))
 
     if options.tags:
         for o in options.tags:
             query.append(('tags', o))
 
+    if options.not_tags:
+        for o in options.not_tags:
+            query.append(('-tags', o))
+
     if options.text:
         for o in options.text:
             query.append(('text', o))
+
+    if options.not_text:
+        for o in options.not_text:
+            query.append(('-text', o))
 
     if options.sortby:
         query.append(('sort-by', options.sortby))
