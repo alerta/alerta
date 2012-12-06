@@ -280,7 +280,7 @@
                          'ContentAPI':      envfilter+'&service=ContentAPI',
                          'Identity':        envfilter+'&service=Identity',
                          'MicroApp':        envfilter+'&service=MicroApp',
-                         'Other':           envfilter+'&service=Arts|Other'
+                         'Other':           envfilter+'&-service=R1|R2|Frontend|Mobile|SharedSvcs|Discussion|FlexibleContent|Soulmates|Network|ContentAPI|Identity|MicroApp'
                        };
 
         loadStatus(statusfilter, true);
