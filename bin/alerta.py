@@ -22,7 +22,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.5.2'
+__version__ = '1.5.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -34,6 +34,8 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alerta.log'
 PIDFILE = '/var/run/alerta/alerta.pid'
+
+NUM_THREADS = 4
 
 # Global variables
 conn = None
@@ -350,16 +352,18 @@ def main():
         logging.error('Stomp connection error: %s', e)
 
     # Start worker thread
-    w = WorkerThread(queue)
-    w.start()
-    logging.info('Starting alert forwarding thread: %s', w.getName())
+    for i in range(NUM_THREADS):
+        w = WorkerThread(queue)
+        w.start()
+        logging.info('Starting alert forwarding thread: %s', w.getName())
 
     while True:
         try:
             time.sleep(0.01)
         except (KeyboardInterrupt, SystemExit):
             conn.disconnect()
-            queue.put(None)
+            for i in range(NUM_THREADS):
+                queue.put(None)
             os.unlink(PIDFILE)
             sys.exit(0)
 
