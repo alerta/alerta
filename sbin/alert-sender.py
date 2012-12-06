@@ -25,7 +25,7 @@ import logging
 import uuid
 
 __program__ = 'alert-sender'
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 BROKER_LIST  = [('monitoring.guprod.gnl', 61613),('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -199,7 +199,7 @@ if not options.severity:
     options.severity = 'normal'
 elif options.severity.upper() not in VALID_SEVERITY:
     parser.print_help()
-    parser.error("Severity must be one of %s" % ','.join(VALID_SEVERITY))
+    parser.error("Severity '%s' must be one of %s" % (options.severity, ','.join(VALID_SEVERITY)))
 
 if not all(x in VALID_ENVIRONMENT for x in options.environment):
     parser.print_help()
