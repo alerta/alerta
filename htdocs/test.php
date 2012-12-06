@@ -200,17 +200,17 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="Deploys" data-label="Deploys">
+            <table class="table table-bordered table-condensed summary" id="Other" data-label="Other">
               <thead>
-                <tr> <th colspan="6" id="Deploys-status">Deploys</th> </tr> 
+                <tr> <th colspan="6" id="Other-status">Other</th> </tr> 
               </thead>
               <tbody>
-                <tr id="Deploys-warnings" class="warnings">
-                  <td id="Deploys-critical">0</td>
-                  <td id="Deploys-major">0</td>
-                  <td id="Deploys-minor">0</td>
-                  <td id="Deploys-warning">0</td>
-                  <td id="Deploys-normal">0</td>
+                <tr id="Other-warnings" class="warnings">
+                  <td id="Other-critical">0</td>
+                  <td id="Other-major">0</td>
+                  <td id="Other-minor">0</td>
+                  <td id="Other-warning">0</td>
+                  <td id="Other-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -251,7 +251,7 @@
             </tbody>
             <tbody id="MicroApp-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="Deploys-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="Other-alerts" class="serviceAlerts initially-hidden">
             </tbody>
           </table>
 
@@ -267,20 +267,20 @@
 
         heartbeatAlerts();
 
-        var env = "TEST";
-        var statusfilter = 'environment='+env+'&status=OPEN|ACK|CLOSED';
-        var services = { 'R2R1':            statusfilter+'&service=R2|R1',
-                         'Frontend':        statusfilter+'&service=Frontend',
-                         'Mobile':          statusfilter+'&service=Mobile',
-                         'SharedSvcs':      statusfilter+'&service=SharedSvcs',
-                         'Discussion':      statusfilter+'&service=Discussion',
-                         'FlexibleContent': statusfilter+'&service=FlexibleContent',
-                         'Soulmates':       statusfilter+'&service=Soulmates',
-                         'Network':         statusfilter+'&service=^Network',
-                         'ContentAPI':      statusfilter+'&service=ContentAPI',
-                         'Identity':        statusfilter+'&service=Identity',
-                         'MicroApp':        statusfilter+'&service=MicroApp',
-                         'Deploys':         statusfilter+'&event=Deploy'
+        var envfilter = 'environment=TEST';
+        var statusfilter = envfilter;
+        var services = { 'R2R1':            envfilter+'&service=R2|R1',
+                         'Frontend':        envfilter+'&service=Frontend',
+                         'Mobile':          envfilter+'&service=Mobile',
+                         'SharedSvcs':      envfilter+'&service=SharedSvcs',
+                         'Discussion':      envfilter+'&service=Discussion',
+                         'FlexibleContent': envfilter+'&service=FlexibleContent',
+                         'Soulmates':       envfilter+'&service=Soulmates',
+                         'Network':         envfilter+'&service=^Network',
+                         'ContentAPI':      envfilter+'&service=ContentAPI',
+                         'Identity':        envfilter+'&service=Identity',
+                         'MicroApp':        envfilter+'&service=MicroApp',
+                         'Other':           envfilter+'&service=Arts|Other'
                        };
 
         loadStatus(statusfilter, true);

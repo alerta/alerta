@@ -104,7 +104,7 @@
 
         heartbeatAlerts();
 
-        var statusfilter = '<?php echo $query; ?>&status=OPEN|ACK|CLOSED';
+        var statusfilter = '<?php echo $query; ?>';
 
         var services = { '<?php echo $tag; ?>': statusfilter };
         loadStatus(statusfilter, true);
