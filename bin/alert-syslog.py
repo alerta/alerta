@@ -23,7 +23,7 @@ import re
 import fnmatch
 
 __program__ = 'alert-syslog'
-__version__ = '1.1.6'
+__version__ = '1.1.7'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -155,22 +155,21 @@ def send_syslog(data):
 
     try:
         syslogconf = yaml.load(open(SYSLOGCONF))
+        logging.info('Loaded %d Syslog configurations OK', len(syslogconf))
     except Exception, e:
         logging.warning('Failed to load Syslog configuration: %s. Using defaults.', e)
         syslogconf = dict()
-    logging.info('Loaded %d Syslog configurations OK', len(syslogconf))
 
     for s in syslogconf:
         logging.debug('syslogconf: %s', s)
         if fnmatch.fnmatch('%s.%s' % (facility, level), s['priority']):
             if 'parser' in s:
-                print 'Loading parser %s' % s['parser']
+                logging.debug('Loading parser %s', s['parser'])
                 try:
                     exec(open('%s/%s.py' % (PARSERDIR, s['parser'])))
                     logging.info('Parser %s/%s exec OK', PARSERDIR, s['parser'])
                 except Exception, e:
-                    print 'Parser %s failed: %s' % (s['parser'], e)
-                    logging.warning('Parser %s failed', s['parser'])
+                    logging.warning('Parser %s failed: %s', s['parser'], e)
             if 'event' in s:
                 event = s['event']
             if 'resource' in s:
