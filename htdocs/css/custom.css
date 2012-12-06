@@ -135,14 +135,14 @@ table.summary {
 }
 
 .NORMAL {
-  background-color: lime;
+  background-color: #00CC00;
 }
 .table tbody tr:hover td.normal, .normal {
-	background-color: lime;
+	background-color: #00CC00;
 }
 
 .INFORM {
-  background-color: lime;
+  background-color: #00CC00;
 }
 
 .DEBUG {

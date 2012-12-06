@@ -177,7 +177,7 @@ function getAlerts(service, filter, refresh) {
         } else if (data.response.alerts.severityCounts.warning > 0) {
           scolor = 'dodgerblue';
         } else {
-          scolor = 'lime';
+          scolor = '#00CC00';
         }
       $(sev_id + "-status").css('background-color',scolor);
 
