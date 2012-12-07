@@ -12,6 +12,7 @@ try:
     import json
 except ImportError:
     import simplejson as json
+import yaml
 import threading
 from Queue import Queue
 import stomp
@@ -22,7 +23,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.5.4'
+__version__ = '1.5.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -34,6 +35,8 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alerta.log'
 PIDFILE = '/var/run/alerta/alerta.pid'
+ALERTCONF = '/opt/alerta/conf/alerta.yaml'
+PARSERDIR = '/opt/alerta/bin/parsers'
 
 NUM_THREADS = 4
 
@@ -70,6 +73,56 @@ class WorkerThread(threading.Thread):
             start = time.time()
             alertid = alert['id']
             logging.info('%s : %s', alertid, alert['summary'])
+
+            # Load alert transforms
+            try:
+                alertconf = yaml.load(open(ALERTCONF))
+                logging.info('Loaded %d alert transforms and blackout rules OK', len(alertconf))
+            except Exception, e:
+                alertconf = dict()
+                logging.warning('Failed to load alert transforms and blackout rules: %s', e)
+
+            # Apply alert transforms and blackouts
+            suppress = False
+            for conf in alertconf:
+                logging.debug('alertconf: %s', conf)
+                if all(item in alert.items() for item in conf['match'].items()):
+                    if 'parser' in conf:
+                        logging.debug('Loading parser %s', conf['parser'])
+                        try:
+                            exec(open('%s/%s.py' % (PARSERDIR, conf['parser']))) in globals(), locals()
+                            logging.info('Parser %s/%s exec OK', PARSERDIR, conf['parser'])
+                        except Exception, e:
+                            logging.warning('Parser %s failed: %s', conf['parser'], e)
+                    if 'event' in conf:
+                        event = conf['event']
+                    if 'resource' in conf:
+                        resource = conf['resource']
+                    if 'severity' in conf:
+                        severity = conf['severity']
+                    if 'group' in conf:
+                        group = conf['group']
+                    if 'value' in conf:
+                        value = conf['value']
+                    if 'text' in conf:
+                        text = conf['text']
+                    if 'environment' in conf:
+                        environment = [conf['environment']]
+                    if 'service' in conf:
+                        service = [conf['service']]
+                    if 'tags' in conf:
+                        tags = conf['tags']
+                    if 'correlatedEvents' in conf:
+                        correlate = conf['correlatedEvents']
+                    if 'thresholdInfo' in conf:
+                        threshold = conf['thresholdInfo']
+                    if 'suppress' in conf:
+                        suppress = conf['suppress']
+                    break
+
+            if suppress:
+                logging.info('%s : Suppressing alert %s', alert['id'], alert['summary'])
+                return
 
             createTime = datetime.datetime.strptime(alert['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
             createTime = createTime.replace(tzinfo=pytz.utc)

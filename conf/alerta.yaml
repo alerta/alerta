@@ -1,0 +1,10 @@
+# Assign a service to EC2 alerts based on cluster tag
+- match:
+    service: EC2
+  parser: Ec2ServiceLookup
+
+# Assign a service to RiffRaff alerts based on resource
+- match:
+    group: Deploys
+  parser: DeploysServiceLookup
+
