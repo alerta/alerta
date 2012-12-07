@@ -7,6 +7,8 @@ elif 'content-api' in alert['resource'].lower():
     alert['service'] = [ 'ContentAPI' ]
 elif alert['resource'].startswith('frontend'):
     alert['service'] = [ 'Frontend' ]
+    if alert['event'] == 'DeployFailed':
+        alert['severity'] = 'CRITICAL'
 elif 'flexible' in alert['resource'].lower():
     alert['service'] = [ 'FlexibleContent' ]
 elif alert['resource'].startswith('Identity'):
