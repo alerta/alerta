@@ -22,13 +22,13 @@ elif any(tag.startswith('cluster:mongo-cluster') for tag in alert['tags']):
 # outboundproxy -> SharedSvcs
 elif any(tag.startswith('cluster:outboundproxy') for tag in alert['tags']):
     alert['service'] = [ 'SharedSvcs' ]
-# arts-books -> Arts
-# arts-music -> Arts
+# arts-books -> Mutualisation
+# arts-music -> Mutualisation
 elif any(tag.startswith('cluster:arts') for tag in alert['tags']):
-    alert['service'] = [ 'Arts' ]
-# lists-service -> Arts
+    alert['service'] = [ 'Mutualisation' ]
+# lists-service -> Mutualisation
 elif any(tag.startswith('cluster:lists-service') for tag in alert['tags']):
-    alert['service'] = [ 'Arts' ]
+    alert['service'] = [ 'Mutualisation' ]
 # cutswatch-db -> Other
 # cutswatch-frontend -> Other
 elif any(tag.startswith('cluster:cutswatch') for tag in alert['tags']):
