@@ -9,6 +9,7 @@ elif alert['resource'].startswith('frontend'):
     alert['service'] = [ 'Frontend' ]
     if alert['event'] == 'DeployFailed':
         alert['severity'] = 'CRITICAL'
+        alert['tags'].append('email:frontend')
 elif 'flexible' in alert['resource'].lower():
     alert['service'] = [ 'FlexibleContent' ]
 elif alert['resource'].startswith('Identity'):
