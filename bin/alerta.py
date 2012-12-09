@@ -23,7 +23,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.5.5'
+__version__ = '1.6.0'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -139,7 +139,7 @@ class WorkerThread(threading.Thread):
                 alert['timeout'] = DEFAULT_TIMEOUT
                 expireTime = createTime + datetime.timedelta(seconds=alert['timeout'])
 
-            if alerts.find_one({"resource": alert['resource'], "event": alert['event'], "severity": alert['severity']}):
+            if alerts.find_one({"environment": alert['environment'], "resource": alert['resource'], "event": alert['event'], "severity": alert['severity']}):
                 logging.info('%s : Duplicate alert -> update dup count', alertid)
                 # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary, value, tags and origin
                 #                    2. increment duplicate count
@@ -148,7 +148,7 @@ class WorkerThread(threading.Thread):
                 no_obj_error = "No matching object found"
                 alert = db.command("findAndModify", 'alerts',
                     allowable_errors=[no_obj_error],
-                    query={ "resource": alert['resource'], "event": alert['event'] },
+                    query={ "environment": alert['environment'], "resource": alert['resource'], "event": alert['event'] },
                     update={ '$set': { "lastReceiveTime": receiveTime, "expireTime": expireTime,
                                 "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
                                 "tags": alert['tags'], "repeat": True, "origin": alert['origin'] },
@@ -169,7 +169,7 @@ class WorkerThread(threading.Thread):
                     updateTime = datetime.datetime.utcnow()
                     updateTime = updateTime.replace(tzinfo=pytz.utc)
                     alerts.update(
-                        { "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
+                        { "environment": alert['environment'], "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
                         { '$set': { "status": status },
                           '$push': { "history": { "status": status, "updateTime": updateTime } }})
                     logging.info('%s : Alert status for duplicate %s %s alert changed to %s', alertid, alert['severity'], alert['event'], status)
@@ -178,8 +178,8 @@ class WorkerThread(threading.Thread):
 
                 self.input_queue.task_done()
 
-            elif alerts.find_one({"resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]}):
-                previousSeverity = alerts.find_one({"resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]}, { "severity": 1 , "_id": 0})['severity']
+            elif alerts.find_one({"environment": alert['environment'], "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]}):
+                previousSeverity = alerts.find_one({"environment": alert['environment'], "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]}, { "severity": 1 , "_id": 0})['severity']
                 logging.info('%s : Event and/or severity change %s %s -> %s update details', alertid, alert['event'], previousSeverity, alert['severity'])
                 # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime, lastReceiveTime, previousSeverity,
                 #                        severityCode, lastReceiveId, text, summary, value, tags and origin
@@ -190,7 +190,7 @@ class WorkerThread(threading.Thread):
                 no_obj_error = "No matching object found"
                 alert = db.command("findAndModify", 'alerts',
                     allowable_errors=[no_obj_error],
-                    query={ "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
+                    query={ "environment": alert['environment'], "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
                     update={ '$set': { "event": alert['event'], "severity": alert['severity'], "severityCode": alert['severityCode'],
                                "createTime": createTime, "receiveTime": receiveTime, "lastReceiveTime": receiveTime, "expireTime": expireTime,
                                "previousSeverity": previousSeverity, "lastReceiveId": alertid, "text": alert['text'], "summary": alert['summary'], "value": alert['value'],
@@ -227,7 +227,7 @@ class WorkerThread(threading.Thread):
                     updateTime = datetime.datetime.utcnow()
                     updateTime = updateTime.replace(tzinfo=pytz.utc)
                     alerts.update(
-                        { "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
+                        { "environment": alert['environment'], "resource": alert['resource'], '$or': [{"event": alert['event']}, {"correlatedEvents": alert['event']}]},
                         { '$set': { "status": status },
                           '$push': { "history": { "status": status, "updateTime": updateTime } }})
                     logging.info('%s : Alert status for %s %s alert with diff event/severity changed to %s', alertid, alert['severity'], alert['event'], status)
@@ -286,7 +286,7 @@ class WorkerThread(threading.Thread):
 
                 alerts.insert(alert, safe=True)
                 alerts.update(
-                    { "resource": alert['resource'], "event": alert['event'] },
+                    { "environment": alert['environment'], "resource": alert['resource'], "event": alert['event'] },
                     { '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "event": alert['event'],
                                  "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }},
                       '$set': { "duplicateCount": 0 }}, safe=True)
@@ -294,7 +294,7 @@ class WorkerThread(threading.Thread):
                 updateTime = datetime.datetime.utcnow()
                 updateTime = updateTime.replace(tzinfo=pytz.utc)
                 alerts.update(
-                    { "resource": alert['resource'], "event": alert['event'] },
+                    { "environment": alert['environment'], "resource": alert['resource'], "event": alert['event'] },
                     { '$set': { "status": status },
                       '$push': { "history": { "status": status, "updateTime": updateTime } }}, safe=True)
                 logging.info('%s : Alert status for new %s %s alert set to %s', alertid, alert['severity'], alert['event'], status)
