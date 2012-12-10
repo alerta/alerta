@@ -18,7 +18,7 @@ import urllib2, urllib
 import operator
 import pytz
 
-__version__ = '1.3.2'
+__version__ = '1.3.3'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -192,6 +192,18 @@ def main():
                       dest="sortby",
                       default='lastReceiveTime',
                       help="Sort by attribute (default: createTime)")
+    parser.add_option("-w",
+                      "--watch",
+                      action="store_true",
+                      dest="watch",
+                      default=False,
+                      help="Periodically poll for new  alerts every 2 seconds.")
+    parser.add_option("-n",
+                      "--interval",
+                      type=int,
+                      dest="interval",
+                      default=2,
+                      help="Change the default watch interval.")
     parser.add_option("-c",
                       "--count",
                       "--limit",
@@ -222,125 +234,98 @@ def main():
         server = SERVER
     API_URL = 'http://%s/alerta/api/v1/alerts' % server
 
-    query = list()
+    query = dict()
 
     if options.minutes or options.hours or options.days:
         now = datetime.datetime.utcnow()
         fromTime = now - datetime.timedelta(days=options.days, minutes=options.minutes+options.hours*60)
-        query.append('from-date=%s' % fromTime.replace(microsecond=0).isoformat() + ".%03dZ" % (fromTime.microsecond//1000))
+        query['from-date'] = fromTime.replace(microsecond=0).isoformat() + ".%03dZ" % (fromTime.microsecond//1000)
         now = now.replace(tzinfo=pytz.utc)
         fromTime = fromTime.replace(tzinfo=pytz.utc)
+    elif options.watch:
+        fromTime = datetime.datetime.utcnow()
+        query['from-date'] = fromTime.replace(microsecond=0).isoformat() + ".%03dZ" % (fromTime.microsecond//1000)
 
     if options.alertid:
-        for o in options.alertid:
-            query.append(('id', o))
+        query['id'] = '|'.join(options.alertid)
 
     if options.environment:
-        for o in options.environment:
-            query.append(('environment', o))
+        query['environment'] = '|'.join(options.environment)
 
     if options.not_environment:
-        for o in options.not_environment:
-            query.append(('-environment', o))
+        query['-environment'] = '|'.join(options.not_environment)
 
     if options.service:
-        for o in options.service:
-            query.append(('service',o))
+        query['service'] = '|'.join(options.service)
 
     if options.not_service:
-        for o in options.not_service:
-            query.append(('-service', o))
+        query['-service'] = '|'.join(options.not_service)
 
     if options.resource:
-        for o in options.resource:
-            query.append(('resource', o))
+        query['resource'] = '|'.join(options.resource)
 
     if options.not_resource:
-        for o in options.not_resource:
-            query.append(('-resource', o))
+        query['-resource'] = '|'.join(options.not_resource)
 
     if options.severity:
-        for o in options.severity:
-            query.append(('severity', o.upper()))
-#         m = options.severity.split('..')
-#         if len(m) > 1:
-#             query['severityCode'] = { '$lte': SEVERITY_CODE[m[0].upper()], '$gte': SEVERITY_CODE[m[1].upper()] }
-#         else:
-#             query['severityCode'] = SEVERITY_CODE[options.severity.upper()]
+        query['severity'] = '|'.join(options.severity).upper()
 
     if options.not_severity:
-        for o in options.not_severity:
-            query.append(('-severity', o.upper()))
+        query['-severity'] = '|'.join(options.not_severity).upper()
 
     if not options.status:
-        query.append(('status','OPEN'))
-        query.append(('status','ACK'))
-        query.append(('status','CLOSED'))
+        query['status'] = 'OPEN|ACK|CLOSED'
 
     if options.status:
-        for o in options.status:
-            query.append(('status',o))
+        query['status'] = '|'.join(options.status).upper()
 
     if options.not_status:
-        for o in options.not_status:
-            query.append(('-status', o))
+        query['-status'] = '|'.join(options.not_status).upper()
 
     if options.event:
-        for o in options.event:
-            query.append(('event', o))
+        query['event'] = '|'.join(options.event)
 
     if options.not_event:
-        for o in options.not_event:
-            query.append(('-event', o))
+        query['-event'] = '|'.join(options.not_event)
 
     if options.group:
-        for o in options.group:
-            query.append(('group', o))
+        query['group'] = '|'.join(options.group)
 
     if options.not_group:
-        for o in options.not_group:
-            query.append(('-group', o))
+        query['-group'] = '|'.join(options.not_group)
 
     if options.value:
-        for o in options.value:
-            query.append(('value', o))
+        query['value'] = '|'.join(options.value)
 
     if options.not_value:
-        for o in options.not_value:
-            query.append(('-value', o))
+        query['-value'] = '|'.join(options.not_value)
 
     if options.origin:
-        for o in options.origin:
-            query.append(('origin', o))
+        query['origin'] = '|'.join(options.origin)
 
     if options.not_origin:
-        for o in options.not_origin:
-            query.append(('-origin', o))
+        query['-origin'] = '|'.join(options.not_origin)
 
     if options.tags:
-        for o in options.tags:
-            query.append(('tags', o))
+        query['tags'] = '|'.join(options.tags)
 
     if options.not_tags:
-        for o in options.not_tags:
-            query.append(('-tags', o))
+        query['-tags'] = '|'.join(options.not_tags)
 
     if options.text:
-        for o in options.text:
-            query.append(('text', o))
+        query['text'] = '|'.join(options.text)
 
     if options.not_text:
-        for o in options.not_text:
-            query.append(('-text', o))
+        query['-text'] = '|'.join(options.not_text)
 
     if options.sortby:
-        query.append(('sort-by', options.sortby))
+        query['sort-by'] = options.sortby
 
     if options.limit:
-        query.append(('limit', options.limit))
+        query['limit'] = options.limit
 
     if options.show == ['counts']:
-        query.append(('hide-alert-details','true'))
+        query['hide-alert-details'] = 'true'
 
     url = "%s?%s" % (API_URL, urllib.urlencode(query))
 
@@ -406,148 +391,158 @@ def main():
         end_color = ENDC
 
     # Query API for alerts
-    start = time.time()
-    try:
-        output = urllib2.urlopen(url).read()
-        response = json.loads(output)['response']
-    except urllib2.URLError, e:
-        print "ERROR: Alert query %s failed - %s" % (url, e)
-        sys.exit(1)
-    end = time.time()
+    while True:
 
-    if options.sortby in ['createTime', 'receiveTime', 'lastReceiveTime']:
-        alertDetails = reversed(response['alerts']['alertDetails'])
-    else:
-        alertDetails = response['alerts']['alertDetails']
+        start = time.time()
+        try:
+            output = urllib2.urlopen(url)
+            fromTime = datetime.datetime.utcnow()
+            response = json.loads(output.read())['response']
+        except urllib2.URLError, e:
+            print "ERROR: Alert query %s failed - %s" % (url, e)
+            sys.exit(1)
+        end = time.time()
 
-    count = 0
-    for alert in alertDetails:
-        alertid          = alert['id']
-        correlatedEvents = alert.get('correlatedEvents', ['n/a'])
-        createTime       = datetime.datetime.strptime(alert['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        createTime       = createTime.replace(tzinfo=pytz.utc)
-        environment      = alert['environment']
-        event            = alert['event']
-        graphs           = alert.get('graphs', ['n/a'])
-        group            = alert['group']
-        moreInfo         = alert.get('moreInfo', 'n/a')
-        origin           = alert['origin']
-        resource         = alert['resource']
-        service          = alert['service']
-        severity         = alert['severity']
-        severityCode     = int(alert['severityCode'])
-        status           = alert['status']
-        summary          = alert['summary']
-        tags             = alert['tags']
-        text             = alert['text']
-        thresholdInfo    = alert.get('thresholdInfo', 'n/a')
-        timeout          = alert.get('timeout', '0')
-        type             = alert['type']
-        value            = alert['value']
-
-        duplicateCount   = int(alert['duplicateCount'])
-        if alert['expireTime'] is not None:
-            expireTime   = datetime.datetime.strptime(alert['expireTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-            expireTime   = expireTime.replace(tzinfo=pytz.utc)
+        if options.sortby in ['createTime', 'receiveTime', 'lastReceiveTime']:
+            alertDetails = reversed(response['alerts']['alertDetails'])
         else:
-            expireTime   = None
-        lastReceiveId    = alert['lastReceiveId']
-        lastReceiveTime  = datetime.datetime.strptime(alert['lastReceiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        lastReceiveTime  = lastReceiveTime.replace(tzinfo=pytz.utc)
-        previousSeverity = alert['previousSeverity']
-        receiveTime      = datetime.datetime.strptime(alert['receiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        receiveTime      = receiveTime.replace(tzinfo=pytz.utc)
-        repeat           = alert['repeat']
-        delta            = receiveTime - createTime
-        latency          = int(delta.days * 24 * 60 * 60 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000)
+            alertDetails = response['alerts']['alertDetails']
 
-        count += 1
+        count = 0
+        for alert in alertDetails:
+            alertid          = alert['id']
+            correlatedEvents = alert.get('correlatedEvents', ['n/a'])
+            createTime       = datetime.datetime.strptime(alert['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            createTime       = createTime.replace(tzinfo=pytz.utc)
+            environment      = alert['environment']
+            event            = alert['event']
+            graphs           = alert.get('graphs', ['n/a'])
+            group            = alert['group']
+            moreInfo         = alert.get('moreInfo', 'n/a')
+            origin           = alert['origin']
+            resource         = alert['resource']
+            service          = alert['service']
+            severity         = alert['severity']
+            severityCode     = int(alert['severityCode'])
+            status           = alert['status']
+            summary          = alert['summary']
+            tags             = alert['tags']
+            text             = alert['text']
+            thresholdInfo    = alert.get('thresholdInfo', 'n/a')
+            timeout          = alert.get('timeout', '0')
+            type             = alert['type']
+            value            = alert['value']
 
-        if options.sortby == 'createTime':
-            displayTime = createTime
-        elif options.sortby == 'receiveTime':
-            displayTime = receiveTime
+            duplicateCount   = int(alert['duplicateCount'])
+            if alert['expireTime'] is not None:
+                expireTime   = datetime.datetime.strptime(alert['expireTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                expireTime   = expireTime.replace(tzinfo=pytz.utc)
+            else:
+                expireTime   = None
+            lastReceiveId    = alert['lastReceiveId']
+            lastReceiveTime  = datetime.datetime.strptime(alert['lastReceiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            lastReceiveTime  = lastReceiveTime.replace(tzinfo=pytz.utc)
+            previousSeverity = alert['previousSeverity']
+            receiveTime      = datetime.datetime.strptime(alert['receiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            receiveTime      = receiveTime.replace(tzinfo=pytz.utc)
+            repeat           = alert['repeat']
+            delta            = receiveTime - createTime
+            latency          = int(delta.days * 24 * 60 * 60 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000)
+
+            count += 1
+
+            if options.sortby == 'createTime':
+                displayTime = createTime
+            elif options.sortby == 'receiveTime':
+                displayTime = receiveTime
+            else:
+                displayTime = lastReceiveTime
+
+            if 'color' in options.show or options.color:
+                line_color = COLOR[severity]
+
+            if 'summary' in options.show:
+                print(line_color + '%s' % summary + end_color)
+            else:
+                print(line_color + '%s|%s|%s|%5d|%-5s|%-10s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
+                    displayTime.astimezone(tz).strftime(DATE_FORMAT),
+                    SEV[severity],
+                    duplicateCount,
+                    ','.join(environment),
+                    ','.join(service),
+                    resource,
+                    group,
+                    event,
+                    value) + end_color)
+
+            if 'text' in options.show:
+                print(line_color + '   |%s' % (text) + end_color)
+
+            if 'attributes' in options.show:
+                print(line_color + '    severity | %s -> %s (%s)' % (previousSeverity, severity, severityCode) + end_color)
+                print(line_color + '    status   | %s' % (status) + end_color)
+                print(line_color + '    resource | %s' % (resource) + end_color)
+                print(line_color + '    group    | %s' % (group) + end_color)
+                print(line_color + '    event    | %s' % (event) + end_color)
+                print(line_color + '    value    | %s' % (value) + end_color)
+
+            if 'times' in options.show:
+                print(line_color + '      time created  | %s' % (createTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
+                print(line_color + '      time received | %s' % (receiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
+                print(line_color + '      last received | %s' % (lastReceiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
+                print(line_color + '      latency       | %sms' % (latency) + end_color)
+                print(line_color + '      timeout       | %ss' % (timeout) + end_color)
+                if expireTime:
+                    print(line_color + '      expire time   | %s' % (expireTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
+
+            if 'details' in options.show:
+                print(line_color + '          alert id     | %s' % (alertid) + end_color)
+                print(line_color + '          last recv id | %s' % (lastReceiveId) + end_color)
+                print(line_color + '          environment  | %s' % (','.join(environment)) + end_color)
+                print(line_color + '          service      | %s' % (','.join(service)) + end_color)
+                print(line_color + '          resource     | %s' % (resource) + end_color)
+                print(line_color + '          type         | %s' % (type) + end_color)
+                print(line_color + '          origin       | %s' % (origin) + end_color)
+                print(line_color + '          more info    | %s' % (moreInfo) + end_color)
+                print(line_color + '          threshold    | %s' % (thresholdInfo) + end_color)
+                print(line_color + '          correlate    | %s' % (','.join(correlatedEvents)) + end_color)
+
+            if 'tags' in options.show and tags:
+                for t in tags:
+                    print(line_color + '            tag | %s' % (t) + end_color)
+
+            if 'history' in options.show:
+                for hist in alert['history']:
+                    if 'event' in hist:
+                        alertid     = hist['id']
+                        createTime  = datetime.datetime.strptime(hist['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                        createTime  = createTime.replace(tzinfo=pytz.utc)
+                        event       = hist['event']
+                        receiveTime = datetime.datetime.strptime(hist['receiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                        receiveTime = receiveTime.replace(tzinfo=pytz.utc)
+                        severity    = hist['severity']
+                        value       = hist['value']
+                        text        = hist['text']
+                        print(line_color + '  %s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
+                            receiveTime.astimezone(tz).strftime(DATE_FORMAT),
+                            SEV[severity],
+                            resource,
+                            group,
+                            event,
+                            value) + end_color)
+                        print(line_color + '    |%s' % (text) + end_color)
+                    if 'status' in hist:
+                        updateTime  = datetime.datetime.strptime(hist['updateTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                        updateTime  = updateTime.replace(tzinfo=pytz.utc)
+                        status      = hist['status']
+                        print(line_color + '    %s|%s' % (updateTime.astimezone(tz).strftime(DATE_FORMAT), status) + end_color)
+
+        if options.watch:
+            time.sleep(options.interval)
+            query['from-date'] = fromTime.replace(microsecond=0).isoformat() + ".%03dZ" % (fromTime.microsecond//1000)
+            url = "%s?%s" % (API_URL, urllib.urlencode(query))
         else:
-            displayTime = lastReceiveTime
-
-        if 'color' in options.show or options.color:
-            line_color = COLOR[severity]
-
-        if 'summary' in options.show:
-            print(line_color + '%s' % summary + end_color)
-        else:
-            print(line_color + '%s|%s|%s|%5d|%-5s|%-10s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
-                displayTime.astimezone(tz).strftime(DATE_FORMAT),
-                SEV[severity],
-                duplicateCount,
-                ','.join(environment),
-                ','.join(service),
-                resource,
-                group,
-                event,
-                value) + end_color)
-
-        if 'text' in options.show:
-            print(line_color + '   |%s' % (text) + end_color)
-
-        if 'attributes' in options.show:
-            print(line_color + '    severity | %s -> %s (%s)' % (previousSeverity, severity, severityCode) + end_color)
-            print(line_color + '    status   | %s' % (status) + end_color)
-            print(line_color + '    resource | %s' % (resource) + end_color)
-            print(line_color + '    group    | %s' % (group) + end_color)
-            print(line_color + '    event    | %s' % (event) + end_color)
-            print(line_color + '    value    | %s' % (value) + end_color)
-
-        if 'times' in options.show:
-            print(line_color + '      time created  | %s' % (createTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
-            print(line_color + '      time received | %s' % (receiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
-            print(line_color + '      last received | %s' % (lastReceiveTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
-            print(line_color + '      latency       | %sms' % (latency) + end_color)
-            print(line_color + '      timeout       | %ss' % (timeout) + end_color)
-            if expireTime:
-                print(line_color + '      expire time   | %s' % (expireTime.astimezone(tz).strftime(DATE_FORMAT)) + end_color)
-
-        if 'details' in options.show:
-            print(line_color + '          alert id     | %s' % (alertid) + end_color)
-            print(line_color + '          last recv id | %s' % (lastReceiveId) + end_color)
-            print(line_color + '          environment  | %s' % (','.join(environment)) + end_color)
-            print(line_color + '          service      | %s' % (','.join(service)) + end_color)
-            print(line_color + '          resource     | %s' % (resource) + end_color)
-            print(line_color + '          type         | %s' % (type) + end_color)
-            print(line_color + '          origin       | %s' % (origin) + end_color)
-            print(line_color + '          more info    | %s' % (moreInfo) + end_color)
-            print(line_color + '          threshold    | %s' % (thresholdInfo) + end_color)
-            print(line_color + '          correlate    | %s' % (','.join(correlatedEvents)) + end_color)
-
-        if 'tags' in options.show and tags:
-            for t in tags:
-                print(line_color + '            tag | %s' % (t) + end_color)
-
-        if 'history' in options.show:
-            for hist in alert['history']:
-                if 'event' in hist:
-                    alertid     = hist['id']
-                    createTime  = datetime.datetime.strptime(hist['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-                    createTime  = createTime.replace(tzinfo=pytz.utc)
-                    event       = hist['event']
-                    receiveTime = datetime.datetime.strptime(hist['receiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-                    receiveTime = receiveTime.replace(tzinfo=pytz.utc)
-                    severity    = hist['severity']
-                    value       = hist['value']
-                    text        = hist['text']
-                    print(line_color + '  %s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
-                        receiveTime.astimezone(tz).strftime(DATE_FORMAT),
-                        SEV[severity],
-                        resource,
-                        group,
-                        event,
-                        value) + end_color)
-                    print(line_color + '    |%s' % (text) + end_color)
-                if 'status' in hist:
-                    updateTime  = datetime.datetime.strptime(hist['updateTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-                    updateTime  = updateTime.replace(tzinfo=pytz.utc)
-                    status      = hist['status']
-                    print(line_color + '    %s|%s' % (updateTime.astimezone(tz).strftime(DATE_FORMAT), status) + end_color)
+            break
 
     if 'counts' in options.show:
         print
@@ -573,4 +568,7 @@ def main():
         print "Total: %d (produced on %s at %s by %s,v%s on %s in %sms)" % (count, now.astimezone(tz).strftime("%d/%m/%y"), now.astimezone(tz).strftime("%H:%M:%S %Z"), PGM, __version__, os.uname()[1], int((end - start) * 1000))
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except (KeyboardInterrupt, SystemExit):
+        sys.exit(0)
