@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.10'
+__version__ = '1.9.11'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -162,6 +162,7 @@ def main():
         else:
             limit = 0
 
+        query = dict()
         if 'from-date' in form:
             from_date = datetime.datetime.strptime(form['from-date'][0], '%Y-%m-%dT%H:%M:%S.%fZ')
             from_date = from_date.replace(tzinfo=pytz.utc)
@@ -181,7 +182,6 @@ def main():
         else:
             sortby.append(('lastReceiveTime',-1))
 
-        query = dict()
         for field in form:
             if field in ['callback', '_']:
                 continue
