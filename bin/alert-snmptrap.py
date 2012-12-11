@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-snmptrap'
-__version__ = '1.2.1'
+__version__ = '1.2.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -30,6 +30,7 @@ DEFAULT_TIMEOUT = 86400
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-snmptrap.log'
+DISABLE = '/opt/alerta/conf/alert-snmptrap.disable'
 TRAPCONF = '/opt/alerta/conf/alert-snmptrap.yaml'
 PARSERDIR = '/opt/alerta/bin/parsers'
 
@@ -47,6 +48,11 @@ SEVERITY_CODE = {
 def main():
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-snmptrap[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    logging.info('Starting up Alert SNMP Trap version %s', __version__)
+
+    if os.path.isfile(DISABLE):
+        logging.warning('Disable flag exists (%s). Exiting...', DISABLE)
+        sys.exit(0)
 
     trapvars = dict()
     trapvars['$$'] = '$'
@@ -121,6 +127,7 @@ def main():
     tags        = list()
     correlate   = list()
     threshold   = ''
+    suppress    = False
 
     # Match trap to specific config and load any parsers
     # Note: any of these variables could have been modified by a parser
@@ -166,6 +173,13 @@ def main():
                 correlate = t['correlatedEvents']
             if 'thresholdInfo' in t:
                 threshold = t['thresholdInfo']
+            if 'suppress' in t:
+                suppress = t['suppress']
+            break
+
+    if suppress:
+        logging.info('Suppressing %s SNMP trap from %s', trapoid, resource)
+        return
 
     # Trap variable substitution
     logging.debug('trapvars: %s', trapvars)
@@ -188,8 +202,6 @@ def main():
     headers = dict()
     headers['type']           = "snmptrapAlert"
     headers['correlation-id'] = alertid
-    headers['persistent']     = 'true'
-    headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
     alert = dict()
     alert['id']               = alertid

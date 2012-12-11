@@ -5,16 +5,13 @@
 #
 ########################################
 
-# TODO
-# 1. parse SD PARAMS
-# 2. add configurable parsing
-
 import os
 import sys
 try:
     import json
 except ImportError:
     import simplejson as json
+import yaml
 import stomp
 import time
 import datetime
@@ -23,9 +20,10 @@ import socket
 import select
 import uuid
 import re
+import fnmatch
 
 __program__ = 'alert-syslog'
-__version__ = '1.1.2'
+__version__ = '1.1.7'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -36,6 +34,8 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 LOGFILE = '/var/log/alerta/alert-syslog.log'
 PIDFILE = '/var/run/alerta/alert-syslog.pid'
 DISABLE = '/opt/alerta/conf/alert-syslog.disable'
+SYSLOGCONF = '/opt/alerta/conf/alert-syslog.yaml'
+PARSERDIR = '/opt/alerta/bin/parsers'
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -134,20 +134,71 @@ def send_syslog(data):
             return
 
     # Decode syslog PRI
-    fac = PRI >> 3
-    sev = PRI & 7
-    facility = SYSLOG_FACILITY_NAMES[fac]
-    severity = SYSLOG_SEVERITY_NAMES[sev]
+    facility = PRI >> 3
+    facility = SYSLOG_FACILITY_NAMES[facility]
+    level = PRI & 7
+    level = SYSLOG_SEVERITY_NAMES[level]
 
-    # Assign alert attributes
+    # Defaults
+    event       = '%s%s' % (facility.capitalize(), level.capitalize())
+    resource    = LOGHOST
+    severity    = SYSLOG_SEVERITY_MAP[level]
+    group       = 'Syslog'
+    value       = TAG
+    text        = MSG
     environment = ['INFRA']
-    service = ['Servers']
-    resource =  LOGHOST
-    event = '%s%s' % (facility.capitalize(), severity.capitalize())
-    group = 'Syslog'
-    value = TAG or MSGID
-    text = MSG
-    tags = [ '%s.%s' % (facility, severity) ]
+    service     = ['Infrastructure']
+    tags        = [ '%s.%s' % (facility, level) ]
+    correlate   = list()
+    threshold   = ''
+    suppress    = False
+
+    try:
+        syslogconf = yaml.load(open(SYSLOGCONF))
+        logging.info('Loaded %d Syslog configurations OK', len(syslogconf))
+    except Exception, e:
+        logging.warning('Failed to load Syslog configuration: %s. Using defaults.', e)
+        syslogconf = dict()
+
+    for s in syslogconf:
+        logging.debug('syslogconf: %s', s)
+        if fnmatch.fnmatch('%s.%s' % (facility, level), s['priority']):
+            if 'parser' in s:
+                logging.debug('Loading parser %s', s['parser'])
+                try:
+                    exec(open('%s/%s.py' % (PARSERDIR, s['parser'])))
+                    logging.info('Parser %s/%s exec OK', PARSERDIR, s['parser'])
+                except Exception, e:
+                    logging.warning('Parser %s failed: %s', s['parser'], e)
+            if 'event' in s:
+                event = s['event']
+            if 'resource' in s:
+                resource = s['resource']
+            if 'severity' in s:
+                severity = s['severity']
+            if 'group' in s:
+                group = s['group']
+            if 'value' in s:
+                value = s['value']
+            if 'text' in s:
+                text = s['text']
+            if 'environment' in s:
+                environment = [s['environment']]
+            if 'service' in s:
+                service = [s['service']]
+            if 'tags' in s:
+                tags = s['tags']
+            if 'correlatedEvents' in s:
+                correlate = s['correlatedEvents']
+            if 'thresholdInfo' in s:
+                threshold = s['thresholdInfo']
+            if 'suppress' in s:
+                suppress = s['suppress']
+            break
+
+    if suppress:
+        logging.info('Suppressing %s.%s syslog message from %s', facility, level, resource)
+        return
 
     alertid = str(uuid.uuid4()) # random UUID
     createTime = datetime.datetime.utcnow()
@@ -157,23 +208,24 @@ def send_syslog(data):
     headers['correlation-id'] = alertid
 
     alert = dict()
-    alert['id']            = alertid
-    alert['resource']      = resource
-    alert['event']         = event
-    alert['group']         = group
-    alert['value']         = value
-    alert['severity']      = SYSLOG_SEVERITY_MAP[severity]
-    alert['severityCode']  = SEVERITY_CODE[alert['severity']]
-    alert['environment']   = environment
-    alert['service']       = service
-    alert['text']          = text
-    alert['type']          = 'syslogAlert'
-    alert['tags']          = tags
-    alert['summary']       = '%s - %s %s is %s on %s %s' % (','.join(environment), alert['severity'].upper(), event, value, ','.join(service), resource)
-    alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
-    alert['origin']        = "%s/%s" % (__program__, os.uname()[1])
-    alert['thresholdInfo'] = 'n/a'
-    alert['timeout']       = DEFAULT_TIMEOUT
+    alert['id']               = alertid
+    alert['resource']         = resource
+    alert['event']            = event
+    alert['group']            = group
+    alert['value']            = value
+    alert['severity']         = severity.upper()
+    alert['severityCode']     = SEVERITY_CODE[alert['severity']]
+    alert['environment']      = environment
+    alert['service']          = service
+    alert['text']             = text
+    alert['type']             = 'syslogAlert'
+    alert['tags']             = tags
+    alert['summary']          = '%s - %s %s is %s on %s %s' % (','.join(environment), severity.upper(), event, value, ','.join(service), resource)
+    alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
+    alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
+    alert['thresholdInfo']    = threshold
+    alert['timeout']          = DEFAULT_TIMEOUT
+    alert['correlatedEvents'] = correlate
 
     logging.info('%s : %s', alertid, json.dumps(alert))
 

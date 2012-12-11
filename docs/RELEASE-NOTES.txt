@@ -1,11 +1,29 @@
 Release Notes
 =============
 
+Alerta version 1.2.4
+--------------------
+
+* Disable flag added to alert-snmptrap
+* Add support for custom parsers to syslogger
+* Add alert suppression to syslog, snmptrap and alerta
+* Component heartbeats can be sent by alert-sender
+* Fixed handling of EXPIRED alerts with severity INFORM
+* Delete alerts CLOSED for more than 2 hours
+* Example command-line alert delete tool
+* Reorganise services in web alert console
+* Query for list of resources via REST API
+* Alert ganglia will add units to event value
+* Only return specific fields in REST API
+* Support 'not' operator query in REST API
+* Alerta uses worker threads to process alerts
+* Added support for alert transformations
+
 Alerta version 1.2.3
 --------------------
 
-* New alert-notify script and example configutarion. (support sms and email notifications)
-
+* New alert-notify script and example configuration
+* Supports user-defined SMS and email notification
 
 Alerta version 1.2.2
 --------------------

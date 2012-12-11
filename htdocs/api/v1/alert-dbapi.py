@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.6'
+__version__ = '1.9.11'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -137,6 +137,18 @@ def main():
             hide_repeats = []
 
         fields = dict()
+        if 'fields' in form:
+            if len(form['fields']) == 1:
+                for f in form['fields'][0].split(','):
+                    fields[f] = 1
+            else:
+                for f in form['fields']:
+                    fields[f] = 1
+            del form['fields']
+
+            fields['severity'] = 1 # always include severity and status
+            fields['status'] = 1
+
         if 'hide-alert-history' in form:
             if form['hide-alert-history'][0] == 'true':
                 fields['history'] = 0
@@ -150,6 +162,7 @@ def main():
         else:
             limit = 0
 
+        query = dict()
         if 'from-date' in form:
             from_date = datetime.datetime.strptime(form['from-date'][0], '%Y-%m-%dT%H:%M:%S.%fZ')
             from_date = from_date.replace(tzinfo=pytz.utc)
@@ -169,7 +182,6 @@ def main():
         else:
             sortby.append(('lastReceiveTime',-1))
 
-        query = dict()
         for field in form:
             if field in ['callback', '_']:
                 continue
@@ -177,12 +189,20 @@ def main():
                 query['_id'] = dict()
                 query['_id']['$regex'] = '^'+form['id'][0]
             elif len(form[field]) == 1:
-                query[field] = dict()
-                query[field]['$regex'] = form[field][0]
-                query[field]['$options'] = 'i'  # case insensitive search
+                if field.startswith('-'):
+                    query[field[1:]] = dict()
+                    query[field[1:]]['$not'] = re.compile(form[field][0])
+                else:
+                    query[field] = dict()
+                    query[field]['$regex'] = form[field][0]
+                    query[field]['$options'] = 'i'  # case insensitive search
             else:
-                query[field] = dict()
-                query[field]['$in'] = form[field]
+                if field.startswith('-'):
+                    query[field[1:]] = dict()
+                    query[field[1:]]['$nin'] = form[field]
+                else:
+                    query[field] = dict()
+                    query[field]['$in'] = form[field]
 
         # Init status and severity counts
         total = 0
@@ -351,7 +371,8 @@ def main():
 
     m = re.search(r'DELETE /alerta/api/v1/alerts/alert/(?P<id>\S+)$', request)
     if m:
-        query['_id'] = m.group('id')
+        query['_id'] = dict()
+        query['_id']['$regex'] = '^'+m.group('id')
 
         logging.info('MongoDB DELETE -> alerts.remove(%s)', query)
         error = alerts.remove(query, safe=True)
@@ -365,6 +386,63 @@ def main():
         diff = int(diff * 1000) # management status needs time in milliseconds
         mgmt.update(
             { "group": "requests", "name": "delete", "type": "timer", "title": "DELETE requests", "description": "Requests to delete alerts via the API" },
+            { '$inc': { "count": 1, "totalTime": diff}},
+            True)
+
+    m = re.search(r'GET /alerta/api/v1/resources$', request)
+    if m:
+        logging.debug('form %s' % form)
+
+        fields = dict()
+        fields['environment'] = 1
+        fields['service'] = 1
+        fields['resource'] = 1
+
+        if 'limit' in form:
+            limit = int(form['limit'][0])
+            del form['limit']
+        else:
+            limit = 0
+
+        sortby = list()
+
+        query = dict()
+        for field in form:
+            if field in ['callback', '_']:
+                continue
+            if len(form[field]) == 1:
+                query[field] = dict()
+                query[field]['$regex'] = form[field][0]
+                query[field]['$options'] = 'i'  # case insensitive search
+            else:
+                query[field] = dict()
+                query[field]['$in'] = form[field]
+
+        if not len(fields): fields = None
+        logging.debug('MongoDB GET all -> alerts.find(%s, %s, sort=%s).limit(%s)', query, fields, sortby, limit)
+
+        resources = dict()
+        for alert in alerts.find(query, fields, sort=sortby).limit(limit):
+            resources[alert['resource']] = { 'environment': alert['environment'], 'service': alert['service'], 'resource': alert['resource'] }
+
+        resourceDetails = list()
+        for resource in resources:
+            resourceDetails.append(resources[resource])
+
+        total = len(resourceDetails)
+        resourceDetails.sort()
+
+        status['response']['resources'] = { 'resourceDetails': list(resourceDetails) }
+
+        diff = time.time() - start
+        status['response']['status'] = 'ok'
+        status['response']['time'] = "%.3f" % diff
+        status['response']['total'] = total
+        status['response']['localTime'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+        diff = int(diff * 1000) # management status needs time in milliseconds
+        mgmt.update(
+            { "group": "requests", "name": "complex_get", "type": "timer", "title": "Complex GET requests", "description": "Requests to the alert status API" },
             { '$inc': { "count": 1, "totalTime": diff}},
             True)
 

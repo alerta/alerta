@@ -267,22 +267,22 @@
 
         heartbeatAlerts();
 
-        var env = "";
-        var statusfilter = '&status=OPEN|ACK|CLOSED';
-        var services = { 'KPL':       statusfilter+'&tags=datacentre:dc1',
-                         'BRK':       statusfilter+'&tags=datacentre:dc2',
-                         'eu-west-1': statusfilter+'&tags=datacentre:eu-west-1',
-                         'dev':       statusfilter+'&tags=datacentre:dev',
+        var envfilter = '';
+        var statusfilter = '';
+        var services = { 'KPL':       'tags=datacentre:dc1',
+                         'BRK':       'tags=datacentre:dc2',
+                         'eu-west-1': 'tags=datacentre:eu-west-1',
+                         'dev':       'tags=datacentre:dev',
 
-                         'Physical':  statusfilter+'&tags=virtual:physical',
-                         'VMware':    statusfilter+'&tags=virtual:vmware',
-                         'Xen':       statusfilter+'&tags=virtual:xen',
-                         'KVM':       statusfilter+'&tags=virutal:kvm',
+                         'Physical':  'tags=virtual:physical',
+                         'VMware':    'tags=virtual:vmware',
+                         'Xen':       'tags=virtual:xen',
+                         'KVM':       'tags=virutal:kvm',
 
-                         'Linux':     statusfilter+'&tags=os:linux',
-                         'Solaris':   statusfilter+'&tags=os:sunos',
-                         'Syslog':    statusfilter+'&group=Syslog',
-                         'Network':   statusfilter+'&service=Network',
+                         'Linux':     'tags=os:linux',
+                         'Solaris':   'tags=os:sunos',
+                         'Syslog':    'group=Syslog',
+                         'Network':   'service=^Network',
                        };
 
         loadStatus(statusfilter, true);

@@ -25,7 +25,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
 __program__ = 'alert-urlmon'
-__version__ = '1.5.8'
+__version__ = '1.5.12'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -43,9 +43,6 @@ NUM_THREADS = 10
 GMETRIC_SEND = True
 GMETRIC_CMD = '/usr/bin/gmetric'
 GMETRIC_OPTIONS = '--spoof 10.1.1.1:urlmon --conf /etc/ganglia/alerta/gmond-alerta.conf'
-
-os.environ['http_proxy'] = 'http://proxy.gul3.gnl:3128/'
-os.environ['https_proxy'] = 'http://proxy.gul3.gnl:3128/'
 
 HTTP_ALERTS = [
     'HttpConnectionError',
@@ -147,16 +144,26 @@ class WorkerThread(threading.Thread):
             realm = item.get('realm', None)
             uri = item.get('uri', None)
 
+            proxy = item.get('proxy', False)
+            if proxy:
+                proxy_handler = urllib2.ProxyHandler(proxy)
+
             if username and password:
                 auth_handler = urllib2.HTTPBasicAuthHandler()
                 auth_handler.add_password(realm = realm,
                     uri = uri,
                     user = username,
                     passwd = password)
-                opener = urllib2.build_opener(auth_handler)
+                if proxy:
+                    opener = urllib2.build_opener(auth_handler, proxy_handler)
+                else:
+                    opener = urllib2.build_opener(auth_handler)
             else:
                 redir_handler = NoRedirection()
-                opener = urllib2.build_opener(redir_handler)
+                if proxy:
+                    opener = urllib2.build_opener(redir_handler, proxy_handler)
+                else:
+                    opener = urllib2.build_opener(redir_handler)
             urllib2.install_opener(opener)
 
             if 'User-agent' not in headers:
@@ -266,12 +273,12 @@ class WorkerThread(threading.Thread):
 
             if GMETRIC_SEND:
                 gmetric_cmd = "%s --name availability-%s --value %.1f --type float --units \" \" --slope both --group %s %s" % (
-                    GMETRIC_CMD, item['resource'], avail, item['service'], GMETRIC_OPTIONS)
+                    GMETRIC_CMD, item['resource'], avail, ','.join(item['service']), GMETRIC_OPTIONS) # XXX - gmetric doesn't support multiple groups
                 logging.debug("%s", gmetric_cmd)
                 os.system("%s" % gmetric_cmd)
 
                 gmetric_cmd = "%s --name response_time-%s --value %d --type uint16 --units ms --slope both --group %s %s" % (
-                    GMETRIC_CMD, item['resource'], rtt, item['service'], GMETRIC_OPTIONS)
+                    GMETRIC_CMD, item['resource'], rtt, ','.join(item['service']), GMETRIC_OPTIONS)
                 logging.debug("%s", gmetric_cmd)
                 os.system("%s" % gmetric_cmd)
 
@@ -311,15 +318,13 @@ class WorkerThread(threading.Thread):
                 headers = dict()
                 headers['type']           = "serviceAlert"
                 headers['correlation-id'] = alertid
-                headers['persistent']     = 'true'
-                headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
                 # standard alert info
                 alert = dict()
                 alert['id']               = alertid
                 alert['resource']         = item['resource']
                 alert['event']            = event
-                alert['group']            = 'SLM'  # Service Level Monitoring
+                alert['group']            = 'Web'
                 alert['value']            = value
                 alert['severity']         = severity
                 alert['severityCode']     = SEVERITY_CODE[severity]

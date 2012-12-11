@@ -25,7 +25,7 @@ import logging
 import uuid
 
 __program__ = 'alert-sender'
-__version__ = '1.1.0'
+__version__ = '1.1.3'
 
 BROKER_LIST  = [('monitoring.guprod.gnl', 61613),('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -91,6 +91,15 @@ parser.add_option("-o",
                   dest="timeout",
                   default=DEFAULT_TIMEOUT,
                   help="Timeout in seconds that OPEN alert will persist in console.")
+parser.add_option("-H",
+                  "--heartbeat",
+                  action="store_true",
+                  default=False,
+                  help="Send heartbeat to alerta.")
+parser.add_option("-O",
+                  "--origin",
+                  dest="origin",
+                  help="Origin of heartbeat. Usually an application instance.")
 parser.add_option("-q",
                   "--quiet",
                   action="store_true",
@@ -116,7 +125,60 @@ SEVERITY_CODE = {
     'DEBUG':          7, # Debug
 }
 
+def send_message(alert, headers):
+
+    logging.info('%s : %s', alert['id'], json.dumps(alert))
+
+    if (not options.dry_run):
+        try:
+            conn = stomp.Connection(BROKER_LIST)
+            conn.start()
+            conn.connect(wait=True)
+        except Exception, e:
+            print >>sys.stderr, "ERROR: Could not connect to broker - %s" % e
+            logging.error('Could not connect to broker %s', e)
+            sys.exit(1)
+        try:
+            conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
+        except Exception, e:
+            print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
+            logging.error('Failed to send alert to broker %s', e)
+            sys.exit(1)
+        broker = conn.get_host_and_port()
+        logging.info('%s : Alert sent to %s:%s', alert['id'], broker[0], str(broker[1]))
+        conn.disconnect()
+        if not options.quiet:
+            print alert['id']
+        sys.exit(0)
+    else:
+        print "%s %s" % (json.dumps(headers, indent=4), json.dumps(alert, indent=4))
+    sys.exit(0)
+
+# main()
 options, args = parser.parse_args()
+
+if options.heartbeat:
+    if not options.origin:
+        parser.error("Must supply origin to send a heartbeat.")
+
+    heartbeatid = str(uuid.uuid4()) # random UUID
+    createTime = datetime.datetime.utcnow()
+
+    headers = dict()
+    headers['type']           = "heartbeat"
+    headers['correlation-id'] = heartbeatid
+
+    heartbeat = dict()
+    heartbeat['id']         = heartbeatid
+    heartbeat['type']       = "heartbeat"
+    heartbeat['createTime'] = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
+    heartbeat['origin']     = "%s/%s" % (options.origin,os.uname()[1])
+    if options.tags:
+        heartbeat['version'] = options.tags
+    else:
+        heartbeat['version'] = __version__
+
+    send_message(heartbeat, headers)
 
 if not options.resource:
     parser.print_help()
@@ -137,7 +199,7 @@ if not options.severity:
     options.severity = 'normal'
 elif options.severity.upper() not in VALID_SEVERITY:
     parser.print_help()
-    parser.error("Severity must be one of %s" % ','.join(VALID_SEVERITY))
+    parser.error("Severity '%s' must be one of %s" % (options.severity, ','.join(VALID_SEVERITY)))
 
 if not all(x in VALID_ENVIRONMENT for x in options.environment):
     parser.print_help()
@@ -153,21 +215,18 @@ if not options.text:
     parser.print_help()
     parser.error("Must supply alert text. How else are we to know what happened?")
 
-def main():
-
     try:
         logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-sender[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     except IOError:
         pass
 
+else:
     alertid = str(uuid.uuid4()) # random UUID
     createTime = datetime.datetime.utcnow()
 
     headers = dict()
     headers['type']           = "exceptionAlert"
     headers['correlation-id'] = alertid
-    headers['persistent']     = 'true'
-    headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
     alert = dict()
     alert['id']            = alertid
@@ -190,31 +249,4 @@ def main():
     alert['thresholdInfo'] = 'n/a'
     alert['timeout']       = options.timeout
 
-    logging.info('%s : %s', alertid, json.dumps(alert))
-
-    if (not options.dry_run):
-        try:
-            conn = stomp.Connection(BROKER_LIST)
-            conn.start()
-            conn.connect(wait=True)
-        except Exception, e:
-            print >>sys.stderr, "ERROR: Could not connect to broker - %s" % e
-            logging.error('Could not connect to broker %s', e)
-            sys.exit(1)
-        try:
-            conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
-        except Exception, e:
-            print >>sys.stderr, "ERROR: Failed to send alert to broker - %s " % e
-            logging.error('Failed to send alert to broker %s', e)
-            sys.exit(1)
-        broker = conn.get_host_and_port()
-        logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
-        conn.disconnect()
-        if not options.quiet:
-            print alertid
-        sys.exit(0)
-    else:
-        print "%s %s" % (json.dumps(headers, indent=4), json.dumps(alert, indent=4))
-
-if __name__ == '__main__':
-    main()
+    send_message(alert, headers)

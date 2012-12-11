@@ -21,7 +21,7 @@ import uuid
 import re
 
 __program__ = 'alert-ganglia'
-__version__ = '1.8.5'
+__version__ = '1.8.9'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -128,10 +128,20 @@ def init_rules():
 
 def quote(s):
     try:
+        return int(s)
+    except TypeError:
         float(s)
         return "%.1f" % float(s)
     except ValueError:
         return '"%s"' % s
+
+def format_units(units):
+
+    if units in ['seconds','s']:
+        return 's'
+    if units in ['percent','%']:
+        return '%'
+    return ' '+units
 
 def main():
     global conn
@@ -172,9 +182,11 @@ def main():
     while True:
         try:
             # Read (or re-read) rules as necessary
-            if os.path.getmtime(RULESFILE) != rules_mod_time:
-                rules = init_rules()
-                rules_mod_time = os.path.getmtime(RULESFILE)
+            #if os.path.getmtime(RULESFILE) != rules_mod_time:
+            #    rules = init_rules()
+            #    rules_mod_time = os.path.getmtime(RULESFILE)
+
+            rules = init_rules() # re-read rule config each time
 
             for rule in rules:
                 # Check rule is valid
@@ -198,7 +210,7 @@ def main():
                 response = get_metrics(filter)
 
                 # Make non-metric substitutions
-                now = time.time()
+                now = int(time.time())
                 rule['value'] = re.sub('\$now', str(now), rule['value'])
                 idx = 0
                 for threshold in rule['thresholdInfo']:
@@ -252,6 +264,7 @@ def main():
                         if 'value' not in metric[resource]:
                             metric[resource]['value'] = rule['value']
                         metric[resource]['value'] = re.sub('\$%s(\.sum)?' % m['metric'], str(v), metric[resource]['value'])
+                        metric[resource]['units'] = m['units']
 
                         metric[resource]['tags'] = list()
                         metric[resource]['tags'].extend(rule['tags'])
@@ -364,14 +377,13 @@ def main():
                                 or (previousSeverity[(resource, rule['event'])] == sev and repeat)):
 
                                 logging.debug('%s %s %s %s rule fired %s %s %s %s', ','.join(metric[resource]['environment']), ','.join(metric[resource]['service']), sev,rule['event'],resource,ti, rule['text'][index], calculated_value)
+
                                 alertid = str(uuid.uuid4()) # random UUID
                                 createTime = datetime.datetime.utcnow()
 
                                 headers = dict()
                                 headers['type']           = "gangliaAlert"
                                 headers['correlation-id'] = alertid
-                                headers['persistent']     = 'true'
-                                headers['expires']        = int(time.time() * 1000) + EXPIRATION_TIME * 1000
 
                                 # standard alert info
                                 alert = dict()
@@ -379,7 +391,7 @@ def main():
                                 alert['resource']         = resource
                                 alert['event']            = rule['event']
                                 alert['group']            = rule['group']
-                                alert['value']            = calculated_value
+                                alert['value']            = "%s%s" % (calculated_value, format_units(metric[resource]['units']))
                                 alert['severity']         = sev
                                 alert['severityCode']     = SEVERITY_CODE[sev]
                                 alert['environment']      = metric[resource]['environment']
@@ -387,7 +399,7 @@ def main():
                                 alert['text']             = metric[resource]['text'][index]
                                 alert['type']             = 'gangliaAlert'
                                 alert['tags']             = metric[resource]['tags']
-                                alert['summary']          = '%s - %s %s is %s on %s %s' % (','.join(metric[resource]['environment']), sev, rule['event'], calculated_value, ','.join(metric[resource]['service']), resource)
+                                alert['summary']          = '%s - %s %s is %s on %s %s' % (','.join(metric[resource]['environment']), sev, rule['event'], alert['value'], ','.join(metric[resource]['service']), resource)
                                 alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
                                 alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
                                 alert['thresholdInfo']    = ','.join(rule['thresholdInfo'])

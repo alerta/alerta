@@ -1,43 +1,48 @@
 # Server reboots within last 2 hours
 - event: ServerReboot
-  filter: metric=boottime
-  value: $boottime > ($now - 7200)
-  thresholdInfo: [ 'INFORM:==:True' ]
+  filter: # all
+  value: $now - $boottime
+  thresholdInfo: [ 'INFORM:<:7200' ]
   text: [ 'Server rebooted less than 2 hours ago' ]
   resource: $host
-  group: Server
-  graphs: []
+  group: Hardware
+  graphs: [ ]
+  tags: [ 'owner:websys' ]
+
+# Puppet Last Run alert
+- event: PuppetLastRun
+  filter: # all
+  value: $now - $pup_last_run
+  thresholdInfo: [ 'MAJOR:>:7200','NORMAL:<:7200' ]
+  text: ['Puppet agent has not run for at least 2 hours (last puppet run at $pup_last_run)','Puppet agent is OK (last puppet run at $pup_last_run).']
+  resource: $host
+  group: Puppet
+  count: 2
+  repeat: 10
+  graphs: [ ]
   tags: [ 'owner:websys' ]
 
 # Puppet Resource alert
 - event: PuppetResFailed
-  filter: metric=pup_res_failed
+  filter: # all
   value: $pup_res_failed
   thresholdInfo: [ 'WARNING:>:0','NORMAL:==:0' ]
   text: [ 'Puppet agent failed to update $pup_res_failed out of $pup_res_total resources','Puppet is updating all $pup_res_total resources' ]
   resource: $host
   group: Puppet
-  graphs: [pup_res_failed]
-  tags: [ 'owner:websys' ]
-
-# Puppet Last Run alert
-- event: PuppetLastRun
-  filter: metric=pup_last_run
-  value: $pup_last_run
-  thresholdInfo: [ 'MINOR:<:$now - 7200','NORMAL:>:$now - 7200' ]
-  text: ['Puppet agent has not run for at least 2 hours (last puppet run at $pup_last_run)','Puppet agent is OK (last puppet run at $pup_last_run).']
-  resource: $host
-  group: Puppet
-  graphs: []
+  count: 2
+  repeat: 10
+  graphs: [ 'pup_res_failed' ]
   tags: [ 'owner:websys' ]
 
 # Ganglia Heartbeat alert
 - event: GangliaHeartbeat
-  filter: metric=heartbeat
+  filter: # all
   value: $heartbeat
-  thresholdInfo: [ 'WARNING:<:$now - 300','NORMAL:>:$now - 300' ]
-  text: [ 'No heartbeat from Ganglia agent for at least 5 minutes (last received at $heartbeat)','Heartbeat from Ganglia agent OK (last received at $heartbeat)' ] 
+  thresholdInfo: [ 'CRITICAL:>:90','NORMAL:<:90' ]
+  text: [ 'No heartbeat from Ganglia agent for at least 90 seconds','Heartbeat from Ganglia agent OK' ]
   resource: $host
   group: Ganglia
-  graphs: []
-  tags: []
+  repeat: 10
+  graphs: [ ]
+  tags: [ 'owner:websys' ]

@@ -20,21 +20,71 @@
           <strong>Alert Summary</strong>
         <div class="row show-grid">
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="R2" data-label="R2">
+            <table class="table table-bordered table-condensed summary" id="R2R1" data-label="R2R1">
               <thead>
-                <tr> <th colspan="6" id="R2-status">R2</th> </tr> 
+                <tr> <th colspan="6" id="R2R1-status">R2 &amp; R1</th> </tr> 
               </thead>
               <tbody>
-                <tr id="R2-warnings" class="warnings">
-                  <td id="R2-critical">0</td>
-                  <td id="R2-major">0</td>
-                  <td id="R2-minor">0</td>
-                  <td id="R2-warning">0</td>
-                  <td id="R2-normal">0</td>
+                <tr id="R2R1-warnings" class="warnings">
+                  <td id="R2R1-critical">0</td>
+                  <td id="R2R1-major">0</td>
+                  <td id="R2R1-minor">0</td>
+                  <td id="R2R1-warning">0</td>
+                  <td id="R2R1-normal">0</td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Frontend" data-label="Frontend">
+              <thead>
+                <tr> <th colspan="6" id="Frontend-status">Frontend</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="Frontend-warnings" class="warnings">
+                  <td id="Frontend-critical">0</td>
+                  <td id="Frontend-major">0</td>
+                  <td id="Frontend-minor">0</td>
+                  <td id="Frontend-warning">0</td>
+                  <td id="Frontend-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Mobile" data-label="Mobile">
+              <thead>
+                <tr> <th colspan="6" id="Mobile-status">Mobile</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="Mobile-warnings" class="warnings">
+                  <td id="Mobile-critical">0</td>
+                  <td id="Mobile-major">0</td>
+                  <td id="Mobile-minor">0</td>
+                  <td id="Mobile-warning">0</td>
+                  <td id="Mobile-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="SharedSvcs" data-label="Shared Services">
+              <thead>
+                <tr> <th colspan="6" id="SharedSvcs-status">Shared Services</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="SharedSvcs-warnings" class="warnings">
+                  <td id="SharedSvcs-critical">0</td>
+                  <td id="SharedSvcs-major">0</td>
+                  <td id="SharedSvcs-minor">0</td>
+                  <td id="SharedSvcs-warning">0</td>
+                  <td id="SharedSvcs-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="row show-grid">
           <div class="span3">
             <table class="table table-bordered table-condensed summary" id="Discussion" data-label="Discussion">
               <thead>
@@ -47,56 +97,6 @@
                   <td id="Discussion-minor">0</td>
                   <td id="Discussion-warning">0</td>
                   <td id="Discussion-normal">0</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="ContentAPI" data-label="Content API">
-              <thead>
-                <tr> <th colspan="6" id="ContentAPI-status">Content API</th> </tr> 
-              </thead>
-              <tbody>
-                <tr id="ContentAPI-warnings" class="warnings">
-                  <td id="ContentAPI-critical">0</td>
-                  <td id="ContentAPI-major">0</td>
-                  <td id="ContentAPI-minor">0</td>
-                  <td id="ContentAPI-warning">0</td>
-                  <td id="ContentAPI-normal">0</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="Identity" data-label="Identity">
-              <thead>
-                <tr> <th colspan="6" id="Identity-status">Identity</th> </tr> 
-              </thead>
-              <tbody>
-                <tr id="Identity-warnings" class="warnings">
-                  <td id="Identity-critical">0</td>
-                  <td id="Identity-major">0</td>
-                  <td id="Identity-minor">0</td>
-                  <td id="Identity-warning">0</td>
-                  <td id="Identity-normal">0</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div class="row show-grid">
-          <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="R1" data-label="R1">
-              <thead>
-                <tr> <th colspan="6" id="R1-status">R1</th> </tr> 
-              </thead>
-              <tbody>
-                <tr id="R1-warnings" class="warnings">
-                  <td id="R1-critical">0</td>
-                  <td id="R1-major">0</td>
-                  <td id="R1-minor">0</td>
-                  <td id="R1-warning">0</td>
-                  <td id="R1-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -134,17 +134,17 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="SharedSvcs" data-label="Shared Services">
+            <table class="table table-bordered table-condensed summary" id="Network" data-label="Network Services">
               <thead>
-                <tr> <th colspan="6" id="SharedSvcs-status">Shared Services</th> </tr> 
+                <tr> <th colspan="6" id="Network-status">Network Services</th> </tr> 
               </thead>
               <tbody>
-                <tr id="SharedSvcs-warnings" class="warnings">
-                  <td id="SharedSvcs-critical">0</td>
-                  <td id="SharedSvcs-major">0</td>
-                  <td id="SharedSvcs-minor">0</td>
-                  <td id="SharedSvcs-warning">0</td>
-                  <td id="SharedSvcs-normal">0</td>
+                <tr id="Network-warnings" class="warnings">
+                  <td id="Network-critical">0</td>
+                  <td id="Network-major">0</td>
+                  <td id="Network-minor">0</td>
+                  <td id="Network-warning">0</td>
+                  <td id="Network-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -152,9 +152,41 @@
         </div>
         <div class="row show-grid">
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="MicroApp" data-label="MicroApp">
+            <table class="table table-bordered table-condensed summary" id="ContentAPI" data-label="Content API">
               <thead>
-                <tr> <th colspan="6" id="MicroApp-status">Micro App</th> </tr> 
+                <tr> <th colspan="6" id="ContentAPI-status">Content API</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="ContentAPI-warnings" class="warnings">
+                  <td id="ContentAPI-critical">0</td>
+                  <td id="ContentAPI-major">0</td>
+                  <td id="ContentAPI-minor">0</td>
+                  <td id="ContentAPI-warning">0</td>
+                  <td id="ContentAPI-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="Identity" data-label="Identity">
+              <thead>
+                <tr> <th colspan="6" id="Identity-status">Identity</th> </tr> 
+              </thead>
+              <tbody>
+                <tr id="Identity-warnings" class="warnings">
+                  <td id="Identity-critical">0</td>
+                  <td id="Identity-major">0</td>
+                  <td id="Identity-minor">0</td>
+                  <td id="Identity-warning">0</td>
+                  <td id="Identity-normal">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="span3">
+            <table class="table table-bordered table-condensed summary" id="MicroApp" data-label="Micro App">
+              <thead>
+                <tr> <th colspan="6" id="MicroApp-status">Micro Apps</th> </tr> 
               </thead>
               <tbody>
                 <tr id="MicroApp-warnings" class="warnings">
@@ -168,49 +200,17 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="Mutualisation" data-label="Mutualisation">
+            <table class="table table-bordered table-condensed summary" id="Other" data-label="Other">
               <thead>
-                <tr> <th colspan="6" id="Mutualisation-status">Mutualisation</th> </tr> 
+                <tr> <th colspan="6" id="Other-status">Other</th> </tr> 
               </thead>
               <tbody>
-                <tr id="Mutualisation-warnings" class="warnings">
-                  <td id="Mutualisation-critical">0</td>
-                  <td id="Mutualisation-major">0</td>
-                  <td id="Mutualisation-minor">0</td>
-                  <td id="Mutualisation-warning">0</td>
-                  <td id="Mutualisation-normal">0</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="EC2" data-label="EC2">
-              <thead>
-                <tr> <th colspan="6" id="EC2-status">EC2 Servers</th> </tr> 
-              </thead>
-              <tbody>
-                <tr id="EC2-warnings" class="warnings">
-                  <td id="EC2-critical">0</td>
-                  <td id="EC2-major">0</td>
-                  <td id="EC2-minor">0</td>
-                  <td id="EC2-warning">0</td>
-                  <td id="EC2-normal">0</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="Network" data-label="Network">
-              <thead>
-                <tr> <th colspan="6" id="Network-status">Network</th> </tr> 
-              </thead>
-              <tbody>
-                <tr id="Network-warnings" class="warnings">
-                  <td id="Network-critical">0</td>
-                  <td id="Network-major">0</td>
-                  <td id="Network-minor">0</td>
-                  <td id="Network-warning">0</td>
-                  <td id="Network-normal">0</td>
+                <tr id="Other-warnings" class="warnings">
+                  <td id="Other-critical">0</td>
+                  <td id="Other-major">0</td>
+                  <td id="Other-minor">0</td>
+                  <td id="Other-warning">0</td>
+                  <td id="Other-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -229,29 +229,29 @@
             <thead>
               <tr> <th></th><th>Severity</th><th>Status</th><th>Last Receive Time</th><th>Dupl. Count</th><th>Env.</th><th>Service</th><th>Cluster</th><th>Resource</th><th>Event</th><th>Value</th><th>Text</th></tr>
             </thead>
-            <tbody id="R2-alerts" class="serviceAlerts">
+            <tbody id="R2R1-alerts" class="serviceAlerts">
+            </tbody>
+            <tbody id="Frontend-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Mobile-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="SharedSvcs-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="Discussion-alerts" class="serviceAlerts initially-hidden">
-            </tbody>
-            <tbody id="ContentAPI-alerts" class="serviceAlerts initially-hidden">
-            </tbody>
-            <tbody id="Identity-alerts" class="serviceAlerts initially-hidden">
-            </tbody>
-            <tbody id="R1-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="FlexibleContent-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="Soulmates-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="SharedSvcs-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="Network-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="ContentAPI-alerts" class="serviceAlerts initially-hidden">
+            </tbody>
+            <tbody id="Identity-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="MicroApp-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="Mutualisation-alerts" class="serviceAlerts initially-hidden">
-            </tbody>
-            <tbody id="EC2-alerts" class="serviceAlerts initially-hidden">
-            </tbody>
-            <tbody id="Network-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="Other-alerts" class="serviceAlerts initially-hidden">
             </tbody>
           </table>
 
@@ -267,27 +267,28 @@
 
         heartbeatAlerts();
 
-        var env = "TEST";
-        var statusfilter = 'environment='+env+'&status=OPEN|ACK|CLOSED';
-        var services = { 'R2':              statusfilter+'&service=R2',
-                         'Discussion':      statusfilter+'&service=Discussion',
-                         'ContentAPI':      statusfilter+'&service=ContentAPI',
-                         'Identity':        statusfilter+'&service=Identity',
-                         'R1':              statusfilter+'&service=R1',
-                         'FlexibleContent': statusfilter+'&service=FlexibleContent',
-                         'Soulmates':       statusfilter+'&service=Soulmates',
-                         'SharedSvcs':      statusfilter+'&service=SharedSvcs',
-                         'MicroApp':        statusfilter+'&service=MicroApp',
-                         'Mutualisation':   statusfilter+'&service=Mutualisation',
-                         'EC2':             statusfilter+'&service=EC2',
-                         'Network':         statusfilter+'&service=Network' };
+        var envfilter = 'environment=TEST';
+        var statusfilter = envfilter;
+        var services = { 'R2R1':            envfilter+'&service=R2|R1',
+                         'Frontend':        envfilter+'&service=Frontend',
+                         'Mobile':          envfilter+'&service=Mobile',
+                         'SharedSvcs':      envfilter+'&service=SharedSvcs',
+                         'Discussion':      envfilter+'&service=Discussion',
+                         'FlexibleContent': envfilter+'&service=FlexibleContent',
+                         'Soulmates':       envfilter+'&service=Soulmates',
+                         'Network':         envfilter+'&service=^Network',
+                         'ContentAPI':      envfilter+'&service=ContentAPI',
+                         'Identity':        envfilter+'&service=Identity',
+                         'MicroApp':        envfilter+'&service=MicroApp',
+                         'Other':           envfilter+'&-service=R1|R2|Frontend|Mobile|SharedSvcs|Discussion|FlexibleContent|Soulmates|Network|ContentAPI|Identity|MicroApp'
+                       };
 
-        loadStatus(statusfilter, true)
+        loadStatus(statusfilter, true);
         loadAlerts(services, true);
 
         $('#refresh-all').click(function() {
+          loadStatus(statusfilter, false);
           loadAlerts(services, false)
-          loadStatus(statusfilter, false)
         });
       });
     </script>

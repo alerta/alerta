@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 curl -XPOST http://${1:-'monitoring.gudev.gnl'}/alerta/api/v1/alerts/alert.json -d '{
     "resource": "host5",

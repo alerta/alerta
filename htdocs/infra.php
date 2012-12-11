@@ -52,17 +52,17 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="EC2" data-label="EC2">
+            <table class="table table-bordered table-condensed summary" id="Cloud" data-label="Cloud">
               <thead>
-                <tr> <th colspan="6" id="EC2-status">EC2 Servers</th> </tr> 
+                <tr> <th colspan="6" id="Cloud-status">Cloud</th> </tr> 
               </thead>
               <tbody>
-                <tr id="EC2-warnings" class="warnings">
-                  <td id="EC2-critical">0</td>
-                  <td id="EC2-major">0</td>
-                  <td id="EC2-minor">0</td>
-                  <td id="EC2-warning">0</td>
-                  <td id="EC2-normal">0</td>
+                <tr id="Cloud-warnings" class="warnings">
+                  <td id="Cloud-critical">0</td>
+                  <td id="Cloud-major">0</td>
+                  <td id="Cloud-minor">0</td>
+                  <td id="Cloud-warning">0</td>
+                  <td id="Cloud-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -184,17 +184,17 @@
             </table>
           </div>
           <div class="span3">
-            <table class="table table-bordered table-condensed summary" id="SLM" data-label="SLM">
+            <table class="table table-bordered table-condensed summary" id="Deploys" data-label="Deploys">
               <thead>
-                <tr> <th colspan="6" id="SLM-status">SLM</th> </tr>
+                <tr> <th colspan="6" id="Deploys-status">Deploys</th> </tr>
               </thead>
               <tbody>
-                <tr id="SLM-warnings" class="warnings">
-                  <td id="SLM-critical">0</td>
-                  <td id="SLM-major">0</td>
-                  <td id="SLM-minor">0</td>
-                  <td id="SLM-warning">0</td>
-                  <td id="SLM-normal">0</td>
+                <tr id="Deploys-warnings" class="warnings">
+                  <td id="Deploys-critical">0</td>
+                  <td id="Deploys-major">0</td>
+                  <td id="Deploys-minor">0</td>
+                  <td id="Deploys-warning">0</td>
+                  <td id="Deploys-normal">0</td>
                 </tr>
               </tbody>
             </table>
@@ -237,7 +237,7 @@
             </tbody>
             <tbody id="Network-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="EC2-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="Cloud-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="Puppet-alerts" class="serviceAlerts initially-hidden">
             </tbody>
@@ -249,7 +249,7 @@
             </tbody>
             <tbody id="Acknowledged-alerts" class="serviceAlerts initially-hidden">
             </tbody>
-            <tbody id="SLM-alerts" class="serviceAlerts initially-hidden">
+            <tbody id="Deploys-alerts" class="serviceAlerts initially-hidden">
             </tbody>
             <tbody id="Reboot-alerts" class="serviceAlerts initially-hidden">
             </tbody>
@@ -267,20 +267,23 @@
 
         heartbeatAlerts();
 
-        var env = "INFRA";
-        var statusfilter = 'environment='+env+'&status=OPEN|ACK|CLOSED';
-        var services = { 'OS':       'status=OPEN|ACK|CLOSED&group=OS',
-                         'Linux':    'status=OPEN|ACK|CLOSED&tags=os:linux',
-                         'Solaris':  'status=OPEN|ACK|CLOSED&tags=os:sunos',
-                         'Network':  statusfilter+'&service=Network',
-                         'EC2':      statusfilter+'&service=EC2',
-                         'Puppet':   'status=OPEN|ACK|CLOSED&group=Puppet',
-                         'Syslog':   'status=OPEN|ACK|CLOSED&group=Syslog',
-                         'Web':      'status=OPEN|ACK|CLOSED&group=Web',
-                         'Ganglia':  'status=OPEN|ACK|CLOSED&group=Ganglia',
+        var envfilter = 'environment=INFRA';
+        var statusfilter = '';
+        var services = { 'OS':           'group=OS',
+                         'Linux':        'tags=os:linux',
+                         'Solaris':      'tags=os:sunos',
+
+                         'Network':      'service=^Network',
+                         'Syslog':       'group=Syslog',
                          'Acknowledged': 'status=ACK',
-                         'SLM':      'status=OPEN|ACK|CLOSED&group=SLM',
-                         'Reboot':   'status=OPEN|ACK|CLOSED&event=ServerReboot',
+
+                         'Cloud':        'service=OpenStack|AWS',
+                         'Web':          'group=Web',
+                         'Deploys':      'group=Deploys',
+
+                         'Puppet':       'group=Puppet',
+                         'Ganglia':      'group=Ganglia',
+                         'Reboot':       'event=ServerReboot'
                        };
 
         loadStatus(statusfilter, true);
