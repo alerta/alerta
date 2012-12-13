@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.12'
+__version__ = '1.9.13'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -162,15 +162,14 @@ def main():
         else:
             limit = 0
 
-        last_time = datetime.datetime.utcnow()
-        to_date = last_time
-        to_date = to_date.replace(tzinfo=pytz.utc)
-
         query = dict()
+        query_time = datetime.datetime.utcnow()
         if 'from-date' in form:
             from_date = datetime.datetime.strptime(form['from-date'][0], '%Y-%m-%dT%H:%M:%S.%fZ')
             from_date = from_date.replace(tzinfo=pytz.utc)
-            query['lastReceiveTime'] = {'$gte': from_date, '$lt': to_date }
+            to_date = query_time
+            to_date = to_date.replace(tzinfo=pytz.utc)
+            query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date }
             del form['from-date']
 
         sortby = list()
@@ -228,12 +227,15 @@ def main():
         else:
             more = False
 
+        last_time = None
         alertDetails = list()
         for alert in alerts.find(query, fields, sort=sortby).limit(limit):
             if alert['severity'] in hide_repeats and alert['repeat']:
                 continue
 
-            if alert['lastReceiveTime'] > last_time:
+            if not last_time:
+                last_time = alert['lastReceiveTime']
+            elif alert['lastReceiveTime'] > last_time:
                 last_time = alert['lastReceiveTime']
 
             if not hide_details:
@@ -282,6 +284,9 @@ def main():
                 'debug': debug
         }
         logging.info('severityCounts %s', sev)
+
+        if not last_time:
+            last_time = query_time
 
         status['response']['alerts'] = { 'statusCounts': stat, 'severityCounts': sev, 'alertDetails': list(alertDetails) , 'lastTime': last_time }
 

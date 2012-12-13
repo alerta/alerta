@@ -18,7 +18,7 @@ import urllib2, urllib
 import operator
 import pytz
 
-__version__ = '1.3.3'
+__version__ = '1.3.4'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -539,7 +539,7 @@ def main():
 
         if options.watch:
             time.sleep(options.interval)
-            query['from-date'] = fromTime.replace(microsecond=0).isoformat() + ".%03dZ" % (fromTime.microsecond//1000)
+            query['from-date'] = response['alerts']['lastTime']
             url = "%s?%s" % (API_URL, urllib.urlencode(query))
         else:
             break
