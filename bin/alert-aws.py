@@ -8,6 +8,7 @@
 import os
 import sys
 import time
+import urllib
 import urllib2
 try:
     import json
@@ -22,10 +23,11 @@ import uuid
 import boto.ec2
 
 __program__ = 'alert-aws'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
+BASE_URL     = 'http://monitoring.guprod.gnl/alerta/api/v1'
 
 DEFAULT_TIMEOUT = 86400
 WAIT_SECONDS = 10
@@ -99,6 +101,40 @@ def ec2_status():
                 else:
                     info[i.id]['status'] = u'not-available:not-available'
 
+    # Get list of all alerts from EC2
+    url = '%s/alerts' % BASE_URL
+    try:
+        response = json.loads(urllib2.urlopen(url, None, 15).read())['response']
+    except urllib2.URLError, e:
+        logging.error('Could not get list of alerts from resources located in EC2: %s', e)
+        response = None
+
+    if response and 'alerts' in response and 'alertDetails' in response['alerts']:
+        alertDetails = response['alerts']['alertDetails']
+
+        for alert in alertDetails:
+            alertid  = alert['id']
+            resource = alert['resource']
+
+            # resource might be 'i-01234567:/tmp'
+            if ':' in resource:
+                resource = resource.split(':')[0]
+
+            if resource not in info:
+                logging.info('%s : EC2 instance %s is no longer running, deleting associated alert', alertid, resource)
+                url = '%s/alerts/alert/%s' % (BASE_URL, alertid)
+                method_override = '{ "_method": "delete" }'
+                req = urllib2.Request(url, method_override)
+                try:
+                    response = json.loads(urllib2.urlopen(req).read())['response']
+                except urllib2.URLError, e:
+                    logging.error('%s : API end-point error: %s', alertid, e)
+
+                if response['status'] == 'ok':
+                    logging.info('%s : Successfully deleted alert', alertid)
+                else:
+                    logging.warning('%s : Failed to delete alert: %s', alertid, response['message'])
+
     for instance in info:
         for check, event in [('state', 'Ec2InstanceState'),
                              ('status','Ec2StatusChecks')]:
@@ -133,10 +169,10 @@ def ec2_status():
                         text = "System and instance status checks are ok"
                     elif info[instance][check].startswith('ok'):
                         severity = 'WARNING'
-                        text = 'System status check is %s' % info[instance][check].split(':')[0]
+                        text = 'Instance status check is %s' % info[instance][check].split(':')[1]
                     elif info[instance][check].endswith('ok'):
                         severity = 'WARNING'
-                        text = 'Instance status check is %s' % info[instance][check].split(':')[1]
+                        text = 'System status check is %s' % info[instance][check].split(':')[0]
                     else:
                         severity = 'WARNING'
                         text = 'System status check is %s and instance status check is %s' % tuple(info[instance][check].split(':'))
