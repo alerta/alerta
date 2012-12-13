@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.11'
+__version__ = '1.9.12'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -220,6 +220,12 @@ def main():
         if not len(fields): fields = None
         logging.debug('MongoDB GET all -> alerts.find(%s, %s, sort=%s).limit(%s)', query, fields, sortby, limit)
 
+        count = alerts.find(query).count()
+        if limit and count > limit:
+            more = True
+        else:
+            more = False
+
         alertDetails = list()
         for alert in alerts.find(query, fields, sort=sortby).limit(limit):
             if alert['severity'] in hide_repeats and alert['repeat']:
@@ -278,6 +284,7 @@ def main():
         status['response']['status'] = 'ok'
         status['response']['time'] = "%.3f" % diff
         status['response']['total'] = total
+        status['response']['more'] = more
         status['response']['localTime'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
         diff = int(diff * 1000) # management status needs time in milliseconds
