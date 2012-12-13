@@ -62,7 +62,7 @@ def ec2_status():
         account_name = account['account']
         access_key = account.get('aws_access_key_id','')
         secret_key = account.get('aws_secret_access_key','')
-        logging.debug('AWS Account=%s, AwsAccessKey=%s, AwsSecretKey=************************************%s' % (account_name, access_key, secret_key[-4:])
+        logging.debug('AWS Account=%s, AwsAccessKey=%s, AwsSecretKey=************************************%s', account_name, access_key, secret_key[-4:])
 
         for region in EC2_REGIONS:
             try:
