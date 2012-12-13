@@ -162,12 +162,14 @@ def main():
         else:
             limit = 0
 
+        last_time = datetime.datetime.utcnow()
+        to_date = last_time
+        to_date = to_date.replace(tzinfo=pytz.utc)
+
         query = dict()
         if 'from-date' in form:
             from_date = datetime.datetime.strptime(form['from-date'][0], '%Y-%m-%dT%H:%M:%S.%fZ')
             from_date = from_date.replace(tzinfo=pytz.utc)
-            to_date = datetime.datetime.utcnow()
-            to_date = to_date.replace(tzinfo=pytz.utc)
             query['lastReceiveTime'] = {'$gte': from_date, '$lt': to_date }
             del form['from-date']
 
@@ -231,6 +233,9 @@ def main():
             if alert['severity'] in hide_repeats and alert['repeat']:
                 continue
 
+            if alert['lastReceiveTime'] > last_time:
+                last_time = alert['lastReceiveTime']
+
             if not hide_details:
                 alert['id'] = alert['_id']
                 del alert['_id']
@@ -278,7 +283,7 @@ def main():
         }
         logging.info('severityCounts %s', sev)
 
-        status['response']['alerts'] = { 'statusCounts': stat, 'severityCounts': sev, 'alertDetails': list(alertDetails) }
+        status['response']['alerts'] = { 'statusCounts': stat, 'severityCounts': sev, 'alertDetails': list(alertDetails) , 'lastTime': last_time }
 
         diff = time.time() - start
         status['response']['status'] = 'ok'
