@@ -23,7 +23,7 @@ import uuid
 import boto.ec2
 
 __program__ = 'alert-aws'
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -84,9 +84,9 @@ def ec2_status():
                 info[i.id] = dict()
                 info[i.id]['account'] = account_name
                 info[i.id]['state'] = i.state
-                info[i.id]['stage'] = i.tags.get('Stage','n/a')
-                info[i.id]['role'] = i.tags.get('Role','n/a')
-                info[i.id]['tags'] = i.tags
+                info[i.id]['stage'] = i.tags.get('Stage','unknown')
+                info[i.id]['role'] = i.tags.get('Role','unknown')
+                info[i.id]['tags'] = [ 'os:Linux', 'cluster:%s_%s' % (info[i.id]['role'], region), 'datacentre:%s' % region, 'virtual:xen', 'cloud:AWS/EC2' ]
 
             try:
                 status = ec2.get_all_instance_status()
@@ -102,7 +102,7 @@ def ec2_status():
                     info[i.id]['status'] = u'not-available:not-available'
 
     # Get list of all alerts from EC2
-    url = '%s/alerts' % BASE_URL
+    url = '%s/alerts?tags=cloud:AWS/EC2' % BASE_URL  # tag filter on cloud:AWS/EC2
     try:
         response = json.loads(urllib2.urlopen(url, None, 15).read())['response']
     except urllib2.URLError, e:
@@ -120,6 +120,7 @@ def ec2_status():
             if ':' in resource:
                 resource = resource.split(':')[0]
 
+            # Delete alerts for instances that are no longer listed by EC2 API
             if resource not in info:
                 logging.info('%s : EC2 instance %s is no longer running, deleting associated alert', alertid, resource)
                 url = '%s/alerts/alert/%s' % (BASE_URL, alertid)
@@ -151,7 +152,7 @@ def ec2_status():
                 text        = 'Instance was %s now it is %s' % (last[instance][check], info[instance][check])
                 environment = [ info[instance]['stage'] ]
                 service     = [ 'Cloud' ]
-                tags        = list()
+                tags        = info[instance]['tags']
                 correlate   = ''
 
                 # instance-state = pending | running | shutting-down | terminated | stopping | stopped
