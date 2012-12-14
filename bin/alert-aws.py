@@ -23,14 +23,14 @@ import uuid
 import boto.ec2
 
 __program__ = 'alert-aws'
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 BASE_URL     = 'http://monitoring.guprod.gnl/alerta/api/v1'
 
 DEFAULT_TIMEOUT = 86400
-WAIT_SECONDS = 10
+WAIT_SECONDS = 60
 
 LOGFILE = '/var/log/alerta/alert-aws.log'
 PIDFILE = '/var/run/alerta/alert-aws.pid'
