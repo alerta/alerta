@@ -38,7 +38,7 @@ PIDFILE = '/home/dnanini/alerta/alert-dynect.pid'
 DISABLE = '/home/dnanini/alerta/conf/alert-aws.disable'
 
 REPEAT_LIMIT = 10
-repeats = REPEAT_LIMIT
+count = 0
 
 #_check_rate   = 600             # Check rate of alerts
 _check_rate   = 15
@@ -47,7 +47,7 @@ _check_rate   = 15
 config = dict()
 info = dict()
 last = dict()
-dynect = []
+dynect = dict()
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -66,120 +66,68 @@ class WorkerThread(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
-        global conn, repeats, last
+        global conn, count, last
 
         queryDynect()
 
-        logging.info('Tokens: %d' % repeats)
+        logging.info('Repeats: %d' % count)
 
         for item in info:
 
             # Defaults
             resource    = item
-            group       = 'Network'
+            group       = 'GSLB'
             value       = info[item]
             environment = [ 'PROD' ]
-            service     = [ 'Infrastructure' ]
+            service     = [ 'Network' ]
             tags        = ''
             correlate   = ''
             event       = ''
             text        = 'Item was %s now it is %s.' % (info[item], last[item])
 
-            # gslb status	= ok | unk | trouble | failover
-            # pool status	= up | unk | down
-            # pool serve_mode	= obey | always | remove | no
-
-            if repeats == 10:
-
-                logging.info('Resending state of %s' % item)
+            if last[item] != info[item] or count == repeats:
 
                 if item.startswith('gslb-'):
 
-                    if 'ok' in info[item]:
-                        event = 'GSLBOK'
-                        severity = 'NORMAL'
-                        text = 'GSLB state -> status: %s.' % (info[item])
+                    # gslb status       = ok | unk | trouble | failover
 
-                elif item.startswith('pool-'):
-
-                    if 'up:obey:' in info[item]:
-                        event = 'PoolUp'
-                        severity = 'NORMAL'
-                        text = 'Pool state -> status: %s serve_mode: %s weight: %s.' % tuple(info[item].split(':'))
-
-                alertid = str(uuid.uuid4()) # random UUID
-                createTime = datetime.datetime.utcnow()
-
-                headers = dict()
-                headers['type']           = "serviceAlert"
-                headers['correlation-id'] = alertid
-
-                alert = dict()
-                alert['id']               = alertid
-                alert['resource']         = resource
-                alert['event']            = event
-                alert['group']            = group
-                alert['value']            = value
-                alert['severity']         = severity.upper()
-                alert['severityCode']     = SEVERITY_CODE[alert['severity']]
-                alert['environment']      = environment
-                alert['service']          = service
-                alert['text']             = text
-                alert['type']             = 'dynectAlert'
-                alert['tags']             = tags
-                alert['summary']          = '%s - %s %s is %s on %s %s' % (','.join(environment), severity.upper(), event, value, ','.join(service), resource)
-                alert['createTime']       = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
-                alert['origin']           = "%s/%s" % (__program__, os.uname()[1])
-                alert['thresholdInfo']    = 'n/a'
-                alert['timeout']          = DEFAULT_TIMEOUT
-                alert['correlatedEvents'] = correlate
-
-                logging.info('%s : %s', alertid, json.dumps(alert))
-
-                while not conn.is_connected():
-                    logging.warning('Waiting for message broker to become available')
-                    time.sleep(30.0)
-
-                try:
-                    conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
-                    broker = conn.get_host_and_port()
-                    logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
-                except Exception, e:
-                    logging.error('Failed to send alert to broker %s', e)
-
-            logging.info('Comparing GSLB or Pool. %s' % item)
-
-            if last[item] != info[item]:
-
-                logging.info('GSLB or Pool state change from %s to %s' % (info[item], last[item]))
-
-                if item.startswith('gslb-'):
-
+                    logging.info('GSLB state change from %s to %s' % (info[item], last[item]))
                     text = 'GSLB status is %s.' % last[item]
 
                     if 'ok' in info[item]:
-                        event = 'GSLBOK'
+                        event = 'GslbOK'
                         severity = 'NORMAL'
                     else:
-                        event = 'GSLBNotOK'
+                        event = 'GslbNotOK'
                         severity = 'CRITICAL'
 
                 elif item.startswith('pool-'):
 
-                    text = 'Pool is in state -> status: %s serve_mode: %s weight: %s and should be in state -> status: %s serve_mode: %s weight: %s' % tuple(last[item].split(':') + info[item].split(':'))
+                    # pool status       = up | unk | down
+                    # pool serve_mode   = obey | always | remove | no
+                    # pool weight	(1-15)
 
-                    if 'down' in info[item]: 
-                        event = 'PoolDown'
-                        severity = 'MAYOR'
-                    elif 'obey' not in info[item]:
-                        event = 'PoolServeMode'
-                        severity = 'WARNING'
-                    elif 'up:obey:' in info[item]:
+                    print checkweight(info[item][1], item)
+
+                    logging.info('Pool state change from %s to %s' % (info[item], last[item]))
+
+                    if 'up:obey' in info[item] and checkweight(info[item][1], item) == True: 
                         event = 'PoolUp'
                         severity = 'NORMAL'
+                        text = 'Pool status is normal'
                     else:
-                        event = 'PoolStateChange'
-                        severity = 'WARNING'
+                        if 'down' in info[item]:
+                            event = 'PoolDown'
+                            severity = 'MAJOR'
+                            text = 'Pool is down'
+                        elif 'obey' not in info[item]:
+                            event = 'PoolServe'
+                            severity = 'MAJOR'
+                            text = 'Pool with an incorrect serve mode'
+                        elif checkweight(info[item][1], item) == False:
+                            event = 'PoolWeightError'
+                            severity = 'MINOR'
+                            text = 'Pool with an incorrect weight'
 
                 alertid = str(uuid.uuid4()) # random UUID
                 createTime = datetime.datetime.utcnow()
@@ -223,30 +171,17 @@ class WorkerThread(threading.Thread):
 
         last = info.copy()
 
-        if repeats:
-            repeats -= 1
+        if count:
+            count -= 1
         else:
-            repeats = REPEAT_LIMIT
+            count = repeats
 
         return
-
-class MessageHandler(object):
-
-    def on_error(self, headers, body):
-        logging.error('Received an error %s', body)
-
-    def on_disconnected(self):
-        global conn
-
-        logging.warning('Connection lost. Attempting auto-reconnect to %s', ALERT_QUEUE)
-        conn.start()
-        conn.connect(wait=True)
-        conn.subscribe(destination=ALERT_QUEUE, ack='auto')
 
 # Initialise Config
 def init_config():
 
-    global config, repeats, last
+    global config, repeats, count, last
 
     logging.info('Loading config...')
 
@@ -256,11 +191,20 @@ def init_config():
         logging.error('Failed to load config: %s', e)
     logging.info('Loaded %d config OK', len(config))
 
-    REPEAT_LIMIT = config['repeats']
-    repeats = REPEAT_LIMIT
+    repeats = config.get('repeats', REPEAT_LIMIT)
+    count = repeats
 
     queryDynect()
     last = info.copy()
+
+def checkweight(parent, resource):
+
+    weight = info[resource][0].split(':')[2]
+    for item in info:
+        if item.startswith('pool-') and info[item][1] == parent and item != resource and weight == info[item][0].split(':')[2]:
+            return True
+            break
+    return False
 
 def queryDynect():
 
@@ -290,14 +234,14 @@ def queryDynect():
             # Discover LoadBalancer pool information.
             for lb in gslb:
                 fqdn = lb.split('/')[4]
-                dynect.append(zone+'/'+fqdn)
                 response = rest_iface.execute('/LoadBalance/'+zone+'/'+fqdn+'/','GET')
                 info['gslb-'+fqdn] = response['data']['status']
 
-                for i in range(0,len(response['data']['pool'])):
-                    name = '%s-%s' % (fqdn, response['data']['pool'][i]['label'])
-                    state = '%s:%s:%s' % (response['data']['pool'][i]['status'], response['data']['pool'][i]['serve_mode'], response['data']['pool'][i]['weight'])
-                    info['pool-'+name] = state
+                for i in response['data']['pool']:
+                    name = '%s-%s' % (fqdn, i['label'].replace(' ','-'))
+                    state = '%s:%s:%s' % (i['status'], i['serve_mode'], i['weight'])
+                    parent = 'gslb-'+fqdn
+                    info['pool-'+name] = state, parent
 
         logging.info('Finish quering and object discovery.')
         logging.info('GSLBs and Pools: %s', json.dumps(info))
@@ -307,6 +251,19 @@ def queryDynect():
     except Exception, e:
         logging.error('Failed to discover GSLBs: %s', e)
         pass
+
+class MessageHandler(object):
+
+    def on_error(self, headers, body):
+        logging.error('Received an error %s', body)
+
+    def on_disconnected(self):
+        global conn
+
+        logging.warning('Connection lost. Attempting auto-reconnect to %s', ALERT_QUEUE)
+        conn.start()
+        conn.connect(wait=True)
+        conn.subscribe(destination=ALERT_QUEUE, ack='auto')
 
 def send_heartbeat():
     global conn
