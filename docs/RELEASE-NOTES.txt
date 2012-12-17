@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+Alerta version 1.2.5
+--------------------
+
+* Add alerting on AWS EC2 instance status
+* Delete alerts for stale AWS EC2 instances
+* Add lastTime field to alert API response
+* Add tail-like "watch" option to query CLI
+* Alert environment used to namespace resources
+
 Alerta version 1.2.4
 --------------------
 
