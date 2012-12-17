@@ -18,7 +18,7 @@ import urllib2, urllib
 import operator
 import pytz
 
-__version__ = '1.3.4'
+__version__ = '1.3.5'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -564,8 +564,12 @@ def main():
     if not options.nofooter:
         now = datetime.datetime.utcnow()
         now = now.replace(tzinfo=pytz.utc)
+        if response['more']:
+            has_more = '+'
+        else:
+            has_more = ''
         print
-        print "Total: %d (produced on %s at %s by %s,v%s on %s in %sms)" % (count, now.astimezone(tz).strftime("%d/%m/%y"), now.astimezone(tz).strftime("%H:%M:%S %Z"), PGM, __version__, os.uname()[1], int((end - start) * 1000))
+        print "Total: %d%s (produced on %s at %s by %s,v%s on %s in %sms)" % (count, has_more, now.astimezone(tz).strftime("%d/%m/%y"), now.astimezone(tz).strftime("%H:%M:%S %Z"), PGM, __version__, os.uname()[1], int((end - start) * 1000))
 
 if __name__ == '__main__':
     try:
