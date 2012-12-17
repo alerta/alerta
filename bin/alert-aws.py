@@ -23,7 +23,7 @@ import uuid
 import boto.ec2
 
 __program__ = 'alert-aws'
-__version__ = '1.0.4'
+__version__ = '1.0.5'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -36,8 +36,6 @@ LOGFILE = '/var/log/alerta/alert-aws.log'
 PIDFILE = '/var/run/alerta/alert-aws.pid'
 DISABLE = '/opt/alerta/conf/alert-aws.disable'
 AWSCONF = '/opt/alerta/conf/alert-aws.yaml'
-
-EC2_REGIONS = [ 'eu-west-1', 'us-east-1' ]
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -59,14 +57,12 @@ def ec2_status():
 
     last = info.copy()
 
-    accounts = [a for a in awsconf if 'account' in a]
-    for account in accounts:
-        account_name = account['account']
-        access_key = account.get('aws_access_key_id','')
-        secret_key = account.get('aws_secret_access_key','')
-        logging.debug('AWS Account=%s, AwsAccessKey=%s, AwsSecretKey=************************************%s', account_name, access_key, secret_key[-4:])
+    for account,keys in awsconf['accounts'].iteritems():
+        access_key = keys.get('aws_access_key_id','')
+        secret_key = keys.get('aws_secret_access_key','')
+        logging.debug('AWS Account=%s, AwsAccessKey=%s, AwsSecretKey=************************************%s', account, access_key, secret_key[-4:])
 
-        for region in EC2_REGIONS:
+        for region in awsconf['regions']:
             try:
                 ec2 = boto.ec2.connect_to_region(region, aws_access_key_id=access_key, aws_secret_access_key=secret_key)
             except boto.exception.EC2ResponseError, e:
@@ -82,7 +78,7 @@ def ec2_status():
             instances = [i for r in reservations for i in r.instances]
             for i in instances:
                 info[i.id] = dict()
-                info[i.id]['account'] = account_name
+                info[i.id]['account'] = account
                 info[i.id]['state'] = i.state
                 info[i.id]['stage'] = i.tags.get('Stage','unknown')
                 info[i.id]['role'] = i.tags.get('Role','unknown')

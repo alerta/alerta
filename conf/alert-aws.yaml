@@ -1,0 +1,9 @@
+regions: [ 'eu-west-1','us-east-1']
+
+accounts:
+  your-aws-account-name:
+    aws_access_key_id: ACCESS_KEY_ID_HERE
+    aws_secret_access_key: SECRET_ACCESS_KEY_HERE
+  another-aws-account-name:
+    aws_access_key_id: ACCESS_KEY_ID_HERE
+    aws_secret_access_key: SECRET_ACCESS_KEY_HERE
