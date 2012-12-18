@@ -23,31 +23,25 @@ from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 from dynect.DynectDNS import DynectRest
 
 __program__ = 'alert-dynect'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 DEFAULT_TIMEOUT = 86400
-#CONFIGFILE = '/opt/alerta/conf/alert-dynect.yaml'
-#LOGFILE = '/var/log/alerta/alert-dynect.log'
-#PIDFILE = '/var/run/alerta/alert-dynect.pid'
-#DISABLE = '/opt/alerta/conf/alert-aws.disable'
-CONFIGFILE = '/home/dnanini/alerta/conf/alert-dynect.yaml'
-LOGFILE = '/home/dnanini/alerta/alert-dynect.log'
-PIDFILE = '/home/dnanini/alerta/alert-dynect.pid'
-DISABLE = '/home/dnanini/alerta/conf/alert-aws.disable'
+CONFIGFILE = '/opt/alerta/conf/alert-dynect.yaml'
+LOGFILE = '/var/log/alerta/alert-dynect.log'
+PIDFILE = '/var/run/alerta/alert-dynect.pid'
+DISABLE = '/opt/alerta/conf/alert-aws.disable'
 
 REPEAT_LIMIT = 10
 count = 0
 
-#_check_rate   = 600             # Check rate of alerts
-_check_rate   = 15
+_check_rate   = 900             # Check rate of alerts
 
 # Global variables
 config = dict()
 info = dict()
 last = dict()
-dynect = dict()
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -77,24 +71,24 @@ class WorkerThread(threading.Thread):
             # Defaults
             resource    = item
             group       = 'GSLB'
-            value       = info[item]
+            value       = info[item][0]
             environment = [ 'PROD' ]
             service     = [ 'Network' ]
             tags        = ''
             correlate   = ''
             event       = ''
-            text        = 'Item was %s now it is %s.' % (info[item], last[item])
+            text        = 'Item was %s now it is %s.' % (info[item][0], last[item][0])
 
-            if last[item] != info[item] or count == repeats:
+            if last[item][0] != info[item][0] or count == repeats:
 
                 if item.startswith('gslb-'):
 
                     # gslb status       = ok | unk | trouble | failover
 
-                    logging.info('GSLB state change from %s to %s' % (info[item], last[item]))
-                    text = 'GSLB status is %s.' % last[item]
+                    logging.info('GSLB state change from %s to %s' % (info[item][0], last[item][0]))
+                    text = 'GSLB status is %s.' % last[item][0]
 
-                    if 'ok' in info[item]:
+                    if 'ok' in info[item][0]:
                         event = 'GslbOK'
                         severity = 'NORMAL'
                     else:
@@ -107,20 +101,18 @@ class WorkerThread(threading.Thread):
                     # pool serve_mode   = obey | always | remove | no
                     # pool weight	(1-15)
 
-                    print checkweight(info[item][1], item)
+                    logging.info('Pool state change from %s to %s' % (info[item][0], last[item][0]))
 
-                    logging.info('Pool state change from %s to %s' % (info[item], last[item]))
-
-                    if 'up:obey' in info[item] and checkweight(info[item][1], item) == True: 
+                    if 'up:obey' in info[item][0] and checkweight(info[item][1], item) == True: 
                         event = 'PoolUp'
                         severity = 'NORMAL'
                         text = 'Pool status is normal'
                     else:
-                        if 'down' in info[item]:
+                        if 'down' in info[item][0]:
                             event = 'PoolDown'
                             severity = 'MAJOR'
                             text = 'Pool is down'
-                        elif 'obey' not in info[item]:
+                        elif 'obey' not in info[item][0]:
                             event = 'PoolServe'
                             severity = 'MAJOR'
                             text = 'Pool with an incorrect serve mode'
@@ -208,7 +200,7 @@ def checkweight(parent, resource):
 
 def queryDynect():
 
-    global dynect, info
+    global info
 
     logging.info('Quering DynECT to get the state of GSLBs')
 
@@ -235,7 +227,7 @@ def queryDynect():
             for lb in gslb:
                 fqdn = lb.split('/')[4]
                 response = rest_iface.execute('/LoadBalance/'+zone+'/'+fqdn+'/','GET')
-                info['gslb-'+fqdn] = response['data']['status']
+                info['gslb-'+fqdn] = response['data']['status'], 'gslb-'+fqdn
 
                 for i in response['data']['pool']:
                     name = '%s-%s' % (fqdn, i['label'].replace(' ','-'))
