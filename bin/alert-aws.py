@@ -23,7 +23,7 @@ import uuid
 import boto.ec2
 
 __program__ = 'alert-aws'
-__version__ = '1.0.6'
+__version__ = '1.0.7'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -125,7 +125,6 @@ def ec2_status():
         logging.info('Retreived %s EC2 alerts', response['total'])
         alertDetails = response['alerts']['alertDetails']
 
-        deleted = 0
         for alert in alertDetails:
             alertid  = alert['id']
             resource = alert['resource']
@@ -144,25 +143,29 @@ def ec2_status():
 
             # Delete alerts for instances that are no longer listed by EC2 API
             if resource not in info:
-                logging.info('%s : EC2 instance %s is no longer running, deleting associated alert', alertid, resource)
-                url = '%s/alerts/alert/%s' % (BASE_URL, alertid)
-                # data = '{ "_method": "delete" }'
-                data = '{ "status": "DELETED" }'
-                logging.debug('%s : %s %s', alertid, url, data)
-                req = urllib2.Request(url, data)
-                try:
-                    response = json.loads(urllib2.urlopen(req).read())['response']
-                except urllib2.URLError, e:
-                    logging.error('%s : API endpoint error: %s', alertid, e)
-                    continue
+                logging.info('%s : EC2 instance %s is no longer listed, DELETE associated alert', alertid, resource)
+                data = '{ "_method": "delete" }'
+                # data = '{ "status": "DELETED" }' # XXX - debug only
+            elif info[resource]['state'] == 'terminated' and alert['status'] != 'ACK' and alert['event'] not in ['Ec2InstanceState', 'Ec2StatusChecks']:
+                logging.info('%s : EC2 instance %s is terminated, ACK associated alert', alertid, resource)
+                data = '{ "status": "ACK" }'
+            else:
+                continue
 
-                if response['status'] == 'ok':
-                    logging.info('%s : Successfully deleted alert', alertid)
-                else:
-                    logging.warning('%s : Failed to delete alert: %s', alertid, response['message'])
-                deleted =+ 1
+            # Delete alert or update alert status
+            url = '%s/alerts/alert/%s' % (BASE_URL, alertid)
+            logging.debug('%s : %s %s', alertid, url, data)
+            req = urllib2.Request(url, data)
+            try:
+                response = json.loads(urllib2.urlopen(req).read())['response']
+            except urllib2.URLError, e:
+                logging.error('%s : API endpoint error: %s', alertid, e)
+                continue
 
-        logging.info('Deleted %s EC2 alerts', deleted)
+            if response['status'] == 'ok':
+                logging.info('%s : Successfully updated alert', alertid)
+            else:
+                logging.warning('%s : Failed to update alert: %s', alertid, response['message'])
 
     for instance in info:
         for check, event in [('state', 'Ec2InstanceState'),
