@@ -23,7 +23,7 @@ import uuid
 import boto.ec2
 
 __program__ = 'alert-aws'
-__version__ = '1.0.5'
+__version__ = '1.0.6'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -31,6 +31,8 @@ BASE_URL     = 'http://monitoring.guprod.gnl/alerta/api/v1'
 
 DEFAULT_TIMEOUT = 86400
 WAIT_SECONDS = 60
+
+GLOBAL_CONF = '/opt/alerta/conf/alerta-global.yaml'
 
 LOGFILE = '/var/log/alerta/alert-aws.log'
 PIDFILE = '/var/run/alerta/alert-aws.pid'
@@ -51,9 +53,16 @@ SEVERITY_CODE = {
 # Globals
 info = dict()
 last = dict()
+lookup = dict()
 
 def ec2_status():
-    global conn, awsconf
+    global conn, globalconf, awsconf, BASE_URL, info, last
+
+    if 'endpoint' in globalconf:
+        BASE_URL = '%s/alerta/api/v1' % globalconf['endpoint']
+    if 'proxy' in globalconf:
+        os.environ['http_proxy'] = globalconf['proxy']['http']
+        os.environ['https_proxy'] = globalconf['proxy']['https']
 
     last = info.copy()
 
@@ -69,21 +78,27 @@ def ec2_status():
                 logging.warning('EC2 API call connect_to_region(region=%s) failed: %s', region, e)
                 continue
 
+            logging.info('Get all instances for account %s in %s', account, region)
             try:
                 reservations = ec2.get_all_instances()
             except boto.exception.EC2ResponseError, e:
                 logging.warning('EC2 API call get_all_instances() failed: %s', e)
                 continue
 
-            instances = [i for r in reservations for i in r.instances]
+            instances = [i for r in reservations for i in r.instances if i.tags]
             for i in instances:
                 info[i.id] = dict()
-                info[i.id]['account'] = account
                 info[i.id]['state'] = i.state
                 info[i.id]['stage'] = i.tags.get('Stage','unknown')
                 info[i.id]['role'] = i.tags.get('Role','unknown')
-                info[i.id]['tags'] = [ 'os:Linux', 'cluster:%s_%s' % (info[i.id]['role'], region), 'datacentre:%s' % region, 'virtual:xen', 'cloud:AWS/EC2' ]
+                info[i.id]['tags'] = [ 'os:Linux', 'role:%s' % info[i.id]['role'], 'datacentre:%s' % region, 'virtual:xen', 'cloud:AWS/EC2', 'account:%s' % account ]
+                info[i.id]['tags'].append('cluster:%s_%s' % (info[i.id]['role'], region)) # FIXME - replace match on cluster with match on role
 
+                # FIXME - this is a hack until all EC2 instances are keyed off instance id
+                logging.debug('%s -> %s', i.private_dns_name, i.id)
+                lookup[i.private_dns_name.split('.')[0]] = i.id
+
+            logging.info('Get system and instance status for account %s in %s', account, region)
             try:
                 status = ec2.get_all_instance_status()
             except boto.exception.EC2ResponseError, e:
@@ -98,7 +113,8 @@ def ec2_status():
                     info[i.id]['status'] = u'not-available:not-available'
 
     # Get list of all alerts from EC2
-    url = '%s/alerts?tags=cloud:AWS/EC2' % BASE_URL  # tag filter on cloud:AWS/EC2
+    url = '%s/alerts?tags=cloud:AWS/EC2&status=OPEN|ACK|CLOSED' % BASE_URL  # tag filter on cloud:AWS/EC2
+    logging.info('Get list of EC2 alerts from %s', url)
     try:
         response = json.loads(urllib2.urlopen(url, None, 15).read())['response']
     except urllib2.URLError, e:
@@ -106,8 +122,10 @@ def ec2_status():
         response = None
 
     if response and 'alerts' in response and 'alertDetails' in response['alerts']:
+        logging.info('Retreived %s EC2 alerts', response['total'])
         alertDetails = response['alerts']['alertDetails']
 
+        deleted = 0
         for alert in alertDetails:
             alertid  = alert['id']
             resource = alert['resource']
@@ -116,21 +134,35 @@ def ec2_status():
             if ':' in resource:
                 resource = resource.split(':')[0]
 
+            if resource.startswith('ip-'): # FIXME - transform ip-10-x-x-x to i-01234567
+                logging.debug('%s : Transforming resource %s -> %s', alertid, resource, lookup.get(resource, resource))
+                resource = lookup.get(resource, resource)
+
+            if alert['service'] == 'Ophan':
+                logging.warning('%s : Skip Ophan instance %s until we have proper credentials', alertid, resource)
+                continue
+
             # Delete alerts for instances that are no longer listed by EC2 API
             if resource not in info:
                 logging.info('%s : EC2 instance %s is no longer running, deleting associated alert', alertid, resource)
                 url = '%s/alerts/alert/%s' % (BASE_URL, alertid)
-                method_override = '{ "_method": "delete" }'
-                req = urllib2.Request(url, method_override)
+                # data = '{ "_method": "delete" }'
+                data = '{ "status": "DELETED" }'
+                logging.debug('%s : %s %s', alertid, url, data)
+                req = urllib2.Request(url, data)
                 try:
                     response = json.loads(urllib2.urlopen(req).read())['response']
                 except urllib2.URLError, e:
-                    logging.error('%s : API end-point error: %s', alertid, e)
+                    logging.error('%s : API endpoint error: %s', alertid, e)
+                    continue
 
                 if response['status'] == 'ok':
                     logging.info('%s : Successfully deleted alert', alertid)
                 else:
                     logging.warning('%s : Failed to delete alert: %s', alertid, response['message'])
+                deleted =+ 1
+
+        logging.info('Deleted %s EC2 alerts', deleted)
 
     for instance in info:
         for check, event in [('state', 'Ec2InstanceState'),
@@ -147,7 +179,7 @@ def ec2_status():
                 value       = info[instance][check]
                 text        = 'Instance was %s now it is %s' % (last[instance][check], info[instance][check])
                 environment = [ info[instance]['stage'] ]
-                service     = [ 'Cloud' ]
+                service     = [ 'EC2' ] # NOTE: Will be transformed to correct service using Ec2ServiceLookup
                 tags        = info[instance]['tags']
                 correlate   = ''
 
@@ -239,7 +271,7 @@ def send_heartbeat():
         logging.error('Failed to send heartbeat to broker %s', e)
 
 def main():
-    global conn, awsconf
+    global conn, globalconf, awsconf
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-aws[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up Alert Amazon Web Services EC2 version %s', __version__)
@@ -258,6 +290,14 @@ def main():
     while os.path.isfile(DISABLE):
         logging.warning('Disable flag exists (%s). Sleeping...', DISABLE)
         time.sleep(120)
+
+    # Read in global configuration file
+    try:
+        globalconf = yaml.load(open(GLOBAL_CONF))
+        logging.info('Loaded %d global configurations OK', len(globalconf))
+    except Exception, e:
+        logging.warning('Failed to load global configuration: %s. Exit.', e)
+        sys.exit(1)
 
     # Read in configuration file
     try:
