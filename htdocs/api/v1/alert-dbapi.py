@@ -21,7 +21,7 @@ import logging
 import pytz
 import re
 
-__version__ = '1.9.13'
+__version__ = '1.9.14'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
@@ -312,11 +312,16 @@ def main():
         update = data
         update['repeat'] = False
 
+        if 'severity' in update:
+            previousSeverity = alerts.find_one(query, { "severity": 1 , "_id": 0})['severity']
+            update['previousSeverity'] = previousSeverity
+
         logging.debug('MongoDB MODIFY -> alerts.update(%s, { $set: %s })', query, update)
         error = alerts.update(query, { '$set': update }, safe=True)
         logging.debug('MongoDB MODIFY -> error %s', error)
         if error['updatedExisting'] == True:
             status['response']['status'] = 'ok'
+
 
             if 'status' in update:
                 updateTime = datetime.datetime.utcnow()
@@ -351,6 +356,7 @@ def main():
                 broker = conn.get_host_and_port()
                 logging.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
                 conn.disconnect()
+
         else:
             status['response']['status'] = 'error'
             status['response']['message'] = 'No existing alert with that ID found'
