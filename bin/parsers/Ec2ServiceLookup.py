@@ -65,3 +65,5 @@ elif any(tag.startswith('cluster:zabbix') for tag in alert['tags']):
     alert['service'] = [ 'SharedSvcs' ]
 else:
     alert['service'] = [ 'Unknown' ]
+
+alert['summary'] = '%s - %s %s is %s on %s %s' % (','.join(alert['environment']), alert['severity'], alert['event'], alert['value'], ','.join(alert['service']), alert['resource'])
