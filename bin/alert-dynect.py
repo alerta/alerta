@@ -31,7 +31,7 @@ DEFAULT_TIMEOUT = 86400
 CONFIGFILE = '/opt/alerta/conf/alert-dynect.yaml'
 LOGFILE = '/var/log/alerta/alert-dynect.log'
 PIDFILE = '/var/run/alerta/alert-dynect.pid'
-DISABLE = '/opt/alerta/conf/alert-aws.disable'
+DISABLE = '/opt/alerta/conf/alert-dynect.disable'
 
 REPEAT_LIMIT = 10
 count = 0
