@@ -23,7 +23,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 from dynect.DynectDNS import DynectRest
 
 __program__ = 'alert-dynect'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -54,10 +54,6 @@ SEVERITY_CODE = {
     'INFORM':         6, # Informational
     'DEBUG':          7, # Debug
 }
-
-if 'proxy' in globalconf:
-    os.environ['http_proxy'] = globalconf['proxy']['http']
-    os.environ['https_proxy'] = globalconf['proxy']['https']
 
 class WorkerThread(threading.Thread):
 
@@ -205,7 +201,11 @@ def checkweight(parent, resource):
 
 def queryDynect():
 
-    global info
+    global info, globalconf
+
+    if 'proxy' in globalconf:
+        os.environ['http_proxy'] = globalconf['proxy']['http']
+        os.environ['https_proxy'] = globalconf['proxy']['https']
 
     logging.info('Quering DynECT to get the state of GSLBs')
 
@@ -287,7 +287,7 @@ def send_heartbeat():
         logging.error('Failed to send heartbeat to broker %s', e)
 
 def main():
-    global config, conn
+    global config, conn, globalconf
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-dynect[%(process)d] %(threadName)s %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Starting up DynECT GSLB monitor version %s', __version__)
@@ -302,6 +302,18 @@ def main():
         except OSError:
             pass
     file(PIDFILE, 'w').write(str(os.getpid()))
+
+    while os.path.isfile(DISABLE):
+        logging.warning('Disable flag exists (%s). Sleeping...', DISABLE)
+        time.sleep(120)
+
+    # Read in global configuration file
+    try:
+        globalconf = yaml.load(open(GLOBAL_CONF))
+        logging.info('Loaded %d global configurations OK', len(globalconf))
+    except Exception, e:
+        logging.warning('Failed to load global configuration: %s. Exit.', e)
+        sys.exit(1)
 
     # Connect to message broker
     logging.info('Connect to broker')
