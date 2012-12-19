@@ -16,9 +16,13 @@ except ImportError:
     import simplejson
 import urllib2, urllib
 import operator
-import pytz
+try:
+    import pytz
+except ImportError:
+    print 'Python timezone definitions are missing. Please install python-tz (Ubuntu) or pytz (Centos). Exiting...'
+    sys.exit(1)
 
-__version__ = '1.3.5'
+__version__ = '1.3.6'
 
 SEV = {
     'CRITICAL': 'Crit',
@@ -74,7 +78,6 @@ def main():
                       dest="timezone",
                       help="Set timezone (default: Europe/London)")
     parser.add_option("--minutes",
-                      "--mins",
                       type="int",
                       dest="minutes",
                       default=0,
@@ -108,7 +111,9 @@ def main():
                       "--service",
                       action="append",
                       dest="service",
-                      help="Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, Mutualisation, SharedSvcs")
+                      help="Service eg. R1, R2, Discussion, ContentAPI, Frontend, " +
+                           "FlexibleContent, Identity, Mobile, Soulmates, MicroApp, " +
+                           "Mutualisation, SharedSvcs, Network, Infrastructure")
     parser.add_option( "--not-service",
                       action="append",
                       dest="not_service")
@@ -147,7 +152,8 @@ def main():
                       "--group",
                       action="append",
                       dest="group",
-                      help="Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security")
+                      help="Event group eg. Application, Backup, Database, HA, " +
+                           "Hardware, System, OS, Performance, Storage, Security, Web")
     parser.add_option("--not-group",
                       action="append",
                       dest="not_group")
@@ -353,24 +359,48 @@ def main():
             print "    alert id: ^%s" % ','.join(options.alertid)
         if options.environment:
             print " environment: %s" % ','.join(options.environment)
+        if options.not_environment:
+            print " environment: (not) %s" % ','.join(options.not_environment)
         if options.service:
             print "     service: %s" % ','.join(options.service)
+        if options.not_service:
+            print "     service: (not) %s" % ','.join(options.not_service)
         if options.resource:
             print "    resource: %s" % ','.join(options.resource)
+        if options.not_resource:
+            print "    resource: (not) %s" % ','.join(options.not_resource)
         if options.origin:
             print "      origin: %s" % ','.join(options.origin)
+        if options.not_origin:
+            print "      origin: (not) %s" % ','.join(options.not_origin)
         if options.severity:
             print "    severity: %s" % ','.join(options.severity)
+        if options.not_severity:
+            print "    severity: (not) %s" % ','.join(options.not_severity)
         if options.status:
             print "      status: %s" % ','.join(options.status)
+        if options.not_status:
+            print "      status: (not) %s" % ','.join(options.not_status)
         if options.event:
             print "       event: %s" % ','.join(options.event)
+        if options.not_event:
+            print "       event: (not) %s" % ','.join(options.not_event)
         if options.group:
             print "       group: %s" % ','.join(options.group)
+        if options.not_group:
+            print "       group: (not) %s" % ','.join(options.not_group)
         if options.value:
             print "       value: %s" % ','.join(options.value)
+        if options.not_value:
+            print "       value: (not) %s" % ','.join(options.not_value)
         if options.text:
             print "        text: %s" % ','.join(options.text)
+        if options.not_text:
+            print "        text: (not) %s" % ','.join(options.not_text)
+        if options.tags:
+            print "        tags: %s" % ','.join(options.tags)
+        if options.not_tags:
+            print "        tags: (not) %s" % ','.join(options.not_tags)
         if options.limit:
             print "       count: %d" % options.limit
         print
