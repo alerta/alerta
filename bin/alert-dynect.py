@@ -36,7 +36,7 @@ DISABLE = '/opt/alerta/conf/alert-dynect.disable'
 REPEAT_LIMIT = 10
 count = 0
 
-_check_rate   = 900             # Check rate of alerts
+_check_rate   = 120             # Check rate of alerts
 
 # Global variables
 config = dict()
