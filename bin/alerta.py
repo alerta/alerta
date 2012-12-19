@@ -23,7 +23,7 @@ import logging
 import re
 
 __program__ = 'alerta'
-__version__ = '1.6.0'
+__version__ = '1.6.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts' # inbound
@@ -278,18 +278,17 @@ class WorkerThread(threading.Thread):
                 alert['expireTime']       = expireTime
                 alert['previousSeverity'] = 'UNKNOWN'
                 alert['repeat']           = False
+                alert['duplicateCount']   = 0
+                alert['status']           = 'OPEN'
+
+                alert['history'] = [ { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "event": alert['event'],
+                                     "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid } ]
+                alerts.insert(alert, safe=True)
+
                 if alert['severity'] != 'NORMAL':
                     status = 'OPEN'
                 else:
                     status = 'CLOSED'
-                alert['status'] = status
-
-                alerts.insert(alert, safe=True)
-                alerts.update(
-                    { "environment": alert['environment'], "resource": alert['resource'], "event": alert['event'] },
-                    { '$push': { "history": { "createTime": createTime, "receiveTime": receiveTime, "severity": alert['severity'], "event": alert['event'],
-                                 "severityCode": alert['severityCode'], "value": alert['value'], "text": alert['text'], "id": alertid }},
-                      '$set': { "duplicateCount": 0 }}, safe=True)
 
                 updateTime = datetime.datetime.utcnow()
                 updateTime = updateTime.replace(tzinfo=pytz.utc)
