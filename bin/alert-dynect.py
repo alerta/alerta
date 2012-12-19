@@ -27,6 +27,7 @@ __version__ = '1.0.1'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
+GLOBAL_CONF = '/opt/alerta/conf/alerta-global.yaml'
 DEFAULT_TIMEOUT = 86400
 CONFIGFILE = '/opt/alerta/conf/alert-dynect.yaml'
 LOGFILE = '/var/log/alerta/alert-dynect.log'
@@ -53,6 +54,10 @@ SEVERITY_CODE = {
     'INFORM':         6, # Informational
     'DEBUG':          7, # Debug
 }
+
+if 'proxy' in globalconf:
+    os.environ['http_proxy'] = globalconf['proxy']['http']
+    os.environ['https_proxy'] = globalconf['proxy']['https']
 
 class WorkerThread(threading.Thread):
 
