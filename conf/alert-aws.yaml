@@ -1,3 +1,6 @@
+
+filter: tags=cloud:AWS/EC2&status=OPEN|ACK|CLOSED|EXPIRED
+
 regions: [ 'eu-west-1','us-east-1']
 
 accounts:

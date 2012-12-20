@@ -23,11 +23,11 @@ import uuid
 import boto.ec2
 
 __program__ = 'alert-aws'
-__version__ = '1.0.7'
+__version__ = '1.0.8'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
-BASE_URL     = 'http://monitoring.guprod.gnl/alerta/api/v1'
+BASE_URL     = 'http://localhost/alerta/api/v1'
 
 DEFAULT_TIMEOUT = 86400
 WAIT_SECONDS = 60
@@ -60,11 +60,14 @@ def ec2_status():
 
     if 'endpoint' in globalconf:
         BASE_URL = '%s/alerta/api/v1' % globalconf['endpoint']
+    url = '%s/alerts?%s' % (BASE_URL, awsconf.get('filter','tags=cloud:AWS/EC2'))
+
     if 'proxy' in globalconf:
         os.environ['http_proxy'] = globalconf['proxy']['http']
         os.environ['https_proxy'] = globalconf['proxy']['https']
 
     last = info.copy()
+    info = dict()
 
     for account,keys in awsconf['accounts'].iteritems():
         access_key = keys.get('aws_access_key_id','')
@@ -113,7 +116,6 @@ def ec2_status():
                     info[i.id]['status'] = u'not-available:not-available'
 
     # Get list of all alerts from EC2
-    url = '%s/alerts?tags=cloud:AWS/EC2&status=OPEN|ACK|CLOSED' % BASE_URL  # tag filter on cloud:AWS/EC2
     logging.info('Get list of EC2 alerts from %s', url)
     try:
         response = json.loads(urllib2.urlopen(url, None, 15).read())['response']
@@ -136,10 +138,6 @@ def ec2_status():
             if resource.startswith('ip-'): # FIXME - transform ip-10-x-x-x to i-01234567
                 logging.debug('%s : Transforming resource %s -> %s', alertid, resource, lookup.get(resource, resource))
                 resource = lookup.get(resource, resource)
-
-            if alert['service'] == 'Ophan':
-                logging.warning('%s : Skip Ophan instance %s until we have proper credentials', alertid, resource)
-                continue
 
             # Delete alerts for instances that are no longer listed by EC2 API
             if resource not in info:
