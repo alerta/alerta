@@ -22,16 +22,16 @@ import re
 import requests
 
 __program__ = 'alert-dynect'
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 GLOBAL_CONF = '/opt/alerta/conf/alerta-global.yaml'
 DEFAULT_TIMEOUT = 86400
 CONFIGFILE = '/opt/alerta/conf/alert-dynect.yaml'
+DISABLE = '/opt/alerta/conf/alert-dynect.disable'
 LOGFILE = '/var/log/alerta/alert-dynect.log'
 PIDFILE = '/var/run/alerta/alert-dynect.pid'
-DISABLE = '/opt/alerta/conf/alert-dynect.disable'
 
 BASE_URL = 'https://api2.dynect.net'
 
@@ -45,7 +45,6 @@ config = dict()
 info = dict()
 last = dict()
 globalconf = dict()
-
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -213,8 +212,7 @@ def queryDynect():
     logging.info('Quering DynECT to get the state of GSLBs')
 
     if 'proxy' in globalconf:
-        print globalconf['proxy']['http']
-        proxies = {"http": "proxy:3128"}
+        proxies = {"http": globalconf['proxy']['http']}
 
     headers = {'content-type': 'application/json'}
 
