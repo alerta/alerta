@@ -19,8 +19,7 @@ import datetime
 import logging
 import uuid
 import re
-from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
-from dynect.DynectDNS import DynectRest
+import requests
 
 __program__ = 'alert-dynect'
 __version__ = '1.0.2'
@@ -34,6 +33,8 @@ LOGFILE = '/var/log/alerta/alert-dynect.log'
 PIDFILE = '/var/run/alerta/alert-dynect.pid'
 DISABLE = '/opt/alerta/conf/alert-dynect.disable'
 
+BASE_URL = 'https://api2.dynect.net'
+
 REPEAT_LIMIT = 10
 count = 0
 
@@ -43,6 +44,8 @@ _check_rate   = 120             # Check rate of alerts
 config = dict()
 info = dict()
 last = dict()
+globalconf = dict()
+
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -187,6 +190,8 @@ def init_config():
     repeats = config.get('repeats', REPEAT_LIMIT)
     count = repeats
 
+    del config['repeats']
+
     queryDynect()
     last = info.copy()
 
@@ -201,37 +206,43 @@ def checkweight(parent, resource):
 
 def queryDynect():
 
-    global info, globalconf
+    global info
 
-    if 'proxy' in globalconf:
-        os.environ['http_proxy'] = globalconf['proxy']['http']
-        os.environ['https_proxy'] = globalconf['proxy']['https']
+    proxies = {}
 
     logging.info('Quering DynECT to get the state of GSLBs')
 
+    if 'proxy' in globalconf:
+        print globalconf['proxy']['http']
+        proxies = {"http": "proxy:3128"}
+
+    headers = {'content-type': 'application/json'}
+
     # Creating DynECT API session 
     try:
-        rest_iface = DynectRest()
-        response = rest_iface.execute('/Session/', 'POST', config)
+
+        response = requests.post( BASE_URL + '/REST/Session/', data=json.dumps(config), headers=headers, proxies=proxies).json()
 
         if response['status'] != 'success':
             logging.error('Incorrect credentials')
             sys.exit(1)
 
+        headers['Auth-Token'] = response['data']['token']
+
         # Discover all the Zones in DynECT
-        response = rest_iface.execute('/Zone/', 'GET')
+        response = requests.get( BASE_URL +'/REST/Zone/', data=json.dumps(config), headers=headers, proxies=proxies).json()
         zone_resources = response['data']
 
         # Discover all the LoadBalancers
         for item in zone_resources:
             zone = item.split('/')[3]
-            response = rest_iface.execute('/LoadBalance/'+zone+'/','GET')
+            response = requests.get( BASE_URL +'/REST/LoadBalance/'+zone+'/', data=json.dumps(config), headers=headers, proxies=proxies).json()
             gslb = response['data']
 
             # Discover LoadBalancer pool information.
             for lb in gslb:
                 fqdn = lb.split('/')[4]
-                response = rest_iface.execute('/LoadBalance/'+zone+'/'+fqdn+'/','GET')
+                response = requests.get( BASE_URL + '/REST/LoadBalance/'+zone+'/'+fqdn+'/', data=json.dumps(config), headers=headers, proxies=proxies).json()
                 info['gslb-'+fqdn] = response['data']['status'], 'gslb-'+fqdn
 
                 for i in response['data']['pool']:
@@ -243,7 +254,8 @@ def queryDynect():
         logging.info('Finish quering and object discovery.')
         logging.info('GSLBs and Pools: %s', json.dumps(info))
 
-        rest_iface.execute('/Session/', 'DELETE')
+        response = requests.delete( BASE_URL + '/REST/Session/', data=json.dumps(config), headers=headers, proxies=proxies).json()
+        headers['Auth-Token'] = None
 
     except Exception, e:
         logging.error('Failed to discover GSLBs: %s', e)
@@ -303,17 +315,13 @@ def main():
             pass
     file(PIDFILE, 'w').write(str(os.getpid()))
 
-    while os.path.isfile(DISABLE):
-        logging.warning('Disable flag exists (%s). Sleeping...', DISABLE)
-        time.sleep(120)
-
     # Read in global configuration file
     try:
         globalconf = yaml.load(open(GLOBAL_CONF))
         logging.info('Loaded %d global configurations OK', len(globalconf))
-    except Exception, e:
+    except Exception,e:
         logging.warning('Failed to load global configuration: %s. Exit.', e)
-        sys.exit(1)
+        sys.exit(1)   
 
     # Connect to message broker
     logging.info('Connect to broker')
