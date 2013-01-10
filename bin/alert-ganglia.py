@@ -336,6 +336,15 @@ def main():
                     except (SyntaxError,NameError):
                         logging.error('Could not calculate %s value for %s => eval(%s)', rule['event'], resource, metric[resource]['value'])
                         continue
+                    except ZeroDivisionError:
+                        logging.debug('Could not calculate %s value for %s => eval(%s) (division by zero).  Setting to 0 instead.', rule['event'], resource, metric[resource]['value'])
+                        calculated_value = 0
+                        continue
+                    except:
+                        logging.error('Could not calculate %s value for %s => eval(%s) (threw unknown exception)', rule['event'], resource, metric[resource]['value'])
+                        continue
+
+                    logging.debug('For resource %s got calculated_value %s ', resource, calculated_value)
 
                     for ti in metric[resource]['thresholdInfo']:
                         sev,op,threshold = ti.split(':')
@@ -361,7 +370,7 @@ def main():
                             elif currentState[(resource, rule['event'])] == sev:                                                        # Threshold state has not changed
                                 currentCount[(resource, rule['event'], sev)] += 1
 
-                            logging.debug('currentState = %s, currentCount = %d', currentState[(resource, rule['event'])], currentCount[(resource, rule['event'], sev)])
+                            logging.debug('calculated_value = %s, currentState = %s, currentCount = %d', calculated_value, currentState[(resource, rule['event'])], currentCount[(resource, rule['event'], sev)])
 
                             # Determine if should send a repeat alert
                             try:
