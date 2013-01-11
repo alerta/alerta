@@ -26,12 +26,9 @@ __version__ = '1.0.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover                                                                                                                                                                                                 
 ALERT_QUEUE  = '/queue/alerts'
-#LOGFILE = '/var/log/alerta/alert-receiver.log'
-#PIDFILE = '/var/run/alerta/alert-receiver.pid'
-#CONFFILE = '/opt/alerta/conf/alert-receiver.yaml'
-LOGFILE = '/home/dnanini/alerta-dmv/alert-receiver.log'
-PIDFILE = '/home/dnanini/alerta-dmv/alert-receiver.pid'
-CONFIGFILE = '/home/dnanini/alerta-dmv/conf/alert-receiver.yaml'
+LOGFILE = '/var/log/alerta/alert-receiver.log'
+PIDFILE = '/var/run/alerta/alert-receiver.pid'
+CONFIGFILE = '/opt/alerta/conf/alert-receiver.yaml'
 
 config = dict()
 sock = list()
