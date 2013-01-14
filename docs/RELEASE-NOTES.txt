@@ -1,6 +1,17 @@
 Release Notes
 =============
 
+Alerta version 1.2.7
+--------------------
+
+* Fixup a couple of exceptions in alert-ganglia.py on thresholds that throw exceptions
+* Split DynEct monitoring into a receiver and monitor to work around proxy
+
+Alerta version 1.2.6
+--------------------
+
+* First cut at DynECT monitoring
+
 Alerta version 1.2.5
 --------------------
 
