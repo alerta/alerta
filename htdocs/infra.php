@@ -6,6 +6,7 @@
     <link href="css/bootstrap.css" rel="stylesheet">
     <link href="css/bootstrap-responsive.css" rel="stylesheet">
     <link href="css/custom.css" rel="stylesheet">
+    <meta http-equiv="refresh" content="900">
   </head>
 
   <body>
