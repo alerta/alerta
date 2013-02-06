@@ -117,10 +117,10 @@ class WorkerThread(threading.Thread):
                         text = 'GSLB status is %s.' % last[item][0]
 
                         if 'ok' in info[item][0]:
-                            event = 'GslbOK'
+                            event = 'Gslb'
                             severity = 'NORMAL'
                         else:
-                            event = 'GslbNotOK'
+                            event = 'Gslb'
                             severity = 'CRITICAL'
 
                     elif item.startswith('pool-'):
@@ -132,20 +132,20 @@ class WorkerThread(threading.Thread):
                         logging.info('Pool state change from %s to %s' % (info[item][0], last[item][0]))
 
                         if 'up:obey' in info[item][0] and checkweight(info[item][1], item) == True: 
-                            event = 'PoolUp'
+                            event = 'DynEctPool'
                             severity = 'NORMAL'
                             text = 'Pool status is normal'
                         else:
                             if 'down' in info[item][0]:
-                                event = 'PoolDown'
+                                event = 'DynEctPool'
                                 severity = 'MAJOR'
                                 text = 'Pool is down'
                             elif 'obey' not in info[item][0]:
-                                event = 'PoolServe'
+                                event = 'DynEctPool'
                                 severity = 'MAJOR'
                                 text = 'Pool with an incorrect serve mode'
                             elif checkweight(info[item][1], item) == False:
-                                event = 'PoolWeightError'
+                                event = 'DynEctPool'
                                 severity = 'MINOR'
                                 text = 'Pool with an incorrect weight'
 
