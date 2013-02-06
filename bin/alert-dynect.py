@@ -23,7 +23,7 @@ import socket
 from dynect.DynectDNS import DynectRest
 
 __program__ = 'alert-dynect'
-__version__ = '1.1.3'
+__version__ = '1.1.4'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
@@ -116,11 +116,10 @@ class WorkerThread(threading.Thread):
                         logging.info('GSLB state change from %s to %s' % (info[item][0], last[item][0]))
                         text = 'GSLB status is %s.' % last[item][0]
 
+                        event = 'Gslb'
                         if 'ok' in info[item][0]:
-                            event = 'GslbOK'
                             severity = 'NORMAL'
                         else:
-                            event = 'GslbNotOK'
                             severity = 'CRITICAL'
 
                     elif item.startswith('pool-'):
@@ -131,21 +130,18 @@ class WorkerThread(threading.Thread):
 
                         logging.info('Pool state change from %s to %s' % (info[item][0], last[item][0]))
 
+                        event = 'DynEctPool'
                         if 'up:obey' in info[item][0] and checkweight(info[item][1], item) == True: 
-                            event = 'PoolUp'
                             severity = 'NORMAL'
                             text = 'Pool status is normal'
                         else:
                             if 'down' in info[item][0]:
-                                event = 'PoolDown'
                                 severity = 'MAJOR'
                                 text = 'Pool is down'
                             elif 'obey' not in info[item][0]:
-                                event = 'PoolServe'
                                 severity = 'MAJOR'
                                 text = 'Pool with an incorrect serve mode'
                             elif checkweight(info[item][1], item) == False:
-                                event = 'PoolWeightError'
                                 severity = 'MINOR'
                                 text = 'Pool with an incorrect weight'
 

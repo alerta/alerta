@@ -1,6 +1,10 @@
 Release Notes
 =============
 
+Alerta version 1.2.8
+--------------------
+* Make alert-dynect.py use the same event names so that events correlate
+
 Alerta version 1.2.7
 --------------------
 
