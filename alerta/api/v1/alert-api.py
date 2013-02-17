@@ -79,7 +79,7 @@ def main():
     form = urlparse.parse_qs(os.environ['QUERY_STRING'])
     request = method + ' ' + uri.path
 
-    m = re.search(r'(PUT|POST) /alerta/app/v1/alerts/alert.json$', request)
+    m = re.search(r'(PUT|POST) /alerta/api/v1/alerts/alert.json$', request)
     if m:
         alert = data
 

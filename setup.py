@@ -4,13 +4,18 @@ from setuptools import setup
 from alerta import get_version
 
 setup(
-    name="Alerta",
+    name="alerta",
     version=get_version(),
-    packages= ['alerta'],
     description='Alerta monitoring framework',
-    license='Apache License 2.0',
     url='https://github.com/guardian/alerta',
+    license='Apache License 2.0',
     author='Nick Satterly',
     author_email='nick.satterly@guardian.co.uk',
+    packages= ['alerta'],
+    entry_points={
+        'console_scripts': [
+            'alert = alerta.shell:main'
+        ],
+    },
     keywords='alert monitoring system'
 )
