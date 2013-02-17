@@ -38,7 +38,7 @@ ALERTER_MAIL = 'alerta@guardian.co.uk'
 MAILING_LIST = ['nick.satterly@guardian.co.uk']
 TIMEZONE = 'Europe/London'
 
-DISABLE = '/opt/alerta/conf/alert-mailer.disable'
+DISABLE = '/opt/alerta/alerta/alert-mailer.disable'
 LOGFILE = '/var/log/alerta/alert-mailer.log'
 PIDFILE = '/var/run/alerta/alert-mailer.pid'
 

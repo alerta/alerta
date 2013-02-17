@@ -76,7 +76,7 @@ parser.add_option("-o",
                   type=int,
                   dest="timeout",
                   default=DEFAULT_TIMEOUT,
-                  help="Timeout in seconds that OPEN alert will persist in console.")
+                  help="Timeout in seconds that OPEN alert will persist in webapp.")
 parser.add_option("-q",
                   "--quiet",
                   action="store_true",

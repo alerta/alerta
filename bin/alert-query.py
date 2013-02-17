@@ -238,7 +238,7 @@ def main():
         server = options.server
     else:
         server = SERVER
-    API_URL = 'http://%s/alerta/api/v1/alerts' % server
+    API_URL = 'http://%s/alerta/app/v1/alerts' % server
 
     query = dict()
 

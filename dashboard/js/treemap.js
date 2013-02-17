@@ -33,7 +33,7 @@ var div = d3.select("#chart").append("div")
     .style("width", w + "px")
     .style("height", h + "px");
 
-d3.json('http://' + api_server + '/alerta/api/v1/alert-treemap.py', function(json) {
+d3.json('http://' + api_server + '/alerta/app/v1/alert-treemap.py', function(json) {
   div.data([json.response.treemap]).selectAll("div")
       .data(treemap.nodes)
     .enter().append("div")

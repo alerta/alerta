@@ -35,7 +35,7 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alerta.log'
 PIDFILE = '/var/run/alerta/alerta.pid'
-ALERTCONF = '/opt/alerta/conf/alerta.yaml'
+ALERTCONF = '/opt/alerta/alerta/alerta.yaml'
 PARSERDIR = '/opt/alerta/bin/parsers'
 
 NUM_THREADS = 4

@@ -1,0 +1,6 @@
+nose
+pymongo
+stomppy
+Flask
+Werkzeug
+Jinja2

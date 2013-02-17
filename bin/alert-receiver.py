@@ -28,7 +28,7 @@ BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 LOGFILE = '/var/log/alerta/alert-receiver.log'
 PIDFILE = '/var/run/alerta/alert-receiver.pid'
-CONFIGFILE = '/opt/alerta/conf/alert-receiver.yaml'
+CONFIGFILE = '/opt/alerta/alerta/alert-receiver.yaml'
 
 config = dict()
 sock = list()

@@ -30,8 +30,8 @@ DEFAULT_TIMEOUT = 86400
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-snmptrap.log'
-DISABLE = '/opt/alerta/conf/alert-snmptrap.disable'
-TRAPCONF = '/opt/alerta/conf/alert-snmptrap.yaml'
+DISABLE = '/opt/alerta/alerta/alert-snmptrap.disable'
+TRAPCONF = '/opt/alerta/alerta/alert-snmptrap.yaml'
 PARSERDIR = '/opt/alerta/bin/parsers'
 
 SEVERITY_CODE = {

@@ -27,17 +27,17 @@ __version__ = '1.0.8'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
-BASE_URL     = 'http://localhost/alerta/api/v1'
+BASE_URL     = 'http://localhost/alerta/app/v1'
 
 DEFAULT_TIMEOUT = 86400
 WAIT_SECONDS = 60
 
-GLOBAL_CONF = '/opt/alerta/conf/alerta-global.yaml'
+GLOBAL_CONF = '/opt/alerta/alerta/alerta-global.yaml'
 
 LOGFILE = '/var/log/alerta/alert-aws.log'
 PIDFILE = '/var/run/alerta/alert-aws.pid'
-DISABLE = '/opt/alerta/conf/alert-aws.disable'
-AWSCONF = '/opt/alerta/conf/alert-aws.yaml'
+DISABLE = '/opt/alerta/alerta/alert-aws.disable'
+AWSCONF = '/opt/alerta/alerta/alert-aws.yaml'
 
 SEVERITY_CODE = {
     # ITU RFC5674 -> Syslog RFC5424
@@ -59,7 +59,7 @@ def ec2_status():
     global conn, globalconf, awsconf, BASE_URL, info, last
 
     if 'endpoint' in globalconf:
-        BASE_URL = '%s/alerta/api/v1' % globalconf['endpoint']
+        BASE_URL = '%s/alerta/app/v1' % globalconf['endpoint']
     url = '%s/alerts?%s' % (BASE_URL, awsconf.get('filter','tags=cloud:AWS/EC2'))
 
     if 'proxy' in globalconf:

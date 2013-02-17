@@ -31,10 +31,10 @@ __version__ = '1.0.2'
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 NOTIFY_TOPIC = '/topic/notify'
 
-DISABLE = '/opt/alerta/conf/alert-notify.disable'
+DISABLE = '/opt/alerta/alerta/alert-notify.disable'
 LOGFILE = '/var/log/alerta/alert-notify.log'
 PIDFILE = '/var/run/alerta/alert-notify.pid'
-CONFIGFILE ='/opt/alerta/conf/alert-notify.yaml'
+CONFIGFILE ='/opt/alerta/alerta/alert-notify.yaml'
 GRACEPERIOD = 300
 API_SERVER = 'monitoring.guprod.gnl'
 SMTP_SERVER  = 'mx'

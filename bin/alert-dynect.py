@@ -27,10 +27,10 @@ __version__ = '1.1.3'
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
-GLOBAL_CONF = '/opt/alerta/conf/alerta-global.yaml'
+GLOBAL_CONF = '/opt/alerta/alerta/alerta-global.yaml'
 DEFAULT_TIMEOUT = 86400
-CONFIGFILE = '/opt/alerta/conf/alert-dynect.yaml'
-DISABLE = '/opt/alerta/conf/alert-dynect.disable'
+CONFIGFILE = '/opt/alerta/alerta/alert-dynect.yaml'
+DISABLE = '/opt/alerta/alerta/alert-dynect.disable'
 LOGFILE = '/var/log/alerta/alert-dynect.log'
 PIDFILE = '/var/run/alerta/alert-dynect.pid'
 

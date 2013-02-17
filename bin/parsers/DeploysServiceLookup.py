@@ -3,7 +3,7 @@ if alert['resource'].startswith('R1'):
     alert['service'] = [ 'R1' ]
 elif alert['resource'].startswith('R2'):
     alert['service'] = [ 'R2' ]
-elif 'content-api' in alert['resource'].lower():
+elif 'content-app' in alert['resource'].lower():
     alert['service'] = [ 'ContentAPI' ]
 elif alert['resource'].startswith('frontend'):
     alert['service'] = [ 'Frontend' ]

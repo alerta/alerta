@@ -24,8 +24,8 @@
     
     e.g. ACTIVEMQ_OPTS="-Xmx1024M -Dorg.apache.activemq.UseDedicatedTaskRunner=false"
     
-    To run ActiveMQ with this configuration add xbean:conf/activemq-stomp.xml to your command
-    e.g. $ bin/activemq console xbean:conf/activemq-stomp.xml
+    To run ActiveMQ with this configuration add xbean:alerta/activemq-stomp.xml to your command
+    e.g. $ bin/activemq webapp xbean:alerta/activemq-stomp.xml
  -->
 <beans
   xmlns="http://www.springframework.org/schema/beans"

@@ -31,7 +31,7 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 MAX_HISTORY = -10 # maximum number of history log entries to return (0 = no history)
 
-CONFIGFILE = '/opt/alerta/conf/alerta-global.yaml'
+CONFIGFILE = '/opt/alerta/alerta/alerta-global.yaml'
 LOGFILE = '/var/log/alerta/alert-dbapi.log'
 
 # Extend JSON Encoder to support ISO 8601 format dates
@@ -90,7 +90,7 @@ def main():
     if config and 'warning' in config:
         status['response']['warning'] = config['warning']
 
-    m = re.search(r'GET /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
+    m = re.search(r'GET /alerta/app/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
     if m:
         query['_id'] = m.group('id')
 
@@ -120,7 +120,7 @@ def main():
             { '$inc': { "count": 1, "totalTime": diff}},
             True)
 
-    m = re.search(r'GET /alerta/api/v1/alerts$', request)  # hide-alert-details, sort-by 
+    m = re.search(r'GET /alerta/app/v1/alerts$', request)  # hide-alert-details, sort-by
     if m:
         logging.debug('form %s' % form)
 
@@ -303,7 +303,7 @@ def main():
             { '$inc': { "count": 1, "totalTime": diff}},
             True)
 
-    m = re.search(r'(PUT|POST) /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
+    m = re.search(r'(PUT|POST) /alerta/app/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
     if m:
         alertid = m.group('id')
         query['_id'] = dict()
@@ -371,7 +371,7 @@ def main():
             { '$inc': { "count": 1, "totalTime": diff}},
             True)
 
-    m = re.search(r'PUT /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)/tag$', request)
+    m = re.search(r'PUT /alerta/app/v1/alerts/alert/(?P<id>[a-z0-9-]+)/tag$', request)
     if m:
         query['_id'] = dict()
         query['_id']['$regex'] = '^'+m.group('id')
@@ -392,7 +392,7 @@ def main():
             { '$inc': { "count": 1, "totalTime": diff}},
             True)
 
-    m = re.search(r'DELETE /alerta/api/v1/alerts/alert/(?P<id>\S+)$', request)
+    m = re.search(r'DELETE /alerta/app/v1/alerts/alert/(?P<id>\S+)$', request)
     if m:
         query['_id'] = dict()
         query['_id']['$regex'] = '^'+m.group('id')
@@ -412,7 +412,7 @@ def main():
             { '$inc': { "count": 1, "totalTime": diff}},
             True)
 
-    m = re.search(r'GET /alerta/api/v1/resources$', request)
+    m = re.search(r'GET /alerta/app/v1/resources$', request)
     if m:
         logging.debug('form %s' % form)
 

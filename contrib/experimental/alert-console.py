@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ########################################
 #
-# alert-console.py - Alert Console
+# alert-webapp.py - Alert Console
 #
 ########################################
 
@@ -23,7 +23,7 @@ import datetime
 import pytz
 
 __title__ = 'Alert Console'
-__program__ = 'alert-console'
+__program__ = 'alert-webapp'
 __version__ = '1.0.2'
 
 BROKER_LIST  = [('monitoring.guprod.gnl', 61613),('localhost', 61613)] # list of brokers for failover

@@ -144,7 +144,7 @@
   * ============== */
 
   $(function () {
-    $('body').on('click.alert.data-api', dismiss, Alert.prototype.close)
+    $('body').on('click.alert.data-app', dismiss, Alert.prototype.close)
   })
 
 }(window.jQuery);/* ============================================================
@@ -235,7 +235,7 @@
   * =============== */
 
   $(function () {
-    $('body').on('click.button.data-api', '[data-toggle^=button]', function ( e ) {
+    $('body').on('click.button.data-app', '[data-toggle^=button]', function ( e ) {
       var $btn = $(e.target)
       if (!$btn.hasClass('btn')) $btn = $btn.closest('.btn')
       $btn.button('toggle')
@@ -401,7 +401,7 @@
   * ================= */
 
   $(function () {
-    $('body').on('click.carousel.data-api', '[data-slide]', function ( e ) {
+    $('body').on('click.carousel.data-app', '[data-slide]', function ( e ) {
       var $this = $(this), href
         , $target = $($this.attr('data-target') || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '')) //strip for ie7
         , options = !$target.data('modal') && $.extend({}, $target.data(), $this.data())
@@ -556,7 +556,7 @@
   * ==================== */
 
   $(function () {
-    $('body').on('click.collapse.data-api', '[data-toggle=collapse]', function ( e ) {
+    $('body').on('click.collapse.data-app', '[data-toggle=collapse]', function ( e ) {
       var $this = $(this), href
         , target = $this.attr('data-target')
           || e.preventDefault()
@@ -596,8 +596,8 @@
 
   var toggle = '[data-toggle="dropdown"]'
     , Dropdown = function (element) {
-        var $el = $(element).on('click.dropdown.data-api', this.toggle)
-        $('html').on('click.dropdown.data-api', function () {
+        var $el = $(element).on('click.dropdown.data-app', this.toggle)
+        $('html').on('click.dropdown.data-app', function () {
           $el.parent().removeClass('open')
         })
       }
@@ -659,10 +659,10 @@
    * =================================== */
 
   $(function () {
-    $('html').on('click.dropdown.data-api', clearMenus)
+    $('html').on('click.dropdown.data-app', clearMenus)
     $('body')
       .on('click.dropdown', '.dropdown form', function (e) { e.stopPropagation() })
-      .on('click.dropdown.data-api', toggle, Dropdown.prototype.toggle)
+      .on('click.dropdown.data-app', toggle, Dropdown.prototype.toggle)
   })
 
 }(window.jQuery);/* =========================================================
@@ -872,7 +872,7 @@
   * ============== */
 
   $(function () {
-    $('body').on('click.modal.data-api', '[data-toggle="modal"]', function ( e ) {
+    $('body').on('click.modal.data-app', '[data-toggle="modal"]', function ( e ) {
       var $this = $(this), href
         , $target = $($this.attr('data-target') || (href = $this.attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '')) //strip for ie7
         , option = $target.data('modal') ? 'toggle' : $.extend({}, $target.data(), $this.data())
@@ -1287,7 +1287,7 @@
       , $element = $(element).is('body') ? $(window) : $(element)
       , href
     this.options = $.extend({}, $.fn.scrollspy.defaults, options)
-    this.$scrollElement = $element.on('scroll.scroll.data-api', process)
+    this.$scrollElement = $element.on('scroll.scroll.data-app', process)
     this.selector = (this.options.target
       || ((href = $(element).attr('href')) && href.replace(/.*(?=#[^\s]+$)/, '')) //strip for ie7
       || '') + ' .nav li > a'
@@ -1532,7 +1532,7 @@
   * ============ */
 
   $(function () {
-    $('body').on('click.tab.data-api', '[data-toggle="tab"], [data-toggle="pill"]', function (e) {
+    $('body').on('click.tab.data-app', '[data-toggle="tab"], [data-toggle="pill"]', function (e) {
       e.preventDefault()
       $(this).tab('show')
     })
@@ -1814,7 +1814,7 @@
   * ================== */
 
   $(function () {
-    $('body').on('focus.typeahead.data-api', '[data-provide="typeahead"]', function (e) {
+    $('body').on('focus.typeahead.data-app', '[data-provide="typeahead"]', function (e) {
       var $this = $(this)
       if ($this.data('typeahead')) return
       e.preventDefault()

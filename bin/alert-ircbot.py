@@ -29,7 +29,7 @@ IRC_USER     = 'alerta'
 
 API_SERVER = 'monitoring.guprod.gnl'
 
-DISABLE = '/opt/alerta/conf/alert-ircbot.disable'
+DISABLE = '/opt/alerta/alerta/alert-ircbot.disable'
 LOGFILE = '/var/log/alerta/alert-ircbot.log'
 PIDFILE = '/var/run/alerta/alert-ircbot.pid'
 
@@ -114,7 +114,7 @@ class TokenTopUp(threading.Thread):
 
 def ack_alert(alertid):
 
-    url = "http://%s/alerta/api/v1/alerts/alert/%s" % (API_SERVER, alertid)
+    url = "http://%s/alerta/app/v1/alerts/alert/%s" % (API_SERVER, alertid)
     params = json.dumps({'status':'ACK'})
     logging.info('ACK request %s', url)
 

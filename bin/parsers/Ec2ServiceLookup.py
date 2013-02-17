@@ -8,7 +8,7 @@ elif any(tag.startswith('cluster:frontend') for tag in alert['tags']):
 # geolocation -> Soulmates
 elif any(tag.startswith('cluster:soulmates') for tag in alert['tags']):
     alert['service'] = [ 'Soulmates' ]
-elif any(tag.startswith('cluster:geolocation-api') for tag in alert['tags']):
+elif any(tag.startswith('cluster:geolocation-app') for tag in alert['tags']):
     alert['service'] = [ 'Soulmates' ]
 # discussion-app -> Discussion
 # renderer -> Discussion

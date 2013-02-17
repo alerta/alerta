@@ -33,7 +33,7 @@ ALERT_QUEUE  = '/queue/alerts'
 DEFAULT_TIMEOUT = 86400
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
-URLFILE = '/opt/alerta/conf/alert-urlmon.yaml'
+URLFILE = '/opt/alerta/alerta/alert-urlmon.yaml'
 LOGFILE = '/var/log/alerta/alert-urlmon.log'
 PIDFILE = '/var/run/alerta/alert-urlmon.pid'
 
@@ -42,7 +42,7 @@ NUM_THREADS = 10
 
 GMETRIC_SEND = True
 GMETRIC_CMD = '/usr/bin/gmetric'
-GMETRIC_OPTIONS = '--spoof 10.1.1.1:urlmon --conf /etc/ganglia/alerta/gmond-alerta.conf'
+GMETRIC_OPTIONS = '--spoof 10.1.1.1:urlmon --alerta /etc/ganglia/alerta/gmond-alerta.alerta'
 
 HTTP_ALERTS = [
     'HttpConnectionError',

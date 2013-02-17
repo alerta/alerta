@@ -33,7 +33,7 @@ WAIT_SECONDS = 120
 API_SERVER = 'localhost:8080'
 REQUEST_TIMEOUT = 30
 
-RULESFILE = '/opt/alerta/conf/alert-ganglia.yaml'
+RULESFILE = '/opt/alerta/alerta/alert-ganglia.yaml'
 LOGFILE = '/var/log/alerta/alert-ganglia.log'
 PIDFILE = '/var/run/alerta/alert-ganglia.pid'
 
@@ -54,7 +54,7 @@ previousSeverity = dict()
 
 def get_metrics(filter):
 
-    url = "http://%s/ganglia/api/v1/metrics?%s" % (API_SERVER, filter)
+    url = "http://%s/ganglia/app/v1/metrics?%s" % (API_SERVER, filter)
     logging.info('Metric request %s', url)
 
     try:

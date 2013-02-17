@@ -33,8 +33,8 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 
 LOGFILE = '/var/log/alerta/alert-syslog.log'
 PIDFILE = '/var/run/alerta/alert-syslog.pid'
-DISABLE = '/opt/alerta/conf/alert-syslog.disable'
-SYSLOGCONF = '/opt/alerta/conf/alert-syslog.yaml'
+DISABLE = '/opt/alerta/alerta/alert-syslog.disable'
+SYSLOGCONF = '/opt/alerta/alerta/alert-syslog.yaml'
 PARSERDIR = '/opt/alerta/bin/parsers'
 
 SEVERITY_CODE = {

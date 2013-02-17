@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ########################################
 #
-# alerta-api.py - Alerter New Alert API
+# alerta-app.py - Alerter New Alert API
 #
 ########################################
 
@@ -25,7 +25,7 @@ BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'
 EXPIRATION_TIME = 600 # seconds = 10 minutes
 
-LOGFILE = '/var/log/alerta/alert-api.log'
+LOGFILE = '/var/log/alerta/alert-app.log'
 
 VALID_SEVERITY    = [ 'CRITICAL', 'MAJOR', 'MINOR', 'WARNING', 'NORMAL', 'INFORM', 'DEBUG' ]
 VALID_ENVIRONMENT = [ 'PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP','INFRA' ]
@@ -53,7 +53,7 @@ def main():
 
     start = time.time()
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-api[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s alert-app[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
     logging.info('Received HTTP request %s %s' % (os.environ['REQUEST_METHOD'], os.environ['REQUEST_URI']))
 
     status = dict()
@@ -79,7 +79,7 @@ def main():
     form = urlparse.parse_qs(os.environ['QUERY_STRING'])
     request = method + ' ' + uri.path
 
-    m = re.search(r'(PUT|POST) /alerta/api/v1/alerts/alert.json$', request)
+    m = re.search(r'(PUT|POST) /alerta/app/v1/alerts/alert.json$', request)
     if m:
         alert = data
 
@@ -121,7 +121,7 @@ def main():
             alert['type']          = 'exceptionAlert'
             alert['summary']       = '%s - %s %s is %s on %s %s' % (','.join(alert['environment']), alert['severity'].upper(), alert['event'], alert['value'], ','.join(alert['service']), alert['resource'])
             alert['createTime']    = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (createTime.microsecond//1000)
-            alert['origin']        = 'alert-api/%s' % os.uname()[1]
+            alert['origin']        = 'alert-app/%s' % os.uname()[1]
 
             logging.info('%s : %s', alertid, json.dumps(alert))
 
