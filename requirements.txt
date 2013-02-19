@@ -2,5 +2,6 @@ nose
 pymongo
 stomppy
 Flask
+Flask-PyMongo
 Werkzeug
 Jinja2

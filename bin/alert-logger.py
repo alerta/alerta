@@ -8,10 +8,7 @@
 import os
 import sys
 import time
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import json
 import stomp
 import logging
 import urllib2
