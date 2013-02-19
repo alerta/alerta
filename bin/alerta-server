@@ -1,26 +1,25 @@
 #!/usr/bin/env python
 ########################################
 #
-# alerta.py - Alert Server Module
+# alert-server.py - Alert Server Module
 #
 ########################################
 
 import os
 import sys
 import time
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import json
 import yaml
 import threading
-from Queue import Queue
-import stomp
-import pymongo
 import datetime
-import pytz
 import logging
-import re
+
+from Queue import Queue
+
+import stompy
+import pymongo
+import pytz
+
 
 __program__ = 'alerta'
 __version__ = '1.6.1'

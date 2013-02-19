@@ -1,6 +1,7 @@
 """ Possible alert severity codes.
 
 See ITU-T perceived severity model M.3100 and CCITT Rec X.736
+http://tools.ietf.org/html/rfc5674
 http://www.itu.int/rec/T-REC-M.3100
 http://www.itu.int/rec/T-REC-X.736-199201-I
 """
@@ -31,7 +32,7 @@ INDETERMINATE = 'Indeterminate'
 
 ALL = [CRITICAL, MAJOR, MINOR, WARNING, NORMAL, CLEAR, INFORM, DEBUG, AUTH, UNKNOWN, INDETERMINATE]
 
-_NAME_TO_CODE = {
+_SEVERITY_MAP = {
     CRITICAL: CRITICAL_SEV_CODE,
     MAJOR: MAJOR_SEV_CODE,
     MINOR: MINOR_SEV_CODE,
@@ -47,4 +48,4 @@ _NAME_TO_CODE = {
 
 
 def name_to_code(name):
-    return _NAME_TO_CODE.get(name, UNKNOWN_CODE)
+    return _SEVERITY_MAP.get(name, UNKNOWN_SEV_CODE)

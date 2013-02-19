@@ -8,7 +8,8 @@ __version__ = '1.3.0'
 
 DEFAULT_TIMEOUT = 3600
 
-logger = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
+
 
 def main():
     """

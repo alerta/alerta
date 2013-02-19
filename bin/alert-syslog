@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+########################################
+#
+# alert-syslog.py - Alert Syslog Receiver
+#
+########################################
+
+import os
+import sys
+
+possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
+                                                os.pardir,
+                                                os.pardir))
+if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
+    sys.path.insert(0, possible_topdir)
+
+from alerta.common import config
+from alerta.common import log as logging
+from alerta.common.daemon import Daemon
+
+CONF = config.CONF
+
+__program__ = 'alert-syslog'
+__version__ = '1.4.0'
+
+if __name__ == '__main__':
+    config.parse_args(sys.argv)
+    logging.setup(__program__)
+    if not CONF.foreground:
+        daemon = Daemon(__program__)
+        daemon.start()

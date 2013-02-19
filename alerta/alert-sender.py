@@ -9,16 +9,7 @@
 import os
 import sys
 import optparse
-try:
-    import json
-except ImportError:
-    import simplejson as json
-from optparse import OptionParser
-try:
-    import stomp
-except ImportError:
-    print >>sys.stderr, 'ERROR: You need to install the stomp python module'
-    sys.exit(1)
+import json
 import time
 import datetime
 import logging

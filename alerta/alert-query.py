@@ -10,10 +10,7 @@ import sys
 from optparse import OptionParser
 import time
 import datetime
-try:
-    import json
-except ImportError:
-    import simplejson
+import json
 import urllib2, urllib
 import operator
 try:

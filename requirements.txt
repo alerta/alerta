@@ -1,6 +1,6 @@
 nose
 pymongo
-stomppy
+kombu
 Flask
 Flask-PyMongo
 Werkzeug
