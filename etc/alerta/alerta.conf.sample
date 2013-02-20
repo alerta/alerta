@@ -1,0 +1,29 @@
+[DEFAULT]
+# List of directories to load parser definitions from (separated by ',').
+parsers_path=/opt/alerta/etc/conf.d,/usr/share/local/parsers
+
+# Enable logging to syslog
+# Default value is False
+use_syslog=False
+
+# Which syslog facility to use.
+# Valid values include auth, authpriv, syslog, user0, user1...
+# Default value is 'syslog'
+syslog_log_facility=syslog
+
+# Which messages to log.
+# INFO means log all usage
+# ERROR means only log unsuccessful attempts
+syslog_log_level=ERROR
+
+[alerta]
+
+
+[alert-api]
+version=v2
+endpoint=http://127.0.0.1/alerta/api/%(version)s
+
+[alert-syslog]
+
+
+[alert-logger]

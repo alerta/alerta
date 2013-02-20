@@ -21,7 +21,7 @@ __program__ = 'test-daemon'
 
 if __name__ == '__main__':
 
-    config.parse_args(sys.argv)
+    config.parse_args(sys.argv, version='1.1')
     logging.setup('test-daemon')
     LOG = logging.getLogger('test-daemon')
 

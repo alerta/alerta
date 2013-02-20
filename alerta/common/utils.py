@@ -1,6 +1,10 @@
 """Utilities and helper functions."""
 
+
 class Bunch:
+    """
+    Usage: print Bunch({'a':1, 'b':{'foo':2}}).b.foo
+    """
     def __init__(self):
         pass
 
