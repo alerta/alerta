@@ -4,8 +4,6 @@
 import logging
 import logging.handlers
 
-from logging import getLogger
-
 from alerta.common import config
 
 CONF = config.CONF
@@ -17,11 +15,13 @@ _DEFAULT_LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 def setup(name):
     """Setup logging."""
 
-    log_root = logging.getLogger(name)
+    log_root = getLogger(name)
 
     if CONF.use_syslog:
         facility = 'local7'  # TODO(nsatterl): import syslog ???
-        syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
+        # syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
+        # TODO(nsatterl): set for Mac OS at the moment
+        syslog = logging.handlers.SysLogHandler(address='/var/run/syslog', facility=facility)
         log_root.addHandler(syslog)
 
     if CONF.logpath:
@@ -45,6 +45,14 @@ def setup(name):
         log_root.setLevel(logging.INFO)
     else:
         log_root.setLevel(logging.WARNING)
+
+
+def getLogger(name=None):
+
+    if name:
+        return logging.getLogger(name)
+    else:
+        return logging.root
 
 
 # NOTE: From OpenStack logging module

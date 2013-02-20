@@ -1,5 +1,6 @@
 [DEFAULT]
 # List of directories to load parser definitions from (separated by ',').
+# TODO(nsatterl): not supported yet
 parsers_path=/opt/alerta/etc/conf.d,/usr/share/local/parsers
 
 # Enable logging to syslog
@@ -9,12 +10,18 @@ use_syslog=False
 # Which syslog facility to use.
 # Valid values include auth, authpriv, syslog, user0, user1...
 # Default value is 'syslog'
+# TODO(nsatterl): not supported yet
 syslog_log_facility=syslog
 
 # Which messages to log.
 # INFO means log all usage
 # ERROR means only log unsuccessful attempts
+# TODO(nsatterl): not supported yet
 syslog_log_level=ERROR
+
+# Linux: /dev/log MacOS: /var/run/syslog
+# TODO(nsatterl): not supported yet
+syslog_address=/var/run/syslog
 
 [alerta]
 

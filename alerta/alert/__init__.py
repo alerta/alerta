@@ -6,7 +6,7 @@ import json
 from uuid import uuid4
 
 from alerta.alert import severity
-from alerta.log import logging
+from alerta.common import log as logging
 
 _DEFAULT_TIMEOUT = 3600  # default number of seconds before alert is EXPIRED
 

@@ -37,11 +37,13 @@ import sys
 import time
 import atexit
 
-from signal import SIGTERM
-
 from alerta.common import log as logging
 
+from signal import SIGTERM
+
 _DEFAULT_WAIT_ON_DISABLE = 120  # number of seconds to idle before checking disable flag again
+
+LOG = logging.getLogger(__name__)
 
 
 class Daemon:
@@ -51,6 +53,8 @@ class Daemon:
     Usage: subclass the Daemon class and override the run() method
     """
     def __init__(self, prog, pidfile=None, disable_flag=None, logfile=None, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
+
+        logging.setup(__name__)
 
         self.prog = prog
 
@@ -130,7 +134,6 @@ class Daemon:
         # Start the daemon
         self.daemonize()
         self.run()
-        print "start.end"
 
     def stop(self):
         """
@@ -172,17 +175,8 @@ class Daemon:
         self.stop()
         self.start()
 
-    def run(self):
-        self.running = True
-
-        while os.path.isfile(self.disable_flag):
-            logging.warning('Disable flag exists (%s). Sleeping...', self.disable_flag)
-            time.sleep(_DEFAULT_WAIT_ON_DISABLE)
-
-        while not self.shuttingdown:
-            time.sleep(1)
-
-        self.running = False
-
     def getpid(self):
         return self.pid
+
+    def run(self):
+        pass
