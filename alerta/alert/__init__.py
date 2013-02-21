@@ -62,10 +62,10 @@ class Alert(object):
         return self.alertid
 
     def get_header(self):
-        return json.dumps(self.header, indent=4)
+        return self.header
 
     def get_body(self):
-        return json.dumps(self.alert, indent=4)
+        return json.dumps(self.alert)
 
 
 class Heartbeat(object):
@@ -101,10 +101,9 @@ class Heartbeat(object):
         return self.heartbeatid
 
     def get_header(self):
-        LOG.debug(json.dumps(self.header, indent=4))
-        return json.dumps(self.header, indent=4)
+        return self.header
 
     def get_body(self):
-        return json.dumps(self.heartbeat, indent=4)
+        return json.dumps(self.heartbeat)
 
 

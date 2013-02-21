@@ -3,17 +3,9 @@ import sys
 import argparse
 import ConfigParser
 
-import log as logging
 from alerta.common.utils import Bunch
-#from alerta.common import log as logging  # FIXME(nsatterl): circular import?
-
-# TODO(nsatterl): do i set lots of global defaults here?
-# _DEFAULT_MONGO_CONNECTION = 'sqlite:///' + paths.state_path_def('$sqlite_db')
-
-DEFAULT_PORT = 8765
 
 CONF = Bunch()  # config options can be accessed using CONF.verbose or CONF.use_syslog
-LOG = logging.getLogger(__name__)
 
 
 def parse_args(argv, prog=None, version='unknown'):
@@ -47,6 +39,7 @@ def parse_args(argv, prog=None, version='unknown'):
 
         'syslog_udp_port': 514,
         'syslog_tcp_port': 514,
+        'syslog_facility': 'local7',
     }
     CONF.Load(SYSTEM_DEFAULTS)
 

@@ -16,7 +16,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.syslog import SyslogDaemon
+from alerta.syslog.daemon import SyslogDaemon
 
 __version__ = '1.2.0'
 
@@ -25,7 +25,7 @@ CONF = config.CONF
 
 if __name__ == '__main__':
     config.parse_args(sys.argv, version=__version__)
-    logging.setup('alerta.syslog')
+    logging.setup('alerta')
     syslog = SyslogDaemon('alert-syslog')
     syslog.start()
 
