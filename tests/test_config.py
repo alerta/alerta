@@ -16,5 +16,5 @@ def parse_args(argv, prog=None, version='unknown'):
 
 
 # print 'bug url = %s' % CONF.
-print 'bug logpath = %s' % parser.get('bug_tracker', 'logpath')
-print 'wiki logpath = %s' % parser.get('wiki', 'logpath')
+    print 'bug logpath = %s' % parser.get('bug_tracker', 'logpath')
+    print 'wiki logpath = %s' % parser.get('wiki', 'logpath')

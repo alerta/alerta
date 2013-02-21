@@ -16,18 +16,17 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.common.daemon import Daemon
+from alerta.syslog import SyslogDaemon
 
+__version__ = '1.2.0'
+
+LOG = logging.getLogger('alerta.syslog')
 CONF = config.CONF
 
-__program__ = 'alert-syslog'
-__version__ = '1.4.0'
-
 if __name__ == '__main__':
-    config.parse_args(sys.argv)
-    logging.setup(__program__)
-    if not CONF.foreground:
-        daemon = Daemon(__program__)
-        daemon.start()
+    config.parse_args(sys.argv, version=__version__)
+    logging.setup('alerta.syslog')
+    syslog = SyslogDaemon('alert-syslog')
+    syslog.start()
 
 

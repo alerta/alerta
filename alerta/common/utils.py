@@ -13,3 +13,9 @@ class Bunch:
             if isinstance(v, dict):
                 v = Bunch(v)
             self.__dict__[k] = v
+
+    def __str__(self):
+        state = ["%s=%r" % (attribute, value)
+                 for (attribute, value)
+                 in self.__dict__.items()]
+        return '%s(%s)' % (self.__class__.__name__, state)

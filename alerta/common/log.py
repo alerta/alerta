@@ -1,6 +1,6 @@
 
 # TODO(nsatterl): log exceptions (checkout how OpenStack do it)
-
+import socket
 import logging
 import logging.handlers
 
@@ -15,13 +15,16 @@ _DEFAULT_LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 def setup(name):
     """Setup logging."""
 
+    logging.basicConfig()
+    return
+
     log_root = getLogger(name)
 
     if CONF.use_syslog:
         facility = 'local7'  # TODO(nsatterl): import syslog ???
         # syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
         # TODO(nsatterl): set for Mac OS at the moment
-        syslog = logging.handlers.SysLogHandler(address='/var/run/syslog', facility=facility)
+        syslog = logging.handlers.SysLogHandler(address=('localhost', 514), facility=facility, socktype=socket.SOCK_STREAM)
         log_root.addHandler(syslog)
 
     if CONF.logpath:
@@ -49,13 +52,15 @@ def setup(name):
 
 def getLogger(name=None):
 
+    return logging.getLogger(name)
+
     if name:
         return logging.getLogger(name)
     else:
         return logging.root
 
 
-# NOTE: From OpenStack logging module
+# TODO(nsatterl): enable color output
 class ColorHandler(logging.StreamHandler):
     LEVEL_COLORS = {
         logging.DEBUG: '\033[00;32m',  # GREEN

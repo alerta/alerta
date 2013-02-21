@@ -3,7 +3,9 @@ import sys
 import argparse
 import ConfigParser
 
+import log as logging
 from alerta.common.utils import Bunch
+#from alerta.common import log as logging  # FIXME(nsatterl): circular import?
 
 # TODO(nsatterl): do i set lots of global defaults here?
 # _DEFAULT_MONGO_CONNECTION = 'sqlite:///' + paths.state_path_def('$sqlite_db')
@@ -11,6 +13,7 @@ from alerta.common.utils import Bunch
 DEFAULT_PORT = 8765
 
 CONF = Bunch()  # config options can be accessed using CONF.verbose or CONF.use_syslog
+LOG = logging.getLogger(__name__)
 
 
 def parse_args(argv, prog=None, version='unknown'):
@@ -19,6 +22,7 @@ def parse_args(argv, prog=None, version='unknown'):
         prog = os.path.basename(sys.argv[0]).rstrip('.py')
 
     OPTION_DEFAULTS = {
+
         'version': 'unknown',
         'debug': False,
         'verbose': False,
@@ -27,6 +31,24 @@ def parse_args(argv, prog=None, version='unknown'):
         'use_stderr': False,
         'foreground': False,
     }
+
+    SYSTEM_DEFAULTS = {
+
+        'stomp_host': 'localhost',
+        'stomp_port': 61613,
+        'stomp_queue': '/queue/alerts',
+
+        'rabbit_host': 'localhost',
+        'rabbit_port': 5672,
+        'rabbit_use_ssl': False,
+        'rabbit_userid': 'guest',
+        'rabbit_password': 'guest',
+        'rabbit_virtual_host': '/',
+
+        'syslog_udp_port': 514,
+        'syslog_tcp_port': 514,
+    }
+    CONF.Load(SYSTEM_DEFAULTS)
 
     cfg_parser = argparse.ArgumentParser(
         add_help=False
@@ -45,10 +67,14 @@ def parse_args(argv, prog=None, version='unknown'):
         config.read([args.conf_file])
         if config.has_section(prog):
             for name in config.options(prog):
-                if name not in OPTION_DEFAULTS or OPTION_DEFAULTS[name] not in (True, False):
-                    defaults[name] = config.get(prog, name)
-                else:
+                if (OPTION_DEFAULTS.get(name, None) in (True, False) or
+                         SYSTEM_DEFAULTS.get(name, None) in (True, False)):
                     defaults[name] = config.getboolean(prog, name)
+                elif (isinstance(OPTION_DEFAULTS.get(name, None), int) or
+                        isinstance(SYSTEM_DEFAULTS.get(name, None), int)):
+                    defaults[name] = config.getint(prog, name)
+                else:
+                    defaults[name] = config.get(prog, name)
 
     parser = argparse.ArgumentParser(
         prog=prog,
@@ -101,3 +127,4 @@ def parse_args(argv, prog=None, version='unknown'):
     args = parser.parse_args(argv_left)
     CONF.Load(vars(args))
 
+    print 'FIXME %s' % CONF

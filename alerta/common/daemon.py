@@ -38,12 +38,14 @@ import time
 import atexit
 
 from alerta.common import log as logging
+from alerta.common import config
 
 from signal import SIGTERM
 
 _DEFAULT_WAIT_ON_DISABLE = 120  # number of seconds to idle before checking disable flag again
 
 LOG = logging.getLogger(__name__)
+CONF = config.CONF
 
 
 class Daemon:
@@ -52,7 +54,7 @@ class Daemon:
 
     Usage: subclass the Daemon class and override the run() method
     """
-    def __init__(self, prog, pidfile=None, disable_flag=None, logfile=None, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
+    def __init__(self, prog, pidfile=None, disable_flag=None, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
 
         logging.setup(__name__)
 
@@ -63,7 +65,6 @@ class Daemon:
         self.stderr = stderr
 
         self.pidfile = pidfile or '/var/run/alerta/%s.pid' % self.prog
-        self.logfile = logfile or '/var/log/alerta/%s.log' % self.prog
         self.disable_flag = disable_flag or '/var/run/alerta/%s.disable' % self.prog
 
         self.running = False
@@ -81,8 +82,10 @@ class Daemon:
                 # exit first parent
                 sys.exit(0)
         except OSError, e:
-            sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
+            LOG.critical("fork #1 failed: %d (%s)" % (e.errno, e.strerror))
             sys.exit(1)
+
+        LOG.debug('Success fork #1...')
 
         # decouple from parent environment
         os.chdir("/")
@@ -96,8 +99,10 @@ class Daemon:
                 # exit from second parent
                 sys.exit(0)
         except OSError, e:
-            sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
+            LOG.critical("fork #2 failed: %d (%s)" % (e.errno, e.strerror))
             sys.exit(1)
+
+        LOG.debug("Success fork #2...")
 
         # redirect standard file descriptors
         sys.stdout.flush()
@@ -109,13 +114,22 @@ class Daemon:
         os.dup2(so.fileno(), sys.stdout.fileno())
         os.dup2(se.fileno(), sys.stderr.fileno())
 
+        LOG.debug('Redirected stdout, stderr, stdin')
+
         # write pidfile
         atexit.register(self.delpid)
         self.pid = str(os.getpid())
         file(self.pidfile, 'w+').write("%s\n" % self.pid)
 
+        LOG.debug('Wrote PID %s to %s' % (self.pid, self.pidfile))
+
+    def wait_on_disable(self):
+        #TODO(nsattel): daemon should wait in a loop if disable flag exists
+        pass
+
     def delpid(self):
         os.remove(self.pidfile)
+        LOG.debug('Deleted pid file %s' % self.pidfile)
 
     def start(self):
         """
@@ -126,13 +140,16 @@ class Daemon:
             self.pid = open(self.pidfile).read().strip()
             try:
                 os.kill(int(self.pid), 0)
-                print >>sys.stderr, 'Process with pid %s already exists, exiting' % self.pid
+                LOG.critical('Process with pid %s already exists, exiting' % self.pid)
                 sys.exit(1)
             except OSError:
                 pass
 
         # Start the daemon
-        self.daemonize()
+        LOG.info('Starting %s...' % self.prog)
+        if not CONF.foreground:
+            self.daemonize()
+        self.wait_on_disable()
         self.run()
 
     def stop(self):
@@ -150,8 +167,7 @@ class Daemon:
             self.pid = None
 
         if not self.pid:
-            message = "pidfile %s does not exist. Daemon not running?\n"
-            sys.stderr.write(message % self.pidfile)
+            LOG.error("pidfile %s does not exist. Daemon not running?")
             return  # not an error in a restart
 
         # Try killing the daemon process
@@ -179,4 +195,8 @@ class Daemon:
         return self.pid
 
     def run(self):
+        """
+Y       ou should override this method when you subclass Daemon. It will be called after the process has been
+        daemonized by start() or restart().
+        """
         pass

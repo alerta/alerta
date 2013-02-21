@@ -1,4 +1,60 @@
 [DEFAULT]
+# STOMP messaging
+stomp_host=localhost
+stomp_port=61613
+stomp_queue=/queue/alerts
+
+
+
+# AMQP exchange to connect to if using RabbitMQ or Qpid
+# (string value)j
+control_exchange=alerta
+
+# The RabbitMQ broker address where a single node is used
+# (string value)
+#rabbit_host=localhost
+
+# The RabbitMQ broker port where a single node is used
+# (integer value)
+#rabbit_port=5672
+
+# RabbitMQ HA cluster host:port pairs (list value)
+#rabbit_hosts=$rabbit_host:$rabbit_port
+
+# connect over SSL for RabbitMQ (boolean value)
+#rabbit_use_ssl=false
+
+# the RabbitMQ userid (string value)
+#rabbit_userid=guest
+
+# the RabbitMQ password (string value)
+#rabbit_password=guest
+
+# the RabbitMQ virtual host (string value)
+#rabbit_virtual_host=/
+
+# how frequently to retry connecting with RabbitMQ (integer
+# value)
+#rabbit_retry_interval=1
+
+# how long to backoff for between retries when connecting to
+# RabbitMQ (integer value)
+#rabbit_retry_backoff=2
+
+# maximum retries with trying to connect to RabbitMQ (the
+# default of 0 implies an infinite retry count) (integer
+# value)
+#rabbit_max_retries=0
+
+# use durable queues in RabbitMQ (boolean value)
+#rabbit_durable_queues=false
+
+# use H/A queues in RabbitMQ (x-ha-policy: all).You need to
+# wipe RabbitMQ database when changing this option. (boolean
+# value)
+#rabbit_ha_queues=false
+
+
 # List of directories to load parser definitions from (separated by ',').
 # TODO(nsatterl): not supported yet
 parsers_path=/opt/alerta/etc/conf.d,/usr/share/local/parsers

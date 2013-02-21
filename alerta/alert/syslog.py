@@ -52,5 +52,6 @@ _SYSLOG_SEVERITY_MAP = {
 DEFAULT_UDP_PORT = 514
 DEFAULT_TCP_PORT = 514
 
+
 def priority_to_code(name):
     return _SYSLOG_SEVERITY_MAP.get(name, severity.UNKNOWN_SEV_CODE)

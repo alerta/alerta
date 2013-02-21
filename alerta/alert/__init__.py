@@ -10,6 +10,8 @@ from alerta.common import log as logging
 
 _DEFAULT_TIMEOUT = 3600  # default number of seconds before alert is EXPIRED
 
+LOG = logging.getLogger(__name__)
+
 
 class Alert(object):
 
@@ -56,22 +58,53 @@ class Alert(object):
     def __str__(self):
         return json.dumps(self.alert, indent=4)
 
-    def get_alertid(self):
+    def get_id(self):
         return self.alertid
 
-    def send_alert(self):
+    def get_header(self):
+        return json.dumps(self.header, indent=4)
 
-        LOG.debug("%s : Sending ... %s" % (self.alert['id'], self.alert))
-        pass
+    def get_body(self):
+        return json.dumps(self.alert, indent=4)
 
 
 class Heartbeat(object):
 
-    def __init__(self, ):
+    def __init__(self, origin=None, version='unknown'):
 
+        # FIXME(nsatterl): how to fix __program__ for origin???
+        __program__ = 'THIS IS BROKEN'
 
-    def send_heartbeat(self):
+        self.heartbeatid = str(uuid4())
+        self.origin = origin or '%s/%s' % (__program__, os.uname()[1])
 
-        # self.header
-        pass
+        self.header = {
+            'type': 'heartbeat',
+            'correlation-id': self.heartbeatid,
+        }
+
+        self.heartbeat = {
+            'id': self.heartbeatid,
+            'type': 'heartbeat',
+            'createTime': datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z',
+            'origin': origin,
+            'version': version,
+        }
+
+    def __repr__(self):
+        return self.header, self.heartbeat
+
+    def __str__(self):
+        return json.dumps(self.heartbeat, indent=4)
+
+    def get_id(self):
+        return self.heartbeatid
+
+    def get_header(self):
+        LOG.debug(json.dumps(self.header, indent=4))
+        return json.dumps(self.header, indent=4)
+
+    def get_body(self):
+        return json.dumps(self.heartbeat, indent=4)
+
 
