@@ -75,7 +75,7 @@ class SyslogDaemon(Daemon):
                 # TODO(nsatterl): don't send a heartbeat after each and every alert
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat()
-                self.mq.send(heartbeat)
+                #self.mq.send(heartbeat)
             except KeyboardInterrupt:
                 self.shuttingdown = True
 

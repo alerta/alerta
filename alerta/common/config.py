@@ -26,9 +26,21 @@ def parse_args(argv, prog=None, version='unknown'):
 
     SYSTEM_DEFAULTS = {
 
+        'server_threads': 1,
+        'alert_timeout': 86400,  # seconds
+        'parser_dir': '/opt/alerta/bin/parsers',
+
+        'mongo_host': 'localhost',
+        'mongo_port': 27017,
+        'mongo_db': 'monitoring',
+        'mongo_collection': 'alerts',
+
         'stomp_host': 'localhost',
         'stomp_port': 61613,
-        'stomp_queue': '/queue/alerts',
+
+        'inbound_queue': '/queue/alerts',   # TODO(nsatterl): 'alert_queue' and 'alert_topic' ?
+        'outbound_topic': '/queue/notify',
+        'outbound_queue': '/queue/logger',
 
         'rabbit_host': 'localhost',
         'rabbit_port': 5672,
