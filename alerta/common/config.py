@@ -8,7 +8,7 @@ from alerta.common.utils import Bunch
 CONF = Bunch()  # config options can be accessed using CONF.verbose or CONF.use_syslog
 
 
-def parse_args(argv, prog=None, version='unknown'):
+def parse_args(argv, prog=None, version='unknown', cli_parser=None):
 
     if prog is None:
         prog = os.path.basename(sys.argv[0]).rstrip('.py')
@@ -73,7 +73,7 @@ def parse_args(argv, prog=None, version='unknown'):
         if config.has_section(prog):
             for name in config.options(prog):
                 if (OPTION_DEFAULTS.get(name, None) in (True, False) or
-                         SYSTEM_DEFAULTS.get(name, None) in (True, False)):
+                        SYSTEM_DEFAULTS.get(name, None) in (True, False)):
                     defaults[name] = config.getboolean(prog, name)
                 elif (isinstance(OPTION_DEFAULTS.get(name, None), int) or
                         isinstance(SYSTEM_DEFAULTS.get(name, None), int)):
@@ -84,9 +84,8 @@ def parse_args(argv, prog=None, version='unknown'):
     parser = argparse.ArgumentParser(
         prog=prog,
         # description='', # TODO(nsatterl): pass __doc__ from calling program?
-        parents=[cfg_parser],
+        parents=[cli_parser, cfg_parser],
     )
-
     parser.add_argument(
         '--version',
         action='version',
@@ -121,15 +120,17 @@ def parse_args(argv, prog=None, version='unknown'):
         action='store_true',
         help="Send to console stderr"
     )
-    parser.add_argument(
-        '--foreground',
-        default=OPTION_DEFAULTS['foreground'],
-        action='store_true',
-        help="Run in foreground"
-    )
+
+    if not cli_parser:
+        parser.add_argument(
+            '--foreground',
+            default=OPTION_DEFAULTS['foreground'],
+            action='store_true',
+            help="Run in foreground"
+        )
     parser.set_defaults(**defaults)
 
     args = parser.parse_args(argv_left)
     CONF.Load(vars(args))
 
-    #print 'FIXME %s' % CONF
+    print 'FIXME %s' % CONF

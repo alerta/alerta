@@ -1,9 +1,6 @@
-import sys
-import argparse
-import logging
 
+from alerta.common import log as logging
 from alerta.common import config
-from alerta.common.utils import Bunch
 from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging
 
@@ -40,11 +37,14 @@ def main():
             timeout=CONF.timeout,
         )
 
-    LOG.debug(msg)
+    if CONF.dry_run:
+        print msg
+    else:
+        LOG.debug(msg)
 
-    mq = Messaging()
-    mq.connect()
-    mq.send(msg)
-    mq.disconnect()
+        mq = Messaging()
+        mq.connect()
+        mq.send(msg)
+        mq.disconnect()
 
     return msg.get_id()

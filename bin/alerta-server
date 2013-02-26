@@ -24,7 +24,7 @@ LOG = logging.getLogger('alerta.server')
 CONF = config.CONF
 
 if __name__ == '__main__':
-    config.parse_args(sys.argv, version=__version__)
+    config.parse_args(sys.argv[1:], version=__version__)
     logging.setup('alerta')
     alerta = AlertaDaemon('alerta')
     alerta.start()

@@ -281,8 +281,8 @@ class WorkerThread(threading.Thread):
                 self.db.update_status(alert['environment'], alert['resource'], alert['event'], status)
 
                 # Forward alert to notify topic and logger queue
-                self.mq.send(enrichedAlert, CONF.outbound_queue)
-                self.mq.send(enrichedAlert, CONF.outbound_topic)
+                self.mq.send(newAlert, CONF.outbound_queue)
+                self.mq.send(newAlert, CONF.outbound_topic)
 
                 self.input_queue.task_done()
                 LOG.info('%s : Alert forwarded to %s and %s', alert['id'], CONF.outbound_queue, CONF.outbound_topic)

@@ -91,7 +91,7 @@ class Database(object):
     def save_alert(self, alert):
 
         body = alert.get_body()
-        body['history'] = {
+        body['history'] = [{
             "id": body['id'],
             "event": body['event'],
             "severity": body['severity'],
@@ -99,7 +99,7 @@ class Database(object):
             "text": body['text'],
             "createTime": body['createTime'],
             "receiveTime": body['receiveTime'],
-        }
+        }]
         body['_id'] = body['id']
         del body['id']
 
@@ -147,12 +147,16 @@ class Database(object):
 
         LOG.info('Alert status for %s %s %s alert set to %s', environment, resource, event, status)
 
-        return self.db.alerts.update(
-                                    {"environment": environment, "resource": resource,
-                                     '$or': [{"event": event}, {"correlatedEvents": event}]},
-                                    {'$set': {"status": status},
-                                     '$push': {"history": {"status": status, "updateTime": update_time}}}
-        )
+        query = {"environment": environment, "resource": resource,
+                 '$or': [{"event": event}, {"correlatedEvents": event}]}
+        update = {'$set': {"status": status}, '$push': {"history": {"status": status, "updateTime": update_time}}}
+
+        LOG.debug('query = %s, update = %s', query, update)
+
+        try:
+            self.db.alerts.update(query, update)
+        except pymongo.errors.OperationFailure, e:
+            LOG.error('MongoDB error: %s', e)
 
     def update_hb(self):
 

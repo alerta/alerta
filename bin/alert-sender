@@ -9,9 +9,6 @@
 import os
 import sys
 import argparse
-import json
-import datetime
-import uuid
 
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
                                                 os.pardir,
@@ -21,7 +18,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.sender import cli
+from alerta.sender import client
 
 __version__ = '1.2.0'
 
@@ -34,172 +31,167 @@ CONF = config.CONF
 VALID_ENVIRONMENT = ['PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP', 'INFRA']
 
 
-def main():
+def main(argv):
+    try:
+        parser = argparse.ArgumentParser(
+            add_help=False,
+            prog='alert-sender',
+            description='Alert Command-Line Tool - sends an alert to the alerting system. Alerts must have' +
+                        ' a resource (including service and environment), event name, value and text. A ' +
+                        'severity of "Normal" is used if none given. Tags and group are optional.',
+            epilog='alert-sender.py --resource myCoolApp --event AppStatus --group Application --value Down ' +
+                   '--severity critical --env PROD --svc MicroApp --tag release:134 --tag build:1005 ' +
+                   '--text "Micro App X is down."'
+        )
+        parser.add_argument(
+            '-r', '--resource',
+            help='Resource under alarm eg. hostname, network device, application, web address.'
+        )
+        parser.add_argument(
+            '-e',
+            '--event',
+            help='Event name eg. NodeDown, QUEUE:LENGTH:EXCEEDED, coldStart, LOG_ERROR'
+        )
+        parser.add_argument(
+            '-C',
+            '--correlate',
+            help='Comma-separated list of events to correlate together eg. NodeUp,NodeDown'
+        )
+        parser.add_argument(
+            '-g',
+            '--group',
+            help='Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security'
+        )
+        parser.add_argument(
+            '-v',
+            '--value',
+            help='Event value eg. 100%%, Down, PingFail, 55tps, ORA-1664'
+        )
+        parser.add_argument(
+            '-s',
+            '--severity',
+            default='Normal',
+            help='Severity eg. Critical, Major, Minor, Warning, Normal, Inform (default: %(default)s)'
+        )
+        parser.add_argument(
+            '-E',
+            '--environment',
+            metavar='ENV',
+            action='append',
+            help='Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA'
+        )
+        parser.add_argument(
+            '-S',
+            '--svc',
+            '--service',
+            dest='service',
+            action='append',
+            help='Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, SharedSvcs'
+        )
+        parser.add_argument(
+            '-T',
+            '--tag',
+            action='append',
+            dest='tags',
+            default=list(),
+            help='Tag the event with anything and everything.'
+        )
+        parser.add_argument(
+            '-t',
+            '--text',
+            help='Freeform alert text eg. Host not responding to ping.'
+        )
+        parser.add_argument(
+            '-o',
+            '--timeout',
+            type=int,
+            default=DEFAULT_TIMEOUT,
+            help='Timeout in seconds that OPEN alert will persist in webapp.'
+        )
+        parser.add_argument(
+            '-H',
+            '--heartbeat',
+            action='store_true',
+            default=False,
+            help='Send heartbeat to server.'
+        )
+        parser.add_argument(
+            '-O',
+            '--origin',
+            help='Origin of heartbeat. Usually an application instance.'
+        )
+        parser.add_argument(
+            '-q',
+            '--quiet',
+            action='store_true',
+            default=False,
+            help='Do not display assigned alert id.'
+        )
+        parser.add_argument(
+            '-d',
+            '--dry-run',
+            action='store_true',
+            default=False,
+            help='Do not send alert.'
+        )
 
-    parser = argparse.ArgumentParser(
-        prog='alert-sender',
-        description='Alert Command-Line Tool - sends an alert to the alerting system. Alerts must have' +
-                    ' a resource (including service and environment), event name, value and text. A ' +
-                    'severity of "Normal" is used if none given. Tags and group are optional.',
-        epilog='alert-sender.py --resource myCoolApp --event AppStatus --group Application --value Down ' +
-               '--severity critical --env PROD --svc MicroApp --tag release:134 --tag build:1005 ' +
-               '--text "Micro App X is down."'
-    )
-    parser.add_argument(
-        '--version',
-        action='version',
-        version=__version__
-    )
-    parser.add_argument(
-        '--debug',
-        default=False,
-        action='store_true',
-        help="Print debugging output"
-    )
-    parser.add_argument(
-        '-r', '--resource',
-        help='Resource under alarm eg. hostname, network device, application, web address.'
-    )
-    parser.add_argument(
-        '-e',
-        '--event',
-        help='Event name eg. NodeDown, QUEUE:LENGTH:EXCEEDED, coldStart, LOG_ERROR'
-    )
-    parser.add_argument(
-        '-c',
-        '--correlate',
-        help='Comma-separated list of events to correlate together eg. NodeUp,NodeDown'
-    )
-    parser.add_argument(
-        '-g',
-        '--group',
-        help='Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security'
-    )
-    parser.add_argument(
-        '-v',
-        '--value',
-        help='Event value eg. 100%%, Down, PingFail, 55tps, ORA-1664'
-    )
-    parser.add_argument(
-        '-s',
-        '--severity',
-        default='Normal',
-        help='Severity eg. Critical, Major, Minor, Warning, Normal, Inform (default: %(default)s)'
-    )
-    parser.add_argument(
-        '-E',
-        '--environment',
-        metavar='ENV',
-        action='append',
-        help='Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA'
-    )
-    parser.add_argument(
-        '-S',
-        '--svc',
-        '--service',
-        dest='service',
-        action='append',
-        help='Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, SharedSvcs'
-    )
-    parser.add_argument(
-        '-T',
-        '--tag',
-        action='append',
-        dest='tags',
-        default=list(),
-        help='Tag the event with anything and everything.'
-    )
-    parser.add_argument(
-        '-t',
-        '--text',
-        help='Freeform alert text eg. Host not responding to ping.'
-    )
-    parser.add_argument(
-        '-o',
-        '--timeout',
-        type=int,
-        default=DEFAULT_TIMEOUT,
-        help='Timeout in seconds that OPEN alert will persist in webapp.'
-    )
-    parser.add_argument(
-        '-H',
-        '--heartbeat',
-        action='store_true',
-        default=False,
-        help='Send heartbeat to server.'
-    )
-    parser.add_argument(
-        '-O',
-        '--origin',
-        help='Origin of heartbeat. Usually an application instance.'
-    )
-    parser.add_argument(
-        '-q',
-        '--quiet',
-        action='store_true',
-        default=False,
-        help='Do not display assigned alert id.'
-    )
-    parser.add_argument(
-        '-d',
-        '--dry-run',
-        action='store_true',
-        default=False,
-        help='Do not send alert.'
-    )
+        # # Print help if no arguments at all
+        # if not argv:
+        #     parser.print_usage()
+        #     sys.exit(1)
 
-    if len(sys.argv) == 1:
-        parser.print_usage()
+        # Parse command-line arguments specific to this script
+        args, argv = parser.parse_known_args()
+
+        # Parse remaining arguments to system argument parser
+        config.parse_args(argv, version=__version__, cli_parser=parser)
+        logging.setup('alerta')
+
+        CONF.Load(vars(args))
+
+        if CONF.heartbeat:
+            if not CONF.origin:
+                parser.error("Must supply origin to send a heartbeat.")
+
+        else:
+            if not CONF.resource:
+                parser.error("Must supply event resource using -r or --resource")
+
+            if not CONF.event:
+                parser.error("Must supply event name using -e or --event")
+
+            if not CONF.value:
+                parser.error("Must supply event value using -v or --value")
+
+            # if not options.severity:
+            #     options.severity = 'normal'
+            # elif options.severity.upper() not in VALID_SEVERITY:
+            #     parser.print_help()
+            #     parser.error("Severity '%s' must be one of %s" % (options.severity, ','.join(VALID_SEVERITY)))
+            #
+            # if not all(x in VALID_ENVIRONMENT for x in options.environment):
+            #     parser.print_help()
+            #     parser.error("Must supply one or more environments from %s" % ','.join(VALID_ENVIRONMENT))
+            # else:
+            #     options.environment = [x.upper() for x in options.environment]
+
+            if not CONF.service:
+                parser.error("Must supply one or more service using -S or --service")
+
+            if not CONF.text:
+                parser.error("Must supply alert text using -t or --text.")
+
+        msg_id = client.main()
+
+        if not CONF.quiet:
+            print msg_id
+
+    except Exception, e:
+        print >> sys.stderr, e
         sys.exit(1)
 
-    args, args_left = parser.parse_known_args()
-    #print 'args %s' % args
-    CONF.Load(vars(args))
-    #print 'CONF %s' % CONF
-
-    config.parse_args(args_left, version=__version__)
-    logging.setup('alerta')
-
-    if CONF.heartbeat:
-        if not CONF.origin:
-            parser.error("Must supply origin to send a heartbeat.")
-
-    else:
-        if not CONF.resource:
-            parser.error("Must supply event resource using -r or --resource")
-
-        if not CONF.event:
-            parser.error("Must supply event name using -e or --event")
-
-        if not CONF.value:
-           parser.error("Must supply event value using -v or --value")
-
-        # if not options.severity:
-        #     options.severity = 'normal'
-        # elif options.severity.upper() not in VALID_SEVERITY:
-        #     parser.print_help()
-        #     parser.error("Severity '%s' must be one of %s" % (options.severity, ','.join(VALID_SEVERITY)))
-        #
-        # if not all(x in VALID_ENVIRONMENT for x in options.environment):
-        #     parser.print_help()
-        #     parser.error("Must supply one or more environments from %s" % ','.join(VALID_ENVIRONMENT))
-        # else:
-        #     options.environment = [x.upper() for x in options.environment]
-
-        if not CONF.service:
-            parser.error("Must supply one or more service using -S or --service")
-
-        if not CONF.text:
-            parser.error("Must supply alert text. How else are we to know what happened?")
-
-    msg_id = cli.main()
-
-    if not CONF.quiet:
-        print msg_id
-
 if __name__ == '__main__':
-    main()
-    sys.exit(0)
+    main(sys.argv[1:])
 
 
 
