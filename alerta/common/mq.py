@@ -1,5 +1,5 @@
 import time
-
+import json
 import stomp
 
 from alerta.common import log as logging
@@ -54,10 +54,11 @@ class Messaging(object):
 
         while not self.connection.is_connected():
             LOG.warning('Waiting for message broker to become available...')
-            time.sleep(1)
+            time.sleep(0.1)
 
+        LOG.debug('Sending alert to message broker...')
         try:
-            self.connection.send(message=alert.get_body(), headers=alert.get_header(), destination=self.destination)
+            self.connection.send(message=json.dumps(alert.get_body()), headers=alert.get_header(), destination=self.destination)
         except Exception, e:
             LOG.error('Could not send to broker %s:%s : %s', CONF.stomp_host, CONF.stomp_port, e)
             return

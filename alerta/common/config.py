@@ -132,4 +132,4 @@ def parse_args(argv, prog=None, version='unknown'):
     args = parser.parse_args(argv_left)
     CONF.Load(vars(args))
 
-    print 'FIXME %s' % CONF
+    #print 'FIXME %s' % CONF

@@ -16,9 +16,9 @@ LOG = logging.getLogger(__name__)
 
 class Alert(object):
 
-    def __init__(self, resource, event, correlate=list(), group='Misc', value=None, status=status.UNKNOWN,
-                 severity=severity.NORMAL, previous_severity=None, environment=['PROD'], service=list(),
-                 text=None, event_type='exceptionAlert', tags=list(), origin=None, repeat=False, duplicate_count=0,
+    def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status.UNKNOWN,
+                 severity=severity.NORMAL, previous_severity=None, environment=None, service=None,
+                 text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
                  threshold_info='n/a', summary=None, timeout=_DEFAULT_TIMEOUT, alertid=None, last_receive_id=None,
                  create_time=None, receive_time=None, last_receive_time=None, trend_indication=None):
 
@@ -26,6 +26,12 @@ class Alert(object):
         __program__ = 'THIS IS BROKEN'
 
         self.alertid = alertid or str(uuid4())
+
+        correlate = correlate or list()
+        environment = environment or ['PROD']
+        service = service or list()
+        tags = tags or list()
+
         self.summary = summary or '%s - %s %s is %s on %s %s' % (','.join(environment), severity, event, value, ','.join(service), resource)
 
         self.header = {
@@ -94,7 +100,6 @@ class Heartbeat(object):
         __program__ = 'THIS IS BROKEN'
 
         self.heartbeatid = str(uuid4())
-        self.origin = origin or '%s/%s' % (__program__, os.uname()[1])
 
         self.header = {
             'type': 'heartbeat',
@@ -105,12 +110,12 @@ class Heartbeat(object):
             'id': self.heartbeatid,
             'type': 'heartbeat',
             'createTime': datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z',
-            'origin': origin,
+            'origin': origin or '%s/%s' % (__program__, os.uname()[1]),
             'version': version,
         }
 
     def __repr__(self):
-        return self.header, self.heartbeat
+        return 'Heartbeat(header=%r, alert=%r)' % (str(self.header), str(self.heartbeat))
 
     def __str__(self):
         return json.dumps(self.heartbeat, indent=4)
@@ -123,4 +128,3 @@ class Heartbeat(object):
 
     def get_body(self):
         return self.heartbeat
-
