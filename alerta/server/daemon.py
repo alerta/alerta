@@ -183,7 +183,7 @@ class WorkerThread(threading.Thread):
                     else:
                         status = 'CLOSED'
                 else:
-                    status = None
+                    status = 'UNKNOWN'
 
                 status = calculate_status(alert['severity'], previous_severity)
                 if status:
@@ -277,6 +277,7 @@ class WorkerThread(threading.Thread):
                 #     status = 'CLOSED'
                 #
                 status = 'OPEN' if alert['severity'] != 'NORMAL' else 'CLOSED'
+                LOG.debug('severity = %s => status = %s', alert['severity'], status)
                 self.db.update_status(alert['environment'], alert['resource'], alert['event'], status)
 
                 # Forward alert to notify topic and logger queue
@@ -358,7 +359,7 @@ class MessageHandler(object):
     def on_message(self, headers, body):
 
         LOG.info("Received %s %s", headers['type'], headers['correlation-id'])
-        LOG.debug("Received body : %s", body)
+        LOG.debug("Received body : %s", json.dumps(body, indent=4))
 
         # TODO(nsatterl): Use validate_alert() function
         try:

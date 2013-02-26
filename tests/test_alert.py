@@ -18,4 +18,4 @@ if __name__ == '__main__':
     print alert3
 
 
-    print alert4
+    print repr(alert3)

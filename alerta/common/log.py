@@ -36,9 +36,9 @@ def setup(name):
 
         # TODO(nsatterl): test mode like openstack??
 
-    #if CONF.use_stderr:
-    #    streamlog = ColorHandler()
-    #    log_root.addHandler(streamlog)
+    if CONF.use_stderr:
+        streamlog = ColorHandler()
+        log_root.addHandler(streamlog)
 
     for handler in log_root.handlers:
         log_format = _DEFAULT_LOG_FORMAT
@@ -62,14 +62,14 @@ def getLogger(name=None):
 
 
 # TODO(nsatterl): enable color output
-# class ColorHandler(logging.StreamHandler):
-#    LEVEL_COLORS = {
-#        logging.DEBUG: '\033[00;32m',  # GREEN
-#        logging.INFO: '\033[00;36m',  # CYAN
-#        logging.WARN: '\033[01;33m',  # BOLD YELLOW
-#        logging.ERROR: '\033[01;31m',  # BOLD RED
-#        logging.CRITICAL: '\033[01;31m',  # BOLD RED
-#    }
+class ColorHandler(logging.StreamHandler):
+   LEVEL_COLORS = {
+       logging.DEBUG: '\033[00;32m',  # GREEN
+       logging.INFO: '\033[00;36m',  # CYAN
+       logging.WARN: '\033[01;33m',  # BOLD YELLOW
+       logging.ERROR: '\033[01;31m',  # BOLD RED
+       logging.CRITICAL: '\033[01;31m',  # BOLD RED
+   }
 
 #    def format(self, record):
 #        record.color = self.LEVEL_COLORS[record.levelno]

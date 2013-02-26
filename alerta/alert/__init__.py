@@ -19,18 +19,15 @@ class Alert(object):
     def __init__(self, resource, event, correlate=list(), group='Misc', value=None, status=status.UNKNOWN,
                  severity=severity.NORMAL, previous_severity=None, environment=['PROD'], service=list(),
                  text=None, event_type='exceptionAlert', tags=list(), origin=None, repeat=False, duplicate_count=0,
-                 threshold_info=None, summary=None, timeout=_DEFAULT_TIMEOUT, alertid=None, last_receive_id=None,
+                 threshold_info='n/a', summary=None, timeout=_DEFAULT_TIMEOUT, alertid=None, last_receive_id=None,
                  create_time=None, receive_time=None, last_receive_time=None, trend_indication=None):
 
         # FIXME(nsatterl): how to fix __program__ for origin???
         __program__ = 'THIS IS BROKEN'
 
-        print 'alertid = %s' % alertid
-
         self.alertid = alertid or str(uuid4())
-        self.origin = origin or '%s/%s' % (__program__, os.uname()[1])
-        self.summary = summary or '%s - %s %s is %s on %s %s' % (','.join(environment), severity, event,
-                                                     value, ','.join(service), resource)
+        self.summary = summary or '%s - %s %s is %s on %s %s' % (','.join(environment), severity, event, value, ','.join(service), resource)
+
         self.header = {
             'type': event_type,
             'correlation-id': self.alertid,
@@ -52,9 +49,9 @@ class Alert(object):
             'text': text,
             'type': event_type,
             'tags': tags,
-            'summary': summary,
+            'summary': self.summary,
             'createTime': create_time,
-            'origin': origin,
+            'origin': origin or '%s/%s' % (__program__, os.uname()[1]),
             'thresholdInfo': threshold_info,
             'timeout': timeout,
             'expireTime': 'calculate the expire time from createTime+timeout',  # TODO(nsatterl); fix this
@@ -62,6 +59,8 @@ class Alert(object):
             'duplicateCount': duplicate_count,
         }
 
+        if status:
+            self.alert['status'] = status
         if receive_time:
             self.alert['receiveTime'] = receive_time
         if last_receive_time:
@@ -72,7 +71,7 @@ class Alert(object):
             self.alert['trendIndication'] = trend_indication
 
     def __repr__(self):
-        return self.header, self.alert
+        return 'Alert(header=%r, alert=%r)' % (str(self.header), str(self.alert))
 
     def __str__(self):
         return json.dumps(self.alert, indent=4)

@@ -19,19 +19,16 @@ class Database(object):
     def __init__(self):
 
         # Connect to MongoDB
-        print '%s:%s' % (CONF.mongo_host, CONF.mongo_port)
         try:
             self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port)
             self.db = self.conn.monitoring  # TODO(nsatterl): make 'monitoring' a SYSTEM DEFAULT
         except Exception, e:
-            LOG.error('Could not connect to MongoDB server %s:%s : %s', CONF.mongo_host, CONF.mongo_port, e)
+            LOG.error('MongoDB Client error : %s', e)
             sys.exit(1)
 
         if self.conn.alive():
-            LOG.info('MongoDB %s, databases available: %s', self.conn.server_info()['version'], ', '.join(self.conn.database_names()))
-
-        LOG.info('Connected to MongoDB server %s:%s', CONF.mongo_host, CONF.mongo_port)
-        LOG.debug('%s is primary: %s', CONF.mongo_host, self.conn.is_primary)
+            LOG.info('Connected to MongoDB server %s:%s', CONF.mongo_host, CONF.mongo_port)
+            LOG.debug('MongoDB %s, databases available: %s', self.conn.server_info()['version'], ', '.join(self.conn.database_names()))
 
         self.db.alerts.create_index([('environment', pymongo.DESCENDING), ('resource', pymongo.DESCENDING),
                                      ('event', pymongo.DESCENDING)])   # TODO(nsatterl): verify perf of this index
@@ -67,8 +64,6 @@ class Database(object):
         if not response:
             LOG.warning('Alert not found with environment, resource, event, severity = %s %s %s %s', environment, resource, event, severity)
             return
-
-        print 'response = %s' % response
 
         return Alert(
             alertid=response['_id'],
@@ -108,7 +103,7 @@ class Database(object):
         body['_id'] = body['id']
         del body['id']
 
-        self.db.alerts.insert(body, safe=True)
+        return self.db.alerts.insert(body, safe=True)
 
     def modify_alert(self, environment, resource, event, **kwargs):
 

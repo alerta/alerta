@@ -23,7 +23,7 @@ CONF = config.CONF
 
 print CONF
 
-config.parse_args(sys.argv)
+config.parse_args(['--use-stderr', '--debug'])
 logging.setup('alerta')
 db = Database()
 
@@ -41,11 +41,13 @@ print alert3.get_id()
 str = json.dumps(alert3.get_body())
 print 'string=%s' % str
 
-db.save_alert(alert3)
+print 'Saving alert...'
+print db.save_alert(alert3)
 
 
-
+print 'Get alert...'
 print db.get_alert('PROD', 'router55', 'Node_Down', 'Indeterminate')
 
-is_dup = db.is_duplicate('PROD', 'res1', 'event1', 'critical')
-print is_dup
+print 'Check for duplicate...'
+print db.is_duplicate('PROD', 'router55', 'Node_Down', 'Indeterminate')
+print db.is_duplicate('PROD', 'res1', 'event1', 'critical')

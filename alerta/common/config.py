@@ -39,7 +39,7 @@ def parse_args(argv, prog=None, version='unknown'):
         'stomp_port': 61613,
 
         'inbound_queue': '/queue/alerts',   # TODO(nsatterl): 'alert_queue' and 'alert_topic' ?
-        'outbound_topic': '/queue/notify',
+        'outbound_topic': '/topic/notify',
         'outbound_queue': '/queue/logger',
 
         'rabbit_host': 'localhost',
@@ -64,7 +64,7 @@ def parse_args(argv, prog=None, version='unknown'):
         metavar="FILE",
         default='/opt/alerta/etc/alerta.conf'
     )
-    args, argv_left = cfg_parser.parse_known_args()
+    args, argv_left = cfg_parser.parse_known_args(argv)
 
     defaults = dict()
     if args.conf_file:

@@ -1,4 +1,5 @@
 
+import os
 import sys
 import socket
 import select
@@ -182,8 +183,22 @@ class SyslogDaemon(Daemon):
             LOG.info('Suppressing %s.%s syslog message from %s', facility, level, resource)
             return
 
-        syslogAlert = Alert(resource, event, correlate, group, value, severity, environment,
-                            service, text, 'syslogAlert', tags, 'what here???', 'n/a')
+        syslogAlert = Alert(
+            resource=resource,
+            event=event,
+            correlate=correlate,
+            group=group,
+            value=value,
+            severity=severity,
+            environment=environment,
+            service=service,
+            text=text,
+            event_type='syslogAlert',
+            tags=tags,
+            origin='%s/%s' % ('alert-syslog', os.uname()[1])
+        )
+        print syslogAlert
+
         self.mq.send(syslogAlert)
 
 
