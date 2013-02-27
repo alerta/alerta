@@ -8,13 +8,14 @@ import yaml
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert
+from alerta.alert import Alert, severity, status
 from alerta.common.mq import Messaging
 from alerta.common.mongo import Database
 
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
+
 
 #TODO(nsatterl): add this to default system config
 
@@ -91,16 +92,16 @@ class WorkerThread(threading.Thread):
                 }
                 self.db.duplicate_alert(alert['environment'], alert['resource'], alert['event'], **update)
 
-                if alert['status'] not in ['OPEN', 'ACK', 'CLOSED']:
+                if alert['status'] not in [status.OPEN, status.ACK, status.CLOSED]:
                     if alert['severity'] != 'NORMAL':
-                        status = 'OPEN'
+                        current_status = status.OPEN
                     else:
-                        status = 'CLOSED'
+                        current_status = status.CLOSED
                 else:
-                    status = 'UNKNOWN'
+                    current_status = status.UNKNOWN
 
-                if status:
-                    self.db.update_status(alert['environment'], alert['resource'], alert['event'], status)
+                if current_status:
+                    self.db.update_status(alert['environment'], alert['resource'], alert['event'], current_status)
 
                 self.input_queue.task_done()
 
@@ -140,9 +141,9 @@ class WorkerThread(threading.Thread):
                 }
                 enrichedAlert = self.db.modify_alert(alert['environment'], alert['resource'], alert['event'], **update)
 
-                status = calculate_status(alert['severity'], previous_severity)
-                if status:
-                    self.db.update_status(alert['environment'], alert['resource'], alert['event'], status)
+                current_status = calculate_status(alert['severity'], previous_severity)
+                if current_status:
+                    self.db.update_status(alert['environment'], alert['resource'], alert['event'], current_status)
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(enrichedAlert, CONF.outbound_queue)
@@ -180,7 +181,7 @@ class WorkerThread(threading.Thread):
                     receive_time=alert['receiveTime'],
                     last_receive_time=alert['receiveTime'],
                     duplicate_count=0,
-                    status="OPEN", # TODO(nsatterl): status.OPEN
+                    status=status.OPEN,
                     trend_indication=trend_indication,
                     last_receive_id=alert['id'],
                 )
@@ -191,9 +192,9 @@ class WorkerThread(threading.Thread):
                 # else:
                 #     status = 'CLOSED'
                 #
-                status = 'OPEN' if alert['severity'] != 'NORMAL' else 'CLOSED'
-                LOG.debug('severity = %s => status = %s', alert['severity'], status)
-                self.db.update_status(alert['environment'], alert['resource'], alert['event'], status)
+                current_status = status.OPEN if alert['severity'] != severity.NORMAL else status.CLOSED
+                LOG.debug('severity = %s => status = %s', alert['severity'], current_status)
+                self.db.update_status(alert['environment'], alert['resource'], alert['event'], current_status)
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(newAlert, CONF.outbound_queue)
@@ -258,24 +259,24 @@ def transform(alert):
 
 def calculate_status(severity, previous_severity):
     status = None
-    if severity in ['DEBUG', 'INFORM']:
-        status = 'OPEN'
-    elif severity == 'NORMAL':
-        status = 'CLOSED'
-    elif severity == 'WARNING':
-        if previous_severity in ['NORMAL']:
-            status = 'OPEN'
-    elif severity == 'MINOR':
-        if previous_severity in ['NORMAL', 'WARNING']:
-            status = 'OPEN'
-    elif severity == 'MAJOR':
-        if previous_severity in ['NORMAL', 'WARNING', 'MINOR']:
-            status = 'OPEN'
-    elif severity == 'CRITICAL':
-        if previous_severity in ['NORMAL', 'WARNING', 'MINOR', 'MAJOR']:
-            status = 'OPEN'
+    if severity in [severity.DEBUG, severity.INFORM]:
+        status = status.OPEN
+    elif severity == severity.NORMAL:
+        status = status.CLOSED
+    elif severity == severity.WARNING:
+        if previous_severity in severity.NORMAL:
+            status = status.OPEN
+    elif severity == severity.MINOR:
+        if previous_severity in [severity.NORMAL, severity.WARNING]:
+            status = status.OPEN
+    elif severity == severity.MAJOR:
+        if previous_severity in [severity.NORMAL, severity.WARNING, severity.WARNING]:
+            status = status.OPEN
+    elif severity == severity.CRITICAL:
+        if previous_severity in [severity.NORMAL, severity.WARNING, severity.MINOR, severity.MAJOR]:
+            status = status.OPEN
     else:
-        status = 'UNKNOWN'
+        status = status.UNKNOWN
 
     return status
 

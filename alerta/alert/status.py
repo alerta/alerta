@@ -1,9 +1,5 @@
-""" Possible alert severity codes.
-
-See ITU-T perceived severity model M.3100 and CCITT Rec X.736
-http://tools.ietf.org/html/rfc5674
-http://www.itu.int/rec/T-REC-M.3100
-http://www.itu.int/rec/T-REC-X.736-199201-I
+"""
+Possible alert status codes.
 """
 
 OPEN_STATUS_CODE = 1

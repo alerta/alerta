@@ -1,4 +1,5 @@
-""" Possible alert severity codes.
+"""
+Possible alert severity codes.
 
 See ITU-T perceived severity model M.3100 and CCITT Rec X.736
 http://tools.ietf.org/html/rfc5674
@@ -17,6 +18,9 @@ DEBUG_SEV_CODE = 7
 AUTH_SEV_CODE = 8
 UNKNOWN_SEV_CODE = 9
 INDETER_SEV_CODE = 9
+
+# NOTE: The display text in single quotes can be changed depending on preference.
+# eg. CRITICAL = 'critical' or CRITICAL = 'CRITICAL'
 
 CRITICAL = 'Critical'
 MAJOR = 'Major'
@@ -47,5 +51,16 @@ _SEVERITY_MAP = {
 }
 
 
+def is_valid(name):
+    return name in _SEVERITY_MAP
+
+
 def name_to_code(name):
-    return _SEVERITY_MAP.get(name, UNKNOWN_SEV_CODE)
+    return _SEVERITY_MAP.get(name.title(), UNKNOWN_SEV_CODE)
+
+
+def parse_severity(name):
+    for sev in _SEVERITY_MAP:
+        if name.lower() == sev.lower():
+            return sev
+    return 'Not Valid'

@@ -19,6 +19,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.sender import client
+from alerta.alert import severity
 
 __version__ = '1.2.0'
 
@@ -163,17 +164,19 @@ def main(argv):
             if not CONF.value:
                 parser.error("Must supply event value using -v or --value")
 
-            # if not options.severity:
-            #     options.severity = 'normal'
-            # elif options.severity.upper() not in VALID_SEVERITY:
-            #     parser.print_help()
-            #     parser.error("Severity '%s' must be one of %s" % (options.severity, ','.join(VALID_SEVERITY)))
-            #
-            # if not all(x in VALID_ENVIRONMENT for x in options.environment):
-            #     parser.print_help()
-            #     parser.error("Must supply one or more environments from %s" % ','.join(VALID_ENVIRONMENT))
-            # else:
-            #     options.environment = [x.upper() for x in options.environment]
+            CONF.severity = severity.parse_severity(CONF.severity) or severity.NORMAL
+
+            if not CONF.severity:
+                CONF.severity = severity.NORMAL
+            else:
+                CONF.severity = severity.parse_severity(CONF.severity)
+                if CONF.severity not in severity.ALL:
+                    parser.error("Severity must be one of %s" % ','.join(severity.ALL))
+
+            if not CONF.environment:
+                parser.error("Must supply one or more environments using -E or --environment")
+            else:
+                CONF.environment = [x.upper() for x in CONF.environment]
 
             if not CONF.service:
                 parser.error("Must supply one or more service using -S or --service")

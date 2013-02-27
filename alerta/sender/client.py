@@ -3,6 +3,7 @@ from alerta.common import log as logging
 from alerta.common import config
 from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging
+from alerta.alert import severity
 
 __version__ = '1.3.0'
 
@@ -26,7 +27,7 @@ def main():
             correlate=CONF.correlate,
             group=CONF.group,
             value=CONF.value,
-            severity=CONF.severity,        # TODO(nsatterl): convert to severity type
+            severity=CONF.severity,
             environment=CONF.environment,
             service=CONF.service,
             text=CONF.text,
