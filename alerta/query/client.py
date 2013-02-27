@@ -379,13 +379,13 @@ def main():
             '%3d' % response['alerts']['statusCounts']['ack'] + ' ' +
             '%6d' % response['alerts']['statusCounts']['closed'] + '  '),
         print(
-            COLOR['CRITICAL'] + '%4d' % response['alerts']['severityCounts']['critical'] + severity.ENDC + ' ' +
-            COLOR['MAJOR'] + '%4d' % response['alerts']['severityCounts']['major'] + severity.ENDC + ' ' +
-            COLOR['MINOR'] + '%4d' % response['alerts']['severityCounts']['minor'] + severity.ENDC + ' ' +
-            COLOR['WARNING'] + '%4d' % response['alerts']['severityCounts']['warning'] + severity.ENDC + ' ' +
-            COLOR['NORMAL'] + '%4d' % response['alerts']['severityCounts']['normal'] + severity.ENDC + ' ' +
-            COLOR['INFORM'] + '%4d' % response['alerts']['severityCounts']['inform'] + severity.ENDC + ' ' +
-            COLOR['DEBUG'] + '%4d' % response['alerts']['severityCounts']['debug'] + severity.ENDC)
+            severity._COLOR_MAP[severity.CRITICAL] + '%4d' % response['alerts']['severityCounts']['critical'] + severity.ENDC + ' ' +
+            severity._COLOR_MAP[severity.MAJOR] + '%4d' % response['alerts']['severityCounts']['major'] + severity.ENDC + ' ' +
+            severity._COLOR_MAP[severity.MINOR] + '%4d' % response['alerts']['severityCounts']['minor'] + severity.ENDC + ' ' +
+            severity._COLOR_MAP[severity.WARNING] + '%4d' % response['alerts']['severityCounts']['warning'] + severity.ENDC + ' ' +
+            severity._COLOR_MAP[severity.NORMAL] + '%4d' % response['alerts']['severityCounts']['normal'] + severity.ENDC + ' ' +
+            severity._COLOR_MAP[severity.INFORM] + '%4d' % response['alerts']['severityCounts']['inform'] + severity.ENDC + ' ' +
+            severity._COLOR_MAP[severity.DEBUG] + '%4d' % response['alerts']['severityCounts']['debug'] + severity.ENDC)
 
     if not CONF.nofooter:
         now = datetime.datetime.utcnow()
