@@ -24,5 +24,16 @@ _STATUS_MAP = {
 }
 
 
+def is_valid(name):
+    return name in _STATUS_MAP
+
+
 def name_to_code(name):
     return _STATUS_MAP.get(name, UNKNOWN_STATUS_CODE)
+
+
+def parse_status(name):
+    for st in _STATUS_MAP:
+        if name.lower() == st.lower():
+            return st
+    return 'Not Valid'

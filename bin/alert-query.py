@@ -1,0 +1,295 @@
+#!/usr/bin/env python
+
+########################################
+#
+# alert-sender.py - Alert Command-line script
+#
+########################################
+
+import os
+import sys
+import argparse
+
+possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
+                                                os.pardir,
+                                                os.pardir))
+if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
+    sys.path.insert(0, possible_topdir)
+
+from alerta.common import config
+from alerta.common import log as logging
+from alerta.query import client
+from alerta.alert import severity, status
+
+__version__ = '2.0.0'
+
+DEFAULT_TIMEOUT = 86400
+
+LOG = logging.getLogger('alerta.query')
+CONF = config.CONF
+
+
+def main(argv):
+
+    try:
+        parser = argparse.ArgumentParser(
+            add_help=False,
+            description="Alert database query tool - show alerts filtered by attributes",
+            epilog="alert-query.py --color --env QA,REL --group Puppet --count 10 --show all"
+        )
+        # parser.add_argument(
+        #     "-m",
+        #     "--server",
+        #     dest="server",
+        #     help="Alerta server (default: %s)" % SERVER
+        # )
+        # parser.add_argument(
+        #     "-z",
+        #     "--timezone",
+        #     dest="timezone",
+        #     help="Set timezone (default: Europe/London)"
+        # )
+        parser.add_argument(
+            "--minutes",
+            type=int,
+            dest="minutes",
+            default=0,
+            help="Show alerts for last <x> minutes"
+        )
+        parser.add_argument(
+            "--hours",
+            "--hrs",
+            type=int,
+            dest="hours",
+            default=0,
+            help="Show alerts for last <x> hours"
+        )
+        parser.add_argument(
+            "--days",
+            type=int,
+            dest="days",
+            default=0,
+            help="Show alerts for last <x> days"
+        )
+        parser.add_argument(
+            "-i",
+            "--id",
+            action="append",
+            dest="alertid",
+            help="Alert ID (can use 8-char abbrev id)"
+        )
+        parser.add_argument(
+            "-E",
+            "--environment",
+            action="append",
+            dest="environment",
+            help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA"
+        )
+        parser.add_argument(
+            "--not-environment",
+            action="append",
+            dest="not_environment"
+        )
+        parser.add_argument(
+            "-S",
+            "--svc",
+            "--service",
+            action="append",
+            dest="service",
+            help="Service eg. R1, R2, Discussion, ContentAPI, Frontend, " +
+                 "FlexibleContent, Identity, Mobile, Soulmates, MicroApp, " +
+                 "Mutualisation, SharedSvcs, Network, Infrastructure"
+        )
+        parser.add_argument(
+            "--not-service",
+            action="append",
+            dest="not_service"
+        )
+        parser.add_argument(
+            "-r",
+            "--resource",
+            action="append",
+            dest="resource",
+            help="Resource under alarm eg. hostname, network device, application"
+        )
+        parser.add_argument(
+            "--not-resource",
+            action="append",
+            dest="not_resource"
+        )
+        parser.add_argument(
+            "-s",
+            "--severity",
+            action="append",
+            dest="severity",
+            help="Severity eg. %s" % ','.join(severity.ALL)
+        )
+        parser.add_argument(
+            "--not-severity",
+            action="append",
+            dest="not_severity"
+        )
+        parser.add_argument(
+            "--status",
+            action="append",
+            dest="status",
+            help="Status eg. %s" % ','.join(status.ALL)
+        )
+        parser.add_argument(
+            "--not-status",
+            action="append",
+            dest="not_status"
+        )
+        parser.add_argument(
+            "-e",
+            "--event",
+            action="append",
+            dest="event",
+            help="Event name eg. HostAvail, PingResponse, AppStatus"
+        )
+        parser.add_argument(
+            "--not-event",
+            action="append",
+            dest="not_event"
+        )
+        parser.add_argument(
+            "-g",
+            "--group",
+            action="append",
+            dest="group",
+            help="Event group eg. Application, Backup, Database, HA, " +
+                 "Hardware, System, OS, Performance, Storage, Security, Web"
+        )
+        parser.add_argument(
+            "--not-group",
+            action="append",
+            dest="not_group"
+        )
+        parser.add_argument(
+            "--origin",
+            action="append",
+            dest="origin",
+            help="Origin of the alert eg. alert-sender, alert-ganglia"
+        )
+        parser.add_argument(
+            "--not-origin",
+            action="append",
+            dest="not_origin"
+        )
+        parser.add_argument(
+            "-v",
+            "--value",
+            action="append",
+            dest="value",
+            help="Event value eg. 100%, Down, PingFail, 55tps, ORA-1664"
+        )
+        parser.add_argument(
+            "--not-value",
+            action="append",
+            dest="not_value"
+        )
+        parser.add_argument(
+            "-T",
+            "--tags",
+            action="append",
+            dest="tags"
+        )
+        parser.add_argument(
+            "--not-tags",
+            action="append",
+            dest="not_tags"
+        )
+        parser.add_argument(
+            "-t",
+            "--text",
+            action="append",
+            dest="text"
+        )
+        parser.add_argument(
+            "--not-text",
+            action="append",
+            dest="not_text"
+        )
+        parser.add_argument(
+            "--show",
+            action="append",
+            dest="show",
+            default=[],
+            help="Show 'text', 'summary', 'times', 'attributes', 'details', 'tags', 'history', 'counts' and 'color'"
+        )
+        parser.add_argument(
+            "-o",
+            "--orderby",
+            "--sortby",
+            "--sort-by",
+            dest="sortby",
+            default='lastReceiveTime',
+            help="Sort by attribute (default: createTime)"
+        )
+        parser.add_argument(
+            "-w",
+            "--watch",
+            action="store_true",
+            dest="watch",
+            default=False,
+            help="Periodically poll for new  alerts every 2 seconds."
+        )
+        parser.add_argument(
+            "-n",
+            "--interval",
+            type=int,
+            dest="interval",
+            default=2,
+            help="Change the default watch interval."
+        )
+        parser.add_argument(
+            "--count",
+            "--limit",
+            type=int,
+            dest="limit",
+            default=0
+        )
+        parser.add_argument(
+            "--no-header",
+            action="store_true",
+            dest="noheader"
+        )
+        parser.add_argument(
+            "--no-footer",
+            action="store_true",
+            dest="nofooter"
+        )
+        parser.add_argument(
+            "--color",
+            "--colour",
+            action="store_true",
+            default=False,
+            help="Synonym for --show=color"
+        )
+        parser.add_argument(
+            "-d",
+            "--dry-run",
+            action="store_true",
+            default=False,
+            help="Do not run. Output query and filter."
+        )
+
+        args, argv = parser.parse_known_args(argv)
+
+        # Parse remaining arguments to system argument parser
+        config.parse_args(argv, version=__version__, cli_parser=parser)
+        logging.setup('alerta')
+
+        CONF.Load(vars(args))
+
+        client.main()
+
+    except Exception, e:
+        print >> sys.stderr, e
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
+
+
+

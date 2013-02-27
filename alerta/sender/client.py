@@ -3,9 +3,8 @@ from alerta.common import log as logging
 from alerta.common import config
 from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging
-from alerta.alert import severity
 
-__version__ = '1.3.0'
+__version__ = '2.0.0'
 
 DEFAULT_TIMEOUT = 3600
 

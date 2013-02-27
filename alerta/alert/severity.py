@@ -50,6 +50,32 @@ _SEVERITY_MAP = {
     INDETERMINATE: INDETER_SEV_CODE,
 }
 
+_ABBREV_SEVERITY_MAP = {
+    CRITICAL: 'Crit',
+    MAJOR: 'Majr',
+    MINOR: 'Minr',
+    WARNING: 'Warn',
+    NORMAL: 'Norm',
+    CLEAR: 'Clr ',
+    INFORM: 'Info',
+    DEBUG: 'Dbug',
+    AUTH: 'Sec ',
+    UNKNOWN: 'Unkn',
+    INDETERMINATE: 'Ind ',
+}
+
+_COLOR_MAP = {
+    CRITICAL: '\033[91m',
+    MAJOR: '\033[95m',
+    MINOR: '\033[93m',
+    WARNING: '\033[96m',
+    NORMAL: '\033[92m',
+    INFORM: '\033[92m',
+    DEBUG: '\033[90m',
+}
+
+ENDC = '\033[0m'
+
 
 def is_valid(name):
     return name in _SEVERITY_MAP

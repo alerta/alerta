@@ -26,6 +26,12 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
 
     SYSTEM_DEFAULTS = {
 
+        'timezone': 'Europe/London',
+
+        'api_host': 'monitoring',
+        'api_port': 80,
+        'api_endpoint': '/',   # eg. /Services/API
+
         'server_threads': 1,
         'alert_timeout': 86400,  # seconds
         'parser_dir': '/opt/alerta/bin/parsers',

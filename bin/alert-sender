@@ -21,15 +21,12 @@ from alerta.common import log as logging
 from alerta.sender import client
 from alerta.alert import severity
 
-__version__ = '1.2.0'
+__version__ = '2.0.0'
 
 DEFAULT_TIMEOUT = 86400
 
 LOG = logging.getLogger('alerta.sender')
 CONF = config.CONF
-
-#TODO(nsatterl): check for valid environment?
-VALID_ENVIRONMENT = ['PROD', 'REL', 'QA', 'TEST', 'CODE', 'STAGE', 'DEV', 'LWP', 'INFRA']
 
 
 def main(argv):

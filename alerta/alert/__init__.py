@@ -108,8 +108,6 @@ class Alert(object):
             LOG.error('Could not parse alert: %s', e)
             return
 
-        # TODO(nsatterl): Convert status and severity
-
         for k, v in alert.iteritems():
             if k in ['createTime', 'receiveTime', 'lastReceiveTime']:
                 try:
@@ -119,15 +117,17 @@ class Alert(object):
                     return
                 alert[k] = time.replace(tzinfo=pytz.utc)
 
+        print 'ALERT TO PARSE -> %s' % alert
+
         return Alert(
             resource=alert.get('resource', None),
             event=alert.get('event', None),
             correlate=alert.get('correlatedEvents', None),
             group=alert.get('group', None),
             value=alert.get('value', None),
-            status=alert.get('status', None), # TODO(nsatterl): conversion?
-            severity=alert.get('severity', None),
-            previous_severity=alert.get('previousSeverity', None),
+            status=status.parse_status(alert.get('status', None)),
+            severity=severity.parse_severity(alert.get('severity', None)),
+            previous_severity=severity.parse_severity(alert.get('previousSeverity', None)),
             environment=alert.get('environment', None),
             service=alert.get('service', None),
             text=alert.get('text', None),
