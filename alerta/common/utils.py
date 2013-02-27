@@ -8,6 +8,7 @@ class Bunch:
     """
     Usage: print Bunch({'a':1, 'b':{'foo':2}}).b.foo
     """
+
     def __init__(self):
         pass
 
@@ -27,7 +28,7 @@ class Bunch:
 # Extend JSON Encoder to support ISO 8601 format dates
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
-        print 'obj=>%s' % obj
+
         if isinstance(obj, (datetime.date, datetime.datetime)):
             return obj.replace(microsecond=0).isoformat() + ".%03dZ" % (obj.microsecond // 1000)
         else:

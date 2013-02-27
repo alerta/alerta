@@ -81,10 +81,14 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
                 else:
                     defaults[name] = config.get(prog, name)
 
+    parents = [cfg_parser]
+    if cli_parser:
+        parents.append(cli_parser)
+
     parser = argparse.ArgumentParser(
         prog=prog,
         # description='', # TODO(nsatterl): pass __doc__ from calling program?
-        parents=[cli_parser, cfg_parser],
+        parents=parents,
     )
     parser.add_argument(
         '--version',
@@ -133,4 +137,4 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
     args = parser.parse_args(argv_left)
     CONF.Load(vars(args))
 
-    print 'FIXME %s' % CONF
+    #print 'FIXME %s' % CONF

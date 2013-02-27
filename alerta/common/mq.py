@@ -4,6 +4,7 @@ import stomp
 
 from alerta.common import log as logging
 from alerta.common import config
+from alerta.common.utils import DateEncoder
 
 LOG = logging.getLogger(__name__)
 LOG = logging.getLogger('stomp.py')
@@ -58,7 +59,7 @@ class Messaging(object):
 
         LOG.debug('Sending alert to message broker...')
         try:
-            self.connection.send(message=json.dumps(alert.get_body()), headers=alert.get_header(), destination=self.destination)
+            self.connection.send(message=json.dumps(alert.get_body(), cls=DateEncoder), headers=alert.get_header(), destination=self.destination)
         except Exception, e:
             LOG.error('Could not send to broker %s:%s : %s', CONF.stomp_host, CONF.stomp_port, e)
             return

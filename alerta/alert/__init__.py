@@ -1,9 +1,10 @@
-
+from __builtin__ import staticmethod
 import os
 import datetime
 import json
-
 from uuid import uuid4
+
+import pytz
 
 from alerta.alert import severity, status
 from alerta.common import log as logging
@@ -15,7 +16,6 @@ LOG = logging.getLogger(__name__)
 
 
 class Alert(object):
-
     def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status.UNKNOWN,
                  severity=severity.NORMAL, previous_severity=None, environment=None, service=None,
                  text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
@@ -32,14 +32,16 @@ class Alert(object):
         service = service or list()
         tags = tags or list()
 
-        self.summary = summary or '%s - %s %s is %s on %s %s' % (','.join(environment), severity, event, value, ','.join(service), resource)
+        create_time = create_time or datetime.datetime.utcnow()
+        expire_time = create_time + datetime.timedelta(seconds=timeout)
+
+        self.summary = summary or '%s - %s %s is %s on %s %s' % (
+            ','.join(environment), severity, event, value, ','.join(service), resource)
 
         self.header = {
             'type': event_type,
             'correlation-id': self.alertid,
         }
-
-        create_time = create_time or datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'
 
         self.alert = {
             'id': self.alertid,
@@ -49,7 +51,7 @@ class Alert(object):
             'group': group,
             'value': value,
             'severity': severity,
-            'previousSeverity': previous_severity or 'UNKNOWN',   # severity.UNKNOWN,
+            'previousSeverity': previous_severity or 'UNKNOWN', # severity.UNKNOWN,
             'environment': environment,
             'service': service,
             'text': text,
@@ -60,7 +62,7 @@ class Alert(object):
             'origin': origin or '%s/%s' % (__program__, os.uname()[1]),
             'thresholdInfo': threshold_info,
             'timeout': timeout,
-            'expireTime': 'calculate the expire time from createTime+timeout',  # TODO(nsatterl); fix this
+            'expireTime': expire_time,
             'repeat': repeat,
             'duplicateCount': duplicate_count,
         }
@@ -80,7 +82,7 @@ class Alert(object):
         return 'Alert(header=%r, alert=%r)' % (str(self.header), str(self.alert))
 
     def __str__(self):
-        return json.dumps(self.alert, indent=4)
+        return json.dumps(self.alert, cls=DateEncoder, indent=4)
 
     def get_id(self):
         return self.alertid
@@ -91,24 +93,76 @@ class Alert(object):
     def get_body(self):
         return self.alert
 
+    def get_type(self):
+        return self.header['type']
+
+    def receive_now(self):
+        self.alert['receiveTime'] = datetime.datetime.utcnow()
+
+    @staticmethod
+    def parse_alert(alert):
+
+        try:
+            alert = json.loads(alert)
+        except ValueError, e:
+            LOG.error('Could not parse alert: %s', e)
+            return
+
+        # TODO(nsatterl): Convert status and severity
+
+        for k, v in alert.iteritems():
+            if k in ['createTime', 'receiveTime', 'lastReceiveTime']:
+                try:
+                    time = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S.%fZ')
+                except ValueError, e:
+                    LOG.error('Could not parse date time string: %s', e)
+                    return
+                alert[k] = time.replace(tzinfo=pytz.utc)
+
+        return Alert(
+            resource=alert.get('resource', None),
+            event=alert.get('event', None),
+            correlate=alert.get('correlatedEvents', None),
+            group=alert.get('group', None),
+            value=alert.get('value', None),
+            status=alert.get('status', None), # TODO(nsatterl): conversion?
+            severity=alert.get('severity', None),
+            previous_severity=alert.get('previousSeverity', None),
+            environment=alert.get('environment', None),
+            service=alert.get('service', None),
+            text=alert.get('text', None),
+            event_type=alert.get('type', None),
+            tags=alert.get('tags', None),
+            origin=alert.get('origin', None),
+            repeat=alert.get('repeat', None),
+            duplicate_count=alert.get('duplicateCount', None),
+            threshold_info=alert.get('thresholdInfo', None),
+            summary=alert.get('summary', None),
+            timeout=alert.get('timeout', None),
+            alertid=alert.get('id', None),
+            last_receive_id=alert.get('lastReceiveId', None),
+            create_time=alert.get('createTime', None),
+            receive_time=alert.get('receiveTime', None),
+            last_receive_time=alert.get('lastReceiveTime', None),
+            trend_indication=alert.get('trendIndication', None),
+        )
+
 
 class Heartbeat(object):
-
     def __init__(self, origin=None, version='unknown'):
-
         # FIXME(nsatterl): how to fix __program__ for origin???
         __program__ = 'THIS IS BROKEN'
 
         self.heartbeatid = str(uuid4())
 
         self.header = {
-            'type': 'heartbeat',
+            'type': 'Heartbeat',
             'correlation-id': self.heartbeatid,
         }
 
         self.heartbeat = {
             'id': self.heartbeatid,
-            'type': 'heartbeat',
+            'type': 'Heartbeat',
             'createTime': datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z',
             'origin': origin or '%s/%s' % (__program__, os.uname()[1]),
             'version': version,
@@ -118,7 +172,7 @@ class Heartbeat(object):
         return 'Heartbeat(header=%r, alert=%r)' % (str(self.header), str(self.heartbeat))
 
     def __str__(self):
-        return json.dumps(self.heartbeat, indent=4)
+        return json.dumps(self.heartbeat, cls=DateEncoder, indent=4)
 
     def get_id(self):
         return self.heartbeatid
@@ -128,3 +182,6 @@ class Heartbeat(object):
 
     def get_body(self):
         return self.heartbeat
+
+    def get_type(self):
+        return self.header['type']

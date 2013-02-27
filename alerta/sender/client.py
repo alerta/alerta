@@ -40,7 +40,7 @@ def main():
     if CONF.dry_run:
         print msg
     else:
-        LOG.debug(msg)
+        LOG.debug('Message => %s', repr(msg))
 
         mq = Messaging()
         mq.connect()

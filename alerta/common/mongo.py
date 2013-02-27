@@ -8,7 +8,6 @@ import pymongo
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.alert import Alert
-from alerta.common.utils import DateEncoder
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -72,7 +71,7 @@ class Database(object):
             correlate=response['correlatedEvents'],
             group=response['group'],
             value=response['value'],
-            severity=response['severity'],        # convert to severity type
+            severity=response['severity'],        # TODO(nsatterl): convert to severity type
             environment=response['environment'],
             service=response['service'],
             text=response['text'],
