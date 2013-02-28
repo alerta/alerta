@@ -11,7 +11,7 @@ CONF = Bunch()  # config options can be accessed using CONF.verbose or CONF.use_
 def parse_args(argv, prog=None, version='unknown', cli_parser=None):
 
     if prog is None:
-        prog = os.path.basename(sys.argv[0]).rstrip('.py')
+        prog = os.path.basename(sys.argv[0])
 
     OPTION_DEFAULTS = {
 
@@ -151,4 +151,4 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
     args = parser.parse_args(argv_left)
     CONF.Load(vars(args))
 
-    #print 'FIXME %s' % CONF
+    print 'FIXME %s' % CONF

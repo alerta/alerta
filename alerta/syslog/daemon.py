@@ -67,7 +67,7 @@ class SyslogDaemon(Daemon):
                         LOG.debug('Syslog UDP data received: %s', data)
                         self.parse_syslog(data)
                     if i == tcp:
-                        client,addr = tcp.accept()
+                        client, addr = tcp.accept()
                         data = client.recv(4096)
                         client.close()
                         LOG.debug('Syslog TCP data received: %s', data)
@@ -76,7 +76,7 @@ class SyslogDaemon(Daemon):
                 # TODO(nsatterl): don't send a heartbeat after each and every alert
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat()
-                #self.mq.send(heartbeat)
+                self.mq.send(heartbeat)
             except KeyboardInterrupt:
                 self.shuttingdown = True
 
