@@ -109,12 +109,12 @@ class SyslogDaemon(Daemon):
 
         else:
             # Parse RFC 3164 compliant message
-            m = re.match(r'<(\d+)>(\S{3})\s+(\d+) (\d+:\d+:\d+) (\S+) (\S+): (.*)', data)
+            m = re.match(r'<(\d{1,3})>\S{3}\s{1,2}\d?\d \d{2}:\d{2}:\d{2} (\S+) (\S+:)?(.*)', data)
             if m:
                 PRI = int(m.group(1))
-                LOGHOST = m.group(5)
-                TAG = m.group(6)
-                MSG = m.group(7)
+                LOGHOST = m.group(2)
+                TAG = m.group(3).rstrip(':')
+                MSG = m.group(4)
                 LOG.info("Parsed RFC 3164 message OK")
             else:
                 LOG.error("Could not parse syslog RFC 3164 message: %s", data)
@@ -124,14 +124,14 @@ class SyslogDaemon(Daemon):
 
         # Defaults
         event       = '%s%s' % (facility.capitalize(), level.capitalize())
-        resource    = LOGHOST
+        resource    = '%s%s' % (LOGHOST, ':' + TAG if TAG else '')
         severity    = syslog.priority_to_code(level)
         group       = 'Syslog'
-        value       = TAG
+        value       = facility
         text        = MSG
         environment = ['INFRA']
         service     = ['Infrastructure']
-        tags        = [ '%s.%s' % (facility, level) ]
+        tags        = ['%s.%s' % (facility, level)]
         correlate   = list()
         threshold   = ''
         suppress    = False

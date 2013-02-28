@@ -56,8 +56,8 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
         'rabbit_password': 'guest',
         'rabbit_virtual_host': '/',
 
-        'syslog_udp_port': 514,
-        'syslog_tcp_port': 514,
+        'syslog_udp_port': 5140,
+        'syslog_tcp_port': 5140,
         'syslog_facility': 'local7',
     }
     CONF.Load(SYSTEM_DEFAULTS)
