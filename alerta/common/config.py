@@ -18,7 +18,8 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
         'version': 'unknown',
         'debug': False,
         'verbose': False,
-        'logpath': '/var/log/alerta/%s.log' % prog,
+        'log_dir': '/var/log/alerta',
+        'log_file': '%s.log' % prog,
         'use_syslog': True,
         'use_stderr': False,
         'foreground': False,
@@ -114,9 +115,14 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
         help="Log level INFO and higher (default: WARNING)"
     )
     parser.add_argument(
-        '--logpath',
-        default=OPTION_DEFAULTS['logpath'],
-        help="Path for log file"
+        '--log-dir',
+        default=OPTION_DEFAULTS['log_dir'],
+        help="Directory for log file"
+    )
+    parser.add_argument(
+        '--log-file',
+        default=OPTION_DEFAULTS['log_file'],
+        help="Log file name"
     )
     parser.add_argument(
         '--use-syslog',

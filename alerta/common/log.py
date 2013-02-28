@@ -1,7 +1,6 @@
-# FIXME
-#import pdb; pdb.set_trace()
 
-# TODO(nsatterl): log exceptions (checkout how OpenStack do it)
+import os
+import sys
 import socket
 import logging
 import logging.handlers
@@ -13,6 +12,7 @@ CONF = config.CONF
 _DEFAULT_LOG_FORMAT = "%(asctime)s.%(msecs).03d %(name)s[%(process)d] %(threadName)s %(levelname)s - %(message)s"
 _DEFAULT_LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+# TODO(nsatterl): log exceptions (checkout how OpenStack do it)
 
 
 def setup(name):
@@ -30,8 +30,9 @@ def setup(name):
         #syslog = logging.handlers.SysLogHandler(address=('localhost', 514), facility=facility, socktype=socket.SOCK_STREAM)
         #log_root.addHandler(syslog)
 
-    if CONF.logpath:
-        filelog = logging.handlers.WatchedFileHandler(CONF.logpath)
+    logpath = _get_log_file_path()
+    if logpath:
+        filelog = logging.handlers.WatchedFileHandler(logpath)
         log_root.addHandler(filelog)
 
         # TODO(nsatterl): test mode like openstack??
@@ -59,6 +60,26 @@ def getLogger(name=None):
         return logging.getLogger(name)
     else:
         return logging.root
+
+
+def _get_prog_name():
+    print os.path.basename(sys.argv[0])
+    return os.path.basename(sys.argv[0])
+
+
+def _get_log_file_path():
+    logfile = CONF.log_file
+    logdir = CONF.log_dir
+
+    if logfile and not logdir:
+        return logfile
+
+    if logfile and logdir:
+        return os.path.join(logdir, logfile)
+
+    if logdir:
+        prog = prog or _get_prog_name()
+        return '%s.log' % (os.path.join(logdir, prog))
 
 
 # TODO(nsatterl): enable color output
