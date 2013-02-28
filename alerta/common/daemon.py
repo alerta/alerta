@@ -56,8 +56,6 @@ class Daemon:
     """
     def __init__(self, prog, pidfile=None, disable_flag=None, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
 
-        logging.setup(__name__)
-
         self.prog = prog
 
         self.stdin = stdin
@@ -82,10 +80,8 @@ class Daemon:
                 # exit first parent
                 sys.exit(0)
         except OSError, e:
-            LOG.critical("fork #1 failed: %d (%s)" % (e.errno, e.strerror))
+            LOG.critical("Fork #1 failed: %d (%s)" % (e.errno, e.strerror))
             sys.exit(1)
-
-        LOG.debug('Success fork #1...')
 
         # decouple from parent environment
         os.chdir("/")
@@ -99,27 +95,33 @@ class Daemon:
                 # exit from second parent
                 sys.exit(0)
         except OSError, e:
-            LOG.critical("fork #2 failed: %d (%s)" % (e.errno, e.strerror))
+            LOG.critical("Fork #2 failed: %d (%s)" % (e.errno, e.strerror))
             sys.exit(1)
-
-        LOG.debug("Success fork #2...")
 
         # redirect standard file descriptors
         sys.stdout.flush()
         sys.stderr.flush()
+
         si = file(self.stdin, 'r')
         so = file(self.stdout, 'a+')
-        se = file(self.stderr, 'a+', 0)
+        if not CONF.use_stderr:
+            se = file(self.stderr, 'a+', 0)
+
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
+        if not CONF.use_stderr:
+            os.dup2(se.fileno(), sys.stderr.fileno())
 
-        LOG.debug('Redirected stdout, stderr, stdin')
+        LOG.debug('Redirected stdout%s and stdin' % (', stderr' if not CONF.use_stderr else ''))
 
         # write pidfile
         atexit.register(self.delpid)
         self.pid = str(os.getpid())
-        file(self.pidfile, 'w+').write("%s\n" % self.pid)
+        try:
+            file(self.pidfile, 'w+').write("%s\n" % self.pid)
+        except Exception, e:
+            LOG.error('Failed to write pid to file: %s', e)
+            sys.exit(1)
 
         LOG.debug('Wrote PID %s to %s' % (self.pid, self.pidfile))
 
@@ -129,7 +131,7 @@ class Daemon:
 
     def delpid(self):
         os.remove(self.pidfile)
-        LOG.debug('Deleted pid file %s' % self.pidfile)
+        LOG.warning('Deleted pid file %s' % self.pidfile)
 
     def start(self):
         """
@@ -196,7 +198,8 @@ class Daemon:
 
     def run(self):
         """
-Y       ou should override this method when you subclass Daemon. It will be called after the process has been
+        You should override this method when you subclass Daemon. It will be called after the process has been
         daemonized by start() or restart().
         """
+        LOG.error('Something went wrong. This method is meant to be re-implemented by another Daemon class.')
         pass

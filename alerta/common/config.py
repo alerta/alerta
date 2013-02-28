@@ -116,11 +116,13 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
     )
     parser.add_argument(
         '--log-dir',
+        metavar="DIR",
         default=OPTION_DEFAULTS['log_dir'],
-        help="Directory for log file"
+        help="Log directory, prepended to --log-file"
     )
     parser.add_argument(
         '--log-file',
+        metavar="FILE",
         default=OPTION_DEFAULTS['log_file'],
         help="Log file name"
     )
