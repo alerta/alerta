@@ -150,6 +150,7 @@ class Alert(object):
 
 
 class Heartbeat(object):
+
     def __init__(self, origin=None, version='unknown'):
         # FIXME(nsatterl): how to fix __program__ for origin???
         __program__ = 'THIS IS BROKEN'
