@@ -111,6 +111,7 @@ class SnmpTrapHandler(object):
         threshold = ''
         suppress = False
 
+        # TODO(nsatterl): fix  this
         # Match trap to specific config and load any parsers
         # Note: any of these variables could have been modified by a parser
 
