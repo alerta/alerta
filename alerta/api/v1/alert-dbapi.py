@@ -87,8 +87,8 @@ def main():
         config = yaml.load(open(CONFIGFILE,'r'))
     except IOError, e:
         logging.error('Failed to load config file %s: %s', CONFIGFILE, e)
-    if config and 'warning' in config:
-        status['response']['warning'] = config['warning']
+    #if config and 'warning' in config:
+    #    status['response']['warning'] = config['warning']
 
     m = re.search(r'GET /alerta/api/v1/alerts/alert/(?P<id>[a-z0-9-]+)$', request)
     if m:
@@ -244,29 +244,29 @@ def main():
                 alertDetails.append(alert)
 
             total += 1
-            if alert['status'] == 'OPEN':
+            if alert['status'] == 'Open':
                 opened += 1
-            if alert['status'] == 'ACK':
+            if alert['status'] == 'Acknowledged':
                 ack += 1
-            if alert['status'] == 'CLOSED':
+            if alert['status'] == 'Closed':
                 closed += 1
 
             # Only OPEN or NORMAL alerts contribute to the severity counts
-            if alert['severity'] != 'NORMAL' and alert['status'] != 'OPEN':
+            if alert['severity'] != 'Normal' and alert['status'] != 'Open':
                 continue
-            if alert['severity'] == 'CRITICAL':
+            if alert['severity'] == 'Critical':
                 critical += 1
-            elif alert['severity'] == 'MAJOR':
+            elif alert['severity'] == 'Major':
                 major += 1
-            elif alert['severity'] == 'MINOR':
+            elif alert['severity'] == 'Minor':
                 minor += 1
-            elif alert['severity'] == 'WARNING':
+            elif alert['severity'] == 'Warning':
                 warning += 1
-            elif alert['severity'] == 'NORMAL':
+            elif alert['severity'] == 'Normal':
                 normal += 1
-            elif alert['severity'] == 'INFORM':
+            elif alert['severity'] == 'Inform':
                 inform += 1
-            elif alert['severity'] == 'DEBUG':
+            elif alert['severity'] == 'Debug':
                 debug += 1
 
         stat = { 'open': opened,

@@ -20,7 +20,7 @@ class Alert(object):
                  severity=severity.NORMAL, previous_severity=None, environment=None, service=None,
                  text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
                  threshold_info='n/a', summary=None, timeout=_DEFAULT_TIMEOUT, alertid=None, last_receive_id=None,
-                 create_time=None, receive_time=None, last_receive_time=None, trend_indication=None):
+                 create_time=None, receive_time=None, last_receive_time=None, trend_indication=None, raw_data=None):
 
         # FIXME(nsatterl): how to fix __program__ for origin???
         __program__ = 'THIS IS BROKEN'
@@ -65,6 +65,7 @@ class Alert(object):
             'expireTime': expire_time,
             'repeat': repeat,
             'duplicateCount': duplicate_count,
+            'rawData': raw_data,
         }
 
         if status:

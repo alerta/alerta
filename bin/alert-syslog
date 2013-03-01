@@ -18,7 +18,7 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.syslog.daemon import SyslogDaemon
 
-__version__ = '1.2.0'
+__version__ = '2.0.0'
 
 LOG = logging.getLogger('alerta.syslog')
 CONF = config.CONF
