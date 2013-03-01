@@ -79,7 +79,8 @@ class SyslogDaemon(Daemon):
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat()
                 self.mq.send(heartbeat)
-            except KeyboardInterrupt:
+
+            except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
 
         LOG.info('Shutdown request received...')

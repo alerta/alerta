@@ -17,7 +17,7 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.alert import Alert, Heartbeat
-from alerta.common.mq import Messaging
+from alerta.common.mq import Messaging, MessageHandler
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -95,21 +95,11 @@ def ack_alert(alertid):
     return
 
 
-class MessageHandler(object):
+class IrcbotMessageHandler(MessageHandler):
     global tokens
 
     def __init__(self, irc):
         self.irc = irc
-
-    def on_connecting(self, host_and_port):
-        LOG.info('Connecting to %s', host_and_port)
-
-    def on_connected(self, headers, body):
-        LOG.info('Connected to %s %s', headers, body)
-
-    def on_disconnected(self):
-        # TODO(nsatterl): auto-reconnect
-        LOG.error('Connection to messaging server has been lost.')
 
     def on_message(self, headers, body):
 
@@ -134,15 +124,6 @@ class MessageHandler(object):
                         'PRIVMSG %s :%s [%s] %s\r\n' % (IRC_CHANNEL, shortid, alert['status'], alert['summary']))
                 except Exception, e:
                     LOG.error('%s : IRC send failed - %s', alert['lastReceiveId'], e)
-
-    def on_receipt(self, headers, body):
-        LOG.debug('Receipt received %s %s', headers, body)
-
-    def on_error(self, headers, body):
-        LOG.error('Send failed %s %s', headers, body)
-
-    def on_send(self, headers, body):
-        LOG.debug('Sending message %s %s', headers, body)
 
 
 class IrcbotDaemon(Daemon):
