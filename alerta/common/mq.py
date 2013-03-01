@@ -6,12 +6,12 @@ from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
 
-LOG = logging.getLogger(__name__)
 LOG = logging.getLogger('stomp.py')
 CONF = config.CONF
 
 
 class Messaging(object):
+
     def __init__(self):
         logging.setup('stomp.py')
 
@@ -43,8 +43,11 @@ class Messaging(object):
 
         LOG.info('Connected to broker %s:%s', CONF.stomp_host, CONF.stomp_port)
 
-    def subscribe(self, ack='auto'):
-        self.connection.subscribe(destination=CONF.inbound_queue, ack=ack)
+    def subscribe(self, destination=None, ack='auto'):
+
+        self.destination = destination or CONF.inbound_queue
+
+        self.connection.subscribe(destination=self.destination, ack=ack)
 
     def send(self, alert, destination=None):
 
@@ -59,7 +62,8 @@ class Messaging(object):
 
         LOG.debug('Sending alert to message broker...')
         try:
-            self.connection.send(message=json.dumps(alert.get_body(), cls=DateEncoder), headers=alert.get_header(), destination=self.destination)
+            self.connection.send(message=json.dumps(alert.get_body(), cls=DateEncoder), headers=alert.get_header(),
+                                 destination=self.destination)
         except Exception, e:
             LOG.error('Could not send to broker %s:%s : %s', CONF.stomp_host, CONF.stomp_port, e)
             return
@@ -70,3 +74,34 @@ class Messaging(object):
             LOG.info('Disconnecting from broker %s:%s', CONF.stomp_host, CONF.stomp_port)
             self.connection.disconnect()
         LOG.info('Disconnected!')
+
+
+class MessageHandler(object):
+    """
+    A generic message handler class.
+
+    Usage: Subclass the MessageHandler class and override the on_message() method
+    """
+
+    def on_connecting(self, host_and_port):
+        LOG.info('Connecting to %s', host_and_port)
+
+    def on_connected(self, headers, body):
+        LOG.info('Connected to %s %s', headers, body)
+
+    def on_disconnected(self):
+        # TODO(nsatterl): auto-reconnect
+        LOG.error('Connection to messaging server has been lost.')
+
+    def on_message(self, headers, body):
+        LOG.info("Received message %s %s", headers, body)
+
+    def on_receipt(self, headers, body):
+        LOG.debug('Receipt received %s %s', headers, body)
+
+    def on_error(self, headers, body):
+        LOG.error('Error %s %s', headers, body)
+
+    def on_send(self, headers, body):
+        LOG.debug('Sending message %s %s', headers, body)
+

@@ -9,7 +9,7 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.alert import Alert, severity, status
-from alerta.common.mq import Messaging
+from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.mongo import Database
 
 
@@ -281,19 +281,10 @@ def calculate_status(severity, previous_severity):
     return status
 
 
-class MessageHandler(object):
+class ServerMessageHandler(MessageHandler):
+
     def __init__(self, queue):
         self.queue = queue
-
-    def on_connecting(self, host_and_port):
-        LOG.info('Connecting to %s', host_and_port)
-
-    def on_connected(self, headers, body):
-        LOG.info('Connected to %s %s', headers, body)
-
-    def on_disconnected(self):
-        # TODO(nsatterl): auto-reconnect
-        LOG.error('Connection to messaging server has been lost.')
 
     def on_message(self, headers, body):
 
@@ -309,15 +300,6 @@ class MessageHandler(object):
                 alert.receive_now()
                 LOG.debug('Queueing alert %s', alert.get_body())
                 self.queue.put(alert)
-
-    def on_receipt(self, headers, body):
-        LOG.debug('Receipt received %s %s', headers, body)
-
-    def on_error(self, headers, body):
-        LOG.error('Send failed %s %s', headers, body)
-
-    def on_send(self, headers, body):
-        LOG.debug('Sending message %s %s', headers, body)
 
 
 class AlertaDaemon(Daemon):
