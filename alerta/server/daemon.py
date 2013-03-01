@@ -321,6 +321,7 @@ class MessageHandler(object):
 
 
 class AlertaDaemon(Daemon):
+
     def run(self):
         self.running = True
 

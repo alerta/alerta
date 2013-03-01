@@ -8,3 +8,4 @@ Werkzeug
 Jinja2
 PyYAML
 pytz
+boto
