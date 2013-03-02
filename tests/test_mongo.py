@@ -14,7 +14,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import log as logging
 from alerta.common import config
-from alerta.common.mongo import Database
+from alerta.server.database import Mongo
 from alerta.alert import Alert, severity
 
 LOG = logging.getLogger('alerta')
@@ -25,9 +25,7 @@ print CONF
 
 config.parse_args(['--use-stderr', '--debug'])
 logging.setup('alerta')
-db = Database()
-
-import datetime
+db = Mongo()
 
 #print db.save_alert({''})
 alert3 = Alert('router55', 'Node_Down', severity=severity.INDETERMINATE, value='FAILED', timeout=600,
@@ -38,8 +36,8 @@ alert3 = Alert('router55', 'Node_Down', severity=severity.INDETERMINATE, value='
 print alert3
 print alert3.get_id()
 
-str = json.dumps(alert3.get_body())
-print 'string=%s' % str
+print alert3.get_header()
+print alert3.get_body()
 
 print 'Saving alert...'
 print db.save_alert(alert3)

@@ -10,7 +10,7 @@ from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.alert import Alert, severity, status
 from alerta.common.mq import Messaging, MessageHandler
-from alerta.common.mongo import Database
+from alerta.server.database import Mongo
 
 
 LOG = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class WorkerThread(threading.Thread):
         self.input_queue = queue   # internal queue
         self.mq = mq               # message broker
 
-        self.db = Database()       # mongo database
+        self.db = Mongo()       # mongo database
 
     def run(self):
 

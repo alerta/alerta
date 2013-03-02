@@ -29,7 +29,7 @@ class LoggerDaemon(Daemon):
         # Connect to message queue
         self.mq = Messaging()
         self.mq.subscribe(destination=CONF.outbound_queue)
-        self.mq.connect()
+        self.mq.connect(callback=LoggerMessage)
 
         while not self.shuttingdown:
             try:
@@ -50,7 +50,7 @@ class LoggerDaemon(Daemon):
         self.mq.disconnect()
 
 
-class LogMessageHandler(MessageHandler):
+class LoggerMessage(MessageHandler):
     
     def on_message(self, headers, body):
 
@@ -90,24 +90,3 @@ class LogMessageHandler(MessageHandler):
                 LOG.info('%s : Alert indexed at %s/%s/%s', alert['lastReceiveId'], ES_BASE_URL, alert['type'], es_id)
             except Exception:
                 pass
-
-
-class ServerMessageHandler(MessageHandler):
-
-    def __init__(self, queue):
-        self.queue = queue
-
-    def on_message(self, headers, body):
-
-        LOG.info("Received %s %s", headers['type'], headers['correlation-id'])
-        LOG.debug("Received body : %s", body)
-
-        if headers['type'] == 'Heartbeat':
-            # TODO(nsatterl): Heartbeat.parse_heartbeat(body) etc.
-            pass
-        elif headers['type'].endswith('Alert'):
-            alert = Alert.parse_alert(body)
-            if alert:
-                alert.receive_now()
-                LOG.debug('Queueing alert %s', alert.get_body())
-                self.queue.put(alert)

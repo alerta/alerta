@@ -13,7 +13,7 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-class Database(object):
+class Mongo(object):
 
     def __init__(self):
 
@@ -166,4 +166,4 @@ class Database(object):
         if self.conn.alive():
             self.conn.disconnect()
 
-        LOG.info('Database disconnected.')
+        LOG.info('Mongo disconnected.')

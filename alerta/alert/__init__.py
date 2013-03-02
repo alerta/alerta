@@ -100,6 +100,18 @@ class Alert(object):
     def receive_now(self):
         self.alert['receiveTime'] = datetime.datetime.utcnow()
 
+    def ack(self):
+        # TODO(nsatterl): alert.ack()
+        raise NotImplementedError
+
+    def delete(self):
+        # TODO(nsatterl): alert.delete()
+        raise NotImplementedError
+
+    def tag(self, tags):
+        # TODO(nsatterl): alert.tag(tags)
+        raise NotImplementedError
+
     @staticmethod
     def parse_alert(alert):
 
