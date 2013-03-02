@@ -122,7 +122,6 @@ class WorkerThread(threading.Thread):
                 update = {
                     "event": alert['event'],
                     "severity": alert['severity'],
-                    "severityCode": alert['severityCode'],
                     "createTime": alert['createTime'],
                     "receiveTime": alert['receiveTime'],
                     "lastReceiveTime": alert['receiveTime'],
@@ -281,7 +280,7 @@ def calculate_status(severity, previous_severity):
     return status
 
 
-class ServerMessageHandler(MessageHandler):
+class ServerMessage(MessageHandler):
 
     def __init__(self, queue):
         self.queue = queue
@@ -312,7 +311,7 @@ class AlertaDaemon(Daemon):
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect(callback=MessageHandler(self.queue))
+        self.mq.connect(callback=ServerMessage(self.queue))
         self.mq.subscribe()
 
         # Start worker threads

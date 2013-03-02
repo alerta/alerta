@@ -10,12 +10,13 @@ from alerta.common import config
 from alerta.common.daemon import Daemon
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.alert import Alert, Heartbeat
+from alerta.common.utils import DateEncoder
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 ES_SERVER   = 'localhost'
-ES_BASE_URL = 'http://%s:9200/logstash' % (ES_SERVER)
+ES_BASE_URL = 'http://%s:9200/alerta' % (ES_SERVER)
 
 
 class LoggerDaemon(Daemon):
@@ -28,8 +29,8 @@ class LoggerDaemon(Daemon):
 
         # Connect to message queue
         self.mq = Messaging()
+        self.mq.connect(callback=LoggerMessage())
         self.mq.subscribe(destination=CONF.outbound_queue)
-        self.mq.connect(callback=LoggerMessage)
 
         while not self.shuttingdown:
             try:
@@ -56,7 +57,7 @@ class LoggerMessage(MessageHandler):
 
         LOG.debug("Received: %s", body)
 
-        alert = Alert.parse_alert(body)
+        alert = Alert.parse_alert(body).get_body()
         if alert:
 
             LOG.info('%s : [%s] %s', alert['lastReceiveId'], alert['status'], alert['summary'])
@@ -65,19 +66,22 @@ class LoggerMessage(MessageHandler):
             if 'tags' not in alert or not alert['tags']:           # Kibana GUI borks if tags are null
                 alert['tags'] = 'none'
 
-            logstash = dict()
-            logstash['@message'] = alert['summary']
-            logstash['@source'] = alert['resource']
-            logstash['@source_host'] = 'not_used'
-            logstash['@source_path'] = alert['origin']
-            logstash['@tags'] = alert['tags']
-            logstash['@timestamp'] = alert['lastReceiveTime']
-            logstash['@type'] = alert['type']
-            logstash['@fields'] = alert
+            LOG.debug('alert last receivetime %s', alert['lastReceiveTime'])
+
+            logstash = {
+                '@message': alert['summary'],
+                '@source': alert['resource'],
+                '@source_host': 'not_used',
+                '@source_path': alert['origin'],
+                '@tags': alert['tags'],
+                '@timestamp': json.dumps(alert['lastReceiveTime'], cls=DateEncoder),
+                '@type': alert['type'],
+                '@fields': str(alert)
+            }
 
             LOG.debug('Logstash %s', logstash)
 
-            index = datetime.datetime.utcnow().strftime('%Y.%M.%d')
+            index = 'alerta-' + datetime.datetime.utcnow().strftime('%Y.%M.%d')
             try:
                 url = "%s/%s" % (ES_BASE_URL, index)
                 response = urllib2.urlopen(url, json.dumps(logstash)).read()
@@ -87,6 +91,6 @@ class LoggerMessage(MessageHandler):
 
             try:
                 es_id = json.loads(response)['_id']
-                LOG.info('%s : Alert indexed at %s/%s/%s', alert['lastReceiveId'], ES_BASE_URL, alert['type'], es_id)
+                LOG.info('%s : Alert indexed at %s/%s/%s', alert['lastReceiveId'], ES_BASE_URL, index, es_id)
             except Exception:
                 pass

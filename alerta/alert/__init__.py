@@ -20,7 +20,8 @@ class Alert(object):
                  severity=severity.NORMAL, previous_severity=None, environment=None, service=None,
                  text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
                  threshold_info='n/a', summary=None, timeout=_DEFAULT_TIMEOUT, alertid=None, last_receive_id=None,
-                 create_time=None, receive_time=None, last_receive_time=None, trend_indication=None, raw_data=None):
+                 create_time=None, expire_time=None, receive_time=None, last_receive_time=None, trend_indication=None,
+                 raw_data=None):
 
         # FIXME(nsatterl): how to fix __program__ for origin???
         __program__ = 'THIS IS BROKEN'
@@ -33,7 +34,7 @@ class Alert(object):
         tags = tags or list()
 
         create_time = create_time or datetime.datetime.utcnow()
-        expire_time = create_time + datetime.timedelta(seconds=timeout)
+        expire_time = expire_time or create_time + datetime.timedelta(seconds=timeout)
 
         self.summary = summary or '%s - %s %s is %s on %s %s' % (
             ','.join(environment), severity, event, value, ','.join(service), resource)
@@ -122,13 +123,13 @@ class Alert(object):
             return
 
         for k, v in alert.iteritems():
-            if k in ['createTime', 'receiveTime', 'lastReceiveTime']:
+            if k in ['createTime', 'receiveTime', 'lastReceiveTime', 'expireTime']:
                 try:
-                    time = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S.%fZ')
+                    alert[k] = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S.%fZ')
                 except ValueError, e:
                     LOG.error('Could not parse date time string: %s', e)
                     return
-                alert[k] = time.replace(tzinfo=pytz.utc)
+        #         alert[k] = time.replace(tzinfo=pytz.utc)
 
         print 'ALERT TO PARSE -> %s' % alert
 
@@ -155,6 +156,7 @@ class Alert(object):
             alertid=alert.get('id', None),
             last_receive_id=alert.get('lastReceiveId', None),
             create_time=alert.get('createTime', None),
+            expire_time=alert.get('expireTime', None),
             receive_time=alert.get('receiveTime', None),
             last_receive_time=alert.get('lastReceiveTime', None),
             trend_indication=alert.get('trendIndication', None),
