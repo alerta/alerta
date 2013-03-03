@@ -133,24 +133,12 @@ def main(argv):
             help='Do not send alert.'
         )
 
-        # # Print help if no arguments at all
-        # if not argv:
-        #     parser.print_usage()
-        #     sys.exit(1)
-
-        # Parse command-line arguments specific to this script
-        args, argv = parser.parse_known_args()
-
-        # Parse remaining arguments to system argument parser
         config.parse_args(argv, version=__version__, cli_parser=parser)
         logging.setup('alerta')
-
-        CONF.Load(vars(args))
 
         if CONF.heartbeat:
             if not CONF.origin:
                 parser.error("Must supply origin to send a heartbeat.")
-
         else:
             if not CONF.resource:
                 parser.error("Must supply event resource using -r or --resource")
@@ -181,7 +169,8 @@ def main(argv):
             if not CONF.text:
                 parser.error("Must supply alert text using -t or --text.")
 
-        msg_id = SenderClient.main()
+        sender = SenderClient()
+        msg_id = sender.main()
 
         if not CONF.quiet:
             print msg_id
