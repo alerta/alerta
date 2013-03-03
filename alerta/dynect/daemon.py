@@ -115,6 +115,7 @@ class WorkerThread(threading.Thread):
                         else:
                             event = 'GslbNotOK'
                             severity = 'CRITICAL'
+                        correlate = ['GslbOK', 'GslbNotOK' ]
 
                     elif item.startswith('pool-'):
 
@@ -141,6 +142,7 @@ class WorkerThread(threading.Thread):
                                 event = 'PoolWeightError'
                                 severity = 'MINOR'
                                 text = 'Pool with an incorrect weight'
+                        correlate = [ 'PoolUp', 'PoolDown', 'PoolServe', 'PoolWeightError' ]
 
                     alertid = str(uuid.uuid4()) # random UUID
                     createTime = datetime.datetime.utcnow()
