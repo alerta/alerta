@@ -16,7 +16,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.receiver.daemon import ReceiverDaemon
+from alerta.receiver.daemon import ReceiverDaemon, Version
 
 __version__ = '2.0.0'
 
@@ -24,7 +24,7 @@ LOG = logging.getLogger('alerta.receiver')
 CONF = config.CONF
 
 if __name__ == '__main__':
-    config.parse_args(sys.argv[1:], version=__version__)
+    config.parse_args(sys.argv[1:], version=Version)
     logging.setup('alerta')
     receiver = ReceiverDaemon('alert-receiver')
     receiver.start()

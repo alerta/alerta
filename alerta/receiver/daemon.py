@@ -14,9 +14,10 @@ import datetime
 import errno
 import re
 
-__program__ = 'alert-receiver'
-__version__ = '1.0.4'
+Version = '2.0.0'
 
+LOG = logging.getLogger(__name__)
+CONF = config.CONF
 
 BROKER_LIST  = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'

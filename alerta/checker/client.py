@@ -22,7 +22,7 @@ import logging
 import uuid
 import re
 
-__version__ = '1.1.5'
+Version = '2.0.0'
 
 BROKER_LIST  = [('monitoring.guprod.gnl', 61613),('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE  = '/queue/alerts'

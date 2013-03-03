@@ -16,7 +16,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.ganglia.daemon import GangliaDaemon
+from alerta.ganglia.daemon import GangliaDaemon, Version
 
 __version__ = '2.0.0'
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     # TODO(nsatterl): awsconf = yaml.load(open(AWSCONF))
 
-    config.parse_args(sys.argv[1:], version=__version__)
+    config.parse_args(sys.argv[1:], version=Version)
     logging.setup('alerta')
     ganglia = GangliaDaemon('alert-ganglia')
     ganglia.start()

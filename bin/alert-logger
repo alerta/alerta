@@ -16,7 +16,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.logger.daemon import LoggerDaemon
+from alerta.logger.daemon import LoggerDaemon, Version
 
 __version__ = '2.0.0'
 
@@ -26,7 +26,7 @@ CONF = config.CONF
 # TODO(nsatterl): add CLI options for log_host, log_port
 
 if __name__ == '__main__':
-    config.parse_args(sys.argv[1:], version=__version__)
+    config.parse_args(sys.argv[1:], version=Version)
     logging.setup('alerta')
     logger = LoggerDaemon('alert-logger')
     logger.start()

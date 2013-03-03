@@ -11,7 +11,6 @@ from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 
 import yaml
 
-
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
 from alerta.common import log as logging
@@ -19,6 +18,8 @@ from alerta.common import config
 from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
+
+Version = '2.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

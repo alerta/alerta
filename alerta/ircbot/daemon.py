@@ -19,6 +19,8 @@ from alerta.common.daemon import Daemon
 from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 
+Version = '2.0.0'
+
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
@@ -176,7 +178,7 @@ class IrcbotDaemon(Daemon):
                             irc.send('QUIT\r\n')
                 if not ip:
                     LOG.debug('Send heartbeat...')
-                    heartbeat = Heartbeat()
+                    heartbeat = Heartbeat(version=ircbot.version)
                     self.mq.send(heartbeat)
 
                 time.sleep(0.1)

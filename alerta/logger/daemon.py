@@ -12,6 +12,8 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.alert import Alert, Heartbeat
 from alerta.common.utils import DateEncoder
 
+Version = '2.0.0'
+
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 

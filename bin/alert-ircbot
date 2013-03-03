@@ -16,15 +16,17 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.ircbot.daemon import IrcbotDaemon
+from alerta.ircbot.daemon import IrcbotDaemon, Version
 
-__version__ = '2.0.0'
+# __version__ = '2.0.0'
+
+
 
 LOG = logging.getLogger('alerta.ircbot')
 CONF = config.CONF
 
 if __name__ == '__main__':
-    config.parse_args(sys.argv[1:], version=__version__)
+    config.parse_args(sys.argv[1:], version=Version)
     logging.setup('alerta')
     ircbot = IrcbotDaemon('alert-ircbot')
     ircbot.start()

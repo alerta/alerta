@@ -17,7 +17,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.query import client
+from alerta.query.client import QueryClient, Version
 from alerta.alert import severity, status
 
 __version__ = '2.0.0'
@@ -276,12 +276,12 @@ def main(argv):
         args, argv = parser.parse_known_args(argv)
 
         # Parse remaining arguments to system argument parser
-        config.parse_args(argv, version=__version__, cli_parser=parser)
+        config.parse_args(argv, version=Version, cli_parser=parser)
         logging.setup('alerta')
 
         CONF.Load(vars(args))
 
-        client.main()
+        QueryClient.main()
 
     except Exception, e:
         print >> sys.stderr, e

@@ -18,9 +18,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.snmptrap.handler import SnmpTrapHandler
-
-__version__ = '2.0.0'
+from alerta.snmptrap.handler import SnmpTrapHandler, Version
 
 DEFAULT_TIMEOUT = 86400
 
@@ -51,7 +49,7 @@ def main(argv):
 
         argv = ['--debug']
 
-        config.parse_args(argv, version=__version__)
+        config.parse_args(argv, version=Version)
         logging.setup('alerta')
 
         handler = SnmpTrapHandler()

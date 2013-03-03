@@ -18,7 +18,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.sender import client
+from alerta.sender.client import SenderClient, Version
 from alerta.alert import severity
 
 __version__ = '2.0.0'
@@ -181,7 +181,7 @@ def main(argv):
             if not CONF.text:
                 parser.error("Must supply alert text using -t or --text.")
 
-        msg_id = client.main()
+        msg_id = SenderClient.main()
 
         if not CONF.quiet:
             print msg_id

@@ -14,6 +14,8 @@ from alerta.alert import Alert, Heartbeat
 from alerta.alert import syslog
 from alerta.common.mq import Messaging
 
+Version = '2.0.0'
+
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 

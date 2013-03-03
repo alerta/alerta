@@ -7,8 +7,10 @@ from alerta.common import log as logging
 from alerta.alert import Alert
 from alerta.common.mq import Messaging
 
+Version = '2.0.0'
 
-__version__ = '2.0.0'
+LOG = logging.getLogger(__name__)
+CONF = config.CONF
 
 DEFAULT_TIMEOUT = 86400
 EXPIRATION_TIME = 600 # seconds = 10 minutes
@@ -16,8 +18,7 @@ EXPIRATION_TIME = 600 # seconds = 10 minutes
 TRAPCONF = '/opt/alerta/alerta/alert-snmptrap.yaml'
 PARSERDIR = '/opt/alerta/bin/parsers'
 
-LOG = logging.getLogger(__name__)
-CONF = config.CONF
+
 
 
 class SnmpTrapHandler(object):

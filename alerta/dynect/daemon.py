@@ -16,8 +16,7 @@ from Queue import Queue
 import socket
 from dynect.DynectDNS import DynectRest
 
-__program__ = 'alert-dynect'
-__version__ = '1.1.3'
+Version = '2.0.0'
 
 BROKER_LIST = [('localhost', 61613)] # list of brokers for failover
 ALERT_QUEUE = '/queue/alerts'

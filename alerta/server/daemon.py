@@ -12,10 +12,10 @@ from alerta.alert import Alert, severity, status
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 
+Version = '2.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
 
 #TODO(nsatterl): add this to default system config
 
@@ -23,8 +23,6 @@ ALERTCONF = '/opt/alerta/alerta/alerta.yaml'
 
 _SELECT_TIMEOUT = 30
 
-__program__ = 'alerta'
-__version__ = '2.0.0'
 
 
 class WorkerThread(threading.Thread):
