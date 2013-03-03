@@ -23,6 +23,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
         'use_syslog': True,
         'use_stderr': False,
         'foreground': False,
+        'show_settings': False,
     }
 
     SYSTEM_DEFAULTS = {
@@ -33,7 +34,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
         'api_port': 80,
         'api_endpoint': '/',   # eg. /Services/API
 
-        'server_threads': 1,
+        'server_threads': 4,
         'alert_timeout': 86400,  # seconds
         'parser_dir': '/opt/alerta/bin/parsers',
 
@@ -93,6 +94,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
                     defaults[name] = config.getint(prog, name)
                 else:
                     defaults[name] = config.get(prog, name)
+                #print '[%s] %s = %s' % (prog, name, config.get(prog, name))
 
     parents = [cfg_parser]
     if cli_parser:
@@ -144,6 +146,12 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
         action='store_true',
         help="Send to console stderr"
     )
+    parser.add_argument(
+        '--show-settings',
+        default=OPTION_DEFAULTS['show_settings'],
+        action='store_true',
+        help="Output evaluated configuration options"
+    )
 
     if not cli_parser:
         parser.add_argument(
@@ -157,3 +165,8 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
     args = parser.parse_args(argv_left)
     CONF.update(vars(args))
 
+    if CONF.show_settings:
+        print '[DEFAULT]'
+        for k, v in sorted(CONF.iteritems()):
+            print '%s = %s' % (k, v)
+        sys.exit(0)
