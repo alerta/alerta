@@ -8,7 +8,7 @@ from bunch import Bunch
 CONF = Bunch()  # config options can be accessed using CONF.verbose or CONF.use_syslog
 
 
-def parse_args(argv, prog=None, version='unknown', cli_parser=None):
+def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True):
 
     if prog is None:
         prog = os.path.basename(sys.argv[0])
@@ -153,7 +153,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
         help="Output evaluated configuration options"
     )
 
-    if not cli_parser:
+    if daemon:
         parser.add_argument(
             '--foreground',
             default=OPTION_DEFAULTS['foreground'],

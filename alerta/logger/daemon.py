@@ -17,9 +17,6 @@ Version = '2.0.0'
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-ES_SERVER   = 'localhost'
-ES_BASE_URL = 'http://%s:9200/alerta' % (ES_SERVER)
-
 
 class LoggerDaemon(Daemon):
     """
@@ -81,18 +78,19 @@ class LoggerMessage(MessageHandler):
                 '@fields': str(alert)
             }
 
-            LOG.debug('Logstash %s', logstash)
+            LOG.debug('Index payload %s', logstash)
 
-            index = 'alerta-' + datetime.datetime.utcnow().strftime('%Y.%M.%d')
             try:
-                url = "%s/%s" % (ES_BASE_URL, index)
-                response = urllib2.urlopen(url, json.dumps(logstash)).read()
+                index_url = "http://%s:%s/alerta/%s" % (CONF.es_host, CONF.es_port,
+                                                  'alerta-' + datetime.datetime.utcnow().strftime('%Y.%M.%d'))
+                LOG.debug('Index URL: %s', index_url)
+                response = urllib2.urlopen(index_url, json.dumps(logstash)).read()
             except Exception, e:
                 LOG.error('%s : Alert indexing to %s failed - %s', alert['lastReceiveId'], url, e)
                 return
 
             try:
                 es_id = json.loads(response)['_id']
-                LOG.info('%s : Alert indexed at %s/%s/%s', alert['lastReceiveId'], ES_BASE_URL, index, es_id)
+                LOG.info('%s : Alert indexed at %s/%s', alert['lastReceiveId'], index_url, es_id)
             except Exception:
                 pass

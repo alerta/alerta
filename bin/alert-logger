@@ -7,6 +7,7 @@
 
 import os
 import sys
+import argparse
 
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
                                                 os.pardir,
@@ -24,8 +25,27 @@ CONF = config.CONF
 # TODO(nsatterl): add CLI options for log_host, log_port
 
 if __name__ == '__main__':
-    config.parse_args(sys.argv[1:], version=Version)
+
+    parser = argparse.ArgumentParser(
+        add_help=False,
+        prog='alert-logger',
+    )
+    parser.add_argument(
+        '--es-host',
+        metavar='HOSTNAME',
+        default='localhost',
+        help='elasticsearch hostname.',
+    )
+    parser.add_argument(
+        '--es-port',
+        metavar='PORT',
+        default=9200,
+        help='elasticsearch port.',
+    )
+
+    config.parse_args(sys.argv[1:], version=Version, cli_parser=parser)
     logging.setup('alerta')
+
     logger = LoggerDaemon('alert-logger')
     logger.start()
 
