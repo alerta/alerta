@@ -3,7 +3,7 @@ import sys
 import argparse
 import ConfigParser
 
-from alerta.common.utils import Bunch
+from bunch import Bunch
 
 CONF = Bunch()  # config options can be accessed using CONF.verbose or CONF.use_syslog
 
@@ -60,7 +60,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
         'syslog_tcp_port': 5140,
         'syslog_facility': 'local7',
     }
-    CONF.Load(SYSTEM_DEFAULTS)
+    CONF.update(SYSTEM_DEFAULTS)
 
     cfg_parser = argparse.ArgumentParser(
         add_help=False
@@ -73,10 +73,16 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
     )
     args, argv_left = cfg_parser.parse_known_args(argv)
 
+    config_file_order = [
+        args.conf_file,             # default config file or file -c file
+        'alerta.conf',              # config file in current directory (beware daemonize() cd to /
+        os.environ.get('ALERTA_CONF', ''),
+    ]
+
     defaults = dict()
     if args.conf_file:
         config = ConfigParser.SafeConfigParser()
-        config.read([args.conf_file])
+        config.read(config_file_order)
         if config.has_section(prog):
             for name in config.options(prog):
                 if (OPTION_DEFAULTS.get(name, None) in (True, False) or
@@ -149,6 +155,5 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None):
     parser.set_defaults(**defaults)
 
     args = parser.parse_args(argv_left)
-    CONF.Load(vars(args))
+    CONF.update(vars(args))
 
-    #print 'FIXME %s' % CONF
