@@ -18,8 +18,6 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.dynect.daemon import DynectDaemon, Version
 
-__version__ = '2.0.0'
-
 LOG = logging.getLogger('alerta.syslog')
 CONF = config.CONF
 

@@ -398,5 +398,5 @@ class QueryClient(object):
             print
             print "Total: %d%s (produced on %s at %s by %s,v%s on %s in %sms)" % (
                 count, has_more, now.astimezone(tz).strftime("%d/%m/%y"), now.astimezone(tz).strftime("%H:%M:%S %Z"), sys.argv[0],
-                __version__, os.uname()[1], int((end - start) * 1000))
+                Version, os.uname()[1], int((end - start) * 1000))
 

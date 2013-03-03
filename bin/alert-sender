@@ -21,8 +21,6 @@ from alerta.common import log as logging
 from alerta.sender.client import SenderClient, Version
 from alerta.alert import severity
 
-__version__ = '2.0.0'
-
 DEFAULT_TIMEOUT = 86400
 
 LOG = logging.getLogger('alerta.sender')
@@ -133,7 +131,7 @@ def main(argv):
             help='Do not send alert.'
         )
 
-        config.parse_args(argv, version=__version__, cli_parser=parser)
+        config.parse_args(argv, version=Version, cli_parser=parser)
         logging.setup('alerta')
 
         if CONF.heartbeat:

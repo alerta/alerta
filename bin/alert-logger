@@ -18,8 +18,6 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.logger.daemon import LoggerDaemon, Version
 
-__version__ = '2.0.0'
-
 LOG = logging.getLogger('alerta.logger')
 CONF = config.CONF
 
