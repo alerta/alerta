@@ -32,11 +32,12 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
 
         'api_host': 'monitoring',
         'api_port': 80,
-        'api_endpoint': '/',   # eg. /Services/API
+        'api_endpoint': '/alerta/api/v1',   # eg. /Services/API
 
         'server_threads': 4,
         'alert_timeout': 86400,  # seconds
         'parser_dir': '/opt/alerta/bin/parsers',
+        'heartbeat_every': 30,   # seconds
 
         'mongo_host': 'localhost',
         'mongo_port': 27017,
@@ -60,6 +61,11 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'syslog_udp_port': 5140,
         'syslog_tcp_port': 5140,
         'syslog_facility': 'local7',
+
+        'irc_host': 'irc.gudev.gnl',
+        'irc_port': 6667,
+        'irc_channel': '#alerts',
+        'irc_user': 'alerta',
     }
     CONF.update(SYSTEM_DEFAULTS)
 
@@ -80,10 +86,10 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         os.environ.get('ALERTA_CONF', ''),
     ]
 
-    defaults = dict()
     if args.conf_file:
         config = ConfigParser.SafeConfigParser()
         config.read(config_file_order)
+        defaults = config.defaults()
         if config.has_section(prog):
             for name in config.options(prog):
                 if (OPTION_DEFAULTS.get(name, None) in (True, False) or
@@ -95,6 +101,8 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
                 else:
                     defaults[name] = config.get(prog, name)
                 #print '[%s] %s = %s' % (prog, name, config.get(prog, name))
+    else:
+        defaults = dict()
 
     parents = [cfg_parser]
     if cli_parser:

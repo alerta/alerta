@@ -157,9 +157,25 @@ class Mongo(object):
         except pymongo.errors.OperationFailure, e:
             LOG.error('MongoDB error: %s', e)
 
-    def update_hb(self):
+    def update_hb(self, origin, version, create_time, receive_time):
 
-        pass
+        LOG.info('Update heartbeat for %s %s', origin, version)
+
+        query = {"origin": origin}
+        update = {"origin": origin, "version": version, "createTime": create_time, "receiveTime": receive_time}
+
+        try:
+            self.db.heartbeats.update(query, update, True)
+        except pymongo.errors.OperationFailure, e:
+            LOG.error('MongoDB error: %s', e)
+
+    # def save_heartbeat(self, heartbeat):
+    #
+    #     body = heartbeat.get_body()
+    #     body['_id'] = body['id']
+    #     del body['id']
+    #
+    #     return self.db.heartbeats.insert(body, safe=True)
 
     def disconnect(self):
 

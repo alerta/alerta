@@ -16,7 +16,7 @@ import urllib2
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat
+from alerta.alert import Alert, Heartbeat, status
 from alerta.common.mq import Messaging, MessageHandler
 
 Version = '2.0.0'
@@ -24,18 +24,11 @@ Version = '2.0.0'
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-IRC_SERVER = 'irc.gudev.gnl:6667'
-IRC_CHANNEL = '#alerts-dev'
-IRC_USER = 'alerta'
-
-API_SERVER = 'monitoring.guprod.gnl'
-
-_SELECT_TIMEOUT = 30
-
 #
 # An IRC client may send 1 message every 2 seconds
 # See section 5.8 in http://datatracker.ietf.org/doc/rfc2813/
 #
+
 _TokenThread = None            # Worker thread object
 _Lock = threading.Lock()       # Synchronization lock
 TOKEN_LIMIT = 5
@@ -78,7 +71,7 @@ class TokenTopUp(threading.Thread):
 # TODO(nsatterl): this should be in the Alert class
 def ack_alert(alertid):
 
-    url = "http://%s/alerta/app/v1/alerts/alert/%s" % (API_SERVER, alertid)
+    url = "http://%s:%s/%s/alerts/alert/%s" % (CONF.api_host, CONF.api_port, CONF.api_endpoint, alertid)
     params = json.dumps({'status': 'ACK'})
     LOG.info('ACK request %s', url)
 
@@ -98,12 +91,15 @@ def ack_alert(alertid):
 
 
 class IrcbotMessageHandler(MessageHandler):
-    global tokens
 
     def __init__(self, irc):
+
+        #super(MessageHandler, self).__init__()
+
         self.irc = irc
 
     def on_message(self, headers, body):
+        global tokens
 
         if tokens:
             _Lock.acquire()
@@ -111,21 +107,21 @@ class IrcbotMessageHandler(MessageHandler):
             _Lock.release()
             LOG.debug('Taken a token, there are only %d left', tokens)
         else:
-            LOG.warning('%s : No tokens left, rate limiting this alert', 'FIXME')  #TODO(nsatterl): alert['lastReceiveId'])
+            LOG.warning('%s : No tokens left, rate limiting this alert', headers['correlation-id'])
             return
 
         LOG.debug("Received alert : %s", body)
 
         if headers['type'].endswith('Alert'):
-            alert = Alert.parse_alert(body)
-            if alert:
-                LOG.info('%s : Send IRC message to %s', alert['lastReceiveId'], IRC_CHANNEL)
-                shortid = alert['id'].split('-')[0]
+            ircAlert = Alert.parse_alert(body)
+            if ircAlert:
+                LOG.info('%s : Send IRC message to %s', ircAlert.get_id(), CONF.irc_channel)
                 try:
-                    self.irc.send(
-                        'PRIVMSG %s :%s [%s] %s\r\n' % (IRC_CHANNEL, shortid, alert['status'], alert['summary']))
+                    msg = 'PRIVMSG %s :%s [%s] %s' % (CONF.irc_channel, ircAlert.get_id(short=True),
+                                                      ircAlert.alert.get('status', status.UNKNOWN), ircAlert.summary)
+                    self.irc.send(msg + '\r\n')
                 except Exception, e:
-                    LOG.error('%s : IRC send failed - %s', alert['lastReceiveId'], e)
+                    LOG.error('%s : IRC send failed - %s', ircAlert.get_id(), e)
 
 
 class IrcbotDaemon(Daemon):
@@ -139,27 +135,26 @@ class IrcbotDaemon(Daemon):
         # Connect to IRC server
         try:
             irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            server, port = IRC_SERVER.split(':')
-            irc.connect((server, int(port)))
-            irc.send('NICK %s\r\n' % IRC_USER)
-            irc.send('USER %s 8 * : %s\r\n' % (IRC_USER, IRC_USER))
+            irc.connect((CONF.irc_host, CONF.irc_port))
+            irc.send('NICK %s\r\n' % CONF.irc_user)
+            irc.send('USER %s 8 * : %s\r\n' % (CONF.irc_user, CONF.irc_user))
             LOG.debug('USER -> %s', irc.recv(4096))
-            irc.send('JOIN %s\r\n' % IRC_CHANNEL)
+            irc.send('JOIN %s\r\n' % CONF.irc_channel)
             LOG.debug('JOIN ->  %s', irc.recv(4096))
         except Exception, e:
             LOG.error('IRC connection error: %s', e)
             sys.exit(1)
 
-        LOG.info('Joined IRC channel %s on %s as USER %s', IRC_CHANNEL, IRC_SERVER, IRC_USER)
+        LOG.info('Joined IRC channel %s on %s as USER %s', CONF.irc_channel, CONF.irc_host, CONF.irc_user)
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect(callback=MessageHandler(irc))
-        self.mq.connect()
+        self.mq.connect(callback=IrcbotMessageHandler(irc))
+        self.mq.subscribe(destination=CONF.outbound_queue)
 
         while not self.shuttingdown:
             try:
-                ip, op, rdy = select.select([irc], [], [], _SELECT_TIMEOUT)
+                ip, op, rdy = select.select([irc], [], [], CONF.heartbeat_every)
                 for i in ip:
                     if i == irc:
                         data = irc.recv(4096)
@@ -178,7 +173,7 @@ class IrcbotDaemon(Daemon):
                             irc.send('QUIT\r\n')
                 if not ip:
                     LOG.debug('Send heartbeat...')
-                    heartbeat = Heartbeat(version=ircbot.version)
+                    heartbeat = Heartbeat(version=Version)
                     self.mq.send(heartbeat)
 
                 time.sleep(0.1)

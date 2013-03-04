@@ -34,8 +34,8 @@ def main():
 
     start = time.time()
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-mgmt[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
-    logging.info('Received HTTP request %s %s' % (os.environ['REQUEST_METHOD'], os.environ['REQUEST_URI']))
+    #logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-mgmt[%(process)d] %(levelname)s - %(message)s", filename=LOGFILE)
+    #logging.info('Received HTTP request %s %s' % (os.environ['REQUEST_METHOD'], os.environ['REQUEST_URI']))
 
     # Get HTTP method and any body data
     method = os.environ['REQUEST_METHOD']

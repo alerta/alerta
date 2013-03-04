@@ -8,7 +8,7 @@ import yaml
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, severity, status
+from alerta.alert import Alert, Heartbeat, severity, status
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 
@@ -22,7 +22,6 @@ CONF = config.CONF
 ALERTCONF = '/opt/alerta/alerta/alerta.yaml'
 
 _SELECT_TIMEOUT = 30
-
 
 
 class WorkerThread(threading.Thread):
@@ -41,37 +40,29 @@ class WorkerThread(threading.Thread):
         while True:
             LOG.debug('Waiting on input queue...')
             item = self.input_queue.get()
+            LOG.warning('********************** GOT SOMETHING OFF QUEUE!!!! ************************')
 
             if not item:
                 LOG.info('%s is shutting down.', self.getName())
                 break
 
-            # Handle heartbeats
             if item.get_type() == 'Heartbeat':
-                LOG.debug('update heartbeat')
-                #self.hb.update_hb(alert)      # TODO(nsatterl): rename alert to payload or data or something
-
-                try:
-                    self.db.update(
-                        {"origin": alert['origin']},
-                        {"origin": alert['origin'], "version": alert['version'], "createTime": createTime,
-                         "receiveTime": receiveTime},
-                        True)
-                except Exception, e:
-                    LOG.error('Update failed: %s', e)
-                    sys.exit(1)
-                LOG.info('%s : heartbeat from %s', alert['id'], alert['origin'])
+                LOG.info('Heartbeat received...')
+                heartbeat = item.get_body()
+                self.db.update_hb(heartbeat['origin'], heartbeat['version'], heartbeat['createTime'],
+                                  heartbeat['receiveTime'])
                 continue
-
-            alert = item.get_body()
-            print alert
+            else:
+                LOG.info('Alert received...')
+                alert = item.get_body()
 
             # TODO(nsatterl): fix this!!!!
             #alert = transform(alert)
 
             if self.db.is_duplicate(alert['environment'], alert['resource'], alert['event'], alert['severity']):
 
-                # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary, value, tags and origin
+                # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary,
+                #                       value, tags and origin
                 #                    2. increment duplicate count
 
                 LOG.info('%s : Duplicate alert -> update dup count', alert['id'])
@@ -105,7 +96,8 @@ class WorkerThread(threading.Thread):
 
             elif self.db.is_correlated(alert['environment'], alert['resource'], alert['event']):
 
-                # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime, lastReceiveTime, previousSeverity,
+                # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime,
+                #                       lastReceiveTime, previousSeverity,
                 #                       severityCode, lastReceiveId, text, summary, value, tags and origin
                 #                    2. set duplicate count to zero
                 #                    3. push history
@@ -289,13 +281,16 @@ class ServerMessage(MessageHandler):
         LOG.debug("Received body : %s", body)
 
         if headers['type'] == 'Heartbeat':
-            # TODO(nsatterl): Heartbeat.parse_heartbeat(body) etc.
-            pass
+            heartbeat = Heartbeat.parse_heartbeat(body)
+            if heartbeat:
+                heartbeat.receive_now()
+                LOG.debug('Queueing successfully parsed heartbeat %s', heartbeat.get_body())
+                self.queue.put(heartbeat)
         elif headers['type'].endswith('Alert'):
             alert = Alert.parse_alert(body)
             if alert:
                 alert.receive_now()
-                LOG.debug('Queueing alert %s', alert.get_body())
+                LOG.debug('Queueing successfully parsed alert %s', alert.get_body())
                 self.queue.put(alert)
 
 

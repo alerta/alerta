@@ -1,8 +1,10 @@
-from __builtin__ import staticmethod
+
 import os
+import sys
 import datetime
 import json
 from uuid import uuid4
+from __builtin__ import staticmethod
 
 import pytz
 
@@ -23,8 +25,7 @@ class Alert(object):
                  create_time=None, expire_time=None, receive_time=None, last_receive_time=None, trend_indication=None,
                  raw_data=None):
 
-        # FIXME(nsatterl): how to fix __program__ for origin???
-        __program__ = 'THIS IS BROKEN'
+        prog = os.path.basename(sys.argv[0])
 
         self.alertid = alertid or str(uuid4())
 
@@ -60,7 +61,7 @@ class Alert(object):
             'tags': tags,
             'summary': self.summary,
             'createTime': create_time,
-            'origin': origin or '%s/%s' % (__program__, os.uname()[1]),
+            'origin': origin or '%s/%s' % (prog, os.uname()[1]),
             'thresholdInfo': threshold_info,
             'timeout': timeout,
             'expireTime': expire_time,
@@ -86,8 +87,11 @@ class Alert(object):
     def __str__(self):
         return json.dumps(self.alert, cls=DateEncoder, indent=4)
 
-    def get_id(self):
-        return self.alertid
+    def get_id(self, short=False):
+        if short is True:
+            return self.alertid.split('-')[0]
+        else:
+            return self.alertid
 
     def get_header(self):
         return self.header
@@ -129,9 +133,7 @@ class Alert(object):
                 except ValueError, e:
                     LOG.error('Could not parse date time string: %s', e)
                     return
-        #         alert[k] = time.replace(tzinfo=pytz.utc)
-
-        print 'ALERT TO PARSE -> %s' % alert
+        #         alert[k] = time.replace(tzinfo=pytz.utc)   # TODO(nsatterl): test timezone stuff
 
         return Alert(
             resource=alert.get('resource', None),
@@ -165,11 +167,13 @@ class Alert(object):
 
 class Heartbeat(object):
 
-    def __init__(self, origin=None, version='unknown'):
-        # FIXME(nsatterl): how to fix __program__ for origin???
-        __program__ = 'THIS IS BROKEN'
+    def __init__(self, origin=None, version='unknown', heartbeatid=None, create_time=None):
 
-        self.heartbeatid = str(uuid4())
+        prog = os.path.basename(sys.argv[0])
+
+        self.heartbeatid = heartbeatid or str(uuid4())
+
+        create_time = create_time or datetime.datetime.utcnow()
 
         self.header = {
             'type': 'Heartbeat',
@@ -179,13 +183,13 @@ class Heartbeat(object):
         self.heartbeat = {
             'id': self.heartbeatid,
             'type': 'Heartbeat',
-            'createTime': datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z',
-            'origin': origin or '%s/%s' % (__program__, os.uname()[1]),
+            'createTime': create_time,
+            'origin': origin or '%s/%s' % (prog, os.uname()[1]),
             'version': version,
         }
 
     def __repr__(self):
-        return 'Heartbeat(header=%r, alert=%r)' % (str(self.header), str(self.heartbeat))
+        return 'Heartbeat(header=%r, heartbeat=%r)' % (str(self.header), str(self.heartbeat))
 
     def __str__(self):
         return json.dumps(self.heartbeat, cls=DateEncoder, indent=4)
@@ -201,3 +205,30 @@ class Heartbeat(object):
 
     def get_type(self):
         return self.header['type']
+
+    def receive_now(self):
+        self.heartbeat['receiveTime'] = datetime.datetime.utcnow()
+
+    @staticmethod
+    def parse_heartbeat(heartbeat):
+
+        try:
+            heartbeat = json.loads(heartbeat)
+        except ValueError, e:
+            LOG.error('Could not parse heartbeat: %s', e)
+            return
+
+        if heartbeat.get('createTime', None):
+            try:
+                heartbeat['createTime'] = datetime.datetime.strptime(heartbeat['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+            except ValueError, e:
+                LOG.error('Could not parse date time string: %s', e)
+                return
+            # heartbeat[k] = time.replace(tzinfo=pytz.utc)   # TODO(nsatterl): test timezone stuff
+
+        return Heartbeat(
+            origin=heartbeat.get('origin', None),
+            version=heartbeat.get('version', None),
+            heartbeatid=heartbeat.get('id', None),
+            create_time=heartbeat.get('createTime', None),
+        )
