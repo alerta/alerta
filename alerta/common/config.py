@@ -66,6 +66,9 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'irc_port': 6667,
         'irc_channel': '#alerts',
         'irc_user': 'alerta',
+
+        'es_host': 'localhost',
+        'es_port': 9200,
     }
     CONF.update(SYSTEM_DEFAULTS)
 
