@@ -37,7 +37,7 @@ class LoggerDaemon(Daemon):
                 time.sleep(CONF.heartbeat_every)
 
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat()
+                heartbeat = Heartbeat(version=Version)
                 self.mq.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):
