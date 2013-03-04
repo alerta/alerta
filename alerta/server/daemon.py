@@ -25,6 +25,7 @@ _SELECT_TIMEOUT = 30
 
 
 class WorkerThread(threading.Thread):
+
     def __init__(self, mq, queue):
 
         threading.Thread.__init__(self)
@@ -40,7 +41,6 @@ class WorkerThread(threading.Thread):
         while True:
             LOG.debug('Waiting on input queue...')
             item = self.input_queue.get()
-            LOG.warning('********************** GOT SOMETHING OFF QUEUE!!!! ************************')
 
             if not item:
                 LOG.info('%s is shutting down.', self.getName())
@@ -316,18 +316,20 @@ class AlertaDaemon(Daemon):
             except Exception, e:
                 LOG.error('Worker thread #%s did not start: %s', i, e)
                 continue
-            LOG.info('Started alert handler thread: %s', w.getName())
+            LOG.info('Started worker thread: %s', w.getName())
 
         while not self.shuttingdown:
             try:
                 time.sleep(0.1)
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
-                for i in range(CONF.server_threads):
-                    self.queue.put(None)
 
         LOG.info('Shutdown request received...')
         self.running = False
+
+        for i in range(CONF.server_threads):
+            self.queue.put(None)
+        w.join()
 
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()

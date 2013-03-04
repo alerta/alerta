@@ -10,3 +10,4 @@ PyYAML
 pytz
 boto
 bunch
+dynect

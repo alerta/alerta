@@ -3,9 +3,7 @@ import time
 import urllib2
 import json
 import threading
-from Queue import Queue
-import datetime
-import uuid
+import Queue
 import re
 from BaseHTTPServer import BaseHTTPRequestHandler as BHRH
 
@@ -16,7 +14,7 @@ HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.alert import Alert, Heartbeat
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.mq import Messaging
 from alerta.common.daemon import Daemon
 
 Version = '2.0.0'
@@ -27,10 +25,6 @@ CONF = config.CONF
 URLFILE = '/opt/alerta/alerta/alert-urlmon.yaml'
 
 REQUEST_TIMEOUT = 15 # seconds
-
-GMETRIC_SEND = True
-GMETRIC_CMD = '/usr/bin/gmetric'
-GMETRIC_OPTIONS = '--spoof 10.1.1.1:urlmon --alerta /etc/ganglia/alerta/gmond-alerta.alerta'
 
 HTTP_ALERTS = [
     'HttpConnectionError',
@@ -56,7 +50,6 @@ _check_rate = 60             # Check rate of alerts
 
 # Global variables
 urls = dict()
-queue = Queue()
 
 currentCount = dict()
 currentState = dict()
@@ -74,70 +67,6 @@ def init_urls():
     LOG.info('Loaded %d URLs OK', len(urls))
 
 
-class UrlmonDaemon(Daemon):
-    def run(self):
-
-        self.running = True
-
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect()
-
-        # Initialiase alert rules
-        init_urls()
-        url_mod_time = os.path.getmtime(URLFILE)
-
-        # Start worker threads
-        for i in range(CONF.server_threads):
-            w = WorkerThread(queue)
-            w.start()
-            LOG.info('Starting thread: %s', w.getName())
-
-        while not self.shuttingdown:
-            try:
-                # Read (or re-read) urls as necessary
-                if os.path.getmtime(URLFILE) != url_mod_time:
-                    init_urls()
-                    url_mod_time = os.path.getmtime(URLFILE)
-
-                for url in urls:
-                    queue.put(('url', url))
-                queue.put(('timestamp', time.time()))
-
-                LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat()
-                self.mq.send(heartbeat)
-
-                time.sleep(_check_rate)
-
-                urlmon_qsize = queue.qsize()
-                LOG.info('URL check queue length is %d', urlmon_qsize)
-
-                if GMETRIC_SEND:
-                    gmetric_cmd = "%s --name urlmon_qsize --value %d --type uint16 --units \" \" --slope both --group urlmon %s" % (
-                        GMETRIC_CMD, urlmon_qsize, GMETRIC_OPTIONS)
-                    LOG.debug("%s", gmetric_cmd)
-                    os.system("%s" % gmetric_cmd)
-
-            except (KeyboardInterrupt, SystemExit):
-                self.shuttingdown = True
-
-        LOG.info('Shutdown request received...')
-        self.running = False
-
-        for i in range(CONF.server_threads):
-            queue.put(('stop', None))
-        w.join()
-
-        LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()
-
-
-class UrlmonMessage(MessageHandler):
-    def on_message(self, headers, body):
-        LOG.debug("Received: %s", body)
-
-
 # Do not follow redirects
 class NoRedirection(urllib2.HTTPRedirectHandler):
     def http_error_302(self, req, fp, code, msg, headers):
@@ -150,30 +79,24 @@ class NoRedirection(urllib2.HTTPRedirectHandler):
 
 
 class WorkerThread(threading.Thread):
-    def __init__(self, queue):
+    def __init__(self, mq, queue):
+
         threading.Thread.__init__(self)
-        self.input_queue = queue
+
+        self.input_queue = queue   # internal queue
+        self.mq = mq               # message broker
 
     def run(self):
-        global conn
 
         while True:
-            flag, item = self.input_queue.get()
-            if flag == 'stop':
+            LOG.debug('Waiting on input queue...')
+            item = self.input_queue.get()
+
+            if not item:
                 LOG.info('%s is shutting down.', self.getName())
                 break
-            if flag == 'timestamp':
-                urlmon_cycletime = time.time() - item
-                LOG.info('Took %d seconds to schedule all checks.', urlmon_cycletime)
-                if GMETRIC_SEND:
-                    gmetric_cmd = "%s --name urlmon_cycletime --value %d --type uint16 --units seconds --slope both --group urlmon %s" % (
-                        GMETRIC_CMD, urlmon_cycletime, GMETRIC_OPTIONS)
-                    LOG.debug("%s", gmetric_cmd)
-                    os.system("%s" % gmetric_cmd)
-                self.input_queue.task_done()
-                continue
 
-            # defaults
+            # TODO(nsatterl): add to system defaults
             search_string = item.get('search', None)
             rule = item.get('rule', None)
             warn_thold = item.get('warning', 2000)  # ms
@@ -317,7 +240,7 @@ class WorkerThread(threading.Thread):
                 descrStr = 'HTTP server responded with status code %d in %dms' % (code, rtt)
 
             LOG.debug("URL: %s, Status: %s (%s), Round-Trip Time: %dms -> %s", item['url'], status, code, rtt,
-                          event)
+                      event)
 
             # Forward metric data to Ganglia
             if code and code < 300:
@@ -351,7 +274,7 @@ class WorkerThread(threading.Thread):
                     (res)])] = 0                                          # zero-out previous event counter
                 currentState[(res)] = event
             elif currentState[(
-            res)] == event:                                                        # Threshold state has not changed
+                res)] == event:                                                        # Threshold state has not changed
                 currentCount[(res, event)] += 1
 
             LOG.debug('currentState = %s, currentCount = %d', currentState[(res)], currentCount[(res, event)])
@@ -360,62 +283,44 @@ class WorkerThread(threading.Thread):
             if currentCount[(res, event)] < item.get('count', 1):
                 repeat = False
                 LOG.debug('Send repeat alert = %s (curr %s < threshold %s)', repeat, currentCount[(res, event)],
-                              item.get('count', 1))
+                          item.get('count', 1))
             else:
                 repeat = (currentCount[(res, event)] - item.get('count', 1)) % item.get('repeat', 1) == 0
                 LOG.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, currentCount[(res, event)],
-                              item.get('count', 1), item.get('repeat', 1))
+                          item.get('count', 1), item.get('repeat', 1))
 
             LOG.debug('Send alert if prevEvent %s != %s AND thresh %d == %s', previousEvent[(res)], event,
-                          currentCount[(res, event)], item.get('count', 1))
+                      currentCount[(res, event)], item.get('count', 1))
 
             # Determine if current threshold count requires an alert
             if ((previousEvent[(res)] != event and currentCount[(res, event)] == item.get('count', 1))
                 or (previousEvent[(res)] == event and repeat)):
+                resource = item['resource']
+                correlate = HTTP_ALERTS
+                group = 'Web'
+                environment = item['environment']
+                service = item['service']
+                text = descrStr
+                tags = item.get('tags', list())
+                threshold_info = "%s : RT > %d RT > %d x %s" % (
+                    item['url'], warn_thold, crit_thold, item.get('count', 1))
 
-                alertid = str(uuid.uuid4()) # random UUID
-                createTime = datetime.datetime.utcnow()
-
-                headers = dict()
-                headers['type'] = "serviceAlert"
-                headers['correlation-id'] = alertid
-
-                # standard alert info
-                alert = dict()
-                alert['id'] = alertid
-                alert['resource'] = item['resource']
-                alert['event'] = event
-                alert['group'] = 'Web'
-                alert['value'] = value
-                alert['severity'] = severity
-                alert['severityCode'] = SEVERITY_CODE[severity]
-                alert['environment'] = item['environment']
-                alert['service'] = item['service']
-                alert['text'] = descrStr
-                alert['type'] = 'serviceAlert'
-                alert['tags'] = item.get('tags', list())
-                alert['summary'] = '%s - %s %s is %s on %s %s' % (
-                ','.join(item['environment']), severity, event, value, ','.join(item['service']), item['resource'])
-                alert['createTime'] = createTime.replace(microsecond=0).isoformat() + ".%03dZ" % (
-                createTime.microsecond // 1000)
-                alert['origin'] = "%s/%s" % (__program__, os.uname()[1])
-                alert['thresholdInfo'] = "%s : RT > %d RT > %d x %s" % (
-                item['url'], warn_thold, crit_thold, item.get('count', 1))
-                alert['timeout'] = DEFAULT_TIMEOUT
-                alert['correlatedEvents'] = HTTP_ALERTS
-
-                LOG.info('%s : %s', alertid, json.dumps(alert))
-
-                while not conn.is_connected():
-                    LOG.warning('Waiting for message broker to become available')
-                    time.sleep(1.0)
-
-                try:
-                    conn.send(json.dumps(alert), headers, destination=ALERT_QUEUE)
-                    broker = conn.get_host_and_port()
-                    LOG.info('%s : Alert sent to %s:%s', alertid, broker[0], str(broker[1]))
-                except Exception, e:
-                    LOG.error('Failed to send alert to broker %s', e)
+                urlmonAlert = Alert(
+                    resource=resource,
+                    event=event,
+                    correlate=correlate,
+                    group=group,
+                    value=value,
+                    severity=severity,
+                    environment=environment,
+                    service=service,
+                    text=text,
+                    event_type='serviceAlert',
+                    tags=tags,
+                    origin='%s/%s' % ('alert-syslog', os.uname()[1]),
+                    threshold_info=threshold_info,
+                )
+                self.mq.send(urlmonAlert)
 
                 # Keep track of previous event
                 previousEvent[(res)] = event
@@ -426,7 +331,57 @@ class WorkerThread(threading.Thread):
         self.input_queue.task_done()
 
 
+class UrlmonDaemon(Daemon):
+    def run(self):
 
+        self.running = True
+
+        # Create internal queue
+        self.queue = Queue.Queue()
+
+        # Connect to message queue
+        self.mq = Messaging()
+        self.mq.connect()
+
+        # Initialiase alert rules
+        init_urls()
+        url_mod_time = os.path.getmtime(URLFILE)
+
+        # Start worker threads
+        for i in range(CONF.server_threads):
+            w = WorkerThread(self.queue)
+            try:
+                w.start()
+            except Exception, e:
+                LOG.error('Worker thread #%s did not start: %s', i, e)
+                continue
+            LOG.info('Started worker thread: %s', w.getName())
+
+        while not self.shuttingdown:
+            try:
+                for url in urls:
+                    self.queue.put(url)
+
+                LOG.debug('Send heartbeat...')
+                heartbeat = Heartbeat(version=Version)
+                self.mq.send(heartbeat)
+
+                LOG.info('URL check queue length is %d', self.queue.qsize())
+
+                time.sleep(CONF.heartbeat_every)
+
+            except (KeyboardInterrupt, SystemExit):
+                self.shuttingdown = True
+
+        LOG.info('Shutdown request received...')
+        self.running = False
+
+        for i in range(CONF.server_threads):
+            self.queue.put(None)
+        w.join()
+
+        LOG.info('Disconnecting from message broker...')
+        self.mq.disconnect()
 
 
 
