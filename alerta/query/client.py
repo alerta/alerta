@@ -26,8 +26,8 @@ class QueryClient(object):
 
     def main(self):
 
-        API_URL = 'http://%s:%s%s/alerta/api/v1/alerts' % (CONF.api_host, CONF.api_port,
-                                                           CONF.api_endpoint if CONF.api_endpoint != '/' else '')
+        API_URL = 'http://%s:%s%s/alerts' % (CONF.api_host, CONF.api_port,
+                                             CONF.api_endpoint if CONF.api_endpoint != '/' else '')
         query = dict()
 
         if CONF.minutes or CONF.hours or CONF.days:

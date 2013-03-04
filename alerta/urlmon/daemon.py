@@ -24,13 +24,9 @@ Version = '2.0.0'
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-DEFAULT_TIMEOUT = 86400
-EXPIRATION_TIME = 600 # seconds = 10 minutes
-
 URLFILE = '/opt/alerta/alerta/alert-urlmon.yaml'
 
 REQUEST_TIMEOUT = 15 # seconds
-NUM_THREADS = 10
 
 GMETRIC_SEND = True
 GMETRIC_CMD = '/usr/bin/gmetric'
@@ -92,7 +88,7 @@ class UrlmonDaemon(Daemon):
         url_mod_time = os.path.getmtime(URLFILE)
 
         # Start worker threads
-        for i in range(NUM_THREADS):
+        for i in range(CONF.server_threads):
             w = WorkerThread(queue)
             w.start()
             LOG.info('Starting thread: %s', w.getName())
@@ -129,7 +125,7 @@ class UrlmonDaemon(Daemon):
         LOG.info('Shutdown request received...')
         self.running = False
 
-        for i in range(NUM_THREADS):
+        for i in range(CONF.server_threads):
             queue.put(('stop', None))
         w.join()
 
@@ -224,7 +220,7 @@ class WorkerThread(threading.Thread):
             urllib2.install_opener(opener)
 
             if 'User-agent' not in headers:
-                headers['User-agent'] = 'alert-urlmon/%s Python-urllib/%s' % (__version__, urllib2.__version__)
+                headers['User-agent'] = 'alert-urlmon/%s Python-urllib/%s' % (Version, urllib2.__version__)
 
             try:
                 if post:

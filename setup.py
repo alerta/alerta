@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+import setuptools
 from alerta import get_version
 
-setup(
+setuptools.setup(
     name="alerta",
     version=get_version(),
     description='Alerta monitoring framework',
@@ -11,11 +11,22 @@ setup(
     license='Apache License 2.0',
     author='Nick Satterly',
     author_email='nick.satterly@guardian.co.uk',
-    packages= ['alerta'],
-    entry_points={
-        'console_scripts': [
-            'alert = alerta.shell:main'
-        ],
-    },
+    packages= setuptools.find_packages(exclude=['bin', 'tests']),
+    scripts=['bin/alert-aws',
+             'bin/alert-dynect',
+             'bin/alert-ganglia',
+             'bin/alert-ircbot',
+             'bin/alert-logger',
+             'bin/alert-mailer',
+             'bin/alert-notify',
+             'bin/alert-query',
+             'bin/alert-receiver',
+             'bin/alert-sender',
+             'bin/alert-snmptrap',
+             'bin/alert-syslog',
+             'bin/alert-urlmon',
+             'bin/alerta-api',
+             'bin/alerta-server',
+             ],
     keywords='alert monitoring system'
 )

@@ -154,29 +154,29 @@ class IrcbotDaemon(Daemon):
 
         while not self.shuttingdown:
             try:
+                LOG.debug('Waiting for IRC messages...')
                 ip, op, rdy = select.select([irc], [], [], CONF.heartbeat_every)
-                for i in ip:
-                    if i == irc:
-                        data = irc.recv(4096)
-                        if len(data) > 0:
-                            if 'ERROR' in data:
-                                LOG.error('IRC server: %s', data)
-                            else:
-                                LOG.debug('IRC server: %s', data)
-                        if 'PING' in data:
-                            LOG.info('IRC PING received -> PONG ' + data.split()[1])
-                            irc.send('PONG ' + data.split()[1] + '\r\n')
-                        if 'ACK' in data:
-                            LOG.info('Request to ACK %s by %s', data.split()[4], data.split()[0])
-                            ack_alert(data.split()[4])
-                        if data.find('!alerta quit') != -1:
-                            irc.send('QUIT\r\n')
-                if not ip:
+                if ip:
+                    for i in ip:
+                        if i == irc:
+                            data = irc.recv(4096)
+                            if len(data) > 0:
+                                if 'ERROR' in data:
+                                    LOG.error('IRC server: %s', data)
+                                else:
+                                    LOG.debug('IRC server: %s', data)
+                            if 'PING' in data:
+                                LOG.info('IRC PING received -> PONG ' + data.split()[1])
+                                irc.send('PONG ' + data.split()[1] + '\r\n')
+                            if 'ACK' in data:
+                                LOG.info('Request to ACK %s by %s', data.split()[4], data.split()[0])
+                                ack_alert(data.split()[4])
+                            if data.find('!alerta quit') != -1:
+                                irc.send('QUIT\r\n')
+                else:
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(version=Version)
                     self.mq.send(heartbeat)
-
-                time.sleep(0.1)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True

@@ -34,7 +34,7 @@ class LoggerDaemon(Daemon):
         while not self.shuttingdown:
             try:
                 LOG.debug('Waiting for log messages...')
-                time.sleep(30)
+                time.sleep(CONF.heartbeat_every)
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat()
@@ -77,16 +77,16 @@ class LoggerMessage(MessageHandler):
                 '@type': alert['type'],
                 '@fields': str(alert)
             }
-
             LOG.debug('Index payload %s', logstash)
 
+            index_url = "http://%s:%s/alerta/%s" % (CONF.es_host, CONF.es_port,
+                                                    'alerta-' + datetime.datetime.utcnow().strftime('%Y.%M.%d'))
+            LOG.debug('Index URL: %s', index_url)
+
             try:
-                index_url = "http://%s:%s/alerta/%s" % (CONF.es_host, CONF.es_port,
-                                                  'alerta-' + datetime.datetime.utcnow().strftime('%Y.%M.%d'))
-                LOG.debug('Index URL: %s', index_url)
                 response = urllib2.urlopen(index_url, json.dumps(logstash)).read()
             except Exception, e:
-                LOG.error('%s : Alert indexing to %s failed - %s', alert['lastReceiveId'], url, e)
+                LOG.error('%s : Alert indexing to %s failed - %s', alert['lastReceiveId'], index_url, e)
                 return
 
             try:

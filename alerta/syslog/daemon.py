@@ -23,8 +23,6 @@ CONF = config.CONF
 SYSLOGCONF = '/opt/alerta/alerta/alert-syslog.yaml'
 PARSERDIR = '/opt/alerta/bin/parsers'
 
-_SELECT_TIMEOUT = 30
-
 
 class SyslogDaemon(Daemon):
 
@@ -61,26 +59,25 @@ class SyslogDaemon(Daemon):
         while not self.shuttingdown:
             try:
                 LOG.debug('Waiting for syslog messages...')
+                ip, op, rdy = select.select([udp, tcp], [], [], CONF.heartbeat_every)
+                if ip:
+                    for i in ip:
+                        if i == udp:
+                            data = udp.recv(4096)
+                            LOG.debug('Syslog UDP data received: %s', data)
+                            syslogAlert = self.parse_syslog(data)
+                        if i == tcp:
+                            client, addr = tcp.accept()
+                            data = client.recv(4096)
+                            client.close()
+                            LOG.debug('Syslog TCP data received: %s', data)
+                            syslogAlert = self.parse_syslog(data)
 
-                ip, op, rdy = select.select([udp, tcp], [], [], _SELECT_TIMEOUT)
-                for i in ip:
-                    if i == udp:
-                        data = udp.recv(4096)
-                        LOG.debug('Syslog UDP data received: %s', data)
-                        syslogAlert = self.parse_syslog(data)
-                    if i == tcp:
-                        client, addr = tcp.accept()
-                        data = client.recv(4096)
-                        client.close()
-                        LOG.debug('Syslog TCP data received: %s', data)
-                        syslogAlert = self.parse_syslog(data)
-
-                    self.mq.send(syslogAlert)
-
-                # TODO(nsatterl): don't send a heartbeat after each and every alert
-                LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat()
-                self.mq.send(heartbeat)
+                        self.mq.send(syslogAlert)
+                else:
+                    LOG.debug('Send heartbeat...')
+                    heartbeat = Heartbeat(version=Version)
+                    self.mq.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
