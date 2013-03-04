@@ -20,10 +20,7 @@ class SenderClient(object):
     def main(self):
 
         if CONF.heartbeat:
-            msg = Heartbeat(
-                origin=CONF.origin,
-                version=__version__,
-            )
+            msg = Heartbeat(version=Version)
         else:
             msg = Alert(
                 resource=CONF.resource,
