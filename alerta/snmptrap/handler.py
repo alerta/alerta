@@ -1,10 +1,10 @@
 import sys
 import re
-import yaml
+
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.alert import Alert
+from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging
 
 Version = '2.0.0'
@@ -12,13 +12,8 @@ Version = '2.0.0'
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-DEFAULT_TIMEOUT = 86400
-EXPIRATION_TIME = 600 # seconds = 10 minutes
-
 TRAPCONF = '/opt/alerta/alerta/alert-snmptrap.yaml'
 PARSERDIR = '/opt/alerta/bin/parsers'
-
-
 
 
 class SnmpTrapHandler(object):
@@ -28,14 +23,20 @@ class SnmpTrapHandler(object):
         data = sys.stdin.read()
         LOG.info('snmptrapd -> %s', data)
 
-        snmptrapAlert = self.parse_snmptrap(data)
+        snmptrapAlert = SnmpTrapHandler.parse_snmptrap(data)
 
-        mq = Messaging()
-        mq.connect()
-        mq.send(snmptrapAlert)
-        mq.disconnect()
+        self.mq = Messaging()
+        self.mq.connect()
+        self.mq.send(snmptrapAlert)
 
-    def parse_snmptrap(self, data):
+        LOG.debug('Send heartbeat...')
+        heartbeat = Heartbeat(version=Version)
+        self.mq.send(heartbeat)
+
+        self.mq.disconnect()
+
+    @staticmethod
+    def parse_snmptrap(data):
 
         split = data.splitlines()
 
@@ -194,7 +195,7 @@ class SnmpTrapHandler(object):
             tags=tags,
             #origin=origin,  # FIXME(nsatterl): define here or in Alert class?
             threshold_info='n/a',
-            timeout=DEFAULT_TIMEOUT,
+            timeout=CONF.timeout,
             raw_data=data,
         )
         LOG.debug('snmptrapAlert = %s', snmptrapAlert)
