@@ -50,3 +50,4 @@ class SenderClient(object):
             mq.disconnect()
 
         return msg.get_id()
+
