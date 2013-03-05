@@ -162,6 +162,7 @@ class Alert(object):
             receive_time=alert.get('receiveTime', None),
             last_receive_time=alert.get('lastReceiveTime', None),
             trend_indication=alert.get('trendIndication', None),
+            raw_data=alert.get('rawData', None),
         )
 
 

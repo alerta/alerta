@@ -86,7 +86,8 @@ def name_to_code(name):
 
 
 def parse_severity(name):
-    for sev in _SEVERITY_MAP:
-        if name.lower() == sev.lower():
-            return sev
-    return 'Not Valid'
+    if name:
+        for sev in _SEVERITY_MAP:
+            if name.lower() == sev.lower():
+                return sev
+    return None

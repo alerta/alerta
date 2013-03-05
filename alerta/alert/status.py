@@ -33,7 +33,8 @@ def name_to_code(name):
 
 
 def parse_status(name):
-    for st in _STATUS_MAP:
-        if name.lower() == st.lower():
-            return st
-    return 'Not Valid'
+    if name:
+        for st in _STATUS_MAP:
+            if name.lower() == st.lower():
+                return st
+    return None
