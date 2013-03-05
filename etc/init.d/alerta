@@ -10,7 +10,7 @@
 
 RETVAL=0
 prog="alerta"
-binary=/opt/alerta/bin/alerta.py
+binary=/usr/bin/$prog
 pidfile=/var/run/alerta/$prog.pid
 lockfile=/var/lock/subsys/$prog
 

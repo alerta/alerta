@@ -25,8 +25,8 @@ setuptools.setup(
              'bin/alert-snmptrap',
              'bin/alert-syslog',
              'bin/alert-urlmon',
+             'bin/alerta',
              'bin/alerta-api',
-             'bin/alerta-server',
              ],
     keywords='alert monitoring system'
 )

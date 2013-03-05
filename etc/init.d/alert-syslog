@@ -10,7 +10,7 @@
 
 RETVAL=0
 prog="alert-syslog"
-binary=/opt/alerta/bin/alert-syslog.py
+binary=/usr/bin/alert-syslog
 pidfile=/var/run/alerta/$prog.pid
 lockfile=/var/lock/subsys/$prog
 
