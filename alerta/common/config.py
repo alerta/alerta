@@ -84,8 +84,8 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
     args, argv_left = cfg_parser.parse_known_args(argv)
 
     config_file_order = [
-        args.conf_file,             # default config file or file -c file
-        'alerta.conf',              # config file in current directory (beware daemonize() cd to /
+        args.conf_file,
+        os.path.expanduser('~/.alerta.conf'),
         os.environ.get('ALERTA_CONF', ''),
     ]
 
