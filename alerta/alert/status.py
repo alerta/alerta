@@ -37,4 +37,4 @@ def parse_status(name):
         for st in _STATUS_MAP:
             if name.lower() == st.lower():
                 return st
-    return None
+    return 'Not Valid'

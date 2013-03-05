@@ -90,4 +90,4 @@ def parse_severity(name):
         for sev in _SEVERITY_MAP:
             if name.lower() == sev.lower():
                 return sev
-    return None
+    return 'Not Valid'
