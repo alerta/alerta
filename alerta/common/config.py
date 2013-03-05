@@ -20,6 +20,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'verbose': False,
         'log_dir': '/var/log/alerta',
         'log_file': '%s.log' % prog,
+        'pid_dir': '/var/run/alerta',
         'use_syslog': True,
         'use_stderr': False,
         'foreground': False,
@@ -58,8 +59,8 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'rabbit_password': 'guest',
         'rabbit_virtual_host': '/',
 
-        'syslog_udp_port': 5140,
-        'syslog_tcp_port': 5140,
+        'syslog_udp_port': 514,
+        'syslog_tcp_port': 514,
         'syslog_facility': 'local7',
 
         'irc_host': 'irc.gudev.gnl',
@@ -69,6 +70,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
 
         'es_host': 'localhost',
         'es_port': 9200,
+        'es_index': 'alerta-%Y.%m.%d',  # NB. Kibana config must match this index
     }
     CONF.update(SYSTEM_DEFAULTS)
 
@@ -144,6 +146,12 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         metavar="FILE",
         default=OPTION_DEFAULTS['log_file'],
         help="Log file name"
+    )
+    parser.add_argument(
+        '--pid-dir',
+        metavar="DIR",
+        default=OPTION_DEFAULTS['pid_dir'],
+        help="PID directory"
     )
     parser.add_argument(
         '--use-syslog',

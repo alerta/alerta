@@ -62,7 +62,7 @@ class Daemon:
         self.stdout = stdout
         self.stderr = stderr
 
-        self.pidfile = pidfile or '/var/run/alerta/%s.pid' % self.prog
+        self.pidfile = pidfile or '%s/%s.pid' % (CONF.pid_dir, self.prog)
         self.disable_flag = disable_flag or '/var/run/alerta/%s.disable' % self.prog
 
         self.running = False

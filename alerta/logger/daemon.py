@@ -62,12 +62,12 @@ class LoggerMessage(MessageHandler):
             LOG.info('%s : [%s] %s', alert['lastReceiveId'], alert['status'], alert['summary'])
 
             # TODO(nsatterl): is this still required?
-            if 'tags' not in alert or not alert['tags']:           # Kibana GUI borks if tags are null
-                alert['tags'] = 'none'
+            #if 'tags' not in alert or not alert['tags']:           # Kibana GUI borks if tags are null
+            #    alert['tags'] = 'none'
 
             LOG.debug('alert last receivetime %s', alert['lastReceiveTime'])
 
-            logstash = {
+            document = {
                 '@message': alert['summary'],
                 '@source': alert['resource'],
                 '@source_host': 'not_used',
@@ -77,14 +77,14 @@ class LoggerMessage(MessageHandler):
                 '@type': alert['type'],
                 '@fields': str(alert)
             }
-            LOG.debug('Index payload %s', logstash)
+            LOG.debug('Index payload %s', document)
 
-            index_url = "http://%s:%s/alerta/%s" % (CONF.es_host, CONF.es_port,
-                                                    'alerta-' + datetime.datetime.utcnow().strftime('%Y.%M.%d'))
+            index_url = "http://%s:%s/%s/%s" % (CONF.es_host, CONF.es_port,
+                                                datetime.datetime.utcnow().strftime(CONF.es_index), alert['type'])
             LOG.debug('Index URL: %s', index_url)
 
             try:
-                response = urllib2.urlopen(index_url, json.dumps(logstash)).read()
+                response = urllib2.urlopen(index_url, json.dumps(document)).read()
             except Exception, e:
                 LOG.error('%s : Alert indexing to %s failed - %s', alert['lastReceiveId'], index_url, e)
                 return
