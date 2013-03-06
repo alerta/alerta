@@ -10,7 +10,7 @@
 
 <body>
 
-<table cellpadding="0" cellspacing="0" border="1" class="display" id="alerts">
+<table cellpadding="0" cellspacing="0" border="0" class="display" id="alerts">
     <thead>
     <tr>
         <th>Severity</th>
@@ -47,8 +47,22 @@
 </table>
 
 <script>
-    $(document).ready(function() {
 
+    var oTable;
+    function fnFormatDetails ( aData )
+    {
+        //var aData = oTable.fnGetData( nTr );
+        var sOut = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">';
+        sOut += '<tr><td>Rendering engine:</td><td>'+aData[2]+' '+aData[5]+'</td></tr>';
+        sOut += '<tr><td>Link to source:</td><td>Could provide a link here</td></tr>';
+        sOut += '<tr><td>Extra info:</td><td>And any further details here (images etc)</td></tr>';
+        sOut += '</table>';
+
+        return sOut;
+    }
+
+    $(document).ready(function() {
+        // var anOpen = [];
         var oTable = $('#alerts').dataTable({
             "bDestroy" : true,
             "bUseRendered": false,
@@ -116,8 +130,30 @@
                 { "sWidth": "10%", "sClass": "align-center" },
                 { "sWidth": "40%" },
                 { "bVisible": false }
-            ]
+            ],
+            "aaSorting": [[2, 'desc']]
         });
+
+        $('#alerts tbody tr').live( 'click', function () {
+
+            var nTr = this;
+
+            // var i = $.inArray( nTr, anOpen );
+
+            if ( oTable.fnIsOpen(nTr) )
+            {
+                /* This row is already open - close it */
+                // this.src = "../examples_support/details_open.png";
+                oTable.fnClose( nTr );
+            }
+            else
+            {
+                /* Open this row */
+                // this.src = "../examples_support/details_close.png";
+                oTable.fnOpen( nTr, fnFormatDetails(oTable.fnGetData(nTr)), 'details' );
+            }
+        } );
+
         (function worker() {
             $.ajax( {
                 "dataType": 'json',
