@@ -1,3 +1,4 @@
+
 table {
     margin: 0;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -7,9 +8,15 @@ table {
     background-color: #ffffff;
     font-weight: normal;
 }
-
+/*
 td.align-center {
     text-align:center
+}
+*/
+
+.table tbody tr:hover td,
+.table tbody tr:hover th {
+  background-color: transparent;
 }
 
 .Critical {
@@ -45,8 +52,7 @@ td.align-center {
 }
 
 
-.label,
-.badge {
+.label {
     font-size: 10.998px;
     font-weight: bold;
     line-height: 14px;
@@ -70,14 +76,14 @@ td.align-center {
     -moz-border-radius: 9px;
     border-radius: 9px;
 }
-
+/*
 a.label:hover,
 a.badge:hover {
     color: #ffffff;
     text-decoration: none;
     cursor: pointer;
 }
-
+*/
 .label-critical {
     background-color: #b94a48;
 }
@@ -86,7 +92,7 @@ a.badge:hover {
     background-color: #f89406;
 }
 
-label-minor {
+.label-minor {
     background-color: #ffd700;
 }
 
@@ -101,3 +107,13 @@ label-minor {
 .label-inverse{
     background-color: #333333;
 }
+
+/*
+tr.odd {
+    background-color: #E2E4FF;
+}
+
+tr.even {
+    background-color: white;
+}
+*/
