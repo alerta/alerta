@@ -298,13 +298,13 @@ class QueryClient(object):
                 if 'attributes' in CONF.show:
                     print(
                         line_color + '    severity | %s -> %s (%s)' % (
-                        previous_severity, current_severity, severity.name_to_code(current_severity) ) + end_color)
-                    print(line_color + '    trend    | %s' % (trend_indication) + end_color)
-                    print(line_color + '    status   | %s' % (current_status) + end_color)
-                    print(line_color + '    resource | %s' % (resource) + end_color)
-                    print(line_color + '    group    | %s' % (group) + end_color)
-                    print(line_color + '    event    | %s' % (event) + end_color)
-                    print(line_color + '    value    | %s' % (value) + end_color)
+                        previous_severity.capitalize(), current_severity.capitalize(), severity.name_to_code(current_severity) ) + end_color)
+                    print(line_color + '    trend    | %s' % trend_indication + end_color)
+                    print(line_color + '    status   | %s' % current_status.capitalize() + end_color)
+                    print(line_color + '    resource | %s' % resource + end_color)
+                    print(line_color + '    group    | %s' % group + end_color)
+                    print(line_color + '    event    | %s' % event + end_color)
+                    print(line_color + '    value    | %s' % value + end_color)
 
                 if 'times' in CONF.show:
                     print(
@@ -314,22 +314,22 @@ class QueryClient(object):
                         receive_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT)) + end_color)
                     print(line_color + '      last received | %s' % (
                         last_receive_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT)) + end_color)
-                    print(line_color + '      latency       | %sms' % (latency) + end_color)
-                    print(line_color + '      timeout       | %ss' % (timeout) + end_color)
+                    print(line_color + '      latency       | %sms' % latency + end_color)
+                    print(line_color + '      timeout       | %ss' % timeout + end_color)
                     if expire_time:
                         print(line_color + '      expire time   | %s' % (
                             expire_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT)) + end_color)
 
                 if 'details' in CONF.show:
-                    print(line_color + '          alert id     | %s' % (alertid) + end_color)
-                    print(line_color + '          last recv id | %s' % (last_receive_id) + end_color)
+                    print(line_color + '          alert id     | %s' % alertid + end_color)
+                    print(line_color + '          last recv id | %s' % last_receive_id + end_color)
                     print(line_color + '          environment  | %s' % (','.join(environment)) + end_color)
                     print(line_color + '          service      | %s' % (','.join(service)) + end_color)
-                    print(line_color + '          resource     | %s' % (resource) + end_color)
-                    print(line_color + '          type         | %s' % (event_type) + end_color)
-                    print(line_color + '          origin       | %s' % (origin) + end_color)
-                    print(line_color + '          more info    | %s' % (more_info) + end_color)
-                    print(line_color + '          threshold    | %s' % (threshold_info) + end_color)
+                    print(line_color + '          resource     | %s' % resource + end_color)
+                    print(line_color + '          type         | %s' % event_type + end_color)
+                    print(line_color + '          origin       | %s' % origin + end_color)
+                    print(line_color + '          more info    | %s' % more_info + end_color)
+                    print(line_color + '          threshold    | %s' % threshold_info + end_color)
                     print(line_color + '          correlate    | %s' % (','.join(correlate)) + end_color)
 
                 if 'tags' in CONF.show and tags:
