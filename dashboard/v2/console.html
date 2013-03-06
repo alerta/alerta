@@ -7,13 +7,80 @@
 
     <link href="css/bootstrap.css" rel="stylesheet">
     <link href="css/bootstrap-responsive.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            padding-top: 40px;
+            padding-bottom: 40px;
+        }
+    </style>
     <link href="css/custom.css" rel="stylesheet">
 
 </head>
 
 <body>
+<div class="navbar navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </a>
+            <a class="brand" href="./index.html">Alert Console</a>
+            <div class="nav-collapse">
+                <ul class="nav">
+                    <li class="active"><a href="./index.php">Production</a></li>
+                    <li class=""><a href="./dev.php">Development</a></li>
+                    <li class=""><a href="./infra.php">Infrastructure</a></li>
+                    <li class=""><a href="/Kibana">History</a></li>
+                    <li class=""><a href="./about.php">About</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </div>
+</div>
 
 <div class="container">
+    <table width="100%">
+        <tr>
+            <td>
+                <!-- div  id="status-counts" -->
+                <table border=1 class="table table-bordered table-condensed"  id="status-counts">
+                    <tbody>
+                    <tr id="Alert-status" class="status">
+                        <td><span class="label">OPEN</span></td>
+                        <td id="alert-open">0</td>
+                        <td><span class="label">ACK</span></td>
+                        <td id="alert-ack">0</td>
+                        <td><span class="label">CLOSED</span></td>
+                        <td id="alert-closed">0</td>
+                    </tr>
+                    </tbody>
+                </table>
+                <!-- /div -->
+            </td>
+            <td>
+                <div align="right">
+                    <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)">
+                        <option value="0">No limit</option>
+                        <option value="100">Only 100</option>
+                        <option value="500">Only 500</option>
+                        <option value="1000">Only 1000</option>
+                        <option value="5000">Only 5000</option>
+                    </select>
+                    <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)">
+                        <option value="0">All alerts</option>
+                        <option value="120">Last 2 minutes</option>
+                        <option value="300">Last 5 minutes</option>
+                        <option value="600">Last 10 minutes</option>
+                        <option value="1800">Last 30 minutes</option>
+                        <option value="3600">Last 1 hour</option>
+                    </select>
+                    <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh Now</button>
+                </div>
+            </td>
+        </tr>
+    </table>
 
     <div class="row show-grid">
         <div class="span12">
@@ -143,6 +210,26 @@
 
 <script>
 
+function getStatus(statusfilter, refresh) {
+
+    $.getJSON('http://' + api_server + '/alerta/api/v1/alerts?callback=?&hide-alert-details=true&hide-alert-repeats=NORMAL&' + statusfilter + limit + fromDate, function (data) {
+
+        if (data.response.warning) {
+            $('#warning-text').text(data.response.warning);
+            $('#webapp-alert').toggle();
+        }
+
+        $.each(data.response.alerts.statusCounts, function (stat, count) {
+            $("#alert-" + stat).text(count);
+        });
+        if (refresh) {
+            timer = setTimeout(function () {
+                getStatus(statusfilter, refresh);
+            }, 120000);
+        }
+    });
+}
+
 var oTable;
 function fnFormatDetails(aData) {
     var severity = aData[0];
@@ -214,7 +301,7 @@ $(document).ready(function () {
         "bPaginate": true,
         "bDeferRender": true,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-            nRow.className = aData[0] + " " + aData[1];
+            nRow.className = 'severity-' + aData[0] + ' status-' + aData[1];
             // Severity = Critical, Major, Minor, Warning, Informational, Debug
             if (aData[0] == "Critical") {
                 $('td:eq(0)', nRow).html('<span class="label label-critical">Critical</span>');
@@ -239,13 +326,13 @@ $(document).ready(function () {
             }
             // Status = Open, Acknowledged, Closed
             if (aData[1] == "Open") {
-                $('td:eq(1)', nRow).html('<span class="label">Open</span>');
+                $('td:eq(1)', nRow).html('<span class="label label-open">Open</span>');
             }
             if (aData[1] == "Acknowledged") {
-                $('td:eq(1)', nRow).html('<span class="label">Acknowledged</span>');
+                $('td:eq(1)', nRow).html('<span class="label label-ack">Acknowledged</span>');
             }
             if (aData[1] == "Closed") {
-                $('td:eq(1)', nRow).html('<span class="label">Closed</span>');
+                $('td:eq(1)', nRow).html('<span class="label label-closed">Closed</span>');
             }
 
             var d = new Date(aData[2]);
@@ -262,7 +349,7 @@ $(document).ready(function () {
             { "sWidth": "10%", "sClass": "align-center" },
             { "sWidth": "10%", "sClass": "align-center" },
             { "sWidth": "10%", "sClass": "align-center" },
-            { "sWidth": "40%" },
+            { "sWidth": "35%" },
             { "bVisible": false }
         ],
         "aaSorting": [
@@ -293,7 +380,7 @@ $(document).ready(function () {
         $.ajax({
             "dataType": 'json',
             "type": "GET",
-            "url": "http://monitoring/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&environment=PROD|INFRA&service=shared|Infrastructure",
+            "url": "http://monitoring/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&environment=PROD|DEV|INFRA&service=shared|Infrastructure|Discussion|Identity",
             // "async": false,
             "async": true,
             "success": function (data) {
@@ -301,7 +388,8 @@ $(document).ready(function () {
 
                 $.each(data.response.alerts.alertDetails, function (i, ad) {
 
-                    ad.severity = ad.severity.charAt(0).toUpperCase() + ad.severity.slice(1);
+                    ad.severity = ad.severity.charAt(0).toUpperCase() + ad.severity.slice(1).toLowerCase();
+                    ad.status = ad.status.charAt(0).toUpperCase() + ad.status.slice(1).toLowerCase();
 
                     var severityCode;
                     switch (ad.severity) {
@@ -363,7 +451,6 @@ $(document).ready(function () {
                         ad.origin,
                         ad.tags,
                         ad.moreInfo
-
                     ]);
 
                 });
