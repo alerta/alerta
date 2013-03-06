@@ -15,322 +15,366 @@
 
 <div class="container">
 
-<div class="row show-grid">
-<div class="span12">
-<strong>Alert Summary</strong>
-<div class="row show-grid">
-<div class="span3">
-    <table class="table table-bordered table-condensed summary" id="R2R1" data-label="R2R1">
-        <thead>
-        <tr> <th colspan="6" id="R2R1-status">R2 &amp; R1</th> </tr>
-        </thead>
-        <tbody>
-        <tr id="R2R1-warnings" class="warnings">
-            <td id="R2R1-critical">0</td>
-            <td id="R2R1-major">0</td>
-            <td id="R2R1-minor">0</td>
-            <td id="R2R1-warning">0</td>
-            <td id="R2R1-normal">0</td>
-        </tr>
-        </tbody>
-    </table>
-</div>
-</div>
-</div>
-</div>
-
+    <div class="row show-grid">
+        <div class="span12">
+            <div class="row show-grid">
+                <div class="span3">
+                    <table class="table table-bordered table-condensed summary" id="R2R1" data-label="R2R1">
+                        <thead>
+                        <tr>
+                            <th colspan="6" id="R2R1-status">R2 &amp; R1</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="R2R1-warnings" class="warnings">
+                            <td id="R2R1-critical">0</td>
+                            <td id="R2R1-major">0</td>
+                            <td id="R2R1-minor">0</td>
+                            <td id="R2R1-warning">0</td>
+                            <td id="R2R1-normal">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed summary" id="Frontend" data-label="Frontend">
+                        <thead>
+                        <tr>
+                            <th colspan="6" id="Frontend-status">Frontend</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="Frontend-warnings" class="warnings">
+                            <td id="Frontend-critical">0</td>
+                            <td id="Frontend-major">0</td>
+                            <td id="Frontend-minor">0</td>
+                            <td id="Frontend-warning">0</td>
+                            <td id="Frontend-normal">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed summary" id="Discussion" data-label="Discussion">
+                        <thead>
+                        <tr>
+                            <th colspan="6" id="Discussion-status">Discussion</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="Discussion-warnings" class="warnings">
+                            <td id="Discussion-critical">0</td>
+                            <td id="Discussion-major">0</td>
+                            <td id="Discussion-minor">0</td>
+                            <td id="Discussion-warning">0</td>
+                            <td id="Discussion-normal">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed summary" id="Identity" data-label="Identity">
+                        <thead>
+                        <tr>
+                            <th colspan="6" id="Identity-status">Identity</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="Identity-warnings" class="warnings">
+                            <td id="Identity-critical">0</td>
+                            <td id="Identity-major">0</td>
+                            <td id="Identity-minor">0</td>
+                            <td id="Identity-warning">0</td>
+                            <td id="Identity-normal">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Alert Details -->
     <div class="row show-grid">
         <div class="span12">
 
-<table cellpadding="0" cellspacing="0" border="0" class="display table table-bordered table-condensed" id="alerts">
-    <thead>
-    <tr>
-        <th>Severity</th>
-        <th>Status</th>
-        <th>Last Receive Time</th>
-        <th>Dupl. Count</th>
-        <th>Environment</th>
-        <th>Service</th>
-        <th>Resource</th>
-        <th>Event</th>
-        <th>Value</th>
-        <th>Text</th>
-        <th>Severity Code</th>
-    </tr>
-    </thead>
-    <tbody>
+            <table cellpadding="0" cellspacing="0" border="0" class="display table table-bordered table-condensed"
+                   id="alerts">
+                <thead>
+                <tr>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Last Receive Time</th>
+                    <th>Dupl. Count</th>
+                    <th>Environment</th>
+                    <th>Service</th>
+                    <th>Resource</th>
+                    <th>Event</th>
+                    <th>Value</th>
+                    <th>Text</th>
+                    <th>Severity Code</th>
+                </tr>
+                </thead>
+                <tbody>
 
-    </tbody>
-    <tfoot>
-    <tr>
-        <th>Severity</th>
-        <th>Status</th>
-        <th>Last Receive Time</th>
-        <th>Dupl. Count</th>
-        <th>Environment</th>
-        <th>Service</th>
-        <th>Resource</th>
-        <th>Event</th>
-        <th>Value</th>
-        <th>Text</th>
-        <th>Severity Code</th>
-    </tr>
-    </tfoot>
-</table>
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Last Receive Time</th>
+                    <th>Dupl. Count</th>
+                    <th>Environment</th>
+                    <th>Service</th>
+                    <th>Resource</th>
+                    <th>Event</th>
+                    <th>Value</th>
+                    <th>Text</th>
+                    <th>Severity Code</th>
+                </tr>
+                </tfoot>
+            </table>
 
-</div>
-</div>
+        </div>
+    </div>
     <!-- end Alert Details -->
 
-</div> <!-- end container -->
+</div>
+<!-- end container -->
 
 <script>
 
-    var oTable;
-    function fnFormatDetails ( aData )
-    {
-        var severity = aData[0];
-        var status = aData[1];
-        var lastReceiveTime = aData[2];
-        var duplicateCount = aData[3];
-        var environment = aData[4];
-        var service = aData[5];
-            // TODO(nsatterl): cluster
-        var resource = aData[6];
-        var event = aData[7];
-        var value = aData[8];
-        var text = aData[9];
-        var severityCode = aData[10];
-        var alertid = aData[11];
-        var lastReceiveId = aData[12];
-        var createTime = aData[13];
-        var receiveTime = aData[14];
-        var group = aData[15];
-        var previousSeverity = aData[16];
-        var trendIndication = aData[17];
-        var thresholdInfo = aData[18];
-        var timeout = aData[19];
-        var type = aData[20];
-        var repeat = aData[21];
-        var summary = aData[22];
-        var origin = aData[23];
-        var tags = aData[24];
-        var moreInfo = aData[25];
+var oTable;
+function fnFormatDetails(aData) {
+    var severity = aData[0];
+    var status = aData[1];
+    var lastReceiveTime = aData[2];
+    var duplicateCount = aData[3];
+    var environment = aData[4];
+    var service = aData[5];
+    // TODO(nsatterl): cluster
+    var resource = aData[6];
+    var event = aData[7];
+    var value = aData[8];
+    var text = aData[9];
+    var severityCode = aData[10];
+    var alertid = aData[11];
+    var lastReceiveId = aData[12];
+    var createTime = aData[13];
+    var receiveTime = aData[14];
+    var group = aData[15];
+    var previousSeverity = aData[16];
+    var trendIndication = aData[17];
+    var thresholdInfo = aData[18];
+    var timeout = aData[19];
+    var type = aData[20];
+    var repeat = aData[21];
+    var summary = aData[22];
+    var origin = aData[23];
+    var tags = aData[24];
+    var moreInfo = aData[25];
 
-        var sOut = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">';
-        sOut += '<tr class="odd"><td>Alert ID:</td><td>'+ alertid +'</td></tr>';
-        sOut += '<tr class="even"><td>Last Receive Alert ID:</td><td>' + lastReceiveId + '</td></tr>';
-        sOut += '<tr class="odd"><td>Create Time:</td><td>' + createTime + '</td></tr>';
-        sOut += '<tr class="even"><td>Receive Time:</td><td>' + receiveTime + '</td></tr>';
-        sOut += '<tr class="odd"><td>Last Receive Time:</td><td>' + lastReceiveTime + '</td></tr>';
+    var sOut = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">';
+    sOut += '<tr class="odd"><td>Alert ID:</td><td>' + alertid + '</td></tr>';
+    sOut += '<tr class="even"><td>Last Receive Alert ID:</td><td>' + lastReceiveId + '</td></tr>';
+    sOut += '<tr class="odd"><td>Create Time:</td><td>' + createTime + '</td></tr>';
+    sOut += '<tr class="even"><td>Receive Time:</td><td>' + receiveTime + '</td></tr>';
+    sOut += '<tr class="odd"><td>Last Receive Time:</td><td>' + lastReceiveTime + '</td></tr>';
 
-        sOut += '<tr class="even"><td>Environment:</td><td>' + environment + '</td></tr>';
-        sOut += '<tr class="odd"><td>Service:</td><td>' + service + '</td></tr>';
-        sOut += '<tr class="even"><td>Resource:</td><td>' + resource + '</td></tr>';
-        sOut += '<tr class="odd"><td>Event:</td><td>' + event + '</td></tr>';
-        sOut += '<tr class="even"><td>Group:</td><td>' + group + '</td></tr>';
-        sOut += '<tr class="odd"><td>Severity:</td><td>' + previousSeverity + ' -> ' + severity + '</td></tr>';
-        sOut += '<tr class="even"><td>Status:</td><td>' + status + '</td></tr>';
-        sOut += '<tr class="odd"><td>Value:</td><td>' + value + '</td></tr>';
-        sOut += '<tr class="even"><td>Text:</td><td>' + text + '</td></tr>';
+    sOut += '<tr class="even"><td>Environment:</td><td>' + environment + '</td></tr>';
+    sOut += '<tr class="odd"><td>Service:</td><td>' + service + '</td></tr>';
+    sOut += '<tr class="even"><td>Resource:</td><td>' + resource + '</td></tr>';
+    sOut += '<tr class="odd"><td>Event:</td><td>' + event + '</td></tr>';
+    sOut += '<tr class="even"><td>Group:</td><td>' + group + '</td></tr>';
+    sOut += '<tr class="odd"><td>Severity:</td><td>' + previousSeverity + ' -> ' + severity + '</td></tr>';
+    sOut += '<tr class="even"><td>Status:</td><td>' + status + '</td></tr>';
+    sOut += '<tr class="odd"><td>Value:</td><td>' + value + '</td></tr>';
+    sOut += '<tr class="even"><td>Text:</td><td>' + text + '</td></tr>';
 
-        sOut += '<tr class="odd"><td>Trend Indication:</td><td>' + trendIndication + '</td></tr>';
-        sOut += '<tr class="even"><td>Threshold Info:</td><td>' + thresholdInfo + '</td></tr>';
-        sOut += '<tr class="odd"><td>Timeout:</td><td>' + timeout + '</td></tr>';
-        sOut += '<tr class="even"><td>Type:</td><td>' + type + '</td></tr>';
-        sOut += '<tr class="odd"><td>Repeat:</td><td>' + repeat + '</td></tr>';
-        sOut += '<tr class="even"><td>Summary:</td><td>' + summary + '</td></tr>';
-        sOut += '<tr class="odd"><td>Origin:</td><td>' + origin + '</td></tr>';
-        sOut += '<tr class="even"><td>Tags:</td><td>' + tags + '</td></tr>';
-        // TODO(nsatterl): Graphs
-        sOut += '<tr class="odd"><td>More Info:</td><td>' + moreInfo + '</td></tr>';
-        sOut += '</table>';
+    sOut += '<tr class="odd"><td>Trend Indication:</td><td>' + trendIndication + '</td></tr>';
+    sOut += '<tr class="even"><td>Threshold Info:</td><td>' + thresholdInfo + '</td></tr>';
+    sOut += '<tr class="odd"><td>Timeout:</td><td>' + timeout + '</td></tr>';
+    sOut += '<tr class="even"><td>Type:</td><td>' + type + '</td></tr>';
+    sOut += '<tr class="odd"><td>Repeat:</td><td>' + repeat + '</td></tr>';
+    sOut += '<tr class="even"><td>Summary:</td><td>' + summary + '</td></tr>';
+    sOut += '<tr class="odd"><td>Origin:</td><td>' + origin + '</td></tr>';
+    sOut += '<tr class="even"><td>Tags:</td><td>' + tags + '</td></tr>';
+    // TODO(nsatterl): Graphs
+    sOut += '<tr class="odd"><td>More Info:</td><td>' + moreInfo + '</td></tr>';
+    sOut += '</table>';
 
-        return sOut;
-    }
+    return sOut;
+}
 
-    $(document).ready(function() {
-        // var anOpen = [];
-        var oTable = $('#alerts').dataTable({
-            "bDestroy" : true,
-            "bUseRendered": false,
-            "bSort" : true,
-            "bPaginate" : true,
-            "bDeferRender": true,
-            "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
-                nRow.className = aData[0] + " " + aData[1];
-                // Severity = Critical, Major, Minor, Warning, Informational, Debug
-                if ( aData[0] == "Critical" )
-                {
-                    $('td:eq(0)', nRow).html('<span class="label label-critical">Critical</span>');
-                }
-                if ( aData[0] == "Major" )
-                {
-                    $('td:eq(0)', nRow).html('<span class="label label-major">Major</span>');
-                }
-                if ( aData[0] == "Minor" )
-                {
-                    $('td:eq(0)', nRow).html('<span class="label label-minor">Minor</span>');
-                }
-                if ( aData[0] == "Warning" )
-                {
-                    $('td:eq(0)', nRow).html('<span class="label label-warning">Warning</span>');
-                }
-                if ( aData[0] == "Normal" )
-                {
-                    $('td:eq(0)', nRow).html('<span class="label label-success">Normal</span>');
-                }
-                if ( aData[0] == "Informational" )
-                {
-                    $('td:eq(0)', nRow).html('<span class="label label-success">Inform</span>');
-                }
-                if ( aData[0] == "Debug" )
-                {
-                    $('td:eq(0)', nRow).html('<span class="label label-inverse">Debug</span>');
-                }
-                // Status = Open, Acknowledged, Closed
-                if ( aData[1] == "Open" )
-                {
-                    $('td:eq(1)', nRow).html('<span class="label">Open</span>');
-                }
-                if ( aData[1] == "Acknowledged" )
-                {
-                    $('td:eq(1)', nRow).html('<span class="label">Acknowledged</span>');
-                }
-                if ( aData[1] == "Closed" )
-                {
-                    $('td:eq(1)', nRow).html('<span class="label">Closed</span>');
-                }
+$(document).ready(function () {
+    // var anOpen = [];
+    var oTable = $('#alerts').dataTable({
+        "bDestroy": true,
+        "bUseRendered": false,
+        "bSort": true,
+        "bPaginate": true,
+        "bDeferRender": true,
+        "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+            nRow.className = aData[0] + " " + aData[1];
+            // Severity = Critical, Major, Minor, Warning, Informational, Debug
+            if (aData[0] == "Critical") {
+                $('td:eq(0)', nRow).html('<span class="label label-critical">Critical</span>');
+            }
+            if (aData[0] == "Major") {
+                $('td:eq(0)', nRow).html('<span class="label label-major">Major</span>');
+            }
+            if (aData[0] == "Minor") {
+                $('td:eq(0)', nRow).html('<span class="label label-minor">Minor</span>');
+            }
+            if (aData[0] == "Warning") {
+                $('td:eq(0)', nRow).html('<span class="label label-warning">Warning</span>');
+            }
+            if (aData[0] == "Normal") {
+                $('td:eq(0)', nRow).html('<span class="label label-success">Normal</span>');
+            }
+            if (aData[0] == "Informational") {
+                $('td:eq(0)', nRow).html('<span class="label label-success">Inform</span>');
+            }
+            if (aData[0] == "Debug") {
+                $('td:eq(0)', nRow).html('<span class="label label-inverse">Debug</span>');
+            }
+            // Status = Open, Acknowledged, Closed
+            if (aData[1] == "Open") {
+                $('td:eq(1)', nRow).html('<span class="label">Open</span>');
+            }
+            if (aData[1] == "Acknowledged") {
+                $('td:eq(1)', nRow).html('<span class="label">Acknowledged</span>');
+            }
+            if (aData[1] == "Closed") {
+                $('td:eq(1)', nRow).html('<span class="label">Closed</span>');
+            }
 
-                    var d = new Date(aData[2]);
-                    $('td:eq(2)', nRow).html(d.toLocaleString());
+            var d = new Date(aData[2]);
+            $('td:eq(2)', nRow).html(d.toLocaleString());
 
+        },
+        "aoColumns": [
+            { "sWidth": "5%", "iDataSort": 10, "sClass": "align-center" },
+            { "sWidth": "5%", "sClass": "align-center" },
+            { "sWidth": "10%", "sType": "date", "sClass": "align-center" },
+            { "sWidth": "5%", "sClass": "align-center" },
+            { "sWidth": "5%", "sClass": "align-center" },
+            { "sWidth": "5%", "sClass": "align-center" },
+            { "sWidth": "10%", "sClass": "align-center" },
+            { "sWidth": "10%", "sClass": "align-center" },
+            { "sWidth": "10%", "sClass": "align-center" },
+            { "sWidth": "40%" },
+            { "bVisible": false }
+        ],
+        "aaSorting": [
+            [2, 'desc']
+        ],
+        "sDom": "<'row'<'span6'l><'span6'f>r>t<'row'<'span6'i><'span6'p>>"
+    });
+
+    $('#alerts tbody tr').live('click', function () {
+
+        var nTr = this;
+
+        // var i = $.inArray( nTr, anOpen );
+
+        if (oTable.fnIsOpen(nTr)) {
+            /* This row is already open - close it */
+            // this.src = "../examples_support/details_open.png";
+            oTable.fnClose(nTr);
+        }
+        else {
+            /* Open this row */
+            // this.src = "../examples_support/details_close.png";
+            oTable.fnOpen(nTr, fnFormatDetails(oTable.fnGetData(nTr)), 'details');
+        }
+    });
+
+    (function worker() {
+        $.ajax({
+            "dataType": 'json',
+            "type": "GET",
+            "url": "http://monitoring/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&environment=PROD|INFRA&service=shared|Infrastructure",
+            // "async": false,
+            "async": true,
+            "success": function (data) {
+                $('#alerts').dataTable().fnClearTable();
+
+                $.each(data.response.alerts.alertDetails, function (i, ad) {
+
+                    ad.severity = ad.severity.charAt(0).toUpperCase() + ad.severity.slice(1);
+
+                    var severityCode;
+                    switch (ad.severity) {
+                        case 'Critical':
+                            severityCode = 1;
+                            break;
+                        case 'Major':
+                            severityCode = 2;
+                            break;
+                        case 'Minor':
+                            severityCode = 3;
+                            break;
+                        case 'Warning':
+                            severityCode = 4;
+                            break;
+                        case 'Normal':
+                            severityCode = 5;
+                            break;
+                        case 'Informational':
+                            severityCode = 6;
+                            break;
+                        case 'Debug':
+                            severityCode = 7;
+                            break;
+                        case 'Auth':
+                            severityCode = 8;
+                            break;
+                        default:
+                            severityCode = 9; // Unknown
+                    }
+
+                    $('#alerts').dataTable().fnAddData([
+                        ad.severity,       // 0
+                        ad.status,
+                        ad.lastReceiveTime,
+                        ad.duplicateCount,
+                        ad.environment,
+                        ad.service,
+                        // TODO(nsatterl): cluster
+                        ad.resource,
+                        ad.event,
+                        ad.value,
+                        ad.text,  // 9
+
+                        severityCode, // to enable sorting on severity
+
+                        ad.id, // 11
+                        ad.lastReceiveId,
+                        ad.createTime,
+                        ad.receiveTime,
+                        ad.group,
+                        ad.previousSeverity,
+                        ad.trendIndication,
+                        ad.thresholdInfo,
+                        ad.timeout,
+                        ad.type,
+                        ad.repeat,
+                        ad.summary,
+                        ad.origin,
+                        ad.tags,
+                        ad.moreInfo
+
+                    ]);
+
+                });
             },
-            "aoColumns": [
-                { "sWidth": "5%", "iDataSort": 10, "sClass": "align-center" },
-                { "sWidth": "5%", "sClass": "align-center" },
-                { "sWidth": "10%", "sType": "date", "sClass": "align-center" },
-                { "sWidth": "5%", "sClass": "align-center" },
-                { "sWidth": "5%", "sClass": "align-center" },
-                { "sWidth": "5%", "sClass": "align-center" },
-                { "sWidth": "10%", "sClass": "align-center" },
-                { "sWidth": "10%", "sClass": "align-center" },
-                { "sWidth": "10%", "sClass": "align-center" },
-                { "sWidth": "40%" },
-                { "bVisible": false }
-            ],
-            "aaSorting": [[2, 'desc']],
-            "sDom": "<'row'<'span6'l><'span6'f>r>t<'row'<'span6'i><'span6'p>>"
+            complete: function () {
+                oTable.fnDraw(false);
+                setTimeout(worker, 60000);
+            }
         });
-
-        $('#alerts tbody tr').live( 'click', function () {
-
-            var nTr = this;
-
-            // var i = $.inArray( nTr, anOpen );
-
-            if ( oTable.fnIsOpen(nTr) )
-            {
-                /* This row is already open - close it */
-                // this.src = "../examples_support/details_open.png";
-                oTable.fnClose( nTr );
-            }
-            else
-            {
-                /* Open this row */
-                // this.src = "../examples_support/details_close.png";
-                oTable.fnOpen( nTr, fnFormatDetails(oTable.fnGetData(nTr)), 'details' );
-            }
-        } );
-
-        (function worker() {
-            $.ajax( {
-                "dataType": 'json',
-                "type": "GET",
-                "url": "http://monitoring/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&environment=PROD|INFRA&service=shared|Infrastructure",
-                // "async": false,
-                "async": true,
-                "success": function (data)
-                {
-                    $('#alerts').dataTable().fnClearTable();
-
-                    $.each(data.response.alerts.alertDetails, function(i, ad) {
-
-                        ad.severity = ad.severity.charAt(0).toUpperCase() + ad.severity.slice(1);
-
-                                var severityCode;
-                                switch (ad.severity) {
-                                    case 'Critical':
-                                        severityCode = 1;
-                                        break;
-                                    case 'Major':
-                                        severityCode = 2;
-                                        break;
-                                    case 'Minor':
-                                        severityCode = 3;
-                                        break;
-                                    case 'Warning':
-                                        severityCode = 4;
-                                        break;
-                                    case 'Normal':
-                                        severityCode = 5;
-                                        break;
-                                    case 'Informational':
-                                        severityCode = 6;
-                                        break;
-                                    case 'Debug':
-                                        severityCode = 7;
-                                        break;
-                                    case 'Auth':
-                                        severityCode = 8;
-                                        break;
-                                    default:
-                                        severityCode = 9; // Unknown
-                                }
-
-                        $('#alerts').dataTable().fnAddData([
-                            ad.severity,       // 0
-                            ad.status,
-                            ad.lastReceiveTime,
-                            ad.duplicateCount,
-                            ad.environment,
-                            ad.service,
-                                // TODO(nsatterl): cluster
-                            ad.resource,
-                            ad.event,
-                            ad.value,
-                            ad.text,  // 9
-
-                            severityCode, // to enable sorting on severity
-
-                            ad.id, // 11
-                            ad.lastReceiveId,
-                            ad.createTime,
-                            ad.receiveTime,
-                            ad.group,
-                            ad.previousSeverity,
-                            ad.trendIndication,
-                            ad.thresholdInfo,
-                            ad.timeout,
-                            ad.type,
-                            ad.repeat,
-                            ad.summary,
-                            ad.origin,
-                            ad.tags,
-                            ad.moreInfo
-
-                        ]);
-
-                    });
-                },
-                complete: function() {
-                    oTable.fnDraw(false);
-                    setTimeout(worker, 60000);
-                }
-            });
-        })();
-    } );
+    })();
+});
 </script>
 </body>
 </html>
