@@ -49,11 +49,11 @@
                     <tbody>
                     <tr id="Alert-status" class="status">
                         <td><span class="label">OPEN</span></td>
-                        <td id="alert-open">0</td>
+                        <td id="count-open">0</td>
                         <td><span class="label">ACK</span></td>
-                        <td id="alert-ack">0</td>
+                        <td id="count-ack">0</td>
                         <td><span class="label">CLOSED</span></td>
-                        <td id="alert-closed">0</td>
+                        <td id="count-closed">0</td>
                     </tr>
                     </tbody>
                 </table>
@@ -210,26 +210,6 @@
 
 <script>
 
-function getStatus(statusfilter, refresh) {
-
-    $.getJSON('http://' + api_server + '/alerta/api/v1/alerts?callback=?&hide-alert-details=true&hide-alert-repeats=NORMAL&' + statusfilter + limit + fromDate, function (data) {
-
-        if (data.response.warning) {
-            $('#warning-text').text(data.response.warning);
-            $('#webapp-alert').toggle();
-        }
-
-        $.each(data.response.alerts.statusCounts, function (stat, count) {
-            $("#alert-" + stat).text(count);
-        });
-        if (refresh) {
-            timer = setTimeout(function () {
-                getStatus(statusfilter, refresh);
-            }, 120000);
-        }
-    });
-}
-
 var oTable;
 function fnFormatDetails(aData) {
     var severity = aData[0];
@@ -292,7 +272,43 @@ function fnFormatDetails(aData) {
     return sOut;
 }
 
+var logger = 0,
+    fromDate = "",
+    limit = "",
+    timer;
+
+function getStatus(statusfilter, refresh) {
+
+    $.getJSON('http://monitoring/alerta/api/v1/alerts?callback=?&hide-alert-details=true&' + statusfilter + limit + fromDate, function (data) {
+
+        if (data.response.warning) {
+            $('#warning-text').text(data.response.warning);
+            $('#webapp-alert').toggle();
+        }
+
+        $.each(data.response.alerts.statusCounts, function (stat, count) {
+            // alert(stat);
+            $("#count-" + stat).text(count);
+        });
+        if (refresh) {
+            timer = setTimeout(function () {
+                getStatus(statusfilter, refresh);
+            }, 120000);
+        }
+    });
+}
+
+function loadStatus(statusfilter, refresh) {
+    setTimeout(function () {
+        getStatus(statusfilter, refresh);
+    }, 0);
+}
+
+
 $(document).ready(function () {
+
+    loadStatus('environment=PROD|DEV|INFRA', true);
+
     // var anOpen = [];
     var oTable = $('#alerts').dataTable({
         "bDestroy": true,

@@ -180,7 +180,7 @@ function getStatus(statusfilter, refresh) {
             }, 120000);
         }
     });
-};
+}
 
 // Update Alert Summaries
 function getAlerts(service, filter, refresh) {
