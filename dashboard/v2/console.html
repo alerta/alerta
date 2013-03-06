@@ -140,19 +140,19 @@
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed summary" id="Identity" data-label="Identity">
+                    <table class="table table-bordered table-condensed summary" id="Other" data-label="Other">
                         <thead>
                         <tr>
-                            <th colspan="6" id="Identity-status">Identity</th>
+                            <th colspan="6" id="Other-status">Other</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="Identity-warnings" class="warnings">
-                            <td id="Identity-critical">0</td>
-                            <td id="Identity-major">0</td>
-                            <td id="Identity-minor">0</td>
-                            <td id="Identity-warning">0</td>
-                            <td id="Identity-normal">0</td>
+                        <tr id="Other-warnings" class="warnings">
+                            <td id="Other-critical">0</td>
+                            <td id="Other-major">0</td>
+                            <td id="Other-minor">0</td>
+                            <td id="Other-warning">0</td>
+                            <td id="Other-normal">0</td>
                         </tr>
                         </tbody>
                     </table>
@@ -210,7 +210,14 @@
 
 <script>
 
+var logger = 0,
+        fromDate = "",
+        limit = "",
+        timer;
+
 var oTable;
+var filter = '&service=shared';
+
 function fnFormatDetails(aData) {
     var severity = aData[0];
     var status = aData[1];
@@ -272,11 +279,6 @@ function fnFormatDetails(aData) {
     return sOut;
 }
 
-var logger = 0,
-    fromDate = "",
-    limit = "",
-    timer;
-
 function getStatus(statusfilter, refresh) {
 
     $.getJSON('http://monitoring/alerta/api/v1/alerts?callback=?&hide-alert-details=true&' + statusfilter + limit + fromDate, function (data) {
@@ -305,12 +307,113 @@ function loadStatus(statusfilter, refresh) {
 }
 
 
+var filters = {
+    'R2R1': '&group=Syslog',
+    'Frontend': '&value=FAILED',
+    'Discussion': '&service=Identity',
+    'Other': '&-service=R2|R1|Frontend|Identity'
+};
+
+function worker() {
+    $.ajax({
+        "dataType": 'json',
+        "type": "GET",
+        "url": "http://monitoring/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime"
+                + "&environment=PROD|DEV|INFRA"
+                + filter,
+        // "async": false,
+        "async": true,
+        "success": function (data) {
+            $('#alerts').dataTable().fnClearTable();
+
+            $.each(data.response.alerts.alertDetails, function (i, ad) {
+
+                ad.severity = ad.severity.charAt(0).toUpperCase() + ad.severity.slice(1).toLowerCase();
+                ad.status = ad.status.charAt(0).toUpperCase() + ad.status.slice(1).toLowerCase();
+
+                var severityCode;
+                switch (ad.severity) {
+                    case 'Critical':
+                        severityCode = 1;
+                        break;
+                    case 'Major':
+                        severityCode = 2;
+                        break;
+                    case 'Minor':
+                        severityCode = 3;
+                        break;
+                    case 'Warning':
+                        severityCode = 4;
+                        break;
+                    case 'Normal':
+                        severityCode = 5;
+                        break;
+                    case 'Informational':
+                        severityCode = 6;
+                        break;
+                    case 'Debug':
+                        severityCode = 7;
+                        break;
+                    case 'Auth':
+                        severityCode = 8;
+                        break;
+                    default:
+                        severityCode = 9; // Unknown
+                }
+
+                $('#alerts').dataTable().fnAddData([
+                    ad.severity,       // 0
+                    ad.status,
+                    ad.lastReceiveTime,
+                    ad.duplicateCount,
+                    ad.environment,
+                    ad.service,
+                    // TODO(nsatterl): cluster
+                    ad.resource,
+                    ad.event,
+                    ad.value,
+                    ad.text,  // 9
+
+                    severityCode, // to enable sorting on severity
+
+                    ad.id, // 11
+                    ad.lastReceiveId,
+                    ad.createTime,
+                    ad.receiveTime,
+                    ad.group,
+                    ad.previousSeverity,
+                    ad.trendIndication,
+                    ad.thresholdInfo,
+                    ad.timeout,
+                    ad.type,
+                    ad.repeat,
+                    ad.summary,
+                    ad.origin,
+                    ad.tags,
+                    ad.moreInfo
+                ]);
+
+            });
+        },
+        complete: function () {
+            oTable.fnDraw(false);
+            setTimeout(worker, 30 * 1000); // 30 seconds
+        }
+    });
+};
+
 $(document).ready(function () {
 
+    $('.summary').click(function () {
+        filter = filters[this.id];
+        worker();
+    });
+
     loadStatus('environment=PROD|DEV|INFRA', true);
+    worker();
 
     // var anOpen = [];
-    var oTable = $('#alerts').dataTable({
+    oTable = $('#alerts').dataTable({
         "bDestroy": true,
         "bUseRendered": false,
         "bSort": true,
@@ -392,91 +495,6 @@ $(document).ready(function () {
         }
     });
 
-    (function worker() {
-        $.ajax({
-            "dataType": 'json',
-            "type": "GET",
-            "url": "http://monitoring/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&environment=PROD|DEV|INFRA&service=shared|Infrastructure|Discussion|Identity",
-            // "async": false,
-            "async": true,
-            "success": function (data) {
-                $('#alerts').dataTable().fnClearTable();
-
-                $.each(data.response.alerts.alertDetails, function (i, ad) {
-
-                    ad.severity = ad.severity.charAt(0).toUpperCase() + ad.severity.slice(1).toLowerCase();
-                    ad.status = ad.status.charAt(0).toUpperCase() + ad.status.slice(1).toLowerCase();
-
-                    var severityCode;
-                    switch (ad.severity) {
-                        case 'Critical':
-                            severityCode = 1;
-                            break;
-                        case 'Major':
-                            severityCode = 2;
-                            break;
-                        case 'Minor':
-                            severityCode = 3;
-                            break;
-                        case 'Warning':
-                            severityCode = 4;
-                            break;
-                        case 'Normal':
-                            severityCode = 5;
-                            break;
-                        case 'Informational':
-                            severityCode = 6;
-                            break;
-                        case 'Debug':
-                            severityCode = 7;
-                            break;
-                        case 'Auth':
-                            severityCode = 8;
-                            break;
-                        default:
-                            severityCode = 9; // Unknown
-                    }
-
-                    $('#alerts').dataTable().fnAddData([
-                        ad.severity,       // 0
-                        ad.status,
-                        ad.lastReceiveTime,
-                        ad.duplicateCount,
-                        ad.environment,
-                        ad.service,
-                        // TODO(nsatterl): cluster
-                        ad.resource,
-                        ad.event,
-                        ad.value,
-                        ad.text,  // 9
-
-                        severityCode, // to enable sorting on severity
-
-                        ad.id, // 11
-                        ad.lastReceiveId,
-                        ad.createTime,
-                        ad.receiveTime,
-                        ad.group,
-                        ad.previousSeverity,
-                        ad.trendIndication,
-                        ad.thresholdInfo,
-                        ad.timeout,
-                        ad.type,
-                        ad.repeat,
-                        ad.summary,
-                        ad.origin,
-                        ad.tags,
-                        ad.moreInfo
-                    ]);
-
-                });
-            },
-            complete: function () {
-                oTable.fnDraw(false);
-                setTimeout(worker, 60000);
-            }
-        });
-    })();
 });
 </script>
 </body>
