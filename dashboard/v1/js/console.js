@@ -43,19 +43,19 @@ function loadAlerts(services, refresh) {
 }
 
 
-CRITICAL = 'Critical'
-MAJOR = 'Major'
-MINOR = 'Minor'
-WARNING = 'Warning'
-NORMAL = 'Normal'
-CLEAR = 'Clear'
-INFORM = 'Informational'
-DEBUG = 'Debug'
-AUTH = 'Security'
-UNKNOWN = 'Unknown'
-INDETERMINATE = 'Indeterminate'
+CRITICAL = 'Critical';
+MAJOR = 'Major';
+MINOR = 'Minor';
+WARNING = 'Warning';
+NORMAL = 'Normal';
+CLEAR = 'Clear';
+INFORM = 'Informational';
+DEBUG = 'Debug';
+AUTH = 'Security';
+UNKNOWN = 'Unknown';
+INDETERMINATE = 'Indeterminate';
 
-ALL = [CRITICAL, MAJOR, MINOR, WARNING, NORMAL, CLEAR, INFORM, DEBUG, AUTH, UNKNOWN, INDETERMINATE]
+ALL = [CRITICAL, MAJOR, MINOR, WARNING, NORMAL, CLEAR, INFORM, DEBUG, AUTH, UNKNOWN, INDETERMINATE];
 
 
 function sev2label(severity) {

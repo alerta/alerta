@@ -1,0 +1,103 @@
+table {
+    margin: 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    color: #333333;
+    background-color: #ffffff;
+    font-weight: normal;
+}
+
+td.align-center {
+    text-align:center
+}
+
+.Critical {
+  background-color: red;
+}
+
+.Major {
+  background-color: orange;
+}
+
+.Minor {
+	background-color: yellow;
+}
+
+.Warning {
+  background-color: #1E90FF; // dodger-blue
+}
+
+.Normal {
+  background-color: #00CC00;
+}
+
+.Informational {
+  background-color: #00CC00;
+}
+
+.Debug {
+  background-color: #7554BF;
+}
+
+.Closed {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+
+.label,
+.badge {
+    font-size: 10.998px;
+    font-weight: bold;
+    line-height: 14px;
+    color: #ffffff;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    white-space: nowrap;
+    vertical-align: baseline;
+    background-color: #999999;
+}
+
+.label {
+    padding: 1px 4px 2px;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+}
+
+.badge {
+    padding: 1px 9px 2px;
+    -webkit-border-radius: 9px;
+    -moz-border-radius: 9px;
+    border-radius: 9px;
+}
+
+a.label:hover,
+a.badge:hover {
+    color: #ffffff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.label-critical {
+    background-color: #b94a48;
+}
+
+.label-major {
+    background-color: #f89406;
+}
+
+label-minor {
+    background-color: #ffd700;
+}
+
+.label-warning {
+    background-color: #3a87ad;
+}
+
+.label-success {
+    background-color: #468847;
+}
+
+.label-inverse{
+    background-color: #333333;
+}
