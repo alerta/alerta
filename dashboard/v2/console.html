@@ -216,7 +216,8 @@ var logger = 0,
         timer;
 
 var oTable;
-var filter = '&service=shared';
+var envfilter = '&environment=PROD|INFRA|DEV'; // used for status count OPEN,ACK,CLOSED
+var asiFilter = '&service=shared'; // default, used for displayed alert details
 
 function fnFormatDetails(aData) {
     var severity = aData[0];
@@ -279,6 +280,7 @@ function fnFormatDetails(aData) {
     return sOut;
 }
 
+// Alert Status Count for console
 function getStatus(statusfilter, refresh) {
 
     $.getJSON('http://monitoring/alerta/api/v1/alerts?callback=?&hide-alert-details=true&' + statusfilter + limit + fromDate, function (data) {
@@ -306,13 +308,19 @@ function loadStatus(statusfilter, refresh) {
     }, 0);
 }
 
-
-var filters = {
+// Alert Severity Counts for each service
+var asiFilters = {
     'R2R1': '&group=Syslog',
     'Frontend': '&value=FAILED',
     'Discussion': '&service=Identity',
     'Other': '&-service=R2|R1|Frontend|Identity'
 };
+
+
+$('.summary').click(function () {
+    asiFilter = asiFilters[this.id];
+    worker();
+});
 
 function worker() {
     $.ajax({
@@ -320,7 +328,7 @@ function worker() {
         "type": "GET",
         "url": "http://monitoring/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime"
                 + "&environment=PROD|DEV|INFRA"
-                + filter,
+                + asiFilter,
         // "async": false,
         "async": true,
         "success": function (data) {
@@ -404,12 +412,7 @@ function worker() {
 
 $(document).ready(function () {
 
-    $('.summary').click(function () {
-        filter = filters[this.id];
-        worker();
-    });
-
-    loadStatus('environment=PROD|DEV|INFRA', true);
+    loadStatus(envfilter, true);
     worker();
 
     // var anOpen = [];
