@@ -1,0 +1,197 @@
+<html>
+<head>
+
+    <script type="text/javascript" language="javascript" src="js/DataTables/media/js/jquery.js"></script>
+    <script type="text/javascript" language="javascript" src="js/DataTables/media/js/jquery.dataTables.min.js"></script>
+
+    <link href="css/custom.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<table cellpadding="0" cellspacing="0" border="1" class="display" id="alerts">
+    <thead>
+    <tr>
+        <th>Severity</th>
+        <th>Status</th>
+        <th>Last Receive Time</th>
+        <th>Dupl. Count</th>
+        <th>Environment</th>
+        <th>Service</th>
+        <th>Resource</th>
+        <th>Event</th>
+        <th>Value</th>
+        <th>Text</th>
+        <th>Severity Code</th>
+    </tr>
+    </thead>
+    <tbody>
+
+    </tbody>
+    <tfoot>
+    <tr>
+        <th>Severity</th>
+        <th>Status</th>
+        <th>Last Receive Time</th>
+        <th>Dupl. Count</th>
+        <th>Environment</th>
+        <th>Service</th>
+        <th>Resource</th>
+        <th>Event</th>
+        <th>Value</th>
+        <th>Text</th>
+        <th>Severity Code</th>
+    </tr>
+    </tfoot>
+</table>
+
+<script>
+    $(document).ready(function() {
+
+        var oTable = $('#alerts').dataTable({
+            "bDestroy" : true,
+            "bUseRendered": false,
+            "bSort" : true,
+            "bPaginate" : true,
+            "bDeferRender": true,
+            "fnRowCallback": function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+                nRow.className = aData[0] + " " + aData[1];
+                // Severity = Critical, Major, Minor, Warning, Informational, Debug
+                if ( aData[0] == "Critical" )
+                {
+                    $('td:eq(0)', nRow).html('<span class="label label-critical">Critical</span>');
+                }
+                if ( aData[0] == "Major" )
+                {
+                    $('td:eq(0)', nRow).html('<span class="label label-major">Major</span>');
+                }
+                if ( aData[0] == "Minor" )
+                {
+                    $('td:eq(0)', nRow).html('<span class="label label-minor">Minor</span>');
+                }
+                if ( aData[0] == "Warning" )
+                {
+                    $('td:eq(0)', nRow).html('<span class="label label-warning">Warning</span>');
+                }
+                if ( aData[0] == "Normal" )
+                {
+                    $('td:eq(0)', nRow).html('<span class="label label-success">Normal</span>');
+                }
+                if ( aData[0] == "Informational" )
+                {
+                    $('td:eq(0)', nRow).html('<span class="label label-success">Inform</span>');
+                }
+                if ( aData[0] == "Debug" )
+                {
+                    $('td:eq(0)', nRow).html('<span class="label label-inverse">Debug</span>');
+                }
+                // Status = Open, Acknowledged, Closed
+                if ( aData[1] == "Open" )
+                {
+                    $('td:eq(1)', nRow).html('<span class="label">Open</span>');
+                }
+                if ( aData[1] == "Acknowledged" )
+                {
+                    $('td:eq(1)', nRow).html('<span class="label">Acknowledged</span>');
+                }
+                if ( aData[1] == "Closed" )
+                {
+                    $('td:eq(1)', nRow).html('<span class="label">Closed</span>');
+                }
+
+                    var d = new Date(aData[2]);
+                    $('td:eq(2)', nRow).html(d.toLocaleString());
+
+            },
+            "aoColumns": [
+                { "sWidth": "5%", "iDataSort": 10, "sClass": "align-center" },
+                { "sWidth": "5%", "sClass": "align-center" },
+                { "sWidth": "10%", "sType": "date", "sClass": "align-center" },
+                { "sWidth": "5%", "sClass": "align-center" },
+                { "sWidth": "5%", "sClass": "align-center" },
+                { "sWidth": "5%", "sClass": "align-center" },
+                { "sWidth": "10%", "sClass": "align-center" },
+                { "sWidth": "10%", "sClass": "align-center" },
+                { "sWidth": "10%", "sClass": "align-center" },
+                { "sWidth": "40%" },
+                { "bVisible": false }
+            ]
+        });
+        (function worker() {
+            $.ajax( {
+                "dataType": 'json',
+                "type": "GET",
+                "url": "http://monitoring/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&environment=PROD|INFRA&service=shared|Infrastructure",
+                // "async": false,
+                "async": true,
+                "success": function (data)
+                {
+                    $('#alerts').dataTable().fnClearTable();
+
+                    $.each(data.response.alerts.alertDetails, function(i, ad) {
+
+                                var severityCode;
+                                switch (ad.severity) {
+                                    case 'Critical':
+                                    case 'critical':
+                                        severityCode = 1;
+                                        break;
+                                    case 'Major':
+                                    case 'major':
+                                        severityCode = 2;
+                                        break;
+                                    case 'Minor':
+                                    case 'minor':
+                                        severityCode = 3;
+                                        break;
+                                    case 'Warning':
+                                    case 'warning':
+                                        severityCode = 4;
+                                        break;
+                                    case 'Normal':
+                                    case 'normal':
+                                        severityCode = 5;
+                                        break;
+                                    case 'Informational':
+                                    case 'inform':
+                                        severityCode = 6;
+                                        break;
+                                    case 'Debug':
+                                    case 'debug':
+                                        severityCode = 7;
+                                        break;
+                                    case 'Auth':
+                                    case 'auth':
+                                        severityCode = 8;
+                                        break;
+                                    default:
+                                        severityCode = 9; // Unknown
+                                }
+
+                        $('#alerts').dataTable().fnAddData([
+                            ad.severity,
+                            ad.status,
+                            ad.lastReceiveTime,
+                            ad.duplicateCount,
+                            ad.environment,
+                            ad.service,
+                            ad.resource,
+                            ad.event,
+                            ad.value,
+                            ad.text,
+                            severityCode
+                        ]);
+
+                    });
+                },
+                complete: function() {
+                    oTable.fnDraw(false);
+                    setTimeout(worker, 5000);
+                }
+            });
+        })();
+    } );
+</script>
+</body>
+</html>
