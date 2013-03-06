@@ -22,17 +22,17 @@ INDETER_SEV_CODE = 9
 # NOTE: The display text in single quotes can be changed depending on preference.
 # eg. CRITICAL = 'critical' or CRITICAL = 'CRITICAL'
 
-CRITICAL = 'Critical'
-MAJOR = 'Major'
-MINOR = 'Minor'
-WARNING = 'Warning'
-NORMAL = 'Normal'
-CLEAR = 'Clear'
-INFORM = 'Informational'
-DEBUG = 'Debug'
-AUTH = 'Security'
-UNKNOWN = 'Unknown'
-INDETERMINATE = 'Indeterminate'
+CRITICAL = 'critical'
+MAJOR = 'major'
+MINOR = 'minor'
+WARNING = 'warning'
+NORMAL = 'normal'
+CLEAR = 'clear'
+INFORM = 'informational'
+DEBUG = 'debug'
+AUTH = 'security'
+UNKNOWN = 'unknown'
+INDETERMINATE = 'indeterminate'
 
 ALL = [CRITICAL, MAJOR, MINOR, WARNING, NORMAL, CLEAR, INFORM, DEBUG, AUTH, UNKNOWN, INDETERMINATE]
 
@@ -90,4 +90,4 @@ def parse_severity(name):
         for sev in _SEVERITY_MAP:
             if name.lower() == sev.lower():
                 return sev
-    return 'Not Valid'
+    return 'notValid'

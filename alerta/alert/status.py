@@ -8,11 +8,11 @@ CLOSED_STATUS_CODE = 3
 EXPIRED_STATUS_CODE = 4
 UNKNOWN_STATUS_CODE = 9
 
-OPEN = 'Open'
-ACK = 'Acknowledged'
-CLOSED = 'Closed'
-EXPIRED = 'Expired'
-UNKNOWN = 'Unknown'
+OPEN = 'open'
+ACK = 'ack'
+CLOSED = 'closed'
+EXPIRED = 'expired'
+UNKNOWN = 'unknown'
 
 ALL = [OPEN, ACK, CLOSED, EXPIRED, UNKNOWN]
 
@@ -37,4 +37,4 @@ def parse_status(name):
         for st in _STATUS_MAP:
             if name.lower() == st.lower():
                 return st
-    return 'Not Valid'
+    return 'notValid'
