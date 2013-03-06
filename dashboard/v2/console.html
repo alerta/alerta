@@ -63,10 +63,10 @@
                 <div align="right">
                     <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)">
                         <option value="0">No limit</option>
-                        <option value="100">Only 100</option>
-                        <option value="500">Only 500</option>
-                        <option value="1000">Only 1000</option>
-                        <option value="5000">Only 5000</option>
+                        <option value="1">Only 1</option>
+                        <option value="5">Only 5</option>
+                        <option value="7">Only 7</option>
+                        <option value="20">Only 20</option>
                     </select>
                     <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)">
                         <option value="0">All alerts</option>
@@ -248,33 +248,33 @@ function fnFormatDetails(aData) {
     var tags = aData[24];
     var moreInfo = aData[25];
 
-    var sOut = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">';
-    sOut += '<tr class="odd"><td>Alert ID:</td><td>' + alertid + '</td></tr>';
-    sOut += '<tr class="even"><td>Last Receive Alert ID:</td><td>' + lastReceiveId + '</td></tr>';
-    sOut += '<tr class="odd"><td>Create Time:</td><td>' + createTime + '</td></tr>';
-    sOut += '<tr class="even"><td>Receive Time:</td><td>' + receiveTime + '</td></tr>';
-    sOut += '<tr class="odd"><td>Last Receive Time:</td><td>' + lastReceiveTime + '</td></tr>';
+    var sOut = '<table class="table">';
+    sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Last Receive Alert ID</b></td><td>' + lastReceiveId + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Create Time</b></td><td>' + createTime + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Receive Time</b></td><td>' + receiveTime + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Last Receive Time</b></td><td>' + lastReceiveTime + '</td></tr>';
 
-    sOut += '<tr class="even"><td>Environment:</td><td>' + environment + '</td></tr>';
-    sOut += '<tr class="odd"><td>Service:</td><td>' + service + '</td></tr>';
-    sOut += '<tr class="even"><td>Resource:</td><td>' + resource + '</td></tr>';
-    sOut += '<tr class="odd"><td>Event:</td><td>' + event + '</td></tr>';
-    sOut += '<tr class="even"><td>Group:</td><td>' + group + '</td></tr>';
-    sOut += '<tr class="odd"><td>Severity:</td><td>' + previousSeverity + ' -> ' + severity + '</td></tr>';
-    sOut += '<tr class="even"><td>Status:</td><td>' + status + '</td></tr>';
-    sOut += '<tr class="odd"><td>Value:</td><td>' + value + '</td></tr>';
-    sOut += '<tr class="even"><td>Text:</td><td>' + text + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Environment</b></td><td>' + environment + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Service</b></td><td>' + service + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Resource</b></td><td>' + resource + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Event</b></td><td>' + event + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Group</b></td><td>' + group + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Severity</b></td><td>' + previousSeverity + ' -> ' + severity + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Status</b></td><td>' + status + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Value</b></td><td>' + value + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Text</b></td><td>' + text + '</td></tr>';
 
-    sOut += '<tr class="odd"><td>Trend Indication:</td><td>' + trendIndication + '</td></tr>';
-    sOut += '<tr class="even"><td>Threshold Info:</td><td>' + thresholdInfo + '</td></tr>';
-    sOut += '<tr class="odd"><td>Timeout:</td><td>' + timeout + '</td></tr>';
-    sOut += '<tr class="even"><td>Type:</td><td>' + type + '</td></tr>';
-    sOut += '<tr class="odd"><td>Repeat:</td><td>' + repeat + '</td></tr>';
-    sOut += '<tr class="even"><td>Summary:</td><td>' + summary + '</td></tr>';
-    sOut += '<tr class="odd"><td>Origin:</td><td>' + origin + '</td></tr>';
-    sOut += '<tr class="even"><td>Tags:</td><td>' + tags + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Trend Indication</b></td><td>' + trendIndication + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Threshold Info</b></td><td>' + thresholdInfo + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Timeout</b></td><td>' + timeout + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Type</b></td><td>' + type + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Repeat</b></td><td>' + repeat + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Summary</b></td><td>' + summary + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Origin</b></td><td>' + origin + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Tags</b></td><td>' + tags + '</td></tr>';
     // TODO(nsatterl): Graphs
-    sOut += '<tr class="odd"><td>More Info:</td><td>' + moreInfo + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>More Info</b></td><td>' + moreInfo + '</td></tr>';
     sOut += '</table>';
 
     return sOut;
@@ -316,6 +316,79 @@ var asiFilters = {
     'Other': '&-service=R2|R1|Frontend|Identity'
 };
 
+function getAlerts(service, filter, refresh) {
+
+    $('#' + service + ' th').addClass('loader');
+
+    $.getJSON('http://monitoring/alerta/api/v1/alerts?callback=?&hide-alert-repeats=NORMAL&sort-by=lastReceiveTime&' + filter + limit + fromDate, function (data) {
+
+        var sev_id = '#' + service;
+
+        data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.inform;
+
+        $.each(data.response.alerts.severityCounts, function (sev, count) {
+            sev = sev.toLowerCase();
+            $(sev_id + "-" + sev).text(count);
+            //alert(sev_id + "-" + sev + "=" + count);
+            switch (count) {
+                case 0:
+                    $(sev_id + "-" + sev).removeClass("severity-" + sev).addClass('zero');
+                    break;
+                default:
+                    $(sev_id + "-" + sev).addClass("severity-" + sev).removeClass('zero');
+            }
+        });
+
+        if (data.response.alerts.severityCounts.critical > 0) {
+            scolor = 'red';
+        } else if (data.response.alerts.severityCounts.major > 0) {
+            scolor = 'orange';
+        } else if (data.response.alerts.severityCounts.minor > 0) {
+            scolor = 'yellow';
+        } else if (data.response.alerts.severityCounts.warning > 0) {
+            scolor = 'dodgerblue';
+        } else {
+            scolor = '#00CC00';
+        }
+        $(sev_id + "-status").css('background-color', scolor);
+
+        $('#' + service + ' th').removeClass('loader');
+
+        if (refresh) {
+            timer = setTimeout(function () {
+                getAlerts(service, filter, refresh);
+            }, 120000);
+        }
+    });
+};
+
+function loadAlerts(services, refresh) {
+    var delayer = 0;
+    $.each(services, function (service, filter) {
+        setTimeout(function () {
+            getAlerts(service, filter, refresh);
+        }, delayer);
+        delayer += 100;
+    });
+}
+
+function updateLimit(lim) {
+    if (lim > 0) {
+        limit = '&limit=' + lim
+    } else {
+        limit = '';
+    }
+    $('#refresh-all').trigger('click');
+}
+
+function updateFromDate(seconds) {
+    if (seconds > 0) {
+        fromDate = '&from-date=' + new Date(new Date() - seconds * 1000).toISOString();
+    } else {
+        fromDate = '';
+    }
+    $('#refresh-all').trigger('click');
+}
 
 $('.summary').click(function () {
     asiFilter = asiFilters[this.id];
@@ -328,7 +401,7 @@ function worker() {
         "type": "GET",
         "url": "http://monitoring/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime"
                 + "&environment=PROD|DEV|INFRA"
-                + asiFilter,
+                + asiFilter + limit + fromDate,
         // "async": false,
         "async": true,
         "success": function (data) {
@@ -413,7 +486,13 @@ function worker() {
 $(document).ready(function () {
 
     loadStatus(envfilter, true);
+    loadAlerts(asiFilters, true);
     worker();
+
+    $('#refresh-all').click(function() {
+        loadStatus(envfilter, false);
+        loadAlerts(asiFilters, false);
+    });
 
     // var anOpen = [];
     oTable = $('#alerts').dataTable({

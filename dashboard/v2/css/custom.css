@@ -14,6 +14,10 @@ table {
   background-color: transparent;
 }
 
+.odd {
+    background-color: #f9f9f9;
+}
+
 #status-counts {
     margin-top:14px;
 }
@@ -91,3 +95,8 @@ table {
     background-color: #333333;
 }
 
+.loader {
+    background-image: url(../img/loading.gif);
+    background-position: right top;
+    background-repeat: no-repeat;
+}
