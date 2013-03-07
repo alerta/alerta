@@ -13,7 +13,7 @@
 table {
     margin: 0;
     font-family: Sintony, "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 14px;
+    font-size: 12px;
     line-height: 18px;
     color: #333333;
     background-color: #ffffff;
@@ -24,11 +24,16 @@ table {
     background-color: #ddd;
 }
 
-table.summary, #alerts {
+.status-indicator, #alerts {
     cursor: pointer;
 }
 
+.status-indicator {
+    font-size: 14px;
+}
+
 #status-counts {
+    font-size: 14px;
     margin-top:14px;
 }
 .severity-Critical {
@@ -109,4 +114,8 @@ table.summary, #alerts {
     background-image: url(../img/loading.gif);
     background-position: right top;
     background-repeat: no-repeat;
+}
+
+.initially-hidden {
+    display: none;
 }

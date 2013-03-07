@@ -44,14 +44,14 @@
 </div>
 
 <div class="container">
-    <!-- table>
-    <span id="heartbeat-alerts"></span>
-    <div id="console-alert" class="alert alert-info initially-hidden">
-        <button class="close" data-dismiss="alert" onclick="">&times;</button>
-        <strong>Warning!</strong> <span id="warning-text"></span>
-    </div>
-    </table -->
     <table width="100%">
+        <tr>
+            <span id="heartbeat-alerts"></span>
+            <div id="console-alert" class="alert alert-info initially-hidden">
+                <button class="close" data-dismiss="alert" onclick="">&times;</button>
+                <strong>Warning!</strong> <span id="warning-text"></span>
+            </div>
+        </tr>
         <tr>
             <td>
                 <!-- div  id="status-counts" -->
@@ -96,8 +96,8 @@
         <div class="span12">
             <div class="row show-grid">
                 <div class="span3">
-                    <table class="table table-bordered table-condensed" id="R2R1" data-label="R2R1">
-                        <thead class="status-indicator">
+                    <table class="table table-bordered table-condensed status-indicator" id="R2R1" data-label="R2R1">
+                        <thead id="R2R1-overall" class="status-indicator-overall">
                         <tr>
                             <th colspan="6" id="R2R1-status">R2 &amp; R1</th>
                         </tr>
@@ -114,8 +114,8 @@
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed" id="Frontend" data-label="Frontend">
-                        <thead class="status-indicator">
+                    <table class="table table-bordered table-condensed status-indicator" id="Frontend" data-label="Frontend">
+                        <thead id="Frontend-overall" class="status-indicator-overall">
                         <tr>
                             <th colspan="6" id="Frontend-status">Frontend</th>
                         </tr>
@@ -132,8 +132,8 @@
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed" id="Discussion" data-label="Discussion">
-                        <thead class="status-indicator">
+                    <table class="table table-bordered table-condensed status-indicator" id="Discussion" data-label="Discussion">
+                        <thead id="Discussion-overall" class="status-indicator-overall">
                         <tr>
                             <th colspan="6" id="Discussion-status">Discussion</th>
                         </tr>
@@ -150,8 +150,8 @@
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed" id="Other" data-label="Other">
-                        <thead class="status-indicator">
+                    <table class="table table-bordered table-condensed status-indicator" id="Other" data-label="Other">
+                        <thead id="Other-overall" class="status-indicator-overall">
                         <tr>
                             <th colspan="6" id="Other-status">Other</th>
                         </tr>
@@ -321,8 +321,8 @@ function loadStatus(statusfilter, refresh) {
 
 // Alert Severity Counts for each service
 var asiFilters = {
-    'R2R1': '&group=Syslog',
-    'Frontend': '&value=FAILED',
+    'R2R1': '&service=R2|R1',
+    'Frontend': '&service=Frontend',
     'Discussion': '&service=Discussion',
     'Other': '&-service=R2|R1|Frontend|Discussion'
 };
@@ -401,8 +401,9 @@ function updateFromDate(seconds) {
     $('#refresh-all').trigger('click');
 }
 
-$('.status-indicator').click(function () {
-    asiFilter = asiFilters[this.id];
+$('.status-indicator-overall').click(function () {
+    asiFilter = asiFilters[this.id.split('-')[0]];
+    sevFilter = '';
     worker();
 });
 
