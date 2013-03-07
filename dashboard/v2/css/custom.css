@@ -1,4 +1,15 @@
 
+@font-face {
+    font-family: Sintony;
+    src: url('../fonts/Sintony-Regular.ttf');
+}
+
+@font-face {
+    font-family: Sintony;
+    font-weight: bold;
+    src: url('../fonts/Sintony-Bold.ttf');
+}
+
 table {
     margin: 0;
     font-family: Sintony, "Helvetica Neue", Helvetica, Arial, sans-serif;

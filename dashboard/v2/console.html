@@ -1,6 +1,6 @@
 <html lang="en">
 <head>
-    <link href='http://fonts.googleapis.com/css?family=Sintony:400,700' rel='stylesheet' type='text/css'>
+    <!-- link href='http://fonts.googleapis.com/css?family=Sintony:400,700' rel='stylesheet' type='text/css' -->
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
@@ -44,6 +44,13 @@
 </div>
 
 <div class="container">
+    <!-- table>
+    <span id="heartbeat-alerts"></span>
+    <div id="console-alert" class="alert alert-info initially-hidden">
+        <button class="close" data-dismiss="alert" onclick="">&times;</button>
+        <strong>Warning!</strong> <span id="warning-text"></span>
+    </div>
+    </table -->
     <table width="100%">
         <tr>
             <td>
@@ -66,10 +73,10 @@
                 <div align="right">
                     <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)">
                         <option value="0">No limit</option>
-                        <option value="1">Only 1</option>
-                        <option value="5">Only 5</option>
-                        <option value="7">Only 7</option>
-                        <option value="20">Only 20</option>
+                        <option value="10">Only 10</option>
+                        <option value="50">Only 50</option>
+                        <option value="100">Only 100</option>
+                        <option value="500">Only 500</option>
                     </select>
                     <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)">
                         <option value="0">All alerts</option>
@@ -89,73 +96,73 @@
         <div class="span12">
             <div class="row show-grid">
                 <div class="span3">
-                    <table class="table table-bordered table-condensed summary" id="R2R1" data-label="R2R1">
-                        <thead>
+                    <table class="table table-bordered table-condensed" id="R2R1" data-label="R2R1">
+                        <thead class="status-indicator">
                         <tr>
                             <th colspan="6" id="R2R1-status">R2 &amp; R1</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="R2R1-warnings" class="warnings">
-                            <td id="R2R1-critical">0</td>
-                            <td id="R2R1-major">0</td>
-                            <td id="R2R1-minor">0</td>
-                            <td id="R2R1-warning">0</td>
-                            <td id="R2R1-normal">0</td>
+                        <tr id="R2R1-status-indicator">
+                            <td id="R2R1-critical" class="status-indicator-count">0</td>
+                            <td id="R2R1-major" class="status-indicator-count">0</td>
+                            <td id="R2R1-minor" class="status-indicator-count">0</td>
+                            <td id="R2R1-warning" class="status-indicator-count">0</td>
+                            <td id="R2R1-normal" class="status-indicator-count">0</td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed summary" id="Frontend" data-label="Frontend">
-                        <thead>
+                    <table class="table table-bordered table-condensed" id="Frontend" data-label="Frontend">
+                        <thead class="status-indicator">
                         <tr>
                             <th colspan="6" id="Frontend-status">Frontend</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="Frontend-warnings" class="warnings">
-                            <td id="Frontend-critical">0</td>
-                            <td id="Frontend-major">0</td>
-                            <td id="Frontend-minor">0</td>
-                            <td id="Frontend-warning">0</td>
-                            <td id="Frontend-normal">0</td>
+                        <tr id="Frontend-status-indicator">
+                            <td id="Frontend-critical" class="status-indicator-count">0</td>
+                            <td id="Frontend-major" class="status-indicator-count">0</td>
+                            <td id="Frontend-minor" class="status-indicator-count">0</td>
+                            <td id="Frontend-warning" class="status-indicator-count">0</td>
+                            <td id="Frontend-normal" class="status-indicator-count">0</td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed summary" id="Discussion" data-label="Discussion">
-                        <thead>
+                    <table class="table table-bordered table-condensed" id="Discussion" data-label="Discussion">
+                        <thead class="status-indicator">
                         <tr>
                             <th colspan="6" id="Discussion-status">Discussion</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="Discussion-warnings" class="warnings">
-                            <td id="Discussion-critical">0</td>
-                            <td id="Discussion-major">0</td>
-                            <td id="Discussion-minor">0</td>
-                            <td id="Discussion-warning">0</td>
-                            <td id="Discussion-normal">0</td>
+                        <tr id="Discussion-status-indicator">
+                            <td id="Discussion-critical" class="status-indicator-count">0</td>
+                            <td id="Discussion-major" class="status-indicator-count">0</td>
+                            <td id="Discussion-minor" class="status-indicator-count">0</td>
+                            <td id="Discussion-warning" class="status-indicator-count">0</td>
+                            <td id="Discussion-normal" class="status-indicator-count">0</td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed summary" id="Other" data-label="Other">
-                        <thead>
+                    <table class="table table-bordered table-condensed" id="Other" data-label="Other">
+                        <thead class="status-indicator">
                         <tr>
                             <th colspan="6" id="Other-status">Other</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="Other-warnings" class="warnings">
-                            <td id="Other-critical">0</td>
-                            <td id="Other-major">0</td>
-                            <td id="Other-minor">0</td>
-                            <td id="Other-warning">0</td>
-                            <td id="Other-normal">0</td>
+                        <tr id="Other-status-indicator">
+                            <td id="Other-critical" class="status-indicator-count">0</td>
+                            <td id="Other-major" class="status-indicator-count">0</td>
+                            <td id="Other-minor" class="status-indicator-count">0</td>
+                            <td id="Other-warning" class="status-indicator-count">0</td>
+                            <td id="Other-normal" class="status-indicator-count">0</td>
                         </tr>
                         </tbody>
                     </table>
@@ -221,6 +228,7 @@ var logger = 0,
 var oTable;
 var envfilter = '&environment=PROD|INFRA|DEV'; // used for status count OPEN,ACK,CLOSED
 var asiFilter = '&service=shared'; // default, used for displayed alert details
+var sevFilter = '';
 
 function fnFormatDetails(aData) {
     var severity = aData[0];
@@ -286,7 +294,7 @@ function fnFormatDetails(aData) {
 // Alert Status Count for console
 function getStatus(statusfilter, refresh) {
 
-    $.getJSON('http://monitoring/alerta/api/v1/alerts?callback=?&hide-alert-details=true&' + statusfilter + limit + fromDate, function (data) {
+    $.getJSON('http://' + document.domain + '/alerta/api/v1/alerts?callback=?&hide-alert-details=true&' + statusfilter + limit + fromDate, function (data) {
 
         if (data.response.warning) {
             $('#warning-text').text(data.response.warning);
@@ -315,15 +323,15 @@ function loadStatus(statusfilter, refresh) {
 var asiFilters = {
     'R2R1': '&group=Syslog',
     'Frontend': '&value=FAILED',
-    'Discussion': '&service=Identity',
-    'Other': '&-service=R2|R1|Frontend|Identity'
+    'Discussion': '&service=Discussion',
+    'Other': '&-service=R2|R1|Frontend|Discussion'
 };
 
 function getAlerts(service, filter, refresh) {
 
     $('#' + service + ' th').addClass('loader');
 
-    $.getJSON('http://monitoring/alerta/api/v1/alerts?callback=?&hide-alert-repeats=NORMAL&sort-by=lastReceiveTime&' + filter + limit + fromDate, function (data) {
+    $.getJSON('http://' + document.domain + '/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&' + filter + limit + fromDate, function (data) {
 
         var sev_id = '#' + service;
 
@@ -393,8 +401,14 @@ function updateFromDate(seconds) {
     $('#refresh-all').trigger('click');
 }
 
-$('.summary').click(function () {
+$('.status-indicator').click(function () {
     asiFilter = asiFilters[this.id];
+    worker();
+});
+
+$('.status-indicator-count').click(function () {
+    asiFilter = asiFilters[this.id.split('-')[0]];
+    sevFilter = '&severity=' + this.id.split('-')[1];
     worker();
 });
 
@@ -402,9 +416,9 @@ function worker() {
     $.ajax({
         "dataType": 'json',
         "type": "GET",
-        "url": "http://monitoring/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime"
-                + "&environment=PROD|DEV|INFRA"
-                + asiFilter + limit + fromDate,
+        "url": 'http://' + document.domain + '/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime'
+                + '&environment=PROD|DEV|INFRA'
+                + asiFilter + limit + fromDate + sevFilter,
         // "async": false,
         "async": true,
         "success": function (data) {
