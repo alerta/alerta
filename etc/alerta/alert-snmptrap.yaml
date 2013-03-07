@@ -15,16 +15,24 @@
 
 # Defaults
 #
-# event: $O
-# resource: $A
-# severity: NORMAL
-# group: SNMP
-# count: 1
-# repeat: 1
-# value: Trap=[$G|$S]
-# text: $3
-# environment: INFRA
-# service: Network
+# resource: (str) $A
+# event: (str) $O
+# severity: NORMAL (CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN)
+# group: (str) SNMP
+# value: (str) Trap=[$G|$S]
+# text: (str) $3
+# environment: (list) INFRA
+# service: (list) Network
+# correlate: (list) null
+# tags: (list) null
+# threshold_info: (str) null
+# summary: (str) system default
+# timeout: (int) system default
+
+# Suppression flag
+#
+# suppress: (bool) False
+
 
 # Oracle Enterprise Manager
 

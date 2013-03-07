@@ -74,17 +74,6 @@ class WorkerThread(threading.Thread):
                 }
                 self.db.duplicate_alert(alert['environment'], alert['resource'], alert['event'], **update)
 
-                if alert['status'] not in [status.OPEN, status.ACK, status.CLOSED]:
-                    if alert['severity'] != 'NORMAL':
-                        current_status = status.OPEN
-                    else:
-                        current_status = status.CLOSED
-                else:
-                    current_status = status.UNKNOWN
-
-                if current_status:
-                    self.db.update_status(alert['environment'], alert['resource'], alert['event'], current_status)
-
                 self.input_queue.task_done()
 
             elif self.db.is_correlated(alert['environment'], alert['resource'], alert['event']):
@@ -122,9 +111,9 @@ class WorkerThread(threading.Thread):
                 }
                 enrichedAlert = self.db.modify_alert(alert['environment'], alert['resource'], alert['event'], **update)
 
-                current_status = calculate_status(alert['severity'], previous_severity)
-                if current_status:
-                    self.db.update_status(alert['environment'], alert['resource'], alert['event'], current_status)
+                new_status = severity.status_from_severity(previous_severity, alert['severity'])
+                if new_status:
+                    self.db.update_status(alert['environment'], alert['resource'], alert['event'], new_status)
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(enrichedAlert, CONF.outbound_queue)
@@ -168,10 +157,9 @@ class WorkerThread(threading.Thread):
                 )
                 self.db.save_alert(newAlert)
 
-                current_status = severity.status_from_severity(severity.UNKNOWN, alert['severity'])
-
-                LOG.debug('severity = %s => status = %s', alert['severity'], current_status)
-                self.db.update_status(alert['environment'], alert['resource'], alert['event'], current_status)
+                new_status = severity.status_from_severity(severity.UNKNOWN, alert['severity'])
+                if new_status:
+                    self.db.update_status(alert['environment'], alert['resource'], alert['event'], new_status)
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(newAlert, CONF.outbound_queue)

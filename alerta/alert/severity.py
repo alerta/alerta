@@ -1,5 +1,3 @@
-import status
-
 """
 Possible alert severity codes.
 
@@ -9,17 +7,19 @@ http://www.itu.int/rec/T-REC-M.3100
 http://www.itu.int/rec/T-REC-X.736-199201-I
 """
 
+import status
+
 CRITICAL_SEV_CODE = 1
 MAJOR_SEV_CODE = 2
 MINOR_SEV_CODE = 3
 WARNING_SEV_CODE = 4
+INDETER_SEV_CODE = 5
+CLEARED_SEV_CODE = 5
 NORMAL_SEV_CODE = 5
-CLEAR_SEV_CODE = 5
 INFORM_SEV_CODE = 6
 DEBUG_SEV_CODE = 7
 AUTH_SEV_CODE = 8
 UNKNOWN_SEV_CODE = 9
-INDETER_SEV_CODE = 9
 
 # NOTE: The display text in single quotes can be changed depending on preference.
 # eg. CRITICAL = 'critical' or CRITICAL = 'CRITICAL'
@@ -28,28 +28,28 @@ CRITICAL = 'critical'
 MAJOR = 'major'
 MINOR = 'minor'
 WARNING = 'warning'
+INDETERMINATE = 'indeterminate'
+CLEARED = 'cleared'
 NORMAL = 'normal'
-CLEAR = 'clear'
 INFORM = 'informational'
 DEBUG = 'debug'
 AUTH = 'security'
 UNKNOWN = 'unknown'
-INDETERMINATE = 'indeterminate'
 
-ALL = [CRITICAL, MAJOR, MINOR, WARNING, NORMAL, CLEAR, INFORM, DEBUG, AUTH, UNKNOWN, INDETERMINATE]
+ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN]
 
 _SEVERITY_MAP = {
     CRITICAL: CRITICAL_SEV_CODE,
     MAJOR: MAJOR_SEV_CODE,
     MINOR: MINOR_SEV_CODE,
     WARNING: WARNING_SEV_CODE,
+    INDETERMINATE: INDETER_SEV_CODE,
+    CLEARED: CLEARED_SEV_CODE,
     NORMAL: NORMAL_SEV_CODE,
-    CLEAR: CLEAR_SEV_CODE,
     INFORM: INFORM_SEV_CODE,
     DEBUG: DEBUG_SEV_CODE,
     AUTH: AUTH_SEV_CODE,
     UNKNOWN: UNKNOWN_SEV_CODE,
-    INDETERMINATE: INDETER_SEV_CODE,
 }
 
 _ABBREV_SEVERITY_MAP = {
@@ -57,13 +57,13 @@ _ABBREV_SEVERITY_MAP = {
     MAJOR: 'Majr',
     MINOR: 'Minr',
     WARNING: 'Warn',
+    INDETERMINATE: 'Ind ',
+    CLEARED: 'Clrd',
     NORMAL: 'Norm',
-    CLEAR: 'Clr ',
     INFORM: 'Info',
     DEBUG: 'Dbug',
     AUTH: 'Sec ',
     UNKNOWN: 'Unkn',
-    INDETERMINATE: 'Ind ',
 }
 
 _COLOR_MAP = {
@@ -71,9 +71,13 @@ _COLOR_MAP = {
     MAJOR: '\033[95m',
     MINOR: '\033[93m',
     WARNING: '\033[96m',
+    INDETERMINATE: '\033[92m',
+    CLEARED: '\033[92m',
     NORMAL: '\033[92m',
     INFORM: '\033[92m',
     DEBUG: '\033[90m',
+    AUTH: '\033[90m',
+    UNKNOWN: '\033[90m',
 }
 
 ENDC = '\033[0m'
@@ -96,7 +100,6 @@ def parse_severity(name):
 
 
 def trend(previous, current):
-
     if name_to_code(previous) > name_to_code(current):
         return 'moreSevere'
     elif name_to_code(previous) < name_to_code(current):
@@ -105,14 +108,10 @@ def trend(previous, current):
         return 'noChange'
 
 
-def status_from_severity(previous, current):
-
-    if current == NORMAL:
+def status_from_severity(previous, current, current_status=None):
+    if current in [NORMAL, CLEARED]:
         return status.CLOSED
-
-    trend_indication = trend(previous, current)
-    if trend_indication == 'moreSevere':
+    if trend(previous, current) == 'moreSevere':
         return status.OPEN
-    elif trend_indication == 'lessSevere':
-        return status.OPEN
+    return current_status
 

@@ -1,6 +1,7 @@
 import sys
 import re
 
+import yaml
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -11,9 +12,6 @@ Version = '2.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-TRAPCONF = '/opt/alerta/alerta/alert-snmptrap.yaml'
-PARSERDIR = '/opt/alerta/bin/parsers'
 
 
 class SnmpTrapHandler(object):
@@ -53,7 +51,7 @@ class SnmpTrapHandler(object):
             if value.startswith('"'):
                 value = value[1:-1]
             varbinds[oid] = value
-            trapvars['$' + str(idx)] = value # $n
+            trapvars['$' + str(idx)] = value  # $n
 
         trapoid = trapvars['$O'] = trapvars['$2']
         try:
@@ -74,11 +72,11 @@ class SnmpTrapHandler(object):
         if m:
             trapvars['$a'] = m.group(1)
         if 'SNMP-COMMUNITY-MIB::snmpTrapAddress.0' in varbinds:
-            trapvars['$R'] = varbinds['SNMP-COMMUNITY-MIB::snmpTrapAddress.0'] # snmpTrapAddress
+            trapvars['$R'] = varbinds['SNMP-COMMUNITY-MIB::snmpTrapAddress.0']  # snmpTrapAddress
 
         # Get enterprise, specific and generic trap numbers
-        if trapvars['$2'].startswith('SNMPv2-MIB') or trapvars['$2'].startswith('IF-MIB'): # snmp generic traps
-            if 'SNMPv2-MIB::snmpTrapEnterprise.0' in varbinds: # snmpTrapEnterprise.0
+        if trapvars['$2'].startswith('SNMPv2-MIB') or trapvars['$2'].startswith('IF-MIB'):  # snmp generic traps
+            if 'SNMPv2-MIB::snmpTrapEnterprise.0' in varbinds:  # snmpTrapEnterprise.0
                 trapvars['$E'] = varbinds['SNMPv2-MIB::snmpTrapEnterprise.0']
             else:
                 trapvars['$E'] = '1.3.6.1.6.3.1.1.5'
@@ -105,68 +103,71 @@ class SnmpTrapHandler(object):
         severity = 'NORMAL'
         group = 'SNMP'
         value = trapnumber
-        text = trapvars['$3'] # ie. whatever is in varbind 3
+        text = trapvars['$3']  # ie. whatever is in varbind 3
         environment = ['INFRA']
         service = ['Network']
         tags = list()
         correlate = list()
-        threshold = ''
+        timeout = None
+        threshold_info = None
+        summary = None
         suppress = False
 
-        # TODO(nsatterl): fix  this
         # Match trap to specific config and load any parsers
         # Note: any of these variables could have been modified by a parser
 
-        # trapconf = dict()
-        # try:
-        #     trapconf = yaml.load(open(TRAPCONF))
-        # except Exception, e:
-        #     LOG.error('Failed to load SNMP Trap configuration: %s', e)
-        #     sys.exit(1)
-        # LOG.info('Loaded %d SNMP Trap configurations OK', len(trapconf))
-        #
-        # for t in trapconf:
-        #     LOG.debug('trapconf: %s', t)
-        #     if re.match(t['trapoid'], trapoid):
-        #         if 'parser' in t:
-        #             print 'Loading parser %s' % t['parser']
-        #             try:
-        #                 exec (open('%s/%s.py' % (PARSERDIR, t['parser'])))
-        #                 LOG.info('Parser %s/%s exec OK', PARSERDIR, t['parser'])
-        #             except Exception, e:
-        #                 print 'Parser %s failed: %s' % (t['parser'], e)
-        #                 LOG.warning('Parser %s failed', t['parser'])
-        #         if 'event' in t:
-        #             event = t['event']
-        #         if 'resource' in t:
-        #             resource = t['resource']
-        #         if 'severity' in t:
-        #             severity = t['severity']
-        #         if 'group' in t:
-        #             group = t['group']
-        #         if 'value' in t:
-        #             value = t['value']
-        #         if 'text' in t:
-        #             text = t['text']
-        #         if 'environment' in t:
-        #             environment = [t['environment']]
-        #         if 'service' in t:
-        #             service = [t['service']]
-        #         if 'tags' in t:
-        #             tags = t['tags']
-        #         if 'correlatedEvents' in t:
-        #             correlate = t['correlatedEvents']
-        #         if 'thresholdInfo' in t:
-        #             threshold = t['thresholdInfo']
-        #         if 'suppress' in t:
-        #             suppress = t['suppress']
-        #         break
-        #
-        # if suppress:
-        #     LOG.info('Suppressing %s SNMP trap from %s', trapoid, resource)
-        #     return
+        try:
+            trapconf = yaml.load(open(CONF.yaml_config))
+        except Exception, e:
+            LOG.error('Failed to load SNMP Trap configuration: %s', e)
+            sys.exit(1)
+        LOG.info('Loaded %d SNMP Trap configurations OK', len(trapconf))
 
-        # Trap variable substitution
+        for t in trapconf:
+            LOG.debug('trapconf: %s', t)
+            if re.match(t['trapoid'], trapoid):
+                if 'parser' in t:
+                    LOG.debug('Loading parser %s', t['parser'])
+                    try:
+                        exec (open('%s/%s.py' % (CONF.parser_dir, t['parser'])))
+                        LOG.info('Parser %s/%s exec OK', CONF.parser_dir, t['parser'])
+                    except Exception, e:
+                        LOG.warning('Parser %s failed: %s', t['parser'], e)
+                if 'event' in t:
+                    event = t['event']
+                if 'resource' in t:
+                    resource = t['resource']
+                if 'severity' in t:
+                    severity = t['severity']
+                if 'group' in t:
+                    group = t['group']
+                if 'value' in t:
+                    value = t['value']
+                if 'text' in t:
+                    text = t['text']
+                if 'environment' in t:
+                    environment = [t['environment']]
+                if 'service' in t:
+                    service = [t['service']]
+                if 'tags' in t:
+                    tags = t['tags']
+                if 'correlate' in t:
+                    correlate = t['correlate']
+                if 'threshold_info' in t:
+                    threshold_info = t['threshold_info']
+                if 'summary' in t:
+                    summary = t['summary']
+                if 'timeout' in t:
+                    timeout = t['timeout']
+                if 'suppress' in t:
+                    suppress = t['suppress']
+                break
+
+        if suppress:
+            LOG.warning('Suppressing %s SNMP trap from %s', trapoid, resource)
+            return
+
+        # Trap varbind substitutions
         LOG.debug('trapvars: %s', trapvars)
         for k, v in trapvars.iteritems():
             LOG.debug('replace: %s -> %s', k, v)
@@ -179,7 +180,7 @@ class SnmpTrapHandler(object):
             environment[:] = [s.replace(k, v) for s in environment]
             service[:] = [s.replace(k, v) for s in service]
             tags[:] = [s.replace(k, v) for s in tags]
-            threshold = threshold.replace(k, v)
+            threshold_info = threshold_info.replace(k, v)
 
         snmptrapAlert = Alert(
             resource=resource,
@@ -193,9 +194,9 @@ class SnmpTrapHandler(object):
             text=text,
             event_type='snmptrapAlert',
             tags=tags,
-            #origin=origin,  # FIXME(nsatterl): define here or in Alert class?
-            threshold_info='n/a',
-            timeout=CONF.timeout,
+            timeout=timeout,
+            threshold_info=threshold_info,
+            summary=summary,
             raw_data=data,
         )
         LOG.debug('snmptrapAlert = %s', snmptrapAlert)
