@@ -38,7 +38,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'server_threads': 4,
         'alert_timeout': 86400,  # seconds
         'parser_dir': '/opt/alerta/bin/parsers',
-        'heartbeat_every': 30,   # seconds
+        'loop_every': 30,   # seconds
 
         'mongo_host': 'localhost',
         'mongo_port': 27017,
@@ -67,6 +67,9 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'irc_port': 6667,
         'irc_channel': '#alerts',
         'irc_user': 'alerta',
+
+        'ganglia_host': 'ganglia',
+        'ganglia_port': 8080,
 
         'es_host': 'localhost',
         'es_port': 9200,

@@ -59,7 +59,7 @@ class SyslogDaemon(Daemon):
         while not self.shuttingdown:
             try:
                 LOG.debug('Waiting for syslog messages...')
-                ip, op, rdy = select.select([udp, tcp], [], [], CONF.heartbeat_every)
+                ip, op, rdy = select.select([udp, tcp], [], [], CONF.loop_every)
                 if ip:
                     for i in ip:
                         if i == udp:
