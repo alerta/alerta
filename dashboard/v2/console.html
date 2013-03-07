@@ -1,12 +1,15 @@
-<html>
+<html lang="en">
 <head>
+    <link href='http://fonts.googleapis.com/css?family=Sintony:400,700' rel='stylesheet' type='text/css'>
 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
 
-    <script type="text/javascript" language="javascript" src="js/DataTables/media/js/jquery.js"></script>
-    <script type="text/javascript" language="javascript" src="js/DataTables/media/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" language="javascript" src="assets/DataTables/media/js/jquery.js"></script>
+    <script type="text/javascript" language="javascript" src="assets/DataTables/media/js/jquery.dataTables.min.js"></script>
 
-    <link href="css/bootstrap.css" rel="stylesheet">
-    <link href="css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
     <style type="text/css">
         body {
             padding-top: 40px;
@@ -18,7 +21,7 @@
 </head>
 
 <body>
-<div class="navbar navbar-fixed-top">
+<div class="navbar navbar-inverse navbar-fixed-top">
     <div class="navbar-inner">
         <div class="container">
             <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
@@ -248,7 +251,7 @@ function fnFormatDetails(aData) {
     var tags = aData[24];
     var moreInfo = aData[25];
 
-    var sOut = '<table class="table">';
+    var sOut = '<table class="table table-condensed table-striped">';
     sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid + '</td></tr>';
     sOut += '<tr class="even"><td><b>Last Receive Alert ID</b></td><td>' + lastReceiveId + '</td></tr>';
     sOut += '<tr class="odd"><td><b>Create Time</b></td><td>' + createTime + '</td></tr>';
@@ -493,7 +496,7 @@ $(document).ready(function () {
         loadStatus(envfilter, false);
         loadAlerts(asiFilters, false);
     });
-
+    var ti;
     // var anOpen = [];
     oTable = $('#alerts').dataTable({
         "bDestroy": true,
@@ -503,27 +506,37 @@ $(document).ready(function () {
         "bDeferRender": true,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'severity-' + aData[0] + ' status-' + aData[1];
+
+            if (aData[17] == "noChange") {
+                ti = '<i class="icon-minus"></i>&nbsp;'
+            } else if (aData[17] == "moreSevere") {
+                ti = '<i class="icon-arrow-up"></i>&nbsp;'
+            } else if (aData[17] == "lessSevere") {
+                ti = '<i class="icon-arrow-down"></i>&nbsp;'
+            } else {
+                ti = '<i class="icon-random"></i>&nbsp;'
+            }
             // Severity = Critical, Major, Minor, Warning, Informational, Debug
             if (aData[0] == "Critical") {
-                $('td:eq(0)', nRow).html('<span class="label label-critical">Critical</span>');
+                $('td:eq(0)', nRow).html(ti + '<span class="label label-critical">Critical</span>');
             }
             if (aData[0] == "Major") {
-                $('td:eq(0)', nRow).html('<span class="label label-major">Major</span>');
+                $('td:eq(0)', nRow).html(ti + '<span class="label label-major">Major</span>');
             }
             if (aData[0] == "Minor") {
-                $('td:eq(0)', nRow).html('<span class="label label-minor">Minor</span>');
+                $('td:eq(0)', nRow).html(ti + '<span class="label label-minor">Minor</span>');
             }
             if (aData[0] == "Warning") {
-                $('td:eq(0)', nRow).html('<span class="label label-warning">Warning</span>');
+                $('td:eq(0)', nRow).html(ti + '<span class="label label-warning">Warning</span>');
             }
             if (aData[0] == "Normal") {
-                $('td:eq(0)', nRow).html('<span class="label label-success">Normal</span>');
+                $('td:eq(0)', nRow).html(ti + '<span class="label label-success">Normal</span>');
             }
             if (aData[0] == "Informational") {
-                $('td:eq(0)', nRow).html('<span class="label label-success">Inform</span>');
+                $('td:eq(0)', nRow).html(ti + '<span class="label label-success">Inform</span>');
             }
             if (aData[0] == "Debug") {
-                $('td:eq(0)', nRow).html('<span class="label label-inverse">Debug</span>');
+                $('td:eq(0)', nRow).html(ti + '<span class="label label-inverse">Debug</span>');
             }
             // Status = Open, Acknowledged, Closed
             if (aData[1] == "Open") {
@@ -535,7 +548,9 @@ $(document).ready(function () {
             if (aData[1] == "Closed") {
                 $('td:eq(1)', nRow).html('<span class="label label-closed">Closed</span>');
             }
-
+            if (aData[1] == "Expired") {
+                $('td:eq(1)', nRow).html('<span class="label label-expired">Expired</span>');
+            }
             var d = new Date(aData[2]);
             $('td:eq(2)', nRow).html(d.toLocaleString());
 

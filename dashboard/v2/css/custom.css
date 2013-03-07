@@ -1,21 +1,20 @@
 
 table {
     margin: 0;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 13px;
+    font-family: Sintony, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
     line-height: 18px;
     color: #333333;
     background-color: #ffffff;
     font-weight: normal;
 }
 
-.table tbody tr:hover td,
-.table tbody tr:hover th {
-  background-color: transparent;
+.table tbody tr:hover td.zero, .zero {
+    background-color: #ddd;
 }
 
-.odd {
-    background-color: #f9f9f9;
+table.summary, #alerts {
+    cursor: pointer;
 }
 
 #status-counts {
