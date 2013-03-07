@@ -237,7 +237,7 @@ function fnFormatDetails(aData) {
     var duplicateCount = aData[3];
     var environment = aData[4];
     var service = aData[5];
-    // TODO(nsatterl): cluster
+    var cluster = '';
     var resource = aData[6];
     var event = aData[7];
     var value = aData[8];
@@ -256,8 +256,16 @@ function fnFormatDetails(aData) {
     var repeat = aData[21];
     var summary = aData[22];
     var origin = aData[23];
-    var tags = aData[24];
+    var tags = '';
     var moreInfo = aData[25];
+
+    $.each(aData[24], function (y, tag) {
+        tags += '<span class="label">' + tag + '</span> ';
+        var t = tag.split(':');
+        if (t[0] == 'cluster') {
+            cluster = t[1];
+        }
+    });
 
     var sOut = '<table class="table table-condensed table-striped">';
     sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid + '</td></tr>';
