@@ -14,7 +14,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         prog = os.path.basename(sys.argv[0])
 
     OPTION_DEFAULTS = {
-
+        'config': '/etc/alerta/alerta.conf',
         'version': 'unknown',
         'debug': False,
         'verbose': False,
@@ -37,7 +37,8 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
 
         'server_threads': 4,
         'alert_timeout': 86400,  # seconds
-        'parser_dir': '/opt/alerta/bin/parsers',
+        'yaml_config': '/etc/alerta/%s.yaml' % prog,
+        'parser_dir': '/etc/alerta/parsers',
         'loop_every': 30,   # seconds
 
         'mongo_host': 'localhost',
@@ -82,9 +83,9 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
     )
     cfg_parser.add_argument(
         '-c', '--conf-file',
-        help="Specify config file",
+        help="Specify config file (default: %s)" % OPTION_DEFAULTS['config'],
         metavar="FILE",
-        default='/opt/alerta/etc/alerta.conf'
+        default=OPTION_DEFAULTS['config']
     )
     args, argv_left = cfg_parser.parse_known_args(argv)
 
@@ -93,6 +94,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         os.path.expanduser('~/.alerta.conf'),
         os.environ.get('ALERTA_CONF', ''),
     ]
+    #DEBUG print 'CONFIG files => ', config_file_order
 
     if args.conf_file:
         config = ConfigParser.SafeConfigParser()
@@ -108,7 +110,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
                     defaults[name] = config.getint(prog, name)
                 else:
                     defaults[name] = config.get(prog, name)
-                #print '[%s] %s = %s' % (prog, name, config.get(prog, name))
+                #DEBUG print '[%s] %s = %s' % (prog, name, config.get(prog, name))
     else:
         defaults = dict()
 

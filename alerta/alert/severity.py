@@ -1,3 +1,5 @@
+import status
+
 """
 Possible alert severity codes.
 
@@ -91,3 +93,26 @@ def parse_severity(name):
             if name.lower() == sev.lower():
                 return sev
     return 'notValid'
+
+
+def trend(previous, current):
+
+    if name_to_code(previous) > name_to_code(current):
+        return 'moreSevere'
+    elif name_to_code(previous) < name_to_code(current):
+        return 'lessSevere'
+    else:
+        return 'noChange'
+
+
+def status_from_severity(previous, current):
+
+    if current == NORMAL:
+        return status.CLOSED
+
+    trend_indication = trend(previous, current)
+    if trend_indication == 'moreSevere':
+        return status.OPEN
+    elif trend_indication == 'lessSevere':
+        return status.OPEN
+

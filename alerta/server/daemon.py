@@ -1,4 +1,4 @@
-import sys
+
 import time
 import threading
 import Queue
@@ -16,12 +16,6 @@ Version = '2.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-#TODO(nsatterl): add this to default system config
-
-ALERTCONF = '/opt/alerta/alerta/alerta.yaml'
-
-_SELECT_TIMEOUT = 30
 
 
 class WorkerThread(threading.Thread):
@@ -56,8 +50,7 @@ class WorkerThread(threading.Thread):
                 LOG.info('Alert received...')
                 alert = item.get_body()
 
-            # TODO(nsatterl): fix this!!!!
-            #alert = transform(alert)
+            alert = transform(alert)
 
             if self.db.is_duplicate(alert['environment'], alert['resource'], alert['event'], alert['severity']):
 
@@ -106,8 +99,7 @@ class WorkerThread(threading.Thread):
                 LOG.info('%s : Event and/or severity change %s %s -> %s update details', alert['id'], alert['event'],
                          previous_severity, alert['severity'])
 
-                # TODO(nsatterl): determine ti based on current and previous severity
-                trend_indication = 'moreSevere' or 'lessSevere'
+                trend_indication = severity.trend(previous_severity, alert['severity'])
 
                 update = {
                     "event": alert['event'],
@@ -147,7 +139,7 @@ class WorkerThread(threading.Thread):
                 #                  2. push history
                 #                  3. set duplicate count to zero
 
-                trend_indication = 'noChange'
+                trend_indication = severity.trend(severity.UNKNOWN, alert['severity'])
 
                 newAlert = Alert(
                     alertid=alert['id'],
@@ -176,12 +168,8 @@ class WorkerThread(threading.Thread):
                 )
                 self.db.save_alert(newAlert)
 
-                # if alert['severity'] != 'NORMAL':
-                #     status = 'OPEN'
-                # else:
-                #     status = 'CLOSED'
-                #
-                current_status = status.OPEN if alert['severity'] != severity.NORMAL else status.CLOSED
+                current_status = severity.status_from_severity(severity.UNKNOWN, alert['severity'])
+
                 LOG.debug('severity = %s => status = %s', alert['severity'], current_status)
                 self.db.update_status(alert['environment'], alert['resource'], alert['event'], current_status)
 
@@ -193,81 +181,6 @@ class WorkerThread(threading.Thread):
                 LOG.info('%s : Alert forwarded to %s and %s', alert['id'], CONF.outbound_queue, CONF.outbound_topic)
 
         self.input_queue.task_done()
-
-
-def transform(alert):
-    # Load alert transforms
-    try:
-        alertconf = yaml.load(open(ALERTCONF))
-        LOG.info('Loaded %d alert transforms and blackout rules OK', len(alertconf))
-    except Exception, e:
-        alertconf = dict()
-        LOG.warning('Failed to load alert transforms and blackout rules: %s', e)
-
-    suppress = False
-    for conf in alertconf:
-        LOG.debug('alertconf: %s', conf)
-        if all(item in alert.items() for item in conf['match'].items()):
-            if 'parser' in conf:
-                LOG.debug('Loading parser %s', conf['parser'])
-                try:
-                    exec (open('%s/%s.py' % (CONF.parser_dir, conf['parser']))) in globals(), locals()
-                    LOG.info('Parser %s/%s exec OK', CONF.parser_dir, conf['parser'])
-                except Exception, e:
-                    LOG.warning('Parser %s failed: %s', conf['parser'], e)
-            if 'event' in conf:
-                event = conf['event']
-            if 'resource' in conf:
-                resource = conf['resource']
-            if 'severity' in conf:
-                severity = conf['severity']
-            if 'group' in conf:
-                group = conf['group']
-            if 'value' in conf:
-                value = conf['value']
-            if 'text' in conf:
-                text = conf['text']
-            if 'environment' in conf:
-                environment = [conf['environment']]
-            if 'service' in conf:
-                service = [conf['service']]
-            if 'tags' in conf:
-                tags = conf['tags']
-            if 'correlatedEvents' in conf:
-                correlate = conf['correlatedEvents']
-            if 'thresholdInfo' in conf:
-                threshold = conf['thresholdInfo']
-            if 'suppress' in conf:
-                suppress = conf['suppress']
-            break
-
-    if suppress:
-        LOG.info('%s : Suppressing alert %s', alert['id'], alert['summary'])
-        return
-
-
-def calculate_status(severity, previous_severity):
-    status = None
-    if severity in [severity.DEBUG, severity.INFORM]:
-        status = status.OPEN
-    elif severity == severity.NORMAL:
-        status = status.CLOSED
-    elif severity == severity.WARNING:
-        if previous_severity in severity.NORMAL:
-            status = status.OPEN
-    elif severity == severity.MINOR:
-        if previous_severity in [severity.NORMAL, severity.WARNING]:
-            status = status.OPEN
-    elif severity == severity.MAJOR:
-        if previous_severity in [severity.NORMAL, severity.WARNING, severity.WARNING]:
-            status = status.OPEN
-    elif severity == severity.CRITICAL:
-        if previous_severity in [severity.NORMAL, severity.WARNING, severity.MINOR, severity.MAJOR]:
-            status = status.OPEN
-    else:
-        status = status.UNKNOWN
-
-    return status
 
 
 class ServerMessage(MessageHandler):
