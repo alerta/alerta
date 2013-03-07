@@ -59,11 +59,11 @@
                     <tbody>
                     <tr id="Alert-status" class="status">
                         <td><span class="label">OPEN</span></td>
-                        <td id="count-open">0</td>
+                        <td id="count-open"><b>0</b></td>
                         <td><span class="label">ACK</span></td>
-                        <td id="count-ack">0</td>
+                        <td id="count-ack"><b>0</b></td>
                         <td><span class="label">CLOSED</span></td>
-                        <td id="count-closed">0</td>
+                        <td id="count-closed"><b>0</b></td>
                     </tr>
                     </tbody>
                 </table>
@@ -104,11 +104,11 @@
                         </thead>
                         <tbody>
                         <tr id="R2R1-status-indicator">
-                            <td id="R2R1-critical" class="status-indicator-count">0</td>
-                            <td id="R2R1-major" class="status-indicator-count">0</td>
-                            <td id="R2R1-minor" class="status-indicator-count">0</td>
-                            <td id="R2R1-warning" class="status-indicator-count">0</td>
-                            <td id="R2R1-normal" class="status-indicator-count">0</td>
+                            <td id="R2R1-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="R2R1-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="R2R1-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="R2R1-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="R2R1-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
@@ -122,11 +122,11 @@
                         </thead>
                         <tbody>
                         <tr id="Frontend-status-indicator">
-                            <td id="Frontend-critical" class="status-indicator-count">0</td>
-                            <td id="Frontend-major" class="status-indicator-count">0</td>
-                            <td id="Frontend-minor" class="status-indicator-count">0</td>
-                            <td id="Frontend-warning" class="status-indicator-count">0</td>
-                            <td id="Frontend-normal" class="status-indicator-count">0</td>
+                            <td id="Frontend-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Frontend-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Frontend-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Frontend-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Frontend-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
@@ -140,11 +140,11 @@
                         </thead>
                         <tbody>
                         <tr id="Discussion-status-indicator">
-                            <td id="Discussion-critical" class="status-indicator-count">0</td>
-                            <td id="Discussion-major" class="status-indicator-count">0</td>
-                            <td id="Discussion-minor" class="status-indicator-count">0</td>
-                            <td id="Discussion-warning" class="status-indicator-count">0</td>
-                            <td id="Discussion-normal" class="status-indicator-count">0</td>
+                            <td id="Discussion-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Discussion-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Discussion-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Discussion-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Discussion-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
@@ -158,11 +158,11 @@
                         </thead>
                         <tbody>
                         <tr id="Other-status-indicator">
-                            <td id="Other-critical" class="status-indicator-count">0</td>
-                            <td id="Other-major" class="status-indicator-count">0</td>
-                            <td id="Other-minor" class="status-indicator-count">0</td>
-                            <td id="Other-warning" class="status-indicator-count">0</td>
-                            <td id="Other-normal" class="status-indicator-count">0</td>
+                            <td id="Other-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Other-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Other-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Other-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Other-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
@@ -303,7 +303,7 @@ function getStatus(statusfilter, refresh) {
 
         $.each(data.response.alerts.statusCounts, function (stat, count) {
             // alert(stat);
-            $("#count-" + stat).text(count);
+            $("#count-" + stat).html('<b>' + count + '</b>');
         });
         if (refresh) {
             timer = setTimeout(function () {
@@ -339,7 +339,7 @@ function getAlerts(service, filter, refresh) {
 
         $.each(data.response.alerts.severityCounts, function (sev, count) {
             sev = sev.toLowerCase();
-            $(sev_id + "-" + sev).text(count);
+            $(sev_id + "-" + sev).html('<b>' + count + '</b>');
             //alert(sev_id + "-" + sev + "=" + count);
             switch (count) {
                 case 0:
