@@ -1,7 +1,26 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
+                                                os.pardir,
+                                                os.pardir))
+if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
+    sys.path.insert(0, possible_topdir)
+
 from alerta.alert import Alert, severity
+from alerta.common import log as logging
+from alerta.common import config
+
+LOG = logging.getLogger(__name__)
+CONF = config.CONF
+
 
 # TODO(nsatterl): make this a nose test
 if __name__ == '__main__':
+    config.parse_args(sys.argv[1:])
+    logging.setup('alerta')
     alert1 = Alert('host555', 'ping_fail')
     print alert1
 
@@ -17,5 +36,8 @@ if __name__ == '__main__':
                    event_type='myAlert', alertid='1234')
     print alert3
 
-
     print repr(alert3)
+
+    print 'transforming...'
+    alert4 = Alert.transform_alert(alert1)
+    print alert4

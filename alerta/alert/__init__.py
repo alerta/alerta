@@ -3,6 +3,7 @@ import os
 import sys
 import datetime
 import json
+import yaml
 from uuid import uuid4
 from __builtin__ import staticmethod
 
@@ -10,11 +11,13 @@ import pytz
 
 from alerta.alert import severity, status
 from alerta.common import log as logging
+from alerta.common import config
 from alerta.common.utils import DateEncoder
 
 _DEFAULT_TIMEOUT = 3600  # default number of seconds before alert is EXPIRED
 
 LOG = logging.getLogger(__name__)
+CONF = config.CONF
 
 
 class Alert(object):
@@ -163,6 +166,126 @@ class Alert(object):
             last_receive_time=alert.get('lastReceiveTime', None),
             trend_indication=alert.get('trendIndication', None),
             raw_data=alert.get('rawData', None),
+        )
+
+    @staticmethod
+    def transform_alert(alert):
+
+        resource = alert.alert.get('resource', None)
+        event = alert.alert.get('event', None)
+        correlate = alert.alert.get('correlatedEvents', None)
+        group = alert.alert.get('group', None)
+        value = alert.alert.get('value', None)
+        status = alert.alert.get('status', None)
+        severity = alert.alert.get('severity', None)
+        previous_severity = alert.alert.get('previousSeverity', None)
+        environment = alert.alert.get('environment', None)
+        service = alert.alert.get('service', None)
+        text = alert.alert.get('text', None)
+        event_type = alert.alert.get('type', None)
+        tags = alert.alert.get('tags', None)
+        origin = alert.alert.get('origin', None)
+        repeat = alert.alert.get('repeat', None)
+        duplicate_count = alert.alert.get('duplicateCount', None)
+        threshold_info = alert.alert.get('thresholdInfo', None)
+        summary = alert.alert.get('summary', None)
+        timeout = alert.alert.get('timeout', None)
+        alertid = alert.alert.get('id', None)
+        last_receive_id = alert.alert.get('lastReceiveId', None)
+        create_time = alert.alert.get('createTime', None)
+        expire_time = alert.alert.get('expireTime', None)
+        receive_time = alert.alert.get('receiveTime', None)
+        last_receive_time = alert.alert.get('lastReceiveTime', None)
+        trend_indication = alert.alert.get('trendIndication', None)
+        raw_data = alert.alert.get('rawData', None)
+
+        suppress = False
+
+        conf = dict()
+        try:
+            conf = yaml.load(open(CONF.yaml_config))
+            LOG.info('Loaded %d transformer configurations OK', len(conf))
+        except Exception, e:
+            LOG.error('Failed to load transformer configuration: %s', e)
+            #sys.exit(1)
+
+        for c in conf:
+            LOG.debug('YAML config: %s', c)
+            if all(item in alert.alert.items() for item in c['match'].items()):
+                LOG.debug('Matched %s in alert', c['match'])
+
+                if 'parser' in c:
+                    LOG.debug('Loading parser %s', c['parser'])
+                    try:
+                        exec open('%s/%s.py' % (CONF.parser_dir, c['parser'])) in globals(), locals()
+                        LOG.info('Parser %s/%s exec OK', CONF.parser_dir, c['parser'])
+                    except Exception, e:
+                        LOG.warning('Parser %s failed: %s', c['parser'], e)
+
+                if 'event' in c:
+                    event = c['event']
+                if 'resource' in c:
+                    resource = c['resource']
+                if 'severity' in c:
+                    severity = c['severity']
+                if 'group' in c:
+                    group = c['group']
+                if 'value' in c:
+                    value = c['value']
+                if 'text' in c:
+                    text = c['text']
+                if 'environment' in c:
+                    environment = c['environment']
+                if 'service' in c:
+                    service = c['service']
+                if 'tags' in c:
+                    tags = c['tags']
+                if 'correlate' in c:
+                    correlate = c['correlate']
+                if 'threshold_info' in c:
+                    threshold_info = c['threshold_info']
+                if 'summary' in c:
+                    summary = c['summary']
+                if 'timeout' in c:
+                    timeout = c['timeout']
+                if 'suppress' in c:
+                    suppress = c['suppress']
+                break
+
+        if suppress:
+            LOG.info('Suppressing alert %s', alert.alertid)
+            return
+
+        LOG.debug('group = %s', group)
+
+        return Alert(
+            resource=resource,
+            event=event,
+            correlate=correlate,
+            group=group,
+            value=value,
+            status=status,
+            severity=severity,
+            previous_severity=previous_severity,
+            environment=environment,
+            service=service,
+            text=text,
+            event_type=event_type,
+            tags=tags,
+            origin=origin,
+            repeat=repeat,
+            duplicate_count=duplicate_count,
+            threshold_info=threshold_info,
+            summary=summary,
+            timeout=timeout,
+            alertid=alertid,
+            last_receive_id=last_receive_id,
+            create_time=create_time,
+            expire_time=expire_time,
+            receive_time=receive_time,
+            last_receive_time=last_receive_time,
+            trend_indication=trend_indication,
+            raw_data=raw_data,
         )
 
 

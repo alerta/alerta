@@ -1,4 +1,5 @@
 
+import sys
 import time
 import threading
 import Queue
@@ -50,7 +51,10 @@ class WorkerThread(threading.Thread):
                 LOG.info('Alert received...')
                 alert = item.get_body()
 
-            alert = transform(alert)
+            alert = Alert.transform_alert(alert)
+            if not alert:
+                self.input_queue.task_done()
+                return
 
             if self.db.is_duplicate(alert['environment'], alert['resource'], alert['event'], alert['severity']):
 
