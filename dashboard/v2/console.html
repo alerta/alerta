@@ -220,6 +220,46 @@
 
 <script>
 
+var CRITICAL_SEV_CODE = 1;
+var MAJOR_SEV_CODE = 2;
+var MINOR_SEV_CODE = 3;
+var WARNING_SEV_CODE = 4;
+var INDETER_SEV_CODE = 5;
+var CLEARED_SEV_CODE = 5;
+var NORMAL_SEV_CODE = 5;
+var INFORM_SEV_CODE = 6;
+var DEBUG_SEV_CODE = 7;
+var AUTH_SEV_CODE = 8;
+var UNKNOWN_SEV_CODE = 9;
+
+CRITICAL = 'critical';
+MAJOR = 'major';
+MINOR = 'minor';
+WARNING = 'warning';
+INDETERMINATE = 'indeterminate';
+CLEARED = 'cleared';
+NORMAL = 'normal';
+INFORM = 'informational';
+DEBUG = 'debug';
+AUTH = 'security';
+UNKNOWN = 'unknown';
+
+ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN];
+
+var _SEVERITY_MAP = {
+    'critical': 1,
+    'major': 2,
+    'minor': 3,
+    'warning': 4,
+    'indeterminate': 5,
+    'cleared': 5,
+    'normal': 5,
+    'informational': 6,
+    'debug': 7,
+    'auth': 8,
+    'unknown': 9
+};
+
 var logger = 0,
         fromDate = "",
         limit = "",
@@ -347,7 +387,6 @@ function getStatus(statusfilter, refresh) {
         }
 
         $.each(data.response.alerts.statusCounts, function (stat, count) {
-            // alert(stat);
             $("#count-" + stat).html('<b>' + count + '</b>');
         });
         if (refresh) {
@@ -472,37 +511,7 @@ function worker() {
 
             $.each(data.response.alerts.alertDetails, function (i, ad) {
 
-                var severityCode;
-                switch (ad.severity) {
-                    case 'Critical':
-                        severityCode = 1;
-                        break;
-                    case 'Major':
-                        severityCode = 2;
-                        break;
-                    case 'Minor':
-                        severityCode = 3;
-                        break;
-                    case 'Warning':
-                        severityCode = 4;
-                        break;
-                    case 'Normal':
-                        severityCode = 5;
-                        break;
-                    case 'Informational':
-                        severityCode = 6;
-                        break;
-                    case 'Debug':
-                        severityCode = 7;
-                        break;
-                    case 'Auth':
-                        severityCode = 8;
-                        break;
-                    default:
-                        severityCode = 9; // Unknown
-                }
-
-                $('#alerts').dataTable().fnAddData([
+                 $('#alerts').dataTable().fnAddData([
                     ad.severity,       // 0
                     ad.status,
                     ad.lastReceiveTime,
@@ -515,7 +524,7 @@ function worker() {
                     ad.value,
                     ad.text,  // 9
 
-                    severityCode, // to enable sorting on severity
+                    _SEVERITY_MAP[ad.severity], // severityCode to enable sorting on severity
 
                     ad.id, // 11
                     ad.lastReceiveId,
@@ -543,21 +552,6 @@ function worker() {
         }
     });
 };
-
-
-CRITICAL = 'critical';
-MAJOR = 'major';
-MINOR = 'minor';
-WARNING = 'warning';
-INDETERMINATE = 'indeterminate';
-CLEARED = 'cleared';
-NORMAL = 'normal';
-INFORM = 'informational';
-DEBUG = 'debug';
-AUTH = 'security';
-UNKNOWN = 'unknown';
-
-ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN];
 
 function sev2label(severity) {
 
