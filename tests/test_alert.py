@@ -39,5 +39,6 @@ if __name__ == '__main__':
     print repr(alert3)
 
     print 'transforming...'
-    alert4 = Alert.transform_alert(alert1)
-    print alert4
+    suppress = alert1.transform_alert()
+    print 'suppress? %s' % suppress
+    print alert1
