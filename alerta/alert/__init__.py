@@ -249,11 +249,15 @@ class Alert(object):
             self.alert['text'] = self.alert['text'].replace(k, v)
             self.alert['environment'][:] = [e.replace(k, v) for e in self.alert['environment']]
             self.alert['service'][:] = [s.replace(k, v) for s in self.alert['service']]
-            self.alert['tags'][:] = [t.replace(k, v) for t in self.alert['tags']]
-            self.alert['correlatedEvents'] = self.alert['correlatedEvents'].replace(k, v)
-            self.alert['thresholdInfo'] = self.alert['thresholdInfo'].replace(k, v)
-            self.alert['summary'] = self.alert['summary'].replace(k, v)
-            self.alert['timeout'] = self.alert['timeout'].replace(k, v)
+
+            if self.alert['tags'] is not None:
+                self.alert['tags'][:] = [t.replace(k, v) for t in self.alert['tags']]
+            if self.alert['correlatedEvents'] is not None:
+                self.alert['correlatedEvents'] = [c.replace(k, v) for c in self.alert['correlatedEvents']]
+            if self.alert['thresholdInfo'] is not None:
+                self.alert['thresholdInfo'] = self.alert['thresholdInfo'].replace(k, v)
+            if self.alert['summary'] is not None:
+                self.alert['summary'] = self.alert['summary'].replace(k, v)
 
 
 class Heartbeat(object):
