@@ -424,7 +424,7 @@ function getAlerts(service, filter, refresh) {
         $.each(data.response.alerts.severityCounts, function (sev, count) {
             sev = sev.toLowerCase();
             $(sev_id + "-" + sev).html('<b>' + count + '</b>');
-            //alert(sev_id + "-" + sev + "=" + count);
+
             switch (count) {
                 case 0:
                     $(sev_id + "-" + sev).removeClass("severity-" + sev).addClass('zero');

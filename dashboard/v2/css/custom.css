@@ -36,35 +36,35 @@ table {
     font-size: 14px;
     margin-top:14px;
 }
-.severity-Critical {
+.severity-critical {
   background-color: red;
 }
 
-.severity-Major {
+.severity-major {
   background-color: orange;
 }
 
-.severity-Minor {
+.severity-minor {
 	background-color: yellow;
 }
 
-.severity-Warning {
+.severity-warning {
   background-color: #1E90FF; // dodger-blue
 }
 
-.severity-Normal {
+.severity-normal {
   background-color: #00CC00;
 }
 
-.severity-Informational {
+.severity-informational {
   background-color: #00CC00;
 }
 
-.severity-Debug {
+.severity-debug {
   background-color: #7554BF;
 }
 
-.status-Closed {
+.status-closed {
   background-color: rgba(0, 0, 0, 0.5);
 }
 
