@@ -36,38 +36,6 @@ _token_rate = 2                # Add a token every 2 seconds
 tokens = 5
 
 
-class TokenTopUp(threading.Thread):
-
-    def __init__(self):
-        threading.Thread.__init__(self)
-        self.running = False
-        self.shuttingdown = False
-
-    def shutdown(self):
-        self.shuttingdown = True
-        if not self.running:
-            return
-        self.join()
-
-    def run(self):
-        global _token_rate, tokens
-        self.running = True
-
-        while not self.shuttingdown:
-            if self.shuttingdown:
-                break
-
-            if tokens < TOKEN_LIMIT:
-                _Lock.acquire()
-                tokens += 1
-                _Lock.release()
-
-            if not self.shuttingdown:
-                time.sleep(_token_rate)
-
-        self.running = False
-
-
 # TODO(nsatterl): this should be in the Alert class
 def ack_alert(alertid):
 
@@ -110,7 +78,7 @@ class IrcbotMessageHandler(MessageHandler):
             LOG.warning('%s : No tokens left, rate limiting this alert', headers['correlation-id'])
             return
 
-        LOG.debug("Received alert : %s", body)
+        LOG.debug("Received: %s", body)
 
         if headers['type'].endswith('Alert'):
             ircAlert = Alert.parse_alert(body)
@@ -187,3 +155,34 @@ class IrcbotDaemon(Daemon):
 
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()
+
+
+class TokenTopUp(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.running = False
+        self.shuttingdown = False
+
+    def shutdown(self):
+        self.shuttingdown = True
+        if not self.running:
+            return
+        self.join()
+
+    def run(self):
+        global _token_rate, tokens
+        self.running = True
+
+        while not self.shuttingdown:
+            if self.shuttingdown:
+                break
+
+            if tokens < TOKEN_LIMIT:
+                _Lock.acquire()
+                tokens += 1
+                _Lock.release()
+
+            if not self.shuttingdown:
+                time.sleep(_token_rate)
+
+        self.running = False

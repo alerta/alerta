@@ -18,38 +18,6 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-class LoggerDaemon(Daemon):
-    """
-    Index alerts in ElasticSearch using Logstash format so that logstash GUI and/or Kibana can be used as front-ends
-    """
-    def run(self):
-
-        self.running = True
-
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=LoggerMessage())
-        self.mq.subscribe(destination=CONF.outbound_queue)
-
-        while not self.shuttingdown:
-            try:
-                LOG.debug('Waiting for log messages...')
-                time.sleep(CONF.loop_every)
-
-                LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version)
-                self.mq.send(heartbeat)
-
-            except (KeyboardInterrupt, SystemExit):
-                self.shuttingdown = True
-
-        LOG.info('Shutdown request received...')
-        self.running = False
-
-        LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()
-
-
 class LoggerMessage(MessageHandler):
     
     def on_message(self, headers, body):
@@ -94,3 +62,35 @@ class LoggerMessage(MessageHandler):
                 LOG.info('%s : Alert indexed at %s/%s', alert['lastReceiveId'], index_url, es_id)
             except Exception:
                 pass
+
+
+class LoggerDaemon(Daemon):
+    """
+    Index alerts in ElasticSearch using Logstash format so that logstash GUI and/or Kibana can be used as front-ends
+    """
+    def run(self):
+
+        self.running = True
+
+        # Connect to message queue
+        self.mq = Messaging()
+        self.mq.connect(callback=LoggerMessage())
+        self.mq.subscribe(destination=CONF.outbound_queue)
+
+        while not self.shuttingdown:
+            try:
+                LOG.debug('Waiting for log messages...')
+                time.sleep(CONF.loop_every)
+
+                LOG.debug('Send heartbeat...')
+                heartbeat = Heartbeat(version=Version)
+                self.mq.send(heartbeat)
+
+            except (KeyboardInterrupt, SystemExit):
+                self.shuttingdown = True
+
+        LOG.info('Shutdown request received...')
+        self.running = False
+
+        LOG.info('Disconnecting from message broker...')
+        self.mq.disconnect()
