@@ -2,44 +2,66 @@
 
 import os
 import sys
+import time
 
-
-# If ../nova/__init__.py exists, add ../ to Python search path, so that
-# it will override what happens to be installed in /usr/(local/)lib/python...
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
                                                 os.pardir,
                                                 os.pardir))
 if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
-from alerta.common import log as logging
 from alerta.common import config
+from alerta.common import log as logging
 from alerta.common.tokens import LeakyBucket
 
-LOG = logging.getLogger('alerta')
-LOG = logging.getLogger(__name__)
+LOG = logging.getLogger('alerta.syslog')
 CONF = config.CONF
+
+Version = 'alpha'
 
 
 def main():
 
-    leaky = LeakyBucket()
+    leaky = LeakyBucket(10, rate=3)
+    #leaky = LeakyBucket()
     leaky.start()
 
-    print leaky.get_token()
-    print leaky.get_token()
-    print leaky.get_token()
-    print leaky.get_token()
-    print leaky.get_token()
-    print leaky.get_token()
-    print leaky.get_token()
-    print leaky.get_token()
-    print leaky.get_token()
-    print leaky.get_token()
-    print leaky.get_token()
-    print leaky.get_token()
+    try:
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
 
+        time.sleep(5)
+
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+        print leaky.get_count(), leaky.get_token(), time.sleep(1)
+
+    except (KeyboardInterrupt, SystemExit):
+        leaky.shutdown()
+
+    if leaky.is_alive:
+        leaky.shutdown()
+
+    print 'bye!'
 
 
 if __name__ == '__main__':
+    config.parse_args(sys.argv[1:], version=Version)
+    logging.setup('alerta')
     main()

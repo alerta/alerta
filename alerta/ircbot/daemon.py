@@ -17,16 +17,12 @@ from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.alert import Alert, Heartbeat, status
 from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.tokens import LeakyBucket
 
 Version = '2.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-#
-# An IRC client may send 1 message every 2 seconds
-# See section 5.8 in http://datatracker.ietf.org/doc/rfc2813/
-#
 
 
 # TODO(nsatterl): this should be in the Alert class
@@ -53,21 +49,16 @@ def ack_alert(alertid):
 
 class IrcbotMessage(MessageHandler):
 
-    def __init__(self, irc):
+    def __init__(self, irc, tokens):
 
         #super(MessageHandler, self).__init__()
 
         self.irc = irc
+        self.tokens = tokens
 
     def on_message(self, headers, body):
-        global tokens
 
-        if tokens:
-            _Lock.acquire()
-            tokens -= 1
-            _Lock.release()
-            LOG.debug('Taken a token, there are only %d left', tokens)
-        else:
+        if not self.tokens.get_token():
             LOG.warning('%s : No tokens left, rate limiting this alert', headers['correlation-id'])
             return
 
@@ -88,11 +79,13 @@ class IrcbotMessage(MessageHandler):
 class IrcbotDaemon(Daemon):
 
     def run(self):
+
         self.running = True
 
-        # Start token bucket thread
-        _TokenThread = TokenTopUp()
-        _TokenThread.start()
+        # An IRC client may send 1 message every 2 seconds
+        # See section 5.8 in http://datatracker.ietf.org/doc/rfc2813/
+        tokens = LeakyBucket(tokens=20, rate=2)
+        tokens.start()
 
         # Connect to IRC server
         try:
@@ -111,7 +104,7 @@ class IrcbotDaemon(Daemon):
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect(callback=IrcbotMessage(irc))
+        self.mq.connect(callback=IrcbotMessage(irc, tokens))
         self.mq.subscribe(destination=CONF.outbound_queue)
 
         while not self.shuttingdown:
@@ -142,10 +135,10 @@ class IrcbotDaemon(Daemon):
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
-                _TokenThread.shutdown()
 
         LOG.info('Shutdown request received...')
         self.running = False
+        tokens.shutdown()
 
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()

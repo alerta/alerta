@@ -41,6 +41,9 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'parser_dir': '/etc/alerta/parsers',
         'loop_every': 30,   # seconds
 
+        'token_limit': 20,
+        'token_rate': 2,
+
         'mongo_host': 'localhost',
         'mongo_port': 27017,
         'mongo_db': 'monitoring',

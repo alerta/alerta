@@ -2,18 +2,21 @@
 import time
 import threading
 
-from alerta.alert.common import config
+from alerta.common import config
+from alerta.common import log as logging
 
+LOG = logging.getLogger(__name__)
 CONF = config.CONF
 lock = threading.Lock()
 
 
 class LeakyBucket(threading.Thread):
 
-    def __init__(self, tokens=None, rate=None):
+    def __init__(self, tokens=None, limit=None, rate=None):
 
         self.tokens = tokens or CONF.token_limit
-        self.rate = rate or CONF.token_rate
+        self.limit = limit or tokens or CONF.token_limit
+        self.rate = rate or float(CONF.token_rate)
 
         threading.Thread.__init__(self)
 
@@ -37,9 +40,10 @@ class LeakyBucket(threading.Thread):
             if self.shuttingdown:
                 break
 
-            if self.tokens < CONF.token_limit:
+            if self.tokens < self.limit:
                 with lock:
                     self.tokens += 1
+                LOG.debug('Token top-up! Now %s tokens', self.tokens)
 
             if not self.shuttingdown:
                 time.sleep(self.rate)
@@ -56,6 +60,11 @@ class LeakyBucket(threading.Thread):
         with lock:
             if self.is_token():
                 self.tokens -= 1
+                LOG.debug('Got a token! There are %s left', self.tokens)
                 return True
             else:
+                LOG.debug('Sorry, no tokens left')
                 return False
+
+    def get_count(self):
+        return self.tokens
