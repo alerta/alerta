@@ -279,8 +279,8 @@ function fnFormatDetails(aData) {
     sOut += '<tr class="even"><td><b>Resource</b></td><td>' + resource + '</td></tr>';
     sOut += '<tr class="odd"><td><b>Event</b></td><td>' + event + '</td></tr>';
     sOut += '<tr class="even"><td><b>Group</b></td><td>' + group + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Severity</b></td><td>' + previousSeverity + ' -> ' + severity + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Status</b></td><td>' + status + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Severity</b></td><td>' + sev2label(previousSeverity) + ' -> ' + sev2label(severity) + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Status</b></td><td>' + stat2label(status) + '</td></tr>';
     sOut += '<tr class="odd"><td><b>Value</b></td><td>' + value + '</td></tr>';
     sOut += '<tr class="even"><td><b>Text</b></td><td>' + text + '</td></tr>';
 
@@ -435,8 +435,9 @@ function worker() {
 
             $.each(data.response.alerts.alertDetails, function (i, ad) {
 
-                ad.severity = ad.severity.charAt(0).toUpperCase() + ad.severity.slice(1).toLowerCase();
-                ad.status = ad.status.charAt(0).toUpperCase() + ad.status.slice(1).toLowerCase();
+                //ad.severity = ad.severity.charAt(0).toUpperCase() + ad.severity.slice(1).toLowerCase();
+                //ad.previousSeverity = ad.previousSeverity.charAt(0).toUpperCase() + ad.previousSeverity.slice(1).toLowerCase();
+                //ad.status = ad.status.charAt(0).toUpperCase() + ad.status.slice(1).toLowerCase();
 
                 var severityCode;
                 switch (ad.severity) {
@@ -509,6 +510,88 @@ function worker() {
     });
 };
 
+
+CRITICAL = 'critical';
+MAJOR = 'major';
+MINOR = 'minor';
+WARNING = 'warning';
+INDETERMINATE = 'indeterminate';
+CLEARED = 'cleared';
+NORMAL = 'normal';
+INFORM = 'informational';
+DEBUG = 'debug';
+AUTH = 'security';
+UNKNOWN = 'unknown';
+
+ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN];
+
+function sev2label(severity) {
+
+    var label;
+
+    switch (severity) {
+        case CRITICAL:
+            label = 'label-important';
+            break;
+        case MAJOR:
+            label = 'label-warning';
+            break;
+        case MINOR:
+            label = 'label-minor';
+            break;
+        case WARNING:
+            label = 'label-info';
+            break;
+        case DEBUG:
+            label = 'label-inverse';
+            break;
+        case UNKNOWN:
+            label = '';
+            break;
+        default:
+            label = 'label-success';
+    }
+    severity = severity.charAt(0).toUpperCase() + severity.slice(1).toLowerCase();
+
+    return('<span class="label ' + label + '">' + severity + '</span>');
+}
+
+OPEN = 'open';
+ACK = 'ack';
+CLOSED = 'closed';
+EXPIRED = 'expired';
+UNKNOWN = 'unknown';
+
+ALL = [OPEN, ACK, CLOSED, EXPIRED, UNKNOWN];
+
+function stat2label(status) {
+
+    var label;
+
+    switch (status) {
+        case OPEN:
+            label = 'label-open';
+            break;
+        case ACK:
+            label = 'label-ack';
+            break;
+        case CLOSED:
+            label = 'label-closed';
+            break;
+        case EXPIRED:
+            label = 'label-expired';
+            break;
+        case UNKNOWN:
+            label = 'label-unknown';
+            break;
+        default:
+            label = '';
+    }
+    status = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+
+    return('<span class="label ' + label + '">' + status + '</span>');
+}
+
 $(document).ready(function () {
 
     loadStatus(envfilter, true);
@@ -539,41 +622,9 @@ $(document).ready(function () {
             } else {
                 ti = '<i class="icon-random"></i>&nbsp;'
             }
-            // Severity = Critical, Major, Minor, Warning, Informational, Debug
-            if (aData[0] == "Critical") {
-                $('td:eq(0)', nRow).html(ti + '<span class="label label-critical">Critical</span>');
-            }
-            if (aData[0] == "Major") {
-                $('td:eq(0)', nRow).html(ti + '<span class="label label-major">Major</span>');
-            }
-            if (aData[0] == "Minor") {
-                $('td:eq(0)', nRow).html(ti + '<span class="label label-minor">Minor</span>');
-            }
-            if (aData[0] == "Warning") {
-                $('td:eq(0)', nRow).html(ti + '<span class="label label-warning">Warning</span>');
-            }
-            if (aData[0] == "Normal") {
-                $('td:eq(0)', nRow).html(ti + '<span class="label label-success">Normal</span>');
-            }
-            if (aData[0] == "Informational") {
-                $('td:eq(0)', nRow).html(ti + '<span class="label label-success">Inform</span>');
-            }
-            if (aData[0] == "Debug") {
-                $('td:eq(0)', nRow).html(ti + '<span class="label label-inverse">Debug</span>');
-            }
-            // Status = Open, Acknowledged, Closed
-            if (aData[1] == "Open") {
-                $('td:eq(1)', nRow).html('<span class="label label-open">Open</span>');
-            }
-            if (aData[1] == "Acknowledged") {
-                $('td:eq(1)', nRow).html('<span class="label label-ack">Acknowledged</span>');
-            }
-            if (aData[1] == "Closed") {
-                $('td:eq(1)', nRow).html('<span class="label label-closed">Closed</span>');
-            }
-            if (aData[1] == "Expired") {
-                $('td:eq(1)', nRow).html('<span class="label label-expired">Expired</span>');
-            }
+            $('td:eq(0)', nRow).html(ti + sev2label(aData[0]));
+            $('td:eq(1)', nRow).html(stat2label(aData[1]));
+
             var d = new Date(aData[2]);
             $('td:eq(2)', nRow).html(d.toLocaleString());
 

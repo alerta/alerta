@@ -22,7 +22,7 @@ CONF = config.CONF
 
 class Alert(object):
     def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status.UNKNOWN,
-                 severity=severity.NORMAL, previous_severity=None, environment=None, service=None,
+                 severity=severity.NORMAL, previous_severity=severity.UNKNOWN, environment=None, service=None,
                  text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
                  threshold_info='n/a', summary=None, timeout=None, alertid=None, last_receive_id=None,
                  create_time=None, expire_time=None, receive_time=None, last_receive_time=None, trend_indication=None,
@@ -57,7 +57,7 @@ class Alert(object):
             'group': group,
             'value': value,
             'severity': severity,
-            'previousSeverity': previous_severity or 'UNKNOWN', # severity.UNKNOWN,
+            'previousSeverity': previous_severity,
             'environment': environment,
             'service': service,
             'text': text,
