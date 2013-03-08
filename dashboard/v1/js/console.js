@@ -42,7 +42,6 @@ function loadAlerts(services, refresh) {
     });
 }
 
-
 CRITICAL = 'Critical';
 MAJOR = 'Major';
 MINOR = 'Minor';
