@@ -5,6 +5,8 @@ import datetime
 import json
 import yaml
 from uuid import uuid4
+import re
+import fnmatch
 from __builtin__ import staticmethod
 
 import pytz
@@ -168,7 +170,11 @@ class Alert(object):
             raw_data=alert.get('rawData', None),
         )
 
-    def transform_alert(self):
+    def transform_alert(self, **kwargs):
+
+        trapoid = kwargs.get('trapoid', None)
+        facility = kwargs.get('facility', None)
+        level = kwargs.get('level', None)
 
         suppress = False
 
@@ -181,7 +187,15 @@ class Alert(object):
 
         for c in conf:
             LOG.debug('YAML config: %s', c)
-            if all(item in self.alert.items() for item in c['match'].items()):
+
+            if self.get_type() == 'snmptrapAlert' and trapoid:
+                match = re.match(c['trapoid'], trapoid)
+            elif self.get_type() == 'syslogAlert' and facility and level:
+                match = fnmatch.fnmatch('%s.%s' % (facility, level), c['priority'])
+            else:
+                match = all(item in self.alert.items() for item in c['match'].items())
+
+            if match:
                 LOG.debug('Matched %s in alert', c['match'])
 
                 if 'parser' in c:
@@ -211,9 +225,9 @@ class Alert(object):
                 if 'tags' in c:
                     self.alert['tags'] = c['tags']
                 if 'correlate' in c:
-                    self.alert['correlate'] = c['correlate']
+                    self.alert['correlatedEvents'] = c['correlate']
                 if 'threshold_info' in c:
-                    self.alert['threshold_info'] = c['threshold_info']
+                    self.alert['thresholdInfo'] = c['threshold_info']
                 if 'summary' in c:
                     self.alert['summary'] = c['summary']
                 if 'timeout' in c:
@@ -223,6 +237,24 @@ class Alert(object):
                 break
 
         return suppress
+
+    def translate(self, mappings):
+
+        for k, v in mappings.iteritems():
+            LOG.debug('translate %s -> %s', k, v)
+            self.alert['event'] = self.alert['event'].replace(k, v)
+            self.alert['resource'] = self.alert['resource'].replace(k, v)
+            self.alert['severity'] = self.alert['severity'].replace(k, v)
+            self.alert['group'] = self.alert['group'].replace(k, v)
+            self.alert['value'] = self.alert['value'].replace(k, v)
+            self.alert['text'] = self.alert['text'].replace(k, v)
+            self.alert['environment'][:] = [e.replace(k, v) for e in self.alert['environment']]
+            self.alert['service'][:] = [s.replace(k, v) for s in self.alert['service']]
+            self.alert['tags'][:] = [t.replace(k, v) for t in self.alert['tags']]
+            self.alert['correlatedEvents'] = self.alert['correlatedEvents'].replace(k, v)
+            self.alert['thresholdInfo'] = self.alert['thresholdInfo'].replace(k, v)
+            self.alert['summary'] = self.alert['summary'].replace(k, v)
+            self.alert['timeout'] = self.alert['timeout'].replace(k, v)
 
 
 class Heartbeat(object):

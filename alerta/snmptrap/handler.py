@@ -6,6 +6,7 @@ import yaml
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.alert import Alert, Heartbeat
+from alerta.alert.severity import *
 from alerta.common.mq import Messaging
 
 Version = '2.0.0'
@@ -100,7 +101,7 @@ class SnmpTrapHandler(object):
         # Defaults
         event = trapoid
         resource = agent.split('.')[0]
-        severity = 'NORMAL'
+        severity = NORMAL
         group = 'SNMP'
         value = trapnumber
         text = trapvars['$3']  # ie. whatever is in varbind 3
@@ -111,76 +112,6 @@ class SnmpTrapHandler(object):
         timeout = None
         threshold_info = None
         summary = None
-        suppress = False
-
-        # Match trap to specific config and load any parsers
-        # Note: any of these variables could have been modified by a parser
-
-        try:
-            trapconf = yaml.load(open(CONF.yaml_config))
-        except Exception, e:
-            LOG.error('Failed to load SNMP Trap configuration: %s', e)
-            sys.exit(1)
-        LOG.info('Loaded %d SNMP Trap configurations OK', len(trapconf))
-
-        for t in trapconf:
-            LOG.debug('trapconf: %s', t)
-            if re.match(t['trapoid'], trapoid):
-                if 'parser' in t:
-                    LOG.debug('Loading parser %s', t['parser'])
-                    try:
-                        exec (open('%s/%s.py' % (CONF.parser_dir, t['parser'])))
-                        LOG.info('Parser %s/%s exec OK', CONF.parser_dir, t['parser'])
-                    except Exception, e:
-                        LOG.warning('Parser %s failed: %s', t['parser'], e)
-                if 'event' in t:
-                    event = t['event']
-                if 'resource' in t:
-                    resource = t['resource']
-                if 'severity' in t:
-                    severity = t['severity']
-                if 'group' in t:
-                    group = t['group']
-                if 'value' in t:
-                    value = t['value']
-                if 'text' in t:
-                    text = t['text']
-                if 'environment' in t:
-                    environment = [t['environment']]
-                if 'service' in t:
-                    service = [t['service']]
-                if 'tags' in t:
-                    tags = t['tags']
-                if 'correlate' in t:
-                    correlate = t['correlate']
-                if 'threshold_info' in t:
-                    threshold_info = t['threshold_info']
-                if 'summary' in t:
-                    summary = t['summary']
-                if 'timeout' in t:
-                    timeout = t['timeout']
-                if 'suppress' in t:
-                    suppress = t['suppress']
-                break
-
-        if suppress:
-            LOG.warning('Suppressing %s SNMP trap from %s', trapoid, resource)
-            return
-
-        # Trap varbind substitutions
-        LOG.debug('trapvars: %s', trapvars)
-        for k, v in trapvars.iteritems():
-            LOG.debug('replace: %s -> %s', k, v)
-            event = event.replace(k, v)
-            resource = resource.replace(k, v)
-            severity = severity.replace(k, v)
-            group = group.replace(k, v)
-            value = value.replace(k, v)
-            text = text.replace(k, v)
-            environment[:] = [s.replace(k, v) for s in environment]
-            service[:] = [s.replace(k, v) for s in service]
-            tags[:] = [s.replace(k, v) for s in tags]
-            threshold_info = threshold_info.replace(k, v)
 
         snmptrapAlert = Alert(
             resource=resource,
@@ -198,7 +129,13 @@ class SnmpTrapHandler(object):
             threshold_info=threshold_info,
             summary=summary,
             raw_data=data,
-        )
-        LOG.debug('snmptrapAlert = %s', snmptrapAlert)
+            )
+
+        suppress = snmptrapAlert.transform_alert(trapoid=trapoid)
+        if suppress:
+            LOG.warning('Suppressing alert %s', snmptrapAlert.get_id())
+            return
+
+        snmptrapAlert.translate(trapvars)
 
         return snmptrapAlert
