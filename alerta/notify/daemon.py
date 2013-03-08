@@ -27,19 +27,6 @@ Version = '2.0.0'
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-BROKER_LIST = [('localhost', 61613)] # list of brokers for failover
-NOTIFY_TOPIC = '/topic/notify'
-
-DISABLE = '/opt/alerta/alerta/alert-notify.disable'
-LOGFILE = '/var/log/alerta/alert-notify.log'
-PIDFILE = '/var/run/alerta/alert-notify.pid'
-CONFIGFILE = '/opt/alerta/alerta/alert-notify.yaml'
-GRACEPERIOD = 300
-API_SERVER = 'monitoring.guprod.gnl'
-SMTP_SERVER = 'mx'
-ALERTER_MAIL = 'alerta@guardian.co.uk'
-TIMEZONE = 'Europe/London'
-
 # AQL constancs
 USERNAME = ''
 PASSWORD = ''
@@ -70,68 +57,87 @@ _token_rate = 60               # Add a token every 60 seconds
 INITIAL_TOKENS = 5
 
 
+class NotifyMessage(Daemon):
+
+    def on_message(self, headers, body):
+        global alert, hold
+
+        LOG.debug("Received: %s", body)
+
+        alertid = json.loads(body)['id']
+
+        alert[alertid] = json.loads(body)
+
+        LOG.info('%s : [%s] %s', alert[alertid]['lastReceiveId'], alert[alertid]['status'],
+                     alert[alertid]['summary'])
+
+        if not should_we_notify(alertid):
+            LOG.debug('%s : NOT PAGING for [%s] %s', alert[alertid]['lastReceiveId'], alert[alertid]['status'],
+                          alert[alertid]['summary'])
+            del alert[alertid]
+            return
+
+        if alertid in hold:
+            if alert[alertid]['severity'] == 'NORMAL':
+                LOG.info('%s : Dropping NORMAL alert %s', alert[alertid]['lastReceiveId'], alertid)
+                del hold[alertid]
+                del alert[alertid]
+            else:
+                LOG.info('%s : Update alert %s details', alert[alertid]['lastReceiveId'], alertid)
+        else:
+            hold[alertid] = time.time() + CONF.notify_wait
+            LOG.info('%s : Holding onto alert %s for %s seconds', alert[alertid]['lastReceiveId'], alertid,
+                         CONF.notify_wait)
+
+
 class NotifyDaemon(Daemon):
-    global conn
 
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s alert-notify[%(process)d] %(levelname)s - %(message)s",
-                        filename=LOGFILE)
-    logging.info('Starting up Alert Notify version %s', __version__)
+    def run(self):
 
-    # Write pid file
-    if os.path.isfile(PIDFILE):
-        logging.error('%s already exists, exiting', PIDFILE)
-        f = open(PIDFILE)
-        pid = f.read()
-        f.close()
-        try:
-            os.kill(int(pid), 0)
-            sys.exit(1)
-        except OSError:
-            pass
+        self.running = True
 
-    file(PIDFILE, 'w').write(str(os.getpid()))
+        # Initialiase alert config
+        init_config()
+        #config_mod_time = os.path.getmtime(CONFIGFILE)  # FIXME
 
-    while os.path.isfile(DISABLE):
-        logging.warning('Disable flag exists (%s). Sleeping...', DISABLE)
-        time.sleep(120)
+        # Start token bucket thread
+        _TokenThread = TokenTopUp()
+        _TokenThread.start()
 
-    # Initialiase alert config
-    init_config()
-    config_mod_time = os.path.getmtime(CONFIGFILE)
+        # Start notify thread
+        _NotifyThread = ReleaseThread()
+        _NotifyThread.start()
 
-    # Connect to message broker
-    try:
-        conn = stomp.Connection(BROKER_LIST)
-        conn.set_listener('', MessageHandler())
-        conn.start()
-        conn.connect(wait=True)
-        conn.subscribe(destination=NOTIFY_TOPIC, ack='auto', headers={'selector': "repeat = 'false'"})
-    except Exception, e:
-        logging.error('Stomp connection error: %s', e)
+        # Connect to message queue
+        self.mq = Messaging()
+        self.mq.connect(callback=NotifyMessage())
+        self.mq.subscribe(destination=CONF.outbound_queue)
 
-    # Start token bucket thread
-    _TokenThread = TokenTopUp()
-    _TokenThread.start()
+        while not self.shuttingdown:
+            try:
+                # Read (or re-read) config as necessary
+                if os.path.getmtime(CONF.yaml_config) != config_mod_time:
+                    init_config()
+                    config_mod_time = os.path.getmtime(CONF.yaml_config)
 
-    # Start notify thread
-    _NotifyThread = ReleaseThread()
-    _NotifyThread.start()
+                LOG.debug('Waiting for email messages...')
+                time.sleep(CONF.loop_every)
 
-    # Main Loop
-    while True:
-        try:
-            # Read (or re-read) config as necessary
-            if os.path.getmtime(CONFIGFILE) != config_mod_time:
-                init_config()
-                config_mod_time = os.path.getmtime(CONFIGFILE)
+                LOG.debug('Send heartbeat...')
+                heartbeat = Heartbeat(version=Version)
+                self.mq.send(heartbeat)
 
-            time.sleep(0.5)
-        except (KeyboardInterrupt, SystemExit):
-            conn.disconnect()
-            _TokenThread.shutdown()
-            _NotifyThread.shutdown()
-            os.unlink(PIDFILE)
-            sys.exit(0)
+            except (KeyboardInterrupt, SystemExit):
+                self.shuttingdown = True
+
+        _TokenThread.shutdown()
+        _NotifyThread.shutdown()
+
+        LOG.info('Shutdown request received...')
+        self.running = False
+
+        LOG.info('Disconnecting from message broker...')
+        self.mq.disconnect()
 
 
 def should_we_notify(alertid):
@@ -144,7 +150,7 @@ def should_we_notify(alertid):
 
 def who_to_notify(tag):
     owner = tag.split(':')[1]
-    logging.info('Identifing owner as %s', owner)
+    LOG.info('Identifing owner as %s', owner)
     return owner
 
 
@@ -154,7 +160,7 @@ def sms_notify(alertid, username, password, destination, url=API_URL):
     data = urllib.urlencode(
         {'username': username, 'password': password, 'destination': destination, 'message': message})
 
-    logging.info('Api call %s', url + '?' + data)
+    LOG.info('Api call %s', url + '?' + data)
 
     req = urllib2.Request(url, data)
     f = urllib2.urlopen(req)
@@ -166,7 +172,7 @@ def sms_notify(alertid, username, password, destination, url=API_URL):
 
     # Api call response syntax.
     # <status no>:<no of credits used> <description>
-    logging.info('Api response %s', response)
+    LOG.info('Api response %s', response)
 
     # Verify response
     if status['0'] in response:
@@ -180,7 +186,7 @@ def email_notify(alertid, email):
 
     createTime = datetime.datetime.strptime(alert[alertid]['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
     createTime = createTime.replace(tzinfo=pytz.utc)
-    tz = pytz.timezone(TIMEZONE)
+    tz = pytz.timezone(CONF.timezone)
     localTime = createTime.astimezone(tz)
 
     text = ''
@@ -213,7 +219,7 @@ def email_notify(alertid, email):
     text += 'Generated by %s on %s at %s\n' % (
     'alert-notify.py', os.uname()[1], datetime.datetime.now().strftime("%a %d %b %H:%M:%S"))
 
-    logging.debug('Raw Text: %s', text)
+    LOG.debug('Raw Text: %s', text)
 
     html = '<p><table border="0" cellpadding="0" cellspacing="0" width="100%">\n'  # table used to center email
     html += '<tr><td bgcolor="#ffffff" align="center">\n'
@@ -258,7 +264,7 @@ def email_notify(alertid, email):
     html += '</td></tr></table>'
     html += '</td></tr></table>'
 
-    logging.debug('HTML Text %s', html)
+    LOG.debug('HTML Text %s', html)
 
     msg_root = MIMEMultipart('related')
     msg_root['Subject'] = '[%s] %s' % (alert[alertid]['status'], alert[alertid]['summary'])
@@ -281,19 +287,19 @@ def email_notify(alertid, email):
             try:
                 image = urllib2.urlopen(g).read()
                 msg_img[g] = MIMEImage(image)
-                logging.debug('graph cid %s', graph_cid[g])
+                LOG.debug('graph cid %s', graph_cid[g])
                 msg_img[g].add_header('Content-ID', '<' + graph_cid[g] + '>')
                 msg_root.attach(msg_img[g])
             except:
                 pass
 
     try:
-        logging.info('%s : Send email to %s', alert[alertid]['lastReceiveId'], MAILING_LIST)
+        LOG.info('%s : Send email to %s', alert[alertid]['lastReceiveId'], MAILING_LIST)
         s = smtplib.SMTP(SMTP_SERVER)
         s.sendmail(ALERTER_MAIL, MAILING_LIST, msg_root.as_string())
         s.quit()
     except smtplib.SMTPException, e:
-        logging.error('%s : Sendmail failed - %s', alert[alertid]['lastReceiveId'], e)
+        LOG.error('%s : Sendmail failed - %s', alert[alertid]['lastReceiveId'], e)
 
 
 def init_tokens():
@@ -305,26 +311,26 @@ def init_tokens():
             tokens[owner, 'email'] = INITIAL_TOKENS
 
     except Exception, e:
-        logging.error('Failed to initialize tokens %s', e)
+        LOG.error('Failed to initialize tokens %s', e)
         pass
 
 
 def init_config():
     global owners, USERNAME, PASSWORD
 
-    logging.info('Loading config.')
+    LOG.info('Loading config.')
 
     try:
-        config = yaml.load(open(CONFIGFILE))
+        config = yaml.load(open(CONF.yaml_config))
     except Exception, e:
-        logging.error('Failed to load alert config: %s', e)
+        LOG.error('Failed to load alert config: %s', e)
         pass
 
     USERNAME = config['global']['USERNAME']
     PASSWORD = config['global']['PASSWORD']
     owners = config['owners']
 
-    logging.info('Loaded %d owners in config.', len(owners))
+    LOG.info('Loaded %d owners in config.', len(owners))
 
     init_tokens()
 
@@ -343,65 +349,32 @@ def send_notify(alertid):
                     _Lock.acquire()
                     tokens[who, 'sms'] -= 1
                     _Lock.release()
-                    logging.debug('Taken a sms token from %s, there are only %d left', who, tokens[who, 'sms'])
+                    LOG.debug('Taken a sms token from %s, there are only %d left', who, tokens[who, 'sms'])
                     sms_notify(alertid, USERNAME, PASSWORD, owners[who]['mobile'])
                 elif tokens[who, 'sms'] == 0:
-                    logging.error('%s run out of sms tokens. Failed to notify %s.', who,
+                    LOG.error('%s run out of sms tokens. Failed to notify %s.', who,
                                   alert[alertid]['lastReceiveId'])
 
                 if tag.startswith('email:') and tokens[who, 'email'] > 0:
                     _Lock.acquire()
                     tokens[who, 'email'] -= 1
                     _Lock.release()
-                    logging.debug('Taken a email token from %s, there are only %d left', who, tokens[who, 'sms'])
+                    LOG.debug('Taken a email token from %s, there are only %d left', who, tokens[who, 'sms'])
                     email_notify(alertid, owners[who]['email'])
                 elif tokens[who, 'email'] == 0:
-                    logging.error('%s run out of email tokens. Failed to notify %s.', who,
+                    LOG.error('%s run out of email tokens. Failed to notify %s.', who,
                                   alert[alertid]['lastReceiveId'])
 
     except Exception, e:
-        logging.error('Notify sending failed for "%s" - %s - %s', alert[alertid]['lastReceiveId'], message, e)
+        LOG.error('Notify sending failed for "%s" - %s - %s', alert[alertid]['lastReceiveId'], message, e)
         pass
 
 
-class MessageHandler(object):
-    def on_error(self, headers, body):
-        logging.error('Received an error %s', body)
-
-    def on_message(self, headers, body):
-        global alert, hold
-
-        logging.debug("Received alert : %s", body)
-
-        alertid = json.loads(body)['id']
-
-        alert[alertid] = json.loads(body)
-
-        logging.info('%s : [%s] %s', alert[alertid]['lastReceiveId'], alert[alertid]['status'],
-                     alert[alertid]['summary'])
-
-        if not should_we_notify(alertid):
-            logging.debug('%s : NOT PAGING for [%s] %s', alert[alertid]['lastReceiveId'], alert[alertid]['status'],
-                          alert[alertid]['summary'])
-            del alert[alertid]
-            return
-
-        if alertid in hold:
-            if alert[alertid]['severity'] == 'NORMAL':
-                logging.info('%s : Dropping NORMAL alert %s', alert[alertid]['lastReceiveId'], alertid)
-                del hold[alertid]
-                del alert[alertid]
-            else:
-                logging.info('%s : Update alert %s details', alert[alertid]['lastReceiveId'], alertid)
-        else:
-            hold[alertid] = time.time() + GRACEPERIOD
-            logging.info('%s : Holding onto alert %s for %s seconds', alert[alertid]['lastReceiveId'], alertid,
-                         GRACEPERIOD)
 
     def on_disconnected(self):
         global conn
 
-        logging.warning('Connection lost. Attempting auto-reconnect to %s', NOTIFY_TOPIC)
+        LOG.warning('Connection lost. Attempting auto-reconnect to %s', NOTIFY_TOPIC)
         conn.start()
         conn.connect(wait=True)
         conn.subscribe(destination=NOTIFY_TOPIC, ack='auto', headers={'selector': "repeat = 'false'"})
@@ -430,7 +403,7 @@ class ReleaseThread(threading.Thread):
             notified = dict()
             for alertid in hold:
                 if hold[alertid] < time.time():
-                    logging.warning('Hold expired for %s and trigger notification', alertid)
+                    LOG.warning('Hold expired for %s and trigger notification', alertid)
                     send_notify(alertid)
                     notified[alertid] = 1
 

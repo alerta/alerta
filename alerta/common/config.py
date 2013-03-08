@@ -80,6 +80,11 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'es_host': 'localhost',
         'es_port': 9200,
         'es_index': 'alerta-%Y.%m.%d',  # NB. Kibana config must match this index
+
+        'aql_endpoint': 'http://gw.aql.com/sms/sms_gw.php',
+        'aql_user': '',
+        'aql_password': '',
+        'notify_wait': 300,  # NB. seconds wait before sending SMS
     }
     CONF.update(SYSTEM_DEFAULTS)
 

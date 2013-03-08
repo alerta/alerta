@@ -58,7 +58,7 @@ def ack_alert(alertid):
     return
 
 
-class IrcbotMessageHandler(MessageHandler):
+class IrcbotMessage(MessageHandler):
 
     def __init__(self, irc):
 
@@ -93,6 +93,7 @@ class IrcbotMessageHandler(MessageHandler):
 
 
 class IrcbotDaemon(Daemon):
+
     def run(self):
         self.running = True
 
@@ -117,7 +118,7 @@ class IrcbotDaemon(Daemon):
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect(callback=IrcbotMessageHandler(irc))
+        self.mq.connect(callback=IrcbotMessage(irc))
         self.mq.subscribe(destination=CONF.outbound_queue)
 
         while not self.shuttingdown:
