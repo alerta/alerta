@@ -297,8 +297,9 @@ class QueryClient(object):
 
                 if 'attributes' in CONF.show:
                     print(
-                        line_color + '    severity | %s -> %s (%s)' % (
-                        previous_severity.capitalize(), current_severity.capitalize(), severity.name_to_code(current_severity) ) + end_color)
+                        line_color + '    severity | %s (%s) -> %s (%s)' % (
+                            previous_severity.capitalize(), severity.name_to_code(previous_severity),
+                            current_severity.capitalize(), severity.name_to_code(current_severity)) + end_color)
                     print(line_color + '    trend    | %s' % trend_indication + end_color)
                     print(line_color + '    status   | %s' % current_status.capitalize() + end_color)
                     print(line_color + '    resource | %s' % resource + end_color)

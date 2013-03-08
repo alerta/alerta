@@ -88,7 +88,7 @@ def is_valid(name):
 
 
 def name_to_code(name):
-    return _SEVERITY_MAP.get(name.title(), UNKNOWN_SEV_CODE)
+    return _SEVERITY_MAP.get(name.lower(), UNKNOWN_SEV_CODE)
 
 
 def parse_severity(name):

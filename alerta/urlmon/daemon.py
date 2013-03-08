@@ -368,7 +368,7 @@ class UrlmonDaemon(Daemon):
 
                 LOG.info('URL check queue length is %d', self.queue.qsize())
 
-                time.sleep(CONF.heartbeat_every)
+                time.sleep(CONF.loop_every)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True

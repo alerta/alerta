@@ -16,8 +16,6 @@ from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
 
-_DEFAULT_TIMEOUT = 3600  # default number of seconds before alert is EXPIRED
-
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
@@ -26,7 +24,7 @@ class Alert(object):
     def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status.UNKNOWN,
                  severity=severity.NORMAL, previous_severity=None, environment=None, service=None,
                  text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
-                 threshold_info='n/a', summary=None, timeout=_DEFAULT_TIMEOUT, alertid=None, last_receive_id=None,
+                 threshold_info='n/a', summary=None, timeout=None, alertid=None, last_receive_id=None,
                  create_time=None, expire_time=None, receive_time=None, last_receive_time=None, trend_indication=None,
                  raw_data=None):
 
@@ -38,6 +36,7 @@ class Alert(object):
         environment = environment or ['PROD']
         service = service or list()
         tags = tags or list()
+        timeout = timeout or CONF.alert_timeout
 
         create_time = create_time or datetime.datetime.utcnow()
         expire_time = expire_time or create_time + datetime.timedelta(seconds=timeout)

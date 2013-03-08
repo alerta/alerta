@@ -104,7 +104,7 @@ class Mongo(object):
 
         return self.db.alerts.insert(body, safe=True)
 
-    def modify_alert(self, environment, resource, event, **kwargs):
+    def modify_alert(self, environment, resource, event, update):
 
         # FIXME - no native find_and_modify method in this version of pymongo
         no_obj_error = "No matching object found"
@@ -112,15 +112,15 @@ class Mongo(object):
                                allowable_errors=[no_obj_error],
                                query={"environment": environment, "resource": resource,
                                       '$or': [{"event": event}, {"correlatedEvents": event}]},
-                               update={'$set': kwargs,
+                               update={'$set': update,
                                        '$push': {"history": {
-                                                    "createTime": kwargs['createTime'],
-                                                    "receiveTime": kwargs['receiveTime'],
-                                                    "severity": kwargs['severity'],
-                                                    "event": kwargs['event'],
-                                                    "value": kwargs['value'],
-                                                    "text": kwargs['text'],
-                                                    "id": kwargs['lastReceiveId']
+                                                    "createTime": update['createTime'],
+                                                    "receiveTime": update['receiveTime'],
+                                                    "severity": update['severity'],
+                                                    "event": update['event'],
+                                                    "value": update['value'],
+                                                    "text": update['text'],
+                                                    "id": update['lastReceiveId']
                                                 }
                                        }
                                },

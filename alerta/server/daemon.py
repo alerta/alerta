@@ -35,27 +35,29 @@ class WorkerThread(threading.Thread):
 
         while True:
             LOG.debug('Waiting on input queue...')
-            item = self.input_queue.get()
+            incomingAlert = self.input_queue.get()
 
-            if not item:
+            if not incomingAlert:
                 LOG.info('%s is shutting down.', self.getName())
                 break
 
-            if item.get_type() == 'Heartbeat':
+            if incomingAlert.get_type() == 'Heartbeat':
                 LOG.info('Heartbeat received...')
-                heartbeat = item.get_body()
+                heartbeat = incomingAlert.get_body()
                 self.db.update_hb(heartbeat['origin'], heartbeat['version'], heartbeat['createTime'],
                                   heartbeat['receiveTime'])
                 continue
             else:
                 LOG.info('Alert received...')
-                alert = item.get_body()
 
-            suppress = alert.transform_alert()
+            suppress = incomingAlert.transform_alert()
             if suppress:
                 LOG.warning('Suppressing alert %s', alert.get_id())
                 self.input_queue.task_done()
                 return
+
+            # Get alert attributes into a dict
+            alert = incomingAlert.get_body()
 
             if self.db.is_duplicate(alert['environment'], alert['resource'], alert['event'], alert['severity']):
 
@@ -114,7 +116,7 @@ class WorkerThread(threading.Thread):
                     "trendIndication": trend_indication,
                     "duplicateCount": 0
                 }
-                enrichedAlert = self.db.modify_alert(alert['environment'], alert['resource'], alert['event'], **update)
+                enrichedAlert = self.db.modify_alert(alert['environment'], alert['resource'], alert['event'], update)
 
                 new_status = severity.status_from_severity(previous_severity, alert['severity'])
                 if new_status:

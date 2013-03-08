@@ -34,7 +34,7 @@ class LoggerDaemon(Daemon):
         while not self.shuttingdown:
             try:
                 LOG.debug('Waiting for log messages...')
-                time.sleep(CONF.heartbeat_every)
+                time.sleep(CONF.loop_every)
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(version=Version)

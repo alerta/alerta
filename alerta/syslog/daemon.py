@@ -1,11 +1,8 @@
 
-import os
 import sys
 import socket
 import select
 import re
-import yaml
-import fnmatch
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -18,10 +15,6 @@ Version = '2.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-#TODO(nsatterl): add this to default system config
-SYSLOGCONF = '/opt/alerta/alerta/alert-syslog.yaml'
-PARSERDIR = '/opt/alerta/bin/parsers'
 
 
 class SyslogDaemon(Daemon):

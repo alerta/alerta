@@ -155,7 +155,7 @@ class IrcbotDaemon(Daemon):
         while not self.shuttingdown:
             try:
                 LOG.debug('Waiting for IRC messages...')
-                ip, op, rdy = select.select([irc], [], [], CONF.heartbeat_every)
+                ip, op, rdy = select.select([irc], [], [], CONF.loop_every)
                 if ip:
                     for i in ip:
                         if i == irc:
