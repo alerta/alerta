@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -x
+
 snmptrap -v2c -c ${2:-'public'} ${1:-'monitoring.gudev.gnl'} "" .1.3.6.1.6.3.1.1.5.1.0 0 s "This is a test coldStart trap"
 snmptrap -v2c -c ${2:-'public'} ${1:-'monitoring.gudev.gnl'} "" .1.3.6.1.6.3.1.1.5.2.0 0 s "This is a test warmStart trap"
 snmptrap -v2c -c ${2:-'public'} ${1:-'monitoring.gudev.gnl'} "" .1.3.6.1.6.3.1.1.5.3.0 0 s "This is a test linkDown trap"
