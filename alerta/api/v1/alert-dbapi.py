@@ -244,29 +244,29 @@ def main():
                 alertDetails.append(alert)
 
             total += 1
-            if alert['status'] == 'Open':
+            if alert['status'] == 'open':
                 opened += 1
-            if alert['status'] == 'Acknowledged':
+            if alert['status'] == 'acknowledged':
                 ack += 1
-            if alert['status'] == 'Closed':
+            if alert['status'] == 'closed':
                 closed += 1
 
             # Only OPEN or NORMAL alerts contribute to the severity counts
-            if alert['severity'] != 'Normal' and alert['status'] != 'Open':
+            if alert['severity'] != 'normal' and alert['status'] != 'open':
                 continue
-            if alert['severity'] == 'Critical':
+            if alert['severity'] == 'critical':
                 critical += 1
-            elif alert['severity'] == 'Major':
+            elif alert['severity'] == 'major':
                 major += 1
-            elif alert['severity'] == 'Minor':
+            elif alert['severity'] == 'minor':
                 minor += 1
-            elif alert['severity'] == 'Warning':
+            elif alert['severity'] == 'warning':
                 warning += 1
-            elif alert['severity'] == 'Normal':
+            elif alert['severity'] == 'normal':
                 normal += 1
-            elif alert['severity'] == 'Inform':
+            elif alert['severity'] == 'informational':
                 inform += 1
-            elif alert['severity'] == 'Debug':
+            elif alert['severity'] == 'debug':
                 debug += 1
 
         stat = { 'open': opened,
