@@ -175,6 +175,10 @@ class WorkerThread(threading.Thread):
                 self.input_queue.task_done()
                 LOG.info('%s : Alert forwarded to %s and %s', alert['id'], CONF.outbound_queue, CONF.outbound_topic)
 
+            LOG.debug('Send heartbeat...')
+            heartbeat = Heartbeat(version=Version)
+            self.mq.send(heartbeat)
+
         self.input_queue.task_done()
 
 
