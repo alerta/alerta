@@ -1,6 +1,5 @@
 
 import time
-import threading
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -8,24 +7,25 @@ from alerta.common.daemon import Daemon
 from alerta.alert import Alert, Heartbeat, severity
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.mail import Mailer
-
+from alerta.common.tokens import LeakyBucket
 
 Version = '2.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-_TokenThread = None            # Worker thread object
-_Lock = threading.Lock()       # Synchronization lock
-TOKEN_LIMIT = 20
-_token_rate = 30               # Add a token every 30 seconds
-tokens = 20
-
 
 class MailerMessage(MessageHandler):
 
+    def __init__(self, tokens):
+
+        self.tokens = tokens
+
     def on_message(self, headers, body):
-        global tokens
+
+        if not self.tokens.get_token():
+            LOG.warning('%s : No tokens left, rate limiting this alert', headers['correlation-id'])
+            return
 
         LOG.debug("Received: %s", body)
 
@@ -35,15 +35,6 @@ class MailerMessage(MessageHandler):
         # Only send email for CRITICAL, MAJOR or related alerts
         if (current_severity not in [severity.CRITICAL, severity.MAJOR]
                 or previous_severity not in [severity.CRITICAL, severity.MAJOR]):
-            return
-
-        if tokens:
-            _Lock.acquire()
-            tokens -= 1
-            _Lock.release()
-            LOG.debug('Taken a token, there are only %d left', tokens)
-        else:
-            LOG.warning('%s : No tokens left, rate limiting this alert', mailAlert.get_id())
             return
 
         email = Mailer(mailAlert)
@@ -57,12 +48,12 @@ class MailerDaemon(Daemon):
         self.running = True
 
         # Start token bucket thread
-        _TokenThread = TokenTopUp()
-        _TokenThread.start()
+        tokens = LeakyBucket(tokens=20, rate=30)
+        tokens.start()
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect(callback=MailerMessage())
+        self.mq.connect(callback=MailerMessage(tokens))
         self.mq.subscribe(destination=CONF.outbound_queue)
 
         while not self.shuttingdown:
@@ -79,37 +70,8 @@ class MailerDaemon(Daemon):
 
         LOG.info('Shutdown request received...')
         self.running = False
+        tokens.shutdown()
 
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()
 
-
-class TokenTopUp(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-        self.running = False
-        self.shuttingdown = False
-
-    def shutdown(self):
-        self.shuttingdown = True
-        if not self.running:
-            return
-        self.join()
-
-    def run(self):
-        global _token_rate, tokens
-        self.running = True
-
-        while not self.shuttingdown:
-            if self.shuttingdown:
-                break
-
-            if tokens < TOKEN_LIMIT:
-                _Lock.acquire()
-                tokens += 1
-                _Lock.release()
-
-            if not self.shuttingdown:
-                time.sleep(_token_rate)
-
-        self.running = False
