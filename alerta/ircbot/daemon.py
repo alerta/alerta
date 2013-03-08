@@ -6,8 +6,7 @@
 ########################################
 
 import sys
-import time
-import threading
+
 import socket
 import select
 import json
@@ -28,12 +27,6 @@ CONF = config.CONF
 # An IRC client may send 1 message every 2 seconds
 # See section 5.8 in http://datatracker.ietf.org/doc/rfc2813/
 #
-
-_TokenThread = None            # Worker thread object
-_Lock = threading.Lock()       # Synchronization lock
-TOKEN_LIMIT = 5
-_token_rate = 2                # Add a token every 2 seconds
-tokens = 5
 
 
 # TODO(nsatterl): this should be in the Alert class
@@ -158,32 +151,4 @@ class IrcbotDaemon(Daemon):
         self.mq.disconnect()
 
 
-class TokenTopUp(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-        self.running = False
-        self.shuttingdown = False
 
-    def shutdown(self):
-        self.shuttingdown = True
-        if not self.running:
-            return
-        self.join()
-
-    def run(self):
-        global _token_rate, tokens
-        self.running = True
-
-        while not self.shuttingdown:
-            if self.shuttingdown:
-                break
-
-            if tokens < TOKEN_LIMIT:
-                _Lock.acquire()
-                tokens += 1
-                _Lock.release()
-
-            if not self.shuttingdown:
-                time.sleep(_token_rate)
-
-        self.running = False

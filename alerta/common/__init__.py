@@ -1,4 +1,4 @@
 
-from alerta.common import log as logging
+#from alerta.common import log as logging
 
-LOG = logging.getLogger(__name__)
+#LOG = logging.getLogger(__name__)

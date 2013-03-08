@@ -18,7 +18,7 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-class Mail(object):
+class Mailer(object):
 
     def __init__(self, alert):
 
@@ -108,12 +108,14 @@ class Mail(object):
         self.text = text
         self.html = html
 
-    def send(self):
+    def send(self, to=None):
+
+        to = to or ','.join(CONF.mail_list)
 
         msg_root = MIMEMultipart('related')
         msg_root['Subject'] = self.subject
         msg_root['From'] = CONF.mail_user
-        msg_root['To'] = ','.join(CONF.mail_list)
+        msg_root['To'] = to
         msg_root.preamble = 'This is a multi-part message in MIME format.'
 
         msg_alt = MIMEMultipart('alternative')

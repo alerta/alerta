@@ -7,6 +7,7 @@ from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.alert import Alert, Heartbeat, severity
 from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.mail import Mailer
 
 
 Version = '2.0.0'
@@ -29,11 +30,11 @@ class MailerMessage(MessageHandler):
         LOG.debug("Received: %s", body)
 
         mailAlert = Alert.parse_alert(body)
-        alert = mailAlert.get_body()
+        current_severity, previous_severity = mailAlert.get_severity()
 
         # Only send email for CRITICAL, MAJOR or related alerts
-        if (alert['severity'] not in [severity.CRITICAL, severity.MAJOR]
-                or alert['previousSeverity'] not in [severity.CRITICAL, severity.MAJOR]):
+        if (current_severity not in [severity.CRITICAL, severity.MAJOR]
+                or previous_severity not in [severity.CRITICAL, severity.MAJOR]):
             return
 
         if tokens:
@@ -42,16 +43,11 @@ class MailerMessage(MessageHandler):
             _Lock.release()
             LOG.debug('Taken a token, there are only %d left', tokens)
         else:
-            LOG.warning('%s : No tokens left, rate limiting this alert', alert['lastReceiveId'])
+            LOG.warning('%s : No tokens left, rate limiting this alert', mailAlert.get_id())
             return
 
-        text, html = format_mail(alert)
-        subject = '[%s] %s' % (alert['status'], alert['summary'])
-
-        LOG.info('%s : Send email to %s', alert['lastReceiveId'], ','.join(CONF.mail_list))
-        send_mail(subject, text, html)
-
-
+        email = Mailer(mailAlert)
+        email.send()
 
 
 class MailerDaemon(Daemon):

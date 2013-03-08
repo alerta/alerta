@@ -31,6 +31,8 @@ class Alert(object):
         prog = os.path.basename(sys.argv[0])
 
         self.alertid = alertid or str(uuid4())
+        self.severity = severity
+        self.previous_severity = previous_severity
 
         correlate = correlate or list()
         environment = environment or ['PROD']
@@ -92,7 +94,7 @@ class Alert(object):
         return json.dumps(self.alert, cls=DateEncoder, indent=4)
 
     def get_id(self, short=False):
-        if short is True:
+        if short:
             return self.alertid.split('-')[0]
         else:
             return self.alertid
@@ -105,6 +107,9 @@ class Alert(object):
 
     def get_type(self):
         return self.header['type']
+
+    def get_severity(self):
+        return self.severity, self.previous_severity
 
     def receive_now(self):
         self.alert['receiveTime'] = datetime.datetime.utcnow()
