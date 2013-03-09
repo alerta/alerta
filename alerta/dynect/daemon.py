@@ -1,14 +1,13 @@
-import sys
+
 import time
 import json
-from Queue import Queue
 
 from dynect.DynectDNS import DynectRest
 
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat
+from alerta.alert import Alert, Heartbeat, severity
 from alerta.common.mq import Messaging
 
 Version = '2.0.0'
@@ -24,8 +23,9 @@ class DynectDaemon(Daemon):
 
         self.info = {}
         self.last_info = {}
-        self.count = 0
+        self.count = {}
         self.updating = False
+        self.last_change = {}
 
     def run(self):
 
@@ -58,23 +58,22 @@ class DynectDaemon(Daemon):
 
         for resource in self.info:
 
-            if self.last_info[resource]['status'] != self.info[resource]['status'] or self.count == 10:
+            LOG.debug('resource = %s, info = %s', resource, self.info[resource])
 
-                LOG.debug('Info => %s', resource)
+            if self.last_info[resource]['status'] != self.info[resource]['status'] or self.count[resource] % 10:
 
                 if resource.startswith('gslb-'):
 
                     # gslb status       = ok | unk | trouble | failover
 
-                    LOG.info('GSLB state change from %s to %s' % (self.info[resource][0], self.last_self.info[resource][0]))
-                    text = 'GSLB status is %s.' % self.last_info[resource][0]
+                    text = 'GSLB status is %s.' % self.info[resource]['status']
 
-                    if 'ok' in self.info[resource][0]:
+                    if self.info[resource]['status'] == 'ok':
                         event = 'GslbOK'
-                        severity = 'NORMAL'
+                        sev = severity.NORMAL
                     else:
                         event = 'GslbNotOK'
-                        severity = 'CRITICAL'
+                        sev = severity.CRITICAL
                     correlate = ['GslbOK', 'GslbNotOK']
 
                 elif resource.startswith('pool-'):
@@ -83,36 +82,34 @@ class DynectDaemon(Daemon):
                     # pool serve_mode   = obey | always | remove | no
                     # pool weight	(1-15)
 
-                    LOG.info('Pool state change from %s to %s' % (self.info[resource][0], self.last_info[resource][0]))
-
-                    if 'up:obey' in self.info[resource][0] and self.check_weight(self.info[resource][1], resource) == True:
+                    if 'up:obey' in self.info[resource]['status'] and self.check_weight(self.info[resource][1], resource) is True:
                         event = 'PoolUp'
-                        severity = 'NORMAL'
-                        text = 'Pool status is normal'
+                        sev = severity.NORMAL
                     else:
-                        if 'down' in self.info[resource][0]:
+                        if 'down' in self.info[resource]['status']:
                             event = 'PoolDown'
-                            severity = 'MAJOR'
+                            sev = severity.MAJOR
                             text = 'Pool is down'
-                        elif 'obey' not in self.info[resource][0]:
+                        elif 'obey' not in self.info[resource]['status']:
                             event = 'PoolServe'
-                            severity = 'MAJOR'
+                            sev = severity.MAJOR
                             text = 'Pool with an incorrect serve mode'
-                        elif self.check_weight(self.info[resource][1], resource) == False:
+                        elif self.check_weight(self.info[resource][1], resource) is False:
                             event = 'PoolWeightError'
-                            severity = 'MINOR'
+                            sev = severity.MINOR
                             text = 'Pool with an incorrect weight'
                     correlate = ['PoolUp', 'PoolDown', 'PoolServe', 'PoolWeightError']
 
                 # Defaults
                 group = 'GSLB'
-                value = self.info[resource][0]
+                value = self.info[resource]['status']
                 environment = ['PROD']
                 service = ['Network']
                 tags = list()
                 timeout = None
                 threshold_info = None
                 summary = None
+                raw_data = self.info[resource]['rawData']
 
                 dynectAlert = Alert(
                     resource=resource,
@@ -120,7 +117,7 @@ class DynectDaemon(Daemon):
                     correlate=correlate,
                     group=group,
                     value=value,
-                    severity=severity,
+                    severity=sev,
                     environment=environment,
                     service=service,
                     text=text,
@@ -129,25 +126,23 @@ class DynectDaemon(Daemon):
                     timeout=timeout,
                     threshold_info=threshold_info,
                     summary=summary,
-                    raw_data=None,
+                    raw_data=raw_data,
                 )
 
                 self.mq.send(dynectAlert)
 
-        if self.count:
-            self.count -= 1
-        else:
-            self.count = 10
-
+            self.count[resource] += 1
+            LOG.debug('count = %s', self.count[resource])
 
     def check_weight(self, parent, resource):
         
-        weight = self.info[resource][0].split(':')[2]
-        for resource in self.info:
-            if (resource.startswith('pool-') and self.info[resource][1] == parent and resource != resource and weight ==
-                    self.info[resource][0].split(':')[2]):
-                return True
-        return False
+        weight = self.info[resource]['status'].split(':')[2]
+
+        for pool in [resource for resource in self.info if resource.startswith('pool') and self.info[resource]['gslb'] == parent]:
+            if self.info[pool]['status'].split(':')[2] != weight:
+                return False
+
+        return True
 
     def queryDynect(self):
 
@@ -157,6 +152,7 @@ class DynectDaemon(Daemon):
             if CONF.debug and CONF.use_stderr:
                 rest_iface.verbose = True
 
+            # login
             credentials = {
                 'customer_name': CONF.dynect_customer,
                 'user_name': CONF.dynect_username,
@@ -197,6 +193,7 @@ class DynectDaemon(Daemon):
             LOG.info('Finish quering and object discovery.')
             LOG.info('GSLBs and Pools: %s', json.dumps(self.info, indent=4))
 
+            # logout
             rest_iface.execute('/Session/', 'DELETE')
 
         except Exception, e:
