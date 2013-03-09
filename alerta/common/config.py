@@ -88,6 +88,10 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'aql_user': '',
         'aql_password': '',
         'notify_wait': 300,  # NB. seconds wait before sending SMS
+
+        'dynect_customer': 'theguardian',
+        'dynect_username': None,
+        'dynect_password': None,
     }
     CONF.update(SYSTEM_DEFAULTS)
 

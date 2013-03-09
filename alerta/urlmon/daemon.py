@@ -79,6 +79,7 @@ class NoRedirection(urllib2.HTTPRedirectHandler):
 
 
 class WorkerThread(threading.Thread):
+
     def __init__(self, mq, queue):
 
         threading.Thread.__init__(self)
