@@ -1,6 +1,5 @@
 import sys
 import datetime
-import json
 import pytz
 
 import pymongo
@@ -71,7 +70,7 @@ class Mongo(object):
             correlate=response['correlatedEvents'],
             group=response['group'],
             value=response['value'],
-            severity=response['severity'],        # TODO(nsatterl): convert to severity type
+            severity=response['severity'],
             environment=response['environment'],
             service=response['service'],
             text=response['text'],
@@ -108,24 +107,47 @@ class Mongo(object):
 
         # FIXME - no native find_and_modify method in this version of pymongo
         no_obj_error = "No matching object found"
-        return self.db.command("findAndModify", 'alerts',
-                               allowable_errors=[no_obj_error],
-                               query={"environment": environment, "resource": resource,
-                                      '$or': [{"event": event}, {"correlatedEvents": event}]},
-                               update={'$set': update,
-                                       '$push': {"history": {
-                                                    "createTime": update['createTime'],
-                                                    "receiveTime": update['receiveTime'],
-                                                    "severity": update['severity'],
-                                                    "event": update['event'],
-                                                    "value": update['value'],
-                                                    "text": update['text'],
-                                                    "id": update['lastReceiveId']
-                                                }
-                                       }
-                               },
-                               new=True,
-                               fields={"history": 0})['value']
+        response = self.db.command("findAndModify", 'alerts',
+                                   allowable_errors=[no_obj_error],
+                                   query={"environment": environment, "resource": resource,
+                                          '$or': [{"event": event}, {"correlatedEvents": event}]},
+                                   update={'$set': update,
+                                           '$push': {"history": {
+                                                        "createTime": update['createTime'],
+                                                        "receiveTime": update['receiveTime'],
+                                                        "severity": update['severity'],
+                                                        "event": update['event'],
+                                                        "value": update['value'],
+                                                        "text": update['text'],
+                                                        "id": update['lastReceiveId']
+                                                    }
+                                           }
+                                   },
+                                   new=True,
+                                   fields={"history": 0})['value']
+
+        return Alert(
+            alertid=response['_id'],
+            resource=response['resource'],
+            event=response['event'],
+            correlate=response['correlatedEvents'],
+            group=response['group'],
+            value=response['value'],
+            severity=response['severity'],
+            environment=response['environment'],
+            service=response['service'],
+            text=response['text'],
+            event_type=response['type'],
+            tags=response['tags'],
+            origin=response['origin'],
+            threshold_info=response['thresholdInfo'],
+            summary=response['summary'],
+            timeout=response['timeout'],
+            create_time=response['createTime'],
+            receive_time=response['receiveTime'],
+            last_receive_time=response['lastReceiveTime'],
+            trend_indication=response['trendIndication'],
+        )
 
     def duplicate_alert(self, environment, resource, event, **kwargs):
 
@@ -169,6 +191,7 @@ class Mongo(object):
         except pymongo.errors.OperationFailure, e:
             LOG.error('MongoDB error: %s', e)
 
+    # TODO(nsatterl): is this needed?
     # def save_heartbeat(self, heartbeat):
     #
     #     body = heartbeat.get_body()

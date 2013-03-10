@@ -209,6 +209,7 @@ class ServerMessage(MessageHandler):
 class AlertaDaemon(Daemon):
 
     def run(self):
+
         self.running = True
 
         # Create internal queue
@@ -220,7 +221,7 @@ class AlertaDaemon(Daemon):
         self.mq.subscribe()
 
         # Start worker threads
-        LOG.debug('Starting %s alert handler threads...', CONF.server_threads)
+        LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
             w = WorkerThread(self.mq, self.queue)
             try:
