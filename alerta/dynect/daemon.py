@@ -17,6 +17,7 @@ CONF = config.CONF
 
 
 class DynectDaemon(Daemon):
+
     def __init__(self, prog):
 
         Daemon.__init__(self, prog)
@@ -61,12 +62,16 @@ class DynectDaemon(Daemon):
             LOG.debug('resource %s', resource)
 
             if resource not in self.last_info:
-                self.count[resource] = 9
+                self.count[resource] = 0
                 continue
             LOG.debug('info => %s', self.info[resource])
             LOG.debug('last info => %s', self.last_info[resource])
 
-            if self.last_info[resource]['status'] != self.info[resource]['status'] or self.count[resource] % 10:
+            self.count[resource] += 1
+            LOG.debug('count = %s', self.count[resource])
+
+            if (self.last_info[resource]['status'] != self.info[resource]['status']
+                    or self.count[resource] == 1 or self.count[resource] % 10):
 
                 if resource.startswith('gslb-'):
 
@@ -106,6 +111,10 @@ class DynectDaemon(Daemon):
                         text = 'Pool status is normal'
                     correlate = ['PoolUp', 'PoolDown', 'PoolServe', 'PoolWeightError']
 
+                else:
+                    LOG.warning('Unknown resource type: %s', resource)
+                    continue
+
                 # Defaults
                 group = 'GSLB'
                 value = self.info[resource]['status']
@@ -136,9 +145,6 @@ class DynectDaemon(Daemon):
                 )
 
                 self.mq.send(dynectAlert)
-
-            self.count[resource] += 1
-            LOG.debug('count = %s', self.count[resource])
 
     def check_weight(self, parent, resource):
         
