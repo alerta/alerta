@@ -1,12 +1,9 @@
+# FOG credentials file. see http://fog.io/
 
-filter: tags=cloud:AWS/EC2&status=OPEN|ACK|CLOSED|EXPIRED
+:default:
+  :aws_access_key_id: AKIAIISJV5TZ3FPWU3TA
+  :aws_secret_access_key: ABCDEFGHIJKLMNOP1234556/s
 
-regions: [ 'eu-west-1','us-east-1']
-
-accounts:
-  your-aws-account-name:
-    aws_access_key_id: ACCESS_KEY_ID_HERE
-    aws_secret_access_key: SECRET_ACCESS_KEY_HERE
-  another-aws-account-name:
-    aws_access_key_id: ACCESS_KEY_ID_HERE
-    aws_secret_access_key: SECRET_ACCESS_KEY_HERE
+:other:
+  :aws_access_key_id: AKIAIISJV5TZ3FPWU3TA
+  :aws_secret_access_key: ABCDEFGHIJKLMNOP1234556/s
