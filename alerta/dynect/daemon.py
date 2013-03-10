@@ -37,10 +37,10 @@ class DynectDaemon(Daemon):
 
         while not self.shuttingdown:
             try:
-                self.last_info = self.info
-
                 self.queryDynect()
                 self.alertDynect()
+
+                self.last_info = self.info
 
                 if self.updating:
                     LOG.debug('Send heartbeat...')
@@ -58,7 +58,13 @@ class DynectDaemon(Daemon):
 
         for resource in self.info:
 
-            LOG.debug('resource = %s, info = %s', resource, self.info[resource])
+            LOG.debug('resource %s', resource)
+
+            if resource not in self.last_info:
+                self.count[resource] = 9
+                continue
+            LOG.debug('info => %s', self.info[resource])
+            LOG.debug('last info => %s', self.last_info[resource])
 
             if self.last_info[resource]['status'] != self.info[resource]['status'] or self.count[resource] % 10:
 
@@ -82,22 +88,22 @@ class DynectDaemon(Daemon):
                     # pool serve_mode   = obey | always | remove | no
                     # pool weight	(1-15)
 
-                    if 'up:obey' in self.info[resource]['status'] and self.check_weight(self.info[resource][1], resource) is True:
+                    if 'down' in self.info[resource]['status']:
+                        event = 'PoolDown'
+                        sev = severity.MAJOR
+                        text = 'Pool is down'
+                    elif 'obey' not in self.info[resource]['status']:
+                        event = 'PoolServe'
+                        sev = severity.MAJOR
+                        text = 'Pool with an incorrect serve mode'
+                    elif self.check_weight(self.info[resource]['gslb'], resource) is False:
+                        event = 'PoolWeightError'
+                        sev = severity.MINOR
+                        text = 'Pool with an incorrect weight'
+                    else:
                         event = 'PoolUp'
                         sev = severity.NORMAL
-                    else:
-                        if 'down' in self.info[resource]['status']:
-                            event = 'PoolDown'
-                            sev = severity.MAJOR
-                            text = 'Pool is down'
-                        elif 'obey' not in self.info[resource]['status']:
-                            event = 'PoolServe'
-                            sev = severity.MAJOR
-                            text = 'Pool with an incorrect serve mode'
-                        elif self.check_weight(self.info[resource][1], resource) is False:
-                            event = 'PoolWeightError'
-                            sev = severity.MINOR
-                            text = 'Pool with an incorrect weight'
+                        text = 'Pool status is normal'
                     correlate = ['PoolUp', 'PoolDown', 'PoolServe', 'PoolWeightError']
 
                 # Defaults
@@ -139,9 +145,9 @@ class DynectDaemon(Daemon):
         weight = self.info[resource]['status'].split(':')[2]
 
         for pool in [resource for resource in self.info if resource.startswith('pool') and self.info[resource]['gslb'] == parent]:
+            LOG.debug('pool %s weight %s <=> %s', pool, self.info[pool]['status'].split(':')[2], weight)
             if self.info[pool]['status'].split(':')[2] != weight:
                 return False
-
         return True
 
     def queryDynect(self):
@@ -183,7 +189,9 @@ class DynectDaemon(Daemon):
                     fqdn = lb.split('/')[4]  # eg. /REST/LoadBalance/guardiannews.com/id.guardiannews.com/
                     response = rest_iface.execute('/LoadBalance/' + zone + '/' + fqdn + '/', 'GET')
                     LOG.debug('/LoadBalance/%s/%s/ => %s', zone, fqdn, json.dumps(response, indent=4))
-                    self.info['gslb-' + fqdn] = {'status': response['data']['status'], 'gslb': fqdn}
+                    status = response['data']['status']
+                    monitor = response['data']['monitor']
+                    self.info['gslb-' + fqdn] = {'status': status, 'gslb': fqdn, 'rawData': monitor}
 
                     for pool in response['data']['pool']:
                         name = '%s-%s' % (fqdn, pool['label'].replace(' ', '-'))

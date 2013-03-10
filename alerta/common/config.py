@@ -87,11 +87,11 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'aql_endpoint': 'http://gw.aql.com/sms/sms_gw.php',
         'aql_user': '',
         'aql_password': '',
-        'notify_wait': 300,  # NB. seconds wait before sending SMS
+        'notify_wait': 300,  # seconds to wait before sending SMS
 
         'dynect_customer': 'theguardian',
-        'dynect_username': None,
-        'dynect_password': None,
+        'dynect_username': '',
+        'dynect_password': '',
     }
     CONF.update(SYSTEM_DEFAULTS)
 
