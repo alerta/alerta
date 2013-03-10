@@ -22,11 +22,9 @@ Version = '2.0.0'
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-URLFILE = '/opt/alerta/alerta/alert-urlmon.yaml'
+_REQUEST_TIMEOUT = 15  # seconds
 
-REQUEST_TIMEOUT = 15 # seconds
-
-HTTP_ALERTS = [
+_HTTP_ALERTS = [
     'HttpConnectionError',
     'HttpServerError',
     'HttpClientError',
@@ -46,22 +44,13 @@ HTTP_RESPONSES[506] = 'Variant Also Negotiates'
 HTTP_RESPONSES[507] = 'Insufficient Storage'
 HTTP_RESPONSES[510] = 'Not Extended'
 
-_check_rate = 60             # Check rate of alerts
-
-# Global variables
-urls = dict()
-
-currentCount = dict()
-currentState = dict()
-previousEvent = dict()
-
 
 # Initialise Rules
 def init_urls():
     global urls
     LOG.info('Loading URLs...')
     try:
-        urls = yaml.load(open(URLFILE))
+        urls = yaml.load(open(CONF.yaml_config))
     except Exception, e:
         LOG.error('Failed to load URLs: %s', e)
     LOG.info('Loaded %d URLs OK', len(urls))
@@ -83,6 +72,11 @@ class WorkerThread(threading.Thread):
     def __init__(self, mq, queue):
 
         threading.Thread.__init__(self)
+        LOG.debug('Initialising %s...', self.getName())
+
+        self.currentCount = {}
+        self.currentState = {}
+        self.previousEvent = {}
 
         self.input_queue = queue   # internal queue
         self.mq = mq               # message broker
@@ -91,20 +85,20 @@ class WorkerThread(threading.Thread):
 
         while True:
             LOG.debug('Waiting on input queue...')
-            item = self.input_queue.get()
+            check = self.input_queue.get()
 
-            if not item:
+            if not check:
                 LOG.info('%s is shutting down.', self.getName())
                 break
 
             # TODO(nsatterl): add to system defaults
-            search_string = item.get('search', None)
-            rule = item.get('rule', None)
-            warn_thold = item.get('warning', 2000)  # ms
-            crit_thold = item.get('critical', 5000) # ms
-            post = item.get('post', None)
+            search_string = check.get('search', None)
+            rule = check.get('rule', None)
+            warn_thold = check.get('warning', 2000)  # ms
+            crit_thold = check.get('critical', 5000) # ms
+            post = check.get('post', None)
 
-            LOG.info('%s checking %s', self.getName(), item['url'])
+            LOG.info('%s checking %s', self.getName(), check['url'])
 
             response = ''
             code = None
@@ -113,15 +107,15 @@ class WorkerThread(threading.Thread):
             start = time.time()
 
             headers = dict()
-            if 'headers' in item:
-                headers = dict(item['headers'])
+            if 'headers' in check:
+                headers = dict(check['headers'])
 
-            username = item.get('username', None)
-            password = item.get('password', None)
-            realm = item.get('realm', None)
-            uri = item.get('uri', None)
+            username = check.get('username', None)
+            password = check.get('password', None)
+            realm = check.get('realm', None)
+            uri = check.get('uri', None)
 
-            proxy = item.get('proxy', False)
+            proxy = check.get('proxy', False)
             if proxy:
                 proxy_handler = urllib2.ProxyHandler(proxy)
 
@@ -148,10 +142,10 @@ class WorkerThread(threading.Thread):
 
             try:
                 if post:
-                    req = urllib2.Request(item['url'], json.dumps(post), headers=headers)
+                    req = urllib2.Request(check['url'], json.dumps(post), headers=headers)
                 else:
-                    req = urllib2.Request(item['url'], headers=headers)
-                response = urllib2.urlopen(req, None, REQUEST_TIMEOUT)
+                    req = urllib2.Request(check['url'], headers=headers)
+                response = urllib2.urlopen(req, None, _REQUEST_TIMEOUT)
             except ValueError, e:
                 LOG.error('Request failed: %s', e)
                 continue
@@ -175,7 +169,7 @@ class WorkerThread(threading.Thread):
                 event = 'HttpConnectionError'
                 severity = 'MAJOR'
                 value = reason
-                descrStr = 'Error during connection or data transfer (timeout=%d).' % (REQUEST_TIMEOUT)
+                descrStr = 'Error during connection or data transfer (timeout=%d).' % _REQUEST_TIMEOUT
             elif code >= 500:
                 event = 'HttpServerError'
                 severity = 'MAJOR'
@@ -200,12 +194,12 @@ class WorkerThread(threading.Thread):
                     event = 'HttpResponseSlow'
                     severity = 'CRITICAL'
                     value = '%dms' % rtt
-                    descrStr = 'Website available but exceeding critical RT thresholds of %dms' % (crit_thold)
+                    descrStr = 'Website available but exceeding critical RT thresholds of %dms' % crit_thold
                 elif rtt > warn_thold:
                     event = 'HttpResponseSlow'
                     severity = 'WARNING'
                     value = '%dms' % rtt
-                    descrStr = 'Website available but exceeding warning RT thresholds of %dms' % (warn_thold)
+                    descrStr = 'Website available but exceeding warning RT thresholds of %dms' % warn_thold
                 if search_string:
                     LOG.debug('Searching for %s', search_string)
                     found = False
@@ -219,7 +213,7 @@ class WorkerThread(threading.Thread):
                         event = 'HttpContentError'
                         severity = 'MINOR'
                         value = 'Search failed'
-                        descrStr = 'Website available but pattern "%s" not found' % (search_string)
+                        descrStr = 'Website available but pattern "%s" not found' % search_string
                 elif rule:
                     LOG.debug('Evaluating rule %s', rule)
                     if 'Content-type' in headers and headers['Content-type'] == 'application/json':
@@ -233,14 +227,14 @@ class WorkerThread(threading.Thread):
                             event = 'HttpContentError'
                             severity = 'MINOR'
                             value = 'Rule failed'
-                            descrStr = 'Website available but rule evaluation failed (%s)' % (rule)
+                            descrStr = 'Website available but rule evaluation failed (%s)' % rule
             elif code >= 100:
                 event = 'HttpInformational'
                 severity = 'NORMAL'
                 value = '%s (%d)' % (status, code)
                 descrStr = 'HTTP server responded with status code %d in %dms' % (code, rtt)
 
-            LOG.debug("URL: %s, Status: %s (%s), Round-Trip Time: %dms -> %s", item['url'], status, code, rtt,
+            LOG.debug("URL: %s, Status: %s (%s), Round-Trip Time: %dms -> %s", check['url'], status, code, rtt,
                       event)
 
             # Forward metric data to Ganglia
@@ -249,62 +243,63 @@ class WorkerThread(threading.Thread):
             else:
                 avail = 0.0
 
-            if GMETRIC_SEND:
-                gmetric_cmd = "%s --name availability-%s --value %.1f --type float --units \" \" --slope both --group %s %s" % (
-                    GMETRIC_CMD, item['resource'], avail, ','.join(item['service']),
-                    GMETRIC_OPTIONS) # XXX - gmetric doesn't support multiple groups
-                LOG.debug("%s", gmetric_cmd)
-                os.system("%s" % gmetric_cmd)
-
-                gmetric_cmd = "%s --name response_time-%s --value %d --type uint16 --units ms --slope both --group %s %s" % (
-                    GMETRIC_CMD, item['resource'], rtt, ','.join(item['service']), GMETRIC_OPTIONS)
-                LOG.debug("%s", gmetric_cmd)
-                os.system("%s" % gmetric_cmd)
+            # if GMETRIC_SEND:
+            #     gmetric_cmd = "%s --name availability-%s --value %.1f --type float --units \" \" --slope both --group %s %s" % (
+            #         GMETRIC_CMD, check['resource'], avail, ','.join(check['service']),
+            #         GMETRIC_OPTIONS) # XXX - gmetric doesn't support multiple groups
+            #     LOG.debug("%s", gmetric_cmd)
+            #     os.system("%s" % gmetric_cmd)
+            # 
+            #     gmetric_cmd = "%s --name response_time-%s --value %d --type uint16 --units ms --slope both --group %s %s" % (
+            #         GMETRIC_CMD, check['resource'], rtt, ','.join(check['service']), GMETRIC_OPTIONS)
+            #     LOG.debug("%s", gmetric_cmd)
+            #     os.system("%s" % gmetric_cmd)
 
             # Set necessary state variables if currentState is unknown
-            res = item['resource']
-            if (res) not in currentState:
-                currentState[(res)] = event
-                currentCount[(res, event)] = 0
-                previousEvent[(res)] = event
+            res = check['resource']
+            if (res) not in self.currentState:
+                self.currentState[(res)] = event
+                self.currentCount[(res, event)] = 0
+                self.previousEvent[(res)] = event
 
-            if currentState[
+            if self.currentState[
                 (res)] != event:                                                          # Change of threshold state
-                currentCount[(res, event)] = currentCount.get((res, event), 0) + 1
-                currentCount[(res, currentState[
+                self.currentCount[(res, event)] = self.currentCount.get((res, event), 0) + 1
+                self.currentCount[(res, self.currentState[
                     (res)])] = 0                                          # zero-out previous event counter
-                currentState[(res)] = event
-            elif currentState[(
+                self.currentState[(res)] = event
+            elif self.currentState[(
                 res)] == event:                                                        # Threshold state has not changed
-                currentCount[(res, event)] += 1
+                self.currentCount[(res, event)] += 1
 
-            LOG.debug('currentState = %s, currentCount = %d', currentState[(res)], currentCount[(res, event)])
+            LOG.debug('currentState = %s, currentCount = %d', self.currentState[(res)], self.currentCount[(res, event)])
 
             # Determine if should send a repeat alert
-            if currentCount[(res, event)] < item.get('count', 1):
+            if self.currentCount[(res, event)] < check.get('count', 1):
                 repeat = False
-                LOG.debug('Send repeat alert = %s (curr %s < threshold %s)', repeat, currentCount[(res, event)],
-                          item.get('count', 1))
+                LOG.debug('Send repeat alert = %s (curr %s < threshold %s)', repeat, self.currentCount[(res, event)],
+                          check.get('count', 1))
             else:
-                repeat = (currentCount[(res, event)] - item.get('count', 1)) % item.get('repeat', 1) == 0
-                LOG.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, currentCount[(res, event)],
-                          item.get('count', 1), item.get('repeat', 1))
+                repeat = (self.currentCount[(res, event)] - check.get('count', 1)) % check.get('repeat', 1) == 0
+                LOG.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, self.currentCount[(res, event)],
+                          check.get('count', 1), check.get('repeat', 1))
 
-            LOG.debug('Send alert if prevEvent %s != %s AND thresh %d == %s', previousEvent[(res)], event,
-                      currentCount[(res, event)], item.get('count', 1))
+            LOG.debug('Send alert if prevEvent %s != %s AND thresh %d == %s', self.previousEvent[(res)], event,
+                      self.currentCount[(res, event)], check.get('count', 1))
 
             # Determine if current threshold count requires an alert
-            if ((previousEvent[(res)] != event and currentCount[(res, event)] == item.get('count', 1))
-                or (previousEvent[(res)] == event and repeat)):
-                resource = item['resource']
-                correlate = HTTP_ALERTS
+            if ((self.previousEvent[(res)] != event and self.currentCount[(res, event)] == check.get('count', 1))
+                or (self.previousEvent[(res)] == event and repeat)):
+
+                resource = check['resource']
+                correlate = _HTTP_ALERTS
                 group = 'Web'
-                environment = item['environment']
-                service = item['service']
+                environment = check['environment']
+                service = check['service']
                 text = descrStr
-                tags = item.get('tags', list())
+                tags = check.get('tags', list())
                 threshold_info = "%s : RT > %d RT > %d x %s" % (
-                    item['url'], warn_thold, crit_thold, item.get('count', 1))
+                    check['url'], warn_thold, crit_thold, check.get('count', 1))
 
                 urlmonAlert = Alert(
                     resource=resource,
@@ -318,13 +313,12 @@ class WorkerThread(threading.Thread):
                     text=text,
                     event_type='serviceAlert',
                     tags=tags,
-                    origin='%s/%s' % ('alert-syslog', os.uname()[1]),
                     threshold_info=threshold_info,
                 )
                 self.mq.send(urlmonAlert)
 
                 # Keep track of previous event
-                previousEvent[(res)] = event
+                self.previousEvent[(res)] = event
 
             self.input_queue.task_done()
             LOG.info('%s check complete.', self.getName())
@@ -333,6 +327,7 @@ class WorkerThread(threading.Thread):
 
 
 class UrlmonDaemon(Daemon):
+
     def run(self):
 
         self.running = True
@@ -346,11 +341,12 @@ class UrlmonDaemon(Daemon):
 
         # Initialiase alert rules
         init_urls()
-        url_mod_time = os.path.getmtime(URLFILE)
+        url_mod_time = os.path.getmtime(CONF.yaml_config)
 
         # Start worker threads
+        LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.queue)
+            w = WorkerThread(self.mq, self.queue)
             try:
                 w.start()
             except Exception, e:
