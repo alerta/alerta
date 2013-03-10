@@ -217,6 +217,8 @@ class QueryClient(object):
             except urllib2.URLError, e:
                 print "ERROR: Alert query %s failed - %s" % (url, e)
                 sys.exit(1)
+            except (KeyboardInterrupt, SystemExit):
+                sys.exit(0)
             end = time.time()
 
             if CONF.sortby in ['createTime', 'receiveTime', 'lastReceiveTime']:
@@ -366,7 +368,10 @@ class QueryClient(object):
                                 update_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT), historical_status) + end_color)
 
             if CONF.watch:
-                time.sleep(CONF.interval)
+                try:
+                    time.sleep(CONF.interval)
+                except (KeyboardInterrupt, SystemExit):
+                    sys.exit(0)
                 query['from-date'] = response['alerts']['lastTime']
                 url = "%s?%s" % (API_URL, urllib.urlencode(query))
             else:
