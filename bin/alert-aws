@@ -22,8 +22,6 @@ LOG = logging.getLogger('alerta.aws')
 CONF = config.CONF
 
 if __name__ == '__main__':
-
-    # TODO(nsatterl): awsconf = yaml.load(open(AWSCONF))
     config.parse_args(sys.argv[1:], version=Version)
     logging.setup('alerta')
     aws = AwsDaemon('alert-aws')

@@ -35,6 +35,9 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'api_port': 80,
         'api_endpoint': '/alerta/api/v1',   # eg. /Services/API
 
+        'http_proxy': None,
+        'https_proxy': None,
+
         'server_threads': 4,
         'alert_timeout': 86400,  # seconds
         'yaml_config': '/etc/alerta/%s.yaml' % prog,
@@ -92,6 +95,9 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'dynect_customer': 'theguardian',
         'dynect_username': '',
         'dynect_password': '',
+
+        'fog_file': '/etc/fog/alerta.conf',  # used by alert-aws
+        'ec2_regions': ['eu-west-1', 'us-east-1'],
     }
     CONF.update(SYSTEM_DEFAULTS)
 
