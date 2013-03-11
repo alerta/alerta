@@ -192,27 +192,23 @@ class Alert(object):
         for c in conf:
             LOG.debug('YAML config: %s', c)
 
-            if self.get_type() == 'snmptrapAlert' and trapoid:
+            if self.get_type() == 'snmptrapAlert' and trapoid and 'trapoid' in c:
                 match = re.match(c['trapoid'], trapoid)
                 pattern = trapoid
-            elif self.get_type() == 'syslogAlert' and facility and level:
+            elif self.get_type() == 'syslogAlert' and facility and level and 'priority' in c:
                 match = fnmatch.fnmatch('%s.%s' % (facility, level), c['priority'])
                 pattern = c['priority']
-            else:
+            elif 'match' in c:
                 match = all(item in self.alert.items() for item in c['match'].items())
                 pattern = c['match'].items()
+            else:
+                match = None
+                pattern = None
 
             if match:
                 LOG.debug('Matched %s for alert', pattern)
 
-                if 'parser' in c:
-                    LOG.debug('Loading parser %s', c['parser'])
-                    try:
-                        exec(open('%s/%s.py' % (CONF.parser_dir, c['parser']))) in globals(), self.alert
-                        LOG.info('Parser %s/%s exec OK', CONF.parser_dir, c['parser'])
-                    except Exception, e:
-                        LOG.warning('Parser %s failed: %s', c['parser'], e)
-
+                # 1. Simple substitutions
                 if 'event' in c:
                     self.alert['event'] = c['event']
                 if 'resource' in c:
@@ -239,8 +235,20 @@ class Alert(object):
                     self.alert['summary'] = c['summary']
                 if 'timeout' in c:
                     self.alert['timeout'] = c['timeout']
+
+                # 2. Complex transformations
+                if 'parser' in c:
+                    LOG.debug('Loading parser %s', c['parser'])
+                    try:
+                        exec(open('%s/%s.py' % (CONF.parser_dir, c['parser']))) in globals(), self.alert
+                        LOG.info('Parser %s/%s exec OK', CONF.parser_dir, c['parser'])
+                    except Exception, e:
+                        LOG.warning('Parser %s failed: %s', c['parser'], e)
+
+                # 3. Suppress based on results of 1 or 2
                 if 'suppress' in c:
                     suppress = c['suppress']
+
                 break
 
         return suppress
