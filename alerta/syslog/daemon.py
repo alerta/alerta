@@ -124,7 +124,7 @@ class SyslogDaemon(Daemon):
             resource = '%s%s' % (HOSTNAME, ':' + TAG if TAG else '')
             severity = syslog.priority_to_code(level)
             group = 'Syslog'
-            value = facility
+            value = level
             text = MSG
             environment = ['INFRA']
             service = ['Platform']
