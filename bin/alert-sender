@@ -24,6 +24,8 @@ from alerta.alert import severity
 LOG = logging.getLogger('alerta.sender')
 CONF = config.CONF
 
+_DEFAULT_TIMEOUT = 86400  # TODO(nsatterl): should be CONF.alert_timeout
+
 
 def main(argv):
     try:
@@ -99,7 +101,7 @@ def main(argv):
             '-o',
             '--timeout',
             type=int,
-            default=CONF.alert_timeout,
+            default=_DEFAULT_TIMEOUT,
             help='Timeout in seconds that OPEN alert will persist in webapp.'
         )
         parser.add_argument(
