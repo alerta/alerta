@@ -39,11 +39,11 @@ class DynectDaemon(Daemon):
         while not self.shuttingdown:
             try:
                 self.queryDynect()
-                self.alertDynect()
-
-                self.last_info = self.info
 
                 if self.updating:
+                    self.alertDynect()
+                    self.last_info = self.info
+
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(version=Version)
                     self.mq.send(heartbeat)
