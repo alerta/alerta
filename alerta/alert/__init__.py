@@ -194,13 +194,16 @@ class Alert(object):
 
             if self.get_type() == 'snmptrapAlert' and trapoid:
                 match = re.match(c['trapoid'], trapoid)
+                pattern = trapoid
             elif self.get_type() == 'syslogAlert' and facility and level:
                 match = fnmatch.fnmatch('%s.%s' % (facility, level), c['priority'])
+                pattern = c['priority']
             else:
                 match = all(item in self.alert.items() for item in c['match'].items())
+                pattern = c['match'].items()
 
             if match:
-                LOG.debug('Matched %s in alert', c['match'])
+                LOG.debug('Matched %s for alert', pattern)
 
                 if 'parser' in c:
                     LOG.debug('Loading parser %s', c['parser'])
