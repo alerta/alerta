@@ -58,15 +58,15 @@ class SyslogDaemon(Daemon):
                         if i == udp:
                             data = udp.recv(4096)
                             LOG.debug('Syslog UDP data received: %s', data)
-                            syslogAlert = self.parse_syslog(data)
                         if i == tcp:
                             client, addr = tcp.accept()
                             data = client.recv(4096)
                             client.close()
                             LOG.debug('Syslog TCP data received: %s', data)
-                            syslogAlert = self.parse_syslog(data)
 
-                        self.mq.send(syslogAlert)
+                        syslogAlert = self.parse_syslog(data)
+                        if syslogAlert:
+                            self.mq.send(syslogAlert)
                 else:
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(version=Version)
