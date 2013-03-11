@@ -1,22 +1,16 @@
 Version 1.x
 ===========
-- components should automatically reconnect if broker restarts
-- scripts should use YAML-based configuration files
-- add ability to remote kill client auto-refresh
+- scripts use YAML-based configuration files
 
 Version 2.0
 ===========
+- scripts use ini-based global configuration file
 - sort-able and search-able alert console
-- add event correlation using ESPER or some such tool
 - divert alerts and make blackout based on suppression rules
 
+Version 2.1
+===========
+- components should automatically reconnect if broker restarts
+- add ability to remote kill client auto-refresh
+- add event correlation using ESPER or some such tool
 
-setup.py
-requirements.txt
-pylintrc
-Makefile
-tests
-Flask api
-bin -> /opt/alerta/bin
-alert send ... -> /usr/local/bin
-use argparse not optparse

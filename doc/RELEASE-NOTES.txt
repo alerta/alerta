@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+Alerta version 2.0.0
+--------------------
+
+* Standardised options and config file format
+* Refactored code-base to use modules and classes
+* New alert console that supports sort and search (bugs!)
+* New API based on Flask (wip)
+
 Alerta version 1.2.7
 --------------------
 
