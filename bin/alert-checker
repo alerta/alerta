@@ -1,0 +1,153 @@
+#!/usr/bin/env python
+
+########################################
+#
+# alert-checker - Alert Nagios script
+#
+########################################
+
+import os
+import sys
+import argparse
+
+possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
+                                                os.pardir,
+                                                os.pardir))
+if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
+    sys.path.insert(0, possible_topdir)
+
+from alerta.common import config
+from alerta.common import log as logging
+from alerta.checker.client import CheckerClient, Version
+
+LOG = logging.getLogger('alerta.checker')
+CONF = config.CONF
+
+
+def main(argv):
+    try:
+        parser = argparse.ArgumentParser(
+            add_help=False,
+            prog='alert-checker',
+            description='Alert Nagios Check - runs a Nagios plug-in and sends the result to the alerting system. ' +
+                        'Alerts have a resource (including service and environment), event name, value and text. A ' +
+                        'severity of "Normal" is used if none given. Tags and group are optional.',
+            epilog='alert-checker --nagios-cmd "check_procs -w 10 -c 20 --metric=CPU" --resource Sever1 ' +
+                   '--event ProcStatus --group OS --env PROD --svc Discussion'
+        )
+        parser.add_argument(
+            '-n', '--nagios-cmd',
+            help='Nagios check command line.'
+        )
+        parser.add_argument(
+            '-r', '--resource',
+            help='Resource under alarm eg. hostname, network device, application, web address.'
+        )
+        parser.add_argument(
+            '-e',
+            '--event',
+            help='Event name eg. NodeDown, QUEUE:LENGTH:EXCEEDED, coldStart, LOG_ERROR'
+        )
+        parser.add_argument(
+            '-C',
+            '--correlate',
+            help='Comma-separated list of events to correlate together eg. NodeUp,NodeDown'
+        )
+        parser.add_argument(
+            '-g',
+            '--group',
+            help='Event group eg. Application, Backup, Database, HA, Hardware, Job, Network, OS, Performance, Security'
+        )
+        parser.add_argument(
+            '-E',
+            '--environment',
+            metavar='ENV',
+            action='append',
+            help='Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA'
+        )
+        parser.add_argument(
+            '-S',
+            '--svc',
+            '--service',
+            dest='service',
+            action='append',
+            help='Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, SharedSvcs'
+        )
+        parser.add_argument(
+            '-T',
+            '--tag',
+            action='append',
+            dest='tags',
+            default=list(),
+            help='Tag the event with anything and everything.'
+        )
+        parser.add_argument(
+            '-o',
+            '--timeout',
+            type=int,
+            default=86400,
+            help='Timeout in seconds that OPEN alert will persist in webapp.'
+        )
+        parser.add_argument(
+            '-H',
+            '--heartbeat',
+            action='store_true',
+            default=False,
+            help='Send heartbeat to server.'
+        )
+        parser.add_argument(
+            '-O',
+            '--origin',
+            help='Origin of heartbeat. Usually an application instance.'
+        )
+        parser.add_argument(
+            '-q',
+            '--quiet',
+            action='store_true',
+            default=False,
+            help='Do not display assigned alert id.'
+        )
+        parser.add_argument(
+            '-d',
+            '--dry-run',
+            action='store_true',
+            default=False,
+            help='Do not send alert.'
+        )
+
+        config.parse_args(argv, version=Version, cli_parser=parser, daemon=False)
+        logging.setup('alerta')
+
+        if not CONF.heartbeat:
+            if not CONF.nagios_cmd:
+                parser.error("Must supply full command line for Nagios check using -n or --nagios-cmd")
+
+            if not CONF.resource:
+                parser.error("Must supply event resource using -r or --resource")
+
+            if not CONF.event:
+                parser.error("Must supply event name using -e or --event")
+
+            if not CONF.environment:
+                parser.error("Must supply one or more environments using -E or --environment")
+            else:
+                CONF.environment = [x.upper() for x in CONF.environment]
+
+            if not CONF.service:
+                parser.error("Must supply one or more service using -S or --service")
+
+        checker = CheckerClient()
+        msg_id = checker.main()
+
+        if not CONF.quiet:
+            print msg_id
+
+    except Exception, e:
+        print >> sys.stderr, e
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
+
+
+
