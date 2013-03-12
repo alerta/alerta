@@ -245,6 +245,11 @@ class Alert(object):
                     except Exception, e:
                         LOG.warning('Parser %s failed: %s', c['parser'], e)
 
+                    # XXX - Suppress flag can only be passed back as alert attribute
+                    if 'suppress' in self.alert:
+                        suppress = self.alert['suppress']
+                        del self.alert['suppress']
+
                 # 3. Suppress based on results of 1 or 2
                 if 'suppress' in c:
                     suppress = suppress or c['suppress']
