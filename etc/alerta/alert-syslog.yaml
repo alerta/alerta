@@ -1,0 +1,24 @@
+# Nova = local0
+- priority: local0.*
+  service: [Nova]
+  parser: OpenStackParser
+
+# Glance = local1
+- priority: local1.*
+  service: [Glance]
+  parser: OpenStackParser
+
+# Cinder = local2
+- priority: local2.*
+  service: [Cinder]
+  parser: OpenStackParser
+
+# Keystone = local3
+- priority: local3.*
+  service: [Keystone]
+  parser: OpenStackParser
+
+# Quantum = local4
+- priority: local4.*
+  service: [Quantum]
+  parser: OpenStackParser

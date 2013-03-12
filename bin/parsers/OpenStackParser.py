@@ -1,13 +1,15 @@
-# LOG.debug('locals = %s', locals())
-
-m = re.search('[DEBUG|INFO|WARNING|CRITICAL|TRACE] (?P<event>\S+) \[.*\] (?P<text>.*)', text)
+m = re.search('(?P<level>DEBUG|INFO|AUDIT|WARNING|ERROR|CRITICAL|TRACE) \[?(?P<module>[^] ]+)\]?( \[(?P<uuid>[^]]+)\])? (?P<text>.*)', text)
 if m:
-    msg = m.groupdict()
-    event = msg['event']
-    text = msg['text']
-    value = msg['sev']
+    resource = resource + ':' +  m.group('module')
+    value = m.group('level')
+    text = m.group('text')
+    uuid = m.group('uuid').partition(' ')[0] if m.group('uuid') else 'none'
+    tags.append('uuid:%s' % uuid)
 else:
-    tags.append('no match')
+    LOG.warning('No match: locals = %s', locals())
 
 if 'Checking Token' in text:
     suppress = True
+
+# clean-up temp variables
+del m
