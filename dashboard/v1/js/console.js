@@ -167,7 +167,7 @@ function getStatus(statusfilter, refresh) {
 
         if (data.response.warning) {
             $('#warning-text').text(data.response.warning);
-            $('#webapp-alert').toggle();
+            $('#console-alert').toggle();
         }
 
         $.each(data.response.alerts.statusCounts, function (stat, count) {
@@ -393,14 +393,14 @@ $(document).ready(function () {
     $('tbody').on('click', '.delete-alert', function () {
         if (confirm('IMPORTANT: Deleting this alert is a permanent operation that will '
             + 'remove the alert from all user consoles.\n\n'
-            + 'Cancel to return to the webapp or OK to delete.')) {
+            + 'Cancel to return to the console or OK to delete.')) {
             /* $.ajax({
              type: 'DELETE',
-             url: 'http://' + api_server + '/alerta/app/v1/alerts/alert/' + this.id,
+             url: 'http://' + api_server + '/alerta/api/v1/alerts/alert/' + this.id,
              }); */
             $.ajax({
                 type: 'POST',
-                url: 'http://' + api_server + '/alerta/app/v1/alerts/alert/' + this.id,
+                url: 'http://' + api_server + '/alerta/api/v1/alerts/alert/' + this.id,
                 data: JSON.stringify({ _method: 'delete' })
             });
             $(this).parent().parent().next().remove(); // delete drop-down
@@ -411,7 +411,7 @@ $(document).ready(function () {
     $('tbody').on('click', '.ack-alert', function () {
         $.ajax({
             type: 'PUT',
-            url: 'http://' + api_server + '/alerta/app/v1/alerts/alert/' + this.id,
+            url: 'http://' + api_server + '/alerta/api/v1/alerts/alert/' + this.id,
             data: JSON.stringify({ status: 'ACK' })
         });
         $(this).parent().parent().find('.ad-stat-td').html('<span class="label">ACK</td>');
@@ -420,7 +420,7 @@ $(document).ready(function () {
     $('tbody').on('click', '.unack-alert', function () {
         $.ajax({
             type: 'PUT',
-            url: 'http://' + api_server + '/alerta/app/v1/alerts/alert/' + this.id,
+            url: 'http://' + api_server + '/alerta/api/v1/alerts/alert/' + this.id,
             data: JSON.stringify({ status: 'OPEN' })
         });
         $(this).parent().parent().find('.ad-stat-td').html('<span class="label">OPEN</td>');
@@ -431,7 +431,7 @@ $(document).ready(function () {
         if (tag != null && tag != "") {
             $.ajax({
                 type: 'PUT',
-                url: 'http://' + api_server + '/alerta/app/v1/alerts/alert/' + this.id + '/tag',
+                url: 'http://' + api_server + '/alerta/api/v1/alerts/alert/' + this.id + '/tag',
                 data: JSON.stringify({ tags: tag })
             });
         }
