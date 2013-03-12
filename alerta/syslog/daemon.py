@@ -133,6 +133,7 @@ class SyslogDaemon(Daemon):
             timeout = None
             threshold_info = None
             summary = None
+            raw_data = msg
 
             syslogAlert = Alert(
                 resource=resource,
@@ -149,7 +150,7 @@ class SyslogDaemon(Daemon):
                 timeout=timeout,
                 threshold_info=threshold_info,
                 summary=summary,
-                raw_data=msg,
+                raw_data=raw_data,
             )
 
             suppress = syslogAlert.transform_alert(facility=facility, level=level)
