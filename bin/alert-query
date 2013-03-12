@@ -20,8 +20,6 @@ from alerta.common import log as logging
 from alerta.query.client import QueryClient, Version
 from alerta.alert import severity, status
 
-DEFAULT_TIMEOUT = 86400
-
 LOG = logging.getLogger('alerta.query')
 CONF = config.CONF
 
@@ -166,7 +164,7 @@ def main(argv):
             "--value",
             action="append",
             dest="value",
-            help="Event value eg. 100%, Down, PingFail, 55tps, ORA-1664"
+            help="Event value eg. 100%%, Down, PingFail, 55tps, ORA-1664"
         )
         parser.add_argument(
             "--not-value",
@@ -200,7 +198,7 @@ def main(argv):
             action="append",
             dest="show",
             default=[],
-            help="Show 'text', 'summary', 'times', 'attributes', 'details', 'tags', 'history', 'counts' and 'color'"
+            help="Show 'text', 'summary', 'times', 'attributes', 'details', 'tags', 'raw', 'history', 'counts' and 'color'"
         )
         parser.add_argument(
             "-o",

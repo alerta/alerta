@@ -248,6 +248,8 @@ class QueryClient(object):
                 summary = alert.get('summary', None)
                 timeout = alert.get('timeout', 0)
                 alertid = alert.get('id', None)
+                raw_data = alert.get('rawData', None)
+
                 last_receive_id = alert.get('lastReceiveId', None)
                 create_time = datetime.datetime.strptime(alert.get('createTime', None), '%Y-%m-%dT%H:%M:%S.%fZ')
                 create_time = create_time.replace(tzinfo=pytz.utc)
@@ -338,6 +340,9 @@ class QueryClient(object):
                 if 'tags' in CONF.show and tags:
                     for t in tags:
                         print(line_color + '            tag | %s' % (t) + end_color)
+
+                if 'raw' in CONF.show and raw_data:
+                    print(line_color + '   |%s' % (raw_data) + end_color)
 
                 if 'history' in CONF.show:
                     for hist in alert['history']:
