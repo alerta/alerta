@@ -247,7 +247,7 @@ class Alert(object):
 
                 # 3. Suppress based on results of 1 or 2
                 if 'suppress' in c:
-                    suppress = c['suppress']
+                    suppress = suppress or c['suppress']
 
                 break
 

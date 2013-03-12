@@ -87,6 +87,9 @@ class SyslogDaemon(Daemon):
 
         for msg in data.split('\n'):
 
+            if 'last message repeated' in msg:
+                continue
+
             if re.match('<\d+>1', msg):
                 # Parse RFC 5424 compliant message
                 m = re.match(r'<(\d+)>1 (\S+) (\S+) (\S+) (\S+) (\S+) (.*)', msg)
