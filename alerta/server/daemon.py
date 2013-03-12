@@ -78,6 +78,7 @@ class WorkerThread(threading.Thread):
                     "repeat": True,
                     "origin": alert['origin'],
                     "trendIndication": 'noChange',
+                    "rawData": alert['rawData'],
                 }
                 self.db.duplicate_alert(alert['environment'], alert['resource'], alert['event'], **update)
 
@@ -114,7 +115,8 @@ class WorkerThread(threading.Thread):
                     "origin": alert['origin'],
                     "thresholdInfo": alert['thresholdInfo'],
                     "trendIndication": trend_indication,
-                    "duplicateCount": 0
+                    "rawData": alert['rawData'],
+                    "duplicateCount": 0,
                 }
                 enrichedAlert = self.db.modify_alert(alert['environment'], alert['resource'], alert['event'], update)
 
@@ -161,6 +163,7 @@ class WorkerThread(threading.Thread):
                     status=status.OPEN,
                     trend_indication=trend_indication,
                     last_receive_id=alert['id'],
+                    raw_data=alert['rawData'],
                 )
                 self.db.save_alert(newAlert)
 
