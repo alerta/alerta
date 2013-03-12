@@ -23,16 +23,15 @@ def setup(name):
 
     if CONF.use_syslog:
         facility = CONF.syslog_facility
-        # syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
-        # TODO(nsatterl): set for Mac OS at the moment
-        #syslog = logging.handlers.SysLogHandler(address=('localhost', 514), facility=facility, socktype=socket.SOCK_STREAM)
-        #log_root.addHandler(syslog)
+        syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
+        # syslog = logging.handlers.SysLogHandler(address=('localhost', 514), facility=facility, socktype=socket.SOCK_STREAM)
+        log_root.addHandler(syslog)
 
     logpath = _get_log_file_path()
     if logpath:
         try:
             filelog = logging.handlers.WatchedFileHandler(logpath)
-        except IOError, e:
+        except IOError:
             raise
         log_root.addHandler(filelog)
 
@@ -82,7 +81,6 @@ def _get_log_file_path():
         return '%s.log' % (os.path.join(logdir, prog))
 
 
-# TODO(nsatterl): enable color output
 class ColorHandler(logging.StreamHandler):
     LEVEL_COLORS = {
         logging.DEBUG: '\033[00;32m',  # GREEN
@@ -92,6 +90,6 @@ class ColorHandler(logging.StreamHandler):
         logging.CRITICAL: '\033[01;31m',  # BOLD RED
     }
 
-#    def format(self, record):
-#        record.color = self.LEVEL_COLORS[record.levelno]
-#        return logging.StreamHandler.format(self, record)
+    def format(self, record):
+        record.color = self.LEVEL_COLORS[record.levelno]
+        return logging.StreamHandler.format(self, record)
