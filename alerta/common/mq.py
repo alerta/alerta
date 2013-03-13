@@ -47,7 +47,8 @@ class Messaging(object):
 
         self.destination = destination or CONF.inbound_queue
 
-        self.connection.subscribe(destination=self.destination, ack=ack)
+        if self.connection.is_connected():
+            self.connection.subscribe(destination=self.destination, ack=ack)
 
     def send(self, alert, destination=None):
 
@@ -58,7 +59,7 @@ class Messaging(object):
 
         while not self.connection.is_connected():
             LOG.warning('Waiting for message broker to become available...')
-            time.sleep(0.1)
+            time.sleep(2)
 
         LOG.debug('Sending alert to message broker...')
         try:
