@@ -121,11 +121,13 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
     ]
     #DEBUG print 'CONFIG files => ', config_file_order
 
-    if args.conf_file:
-        config = ConfigParser.SafeConfigParser()
-        config.read(config_file_order)
-        defaults = config.defaults()
-        if config.has_section(prog):
+    config = ConfigParser.SafeConfigParser()
+    conf_files = config.read(config_file_order)
+    defaults = config.defaults()  # read in [DEFAULTS] section
+    defaults['conf_file'] = ','.join(conf_files)
+
+    if conf_files:
+        if config.has_section(prog):  # read in program-specific sections
             for name in config.options(prog):
                 if (OPTION_DEFAULTS.get(name, None) in (True, False) or
                         SYSTEM_DEFAULTS.get(name, None) in (True, False)):
