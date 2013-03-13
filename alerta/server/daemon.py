@@ -35,7 +35,13 @@ class WorkerThread(threading.Thread):
 
         while True:
             LOG.debug('Waiting on input queue...')
-            incomingAlert = self.input_queue.get()
+            try:
+                incomingAlert = self.input_queue.get(True, CONF.loop_every)
+            except Queue.Empty:
+                LOG.debug('Send heartbeat...')
+                heartbeat = Heartbeat(version=Version)
+                self.mq.send(heartbeat)
+                continue
 
             if not incomingAlert:
                 LOG.info('%s is shutting down.', self.getName())
@@ -177,10 +183,6 @@ class WorkerThread(threading.Thread):
 
                 self.input_queue.task_done()
                 LOG.info('%s : Alert forwarded to %s and %s', alert['id'], CONF.outbound_queue, CONF.outbound_topic)
-
-            LOG.debug('Send heartbeat...')
-            heartbeat = Heartbeat(version=Version)
-            self.mq.send(heartbeat)
 
         self.input_queue.task_done()
 
