@@ -2,6 +2,7 @@
 import time
 import json
 
+# https://github.com/dyninc/Dynect-API-Python-Library
 from dynect.DynectDNS import DynectRest
 
 from alerta.common import config
