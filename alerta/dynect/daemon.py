@@ -150,8 +150,11 @@ class DynectDaemon(Daemon):
     def check_weight(self, parent, resource):
         
         weight = self.info[resource]['status'].split(':')[2]
-
         for pool in [resource for resource in self.info if resource.startswith('pool') and self.info[resource]['gslb'] == parent]:
+            if self.info[pool]['status'].split(':')[1] == 'no':
+                LOG.warning('Skipping %s because not serving for pool %s', pool, self.info[pool]['status'])
+                continue
+
             LOG.debug('pool %s weight %s <=> %s', pool, self.info[pool]['status'].split(':')[2], weight)
             if self.info[pool]['status'].split(':')[2] != weight:
                 return False
@@ -205,8 +208,8 @@ class DynectDaemon(Daemon):
                         status = '%s:%s:%s' % (pool['status'], pool['serve_mode'], pool['weight'])
                         self.info['pool-' + name] = {'status': status, 'gslb': fqdn, 'rawData': pool}
 
-            LOG.info('Finish quering and object discovery.')
-            LOG.info('GSLBs and Pools: %s', json.dumps(self.info, indent=4))
+            LOG.info('Finished object discovery query.')
+            LOG.debug('GSLBs and Pools: %s', json.dumps(self.info, indent=4))
 
             # logout
             rest_iface.execute('/Session/', 'DELETE')
