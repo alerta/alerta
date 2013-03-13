@@ -46,9 +46,7 @@ class Messaging(object):
     def subscribe(self, destination=None, ack='auto'):
 
         self.destination = destination or CONF.inbound_queue
-
-        if self.connection.is_connected():
-            self.connection.subscribe(destination=self.destination, ack=ack)
+        self.connection.subscribe(destination=self.destination, ack=ack)
 
     def send(self, alert, destination=None):
 
