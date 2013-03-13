@@ -236,7 +236,13 @@ class AlertaDaemon(Daemon):
 
         while not self.shuttingdown:
             try:
-                time.sleep(0.1)
+                LOG.debug('Send heartbeat...')
+                heartbeat = Heartbeat(version=Version)
+                self.mq.send(heartbeat)
+
+                LOG.debug('Internal queue size is %s messages', self.queue.qsize())
+
+                time.sleep(CONF.loop_every)
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
 
