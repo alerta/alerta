@@ -36,14 +36,16 @@ def setup(name):
 
         # TODO(nsatterl): test mode like openstack??
 
-    if CONF.use_stderr:
-        streamlog = ColorHandler()
-        log_root.addHandler(streamlog)
-
     for handler in log_root.handlers:
         log_format = _DEFAULT_LOG_FORMAT
         date_format = _DEFAULT_LOG_DATE_FORMAT
         handler.setFormatter(logging.Formatter(fmt=log_format, datefmt=date_format))
+
+    if CONF.use_stderr:
+        streamlog = ColorHandler()
+        color_fmt = logging.Formatter("%(color)s" + _DEFAULT_LOG_FORMAT + "\033[0m")
+        streamlog.setFormatter(color_fmt)
+        log_root.addHandler(streamlog)
 
     if CONF.debug:
         log_root.setLevel(logging.DEBUG)
@@ -105,8 +107,6 @@ class ColorHandler(logging.StreamHandler):
 
     def format(self, record):
         record.color = self.LEVEL_COLORS[record.levelno]
-        color_fmt = logging.Formatter("%(color)s" + _DEFAULT_LOG_FORMAT + "\033[0m")
-        self.setFormatter(color_fmt)
         return logging.StreamHandler.format(self, record)
 
 
