@@ -186,7 +186,7 @@ class Alert(object):
             conf = yaml.load(open(CONF.yaml_config))
             LOG.info('Loaded %d transformer configurations OK', len(conf))
         except Exception, e:
-            LOG.error('Failed to load transformer configuration: %s', e)
+            LOG.error('Failed to load transformer configuration %s: %s', CONF.yaml_config, e)
             return
 
         for c in conf:
