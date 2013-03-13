@@ -22,6 +22,7 @@ _DEFAULT_CONSOLE_DATE_FORMAT = '%d/%m/%y %H:%M:%S'
 
 DEFAULT_TIMEOUT = 3600
 
+
 class QueryClient(object):
 
     def main(self):
