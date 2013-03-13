@@ -158,7 +158,8 @@ class SyslogDaemon(Daemon):
 
             suppress = syslogAlert.transform_alert(facility=facility, level=level)
             if suppress:
-                LOG.warning('Suppressing alert %s', syslogAlert.get_id())
+                LOG.warning('Suppressing %s.%s alert', facility, level)
+                LOG.debug('%s', syslogAlert)
                 return
 
             return syslogAlert
