@@ -9,7 +9,6 @@ from alerta.common import config
 
 CONF = config.CONF
 
-
 _DEFAULT_LOG_FORMAT = "%(asctime)s.%(msecs).03d %(name)s[%(process)d] %(threadName)s %(levelname)s - %(message)s"
 _DEFAULT_LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -21,7 +20,7 @@ def setup(name):
 
     log_root = getLogger(name)
 
-    if CONF.use_syslog:
+    if CONF.use_syslog is True:
         facility = CONF.syslog_facility
         syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
         # syslog = logging.handlers.SysLogHandler(address=('localhost', 514), facility=facility, socktype=socket.SOCK_STREAM)
@@ -82,14 +81,32 @@ def _get_log_file_path():
 
 
 class ColorHandler(logging.StreamHandler):
+
+    # XXX - OpenStack colours for reference
+    #
+    # LEVEL_COLORS = {
+    #     logging.NOTSET: '',
+    #     logging.DEBUG: '\033[00;32m',  # GREEN
+    #     logging.INFO: '\033[00;36m',  # CYAN
+    #     #logging.AUDIT: '\033[01;36m',  # BOLD CYAN
+    #     logging.WARN: '\033[01;33m',  # BOLD YELLOW
+    #     logging.ERROR: '\033[01;31m',  # BOLD RED
+    #     logging.CRITICAL: '\033[01;31m',  # BOLD RED
+    # }
+
     LEVEL_COLORS = {
-        logging.DEBUG: '\033[00;32m',  # GREEN
-        logging.INFO: '\033[00;36m',  # CYAN
-        logging.WARN: '\033[01;33m',  # BOLD YELLOW
-        logging.ERROR: '\033[01;31m',  # BOLD RED
-        logging.CRITICAL: '\033[01;31m',  # BOLD RED
+        logging.NOTSET: '',
+        logging.DEBUG: '\033[90m',     # BLACK
+        logging.INFO: '\033[92m',      # GREEN
+        logging.WARN: '\033[96m',      # CYAN
+        logging.ERROR: '\033[93m',     # YELLOW
+        logging.CRITICAL: '\033[91m',  # RED
     }
 
     def format(self, record):
         record.color = self.LEVEL_COLORS[record.levelno]
+        color_fmt = logging.Formatter("%(color)s" + _DEFAULT_LOG_FORMAT + "\033[0m")
+        self.setFormatter(color_fmt)
         return logging.StreamHandler.format(self, record)
+
+

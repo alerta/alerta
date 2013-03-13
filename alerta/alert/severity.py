@@ -5,6 +5,14 @@ See ITU-T perceived severity model M.3100 and CCITT Rec X.736
 http://tools.ietf.org/html/rfc5674
 http://www.itu.int/rec/T-REC-M.3100
 http://www.itu.int/rec/T-REC-X.736-199201-I
+
+           ITU Perceived Severity      syslog SEVERITY (Name)
+           Critical                    1 (Alert)
+           Major                       2 (Critical)
+           Minor                       3 (Error)
+           Warning                     4 (Warning)
+           Indeterminate               5 (Notice)
+           Cleared                     5 (Notice)
 """
 
 import status
