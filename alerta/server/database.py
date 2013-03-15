@@ -52,9 +52,11 @@ class Mongo(object):
                                         '$or': [{"event": event}, {"correlatedEvents": event}]},
                                        {"severity": 1, "_id": 0})['severity']
 
-    def get_alert(self, environment, resource, event, severity=None):
+    def get_alert(self, alertid=None, environment=None, resource=None, event=None, severity=None):
 
-        if severity:
+        if alertid:
+            response = self.db.alerts.find_one({'_id': alertid})
+        elif severity:
             response = self.db.alerts.find_one({"environment": environment, "resource": resource, "event": event, "severity": severity})
         else:
             response = self.db.alerts.find_one({"environment": environment, "resource": resource, "event": event})
@@ -103,14 +105,19 @@ class Mongo(object):
 
         return self.db.alerts.insert(body, safe=True)
 
-    def modify_alert(self, environment, resource, event, update):
+    def modify_alert(self, alertid, environment, resource, event, update):
+
+        if alertid:
+            query = {"_id": alertid}
+        else:
+            query = {"environment": environment, "resource": resource,
+                     '$or': [{"event": event}, {"correlatedEvents": event}]}
 
         # FIXME - no native find_and_modify method in this version of pymongo
         no_obj_error = "No matching object found"
         response = self.db.command("findAndModify", 'alerts',
                                    allowable_errors=[no_obj_error],
-                                   query={"environment": environment, "resource": resource,
-                                          '$or': [{"event": event}, {"correlatedEvents": event}]},
+                                   query=query,
                                    update={'$set': update,
                                            '$push': {"history": {
                                                      "createTime": update['createTime'],

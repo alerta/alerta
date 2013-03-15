@@ -1,17 +1,35 @@
-from flask import jsonify, request, current_app
-from functools import wraps
-from alerta.api.v2 import app, mongo
 
+import json
 import datetime
 
+from flask import request, current_app
+from functools import wraps
+from alerta.api.v2 import app, db
+
+from alerta.common import config
+from alerta.common import log as logging
+from alerta.alert import Alert
+from alerta.common.utils import DateEncoder
+
+Version = '2.0.0'
+
+LOG = logging.getLogger(__name__)
+CONF = config.CONF
+
 # TODO(nsatterl): put these constants somewhere appropriate
-MAX_HISTORY = -10  # 10 most recent
+_MAX_HISTORY = -10  # 10 most recent
+
+# Over-ride jsonify to support Date Encoding
+def jsonify(*args, **kwargs):
+    return current_app.response_class(json.dumps(dict(*args, **kwargs), cls=DateEncoder,
+                                                 indent=None if request.is_xhr else 2), mimetype='application/json')
 
 # TODO(nsatterl): use @before_request and @after_request to attach a unique request id
 @app.before_first_request
 def before_request():
     # print "load config file with warning message"
     pass
+
 
 # TODO(nsatterl): fix JSON-P
 def jsonp(func):
@@ -32,14 +50,11 @@ def jsonp(func):
 @app.route('/alerta/api/v2/alerts/alert/<alertid>')
 def get_alert(alertid):
 
-    alert = mongo.db.alerts.find_one({'_id': alertid})
+    alert = db.get_alert(alertid=alertid)
     if alert:
-        fix_id(alert)
-        return jsonify(response={'alert': alert, 'status': 'ok', 'total': 1})
+        return jsonify(response={"alert": alert.get_body(), "status": "ok", "total": 1})
     else:
-        # TODO(nsatterl): include error message as 'message': 'not found' etc.
         return jsonify(response={"alert": None, "status": "error", "message": "not found", "total": 0})
-
 
 @app.route('/alerta/api/v2/alerts')
 def get_alerts():
@@ -58,7 +73,7 @@ def get_alerts():
     if request.args.get('hide-alert-history', False, bool):
         fields['history'] = 0
     else:
-        fields['history'] = {'slice': MAX_HISTORY}
+        fields['history'] = {'slice': _MAX_HISTORY}
 
     alert_limit = request.args.get('limit', 0, int)
 
@@ -94,6 +109,8 @@ def create_alert(alertid):
 
 @app.route('/alerta/api/v2/alerts/alert/<alertid>', methods=['POST', 'PUT'])
 def modify_alert(alertid):
+
+    #db.modify_alert()
 
     pass
 
