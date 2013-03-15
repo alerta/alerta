@@ -114,20 +114,27 @@ class IrcbotDaemon(Daemon):
                 if ip:
                     for i in ip:
                         if i == irc:
-                            data = irc.recv(4096)
+                            data = irc.recv(4096).rstrip('\r\n')
                             if len(data) > 0:
                                 if 'ERROR' in data:
-                                    LOG.error('IRC server: %s', data)
+                                    LOG.error('%s. Exiting...', data)
+                                    sys.exit(1)
                                 else:
-                                    LOG.debug('IRC server: %s', data)
+                                    LOG.debug('%s', data)
+                            else:
+                                LOG.warning('IRC server sent no data')
                             if 'PING' in data:
                                 LOG.info('IRC PING received -> PONG ' + data.split()[1])
                                 irc.send('PONG ' + data.split()[1] + '\r\n')
-                            if 'ACK' in data:
+                            elif 'ACK' in data:
                                 LOG.info('Request to ACK %s by %s', data.split()[4], data.split()[0])
                                 ack_alert(data.split()[4])
-                            if data.find('!alerta quit') != -1:
+                            elif data.find('!alerta quit') != -1:
                                 irc.send('QUIT\r\n')
+                            else:
+                                LOG.warning('IRC: %s', data)
+                        else:
+                            i.recv()
                 else:
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(version=Version)
