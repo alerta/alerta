@@ -55,9 +55,10 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'stomp_host': 'localhost',
         'stomp_port': 61613,
 
-        'inbound_queue': '/queue/alerts',   # TODO(nsatterl): 'alert_queue' and 'alert_topic' ?
-        'outbound_topic': '/topic/notify',
+        'inbound_queue': '/exchange/alerts',
         'outbound_queue': '/queue/logger',
+        'outbound_topic': '/topic/notify',
+        'forward_duplicate': False,
 
         'rabbit_host': 'localhost',
         'rabbit_port': 5672,
@@ -70,7 +71,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'syslog_tcp_port': 514,
         'syslog_facility': 'local7',
 
-        'smtp_host': 'mx',
+        'smtp_host': 'smtp',
         'smtp_port': 25,
         'mail_user': 'alerta@guardian.co.uk',
         'mail_list': 'websys@guardian.co.uk',
