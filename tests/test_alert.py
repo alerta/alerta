@@ -33,7 +33,7 @@ if __name__ == '__main__':
     alert3 = Alert('router55', 'Node_Down', severity=severity.INDETERMINATE, value='FAILED', timeout=600,
                    service=['Network', 'Common'], tags=['london', 'location:london', 'dc:location=london'],
                    text="Node is not responding via ping.", origin="test3", correlate=['Node_Up', 'Node_Down'],
-                   event_type='myAlert', alertid='1234')
+                   event_type='myAlert', alertid='1234', raw_data='blah blah blah')
     print alert3
 
     print repr(alert3)
