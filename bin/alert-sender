@@ -51,7 +51,9 @@ def main(argv):
         parser.add_argument(
             '-C',
             '--correlate',
-            help='Comma-separated list of events to correlate together eg. NodeUp,NodeDown'
+            action='append',
+            default=list(),
+            help='List of events to correlate together eg. node_up and node_down'
         )
         parser.add_argument(
             '-g',
@@ -74,7 +76,7 @@ def main(argv):
             '--environment',
             metavar='ENV',
             action='append',
-            help='Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA'
+            help='List of effected environments eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA'
         )
         parser.add_argument(
             '-S',
@@ -82,7 +84,8 @@ def main(argv):
             '--service',
             dest='service',
             action='append',
-            help='Service eg. R1, R2, Discussion, Soulmates, ContentAPI, MicroApp, FlexibleContent, SharedSvcs'
+            help='List of effected services eg. R1, R2, Frontend, Discussion, ContentAPI, MicroApp, ' +
+                 'FlexibleContent, Identity, Mobile, Soulmates, Network, SharedSvcs'
         )
         parser.add_argument(
             '-T',
