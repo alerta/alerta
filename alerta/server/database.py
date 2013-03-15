@@ -113,15 +113,15 @@ class Mongo(object):
                                           '$or': [{"event": event}, {"correlatedEvents": event}]},
                                    update={'$set': update,
                                            '$push': {"history": {
-                                                        "createTime": update['createTime'],
-                                                        "receiveTime": update['receiveTime'],
-                                                        "severity": update['severity'],
-                                                        "event": update['event'],
-                                                        "value": update['value'],
-                                                        "text": update['text'],
-                                                        "id": update['lastReceiveId']
+                                                     "createTime": update['createTime'],
+                                                     "receiveTime": update['receiveTime'],
+                                                     "severity": update['severity'],
+                                                     "event": update['event'],
+                                                     "value": update['value'],
+                                                     "text": update['text'],
+                                                     "id": update['lastReceiveId']
                                                     }
-                                           }
+                                            }
                                    },
                                    new=True,
                                    fields={"history": 0})['value']
@@ -153,13 +153,36 @@ class Mongo(object):
 
         # FIXME - no native find_and_modify method in this version of pymongo
         no_obj_error = "No matching object found"
-        return self.db.command("findAndModify", 'alerts',
-                               allowable_errors=[no_obj_error],
-                               query={"environment": environment, "resource": resource, "event": event},
-                               update={'$set': kwargs,
-                                       '$inc': {"duplicateCount": 1}},
-                               new=True,
-                               fields={"history": 0})['value']
+        response = self.db.command("findAndModify", 'alerts',
+                                   allowable_errors=[no_obj_error],
+                                   query={"environment": environment, "resource": resource, "event": event},
+                                   update={'$set': kwargs,
+                                           '$inc': {"duplicateCount": 1}},
+                                   new=True,
+                                   fields={"history": 0})['value']
+
+        return Alert(
+            alertid=response['_id'],
+            resource=response['resource'],
+            event=response['event'],
+            correlate=response['correlatedEvents'],
+            group=response['group'],
+            value=response['value'],
+            severity=response['severity'],
+            environment=response['environment'],
+            service=response['service'],
+            text=response['text'],
+            event_type=response['type'],
+            tags=response['tags'],
+            origin=response['origin'],
+            threshold_info=response['thresholdInfo'],
+            summary=response['summary'],
+            timeout=response['timeout'],
+            create_time=response['createTime'],
+            receive_time=response['receiveTime'],
+            last_receive_time=response['lastReceiveTime'],
+            trend_indication=response['trendIndication'],
+        )
 
     def update_status(self, environment, resource, event, status):
 

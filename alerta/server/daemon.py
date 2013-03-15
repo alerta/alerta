@@ -86,7 +86,12 @@ class WorkerThread(threading.Thread):
                     "trendIndication": 'noChange',
                     "rawData": alert['rawData'],
                 }
-                self.db.duplicate_alert(alert['environment'], alert['resource'], alert['event'], **update)
+                duplicateAlert = self.db.duplicate_alert(alert['environment'], alert['resource'], alert['event'], **update)
+
+                if CONF.forward_duplicate:
+                    # Forward alert to notify topic and logger queue
+                    self.mq.send(duplicateAlert, CONF.outbound_queue)
+                    self.mq.send(duplicateAlert, CONF.outbound_topic)
 
                 self.input_queue.task_done()
 
@@ -124,15 +129,15 @@ class WorkerThread(threading.Thread):
                     "rawData": alert['rawData'],
                     "duplicateCount": 0,
                 }
-                enrichedAlert = self.db.modify_alert(alert['environment'], alert['resource'], alert['event'], update)
+                correlatedAlert = self.db.modify_alert(alert['environment'], alert['resource'], alert['event'], update)
 
                 new_status = severity.status_from_severity(previous_severity, alert['severity'])
                 if new_status:
                     self.db.update_status(alert['environment'], alert['resource'], alert['event'], new_status)
 
                 # Forward alert to notify topic and logger queue
-                self.mq.send(enrichedAlert, CONF.outbound_queue)
-                self.mq.send(enrichedAlert, CONF.outbound_topic)
+                self.mq.send(correlatedAlert, CONF.outbound_queue)
+                self.mq.send(correlatedAlert, CONF.outbound_topic)
 
                 self.input_queue.task_done()
                 LOG.info('%s : Alert forwarded to %s and %s', alert['id'], CONF.outbound_queue, CONF.outbound_topic)
