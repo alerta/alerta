@@ -121,7 +121,7 @@ class Mongo(object):
                     trend_indication=response['trendIndication'],
                 )
             )
-        return 10, alerts
+        return len(alerts), alerts
 
     def save_alert(self, alert):
 

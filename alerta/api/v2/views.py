@@ -1,6 +1,7 @@
 
 import json
 import datetime
+from collections import defaultdict
 
 from flask import request, current_app
 from functools import wraps
@@ -8,7 +9,7 @@ from alerta.api.v2 import app, db
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.alert import Alert
+from alerta.alert import Alert, severity, status
 from alerta.common.utils import DateEncoder
 
 Version = '2.0.0'
@@ -63,22 +64,87 @@ def get_alerts():
     limit = request.args.get('limit', _LIMIT, int)
     alert_details = list()
 
-    found, alerts = db.get_alerts(limit=limit, event='event4')
-    print alerts
-    if found:
+    found, alerts = db.get_alerts(limit=limit)
+    print 'found=%s' % found
+    if found > 0:
         more = True if found > limit else False
 
+        severity_count = defaultdict(int)
+        status_count = defaultdict(int)
+        last_time = None
+
         for alert in alerts:
-            alert_details.append(alert.get_body())
+            body = alert.get_body()
+            alert_details.append(body)
+
+            severity_count[body['severity']] += 1
+            status_count[body['status']] += 1
+
+            if not last_time:
+                last_time = body['lastReceiveTime']
+            elif body['lastReceiveTime'] > last_time:
+                last_time = body['lastReceiveTime']
 
         return jsonify(response={
-            "alertDetails": alert_details,
+            "alerts": {
+                "alertDetails": alert_details,
+                "severityCounts": {
+                    "critical": severity_count[severity.CRITICAL],
+                    "major": severity_count[severity.MAJOR],
+                    "minor": severity_count[severity.MINOR],
+                    "warning": severity_count[severity.WARNING],
+                    "indeterminate": severity_count[severity.INDETERMINATE],
+                    "cleared": severity_count[severity.CLEARED],
+                    "normal": severity_count[severity.NORMAL],
+                    "informational": severity_count[severity.INFORM],
+                    "debug": severity_count[severity.DEBUG],
+                    "auth": severity_count[severity.AUTH],
+                    "unknown": severity_count[severity.UNKNOWN],
+                },
+                "statusCounts": {
+                    "open": status_count[status.OPEN],
+                    "acknowledged": status_count[status.ACK],
+                    "closed": status_count[status.CLOSED],
+                    "expired": status_count[status.EXPIRED],
+                    "unknown": status_count[status.UNKNOWN],
+                },
+                "lastTime": last_time,
+            },
             "status": "ok",
             "total": found,
-            "more": more}
-        )
+            "more": more
+        })
     else:
-        jsonify(response={"alertDetails": alert_details, "status": "error", "message": "not found", "total": 0, "more": False})
+        return jsonify(response={
+            "alerts": {
+                "alertDetails": list(),
+                "severityCounts": {
+                    "critical": 0,
+                    "major": 0,
+                    "minor": 0,
+                    "warning": 0,
+                    "indeterminate": 0,
+                    "cleared": 0,
+                    "normal": 0,
+                    "informational": 0,
+                    "debug": 0,
+                    "auth": 0,
+                    "unknown": 0,
+                    },
+                "statusCounts": {
+                    "open": 0,
+                    "acknowledged": 0,
+                    "closed": 0,
+                    "expired": 0,
+                    "unknown": 0,
+                    },
+                "lastTime": None,
+            },
+            "status": "error",
+            "error": "not found",
+            "total": 0,
+            "more": False,
+        })
 
 @app.route('/alerta/api/v1/alerts/alert.json', methods=['POST', 'PUT'])
 def create_alert(alertid):
