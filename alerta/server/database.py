@@ -63,9 +63,9 @@ class Mongo(object):
 
         if not response:
             LOG.warning('Alert not found with environment, resource, event, severity = %s %s %s %s', environment, resource, event, severity)
-            return
+            return 0, None
 
-        return Alert(
+        return 1, Alert(
             alertid=response['_id'],
             resource=response['resource'],
             event=response['event'],
@@ -87,6 +87,41 @@ class Mongo(object):
             last_receive_time=response['lastReceiveTime'],
             trend_indication=response['trendIndication'],
         )
+
+    def get_alerts(self, limit=0, **kwargs):
+
+        responses = self.db.alerts.find(kwargs).limit(limit)
+        if not responses:
+            LOG.warning('Alert not found with args = %s', kwargs)
+            return 0, None
+
+        alerts = list()
+        for response in responses:
+            alerts.append(
+                Alert(
+                    alertid=response['_id'],
+                    resource=response['resource'],
+                    event=response['event'],
+                    correlate=response['correlatedEvents'],
+                    group=response['group'],
+                    value=response['value'],
+                    severity=response['severity'],
+                    environment=response['environment'],
+                    service=response['service'],
+                    text=response['text'],
+                    event_type=response['type'],
+                    tags=response['tags'],
+                    origin=response['origin'],
+                    threshold_info=response['thresholdInfo'],
+                    summary=response['summary'],
+                    timeout=response['timeout'],
+                    create_time=response['createTime'],
+                    receive_time=response['receiveTime'],
+                    last_receive_time=response['lastReceiveTime'],
+                    trend_indication=response['trendIndication'],
+                )
+            )
+        return 10, alerts
 
     def save_alert(self, alert):
 

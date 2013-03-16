@@ -18,6 +18,7 @@ CONF = config.CONF
 
 # TODO(nsatterl): put these constants somewhere appropriate
 _MAX_HISTORY = -10  # 10 most recent
+_LIMIT = 100
 
 # Over-ride jsonify to support Date Encoding
 def jsonify(*args, **kwargs):
@@ -50,8 +51,8 @@ def jsonp(func):
 @app.route('/alerta/api/v2/alerts/alert/<alertid>')
 def get_alert(alertid):
 
-    alert = db.get_alert(alertid=alertid)
-    if alert:
+    found, alert = db.get_alert(alertid=alertid)
+    if found:
         return jsonify(response={"alert": alert.get_body(), "status": "ok", "total": 1})
     else:
         return jsonify(response={"alert": None, "status": "error", "message": "not found", "total": 0})
@@ -59,48 +60,25 @@ def get_alert(alertid):
 @app.route('/alerta/api/v2/alerts')
 def get_alerts():
 
-    hide_details = request.args.get('hide-alert-details', False, bool)
-    hide_alert_repeats = request.args.getlist('hide-alert-repeats')
+    limit = request.args.get('limit', _LIMIT, int)
+    alert_details = list()
 
-    # TODO(nsatterl): support comma-separated fields eg. fields=event,summary
-    fields = dict((k, 1) for k in request.args.getlist('fields'))
+    found, alerts = db.get_alerts(limit=limit, event='event4')
+    print alerts
+    if found:
+        more = True if found > limit else False
 
-    # NOTE: if filtering on fields still always include severity and status in response
-    if fields:
-        fields['severity'] = 1
-        fields['status'] = 1
+        for alert in alerts:
+            alert_details.append(alert.get_body())
 
-    if request.args.get('hide-alert-history', False, bool):
-        fields['history'] = 0
+        return jsonify(response={
+            "alertDetails": alert_details,
+            "status": "ok",
+            "total": found,
+            "more": more}
+        )
     else:
-        fields['history'] = {'slice': _MAX_HISTORY}
-
-    alert_limit = request.args.get('limit', 0, int)
-
-    query = dict()
-    query_time = datetime.datetime.utcnow()
-
-    from_date = request.args.get('from-date')
-    if from_date:
-        from_date = datetime.datetime.strptime(from_date, '%Y-%m-%dT%H:%M:%S.%fZ')
-        from_date = from_date.replace(tzinfo=pytz.utc)
-        to_date = query_time
-        to_date = to_date.replace(tzinfo=pytz.utc)
-        query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date}
-
-    sort_by = list()
-    for s in request.args.getlist('sort-by'):
-            if s in ['createTime', 'receiveTime', 'lastReceiveTime']:
-                sort_by.append((s, -1))  # sort by newest first
-            else:
-                sort_by.append((s, 1))   # alpha-numeric sort
-    if not sort_by:
-        sort_by.append(('lastReceiveTime', -1))
-
-
-
-    return jsonify(details=hide_details, repeats=hide_alert_repeats, fields=fields)
-
+        jsonify(response={"alertDetails": alert_details, "status": "error", "message": "not found", "total": 0, "more": False})
 
 @app.route('/alerta/api/v1/alerts/alert.json', methods=['POST', 'PUT'])
 def create_alert(alertid):
