@@ -220,6 +220,8 @@
 
 <script>
 
+var api_host = document.domain + ":5000";
+
 var CRITICAL_SEV_CODE = 1;
 var MAJOR_SEV_CODE = 2;
 var MINOR_SEV_CODE = 3;
@@ -364,7 +366,7 @@ function fnFormatDetails(aData) {
     sOut += '<tr class="odd"><td><b>Repeat</b></td><td>' + repeat + '</td></tr>';
     sOut += '<tr class="even"><td><b>Summary</b></td><td>' + summary + '</td></tr>';
     sOut += '<tr class="odd"><td><b>Origin</b></td><td>' + origin + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Tags</b></td><td>' + tags + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Tags</b></td><td>' + tags + '<a id="' + alertid + '" class="tag-alert" rel="tooltip" title="Tag Alert"><i class="icon-tags"></i></a>' + '</td></tr>';
     // TODO(nsatterl): Graphs
     sOut += '<tr class="odd"><td><b>More Info</b></td><td>' + moreInfo + '</td></tr>';
     sOut += '</table>'; // 2
@@ -379,7 +381,7 @@ function fnFormatDetails(aData) {
 // Alert Status Count for console
 function getStatus(statusfilter, refresh) {
 
-    $.getJSON('http://' + document.domain + '/alerta/api/v1/alerts?callback=?&hide-alert-details=true&' + statusfilter + limit + fromDate, function (data) {
+    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&' + statusfilter + limit + fromDate, function (data) {
 
         if (data.response.warning) {
             $('#warning-text').text(data.response.warning);
@@ -415,7 +417,7 @@ function getAlerts(service, filter, refresh) {
 
     $('#' + service + ' th').addClass('loader');
 
-    $.getJSON('http://' + document.domain + '/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime&' + filter + limit + fromDate, function (data) {
+    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime&' + filter + limit + fromDate, function (data) {
 
         var sev_id = '#' + service;
 
@@ -501,7 +503,7 @@ function worker() {
     $.ajax({
         "dataType": 'json',
         "type": "GET",
-        "url": 'http://' + document.domain + '/alerta/api/v1/alerts?callback=?&sort-by=lastReceiveTime'
+        "url": 'http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime'
                 + '&environment=PROD|DEV|INFRA'
                 + asiFilter + limit + fromDate + sevFilter,
         // "async": false,
@@ -694,6 +696,17 @@ $(document).ready(function () {
         }
     });
 
+    $('tbody').on('click', '.tag-alert', function () {
+        var tag = prompt("Enter tag eg. london, location:london, datacentre:location=london");
+        if (tag != null && tag != "") {
+            $.ajax({
+                type: 'PUT',
+                contentType: 'application/json',
+                url: 'http://' + api_host + '/alerta/api/v2/alerts/alert/' + this.id + '/tag',
+                data: JSON.stringify({ tag: tag })
+            });
+        }
+    });
 });
 </script>
 </body>

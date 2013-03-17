@@ -1,9 +1,8 @@
 
-import json
 import datetime
 from collections import defaultdict
 
-from flask import request, current_app
+from flask import request, current_app, send_from_directory, _request_ctx_stack, json
 from functools import wraps
 from alerta.api.v2 import app, db
 
@@ -21,19 +20,27 @@ CONF = config.CONF
 _MAX_HISTORY = -10  # 10 most recent
 _LIMIT = 100
 
+
 # Over-ride jsonify to support Date Encoding
 def jsonify(*args, **kwargs):
     return current_app.response_class(json.dumps(dict(*args, **kwargs), cls=DateEncoder,
                                                  indent=None if request.is_xhr else 2), mimetype='application/json')
 
 # TODO(nsatterl): use @before_request and @after_request to attach a unique request id
-@app.before_first_request
-def before_request():
-    # print "load config file with warning message"
-    pass
+
+# @app.before_request
+# def before_request():
+#     LOG.warning('data %s', request.data)
+#     method = request.data.get('_method', '').upper()
+#     if method:
+#         LOG.warning('Method changed to %s', method)
+#         request.environ['REQUEST_METHOD'] = method
+#         ctx = _request_ctx_stack.top
+#         ctx.url_adapter.default_method = method
+#         assert request.method == method
+#
 
 
-# TODO(nsatterl): fix JSON-P
 def jsonp(func):
     """Wraps JSONified output for JSONP requests."""
     @wraps(func)
@@ -49,23 +56,26 @@ def jsonp(func):
     return decorated_function
 
 
-@app.route('/alerta/api/v2/alerts/alert/<alertid>')
-def get_alert(alertid):
+@app.route('/test', methods=['POST', 'GET', 'PUT', 'DELETE'])
+def test():
 
-    found, alert = db.get_alert(alertid=alertid)
-    if found:
-        return jsonify(response={"alert": alert.get_body(), "status": "ok", "total": 1})
-    else:
-        return jsonify(response={"alert": None, "status": "error", "message": "not found", "total": 0})
+    return jsonify(response={"status": "test", "json": request.json, "data": request.data})
 
-@app.route('/alerta/api/v2/alerts')
+# Returns a list of alerts
+@app.route('/alerta/api/v2/alerts', methods=['GET'])
+@jsonp
 def get_alerts():
 
+    # for arg in request.args:
+    #     if arg == 'limit':
+    #         limit = request.args.get('limit', _LIMIT, int)
+
     limit = request.args.get('limit', _LIMIT, int)
+
     alert_details = list()
 
-    found, alerts = db.get_alerts(limit=limit)
-    print 'found=%s' % found
+    alerts = db.get_alerts(limit=limit)
+    found = len(alerts)
     if found > 0:
         more = True if found > limit else False
 
@@ -146,36 +156,134 @@ def get_alerts():
             "more": False,
         })
 
-@app.route('/alerta/api/v1/alerts/alert.json', methods=['POST', 'PUT'])
-def create_alert(alertid):
 
-    pass
+@app.route('/alerta/api/v2/alerts/alert.json', methods=['POST'])
+@jsonp
+def create_alert():
 
-@app.route('/alerta/api/v2/alerts/alert/<alertid>', methods=['POST', 'PUT'])
-def modify_alert(alertid):
+    # Create a new alert
+    LOG.warning('POST data=%s', request.data)
+    LOG.warning('POST json=%s', request.json)
 
-    #db.modify_alert()
+    try:
+        alert = json.loads(request.data)
+    except Exception, e:
+        return jsonify(response={"status": "error", "message": e})
 
-    pass
+    receive_time = datetime.datetime.utcnow()
+
+    newAlert = Alert(
+        resource=alert.get('resource', None),
+        event=alert.get('event', None),
+        correlate=alert.get('correlatedEvents', None),
+        group=alert.get('group', None),
+        value=alert.get('value', None),
+        status=status.parse_status(alert.get('status', None)),
+        severity=severity.parse_severity(alert.get('severity', None)),
+        previous_severity=severity.parse_severity(alert.get('previousSeverity', None)),
+        environment=alert.get('environment', None),
+        service=alert.get('service', None),
+        text=alert.get('text', None),
+        event_type=alert.get('type', None),
+        tags=alert.get('tags', None),
+        origin=alert.get('origin', None),
+        repeat=alert.get('repeat', None),
+        duplicate_count=alert.get('duplicateCount', None),
+        threshold_info=alert.get('thresholdInfo', None),
+        summary=alert.get('summary', None),
+        timeout=alert.get('timeout', None),
+        alertid=alert.get('id', None),
+        last_receive_id=alert.get('lastReceiveId', None),
+        create_time=alert.get('createTime', None),
+        expire_time=alert.get('expireTime', None),
+        receive_time=receive_time,
+        last_receive_time=alert.get('lastReceiveTime', None),
+        trend_indication=alert.get('trendIndication', None),
+        raw_data=alert.get('rawData', None),
+    )
+    LOG.debug('New alert %s', newAlert)
+    alertid = db.save_alert(newAlert)
+
+    if alertid:
+        return jsonify(response={"status": "ok", "id": alertid})
+    else:
+        return jsonify(response={"status": "error", "message": "something went wrong"})
 
 
-@app.route('/alerta/api/v2/alerts/alert/<alertid>/tag', methods=['POST', 'PUT'])
+@app.route('/alerta/api/v2/alerts/alert/<alertid>', methods=['GET', 'PUT', 'DELETE'])
+@jsonp
+def rud_alert(alertid):
+
+    error = None
+    LOG.warning('alertid=%s', alertid)
+    LOG.warning('data=%s', request.data)
+    LOG.warning('json=%s', request.json)
+
+    # Return a single alert
+    if request.method == 'GET':
+        LOG.warning('GET')
+        alert = db.get_alert(alertid=alertid)
+        if alert:
+            return jsonify(response={"alert": alert.get_body(), "status": "ok", "total": 1})
+        else:
+            return jsonify(response={"alert": None, "status": "error", "message": "not found", "total": 0})
+
+    # Update a single alert
+    elif request.method == 'PUT':
+        LOG.warning('PUT')
+        if request.json:
+            response = db.partial_update_alert(alertid, update=request.json)
+        else:
+            response = None
+            error = "no post data"
+
+        if response:
+            return jsonify(response={"status": "ok"})
+        else:
+            return jsonify(response={"status": "error", "message": error})
+
+    # Delete a single alert
+    elif request.method == 'DELETE':
+        LOG.warning('DELETE')
+        response = db.delete_alert(alertid)
+
+        if response:
+            return jsonify(response={"status": "ok"})
+        else:
+            return jsonify(response={"status": "error", "message": error})
+
+    else:
+        return jsonify(response={"status": "error", "message": "%s unknown method" % request.method})
+
+
+# Tag an alert
+@app.route('/alerta/api/v2/alerts/alert/<alertid>/tag', methods=['PUT'])
+@jsonp
 def tag_alert(alertid):
 
-    pass
+    LOG.warning('alertid=%s', alertid)
+    LOG.warning('data=%s', request.data)
+    LOG.warning('json=%s', request.json)
+
+    tag = request.json.get('tag', None)
+    LOG.warning('tag=%s', tag)
+
+    if tag:
+        response = db.tag_alert(alertid, tag)
+        LOG.warning('response=%s',  response)
+    else:
+        response = None
+
+    if response:
+        return jsonify(response={"status": "ok"})
+    else:
+        return jsonify(response={"status": "error"})
 
 
-@app.route('/alerta/api/v2/alerts/alert/<alertid>', methods=['DELETE'])
-def delete_alert(alertid):
-
-    pass
-
-
-@app.route('/alerta/api/v2/resources')
-def get_resources(alertid):
-
-    pass
-
+@app.route('/alerta/dashboard/<path:filename>')
+def console(filename):
+    # TODO(nsatterl): make this directory configurable
+    return send_from_directory('/Users/nsatterl/Projects/alerta/dashboard', filename)
 
 
 def fix_id(alert):

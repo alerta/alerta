@@ -31,9 +31,9 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
 
         'timezone': 'Europe/London',
 
-        'api_host': 'monitoring',
-        'api_port': 80,
-        'api_endpoint': '/alerta/api/v1',   # eg. /Services/API
+        'api_host': 'localhost',
+        'api_port': 5000,
+        'api_endpoint': '/alerta/api/v2',   # eg. /Services/API
 
         'http_proxy': None,
         'https_proxy': None,

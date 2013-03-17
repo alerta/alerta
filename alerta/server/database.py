@@ -52,48 +52,12 @@ class Mongo(object):
                                         '$or': [{"event": event}, {"correlatedEvents": event}]},
                                        {"severity": 1, "_id": 0})['severity']
 
-    def get_alert(self, alertid=None, environment=None, resource=None, event=None, severity=None):
-
-        if alertid:
-            response = self.db.alerts.find_one({'_id': alertid})
-        elif severity:
-            response = self.db.alerts.find_one({"environment": environment, "resource": resource, "event": event, "severity": severity})
-        else:
-            response = self.db.alerts.find_one({"environment": environment, "resource": resource, "event": event})
-
-        if not response:
-            LOG.warning('Alert not found with environment, resource, event, severity = %s %s %s %s', environment, resource, event, severity)
-            return 0, None
-
-        return 1, Alert(
-            alertid=response['_id'],
-            resource=response['resource'],
-            event=response['event'],
-            correlate=response['correlatedEvents'],
-            group=response['group'],
-            value=response['value'],
-            severity=response['severity'],
-            environment=response['environment'],
-            service=response['service'],
-            text=response['text'],
-            event_type=response['type'],
-            tags=response['tags'],
-            origin=response['origin'],
-            threshold_info=response['thresholdInfo'],
-            summary=response['summary'],
-            timeout=response['timeout'],
-            create_time=response['createTime'],
-            receive_time=response['receiveTime'],
-            last_receive_time=response['lastReceiveTime'],
-            trend_indication=response['trendIndication'],
-        )
-
     def get_alerts(self, limit=0, **kwargs):
 
         responses = self.db.alerts.find(kwargs).limit(limit)
         if not responses:
             LOG.warning('Alert not found with args = %s', kwargs)
-            return 0, None
+            return None
 
         alerts = list()
         for response in responses:
@@ -119,34 +83,55 @@ class Mongo(object):
                     receive_time=response['receiveTime'],
                     last_receive_time=response['lastReceiveTime'],
                     trend_indication=response['trendIndication'],
-                )
+                    )
             )
-        return len(alerts), alerts
+        return alerts
 
-    def save_alert(self, alert):
-
-        body = alert.get_body()
-        body['history'] = [{
-            "id": body['id'],
-            "event": body['event'],
-            "severity": body['severity'],
-            "value": body['value'],
-            "text": body['text'],
-            "createTime": body['createTime'],
-            "receiveTime": body['receiveTime'],
-        }]
-        body['_id'] = body['id']
-        del body['id']
-
-        return self.db.alerts.insert(body, safe=True)
-
-    def modify_alert(self, alertid, environment, resource, event, update):
+    def get_alert(self, alertid=None, environment=None, resource=None, event=None, severity=None):
 
         if alertid:
-            query = {"_id": alertid}
+            response = self.db.alerts.find_one({'_id': {'$regex': '^' + alertid}})
+        elif severity:
+            response = self.db.alerts.find_one({"environment": environment, "resource": resource, "event": event, "severity": severity})
+        else:
+            response = self.db.alerts.find_one({"environment": environment, "resource": resource, "event": event})
+
+        if not response:
+            LOG.warning('Alert not found with environment, resource, event, severity = %s %s %s %s', environment, resource, event, severity)
+            return None
+
+        return Alert(
+            alertid=response['_id'],
+            resource=response['resource'],
+            event=response['event'],
+            correlate=response['correlatedEvents'],
+            group=response['group'],
+            value=response['value'],
+            severity=response['severity'],
+            environment=response['environment'],
+            service=response['service'],
+            text=response['text'],
+            event_type=response['type'],
+            tags=response['tags'],
+            origin=response['origin'],
+            threshold_info=response['thresholdInfo'],
+            summary=response['summary'],
+            timeout=response['timeout'],
+            create_time=response['createTime'],
+            receive_time=response['receiveTime'],
+            last_receive_time=response['lastReceiveTime'],
+            trend_indication=response['trendIndication'],
+        )
+
+    def update_alert(self, alertid=None, environment=None, resource=None, event=None, update=None):
+
+        if alertid:
+            query = {'_id': {'$regex': '^' + alertid}}
         else:
             query = {"environment": environment, "resource": resource,
                      '$or': [{"event": event}, {"correlatedEvents": event}]}
+
+        LOG.warning('update=%s', update)
 
         # FIXME - no native find_and_modify method in this version of pymongo
         no_obj_error = "No matching object found"
@@ -154,17 +139,18 @@ class Mongo(object):
                                    allowable_errors=[no_obj_error],
                                    query=query,
                                    update={'$set': update,
-                                           '$push': {"history": {
-                                                     "createTime": update['createTime'],
-                                                     "receiveTime": update['receiveTime'],
-                                                     "severity": update['severity'],
-                                                     "event": update['event'],
-                                                     "value": update['value'],
-                                                     "text": update['text'],
-                                                     "id": update['lastReceiveId']
-                                                    }
-                                            }
-                                   },
+                                           '$push': {
+                                               "history": {
+                                                    "createTime": update['createTime'],
+                                                    "receiveTime": update['receiveTime'],
+                                                    "severity": update['severity'],
+                                                    "event": update['event'],
+                                                    "value": update['value'],
+                                                    "text": update['text'],
+                                                    "id": update['lastReceiveId']
+                                               }
+                                           }
+                                           },
                                    new=True,
                                    fields={"history": 0})['value']
 
@@ -190,6 +176,51 @@ class Mongo(object):
             last_receive_time=response['lastReceiveTime'],
             trend_indication=response['trendIndication'],
         )
+
+    def partial_update_alert(self, alertid=None, environment=None, resource=None, event=None, update=None):
+
+        if alertid:
+            query = {'_id': {'$regex': '^' + alertid}}
+        else:
+            query = {"environment": environment, "resource": resource,
+                     '$or': [{"event": event}, {"correlatedEvents": event}]}
+
+        LOG.warning('partial update=%s', update)
+
+        response = self.db.alerts.update(query, {'$set': update}, multi=False)
+        LOG.debug("db.alerts.update({'_id': {'$regex': '^' + %s}}) response=%s", alertid, response)
+
+        return True if 'ok' in response else False
+
+    def delete_alert(self, alertid):
+
+        response = self.db.alerts.remove({'_id': {'$regex': '^' + alertid}})
+        LOG.debug("db.alerts.remove({'_id': {'$regex': '^' + %s}}) response=%s", alertid, response)
+
+        return True if 'ok' in response else False
+
+    def tag_alert(self, alertid, tag):
+
+        response = self.db.alerts.update({'_id': {'$regex': '^' + alertid}}, {'$push': {"tags": tag}})
+
+        return True if 'ok' in response else False
+
+    def save_alert(self, alert):
+
+        body = alert.get_body()
+        body['history'] = [{
+            "id": body['id'],
+            "event": body['event'],
+            "severity": body['severity'],
+            "value": body['value'],
+            "text": body['text'],
+            "createTime": body['createTime'],
+            "receiveTime": body['receiveTime'],
+        }]
+        body['_id'] = body['id']
+        del body['id']
+
+        return self.db.alerts.insert(body)
 
     def duplicate_alert(self, environment, resource, event, **kwargs):
 
@@ -226,15 +257,19 @@ class Mongo(object):
             trend_indication=response['trendIndication'],
         )
 
-    def update_status(self, environment, resource, event, status):
+    def update_status(self, alertid=None, environment=None, resource=None, event=None, status=None):
 
         update_time = datetime.datetime.utcnow()
         update_time = update_time.replace(tzinfo=pytz.utc)
 
-        LOG.info('Alert status for %s %s %s alert set to %s', environment, resource, event, status)
+        if alertid:
+            query = {"_id": alertid}
+        else:
+            query = {"environment": environment, "resource": resource,
+                     '$or': [{"event": event}, {"correlatedEvents": event}]}
 
-        query = {"environment": environment, "resource": resource,
-                 '$or': [{"event": event}, {"correlatedEvents": event}]}
+        #LOG.info('Alert status for %s %s %s alert set to %s', environment, resource, event, status)
+
         update = {'$set': {"status": status}, '$push': {"history": {"status": status, "updateTime": update_time}}}
 
         LOG.debug('query = %s, update = %s', query, update)

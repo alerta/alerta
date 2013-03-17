@@ -1,22 +1,33 @@
 #!/bin/bash
 
-curl -XPOST http://${1:-'monitoring.gudev.gnl'}/alerta/api/v1/alerts/alert.json -d '{
-    "resource": "host5",
+curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/api/v2/alerts/alert.json' -d '
+{
+  "resource": "host55",
+  "event": "event111",
+  "severity": "major",
+  "environment": ["RELEASE", "QA"],
+  "service": ["Common"],
+  "text": "this is a test",
+  "value": "OK"
+}'
+
+curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/api/v2/alerts/alert.json' -d '{
+    "resource": "host55",
     "event": "HostAvail",
     "group": "Network",
     "value": "Down",
-    "severity": "MAJOR",
+    "severity": "major",
     "environment": [
-        "REL",
+        "RELEASE",
         "QA"
     ],
     "service": [
-        "SharedSvcs"
+        "Common"
     ],
     "tags": [
         "location=London",
-        "region=EU"
+         "region=EU"
     ],
-    "text": "Host is not responding to ping"
+    "text": "Host is not responding to ping."
 }'
 echo
