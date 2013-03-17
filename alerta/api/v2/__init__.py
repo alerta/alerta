@@ -1,12 +1,12 @@
 import sys
 
 from flask import Flask
-from flask.ext.pymongo import PyMongo
+#from flask.ext.pymongo import PyMongo
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat
+#from alerta.common.daemon import Daemon
+#from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging
 from alerta.server.database import Mongo
 
@@ -28,6 +28,8 @@ app.config.from_object(__name__)
 #mongo = PyMongo(app)
 db = Mongo()
 
+create_mq = Messaging()
+create_mq.connect()
 
 import views
 import management.views

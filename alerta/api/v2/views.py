@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from flask import request, current_app, send_from_directory, _request_ctx_stack, json
 from functools import wraps
-from alerta.api.v2 import app, db
+from alerta.api.v2 import app, db, create_mq
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -60,6 +60,7 @@ def jsonp(func):
 def test():
 
     return jsonify(response={"status": "test", "json": request.json, "data": request.data})
+
 
 # Returns a list of alerts
 @app.route('/alerta/api/v2/alerts', methods=['GET'])
@@ -162,15 +163,10 @@ def get_alerts():
 def create_alert():
 
     # Create a new alert
-    LOG.warning('POST data=%s', request.data)
-    LOG.warning('POST json=%s', request.json)
-
     try:
         alert = json.loads(request.data)
     except Exception, e:
         return jsonify(response={"status": "error", "message": e})
-
-    receive_time = datetime.datetime.utcnow()
 
     newAlert = Alert(
         resource=alert.get('resource', None),
@@ -178,34 +174,22 @@ def create_alert():
         correlate=alert.get('correlatedEvents', None),
         group=alert.get('group', None),
         value=alert.get('value', None),
-        status=status.parse_status(alert.get('status', None)),
         severity=severity.parse_severity(alert.get('severity', None)),
-        previous_severity=severity.parse_severity(alert.get('previousSeverity', None)),
         environment=alert.get('environment', None),
         service=alert.get('service', None),
         text=alert.get('text', None),
-        event_type=alert.get('type', None),
+        event_type=alert.get('type', 'exceptionAlert'),
         tags=alert.get('tags', None),
         origin=alert.get('origin', None),
-        repeat=alert.get('repeat', None),
-        duplicate_count=alert.get('duplicateCount', None),
         threshold_info=alert.get('thresholdInfo', None),
-        summary=alert.get('summary', None),
         timeout=alert.get('timeout', None),
-        alertid=alert.get('id', None),
-        last_receive_id=alert.get('lastReceiveId', None),
-        create_time=alert.get('createTime', None),
-        expire_time=alert.get('expireTime', None),
-        receive_time=receive_time,
-        last_receive_time=alert.get('lastReceiveTime', None),
-        trend_indication=alert.get('trendIndication', None),
         raw_data=alert.get('rawData', None),
     )
     LOG.debug('New alert %s', newAlert)
-    alertid = db.save_alert(newAlert)
+    create_mq.send(newAlert)
 
-    if alertid:
-        return jsonify(response={"status": "ok", "id": alertid})
+    if newAlert:
+        return jsonify(response={"status": "ok", "id": newAlert.get_id()})
     else:
         return jsonify(response={"status": "error", "message": "something went wrong"})
 
@@ -215,13 +199,9 @@ def create_alert():
 def rud_alert(alertid):
 
     error = None
-    LOG.warning('alertid=%s', alertid)
-    LOG.warning('data=%s', request.data)
-    LOG.warning('json=%s', request.json)
 
     # Return a single alert
     if request.method == 'GET':
-        LOG.warning('GET')
         alert = db.get_alert(alertid=alertid)
         if alert:
             return jsonify(response={"alert": alert.get_body(), "status": "ok", "total": 1})
@@ -230,7 +210,6 @@ def rud_alert(alertid):
 
     # Update a single alert
     elif request.method == 'PUT':
-        LOG.warning('PUT')
         if request.json:
             response = db.partial_update_alert(alertid, update=request.json)
         else:
@@ -244,7 +223,6 @@ def rud_alert(alertid):
 
     # Delete a single alert
     elif request.method == 'DELETE':
-        LOG.warning('DELETE')
         response = db.delete_alert(alertid)
 
         if response:
@@ -261,16 +239,10 @@ def rud_alert(alertid):
 @jsonp
 def tag_alert(alertid):
 
-    LOG.warning('alertid=%s', alertid)
-    LOG.warning('data=%s', request.data)
-    LOG.warning('json=%s', request.json)
-
     tag = request.json.get('tag', None)
-    LOG.warning('tag=%s', tag)
 
     if tag:
         response = db.tag_alert(alertid, tag)
-        LOG.warning('response=%s',  response)
     else:
         response = None
 
@@ -285,10 +257,4 @@ def console(filename):
     # TODO(nsatterl): make this directory configurable
     return send_from_directory('/Users/nsatterl/Projects/alerta/dashboard', filename)
 
-
-def fix_id(alert):
-    if '_id' in alert:
-        alert['id'] = alert['_id']
-        del alert['_id']
-    return alert
 

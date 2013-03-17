@@ -2,7 +2,7 @@
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/api/v2/alerts/alert.json' -d '
 {
-  "resource": "host55",
+  "resource": "host678",
   "event": "event111",
   "severity": "major",
   "environment": ["RELEASE", "QA"],
@@ -12,7 +12,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
 }'
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/api/v2/alerts/alert.json' -d '{
-    "resource": "host55",
+    "resource": "host789",
     "event": "HostAvail",
     "group": "Network",
     "value": "Down",

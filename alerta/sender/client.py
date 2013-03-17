@@ -35,8 +35,9 @@ class SenderClient(object):
                 event_type='exceptionAlert',  # TODO(nsatterl): make this configurable?
                 tags=CONF.tags,
                 origin=CONF.origin,
-                threshold_info='n/a',   #TODO(nsatterl): make this configurable?
+                threshold_info='n/a',   # TODO(nsatterl): make this configurable?
                 timeout=CONF.timeout,
+                raw_data='n/a',  # TODO(nsatterl): make this configurable?
             )
 
         if CONF.dry_run:
