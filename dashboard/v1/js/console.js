@@ -6,7 +6,7 @@ var logger = 0,
 
 var hb_threshold = 300; // 5 minutes
 
-var api_server = document.domain + ':80';
+var api_server = document.domain + ':5000';
 
 function updateLimit(lim) {
     if (lim > 0) {
@@ -163,7 +163,7 @@ function getHeartbeats(refresh) {
 // Update Alert Status
 function getStatus(statusfilter, refresh) {
 
-    $.getJSON('http://' + api_server + '/alerta/api/v1/alerts?callback=?&hide-alert-details=true&hide-alert-repeats=NORMAL&' + statusfilter + limit + fromDate, function (data) {
+    $.getJSON('http://' + api_server + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&hide-alert-repeats=NORMAL&' + statusfilter + limit + fromDate, function (data) {
 
         if (data.response.warning) {
             $('#warning-text').text(data.response.warning);
@@ -186,7 +186,7 @@ function getAlerts(service, filter, refresh) {
 
     $('#' + service + ' th').addClass('loader');
 
-    $.getJSON('http://' + api_server + '/alerta/api/v1/alerts?callback=?&hide-alert-repeats=NORMAL&sort-by=lastReceiveTime&' + filter + limit + fromDate, function (data) {
+    $.getJSON('http://' + api_server + '/alerta/api/v2/alerts?callback=?&hide-alert-repeats=NORMAL&sort-by=lastReceiveTime&' + filter + limit + fromDate, function (data) {
 
         var sev_id = '#' + service;
 
@@ -396,11 +396,11 @@ $(document).ready(function () {
             + 'Cancel to return to the console or OK to delete.')) {
             /* $.ajax({
              type: 'DELETE',
-             url: 'http://' + api_server + '/alerta/api/v1/alerts/alert/' + this.id,
+             url: 'http://' + api_server + '/alerta/api/v2/alerts/alert/' + this.id,
              }); */
             $.ajax({
                 type: 'POST',
-                url: 'http://' + api_server + '/alerta/api/v1/alerts/alert/' + this.id,
+                url: 'http://' + api_server + '/alerta/api/v2/alerts/alert/' + this.id,
                 data: JSON.stringify({ _method: 'delete' })
             });
             $(this).parent().parent().next().remove(); // delete drop-down
@@ -411,7 +411,7 @@ $(document).ready(function () {
     $('tbody').on('click', '.ack-alert', function () {
         $.ajax({
             type: 'PUT',
-            url: 'http://' + api_server + '/alerta/api/v1/alerts/alert/' + this.id,
+            url: 'http://' + api_server + '/alerta/api/v2/alerts/alert/' + this.id,
             data: JSON.stringify({ status: 'ACK' })
         });
         $(this).parent().parent().find('.ad-stat-td').html('<span class="label">ACK</td>');
@@ -420,7 +420,7 @@ $(document).ready(function () {
     $('tbody').on('click', '.unack-alert', function () {
         $.ajax({
             type: 'PUT',
-            url: 'http://' + api_server + '/alerta/api/v1/alerts/alert/' + this.id,
+            url: 'http://' + api_server + '/alerta/api/v2/alerts/alert/' + this.id,
             data: JSON.stringify({ status: 'OPEN' })
         });
         $(this).parent().parent().find('.ad-stat-td').html('<span class="label">OPEN</td>');
@@ -431,7 +431,7 @@ $(document).ready(function () {
         if (tag != null && tag != "") {
             $.ajax({
                 type: 'PUT',
-                url: 'http://' + api_server + '/alerta/api/v1/alerts/alert/' + this.id + '/tag',
+                url: 'http://' + api_server + '/alerta/api/v2/alerts/alert/' + this.id + '/tag',
                 data: JSON.stringify({ tags: tag })
             });
         }
