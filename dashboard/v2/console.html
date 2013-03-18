@@ -417,7 +417,8 @@ function getAlerts(service, filter, refresh) {
 
     $('#' + service + ' th').addClass('loader');
 
-    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime&' + filter + limit + fromDate, function (data) {
+    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime&'
+            + envfilter + filter + limit + fromDate, function (data) {
 
         var sev_id = '#' + service;
 
@@ -504,8 +505,7 @@ function worker() {
         "dataType": 'json',
         "type": "GET",
         "url": 'http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime'
-                + '&environment=PROD|DEV|INFRA'
-                + asiFilter + limit + fromDate + sevFilter,
+                + envfilter + asiFilter + limit + fromDate + sevFilter,
         // "async": false,
         "async": true,
         "success": function (data) {

@@ -6,7 +6,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
   "event": "HW:NIC:FAILED",
   "group": "Hardware",
   "severity": "major",
-  "environment": ["RELEASE", "QA"],
+  "environment": ["PROD", "INFRA"],
   "service": ["Common"],
   "text": "Network interface eth0 is down.",
   "value": "error"
@@ -19,8 +19,8 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
     "value": "Down",
     "severity": "major",
     "environment": [
-        "RELEASE",
-        "QA"
+        "DEV",
+        "INFRA"
     ],
     "service": [
         "Network"
@@ -39,8 +39,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
     "value": "UP",
     "severity": "normal",
     "environment": [
-        "RELEASE",
-        "QA"
+        "INFRA"
     ],
     "service": [
         "Common"
@@ -59,8 +58,8 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
     "value": "ERROR 011",
     "severity": "warning",
     "environment": [
-        "RELEASE",
-        "QA"
+        "DEV",
+        "PROD"
     ],
     "service": [
         "Common"
