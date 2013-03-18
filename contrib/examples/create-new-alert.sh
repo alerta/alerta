@@ -6,11 +6,18 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
   "event": "HW:NIC:FAILED",
   "group": "Hardware",
   "severity": "major",
-  "environment": ["PROD", "INFRA"],
-  "service": ["Common"],
+  "environment": [
+      "PROD",
+      "INFRA"
+  ],
+  "service": [
+      "Common"
+  ],
   "text": "Network interface eth0 is down.",
   "value": "error"
 }'
+echo
+sleep 1
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/api/v2/alerts/alert.json' -d '{
     "resource": "fw010",
@@ -31,6 +38,8 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
     ],
     "text": "Firewall is not responding to ping."
 }'
+echo
+sleep 2
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/api/v2/alerts/alert.json' -d '{
     "resource": "router0011",
@@ -50,6 +59,8 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
     ],
     "text": "Router is up."
 }'
+echo
+sleep 3
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/api/v2/alerts/alert.json' -d '{
     "resource": "mydb",
@@ -70,6 +81,8 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
     ],
     "text": "Oracle 011 error."
 }'
+echo
+sleep 1
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/api/v2/alerts/alert.json' -d '{
     "resource": "myapp",
@@ -89,6 +102,8 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
     ],
     "text": "Service unavailable."
 }'
+echo
+sleep 1
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/api/v2/alerts/alert.json' -d '{
     "resource": "host44",
