@@ -27,8 +27,15 @@ To install and configure the requirements on Debian/Ubuntu:
 ```
 $ sudo apt-get install mongodb-server
 $ sudo apt-get install rabbitmq-server
-$ rabbitmq-plugins enable rabbitmq_stomp
-$ rabbitmqadmin declare exchange name=alerts type=fanout
+```
+
+To enable STOMP in RabbitMQ and configure the broker:
+
+```
+$ sudo /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_stomp
+$ sudo service rabbitmq-server restart
+$ wget http://guest:guest@localhost:55672/cli/rabbitmqadmin && chmod +x rabbitmqadmin
+$ ./rabbitmqadmin declare exchange name=alerts type=fanout
 ```
 
 To run Alerta in a python virtual environment:
