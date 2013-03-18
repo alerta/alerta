@@ -1,11 +1,6 @@
-nose
 stomp.py
 pymongo
-kombu
 Flask
-Flask-PyMongo
-Werkzeug
-Jinja2
 PyYAML
 pytz
 boto
