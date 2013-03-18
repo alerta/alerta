@@ -26,7 +26,7 @@ class Alert(object):
                  text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
                  threshold_info='n/a', summary=None, timeout=None, alertid=None, last_receive_id=None,
                  create_time=None, expire_time=None, receive_time=None, last_receive_time=None, trend_indication=None,
-                 raw_data=None):
+                 raw_data=None, history=None):
 
         prog = os.path.basename(sys.argv[0])
 
@@ -86,6 +86,8 @@ class Alert(object):
             self.alert['lastReceiveId'] = last_receive_id
         if trend_indication:
             self.alert['trendIndication'] = trend_indication
+        if history:
+            self.alert['history'] = history
 
     def __repr__(self):
         return 'Alert(header=%r, alert=%r)' % (str(self.header), str(self.alert))

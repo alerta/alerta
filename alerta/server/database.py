@@ -92,6 +92,7 @@ class Mongo(object):
                     last_receive_time=response['lastReceiveTime'],
                     trend_indication=response['trendIndication'],
                     raw_data=response['rawData'],
+                    history=response['history'],
                 )
             )
         return alerts
