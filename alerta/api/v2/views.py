@@ -53,17 +53,13 @@ def jsonp(func):
 @app.route('/test', methods=['POST', 'GET', 'PUT', 'DELETE'])
 def test():
 
-    return jsonify(response={"status": "test", "json": request.json, "data": request.data})
+    return jsonify(response={"status": "ok", "json": request.json, "data": request.data, "args": request.args})
 
 
 # Returns a list of alerts
 @app.route('/alerta/api/v2/alerts', methods=['GET'])
 @jsonp
 def get_alerts():
-
-    # for arg in request.args:
-    #     if arg == 'limit':
-    #         limit = request.args.get('limit', _LIMIT, int)
 
     limit = request.args.get('limit', _LIMIT, int)
 
@@ -80,9 +76,9 @@ def get_alerts():
     alert_details = list()
 
     alerts = db.get_alerts(query=query, limit=limit)
-    found = len(alerts)
-    if found > 0:
-        more = True if found > limit else False
+    total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
+    found = 0
+    if len(alerts) > 0:
 
         severity_count = defaultdict(int)
         status_count = defaultdict(int)
@@ -90,7 +86,17 @@ def get_alerts():
 
         for alert in alerts:
             body = alert.get_body()
-            alert_details.append(body)
+
+            if body['severity'] in request.args.getlist('hide-alert-repeats') and body['repeat']:
+                continue
+
+            found += 1
+
+            if not request.args.get('hide-alert-details', False, bool):
+                alert_details.append(body)
+
+            if request.args.get('hide-alert-history', False, bool):
+                body['history'] = []
 
             severity_count[body['severity']] += 1
             status_count[body['status']] += 1
@@ -127,7 +133,7 @@ def get_alerts():
             },
             "status": "ok",
             "total": found,
-            "more": more
+            "more": total > limit
         })
     else:
         return jsonify(response={

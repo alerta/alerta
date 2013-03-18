@@ -52,6 +52,12 @@ class Mongo(object):
                                         '$or': [{"event": event}, {"correlatedEvents": event}]},
                                        {"severity": 1, "_id": 0})['severity']
 
+    def get_count(self, query=None):
+
+        query = query or dict()
+
+        return self.db.alerts.find(query).count()
+
     def get_alerts(self, query=None, limit=0):
 
         query = query or dict()
