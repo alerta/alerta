@@ -42,20 +42,23 @@ function loadAlerts(services, refresh) {
     });
 }
 
-CRITICAL = 'Critical';
-MAJOR = 'Major';
-MINOR = 'Minor';
-WARNING = 'Warning';
-NORMAL = 'Normal';
-CLEAR = 'Clear';
-INFORM = 'Informational';
-DEBUG = 'Debug';
-AUTH = 'Security';
-UNKNOWN = 'Unknown';
-INDETERMINATE = 'Indeterminate';
+CRITICAL = 'critical';
+MAJOR = 'major';
+MINOR = 'minor';
+WARNING = 'warning';
+NORMAL = 'normal';
+CLEAR = 'clear';
+INFORM = 'informational';
+DEBUG = 'debug';
+AUTH = 'security';
+UNKNOWN = 'unknown';
+INDETERMINATE = 'indeterminate';
 
 ALL = [CRITICAL, MAJOR, MINOR, WARNING, NORMAL, CLEAR, INFORM, DEBUG, AUTH, UNKNOWN, INDETERMINATE];
 
+OPEN = 'open';
+ACK = 'acknowledged';
+CLOSED = 'closed';
 
 function sev2label(severity) {
 
@@ -190,7 +193,7 @@ function getAlerts(service, filter, refresh) {
 
         var sev_id = '#' + service;
 
-        data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.inform;
+        data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.informational;
 
         $.each(data.response.alerts.severityCounts, function (sev, count) {
             $(sev_id + "-" + sev).text(count);
@@ -302,10 +305,10 @@ function getAlerts(service, filter, refresh) {
                 '<td>' + ad.event + '</td>' +
                 '<td>' + ad.value + '</td>' +
                 '<td class="alert-text">' + ad.text;
-            if (ad.status == 'OPEN') {
+            if (ad.status == OPEN) {
                 rows += '<a id="' + ad.id + '" class="ack-alert" rel="tooltip" title="Acknowledge"><i class="icon-star-empty"></i></a>';
             }
-            if (ad.status == 'ACK') {
+            if (ad.status == ACK) {
                 rows += '<a id="' + ad.id + '" class="unack-alert" rel="tooltip" title="Unacknowledge"><i class="icon-star"></i></a>';
             }
             rows += '<a id="' + ad.id + '" href="mailto:?subject=' + ad.summary + '&body=' + ad.text + '%0D%0A%0D%0ASee http://' + api_server + '/alerta/details.php?id=' + ad.id + '" class="email-alert" rel="tooltip" title="Email Alert" target="_blank"><i class="icon-envelope"></i></a>';
@@ -412,7 +415,7 @@ $(document).ready(function () {
         $.ajax({
             type: 'PUT',
             url: 'http://' + api_server + '/alerta/api/v2/alerts/alert/' + this.id,
-            data: JSON.stringify({ status: 'ACK' })
+            data: JSON.stringify({ status: ACK })
         });
         $(this).parent().parent().find('.ad-stat-td').html('<span class="label">ACK</td>');
     });
@@ -421,7 +424,7 @@ $(document).ready(function () {
         $.ajax({
             type: 'PUT',
             url: 'http://' + api_server + '/alerta/api/v2/alerts/alert/' + this.id,
-            data: JSON.stringify({ status: 'OPEN' })
+            data: JSON.stringify({ status: open })
         });
         $(this).parent().parent().find('.ad-stat-td').html('<span class="label">OPEN</td>');
     });
