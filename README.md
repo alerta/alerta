@@ -88,7 +88,7 @@ http://localhost:5000/alerta/dashboard/v1/console.html
 To see some test alerts in the console run:
 
 ```
-contrib/examples/create-new-alert.sh
+$ contrib/examples/create-new-alert.sh
 ```
 
 Optional (for alert history)
