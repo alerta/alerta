@@ -58,13 +58,14 @@ class Mongo(object):
 
         return self.db.alerts.find(query).count()
 
-    def get_alerts(self, query=None, limit=0):
+    def get_alerts(self, query=None, sort=None, limit=0):
 
         query = query or dict()
+        sort = sort or dict()
 
-        responses = self.db.alerts.find(query).limit(limit)
+        responses = self.db.alerts.find(query, sort=sort).limit(limit)
         if not responses:
-            LOG.warning('Alert not found with query = %s, limit = %s', query, limit)
+            LOG.warning('Alert not found with query = %s, sort = %s, limit = %s', query, sort, limit)
             return None
 
         alerts = list()

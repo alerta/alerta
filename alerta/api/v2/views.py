@@ -95,11 +95,19 @@ def get_alerts():
                 query[field] = dict()
                 query[field]['$in'] = value
 
-    LOG.debug('Query = %s', query)
+    sort = list()
+    if request.args.get('sort-by', None):
+        for sort_by in request.args.getlist('sort-by'):
+            if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
+                sort.append((sort_by, -1))  # sort by newest first
+            else:
+                sort.append((sort_by, 1))  # sort by newest first
+    else:
+        sort.append(('lastReceiveTime', -1))
 
     limit = request.args.get('limit', _LIMIT, int)
 
-    alerts = db.get_alerts(query=query, limit=limit)
+    alerts = db.get_alerts(query=query, sort=sort, limit=limit)
     total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
 
     found = 0
