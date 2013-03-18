@@ -13,9 +13,9 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
 }'
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/api/v2/alerts/alert.json' -d '{
-    "resource": "host789",
-    "event": "HostAvail",
-    "group": "Network",
+    "resource": "fw010",
+    "event": "NodeDown",
+    "group": "Firewall",
     "value": "Down",
     "severity": "major",
     "environment": [
@@ -23,13 +23,13 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/ap
         "QA"
     ],
     "service": [
-        "Common"
+        "Network"
     ],
     "tags": [
         "location=London",
          "region=EU"
     ],
-    "text": "Host is not responding to ping."
+    "text": "Firewall is not responding to ping."
 }'
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:5000/alerta/api/v2/alerts/alert.json' -d '{
