@@ -52,11 +52,13 @@ class Mongo(object):
                                         '$or': [{"event": event}, {"correlatedEvents": event}]},
                                        {"severity": 1, "_id": 0})['severity']
 
-    def get_alerts(self, limit=0, **kwargs):
+    def get_alerts(self, query=None, limit=0):
 
-        responses = self.db.alerts.find(kwargs).limit(limit)
+        query = query or dict()
+
+        responses = self.db.alerts.find(query).limit(limit)
         if not responses:
-            LOG.warning('Alert not found with args = %s', kwargs)
+            LOG.warning('Alert not found with query = %s, limit = %s', query, limit)
             return None
 
         alerts = list()
@@ -69,21 +71,28 @@ class Mongo(object):
                     correlate=response['correlatedEvents'],
                     group=response['group'],
                     value=response['value'],
+                    status=response['status'],
                     severity=response['severity'],
+                    previous_severity=response['previousSeverity'],
                     environment=response['environment'],
                     service=response['service'],
                     text=response['text'],
                     event_type=response['type'],
                     tags=response['tags'],
                     origin=response['origin'],
+                    repeat=response['repeat'],
+                    duplicate_count=response['duplicateCount'],
                     threshold_info=response['thresholdInfo'],
                     summary=response['summary'],
                     timeout=response['timeout'],
+                    last_receive_id=response['lastReceiveId'],
                     create_time=response['createTime'],
+                    expire_time=response['expireTime'],
                     receive_time=response['receiveTime'],
                     last_receive_time=response['lastReceiveTime'],
                     trend_indication=response['trendIndication'],
-                    )
+                    raw_data=response['rawData'],
+                )
             )
         return alerts
 
@@ -224,6 +233,8 @@ class Mongo(object):
 
     def duplicate_alert(self, environment, resource, event, **kwargs):
 
+        LOG.warning('update db with duplicate alert: %s, %s, %s, %s', environment, resource, event, kwargs)
+
         # FIXME - no native find_and_modify method in this version of pymongo
         no_obj_error = "No matching object found"
         response = self.db.command("findAndModify", 'alerts',
@@ -232,7 +243,10 @@ class Mongo(object):
                                    update={'$set': kwargs,
                                            '$inc': {"duplicateCount": 1}},
                                    new=True,
-                                   fields={"history": 0})['value']
+                                   fields={"history": 0})
+
+        LOG.critical('db.command response=%s', response)
+        response = response['value']
 
         return Alert(
             alertid=response['_id'],

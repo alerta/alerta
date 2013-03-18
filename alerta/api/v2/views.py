@@ -1,6 +1,9 @@
 
 import os
 import json
+import datetime
+import pytz
+
 from collections import defaultdict
 
 from flask import request, current_app, send_from_directory, _request_ctx_stack
@@ -74,9 +77,19 @@ def get_alerts():
 
     limit = request.args.get('limit', _LIMIT, int)
 
+    query = dict()
+    query_time = datetime.datetime.utcnow()
+    from_date = request.args.get('from-date', None)
+    if from_date:
+        from_date = datetime.datetime.strptime(from_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+        from_date = from_date.replace(tzinfo=pytz.utc)
+        to_date = query_time
+        to_date = to_date.replace(tzinfo=pytz.utc)
+        query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date }
+
     alert_details = list()
 
-    alerts = db.get_alerts(limit=limit)
+    alerts = db.get_alerts(query=query, limit=limit)
     found = len(alerts)
     if found > 0:
         more = True if found > limit else False
@@ -150,7 +163,7 @@ def get_alerts():
                     "expired": 0,
                     "unknown": 0,
                     },
-                "lastTime": None,
+                "lastTime": query_time,
             },
             "status": "error",
             "error": "not found",
