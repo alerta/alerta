@@ -246,7 +246,7 @@ def main():
             total += 1
             if alert['status'] == 'open':
                 opened += 1
-            if alert['status'] == 'acknowledged':
+            if alert['status'] == 'ack':
                 ack += 1
             if alert['status'] == 'closed':
                 closed += 1

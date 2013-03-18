@@ -1,5 +1,4 @@
 
-import os
 import json
 import datetime
 import pytz
@@ -30,20 +29,11 @@ def jsonify(*args, **kwargs):
     return current_app.response_class(json.dumps(dict(*args, **kwargs), cls=DateEncoder,
                                                  indent=None if request.is_xhr else 2), mimetype='application/json')
 
-# TODO(nsatterl): use @before_request and @after_request to attach a unique request id
 
+# TODO(nsatterl): use @before_request and @after_request to attach a unique request id
 # @app.before_request
 # def before_request():
-#     LOG.warning('data %s', request.data)
-#     method = request.data.get('_method', '').upper()
-#     if method:
-#         LOG.warning('Method changed to %s', method)
-#         request.environ['REQUEST_METHOD'] = method
-#         ctx = _request_ctx_stack.top
-#         ctx.url_adapter.default_method = method
-#         assert request.method == method
-#
-
+#     pass
 
 def jsonp(func):
     """Wraps JSONified output for JSONP requests."""
@@ -128,7 +118,7 @@ def get_alerts():
                 },
                 "statusCounts": {
                     "open": status_count[status.OPEN],
-                    "acknowledged": status_count[status.ACK],
+                    "ack": status_count[status.ACK],
                     "closed": status_count[status.CLOSED],
                     "expired": status_count[status.EXPIRED],
                     "unknown": status_count[status.UNKNOWN],
@@ -158,7 +148,7 @@ def get_alerts():
                     },
                 "statusCounts": {
                     "open": 0,
-                    "acknowledged": 0,
+                    "ack": 0,
                     "closed": 0,
                     "expired": 0,
                     "unknown": 0,
@@ -208,7 +198,7 @@ def create_alert():
         return jsonify(response={"status": "error", "message": "something went wrong"})
 
 
-@app.route('/alerta/api/v2/alerts/alert/<alertid>', methods=['GET', 'PUT', 'DELETE'])
+@app.route('/alerta/api/v2/alerts/alert/<alertid>', methods=['GET', 'PUT', 'POST', 'DELETE'])
 @jsonp
 def rud_alert(alertid):
 
@@ -236,7 +226,7 @@ def rud_alert(alertid):
             return jsonify(response={"status": "error", "message": error})
 
     # Delete a single alert
-    elif request.method == 'DELETE':
+    elif request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
         response = db.delete_alert(alertid)
 
         if response:
@@ -245,7 +235,7 @@ def rud_alert(alertid):
             return jsonify(response={"status": "error", "message": error})
 
     else:
-        return jsonify(response={"status": "error", "message": "%s unknown method" % request.method})
+        return jsonify(response={"status": "error", "message": "POST request without '_method' override?"})
 
 
 # Tag an alert
@@ -253,17 +243,17 @@ def rud_alert(alertid):
 @jsonp
 def tag_alert(alertid):
 
-    tag = request.json.get('tag', None)
+    tag = request.json
 
     if tag:
-        response = db.tag_alert(alertid, tag)
+        response = db.tag_alert(alertid, tag['tag'])
     else:
-        response = None
+        return jsonify(response={"status": "error", "message": "no data"})
 
     if response:
         return jsonify(response={"status": "ok"})
     else:
-        return jsonify(response={"status": "error"})
+        return jsonify(response={"status": "error", "message": "error tagging alert"})
 
 
 @app.route('/alerta/dashboard/<path:filename>')

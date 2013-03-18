@@ -57,7 +57,7 @@ INDETERMINATE = 'indeterminate';
 ALL = [CRITICAL, MAJOR, MINOR, WARNING, NORMAL, CLEAR, INFORM, DEBUG, AUTH, UNKNOWN, INDETERMINATE];
 
 OPEN = 'open';
-ACK = 'acknowledged';
+ACK = 'ack';
 CLOSED = 'closed';
 
 function sev2label(severity) {
@@ -403,6 +403,7 @@ $(document).ready(function () {
              }); */
             $.ajax({
                 type: 'POST',
+                contentType: 'application/json',
                 url: 'http://' + api_server + '/alerta/api/v2/alerts/alert/' + this.id,
                 data: JSON.stringify({ _method: 'delete' })
             });
@@ -414,19 +415,21 @@ $(document).ready(function () {
     $('tbody').on('click', '.ack-alert', function () {
         $.ajax({
             type: 'PUT',
+            contentType: 'application/json',
             url: 'http://' + api_server + '/alerta/api/v2/alerts/alert/' + this.id,
             data: JSON.stringify({ status: ACK })
         });
-        $(this).parent().parent().find('.ad-stat-td').html('<span class="label">ACK</td>');
+        $(this).parent().parent().find('.ad-stat-td').html('<span class="label">ack</td>');
     });
 
     $('tbody').on('click', '.unack-alert', function () {
         $.ajax({
             type: 'PUT',
+            contentType: 'application/json',
             url: 'http://' + api_server + '/alerta/api/v2/alerts/alert/' + this.id,
-            data: JSON.stringify({ status: open })
+            data: JSON.stringify({ status: OPEN })
         });
-        $(this).parent().parent().find('.ad-stat-td').html('<span class="label">OPEN</td>');
+        $(this).parent().parent().find('.ad-stat-td').html('<span class="label">open</td>');
     });
 
     $('tbody').on('click', '.tag-alert', function () {
@@ -434,8 +437,9 @@ $(document).ready(function () {
         if (tag != null && tag != "") {
             $.ajax({
                 type: 'PUT',
+                contentType: 'application/json',
                 url: 'http://' + api_server + '/alerta/api/v2/alerts/alert/' + this.id + '/tag',
-                data: JSON.stringify({ tags: tag })
+                data: JSON.stringify({ "tag": tag })
             });
         }
     });
