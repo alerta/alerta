@@ -14,7 +14,7 @@ table {
     margin: 0;
     font-family: Sintony, "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 12px;
-    line-height: 18px;
+    line-height: 14px;
     color: #333333;
     background-color: #ffffff;
     font-weight: normal;
@@ -33,7 +33,7 @@ table {
 }
 
 #status-counts {
-    font-size: 14px;
+    font-size: 13px;
     margin-top:14px;
 }
 .severity-critical {
@@ -102,11 +102,11 @@ table {
     background-color: #3a87ad;
 }
 
-.label-success {
+.label-normal {
     background-color: #468847;
 }
 
-.label-inverse{
+.label-inverse {
     background-color: #333333;
 }
 
@@ -118,4 +118,8 @@ table {
 
 .initially-hidden {
     display: none;
+}
+
+td {
+    white-space: nowrap;
 }

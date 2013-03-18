@@ -58,11 +58,11 @@
                 <table border=1 class="table table-bordered table-condensed"  id="status-counts">
                     <tbody>
                     <tr id="Alert-status" class="status">
-                        <td><span class="label">OPEN</span></td>
+                        <td><span class="label">Open</span></td>
                         <td id="count-open"><b>0</b></td>
-                        <td><span class="label">ACK</span></td>
+                        <td><span class="label">Ack</span></td>
                         <td id="count-ack"><b>0</b></td>
-                        <td><span class="label">CLOSED</span></td>
+                        <td><span class="label">Closed</span></td>
                         <td id="count-closed"><b>0</b></td>
                     </tr>
                     </tbody>
@@ -421,7 +421,7 @@ function getAlerts(service, filter, refresh) {
 
         var sev_id = '#' + service;
 
-        data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.inform;
+        data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.informational;
 
         $.each(data.response.alerts.severityCounts, function (sev, count) {
             sev = sev.toLowerCase();
@@ -561,25 +561,25 @@ function sev2label(severity) {
 
     switch (severity) {
         case CRITICAL:
-            label = 'label-important';
+            label = 'label-critical';
             break;
         case MAJOR:
-            label = 'label-warning';
+            label = 'label-major';
             break;
         case MINOR:
             label = 'label-minor';
             break;
         case WARNING:
-            label = 'label-info';
+            label = 'label-warning';
+            break;
+        case NORMAL:
+            label = 'label-normal';
             break;
         case DEBUG:
             label = 'label-inverse';
             break;
-        case UNKNOWN:
-            label = '';
-            break;
         default:
-            label = 'label-success';
+            label = '';
     }
     severity = severity.charAt(0).toUpperCase() + severity.slice(1).toLowerCase();
 
