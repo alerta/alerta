@@ -321,8 +321,8 @@ function fnFormatDetails(aData) {
                         '<tr><td><b>Event</b></td><td>' + hist.event + '</td></tr>' +
                         '<tr><td><b>Severity</b></td><td>' + sev2label(hist.severity) + '</td></tr>' +
                         '<tr><td><b>Alert ID</b></td><td>' + hist.id + '</td></tr>' +
-                        '<tr><td><b>Create Time</b></td><td>' + hist.createTime + '</td></tr>' +
-                        '<tr><td><b>Receive Time</b></td><td>' + hist.receiveTime + '</td></tr>' +
+                        '<tr><td><b>Create Time</b></td><td>' + date2str(hist.createTime) + '</td></tr>' +
+                        '<tr><td><b>Receive Time</b></td><td>' + date2str(hist.receiveTime) + '</td></tr>' +
                         '<tr><td><b>Text</b></td><td>' + hist.text + '</td></tr>' +
                         '<tr><td><b>Value</b></td><td>' + hist.value + '</td></tr>' +
                         '</table>' +
@@ -345,9 +345,9 @@ function fnFormatDetails(aData) {
     sOut += '<table class="table table-condensed table-striped">';  // 2
     sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid + '</td></tr>';
     sOut += '<tr class="even"><td><b>Last Receive Alert ID</b></td><td>' + lastReceiveId + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Create Time</b></td><td>' + createTime + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Receive Time</b></td><td>' + receiveTime + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Last Receive Time</b></td><td>' + lastReceiveTime + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Create Time</b></td><td>' + date2str(createTime) + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Receive Time</b></td><td>' + date2str(receiveTime) + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Last Receive Time</b></td><td>' + date2str(lastReceiveTime) + '</td></tr>';
 
     sOut += '<tr class="even"><td><b>Environment</b></td><td>' + environment + '</td></tr>';
     sOut += '<tr class="odd"><td><b>Service</b></td><td>' + service + '</td></tr>';
@@ -622,6 +622,16 @@ function stat2label(status) {
     return('<span class="label ' + label + '">' + status + '</span>');
 }
 
+function date2iso8601(datetime) {
+    var d = new Date(datetime);
+    return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + d.toTimeString().split(' ')[0]
+}
+
+function date2str(datetime) {
+    var d = new Date(datetime);
+    return d.toLocaleString();
+}
+
 $(document).ready(function () {
 
     loadStatus(envfilter, true);
@@ -656,7 +666,8 @@ $(document).ready(function () {
             $('td:eq(1)', nRow).html(stat2label(aData[1]));
 
             var d = new Date(aData[2]);
-            $('td:eq(2)', nRow).html(d.toLocaleString());
+            // $('td:eq(2)', nRow).html(d.toLocaleString());
+            $('td:eq(2)', nRow).html(date2iso8601(d));
 
         },
         "aoColumns": [
