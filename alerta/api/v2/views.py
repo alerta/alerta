@@ -1,8 +1,9 @@
 
-import datetime
+import os
+import json
 from collections import defaultdict
 
-from flask import request, current_app, send_from_directory, _request_ctx_stack, json
+from flask import request, current_app, send_from_directory, _request_ctx_stack
 from functools import wraps
 from alerta.api.v2 import app, db, create_mq
 
@@ -254,7 +255,5 @@ def tag_alert(alertid):
 
 @app.route('/alerta/dashboard/<path:filename>')
 def console(filename):
-    # TODO(nsatterl): make this directory configurable
-    return send_from_directory('/Users/nsatterl/Projects/alerta/dashboard', filename)
-
+    return send_from_directory(CONF.dashboard_dir, filename)
 

@@ -7,20 +7,77 @@ The alerta monitoring tool was developed with the following aims in mind:
 *   minimal **CONFIGURATION** that easily accepts alerts from any source
 *   quick at-a-glance **VISUALISATION** with drill-down to detail
 
-![console](/guardian/alerta/raw/master/images/alerta-console-small.png)
+![console](/doc/images/alerta-console-small.png?raw=true)
 
-More screenshots are available [here](/guardian/alerta/tree/master/images/)
-
-Installation
-------------
-
-The backend components are written in Python and the web frontend in JavaScript so there is nothing to compile.
+More screenshots are available [here](/doc/images/)
 
 Requirements
 ------------
 
 - [ActiveMQ][1] or [RabbitMQ][2] ie. a message broker that supports STOMP
 - [MongoDB][3]
+
+Installation
+------------
+
+The backend components are written in Python and the web frontend in JavaScript so there is nothing to compile.
+
+To install and configure the requirements on Debian/Ubuntu:
+
+```
+$ sudo apt-get install mongodb-server
+$ sudo apt-get install rabbitmq-server
+$ rabbitmq-plugins enable rabbitmq_stomp
+$ rabbitmqadmin declare exchange name=alerts type=fanout
+```
+
+To run Alerta in a python virtual environment:
+
+```
+$ pip install virtualenv
+$ pip install virtualenvwrapper
+$ export WORKON_HOME=$HOME/.virtualenvs
+$ mkdir -p $WORKON_HOME
+$ source /usr/local/bin/virtualenvwrapper.sh
+$ mkvirtualenv alerta
+```
+
+To install and configure a test implementation of alerta:
+
+```
+$ git clone git://github.com/guardian/alerta.git alerta
+$ cd alerta
+$ pip install -r requirements.txt
+$ python setup.py install
+```
+
+To start alerta with a configuration that logs to /tmp:
+
+```
+$ bin/alerta --log-dir=/tmp
+$ bin/alerta-api --log-dir=/tmp
+```
+
+To run in the foreground:
+
+```
+$ bin/alerta --log-dir=/tmp --debug --foreground --use-stderr
+$ bin/alerta-api --log-dir=/tmp --debug --use-stderr
+```
+
+To use the alert consoles modify `$HOME/.alerta.conf` like so:
+```
+[alerta-api]
+dashboard_dir = /path/to/alerta/dashboard
+```
+
+And then the alert consoles can be found:
+
+````
+http://localhost:5000/alerta/dashboard/v1/console.html
+http://localhost:5000/alerta/dashboard/v1/console.html
+```
+
 
 Optional (for alert history)
 --------

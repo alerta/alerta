@@ -34,6 +34,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'api_host': 'localhost',
         'api_port': 5000,
         'api_endpoint': '/alerta/api/v2',   # eg. /Services/API
+        'dashboard_dir': '/dashboard',  # eg. /home/username/git/alerta/dashboard
 
         'http_proxy': None,
         'https_proxy': None,
