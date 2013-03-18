@@ -2,16 +2,17 @@
 import json
 import datetime
 import pytz
+import re
 
 from collections import defaultdict
 
-from flask import request, current_app, send_from_directory, _request_ctx_stack
+from flask import request, current_app, send_from_directory
 from functools import wraps
 from alerta.api.v2 import app, db, create_mq
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.alert import Alert, severity, status
+from alerta.alert import Alert, severity, status, ATTRIBUTES
 from alerta.common.utils import DateEncoder
 
 Version = '2.0.0'
@@ -61,8 +62,6 @@ def test():
 @jsonp
 def get_alerts():
 
-    limit = request.args.get('limit', _LIMIT, int)
-
     query = dict()
     query_time = datetime.datetime.utcnow()
     from_date = request.args.get('from-date', None)
@@ -73,11 +72,38 @@ def get_alerts():
         to_date = to_date.replace(tzinfo=pytz.utc)
         query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date }
 
-    alert_details = list()
+    if request.args.get('id', None):
+        query['_id'] = dict()
+        query['_id']['$regex'] = '^' + request.args['id']
+
+    for field in [fields for fields in request.args if fields in ATTRIBUTES]:
+        value = request.args.getlist(field)
+        LOG.error('field (%s) = %s', field, value)
+        if len(value) == 1:
+            if field.startswith('-'):
+                query[field[1:]] = dict()
+                query[field[1:]]['$not'] = re.compile(value[0])
+            else:
+                query[field] = dict()
+                query[field]['$regex'] = value[0]
+                query[field]['$options'] = 'i'  # case insensitive search
+        else:
+            if field.startswith('-'):
+                query[field[1:]] = dict()
+                query[field[1:]]['$nin'] = value
+            else:
+                query[field] = dict()
+                query[field]['$in'] = value
+
+    LOG.debug('Query = %s', query)
+
+    limit = request.args.get('limit', _LIMIT, int)
 
     alerts = db.get_alerts(query=query, limit=limit)
     total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
+
     found = 0
+    alert_details = list()
     if len(alerts) > 0:
 
         severity_count = defaultdict(int)
@@ -90,14 +116,13 @@ def get_alerts():
             if body['severity'] in request.args.getlist('hide-alert-repeats') and body['repeat']:
                 continue
 
-            found += 1
-
             if not request.args.get('hide-alert-details', False, bool):
                 alert_details.append(body)
 
             if request.args.get('hide-alert-history', False, bool):
                 body['history'] = []
 
+            found += 1
             severity_count[body['severity']] += 1
             status_count[body['status']] += 1
 

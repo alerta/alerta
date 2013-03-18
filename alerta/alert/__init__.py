@@ -19,6 +19,32 @@ from alerta.common.utils import DateEncoder
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
+ATTRIBUTES = [
+    'id',
+    'resource',
+    'event',
+    'correlatedEvents',
+    'group',
+    'value',
+    'severity',
+    'previousSeverity',
+    'environment',
+    'service',
+    'text',
+    'type',
+    'tags',
+    'summary',
+    'createTime',
+    'origin',
+    'thresholdInfo',
+    'timeout',
+    'expireTime',
+    'repeat',
+    'duplicateCount',
+    'rawData',
+    'history',
+]
+
 
 class Alert(object):
     def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status.UNKNOWN,
