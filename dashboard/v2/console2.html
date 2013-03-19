@@ -235,6 +235,7 @@ var SEVERITY_MAP = {
 };
 
 var oTable;
+var timer;
 
 $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
 {
@@ -290,7 +291,7 @@ $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallba
     }, oSettings );
 };
 
-get_alerts = function()
+getAlerts = function(refresh)
 {
     return function (sSource, aoData, fnCallback) {
         $.ajax( {
@@ -340,10 +341,17 @@ get_alerts = function()
                 fnCallback(json);
             }
         });
+        if (refresh) {
+            timer = setTimeout(function () {
+                getAlerts(refresh);
+            }, 1000);
+            alert(timer);
+        }
     }
 };
 
 $(document).ready(function() {
+
     oTable = $('#alerts').dataTable({
         "bProcessing": true,
         "bServerSide": false,
@@ -351,8 +359,10 @@ $(document).ready(function() {
         "bPaginate": true,
         "bDeferRender": true,
         "sAjaxSource": "http://localhost:5000/alerta/api/v2/alerts",
-        "fnServerData": get_alerts()
+        "fnServerData": getAlerts(true)
     });
+
+
 });
 
 $('#refresh-all').click(function () {
