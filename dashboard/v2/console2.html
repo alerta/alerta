@@ -96,19 +96,19 @@
         <div class="span12">
             <div class="row show-grid">
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="R2R1" data-label="R2R1">
-                        <thead id="R2R1-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="Web" data-label="Web">
+                        <thead id="Web-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="R2R1-status">R2 &amp; R1</th>
+                            <th colspan="6" id="Web-status">Web</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="R2R1-status-indicator">
-                            <td id="R2R1-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="Web-status-indicator">
+                            <td id="Web-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
@@ -220,6 +220,13 @@
 
 <script>
 
+var asiFilters = {
+    'Web':       '&service=Web',
+    'Frontend':   '&service=Common',
+    'Discussion': '&service=Platform',
+    'Other':      '&-service=Web|Common|Platform'
+};
+
 var SEVERITY_MAP = {
     'critical': 1,
     'major': 2,
@@ -235,6 +242,7 @@ var SEVERITY_MAP = {
 };
 
 var oTable;
+var filter = '';
 var timer;
 
 $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
@@ -299,7 +307,7 @@ $(document).ready(function() {
         "bSort": true,
         "bPaginate": true,
         "bDeferRender": true,
-        "sAjaxSource": "http://localhost:8000/alerta/api/v2/alerts",
+        "sAjaxSource": "http://localhost:8000/alerta/api/v2/alerts?" + filter,
         "fnServerData": function (sSource, aoData, fnCallback) {
             $.ajax( {
                 "dataType": 'json',
@@ -354,7 +362,7 @@ $(document).ready(function() {
 });
 
 function refreshAlerts(refresh) {
-    oTable.fnReloadAjax();
+    oTable.fnReloadAjax("http://localhost:8000/alerta/api/v2/alerts?" + filter);
     if (refresh) {
         timer = setTimeout(function() {
             refreshAlerts(refresh);
@@ -363,6 +371,18 @@ function refreshAlerts(refresh) {
 }
 
 $('#refresh-all').click(function () {
+    refreshAlerts(false);
+});
+
+$('.status-indicator-overall').click(function () {
+    filter = asiFilters[this.id.split('-')[0]];
+    refreshAlerts(false);
+});
+
+
+$('.status-indicator-count').click(function () {
+    filter = asiFilters[this.id.split('-')[0]];
+    filter += '&severity=' + this.id.split('-')[1];
     refreshAlerts(false);
 });
 
