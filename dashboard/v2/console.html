@@ -430,12 +430,22 @@ $(document).ready(function() {
                 ti = '<i class="icon-random"></i>&nbsp;'
             }
             $('td:eq(0)', nRow).html(ti + sev2label(aData[0]));
-            //$('td:eq(1)', nRow).html(stat2label(aData[1]));
+            $('td:eq(1)', nRow).html(stat2label(aData[1]));
 
             var d = new Date(aData[2]);
             // $('td:eq(2)', nRow).html(d.toLocaleString());
-            //$('td:eq(2)', nRow).html(date2iso8601(d));
+            $('td:eq(2)', nRow).html(date2iso8601(d));
 
+            if (aData[1] == OPEN) {
+                $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" class="ack-alert" rel="tooltip" title="Acknowledge"><i class="icon-star-empty"></i></a>');
+            }
+            if (aData[1] == ACK) {
+                $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" class="unack-alert" rel="tooltip" title="Unacknowledge"><i class="icon-star"></i></a>');
+            }
+            $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" href="mailto:?subject=' + aData[22] + '&body=' + aData[9] + '%0D%0A%0D%0ASee http://' + api_host + '/alerta/details.php?id='
+                    + aData[11] + '" class="email-alert" rel="tooltip" title="Email Alert" target="_blank"><i class="icon-envelope"></i></a>');
+            $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" class="tag-alert" rel="tooltip" title="Tag Alert"><i class="icon-tags"></i></a>');
+            $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>');
         },
         "fnServerData": function (sSource, aoData, fnCallback) {
             $.ajax( {
@@ -504,9 +514,13 @@ $(document).ready(function() {
         ],
         "sDom": "<'row'<'span6'l><'span6'f>r>t<'row'<'span6'i><'span6'p>>"
     });
+
     updateStatusCounts(true);
     updateAllIndicators(true);
-    refreshAlerts(true);
+
+    timer = setTimeout(function() {
+        refreshAlerts(true);
+    }, 10000);
 });
 
 function fnFormatDetails(aData) {
@@ -706,7 +720,6 @@ function updateAllIndicators(refresh) {
 }
 
 function updateStatusIndicator(service, refresh) {
-
     $('#' + service + ' th').addClass('loader');
 
     $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime&'
