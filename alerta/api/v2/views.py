@@ -22,7 +22,7 @@ CONF = config.CONF
 
 # TODO(nsatterl): put these constants somewhere appropriate
 _MAX_HISTORY = -10  # 10 most recent
-_LIMIT = 100
+_LIMIT = 1000
 
 
 # Over-ride jsonify to support Date Encoding
