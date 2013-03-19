@@ -48,7 +48,7 @@ _token_rate = 60               # Add a token every 60 seconds
 INITIAL_TOKENS = 5
 
 
-class NotifyMessage(Daemon):
+class NotifyMessage(Messaging):
     def on_message(self, headers, body):
         global alert, hold
 
