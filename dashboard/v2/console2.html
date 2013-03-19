@@ -243,6 +243,8 @@ var SEVERITY_MAP = {
 
 var oTable;
 var filter = '';
+var limit = '';
+var from = '';
 var timer;
 
 $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
@@ -362,7 +364,7 @@ $(document).ready(function() {
 });
 
 function refreshAlerts(refresh) {
-    oTable.fnReloadAjax("http://localhost:8000/alerta/api/v2/alerts?" + filter);
+    oTable.fnReloadAjax("http://localhost:8000/alerta/api/v2/alerts?" + filter + limit + from);
     if (refresh) {
         timer = setTimeout(function() {
             refreshAlerts(refresh);
@@ -385,6 +387,24 @@ $('.status-indicator-count').click(function () {
     filter += '&severity=' + this.id.split('-')[1];
     refreshAlerts(false);
 });
+
+function updateLimit(count) {
+    if (count > 0) {
+        limit = '&limit=' + count;
+    } else {
+        limit = '';
+    }
+    $('#refresh-all').trigger('click');
+}
+
+function updateFromDate(seconds) {
+    if (seconds > 0) {
+        from = '&from-date=' + new Date(new Date() - seconds * 1000).toISOString();
+    } else {
+        from = '';
+    }
+    $('#refresh-all').trigger('click');
+}
 
 </script>
 
