@@ -75,7 +75,7 @@
                         <option value="0">No limit</option>
                         <option value="10">Only 10</option>
                         <option value="50">Only 50</option>
-                        <option value="100">Only 100</option>
+                        <option value="100" selected>Only 100</option>
                         <option value="500">Only 500</option>
                     </select>
                     <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)">
@@ -96,55 +96,55 @@
         <div class="span12">
             <div class="row show-grid">
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="R2R1" data-label="R2R1">
-                        <thead id="R2R1-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="Web" data-label="Web">
+                        <thead id="Web-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="R2R1-status">R2 &amp; R1</th>
+                            <th colspan="6" id="Web-status">Web</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="R2R1-status-indicator">
-                            <td id="R2R1-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="Web-status-indicator">
+                            <td id="Web-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="Frontend" data-label="Frontend">
-                        <thead id="Frontend-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="Common" data-label="Common">
+                        <thead id="Common-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="Frontend-status">Frontend</th>
+                            <th colspan="6" id="Common-status">Common</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="Frontend-status-indicator">
-                            <td id="Frontend-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="Frontend-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="Frontend-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="Frontend-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="Frontend-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="Common-status-indicator">
+                            <td id="Common-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Common-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Common-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Common-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Common-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="Discussion" data-label="Discussion">
-                        <thead id="Discussion-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="Platform" data-label="Platform">
+                        <thead id="Platform-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="Discussion-status">Discussion</th>
+                            <th colspan="6" id="Platform-status">Platform</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="Discussion-status-indicator">
-                            <td id="Discussion-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="Discussion-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="Discussion-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="Discussion-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="Discussion-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="Platform-status-indicator">
+                            <td id="Platform-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Platform-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Platform-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Platform-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Platform-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
@@ -220,7 +220,18 @@
 
 <script>
 
+var env_filter = 'environment=PROD|DEV|INFRA';
+
+var asiFilters = {
+    'Web':      '&service=Web',
+    'Common':   '&service=Common',
+    'Platform': '&service=Platform',
+    'Other':    '&-service=Web|Common|Platform'
+};
+
 var api_host = document.domain + ":8000";
+
+// ************************************* DO NOT EDIT ANYTHING BELOW THIS LINE **************************************
 
 var CRITICAL_SEV_CODE = 1;
 var MAJOR_SEV_CODE = 2;
@@ -248,7 +259,7 @@ UNKNOWN = 'unknown';
 
 ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN];
 
-var _SEVERITY_MAP = {
+var SEVERITY_MAP = {
     'critical': 1,
     'major': 2,
     'minor': 3,
@@ -262,303 +273,8 @@ var _SEVERITY_MAP = {
     'unknown': 9
 };
 
-var logger = 0,
-        fromDate = "",
-        limit = "",
-        timer;
-
-var oTable;
-var envfilter = '&environment=PROD|INFRA|DEV'; // used for status count OPEN,ACK,CLOSED
-var asiFilter = '&service=shared'; // default, used for displayed alert details
-var sevFilter = '';
-
-function fnFormatDetails(aData) {
-    var severity = aData[0];
-    var status = aData[1];
-    var lastReceiveTime = aData[2];
-    var duplicateCount = aData[3];
-    var environment = aData[4];
-    var service = aData[5];
-    var cluster = '';
-    var resource = aData[6];
-    var event = aData[7];
-    var value = aData[8];
-    var text = aData[9];
-    var severityCode = aData[10];
-    var alertid = aData[11];
-    var lastReceiveId = aData[12];
-    var createTime = aData[13];
-    var receiveTime = aData[14];
-    var group = aData[15];
-    var previousSeverity = aData[16];
-    var trendIndication = aData[17];
-    var thresholdInfo = aData[18];
-    var timeout = aData[19];
-    var type = aData[20];
-    var repeat = aData[21];
-    var summary = aData[22];
-    var origin = aData[23];
-    var tags = '';
-    var moreInfo = aData[25];
-    var history = aData[26];
-
-    $.each(aData[24], function (y, tag) {
-        tags += '<span class="label">' + tag + '</span> ';
-        var t = tag.split(':');
-        if (t[0] == 'cluster') {
-            cluster = t[1];
-        }
-    });
-
-    var historydata = '<table class="table table-condensed"><thead><td colspan="2"><b>History </b></td></thead><tbody><tr><td>';
-
-    if (history) {
-        var reverseHistory = history.reverse();
-        $.each(reverseHistory, function (y, hist) {
-            if (hist.event) {
-                historydata += // '<hr/>' +
-                        '<table class="table table-condensed table-striped">' +
-                        '<tr><td><b>Event</b></td><td>' + hist.event + '</td></tr>' +
-                        '<tr><td><b>Severity</b></td><td>' + sev2label(hist.severity) + '</td></tr>' +
-                        '<tr><td><b>Alert ID</b></td><td>' + hist.id + '</td></tr>' +
-                        '<tr><td><b>Create Time</b></td><td>' + date2str(hist.createTime) + '</td></tr>' +
-                        '<tr><td><b>Receive Time</b></td><td>' + date2str(hist.receiveTime) + '</td></tr>' +
-                        '<tr><td><b>Text</b></td><td>' + hist.text + '</td></tr>' +
-                        '<tr><td><b>Value</b></td><td>' + hist.value + '</td></tr>' +
-                        '</table>' +
-                        '';
-            }
-            if (hist.status) {
-                historydata += // '<hr/>' +
-                        '<table class="table table-condensed table-striped">' +
-                        '<tr><td><b>Status</b></td><td>' + stat2label(hist.status) + '</td></tr>' +
-                        '<tr><td><b>Update Time</b></td><td>' + hist.updateTime + '</td></tr>' +
-                        '</table>' +
-                        '';
-            }
-        });
-        historydata += '</td></tr></tbody></table>'
-    }
-
-    var sOut = '<table border=1><tbody><tr><td>'; // 1
-
-    sOut += '<table class="table table-condensed table-striped">';  // 2
-    sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Last Receive Alert ID</b></td><td>' + lastReceiveId + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Create Time</b></td><td>' + date2str(createTime) + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Receive Time</b></td><td>' + date2str(receiveTime) + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Last Receive Time</b></td><td>' + date2str(lastReceiveTime) + '</td></tr>';
-
-    sOut += '<tr class="even"><td><b>Environment</b></td><td>' + environment + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Service</b></td><td>' + service + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Resource</b></td><td>' + resource + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Event</b></td><td>' + event + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Group</b></td><td>' + group + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Severity</b></td><td>' + sev2label(previousSeverity) + ' -> ' + sev2label(severity) + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Status</b></td><td>' + stat2label(status) + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Value</b></td><td>' + value + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Text</b></td><td>' + text + '</td></tr>';
-
-    sOut += '<tr class="odd"><td><b>Trend Indication</b></td><td>' + trendIndication + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Threshold Info</b></td><td>' + thresholdInfo + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Timeout</b></td><td>' + timeout + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Type</b></td><td>' + type + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Repeat</b></td><td>' + repeat + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Summary</b></td><td>' + summary + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Origin</b></td><td>' + origin + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Tags</b></td><td>' + tags + '<a id="' + alertid + '" class="tag-alert" rel="tooltip" title="Tag Alert"><i class="icon-tags"></i></a>' + '</td></tr>';
-    // TODO(nsatterl): Graphs
-    sOut += '<tr class="odd"><td><b>More Info</b></td><td>' + moreInfo + '</td></tr>';
-    sOut += '</table>'; // 2
-
-    sOut += '</td><td>'; // 1
-    sOut += historydata;
-    sOut += '</td></tr></tbody></table>'; // 1
-
-    return sOut;
-}
-
-// Alert Status Count for console
-function getStatus(statusfilter, refresh) {
-
-    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&' + statusfilter + limit + fromDate, function (data) {
-
-        if (data.response.warning) {
-            $('#warning-text').text(data.response.warning);
-            $('#webapp-alert').toggle();
-        }
-
-        $.each(data.response.alerts.statusCounts, function (stat, count) {
-            $("#count-" + stat).html('<b>' + count + '</b>');
-        });
-        if (refresh) {
-            timer = setTimeout(function () {
-                getStatus(statusfilter, refresh);
-            }, 120000);
-        }
-    });
-}
-
-function loadStatus(statusfilter, refresh) {
-    setTimeout(function () {
-        getStatus(statusfilter, refresh);
-    }, 0);
-}
-
-// Alert Severity Counts for each service
-var asiFilters = {
-    'R2R1': '&service=R2|R1',
-    'Frontend': '&service=Frontend',
-    'Discussion': '&service=Discussion',
-    'Other': '&-service=R2|R1|Frontend|Discussion'
-};
-
-function getAlerts(service, filter, refresh) {
-
-    $('#' + service + ' th').addClass('loader');
-
-    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime&'
-            + envfilter + filter + limit + fromDate, function (data) {
-
-        var sev_id = '#' + service;
-
-        data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.informational;
-
-        $.each(data.response.alerts.severityCounts, function (sev, count) {
-            sev = sev.toLowerCase();
-            $(sev_id + "-" + sev).html('<b>' + count + '</b>');
-
-            switch (count) {
-                case 0:
-                    $(sev_id + "-" + sev).removeClass("severity-" + sev).addClass('zero');
-                    break;
-                default:
-                    $(sev_id + "-" + sev).addClass("severity-" + sev).removeClass('zero');
-            }
-        });
-
-        if (data.response.alerts.severityCounts.critical > 0) {
-            scolor = 'red';
-        } else if (data.response.alerts.severityCounts.major > 0) {
-            scolor = 'orange';
-        } else if (data.response.alerts.severityCounts.minor > 0) {
-            scolor = 'yellow';
-        } else if (data.response.alerts.severityCounts.warning > 0) {
-            scolor = 'dodgerblue';
-        } else {
-            scolor = '#00CC00';
-        }
-        $(sev_id + "-status").css('background-color', scolor);
-
-        $('#' + service + ' th').removeClass('loader');
-
-        if (refresh) {
-            timer = setTimeout(function () {
-                getAlerts(service, filter, refresh);
-            }, 120000);
-        }
-    });
-};
-
-function loadAlerts(services, refresh) {
-    var delayer = 0;
-    $.each(services, function (service, filter) {
-        setTimeout(function () {
-            getAlerts(service, filter, refresh);
-        }, delayer);
-        delayer += 100;
-    });
-}
-
-function updateLimit(lim) {
-    if (lim > 0) {
-        limit = '&limit=' + lim
-    } else {
-        limit = '';
-    }
-    $('#refresh-all').trigger('click');
-}
-
-function updateFromDate(seconds) {
-    if (seconds > 0) {
-        fromDate = '&from-date=' + new Date(new Date() - seconds * 1000).toISOString();
-    } else {
-        fromDate = '';
-    }
-    $('#refresh-all').trigger('click');
-}
-
-$('.status-indicator-overall').click(function () {
-    asiFilter = asiFilters[this.id.split('-')[0]];
-    sevFilter = '';
-    worker();
-});
-
-$('.status-indicator-count').click(function () {
-    asiFilter = asiFilters[this.id.split('-')[0]];
-    sevFilter = '&severity=' + this.id.split('-')[1];
-    worker();
-});
-
-function worker() {
-    $.ajax({
-        "dataType": 'json',
-        "type": "GET",
-        "url": 'http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime'
-                + envfilter + asiFilter + limit + fromDate + sevFilter,
-        // "async": false,
-        "async": true,
-        "success": function (data) {
-            $('#alerts').dataTable().fnClearTable();
-
-            $.each(data.response.alerts.alertDetails, function (i, ad) {
-
-                 $('#alerts').dataTable().fnAddData([
-                    ad.severity,       // 0
-                    ad.status,
-                    ad.lastReceiveTime,
-                    ad.duplicateCount,
-                    ad.environment,
-                    ad.service,
-                    // TODO(nsatterl): cluster
-                    ad.resource,
-                    ad.event,
-                    ad.value,
-                    ad.text,  // 9
-
-                    _SEVERITY_MAP[ad.severity], // severityCode to enable sorting on severity
-
-                    ad.id, // 11
-                    ad.lastReceiveId,
-                    ad.createTime,
-                    ad.receiveTime,
-                    ad.group,
-                    ad.previousSeverity,
-                    ad.trendIndication,
-                    ad.thresholdInfo,
-                    ad.timeout,
-                    ad.type,
-                    ad.repeat,
-                    ad.summary,
-                    ad.origin,
-                    ad.tags,
-                    ad.moreInfo,
-                    ad.history
-                ]);
-
-            });
-        },
-        complete: function () {
-            oTable.fnDraw(false);
-            setTimeout(worker, 30 * 1000); // 30 seconds
-        }
-    });
-};
-
 function sev2label(severity) {
-
     var label;
-
     switch (severity) {
         case CRITICAL:
             label = 'label-critical';
@@ -632,24 +348,75 @@ function date2str(datetime) {
     return d.toLocaleString();
 }
 
-$(document).ready(function () {
+var oTable;
+var filter = '';
+var limit = '';
+var from = '';
+var timer;
 
-    loadStatus(envfilter, true);
-    loadAlerts(asiFilters, true);
-    worker();
+$.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
+{
+    if ( typeof sNewSource != 'undefined' && sNewSource != null ) {
+        oSettings.sAjaxSource = sNewSource;
+    }
 
-    $('#refresh-all').click(function() {
-        loadStatus(envfilter, false);
-        loadAlerts(asiFilters, false);
-    });
+    // Server-side processing should just call fnDraw
+    if ( oSettings.oFeatures.bServerSide ) {
+        this.fnDraw();
+        return;
+    }
+
+    this.oApi._fnProcessingDisplay( oSettings, true );
+    var that = this;
+    var iStart = oSettings._iDisplayStart;
+    var aData = [];
+
+    this.oApi._fnServerParams( oSettings, aData );
+
+    oSettings.fnServerData.call( oSettings.oInstance, oSettings.sAjaxSource, aData, function(json) {
+        /* Clear the old information from the table */
+        that.oApi._fnClearTable( oSettings );
+
+        /* Got the data - add it to the table */
+        var aData =  (oSettings.sAjaxDataProp !== "") ?
+                that.oApi._fnGetObjectDataFn( oSettings.sAjaxDataProp )( json ) : json;
+
+        for ( var i=0 ; i<aData.length ; i++ )
+        {
+            that.oApi._fnAddData( oSettings, aData[i] );
+        }
+
+        oSettings.aiDisplay = oSettings.aiDisplayMaster.slice();
+
+        if ( typeof bStandingRedraw != 'undefined' && bStandingRedraw === true )
+        {
+            oSettings._iDisplayStart = iStart;
+            that.fnDraw( false );
+        }
+        else
+        {
+            that.fnDraw();
+        }
+
+        that.oApi._fnProcessingDisplay( oSettings, false );
+
+        /* Callback user function - for event handlers etc */
+        if ( typeof fnCallback == 'function' && fnCallback != null )
+        {
+            fnCallback( oSettings );
+        }
+    }, oSettings );
+};
+
+$(document).ready(function() {
     var ti;
-    // var anOpen = [];
     oTable = $('#alerts').dataTable({
-        "bDestroy": true,
-        "bUseRendered": false,
+        "bProcessing": true,
+        "bServerSide": false,
         "bSort": true,
         "bPaginate": true,
         "bDeferRender": true,
+        "sAjaxSource": "http://localhost:8000/alerta/api/v2/alerts?" + env_filter + filter,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'severity-' + aData[0] + ' status-' + aData[1];
 
@@ -663,12 +430,61 @@ $(document).ready(function () {
                 ti = '<i class="icon-random"></i>&nbsp;'
             }
             $('td:eq(0)', nRow).html(ti + sev2label(aData[0]));
-            $('td:eq(1)', nRow).html(stat2label(aData[1]));
+            //$('td:eq(1)', nRow).html(stat2label(aData[1]));
 
             var d = new Date(aData[2]);
             // $('td:eq(2)', nRow).html(d.toLocaleString());
-            $('td:eq(2)', nRow).html(date2iso8601(d));
+            //$('td:eq(2)', nRow).html(date2iso8601(d));
 
+        },
+        "fnServerData": function (sSource, aoData, fnCallback) {
+            $.ajax( {
+                "dataType": 'json',
+                "type": "GET",
+                "url": sSource,
+                "data": aoData,
+                "success": function (json) {
+                    var a = [];
+                    $.each(json.response.alerts.alertDetails, function (i, ad) {
+                        var inner = [];
+                        inner.push(
+                                ad.severity,       // 0
+                                ad.status,
+                                ad.lastReceiveTime,
+                                ad.duplicateCount,
+                                ad.environment,
+                                ad.service,
+                                // TODO(nsatterl): cluster
+                                ad.resource,
+                                ad.event,
+                                ad.value,
+                                ad.text,  // 9
+
+                                SEVERITY_MAP[ad.severity], // severityCode to enable sorting on severity
+
+                                ad.id, // 11
+                                ad.lastReceiveId,
+                                ad.createTime,
+                                ad.receiveTime,
+                                ad.group,
+                                ad.previousSeverity,
+                                ad.trendIndication,
+                                ad.thresholdInfo,
+                                ad.timeout,
+                                ad.type,
+                                ad.repeat,
+                                ad.summary,
+                                ad.origin,
+                                ad.tags,
+                                ad.moreInfo,
+                                ad.history
+                        );
+                        a.push(inner);
+                    });
+                    json.aaData = a;
+                    fnCallback(json);
+                }
+            });
         },
         "aoColumns": [
             { "sWidth": "5%", "iDataSort": 10, "sClass": "align-center" },
@@ -688,37 +504,267 @@ $(document).ready(function () {
         ],
         "sDom": "<'row'<'span6'l><'span6'f>r>t<'row'<'span6'i><'span6'p>>"
     });
-
-    $('#alerts tbody tr').live('click', function () {
-
-        var nTr = this;
-
-        // var i = $.inArray( nTr, anOpen );
-
-        if (oTable.fnIsOpen(nTr)) {
-            /* This row is already open - close it */
-            // this.src = "../examples_support/details_open.png";
-            oTable.fnClose(nTr);
-        }
-        else {
-            /* Open this row */
-            // this.src = "../examples_support/details_close.png";
-            oTable.fnOpen(nTr, fnFormatDetails(oTable.fnGetData(nTr)), 'details');
-        }
-    });
-
-    $('tbody').on('click', '.tag-alert', function () {
-        var tag = prompt("Enter tag eg. london, location:london, datacentre:location=london");
-        if (tag != null && tag != "") {
-            $.ajax({
-                type: 'PUT',
-                contentType: 'application/json',
-                url: 'http://' + api_host + '/alerta/api/v2/alerts/alert/' + this.id + '/tag',
-                data: JSON.stringify({ tag: tag })
-            });
-        }
-    });
+    updateStatusCounts(true);
+    updateAllIndicators(true);
+    refreshAlerts(true);
 });
+
+function fnFormatDetails(aData) {
+    var severity = aData[0];
+    var status = aData[1];
+    var lastReceiveTime = aData[2];
+    var duplicateCount = aData[3];
+    var environment = aData[4];
+    var service = aData[5];
+    var cluster = '';
+    var resource = aData[6];
+    var event = aData[7];
+    var value = aData[8];
+    var text = aData[9];
+    var severityCode = aData[10];
+    var alertid = aData[11];
+    var lastReceiveId = aData[12];
+    var createTime = aData[13];
+    var receiveTime = aData[14];
+    var group = aData[15];
+    var previousSeverity = aData[16];
+    var trendIndication = aData[17];
+    var thresholdInfo = aData[18];
+    var timeout = aData[19];
+    var type = aData[20];
+    var repeat = aData[21];
+    var summary = aData[22];
+    var origin = aData[23];
+    var tags = '';
+    var moreInfo = aData[25];
+    var history = aData[26];
+
+    $.each(aData[24], function (y, tag) {
+        tags += '<span class="label">' + tag + '</span> ';
+        var t = tag.split(':');
+        if (t[0] == 'cluster') {
+            cluster = t[1];
+        }
+    });
+
+    var historydata = '<table class="table table-condensed"><thead><td colspan="2"><b>History </b></td></thead><tbody><tr><td>';
+
+    if (history) {
+        var reverseHistory = history.reverse();
+        $.each(reverseHistory, function (y, hist) {
+            if (hist.event) {
+                historydata += // '<hr/>' +
+                        '<table class="table table-condensed table-striped">' +
+                                '<tr><td><b>Event</b></td><td>' + hist.event + '</td></tr>' +
+                                '<tr><td><b>Severity</b></td><td>' + sev2label(hist.severity) + '</td></tr>' +
+                                '<tr><td><b>Alert ID</b></td><td>' + hist.id + '</td></tr>' +
+                                '<tr><td><b>Create Time</b></td><td>' + date2str(hist.createTime) + '</td></tr>' +
+                                '<tr><td><b>Receive Time</b></td><td>' + date2str(hist.receiveTime) + '</td></tr>' +
+                                '<tr><td><b>Text</b></td><td>' + hist.text + '</td></tr>' +
+                                '<tr><td><b>Value</b></td><td>' + hist.value + '</td></tr>' +
+                                '</table>' +
+                                '';
+            }
+            if (hist.status) {
+                historydata += // '<hr/>' +
+                        '<table class="table table-condensed table-striped">' +
+                                '<tr><td><b>Status</b></td><td>' + stat2label(hist.status) + '</td></tr>' +
+                                '<tr><td><b>Update Time</b></td><td>' + hist.updateTime + '</td></tr>' +
+                                '</table>' +
+                                '';
+            }
+        });
+        historydata += '</td></tr></tbody></table>'
+    }
+
+    var sOut = '<table border=1><tbody><tr><td>'; // 1
+
+    sOut += '<table class="table table-condensed table-striped">';  // 2
+    sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Last Receive Alert ID</b></td><td>' + lastReceiveId + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Create Time</b></td><td>' + date2str(createTime) + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Receive Time</b></td><td>' + date2str(receiveTime) + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Last Receive Time</b></td><td>' + date2str(lastReceiveTime) + '</td></tr>';
+
+    sOut += '<tr class="even"><td><b>Environment</b></td><td>' + environment + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Service</b></td><td>' + service + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Resource</b></td><td>' + resource + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Event</b></td><td>' + event + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Group</b></td><td>' + group + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Severity</b></td><td>' + sev2label(previousSeverity) + ' -> ' + sev2label(severity) + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Status</b></td><td>' + stat2label(status) + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Value</b></td><td>' + value + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Text</b></td><td>' + text + '</td></tr>';
+
+    sOut += '<tr class="odd"><td><b>Trend Indication</b></td><td>' + trendIndication + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Threshold Info</b></td><td>' + thresholdInfo + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Timeout</b></td><td>' + timeout + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Type</b></td><td>' + type + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Repeat</b></td><td>' + repeat + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Summary</b></td><td>' + summary + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Origin</b></td><td>' + origin + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Tags</b></td><td>' + tags + '<a id="' + alertid + '" class="tag-alert" rel="tooltip" title="Tag Alert"><i class="icon-tags"></i></a>' + '</td></tr>';
+    // TODO(nsatterl): Graphs
+    sOut += '<tr class="odd"><td><b>More Info</b></td><td>' + moreInfo + '</td></tr>';
+    sOut += '</table>'; // 2
+
+    sOut += '</td><td>'; // 1
+    sOut += historydata;
+    sOut += '</td></tr></tbody></table>'; // 1
+
+    return sOut;
+}
+
+$('#alerts tbody tr').live('click', function () {
+
+    var nTr = this;
+
+    // var i = $.inArray( nTr, anOpen );
+
+    if (oTable.fnIsOpen(nTr)) {
+        /* This row is already open - close it */
+        // this.src = "../examples_support/details_open.png";
+        oTable.fnClose(nTr);
+    }
+    else {
+        /* Open this row */
+        // this.src = "../examples_support/details_close.png";
+        oTable.fnOpen(nTr, fnFormatDetails(oTable.fnGetData(nTr)), 'details');
+    }
+});
+
+function refreshAlerts(refresh) {
+    oTable.fnReloadAjax("http://localhost:8000/alerta/api/v2/alerts?" + env_filter + filter + limit + from);
+    if (refresh) {
+        timer = setTimeout(function() {
+            refreshAlerts(refresh);
+        }, 10000);
+    }
+}
+
+$('#refresh-all').click(function () {
+    refreshAlerts(false);
+});
+
+$('.status-indicator-overall').click(function () {
+    filter = asiFilters[this.id.split('-')[0]];
+    refreshAlerts(false);
+});
+
+$('.status-indicator-count').click(function () {
+    filter = asiFilters[this.id.split('-')[0]];
+    filter += '&severity=' + this.id.split('-')[1];
+    refreshAlerts(false);
+});
+
+function updateLimit(count) {
+    if (count > 0) {
+        limit = '&limit=' + count;
+    } else {
+        limit = '';
+    }
+    refreshAlerts(false);
+}
+
+function updateFromDate(seconds) {
+    if (seconds > 0) {
+        from = '&from-date=' + new Date(new Date() - seconds * 1000).toISOString();
+    } else {
+        from = '';
+    }
+    refreshAlerts(false);
+}
+
+function updateStatusCounts(refresh) {
+    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
+            + env_filter + limit + from, function (data) {
+
+        if (data.response.warning) {
+            $('#warning-text').text(data.response.warning);
+            $('#console-alert').toggle();
+        }
+
+        $.each(data.response.alerts.statusCounts, function (status, count) {
+            $("#count-" + status).html('<b>' + count + '</b>');
+        });
+        if (refresh) {
+            timer = setTimeout(function () {
+                updateStatusIndicator(env_filter, refresh);
+            }, 120000);
+        }
+    });
+}
+
+function updateAllIndicators(refresh) {
+    var delayer = 0;
+    $.each(asiFilters, function (service, filter) {
+        setTimeout(function () {
+            updateStatusIndicator(service, refresh);
+        }, delayer);
+        delayer += 100;
+    });
+}
+
+function updateStatusIndicator(service, refresh) {
+
+    $('#' + service + ' th').addClass('loader');
+
+    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime&'
+            + env_filter + asiFilters[service] + limit + from, function (data) {
+
+        var sev_id = '#' + service;
+
+        data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.informational;
+
+        $.each(data.response.alerts.severityCounts, function (sev, count) {
+            sev = sev.toLowerCase();
+            $(sev_id + "-" + sev).html('<b>' + count + '</b>');
+
+            switch (count) {
+                case 0:
+                    $(sev_id + "-" + sev).removeClass("severity-" + sev).addClass('zero');
+                    break;
+                default:
+                    $(sev_id + "-" + sev).addClass("severity-" + sev).removeClass('zero');
+            }
+        });
+        var scolor;
+        if (data.response.alerts.severityCounts.critical > 0) {
+            scolor = 'red';
+        } else if (data.response.alerts.severityCounts.major > 0) {
+            scolor = 'orange';
+        } else if (data.response.alerts.severityCounts.minor > 0) {
+            scolor = 'yellow';
+        } else if (data.response.alerts.severityCounts.warning > 0) {
+            scolor = 'dodgerblue';
+        } else {
+            scolor = '#00CC00';
+        }
+        $(sev_id + "-status").css('background-color', scolor);
+
+        $('#' + service + ' th').removeClass('loader');
+
+        if (refresh) {
+            timer = setTimeout(function () {
+                updateStatusIndicator(status, refresh);
+            }, 120000);
+        }
+    });
+}
+
+$('tbody').on('click', '.tag-alert', function () {
+    var tag = prompt("Enter tag eg. london, location:london, datacentre:location=london");
+    if (tag != null && tag != "") {
+        $.ajax({
+            type: 'PUT',
+            contentType: 'application/json',
+            url: 'http://' + api_host + '/alerta/api/v2/alerts/alert/' + this.id + '/tag',
+            data: JSON.stringify({ tag: tag })
+        });
+    }
+});
+
 </script>
+
 </body>
 </html>
