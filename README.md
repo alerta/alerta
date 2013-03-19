@@ -83,8 +83,8 @@ For example, if the repo was cloned to `/home/foobar/git/alerta` then the `dashb
 And then the alert consoles (both version 1 and 2) can be found at:
 
 ````
-http://localhost:5000/alerta/dashboard/v1/console.html
-http://localhost:5000/alerta/dashboard/v2/console.html
+http://localhost:8000/alerta/dashboard/v1/console.html
+http://localhost:8000/alerta/dashboard/v2/console.html
 ```
 
 To see some test alerts in the console run:
