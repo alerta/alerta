@@ -220,6 +220,8 @@
 
 <script>
 
+var env_filter = 'environment=PROD|DEV|INFRA';
+
 var asiFilters = {
     'Web':      '&service=Web',
     'Common':   '&service=Common',
@@ -414,7 +416,7 @@ $(document).ready(function() {
         "bSort": true,
         "bPaginate": true,
         "bDeferRender": true,
-        "sAjaxSource": "http://localhost:8000/alerta/api/v2/alerts?" + filter,
+        "sAjaxSource": "http://localhost:8000/alerta/api/v2/alerts?" + env_filter + filter,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'severity-' + aData[0] + ' status-' + aData[1];
 
@@ -502,6 +504,8 @@ $(document).ready(function() {
         ],
         "sDom": "<'row'<'span6'l><'span6'f>r>t<'row'<'span6'i><'span6'p>>"
     });
+    updateStatusCounts(true);
+    updateAllIndicators(true);
     refreshAlerts(true);
 });
 
@@ -630,7 +634,7 @@ $('#alerts tbody tr').live('click', function () {
 });
 
 function refreshAlerts(refresh) {
-    oTable.fnReloadAjax("http://localhost:8000/alerta/api/v2/alerts?" + filter + limit + from);
+    oTable.fnReloadAjax("http://localhost:8000/alerta/api/v2/alerts?" + env_filter + filter + limit + from);
     if (refresh) {
         timer = setTimeout(function() {
             refreshAlerts(refresh);
@@ -669,6 +673,83 @@ function updateFromDate(seconds) {
         from = '';
     }
     refreshAlerts(false);
+}
+
+function updateStatusCounts(refresh) {
+    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
+            + env_filter + limit + from, function (data) {
+
+        if (data.response.warning) {
+            $('#warning-text').text(data.response.warning);
+            $('#console-alert').toggle();
+        }
+
+        $.each(data.response.alerts.statusCounts, function (status, count) {
+            $("#count-" + status).html('<b>' + count + '</b>');
+        });
+        if (refresh) {
+            timer = setTimeout(function () {
+                updateStatusIndicator(env_filter, refresh);
+            }, 120000);
+        }
+    });
+}
+
+function updateAllIndicators(refresh) {
+    var delayer = 0;
+    $.each(asiFilters, function (service, filter) {
+        setTimeout(function () {
+            updateStatusIndicator(service, refresh);
+        }, delayer);
+        delayer += 100;
+    });
+}
+
+function updateStatusIndicator(service, refresh) {
+
+    $('#' + service + ' th').addClass('loader');
+
+    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime&'
+            + env_filter + filter + limit + from, function (data) {
+
+        var sev_id = '#' + service;
+
+        data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.informational;
+
+        $.each(data.response.alerts.severityCounts, function (sev, count) {
+            sev = sev.toLowerCase();
+            $(sev_id + "-" + sev).html('<b>' + count + '</b>');
+
+            switch (count) {
+                case 0:
+                    $(sev_id + "-" + sev).removeClass("severity-" + sev).addClass('zero');
+                    break;
+                default:
+                    $(sev_id + "-" + sev).addClass("severity-" + sev).removeClass('zero');
+            }
+        });
+        var scolor;
+        if (data.response.alerts.severityCounts.critical > 0) {
+            scolor = 'red';
+        } else if (data.response.alerts.severityCounts.major > 0) {
+            scolor = 'orange';
+        } else if (data.response.alerts.severityCounts.minor > 0) {
+            scolor = 'yellow';
+        } else if (data.response.alerts.severityCounts.warning > 0) {
+            scolor = 'dodgerblue';
+        } else {
+            scolor = '#00CC00';
+        }
+        $(sev_id + "-status").css('background-color', scolor);
+
+        $('#' + service + ' th').removeClass('loader');
+
+        if (refresh) {
+            timer = setTimeout(function () {
+                updateStatusIndicator(status, refresh);
+            }, 120000);
+        }
+    });
 }
 
 $('tbody').on('click', '.tag-alert', function () {
