@@ -32,7 +32,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'timezone': 'Europe/London',
 
         'api_host': 'localhost',
-        'api_port': 5000,
+        'api_port': 8000,
         'api_endpoint': '/alerta/api/v2',   # eg. /Services/API
         'dashboard_dir': '/dashboard',  # eg. /home/username/git/alerta/dashboard
 
