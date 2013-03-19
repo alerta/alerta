@@ -70,15 +70,14 @@ def get_alerts():
         from_date = from_date.replace(tzinfo=pytz.utc)
         to_date = query_time
         to_date = to_date.replace(tzinfo=pytz.utc)
-        query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date }
+        query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date}
 
     if request.args.get('id', None):
         query['_id'] = dict()
         query['_id']['$regex'] = '^' + request.args['id']
 
-    for field in [fields for fields in request.args if fields in ATTRIBUTES]:
+    for field in [fields for fields in request.args if fields.lstrip('-') in ATTRIBUTES]:
         value = request.args.getlist(field)
-        LOG.error('field (%s) = %s', field, value)
         if len(value) == 1:
             if field.startswith('-'):
                 query[field[1:]] = dict()

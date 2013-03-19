@@ -114,37 +114,37 @@
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="Frontend" data-label="Frontend">
-                        <thead id="Frontend-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="Common" data-label="Common">
+                        <thead id="Common-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="Frontend-status">Frontend</th>
+                            <th colspan="6" id="Common-status">Common</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="Frontend-status-indicator">
-                            <td id="Frontend-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="Frontend-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="Frontend-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="Frontend-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="Frontend-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="Common-status-indicator">
+                            <td id="Common-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Common-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Common-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Common-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Common-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="Discussion" data-label="Discussion">
-                        <thead id="Discussion-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="Platform" data-label="Platform">
+                        <thead id="Platform-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="Discussion-status">Discussion</th>
+                            <th colspan="6" id="Platform-status">Platform</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="Discussion-status-indicator">
-                            <td id="Discussion-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="Discussion-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="Discussion-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="Discussion-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="Discussion-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="Platform-status-indicator">
+                            <td id="Platform-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Platform-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Platform-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Platform-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Platform-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
@@ -221,10 +221,10 @@
 <script>
 
 var asiFilters = {
-    'Web':       '&service=Web',
-    'Frontend':   '&service=Common',
-    'Discussion': '&service=Platform',
-    'Other':      '&-service=Web|Common|Platform'
+    'Web':      '&service=Web',
+    'Common':   '&service=Common',
+    'Platform': '&service=Platform',
+    'Other':    '&-service=Web|Common|Platform'
 };
 
 var SEVERITY_MAP = {
@@ -381,7 +381,6 @@ $('.status-indicator-overall').click(function () {
     refreshAlerts(false);
 });
 
-
 $('.status-indicator-count').click(function () {
     filter = asiFilters[this.id.split('-')[0]];
     filter += '&severity=' + this.id.split('-')[1];
@@ -394,7 +393,7 @@ function updateLimit(count) {
     } else {
         limit = '';
     }
-    $('#refresh-all').trigger('click');
+    refreshAlerts(false);
 }
 
 function updateFromDate(seconds) {
@@ -403,7 +402,7 @@ function updateFromDate(seconds) {
     } else {
         from = '';
     }
-    $('#refresh-all').trigger('click');
+    refreshAlerts(false);
 }
 
 </script>

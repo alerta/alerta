@@ -54,8 +54,6 @@ class Mongo(object):
 
     def get_count(self, query=None):
 
-        query = query or dict()
-
         return self.db.alerts.find(query).count()
 
     def get_alerts(self, query=None, sort=None, limit=0):
