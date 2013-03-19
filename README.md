@@ -78,11 +78,13 @@ To use the alert consoles modify `$HOME/.alerta.conf` like so:
 dashboard_dir = /path/to/alerta/dashboard
 ```
 
-And then the alert consoles can be found at:
+For example, if the repo was cloned to `/home/foobar/git/alerta` then the `dashboard_dir` directory path will be `/home/foobar/git/alerta/dashboard`.
+
+And then the alert consoles (both version 1 and 2) can be found at:
 
 ````
 http://localhost:5000/alerta/dashboard/v1/console.html
-http://localhost:5000/alerta/dashboard/v1/console.html
+http://localhost:5000/alerta/dashboard/v2/console.html
 ```
 
 To see some test alerts in the console run:
