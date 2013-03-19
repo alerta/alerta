@@ -1,0 +1,365 @@
+<html lang="en">
+<head>
+    <!-- link href='http://fonts.googleapis.com/css?family=Sintony:400,700' rel='stylesheet' type='text/css' -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+
+    <script type="text/javascript" language="javascript" src="assets/DataTables/media/js/jquery.js"></script>
+    <script type="text/javascript" language="javascript" src="assets/DataTables/media/js/jquery.dataTables.min.js"></script>
+
+    <link href="assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            padding-top: 40px;
+            padding-bottom: 40px;
+        }
+    </style>
+    <link href="css/custom.css" rel="stylesheet">
+
+</head>
+
+<body>
+<div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </a>
+            <a class="brand" href="./index.html">Alert Console</a>
+            <div class="nav-collapse">
+                <ul class="nav">
+                    <li class="active"><a href="./index.php">Production</a></li>
+                    <li class=""><a href="./dev.php">Development</a></li>
+                    <li class=""><a href="./infra.php">Infrastructure</a></li>
+                    <li class=""><a href="/Kibana">History</a></li>
+                    <li class=""><a href="./about.php">About</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <table width="100%">
+        <tr>
+            <span id="heartbeat-alerts"></span>
+            <div id="console-alert" class="alert alert-info initially-hidden">
+                <button class="close" data-dismiss="alert" onclick="">&times;</button>
+                <strong>Warning!</strong> <span id="warning-text"></span>
+            </div>
+        </tr>
+        <tr>
+            <td>
+                <!-- div  id="status-counts" -->
+                <table border=1 class="table table-bordered table-condensed"  id="status-counts">
+                    <tbody>
+                    <tr id="Alert-status" class="status">
+                        <td><span class="label">Open</span></td>
+                        <td id="count-open"><b>0</b></td>
+                        <td><span class="label">Ack</span></td>
+                        <td id="count-ack"><b>0</b></td>
+                        <td><span class="label">Closed</span></td>
+                        <td id="count-closed"><b>0</b></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <!-- /div -->
+            </td>
+            <td>
+                <div align="right">
+                    <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)">
+                        <option value="0">No limit</option>
+                        <option value="10">Only 10</option>
+                        <option value="50">Only 50</option>
+                        <option value="100" selected>Only 100</option>
+                        <option value="500">Only 500</option>
+                    </select>
+                    <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)">
+                        <option value="0">All alerts</option>
+                        <option value="120">Last 2 minutes</option>
+                        <option value="300">Last 5 minutes</option>
+                        <option value="600">Last 10 minutes</option>
+                        <option value="1800">Last 30 minutes</option>
+                        <option value="3600">Last 1 hour</option>
+                    </select>
+                    <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh Now</button>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="row show-grid">
+        <div class="span12">
+            <div class="row show-grid">
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="R2R1" data-label="R2R1">
+                        <thead id="R2R1-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="R2R1-status">R2 &amp; R1</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="R2R1-status-indicator">
+                            <td id="R2R1-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="R2R1-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="R2R1-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="R2R1-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="R2R1-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="Frontend" data-label="Frontend">
+                        <thead id="Frontend-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="Frontend-status">Frontend</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="Frontend-status-indicator">
+                            <td id="Frontend-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Frontend-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Frontend-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Frontend-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Frontend-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="Discussion" data-label="Discussion">
+                        <thead id="Discussion-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="Discussion-status">Discussion</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="Discussion-status-indicator">
+                            <td id="Discussion-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Discussion-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Discussion-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Discussion-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Discussion-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="Other" data-label="Other">
+                        <thead id="Other-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="Other-status">Other</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="Other-status-indicator">
+                            <td id="Other-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Other-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Other-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Other-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Other-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Alert Details -->
+    <div class="row show-grid">
+        <div class="span12">
+
+            <table cellpadding="0" cellspacing="0" border="0" class="display table table-bordered table-condensed"
+                   id="alerts">
+                <thead>
+                <tr>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Last Receive Time</th>
+                    <th>Dupl.</th>
+                    <th>Environment</th>
+                    <th>Service</th>
+                    <th>Resource</th>
+                    <th>Event</th>
+                    <th>Value</th>
+                    <th>Text</th>
+                    <th>Severity Code</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Last Receive Time</th>
+                    <th>Dupl.</th>
+                    <th>Environment</th>
+                    <th>Service</th>
+                    <th>Resource</th>
+                    <th>Event</th>
+                    <th>Value</th>
+                    <th>Text</th>
+                    <th>Severity Code</th>
+                </tr>
+                </tfoot>
+            </table>
+
+        </div>
+    </div>
+    <!-- end Alert Details -->
+
+</div>
+<!-- end container -->
+
+<script>
+
+var SEVERITY_MAP = {
+    'critical': 1,
+    'major': 2,
+    'minor': 3,
+    'warning': 4,
+    'indeterminate': 5,
+    'cleared': 5,
+    'normal': 5,
+    'informational': 6,
+    'debug': 7,
+    'auth': 8,
+    'unknown': 9
+};
+
+var oTable;
+
+$.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
+{
+    if ( typeof sNewSource != 'undefined' && sNewSource != null ) {
+        oSettings.sAjaxSource = sNewSource;
+    }
+
+    // Server-side processing should just call fnDraw
+    if ( oSettings.oFeatures.bServerSide ) {
+        this.fnDraw();
+        return;
+    }
+
+    this.oApi._fnProcessingDisplay( oSettings, true );
+    var that = this;
+    var iStart = oSettings._iDisplayStart;
+    var aData = [];
+
+    this.oApi._fnServerParams( oSettings, aData );
+
+    oSettings.fnServerData.call( oSettings.oInstance, oSettings.sAjaxSource, aData, function(json) {
+        /* Clear the old information from the table */
+        that.oApi._fnClearTable( oSettings );
+
+        /* Got the data - add it to the table */
+        var aData =  (oSettings.sAjaxDataProp !== "") ?
+                that.oApi._fnGetObjectDataFn( oSettings.sAjaxDataProp )( json ) : json;
+
+        for ( var i=0 ; i<aData.length ; i++ )
+        {
+            that.oApi._fnAddData( oSettings, aData[i] );
+        }
+
+        oSettings.aiDisplay = oSettings.aiDisplayMaster.slice();
+
+        if ( typeof bStandingRedraw != 'undefined' && bStandingRedraw === true )
+        {
+            oSettings._iDisplayStart = iStart;
+            that.fnDraw( false );
+        }
+        else
+        {
+            that.fnDraw();
+        }
+
+        that.oApi._fnProcessingDisplay( oSettings, false );
+
+        /* Callback user function - for event handlers etc */
+        if ( typeof fnCallback == 'function' && fnCallback != null )
+        {
+            fnCallback( oSettings );
+        }
+    }, oSettings );
+};
+
+get_alerts = function()
+{
+    return function (sSource, aoData, fnCallback) {
+        $.ajax( {
+            "dataType": 'json',
+            "type": "GET",
+            "url": sSource,
+            "data": aoData,
+            "success": function (json) {
+                var a = [];
+                $.each(json.response.alerts.alertDetails, function (i, ad) {
+                    var inner = [];
+                    inner.push(
+                        ad.severity,       // 0
+                        ad.status,
+                        ad.lastReceiveTime,
+                        ad.duplicateCount,
+                        ad.environment,
+                        ad.service,
+                        // TODO(nsatterl): cluster
+                        ad.resource,
+                        ad.event,
+                        ad.value,
+                        ad.text,  // 9
+
+                        SEVERITY_MAP[ad.severity], // severityCode to enable sorting on severity
+
+                        ad.id, // 11
+                        ad.lastReceiveId,
+                        ad.createTime,
+                        ad.receiveTime,
+                        ad.group,
+                        ad.previousSeverity,
+                        ad.trendIndication,
+                        ad.thresholdInfo,
+                        ad.timeout,
+                        ad.type,
+                        ad.repeat,
+                        ad.summary,
+                        ad.origin,
+                        ad.tags,
+                        ad.moreInfo,
+                        ad.history
+                    );
+                    a.push(inner);
+                });
+                json.aaData = a;
+                fnCallback(json);
+            }
+        });
+    }
+};
+
+$(document).ready(function() {
+    oTable = $('#alerts').dataTable({
+        "bProcessing": true,
+        "bServerSide": false,
+        "bSort": true,
+        "bPaginate": true,
+        "bDeferRender": true,
+        "sAjaxSource": "http://localhost:5000/alerta/api/v2/alerts",
+        "fnServerData": get_alerts()
+    });
+});
+
+$('#refresh-all').click(function () {
+    oTable.fnReloadAjax();
+});
+
+</script>
+
+</body>
+</html>
