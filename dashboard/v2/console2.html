@@ -710,7 +710,7 @@ function updateStatusIndicator(service, refresh) {
     $('#' + service + ' th').addClass('loader');
 
     $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime&'
-            + env_filter + filter + limit + from, function (data) {
+            + env_filter + asiFilters[service] + limit + from, function (data) {
 
         var sev_id = '#' + service;
 
