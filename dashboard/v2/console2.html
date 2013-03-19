@@ -291,64 +291,6 @@ $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallba
     }, oSettings );
 };
 
-getAlerts = function(refresh)
-{
-    return function (sSource, aoData, fnCallback) {
-        $.ajax( {
-            "dataType": 'json',
-            "type": "GET",
-            "url": sSource,
-            "data": aoData,
-            "success": function (json) {
-                var a = [];
-                $.each(json.response.alerts.alertDetails, function (i, ad) {
-                    var inner = [];
-                    inner.push(
-                        ad.severity,       // 0
-                        ad.status,
-                        ad.lastReceiveTime,
-                        ad.duplicateCount,
-                        ad.environment,
-                        ad.service,
-                        // TODO(nsatterl): cluster
-                        ad.resource,
-                        ad.event,
-                        ad.value,
-                        ad.text,  // 9
-
-                        SEVERITY_MAP[ad.severity], // severityCode to enable sorting on severity
-
-                        ad.id, // 11
-                        ad.lastReceiveId,
-                        ad.createTime,
-                        ad.receiveTime,
-                        ad.group,
-                        ad.previousSeverity,
-                        ad.trendIndication,
-                        ad.thresholdInfo,
-                        ad.timeout,
-                        ad.type,
-                        ad.repeat,
-                        ad.summary,
-                        ad.origin,
-                        ad.tags,
-                        ad.moreInfo,
-                        ad.history
-                    );
-                    a.push(inner);
-                });
-                json.aaData = a;
-                fnCallback(json);
-            }
-        });
-        if (refresh) {
-            timer = setTimeout(function () {
-                getAlerts(refresh);
-            }, 1000);
-        }
-    }
-};
-
 $(document).ready(function() {
 
     oTable = $('#alerts').dataTable({
@@ -358,14 +300,70 @@ $(document).ready(function() {
         "bPaginate": true,
         "bDeferRender": true,
         "sAjaxSource": "http://localhost:8000/alerta/api/v2/alerts",
-        "fnServerData": getAlerts(true)
+        "fnServerData": function (sSource, aoData, fnCallback) {
+            $.ajax( {
+                "dataType": 'json',
+                "type": "GET",
+                "url": sSource,
+                "data": aoData,
+                "success": function (json) {
+                    var a = [];
+                    $.each(json.response.alerts.alertDetails, function (i, ad) {
+                        var inner = [];
+                        inner.push(
+                                ad.severity,       // 0
+                                ad.status,
+                                ad.lastReceiveTime,
+                                ad.duplicateCount,
+                                ad.environment,
+                                ad.service,
+                                // TODO(nsatterl): cluster
+                                ad.resource,
+                                ad.event,
+                                ad.value,
+                                ad.text,  // 9
+
+                                SEVERITY_MAP[ad.severity], // severityCode to enable sorting on severity
+
+                                ad.id, // 11
+                                ad.lastReceiveId,
+                                ad.createTime,
+                                ad.receiveTime,
+                                ad.group,
+                                ad.previousSeverity,
+                                ad.trendIndication,
+                                ad.thresholdInfo,
+                                ad.timeout,
+                                ad.type,
+                                ad.repeat,
+                                ad.summary,
+                                ad.origin,
+                                ad.tags,
+                                ad.moreInfo,
+                                ad.history
+                        );
+                        a.push(inner);
+                    });
+                    json.aaData = a;
+                    fnCallback(json);
+                }
+            });
+        }
     });
-
-
+    refreshAlerts(true);
 });
 
-$('#refresh-all').click(function () {
+function refreshAlerts(refresh) {
     oTable.fnReloadAjax();
+    if (refresh) {
+        timer = setTimeout(function() {
+            refreshAlerts(refresh);
+        }, 10000);
+    }
+}
+
+$('#refresh-all').click(function () {
+    refreshAlerts(false);
 });
 
 </script>
