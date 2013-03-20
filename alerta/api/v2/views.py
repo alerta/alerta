@@ -225,6 +225,7 @@ def create_alert():
         origin=alert.get('origin', None),
         threshold_info=alert.get('thresholdInfo', None),
         timeout=alert.get('timeout', None),
+        alertid=alert.get('id', None),
         raw_data=alert.get('rawData', None),
     )
     LOG.debug('New alert %s', newAlert)
