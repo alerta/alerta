@@ -129,7 +129,7 @@ class WorkerThread(threading.Thread):
                     "rawData": alert['rawData'],
                     "duplicateCount": 0,
                 }
-                correlatedAlert = self.db.modify_alert(alert['environment'], alert['resource'], alert['event'], update)
+                correlatedAlert = self.db.update_alert(alert['environment'], alert['resource'], alert['event'], update)
 
                 new_status = severity.status_from_severity(previous_severity, alert['severity'])
                 if new_status:
