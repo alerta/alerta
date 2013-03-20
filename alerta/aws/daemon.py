@@ -1,4 +1,5 @@
 
+import os
 import sys
 import urllib2
 import json
@@ -43,6 +44,11 @@ class AwsDaemon(Daemon):
         # Connect to message queue
         self.mq = Messaging()
         self.mq.connect()
+
+        if CONF.http_proxy:
+            os.environ['http_proxy'] = CONF.http_proxy
+        if CONF.https_proxy:
+            os.environ['https_proxy'] = CONF.https_proxy
         
         while not self.shuttingdown:
             try:
