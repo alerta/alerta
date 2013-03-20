@@ -411,6 +411,7 @@ $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallba
 };
 
 $(document).ready(function() {
+
     var ti;
     oTable = $('#alerts').dataTable({
         "bProcessing": true,
@@ -650,7 +651,7 @@ $('#alerts tbody tr').live('click', function () {
 });
 
 function refreshAlerts(refresh) {
-    oTable.fnReloadAjax('http://l' + api_host + '/alerta/api/v2/alerts?' + env_filter + filter + limit + from);
+    oTable.fnReloadAjax('http://' + api_host + '/alerta/api/v2/alerts?' + env_filter + filter + limit + from);
     if (refresh) {
         timer = setTimeout(function() {
             refreshAlerts(refresh);
@@ -724,7 +725,7 @@ function updateAllIndicators(refresh) {
 function updateStatusIndicator(service, refresh) {
     $('#' + service + ' th').addClass('loader');
 
-    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&sort-by=lastReceiveTime&'
+    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
             + env_filter + asiFilters[service] + limit + from, function (data) {
 
         var sev_id = '#' + service;
