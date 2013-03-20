@@ -146,8 +146,6 @@ class Mongo(object):
             query = {"environment": environment, "resource": resource,
                      '$or': [{"event": event}, {"correlatedEvents": event}]}
 
-        LOG.warning('update=%s', update)
-
         # FIXME - no native find_and_modify method in this version of pymongo
         no_obj_error = "No matching object found"
         response = self.db.command("findAndModify", 'alerts',
@@ -200,17 +198,13 @@ class Mongo(object):
             query = {"environment": environment, "resource": resource,
                      '$or': [{"event": event}, {"correlatedEvents": event}]}
 
-        LOG.warning('partial update=%s', update)
-
         response = self.db.alerts.update(query, {'$set': update}, multi=False)
-        LOG.debug("db.alerts.update({'_id': {'$regex': '^' + %s}}) response=%s", alertid, response)
 
         return True if 'ok' in response else False
 
     def delete_alert(self, alertid):
 
         response = self.db.alerts.remove({'_id': {'$regex': '^' + alertid}})
-        LOG.debug("db.alerts.remove({'_id': {'$regex': '^' + %s}}) response=%s", alertid, response)
 
         return True if 'ok' in response else False
 
@@ -239,8 +233,6 @@ class Mongo(object):
 
     def duplicate_alert(self, environment, resource, event, **kwargs):
 
-        LOG.warning('update db with duplicate alert: %s, %s, %s, %s', environment, resource, event, kwargs)
-
         # FIXME - no native find_and_modify method in this version of pymongo
         no_obj_error = "No matching object found"
         response = self.db.command("findAndModify", 'alerts',
@@ -251,7 +243,6 @@ class Mongo(object):
                                    new=True,
                                    fields={"history": 0})
 
-        LOG.critical('db.command response=%s', response)
         response = response['value']
 
         return Alert(
@@ -288,11 +279,7 @@ class Mongo(object):
             query = {"environment": environment, "resource": resource,
                      '$or': [{"event": event}, {"correlatedEvents": event}]}
 
-        #LOG.info('Alert status for %s %s %s alert set to %s', environment, resource, event, status)
-
         update = {'$set': {"status": status}, '$push': {"history": {"status": status, "updateTime": update_time}}}
-
-        LOG.debug('query = %s, update = %s', query, update)
 
         try:
             self.db.alerts.update(query, update)
@@ -300,8 +287,6 @@ class Mongo(object):
             LOG.error('MongoDB error: %s', e)
 
     def update_hb(self, origin, version, create_time, receive_time):
-
-        LOG.info('Update heartbeat for %s %s', origin, version)
 
         query = {"origin": origin}
         update = {"origin": origin, "version": version, "createTime": create_time, "receiveTime": receive_time}
