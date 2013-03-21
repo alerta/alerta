@@ -3,7 +3,7 @@ import sys
 import argparse
 import ConfigParser
 
-from bunch import Bunch
+from alerta.common.utils import Bunch
 
 CONF = Bunch()  # config options can be accessed using CONF.verbose or CONF.use_syslog
 
