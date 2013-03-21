@@ -167,6 +167,9 @@ def main(argv):
             if not CONF.text:
                 parser.error("Must supply alert text using -t or --text.")
 
+            if CONF.correlate and CONF.event not in CONF.correlate:
+                CONF.correlate.append(CONF.event)
+
         sender = SenderClient()
         msg_id = sender.main()
 
