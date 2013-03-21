@@ -9,7 +9,7 @@ import re
 import fnmatch
 from __builtin__ import staticmethod
 
-import pytz
+# import pytz
 
 from alerta.alert import severity, status
 from alerta.common import log as logging
