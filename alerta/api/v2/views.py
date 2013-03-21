@@ -1,5 +1,6 @@
 
 import json
+import time
 import datetime
 import pytz
 import re
@@ -295,6 +296,17 @@ def tag_alert(alertid):
         return jsonify(response={"status": "error", "message": "error tagging alert"})
 
 
+
+# Return heartbeats
+@app.route('/alerta/management/healthcheck')
+@jsonp
+def healthcheck():
+
+    heartbeats = db.get_heartbeats()
+    return jsonify(application="alerta", time=int(time.time() * 1000), heartbeats=heartbeats)
+
+
+# Only use when running API in stand-alone mode during testing
 @app.route('/alerta/dashboard/<path:filename>')
 def console(filename):
     return send_from_directory(CONF.dashboard_dir, filename)

@@ -286,6 +286,15 @@ class Mongo(object):
         except pymongo.errors.OperationFailure, e:
             LOG.error('MongoDB error: %s', e)
 
+    def get_heartbeats(self):
+
+        heartbeats = list()
+
+        response = self.db.heartbeats.find({}, {"_id": 0})
+        for heartbeat in response:
+            heartbeats.append(heartbeat)
+        return heartbeats
+
     def update_hb(self, origin, version, create_time, receive_time):
 
         query = {"origin": origin}
