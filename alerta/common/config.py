@@ -39,6 +39,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'http_proxy': None,
         'https_proxy': None,
 
+        'user_id': 'alerta',
         'server_threads': 4,
         'alert_timeout': 86400,  # seconds
         'yaml_config': '/etc/alerta/%s.yaml' % prog,

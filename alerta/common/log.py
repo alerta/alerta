@@ -23,7 +23,6 @@ def setup(name):
     if CONF.use_syslog is True:
         facility = CONF.syslog_facility
         syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
-        # syslog = logging.handlers.SysLogHandler(address=('localhost', 514), facility=facility, socktype=socket.SOCK_STREAM)
         log_root.addHandler(syslog)
 
     logpath = _get_log_file_path()
@@ -61,6 +60,10 @@ def getLogger(name=None):
         return logging.getLogger(name)
     else:
         return logging.root
+
+
+def set_owner(uid=-1, gid=-1):
+    return os.chown(_get_log_file_path(), uid, gid)
 
 
 def _get_prog_name():

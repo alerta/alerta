@@ -34,6 +34,8 @@ if __name__ == "__main__":
 
 import os
 import sys
+import pwd
+import grp
 import time
 import atexit
 
@@ -54,13 +56,28 @@ class Daemon:
 
     Usage: subclass the Daemon class and override the run() method
     """
-    def __init__(self, prog, pidfile=None, disable_flag=None, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
+    def __init__(self, prog, user=None, pidfile=None, disable_flag=None, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
 
         self.prog = prog
 
         self.stdin = stdin
         self.stdout = stdout
         self.stderr = stderr
+
+        self.user = user or CONF.user_id
+        try:
+            pw = pwd.getpwnam(self.user)
+        except KeyError:
+            self.uid = None
+        else:
+            self.uid = pw.pw_uid
+
+        try:
+            gr = grp.getgrnam(self.user)
+        except KeyError:
+            self.gid = -1
+        else:
+            self.gid = gr.gr_gid
 
         self.pidfile = pidfile or '%s/%s.pid' % (CONF.pid_dir, self.prog)
         self.disable_flag = disable_flag or '/var/run/alerta/%s.disable' % self.prog
@@ -82,6 +99,18 @@ class Daemon:
         except OSError, e:
             LOG.critical("Fork #1 failed: %d (%s)" % (e.errno, e.strerror))
             sys.exit(1)
+
+        # change user
+        if self.uid:
+            try:
+                logging.set_owner(self.uid, self.gid)
+                if self.gid != -1:
+                    os.setgid(self.gid)
+                os.setuid(self.uid)
+            except OSError, e:
+                LOG.error('Could not run %s as user %s: %s', self.prog, self.user, e)
+                sys.exit(1)
+            LOG.info('Running %s as user %s', self.prog, self.user)
 
         # decouple from parent environment
         os.chdir("/")
