@@ -25,7 +25,8 @@ JavaScript web interface for an alert console.
 %package server
 Summary: Alerta monitoring framework
 Group: Utilities/System
-Requires: python-argparse, stomppy, pymongo, Flask, PyYAML, pytz, python-boto, python-dynect, alerta-common
+Requires: python-argparse, stomppy, pymongo, Flask, PyYAML, pytz, python-boto, python-dynect
+Requires: alerta-common, httpd, mongo-10gen-server, rabbitmq-server, logrotate
 %description server
 UNKNOWN
 
@@ -55,6 +56,12 @@ python setup.py install --single-version-externally-managed --root=$RPM_BUILD_RO
 %__mkdir_p %{buildroot}%{_sysconfdir}/%{name}/
 %__cp etc/%{name}/%{name}.conf %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
 %__install -m 0755 etc/init.d/* %{buildroot}%{_initrddir}/
+%__mkdir_p %{buildroot}%{_sysconfdir}/httpd/conf.d/
+%__install -m 0755 contrib/apache/%{name}.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/%{name}.conf
+%__mkdir_p %{buildroot}%{_var}/www/html/%{name}/
+%__install -m 0755 contrib/apache/%{name}.wsgi %{buildroot}%{_var}/www/html/%{name}/%{name}.wsgi
+%__mkdir_p %{buildroot}%{_var}/www/html/%{name}/dashboard/
+%__cp -r dashboard/* %{buildroot}%{_var}/www/html/%{name}/dashboard/
 %__install -m 0775 -d %{buildroot}%{_var}/log/%{name}
 %__mkdir_p %{buildroot}%{_sysconfdir}/logrotate.d/
 %__cp etc/%{name}.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
@@ -66,6 +73,9 @@ rm -rf $RPM_BUILD_ROOT
 %files server
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
+%config(noreplace) /var/www/html/%{name}/%{name}.wsgi
+%{_var}/www/html/%{name}/dashboard/
 %{_sysconfdir}/logrotate.d/%{name}
 %dir %attr(775,alerta,apache) /var/log/%{name}
 %dir %attr(-,alerta,alerta) /var/run/%{name}
@@ -84,6 +94,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %files client
 %defattr(-,root,root)
+%config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
+%{_sysconfdir}/logrotate.d/%{name}
+%dir %attr(775,alerta,apache) /var/log/%{name}
+%dir %attr(-,alerta,alerta) /var/run/%{name}
 %{_bindir}/alert-query
 %{_bindir}/alert-sender
 %{_bindir}/alert-checker
