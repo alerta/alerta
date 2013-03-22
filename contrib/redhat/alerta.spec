@@ -25,7 +25,7 @@ JavaScript web interface for an alert console.
 %package server
 Summary: Alerta monitoring framework
 Group: Utilities/System
-Requires: python-argparse, stomppy, pymongo, Flask, PyYAML, pytz, python-boto, python-dynect
+Requires: python-argparse, stomppy, pymongo, python-flask, PyYAML, pytz, python-boto, python-dynect-api
 Requires: alerta-common, httpd, mongo-10gen-server, rabbitmq-server, logrotate
 %description server
 UNKNOWN
@@ -120,7 +120,7 @@ if ! getent passwd alerta >/dev/null 2>&1; then
 fi
 
 %post server
-for name in alerta alerta-api alert-aws alert-dynect alert-ganglia alert-ircbot \
+for name in alerta alert-aws alert-dynect alert-ganglia alert-ircbot \
     alert-logger alert-mailer alert-notify alert-syslog alert-urlmon
 do
     /sbin/chkconfig --add $name
@@ -128,7 +128,7 @@ done
 
 %preun server
 if [ "$1" = "0" ]; then
-    for name in alerta alerta-api alert-aws alert-dynect alert-ganglia alert-ircbot \
+    for name in alerta alert-aws alert-dynect alert-ganglia alert-ircbot \
         alert-logger alert-mailer alert-notify alert-syslog alert-urlmon
     do
         /sbin/chkconfig $name off
