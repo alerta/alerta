@@ -41,6 +41,10 @@ class AwsDaemon(Daemon):
             LOG.error('Could not read AWS credentials file %s: %s', CONF.fog_file, e)
             sys.exit(1)
 
+        if not self.fog:
+            LOG.error('No AWS credentials found in FOG file %s. Exiting...', CONF.fog_file)
+            sys.exit(1)
+
         # Connect to message queue
         self.mq = Messaging()
         self.mq.connect()
