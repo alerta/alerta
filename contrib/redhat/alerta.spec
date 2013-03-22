@@ -1,6 +1,6 @@
 %define name alerta
-%define version 2.0.alpha.1
-%define unmangled_version 2.0.alpha.1
+%define version 2.0.0
+%define unmangled_version 2.0.0
 %define release 1
 
 Name: %{name}
@@ -15,7 +15,6 @@ Prefix: %{_prefix}
 BuildArch: noarch
 Vendor: Nick Satterly <nick.satterly@guardian.co.uk>
 Url: https://github.com/guardian/alerta
-Requires: stomppy, pymongo, Flask, PyYAML, pytz, python-boto, python-dynect
 
 %description
 Alerta is an monitoring framework that uses a message broker
@@ -26,12 +25,14 @@ JavaScript web interface for an alert console.
 %package server
 Summary: Alerta monitoring framework
 Group: Utilities/System
+Requires: python-argparse, stomppy, pymongo, Flask, PyYAML, pytz, python-boto, python-dynect, alerta-common
 %description server
 UNKNOWN
 
 %package client
 Summary: Alerta monitoring framework
 Group: Utilities/System
+Requires: python-argparse, alerta-common
 %description client
 UNKNOWN
 
@@ -51,6 +52,8 @@ python setup.py build
 python setup.py install --single-version-externally-managed --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 
 %__mkdir_p %{buildroot}%{_initrddir}/
+%__mkdir_p %{buildroot}%{_sysconfdir}/%{name}/
+%__cp etc/%{name}/%{name}.conf %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
 %__install -m 0755 etc/init.d/* %{buildroot}%{_initrddir}/
 %__install -m 0775 -d %{buildroot}%{_var}/log/%{name}
 %__mkdir_p %{buildroot}%{_sysconfdir}/logrotate.d/
@@ -62,6 +65,10 @@ rm -rf $RPM_BUILD_ROOT
 
 %files server
 %defattr(-,root,root)
+%config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
+%{_sysconfdir}/logrotate.d/%{name}
+%dir %attr(775,alerta,apache) /var/log/%{name}
+%dir %attr(-,alerta,alerta) /var/run/%{name}
 %{_bindir}/alerta
 %{_bindir}/alerta-api
 %{_bindir}/alert-aws
