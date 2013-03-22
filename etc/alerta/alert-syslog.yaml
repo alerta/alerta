@@ -22,3 +22,10 @@
 - priority: local4.*
   service: [Quantum]
   parser: OpenStackParser
+
+# Alerta = local7
+- priority: local7.*
+  service: [Monitoring]
+  group: Alerta
+  parser: AlertaParser
+

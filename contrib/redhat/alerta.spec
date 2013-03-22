@@ -53,9 +53,10 @@ python setup.py build
 python setup.py install --single-version-externally-managed --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 
 %__mkdir_p %{buildroot}%{_initrddir}/
-%__mkdir_p %{buildroot}%{_sysconfdir}/%{name}/
-%__cp etc/%{name}/%{name}.conf %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
 %__install -m 0755 etc/init.d/* %{buildroot}%{_initrddir}/
+%__mkdir_p %{buildroot}%{_sysconfdir}/%{name}/
+%__mkdir_p %{buildroot}%{_sysconfdir}/%{name}/parsers/
+%__cp etc/%{name}/%{name}.conf %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
 %__mkdir_p %{buildroot}%{_sysconfdir}/httpd/conf.d/
 %__install -m 0755 contrib/apache/%{name}.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/%{name}.conf
 %__mkdir_p %{buildroot}%{_var}/www/html/%{name}/
@@ -72,7 +73,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files server
 %defattr(-,root,root)
+%{_initrddir}/
 %config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
+%{_sysconfdir}/%{name}/parsers/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %config(noreplace) /var/www/html/%{name}/%{name}.wsgi
 %{_var}/www/html/%{name}/dashboard/
@@ -106,7 +109,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/*
 %defattr(-,root,root)
 
-%{_initrddir}/
 %dir %attr(775,alerta,apache) /var/log/%{name}
 %dir %attr(-,alerta,alerta) /var/run/%{name}
 
