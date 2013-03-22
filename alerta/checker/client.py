@@ -3,12 +3,11 @@ import os
 import sys
 import subprocess
 import shlex
-import re
 
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.alert import Alert, Heartbeat, severity
-from alerta.common.mq import Messaging
+from alerta.common.api import ApiClient
 
 Version = '2.0.0'
 
@@ -100,9 +99,7 @@ class CheckerClient(object):
         else:
             LOG.debug('Message => %s', repr(msg))
 
-            mq = Messaging()
-            mq.connect()
-            mq.send(msg)
-            mq.disconnect()
+            api = ApiClient()
+            api.send(msg)
 
         return msg.get_id()
