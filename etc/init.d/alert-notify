@@ -8,9 +8,11 @@
 # Source function library.
 . /etc/init.d/functions
 
+OPTIONS=""
+
 RETVAL=0
 prog="alert-notify"
-binary=/opt/alerta/bin/alert-notify.py
+binary=/usr/bin/$prog
 pidfile=/var/run/alerta/$prog.pid
 lockfile=/var/lock/subsys/$prog
 
@@ -22,12 +24,16 @@ fi
 start() {
 	[ -x $binary ] || exit 5
 
-        # Start daemons.
+	# Check if it is already running
+	if [ ! -f $lockfile ]; then
         echo -n $"Starting $prog: "
-        daemon "$binary $OPTIONS >/dev/null 2>&1 &"
-	RETVAL=$?
-        echo
-	[ $RETVAL -eq 0 ] && touch $lockfile
+        daemon --pidfile=$pidfile $binary $OPTIONS
+	    RETVAL=$?
+	    [ $RETVAL -eq 0 ] && touch $lockfile
+	    echo
+    else
+	    status -p $pidfile $prog
+	fi
 	return $RETVAL
 }
 
