@@ -31,9 +31,10 @@ class Mongo(object):
             LOG.error('MongoDB database error : %s', e)
             sys.exit(1)
 
-        if self.conn.alive():
-            LOG.info('Connected to MongoDB server %s:%s', CONF.mongo_host, CONF.mongo_port)
-            LOG.debug('MongoDB %s, databases available: %s', self.conn.server_info()['version'], ', '.join(self.conn.database_names()))
+        # TODO(nsatterl): problems running under pymongo 2.1.1
+        # if self.conn.alive():
+        #     LOG.info('Connected to MongoDB server %s:%s', CONF.mongo_host, CONF.mongo_port)
+        #     LOG.debug('MongoDB %s, databases available: %s', self.conn.server_info()['version'], ', '.join(self.conn.database_names()))
 
         self.db.alerts.create_index([('environment', pymongo.DESCENDING), ('resource', pymongo.DESCENDING),
                                      ('event', pymongo.DESCENDING)])   # TODO(nsatterl): verify perf of this index
