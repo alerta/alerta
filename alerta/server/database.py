@@ -18,10 +18,17 @@ class Mongo(object):
 
         # Connect to MongoDB
         try:
-            self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port)
+            self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port)  # version >= 2.4
+        except AttributeError:
+            self.conn = pymongo.Connection(CONF.mongo_host, CONF.mongo_port)  # version < 2.4
+        except Exception, e:
+            LOG.error('MongoDB Client connection error : %s', e)
+            sys.exit(1)
+
+        try:
             self.db = self.conn.monitoring  # TODO(nsatterl): make 'monitoring' a SYSTEM DEFAULT
         except Exception, e:
-            LOG.error('MongoDB Client error : %s', e)
+            LOG.error('MongoDB database error : %s', e)
             sys.exit(1)
 
         if self.conn.alive():
