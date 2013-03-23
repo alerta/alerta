@@ -25,7 +25,7 @@
 
 # Alerta = local7
 - priority: local7.*
-  service: [Monitoring]
-  group: Alerta
+  service: [Alerta]
+  group: Internal
   parser: AlertaParser
 
