@@ -47,13 +47,16 @@ HTTP_RESPONSES[510] = 'Not Extended'
 
 # Initialise Rules
 def init_urls():
-    global urls
+
+    urls = list()
     LOG.info('Loading URLs...')
     try:
         urls = yaml.load(open(CONF.yaml_config))
     except Exception, e:
         LOG.error('Failed to load URLs: %s', e)
     LOG.info('Loaded %d URLs OK', len(urls))
+
+    return urls
 
 
 # Do not follow redirects
@@ -340,8 +343,7 @@ class UrlmonDaemon(Daemon):
         self.mq.connect()
 
         # Initialiase alert rules
-        init_urls()
-        url_mod_time = os.path.getmtime(CONF.yaml_config)
+        urls = init_urls()
 
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
