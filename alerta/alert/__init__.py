@@ -197,6 +197,9 @@ class Alert(object):
 
     def transform_alert(self, **kwargs):
 
+        if not os.path.exists(CONF.yaml_config):
+            return
+
         trapoid = kwargs.get('trapoid', None)
         facility = kwargs.get('facility', None)
         level = kwargs.get('level', None)
@@ -213,13 +216,13 @@ class Alert(object):
         for c in conf:
             LOG.debug('YAML config: %s', c)
 
-            if self.get_type() == 'snmptrapAlert' and trapoid and 'trapoid' in c:
+            if self.get_type() == 'snmptrapAlert' and trapoid and c.get('trapoid'):
                 match = re.match(c['trapoid'], trapoid)
                 pattern = trapoid
-            elif self.get_type() == 'syslogAlert' and facility and level and 'priority' in c:
+            elif self.get_type() == 'syslogAlert' and facility and level and c.get('priority'):
                 match = fnmatch.fnmatch('%s.%s' % (facility, level), c['priority'])
                 pattern = c['priority']
-            elif 'match' in c:
+            elif c.get('match'):
                 match = all(item in self.alert.items() for item in c['match'].items())
                 pattern = c['match'].items()
             else:
