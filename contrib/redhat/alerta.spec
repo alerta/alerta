@@ -26,7 +26,7 @@ JavaScript web interface for an alert console.
 Summary: Alerta monitoring framework
 Group: Utilities/System
 Requires: python-argparse, stomppy, pymongo, python-flask, PyYAML, pytz, python-boto, python-dynect-api
-Requires: alerta-common, httpd, mongo-10gen-server, rabbitmq-server, logrotate
+Requires: alerta-common, httpd, mongo-10gen-server, rabbitmq-server, net-snmp, logrotate
 %description server
 UNKNOWN
 
@@ -56,16 +56,18 @@ python setup.py install --single-version-externally-managed --root=$RPM_BUILD_RO
 %__install -m 0755 etc/init.d/* %{buildroot}%{_initrddir}/
 %__mkdir_p %{buildroot}%{_sysconfdir}/%{name}/
 %__mkdir_p %{buildroot}%{_sysconfdir}/%{name}/parsers/
-%__cp etc/%{name}/%{name}.conf %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
+%__install -m 0755  etc/%{name}/%{name}.conf %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
 %__mkdir_p %{buildroot}%{_sysconfdir}/httpd/conf.d/
 %__install -m 0755 contrib/apache/%{name}.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/%{name}.conf
 %__mkdir_p %{buildroot}%{_var}/www/html/%{name}/
 %__install -m 0755 contrib/apache/%{name}.wsgi %{buildroot}%{_var}/www/html/%{name}/%{name}.wsgi
 %__mkdir_p %{buildroot}%{_var}/www/html/%{name}/dashboard/
 %__cp -r dashboard/* %{buildroot}%{_var}/www/html/%{name}/dashboard/
+%__mkdir_p %{buildroot}%{_sysconfdir}/snmp/
+%__install -m 0755 etc/snmptrapd.conf %{buildroot}%{_sysconfdir}/snmp/snmptrapd.conf
 %__install -m 0775 -d %{buildroot}%{_var}/log/%{name}
 %__mkdir_p %{buildroot}%{_sysconfdir}/logrotate.d/
-%__cp etc/%{name}.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
+%__install -m 0755 etc/%{name}.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
 %__mkdir_p %{buildroot}%{_var}/run/%{name}
 
 %clean
@@ -79,6 +81,7 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %config(noreplace) /var/www/html/%{name}/%{name}.wsgi
 %{_var}/www/html/%{name}/dashboard/
+%config(noreplace) %{_sysconfdir}/snmp/snmptrapd.conf
 %{_sysconfdir}/logrotate.d/%{name}
 %dir %attr(775,alerta,apache) /var/log/%{name}
 %dir %attr(-,alerta,alerta) /var/run/%{name}
