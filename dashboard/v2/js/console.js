@@ -1,7 +1,8 @@
 
-var api_host = document.domain + ":80";
-var refresh_interval = '30'; // seconds
+var API_HOST = document.domain + ":8000";
+var REFRESH_INTERVAL = 30; // seconds
 
+var lookup;
 var filter = '';
 var limit = '';
 var from = '';
@@ -19,19 +20,19 @@ var DEBUG_SEV_CODE = 7;
 var AUTH_SEV_CODE = 8;
 var UNKNOWN_SEV_CODE = 9;
 
-CRITICAL = 'critical';
-MAJOR = 'major';
-MINOR = 'minor';
-WARNING = 'warning';
-INDETERMINATE = 'indeterminate';
-CLEARED = 'cleared';
-NORMAL = 'normal';
-INFORM = 'informational';
-DEBUG = 'debug';
-AUTH = 'security';
-UNKNOWN = 'unknown';
+var CRITICAL = 'critical';
+var MAJOR = 'major';
+var MINOR = 'minor';
+var WARNING = 'warning';
+var INDETERMINATE = 'indeterminate';
+var CLEARED = 'cleared';
+var NORMAL = 'normal';
+var INFORM = 'informational';
+var DEBUG = 'debug';
+var AUTH = 'security';
+var UNKNOWN = 'unknown';
 
-ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN];
+// var ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN];
 
 var SEVERITY_MAP = {
     'critical': 1,
@@ -76,13 +77,13 @@ function sev2label(severity) {
     return('<span class="label ' + label + '">' + severity + '</span>');
 }
 
-OPEN = 'open';
-ACK = 'ack';
-CLOSED = 'closed';
-EXPIRED = 'expired';
-UNKNOWN = 'unknown';
+var OPEN = 'open';
+var ACK = 'ack';
+var CLOSED = 'closed';
+var EXPIRED = 'expired';
+var UNKNOWN = 'unknown';
 
-ALL = [OPEN, ACK, CLOSED, EXPIRED, UNKNOWN];
+// var ALL = [OPEN, ACK, CLOSED, EXPIRED, UNKNOWN];
 
 function stat2label(status) {
 
@@ -178,7 +179,10 @@ $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallba
 
 var oTable;
 
-function updateAlertsTable(env_filter) {
+function updateAlertsTable(env_filter, asiFilters) {
+
+    // initialias asiFitlers
+    lookup = asiFilters;
 
     var ti;
     oTable = $('#alerts').dataTable({
@@ -187,7 +191,7 @@ function updateAlertsTable(env_filter) {
         "bSort": true,
         "bPaginate": true,
         "bDeferRender": true,
-        "sAjaxSource": 'http://' + api_host + '/alerta/api/v2/alerts?' + env_filter + filter,
+        "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + env_filter + filter,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'severity-' + aData[0] + ' status-' + aData[1];
 
@@ -213,7 +217,7 @@ function updateAlertsTable(env_filter) {
             // if (aData[1] == ACK) {
             //     $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" class="unack-alert" rel="tooltip" title="Unacknowledge"><i class="icon-star"></i></a>');
             // }
-            // $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" href="mailto:?subject=' + aData[22] + '&body=' + aData[9] + '%0D%0A%0D%0ASee http://' + api_host + '/alerta/details.php?id='
+            // $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" href="mailto:?subject=' + aData[22] + '&body=' + aData[9] + '%0D%0A%0D%0ASee http://' + API_HOST + '/alerta/details.php?id='
             //         + aData[11] + '" class="email-alert" rel="tooltip" title="Email Alert" target="_blank"><i class="icon-envelope"></i></a>');
             // $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" class="tag-alert" rel="tooltip" title="Tag Alert"><i class="icon-tags"></i></a>');
             // $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>');
@@ -287,8 +291,8 @@ function updateAlertsTable(env_filter) {
     });
 
     timer = setTimeout(function() {
-        refreshAlerts(true);
-    }, refresh_interval * 1000);
+        refreshAlerts(env_filter, true);
+    }, REFRESH_INTERVAL * 1000);
 
 }
 
@@ -416,12 +420,12 @@ $('#alerts tbody tr').live('click', function () {
     }
 });
 
-function refreshAlerts(refresh) {
-    oTable.fnReloadAjax('http://' + api_host + '/alerta/api/v2/alerts?' + env_filter + filter + limit + from);
+function refreshAlerts(env_filter, refresh) {
+    oTable.fnReloadAjax('http://' + API_HOST + '/alerta/api/v2/alerts?' + env_filter + filter + limit + from);
     if (refresh) {
         timer = setTimeout(function() {
-            refreshAlerts(refresh);
-        }, refresh_interval * 1000);
+            refreshAlerts(env_filter, refresh);
+        }, REFRESH_INTERVAL * 1000);
     }
 }
 
@@ -430,12 +434,12 @@ $('#refresh-all').click(function () {
 });
 
 $('.status-indicator-overall').click(function () {
-    filter = asiFilters[this.id.split('-')[0]];
+    filter = lookup[this.id.split('-')[0]];
     refreshAlerts(false);
 });
 
 $('.status-indicator-count').click(function () {
-    filter = asiFilters[this.id.split('-')[0]];
+    filter = lookup[this.id.split('-')[0]];
     filter += '&severity=' + this.id.split('-')[1];
     refreshAlerts(false);
 });
@@ -459,7 +463,7 @@ function updateFromDate(seconds) {
 }
 
 function updateStatusCounts(env_filter, refresh) {
-    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
         + env_filter + limit + from, function (data) {
 
         if (data.response.warning) {
@@ -473,7 +477,7 @@ function updateStatusCounts(env_filter, refresh) {
         if (refresh) {
             timer = setTimeout(function () {
                 updateStatusIndicator(env_filter, refresh);
-            }, refresh_interval * 1000);
+            }, REFRESH_INTERVAL * 1000);
         }
     });
 }
@@ -491,7 +495,7 @@ function updateAllIndicators(env_filter, asiFilters, refresh) {
 function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
     $('#' + service + ' th').addClass('loader');
 
-    $.getJSON('http://' + api_host + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
         + env_filter + asi_filter + limit + from, function (data) {
 
         var sev_id = '#' + service;
@@ -528,8 +532,8 @@ function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
 
         if (refresh) {
             timer = setTimeout(function () {
-                updateStatusIndicator(status, refresh);
-            }, refresh_interval * 1000);
+                updateStatusIndicator(env_filter, asi_filter, service, refresh);
+            }, REFRESH_INTERVAL * 1000);
         }
     });
 }
@@ -542,7 +546,7 @@ $(document).ready(function () {
             $.ajax({
                 type: 'PUT',
                 contentType: 'application/json',
-                url: 'http://' + api_host + '/alerta/api/v2/alerts/alert/' + this.id + '/tag',
+                url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id + '/tag',
                 data: JSON.stringify({ tag: tag })
             });
         }
