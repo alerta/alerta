@@ -134,7 +134,8 @@ class WorkerThread(threading.Thread):
 
                 new_status = severity.status_from_severity(previous_severity, alert['severity'])
                 if new_status:
-                    self.db.update_status(alert['environment'], alert['resource'], alert['event'], new_status)
+                    self.db.update_status(environment=alert['environment'], resource=alert['resource'],
+                                          event=alert['event'], status=new_status)
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(correlatedAlert, CONF.outbound_queue)
