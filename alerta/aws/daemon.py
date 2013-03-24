@@ -77,10 +77,11 @@ class AwsDaemon(Daemon):
         self.info = {}
 
         for account, credential in self.fog.iteritems():
+            account = account[1:]
             aws_access_key = credential.get(':aws_access_key_id', None)
             aws_secret_key = credential.get(':aws_secret_access_key', None)
             if not aws_access_key or not aws_secret_key:
-                LOG.error('Invalid FOG credentials for %s, either access key or secret key missing' % account[1:])
+                LOG.error('Invalid FOG credentials for %s, either access key or secret key missing' % account)
                 sys.exit(1)
 
             for region in CONF.ec2_regions:
