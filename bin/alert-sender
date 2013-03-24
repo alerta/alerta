@@ -144,6 +144,9 @@ def main(argv):
             if not CONF.event:
                 parser.error("Must supply event name using -e or --event")
 
+            if not CONF.group:
+                parser.error("Must supply group using -g or --group")
+
             if not CONF.value:
                 parser.error("Must supply event value using -v or --value")
 
