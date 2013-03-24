@@ -83,10 +83,10 @@ class WorkerThread(threading.Thread):
                     "tags": alert['tags'],
                     "repeat": True,
                     "origin": alert['origin'],
-                    "trendIndication": 'noChange',
                     "rawData": alert['rawData'],
                 }
-                duplicateAlert = self.db.duplicate_alert(alert['environment'], alert['resource'], alert['event'], **update)
+                duplicateAlert = self.db.duplicate_alert(environment=alert['environment'], resource=alert['resource'],
+                                                         event=alert['event'], update=update)
 
                 if CONF.forward_duplicate:
                     # Forward alert to notify topic and logger queue
@@ -129,7 +129,8 @@ class WorkerThread(threading.Thread):
                     "rawData": alert['rawData'],
                     "duplicateCount": 0,
                 }
-                correlatedAlert = self.db.update_alert(alert['environment'], alert['resource'], alert['event'], update)
+                correlatedAlert = self.db.update_alert(environment=alert['environment'], resource=alert['resource'],
+                                                       event=alert['event'], update=update)
 
                 new_status = severity.status_from_severity(previous_severity, alert['severity'])
                 if new_status:
@@ -151,12 +152,12 @@ class WorkerThread(threading.Thread):
                 trend_indication = severity.trend(severity.UNKNOWN, alert['severity'])
 
                 newAlert = Alert(
-                    alertid=alert['id'],
                     resource=alert['resource'],
                     event=alert['event'],
                     correlate=alert['correlatedEvents'],
                     group=alert['group'],
                     value=alert['value'],
+                    status=status.OPEN,
                     severity=alert['severity'],
                     environment=alert['environment'],
                     service=alert['service'],
@@ -164,23 +165,25 @@ class WorkerThread(threading.Thread):
                     event_type=alert['type'],
                     tags=alert['tags'],
                     origin=alert['origin'],
+                    repeat=False,
+                    duplicate_count=0,
                     threshold_info=alert['thresholdInfo'],
                     summary=alert['summary'],
                     timeout=alert['timeout'],
+                    alertid=alert['id'],
+                    last_receive_id=alert['id'],
                     create_time=alert['createTime'],
                     receive_time=alert['receiveTime'],
                     last_receive_time=alert['receiveTime'],
-                    duplicate_count=0,
-                    status=status.OPEN,
                     trend_indication=trend_indication,
-                    last_receive_id=alert['id'],
                     raw_data=alert['rawData'],
                 )
                 self.db.save_alert(newAlert)
 
                 new_status = severity.status_from_severity(severity.UNKNOWN, alert['severity'])
                 if new_status:
-                    self.db.update_status(alert['environment'], alert['resource'], alert['event'], new_status)
+                    self.db.update_status(environment=alert['environment'], resource=alert['resource'],
+                                          event=alert['event'], status=new_status)
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(newAlert, CONF.outbound_queue)

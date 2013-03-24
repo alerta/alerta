@@ -211,7 +211,6 @@ class Mongo(object):
             last_receive_time=response['lastReceiveTime'],
             trend_indication=response['trendIndication'],
             raw_data=response['rawData'],
-            history=response['history'],
         )
 
     def partial_update_alert(self, alertid=None, environment=None, resource=None, event=None, update=None):
@@ -255,19 +254,18 @@ class Mongo(object):
 
         return self.db.alerts.insert(body)
 
-    def duplicate_alert(self, environment, resource, event, **kwargs):
+    def duplicate_alert(self, environment, resource, event, update):
 
         # FIXME - no native find_and_modify method in this version of pymongo
         no_obj_error = "No matching object found"
         response = self.db.command("findAndModify", 'alerts',
                                    allowable_errors=[no_obj_error],
                                    query={"environment": environment, "resource": resource, "event": event},
-                                   update={'$set': kwargs,
-                                           '$inc': {"duplicateCount": 1}},
+                                   update={'$set': update,
+                                           '$inc': {"duplicateCount": 1}
+                                   },
                                    new=True,
-                                   fields={"history": 0})
-
-        response = response['value']
+                                   fields={"history": 0})['value']
 
         return Alert(
             alertid=response['_id'],
@@ -297,7 +295,6 @@ class Mongo(object):
             last_receive_time=response['lastReceiveTime'],
             trend_indication=response['trendIndication'],
             raw_data=response['rawData'],
-            history=response['history'],
         )
 
     def update_status(self, alertid=None, environment=None, resource=None, event=None, status=None):
