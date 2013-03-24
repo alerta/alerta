@@ -20,12 +20,12 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 ATTRIBUTES = [
-    'id',
     'resource',
     'event',
     'correlatedEvents',
     'group',
     'value',
+    'status',
     'severity',
     'previousSeverity',
     'environment',
@@ -33,14 +33,19 @@ ATTRIBUTES = [
     'text',
     'type',
     'tags',
-    'summary',
-    'createTime',
     'origin',
-    'thresholdInfo',
-    'timeout',
-    'expireTime',
     'repeat',
     'duplicateCount',
+    'thresholdInfo',
+    'summary',
+    'timeout',
+    'id',
+    'lastReceiveId',
+    'createTime',
+    'expireTime',
+    'receiveTime',
+    'lastReceiveTime',
+    'trendIndication',
     'rawData',
     'history',
 ]
@@ -78,7 +83,6 @@ class Alert(object):
         }
 
         self.alert = {
-            'id': self.alertid,
             'resource': resource,
             'event': event,
             'correlatedEvents': correlate,
@@ -91,14 +95,15 @@ class Alert(object):
             'text': text,
             'type': event_type,
             'tags': tags,
-            'summary': self.summary,
-            'createTime': create_time,
             'origin': origin or '%s/%s' % (prog, os.uname()[1]),
-            'thresholdInfo': threshold_info,
-            'timeout': timeout,
-            'expireTime': expire_time,
             'repeat': repeat,
             'duplicateCount': duplicate_count,
+            'thresholdInfo': threshold_info,
+            'summary': self.summary,
+            'timeout': timeout,
+            'id': self.alertid,
+            'createTime': create_time,
+            'expireTime': expire_time,
             'rawData': raw_data,
         }
 

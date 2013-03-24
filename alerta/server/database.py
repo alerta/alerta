@@ -212,7 +212,7 @@ class Mongo(object):
             trend_indication=response['trendIndication'],
             raw_data=response['rawData'],
             history=response['history'],
-            )
+        )
 
     def partial_update_alert(self, alertid=None, environment=None, resource=None, event=None, update=None):
 
@@ -298,7 +298,7 @@ class Mongo(object):
             trend_indication=response['trendIndication'],
             raw_data=response['rawData'],
             history=response['history'],
-            )
+        )
 
     def update_status(self, alertid=None, environment=None, resource=None, event=None, status=None):
 
