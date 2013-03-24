@@ -3,6 +3,7 @@ var API_HOST = document.domain + ":8000";
 var REFRESH_INTERVAL = 30; // seconds
 
 var lookup;
+var gEnvFilter;
 var filter = '';
 var limit = '';
 var from = '';
@@ -183,6 +184,7 @@ function updateAlertsTable(env_filter, asiFilters) {
 
     // initialias asiFitlers
     lookup = asiFilters;
+    gEnvFilter = env_filter;
 
     var ti;
     oTable = $('#alerts').dataTable({
@@ -291,7 +293,7 @@ function updateAlertsTable(env_filter, asiFilters) {
     });
 
     timer = setTimeout(function() {
-        refreshAlerts(env_filter, true);
+        refreshAlerts(true);
     }, REFRESH_INTERVAL * 1000);
 
 }
@@ -420,11 +422,11 @@ $('#alerts tbody tr').live('click', function () {
     }
 });
 
-function refreshAlerts(env_filter, refresh) {
-    oTable.fnReloadAjax('http://' + API_HOST + '/alerta/api/v2/alerts?' + env_filter + filter + limit + from);
+function refreshAlerts(refresh) {
+    oTable.fnReloadAjax('http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + limit + from);
     if (refresh) {
         timer = setTimeout(function() {
-            refreshAlerts(env_filter, refresh);
+            refreshAlerts(refresh);
         }, REFRESH_INTERVAL * 1000);
     }
 }
