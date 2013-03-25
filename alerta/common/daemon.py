@@ -80,7 +80,7 @@ class Daemon:
             self.gid = gr.gr_gid
 
         self.pidfile = pidfile or '%s/%s.pid' % (CONF.pid_dir, self.prog)
-        self.disable_flag = disable_flag or '/var/run/alerta/%s.disable' % self.prog
+        self.disable_flag = disable_flag or CONF.disable_flag
 
         self.running = False
         self.shuttingdown = False
@@ -155,8 +155,9 @@ class Daemon:
         LOG.debug('Wrote PID %s to %s' % (self.pid, self.pidfile))
 
     def wait_on_disable(self):
-        #TODO(nsattel): daemon should wait in a loop if disable flag exists
-        pass
+        while os.path.isfile(self.disable_flag):
+            LOG.warning('Disable flag %s exists. Sleeping 120 seconds...', self.disable_flag)
+            time.sleep(120)
 
     def delpid(self):
         os.remove(self.pidfile)
@@ -230,5 +231,5 @@ class Daemon:
         You should override this method when you subclass Daemon. It will be called after the process has been
         daemonized by start() or restart().
         """
-        LOG.error('Something went wrong. This method is meant to be re-implemented by another Daemon class.')
+        LOG.error('Something went wrong. This method is meant to be re-implemented by Daemon subclass.')
         pass
