@@ -18,13 +18,13 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.notify.daemon import NotifyDaemon, Version
 
-LOG = logging.getLogger('alerta.notifier')
+LOG = logging.getLogger('alerta.notify')
 CONF = config.CONF
 
 if __name__ == '__main__':
     config.parse_args(sys.argv[1:], version=Version)
     logging.setup('alerta')
-    notify = NotifyDaemon('alert-notifier')
+    notify = NotifyDaemon('alert-notify')
     notify.start()
 
 
