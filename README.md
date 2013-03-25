@@ -61,24 +61,37 @@ $ python setup.py install
 To start alerta with a configuration that logs to /tmp:
 
 ```
-$ bin/alerta --log-dir=/tmp
-$ bin/alerta-api --log-dir=/tmp
+$ alerta --log-dir=/tmp
+$ alerta-api --log-dir=/tmp
 ```
 
 To run in the foreground:
 
 ```
-$ bin/alerta --log-dir=/tmp --debug --foreground --use-stderr
-$ bin/alerta-api --log-dir=/tmp --debug --use-stderr
+$ alerta --log-dir=/tmp --debug --foreground --use-stderr
+$ alerta-api --log-dir=/tmp --debug --use-stderr
 ```
 
 To use the alert consoles modify `$HOME/.alerta.conf` like so:
 ```
+[DEFAULT]
+api_port = 8000
+
 [alerta-api]
 dashboard_dir = /path/to/alerta/dashboard
 ```
 
 For example, if the repo was cloned to `/home/foobar/git/alerta` then the `dashboard_dir` directory path will be `/home/foobar/git/alerta/dashboard`.
+
+Then edit the port in `dashboard/v1/js/console.js`:
+```
+var api_server = document.domain + ':8000';
+```
+
+And edit the port in `dashboard/v2/js/console.js`:
+```
+var API_HOST = document.domain + ":8000";
+```
 
 And then the alert consoles (both version 1 and 2) can be found at:
 
