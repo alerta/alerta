@@ -8,6 +8,16 @@ db.alerts.update({severity:'WARNING'},{$set:{severity: 'warning'}},false, true);
 db.alerts.update({severity:'NORMAL'},{$set:{severity: 'normal'}},false, true);
 db.alerts.update({severity:'INFORM'},{$set:{severity: 'informational'}},false, true);
 db.alerts.update({severity:'DEBUG'},{$set:{severity: 'debug'}},false, true);
+db.alerts.update({severity:'UNKNOWN'},{$set:{severity: 'unknown'}},false, true);
+
+db.alerts.update({previousSeverity:'CRITICAL'},{$set:{previousSeverity: 'critical'}},false, true);
+db.alerts.update({previousSeverity:'MAJOR'},{$set:{previousSeverity: 'major'}},false, true);
+db.alerts.update({previousSeverity:'MINOR'},{$set:{previousSeverity: 'minor'}},false, true);
+db.alerts.update({previousSeverity:'WARNING'},{$set:{previousSeverity: 'warning'}},false, true);
+db.alerts.update({previousSeverity:'NORMAL'},{$set:{previousSeverity: 'normal'}},false, true);
+db.alerts.update({previousSeverity:'INFORM'},{$set:{previousSeverity: 'informational'}},false, true);
+db.alerts.update({previousSeverity:'DEBUG'},{$set:{previousSeverity: 'debug'}},false, true);
+db.alerts.update({previousSeverity:'UNKNOWN'},{$set:{previousSeverity: 'unknown'}},false, true);
 
 // conver status to lowercase
 db.alerts.update({status:'OPEN'},{$set:{status: 'open'}},false, true);
