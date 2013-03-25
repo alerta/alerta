@@ -432,6 +432,8 @@ function refreshAlerts(refresh) {
 }
 
 $('#refresh-all').click(function () {
+    updateStatusCounts(gEnvFilter, false);
+    updateAllIndicators(gEnvFilter, lookup, false);
     refreshAlerts(false);
 });
 
@@ -452,6 +454,8 @@ function updateLimit(count) {
     } else {
         limit = '';
     }
+    updateStatusCounts(gEnvFilter, false);
+    updateAllIndicators(gEnvFilter, lookup, false);
     refreshAlerts(false);
 }
 
@@ -461,6 +465,8 @@ function updateFromDate(seconds) {
     } else {
         from = '';
     }
+    updateStatusCounts(gEnvFilter, false);
+    updateAllIndicators(gEnvFilter, lookup, false);
     refreshAlerts(false);
 }
 
