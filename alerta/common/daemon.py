@@ -155,9 +155,12 @@ class Daemon:
         LOG.debug('Wrote PID %s to %s' % (self.pid, self.pidfile))
 
     def wait_on_disable(self):
-        while os.path.isfile(self.disable_flag):
-            LOG.warning('Disable flag %s exists. Sleeping 120 seconds...', self.disable_flag)
-            time.sleep(120)
+        try:
+            while os.path.isfile(self.disable_flag):
+                LOG.warning('Disable flag %s exists. Sleeping 120 seconds...', self.disable_flag)
+                time.sleep(120)
+        except (KeyboardInterrupt, SystemExit):
+            sys.exit(0)
 
     def delpid(self):
         os.remove(self.pidfile)
