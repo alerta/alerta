@@ -69,7 +69,7 @@ class QueryClient(object):
             query['-severity'] = '|'.join(CONF.not_severity)
 
         if not CONF.status:
-            query['status'] = 'OPEN|ACK|CLOSED'
+            query['status'] = '%s|%s|%s' % (status.OPEN, status.ACK, status.CLOSED)
 
         if CONF.status:
             query['status'] = '|'.join(CONF.status)
