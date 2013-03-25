@@ -49,12 +49,13 @@ def ack_alert(alertid):
 
 class IrcbotMessage(MessageHandler):
 
-    def __init__(self, irc, tokens):
+    def __init__(self, mq, irc, tokens):
 
-        #super(MessageHandler, self).__init__()
-
+        self.mq = mq
         self.irc = irc
         self.tokens = tokens
+
+        MessageHandler.__init__(self)
 
     def on_message(self, headers, body):
 
@@ -74,6 +75,9 @@ class IrcbotMessage(MessageHandler):
                     self.irc.send(msg + '\r\n')
                 except Exception, e:
                     LOG.error('%s : IRC send failed - %s', ircAlert.get_id(), e)
+
+    def on_disconnected(self):
+        self.mq.reconnect()
 
 
 class IrcbotDaemon(Daemon):
@@ -104,7 +108,7 @@ class IrcbotDaemon(Daemon):
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect(callback=IrcbotMessage(irc, tokens))
+        self.mq.connect(callback=IrcbotMessage(self.mq, irc, tokens))
         self.mq.subscribe(destination=CONF.outbound_queue)
 
         while not self.shuttingdown:

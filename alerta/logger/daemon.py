@@ -19,6 +19,10 @@ CONF = config.CONF
 
 
 class LoggerMessage(MessageHandler):
+
+    def __init__(self, mq):
+        self.mq = mq
+        MessageHandler.__init__(self)
     
     def on_message(self, headers, body):
 
@@ -63,6 +67,9 @@ class LoggerMessage(MessageHandler):
             except Exception:
                 pass
 
+    def on_disconnected(self):
+        self.mq.reconnect()
+
 
 class LoggerDaemon(Daemon):
     """
@@ -74,7 +81,7 @@ class LoggerDaemon(Daemon):
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect(callback=LoggerMessage())
+        self.mq.connect(callback=LoggerMessage(self.mq))
         self.mq.subscribe(destination=CONF.outbound_queue)
 
         while not self.shuttingdown:

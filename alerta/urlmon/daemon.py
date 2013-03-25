@@ -14,7 +14,7 @@ HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.alert import Alert, Heartbeat, severity
-from alerta.common.mq import Messaging
+from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.ganglia import Gmetric
 
@@ -330,6 +330,16 @@ class WorkerThread(threading.Thread):
         self.input_queue.task_done()
 
 
+class UrlmonMessage(MessageHandler):
+
+    def __init__(self, mq):
+        self.mq = mq
+        MessageHandler.__init__(self)
+
+    def on_disconnected(self):
+        self.mq.reconnect()
+
+
 class UrlmonDaemon(Daemon):
 
     def run(self):
@@ -341,7 +351,7 @@ class UrlmonDaemon(Daemon):
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect()
+        self.mq.connect(callback=UrlmonMessage(self.mq))
 
         # Initialiase alert rules
         urls = init_urls()

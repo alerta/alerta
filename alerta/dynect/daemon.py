@@ -9,12 +9,22 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.alert import Alert, Heartbeat, severity
-from alerta.common.mq import Messaging
+from alerta.common.mq import Messaging, MessageHandler
 
 Version = '2.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
+
+
+class DynectMessage(MessageHandler):
+
+    def __init__(self, mq):
+        self.mq = mq
+        MessageHandler.__init__(self)
+
+    def on_disconnected(self):
+        self.mq.reconnect()
 
 
 class DynectDaemon(Daemon):
@@ -35,7 +45,7 @@ class DynectDaemon(Daemon):
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect()
+        self.mq.connect(callback=DynectMessage(self.mq))
 
         while not self.shuttingdown:
             try:

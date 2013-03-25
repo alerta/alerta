@@ -17,9 +17,12 @@ CONF = config.CONF
 
 class MailerMessage(MessageHandler):
 
-    def __init__(self, tokens):
+    def __init__(self, mq, tokens):
 
+        self.mq = mq
         self.tokens = tokens
+
+        MessageHandler.__init__(self)
 
     def on_message(self, headers, body):
 
@@ -40,6 +43,9 @@ class MailerMessage(MessageHandler):
         email = Mailer(mailAlert)
         email.send()
 
+    def on_disconnected(self):
+        self.mq.reconnect()
+
 
 class MailerDaemon(Daemon):
 
@@ -53,7 +59,7 @@ class MailerDaemon(Daemon):
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect(callback=MailerMessage(tokens))
+        self.mq.connect(callback=MailerMessage(self.mq, tokens))
         self.mq.subscribe(destination=CONF.outbound_queue)
 
         while not self.shuttingdown:

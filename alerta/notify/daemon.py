@@ -11,7 +11,7 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.alert import Alert, Heartbeat
-from alerta.common.mq import Messaging
+from alerta.common.mq import Messaging, MessageHandler
 
 Version = '2.0.0'
 
@@ -48,7 +48,12 @@ _token_rate = 60               # Add a token every 60 seconds
 INITIAL_TOKENS = 5
 
 
-class NotifyMessage(Messaging):
+class NotifyMessage(MessageHandler):
+
+    def __init__(self, mq):
+        self.mq = mq
+        MessageHandler.__init__(self)
+
     def on_message(self, headers, body):
         global alert, hold
 
@@ -79,8 +84,12 @@ class NotifyMessage(Messaging):
             LOG.info('%s : Holding onto alert %s for %s seconds', alert[alertid]['lastReceiveId'], alertid,
                      CONF.notify_wait)
 
+    def on_disconnected(self):
+        self.mq.reconnect()
+
 
 class NotifyDaemon(Daemon):
+
     def run(self):
 
         self.running = True
@@ -99,7 +108,7 @@ class NotifyDaemon(Daemon):
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect(callback=NotifyMessage())
+        self.mq.connect(callback=NotifyMessage(self.mq))
         self.mq.subscribe(destination=CONF.outbound_queue)
 
         while not self.shuttingdown:

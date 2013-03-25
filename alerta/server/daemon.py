@@ -198,8 +198,12 @@ class WorkerThread(threading.Thread):
 
 class ServerMessage(MessageHandler):
 
-    def __init__(self, queue):
+    def __init__(self, mq, queue):
+
+        self.mq = mq
         self.queue = queue
+
+        MessageHandler.__init__(self)
 
     def on_message(self, headers, body):
 
@@ -219,6 +223,9 @@ class ServerMessage(MessageHandler):
                 LOG.debug('Queueing successfully parsed alert %s', alert.get_body())
                 self.queue.put(alert)
 
+    def on_disconnected(self):
+        self.mq.reconnect()
+
 
 class AlertaDaemon(Daemon):
 
@@ -231,7 +238,7 @@ class AlertaDaemon(Daemon):
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect(callback=ServerMessage(self.queue))
+        self.mq.connect(callback=ServerMessage(self.mq, self.queue))
         self.mq.subscribe()
 
         # Start worker threads

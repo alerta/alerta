@@ -1,6 +1,7 @@
-import time
+
 import json
 import stomp
+from stomp import exception, ConnectionListener
 
 from alerta.common import log as logging
 from alerta.common import config
@@ -8,6 +9,11 @@ from alerta.common.utils import DateEncoder
 
 LOG = logging.getLogger('stomp.py')
 CONF = config.CONF
+
+_RECONNECT_SLEEP_INITIAL = 2  # seconds
+_RECONNECT_SLEEP_INCREASE = 2
+_RECONNECT_SLEEP_MAX = 300    # seconds
+_RECONNECT_ATTEMPTS_MAX = 20
 
 
 class Messaging(object):
@@ -19,11 +25,17 @@ class Messaging(object):
         self.callback = callback
         self.wait = wait
         try:
-            self.connection = stomp.Connection([(CONF.stomp_host, CONF.stomp_port)])
+            self.conn = stomp.Connection(
+                [(CONF.stomp_host, CONF.stomp_port)],
+                reconnect_sleep_initial=_RECONNECT_SLEEP_INITIAL,
+                reconnect_sleep_increase=_RECONNECT_SLEEP_INCREASE,
+                reconnect_sleep_max=_RECONNECT_SLEEP_MAX,
+                reconnect_attempts_max=_RECONNECT_ATTEMPTS_MAX
+                )
             if self.callback:
-                self.connection.set_listener('', self.callback)
-            self.connection.start()
-            self.connection.connect(wait=self.wait)
+                self.conn.set_listener('', self.callback)
+            self.conn.start()
+            self.conn.connect(wait=self.wait)
         except Exception, e:
             LOG.error('Could not connect to broker %s:%s : %s', CONF.stomp_host, CONF.stomp_port, e)
             return
@@ -32,21 +44,27 @@ class Messaging(object):
 
     def reconnect(self):
         try:
-            self.connection = stomp.Connection([(CONF.stomp_host, CONF.stomp_port)])
+            self.conn = stomp.Connection(
+                [(CONF.stomp_host, CONF.stomp_port)],
+                reconnect_sleep_initial=_RECONNECT_SLEEP_INITIAL,
+                reconnect_sleep_increase=_RECONNECT_SLEEP_INCREASE,
+                reconnect_sleep_max=_RECONNECT_SLEEP_MAX,
+                reconnect_attempts_max=_RECONNECT_ATTEMPTS_MAX
+            )
             if self.callback:
-                self.connection.set_listener('', self.callback)
-            self.connection.start()
-            self.connection.connect(wait=self.wait)
+                self.conn.set_listener('', self.callback)
+            self.conn.start()
+            self.conn.connect(wait=self.wait)
         except Exception, e:
-            LOG.error('Could not connect to broker %s:%s : %s', CONF.stomp_host, CONF.stomp_port, e)
+            LOG.error('Could not reconnect to broker %s:%s : %s', CONF.stomp_host, CONF.stomp_port, e)
             return
 
-        LOG.info('Connected to broker %s:%s', CONF.stomp_host, CONF.stomp_port)
+        LOG.info('Reconnected to broker %s:%s', CONF.stomp_host, CONF.stomp_port)
 
     def subscribe(self, destination=None, ack='auto'):
 
         self.destination = destination or CONF.inbound_queue
-        self.connection.subscribe(destination=self.destination, ack=ack)
+        self.conn.subscribe(destination=self.destination, ack=ack)
 
     def send(self, alert, destination=None):
 
@@ -55,33 +73,28 @@ class Messaging(object):
         LOG.debug('header = %s', alert.get_header())
         LOG.debug('message = %s', alert.get_body())
 
-        while not self.connection.is_connected():
-            LOG.warning('Waiting for message broker to become available...')
-            time.sleep(2)
-
-        LOG.debug('Sending alert to message broker...')
+        LOG.info('Sending alert to message broker...')
         try:
-            self.connection.send(message=json.dumps(alert.get_body(), cls=DateEncoder), headers=alert.get_header(),
-                                 destination=self.destination)
-        except Exception, e:
-            LOG.error('Could not send to broker %s:%s : %s', CONF.stomp_host, CONF.stomp_port, e)
+            self.conn.send(message=json.dumps(alert.get_body(), cls=DateEncoder), headers=alert.get_header(),
+                           destination=self.destination)
+        except exception.NotConnectedException, e:
+            LOG.error('Could not send message to broker %s:%s : %s', CONF.stomp_host, CONF.stomp_port, e)
             return
         LOG.info('Message sent to broker %s:%s', CONF.stomp_host, CONF.stomp_port)
 
     def disconnect(self):
-        if self.connection.is_connected():
+        if self.conn.is_connected():
             LOG.info('Disconnecting from broker %s:%s', CONF.stomp_host, CONF.stomp_port)
-            self.connection.disconnect()
+            self.conn.disconnect()
         LOG.info('Disconnected!')
 
 
-class MessageHandler(object):
+class MessageHandler(ConnectionListener):
     """
     A generic message handler class.
 
     Usage: Subclass the MessageHandler class and override the on_message() method
     """
-
     def on_connecting(self, host_and_port):
         LOG.info('Connecting to %s', host_and_port)
 
@@ -89,7 +102,6 @@ class MessageHandler(object):
         LOG.info('Connected to %s %s', headers, body)
 
     def on_disconnected(self):
-        # TODO(nsatterl): auto-reconnect
         LOG.error('Connection to messaging server has been lost.')
 
     def on_message(self, headers, body):
