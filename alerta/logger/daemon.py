@@ -1,4 +1,3 @@
-
 import time
 import json
 import urllib2
@@ -19,7 +18,6 @@ CONF = config.CONF
 
 
 class LoggerMessage(MessageHandler):
-
     def __init__(self, mq):
         self.mq = mq
         MessageHandler.__init__(self)
@@ -27,16 +25,17 @@ class LoggerMessage(MessageHandler):
     def on_message(self, headers, body):
 
         LOG.debug("Received: %s", body)
-
         alert = Alert.parse_alert(body).get_body()
-        if alert:
 
+        if alert:
             LOG.info('%s : [%s] %s', alert['lastReceiveId'], alert['status'], alert['summary'])
+
+            source_host, _, source_path = alert['resource'].partition(':')
             document = {
                 '@message': alert['summary'],
                 '@source': alert['resource'],
-                '@source_host': 'not_used',
-                '@source_path': alert['origin'],
+                '@source_host': source_host,
+                '@source_path': source_path,
                 '@tags': alert['tags'],
                 '@timestamp': alert['lastReceiveTime'],
                 '@type': alert['type'],
@@ -68,6 +67,7 @@ class LoggerDaemon(Daemon):
     """
     Index alerts in ElasticSearch using Logstash format so that logstash GUI and/or Kibana can be used as front-ends
     """
+
     def run(self):
 
         self.running = True
