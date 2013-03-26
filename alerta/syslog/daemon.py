@@ -59,6 +59,7 @@ class SyslogDaemon(Daemon):
         self.mq = Messaging()
         self.mq.connect(callback=SyslogMessage(self.mq))
 
+        count = 0
         while not self.shuttingdown:
             try:
                 LOG.debug('Waiting for syslog messages...')
@@ -77,7 +78,8 @@ class SyslogDaemon(Daemon):
                         syslogAlert = self.parse_syslog(data)
                         if syslogAlert:
                             self.mq.send(syslogAlert)
-                else:
+                    count += 1
+                if not ip or count % 10:
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(version=Version)
                     self.mq.send(heartbeat)
