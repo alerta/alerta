@@ -43,6 +43,7 @@ class Messaging(object):
         LOG.info('Connected to broker %s:%s', CONF.stomp_host, CONF.stomp_port)
 
     def reconnect(self):
+        LOG.warning('Reconnecting to message broker...')
         try:
             self.conn = stomp.Connection(
                 [(CONF.stomp_host, CONF.stomp_port)],
