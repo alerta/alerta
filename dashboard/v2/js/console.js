@@ -1,5 +1,5 @@
 
-var API_HOST = document.domain + ":80";
+var API_HOST = document.domain + ":8000";
 var REFRESH_INTERVAL = 30; // seconds
 
 var lookup;
@@ -196,6 +196,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + env_filter + filter,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'severity-' + aData[0] + ' status-' + aData[1];
+            $(nRow).attr('id', 'row-' + aData[11]);
 
             if (aData[17] == "noChange") {
                 ti = '<i class="icon-minus"></i>&nbsp;'
@@ -212,17 +213,6 @@ function updateAlertsTable(env_filter, asiFilters) {
             var d = new Date(aData[2]);
             // $('td:eq(2)', nRow).html(d.toLocaleString());
             $('td:eq(2)', nRow).html(date2iso8601(d));
-
-            // if (aData[1] == OPEN) {
-            //     $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" class="ack-alert" rel="tooltip" title="Acknowledge"><i class="icon-star-empty"></i></a>');
-            // }
-            // if (aData[1] == ACK) {
-            //     $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" class="unack-alert" rel="tooltip" title="Unacknowledge"><i class="icon-star"></i></a>');
-            // }
-            // $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" href="mailto:?subject=' + aData[22] + '&body=' + aData[9] + '%0D%0A%0D%0ASee http://' + API_HOST + '/alerta/details.php?id='
-            //         + aData[11] + '" class="email-alert" rel="tooltip" title="Email Alert" target="_blank"><i class="icon-envelope"></i></a>');
-            // $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" class="tag-alert" rel="tooltip" title="Tag Alert"><i class="icon-tags"></i></a>');
-            // $('td:eq(9)', nRow).append('<a id="' + aData[11] + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>');
         },
         "fnServerData": function (sSource, aoData, fnCallback) {
             $.ajax( {
@@ -369,7 +359,17 @@ function fnFormatDetails(aData) {
     var sOut = '<table border=1><tbody><tr><td>'; // 1
 
     sOut += '<table class="table table-condensed table-striped">';  // 2
-    sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid;
+
+    if (status == OPEN) {
+        sOut += '<a id="' + alertid + '" class="ack-alert" rel="tooltip" title="Acknowledge Alert"><i class="icon-star-empty"></i></a>';
+    }
+    if (status == ACK) {
+        sOut += '<a id="' + alertid + '" class="unack-alert" rel="tooltip" title="Unacknowledge Alert"><i class="icon-star"></i></a>';
+    }
+    sOut += '<a id="' + alertid + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>';
+    sOut += '</td></tr>';
+
     sOut += '<tr class="even"><td><b>Last Receive Alert ID</b></td><td>' + lastReceiveId + '</td></tr>';
     sOut += '<tr class="odd"><td><b>Create Time</b></td><td>' + date2str(createTime) + '</td></tr>';
     sOut += '<tr class="even"><td><b>Receive Time</b></td><td>' + date2str(receiveTime) + '</td></tr>';
@@ -547,6 +547,42 @@ function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
 }
 
 $(document).ready(function () {
+
+    $('tbody').on('click', '.delete-alert', function () {
+        if (confirm('IMPORTANT: Deleting this alert is a permanent operation that will '
+            + 'remove the alert from all user consoles.\n\n'
+            + 'Cancel to return to the console or OK to delete.')) {
+
+            $.ajax({
+                type: 'POST',
+                contentType: 'application/json',
+                url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id,
+                data: JSON.stringify({ _method: 'delete' })
+            });
+            // FIXME(nsatterl): Should immediately delete the row from the console
+            // oTable.fnDeleteRow(
+            //    oTable.fnGetPosition(
+            //        document.getElementById('#row-' + this.id)));
+        }
+    });
+
+    $('tbody').on('click', '.ack-alert', function () {
+        $.ajax({
+            type: 'PUT',
+            contentType: 'application/json',
+            url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id,
+            data: JSON.stringify({ status: ACK })
+        });
+    });
+
+    $('tbody').on('click', '.unack-alert', function () {
+        $.ajax({
+            type: 'PUT',
+            contentType: 'application/json',
+            url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id,
+            data: JSON.stringify({ status: OPEN })
+        });
+    });
 
     $('tbody').on('click', '.tag-alert', function () {
         var tag = prompt("Enter tag eg. london, location:london, datacentre:location=london");
