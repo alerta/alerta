@@ -23,7 +23,7 @@ class LoggerMessage(MessageHandler):
     def __init__(self, mq):
         self.mq = mq
         MessageHandler.__init__(self)
-    
+
     def on_message(self, headers, body):
 
         LOG.debug("Received: %s", body)
@@ -32,22 +32,15 @@ class LoggerMessage(MessageHandler):
         if alert:
 
             LOG.info('%s : [%s] %s', alert['lastReceiveId'], alert['status'], alert['summary'])
-
-            # TODO(nsatterl): is this still required?
-            #if 'tags' not in alert or not alert['tags']:           # Kibana GUI borks if tags are null
-            #    alert['tags'] = 'none'
-
-            LOG.debug('alert last receivetime %s', alert['lastReceiveTime'])
-
             document = {
                 '@message': alert['summary'],
                 '@source': alert['resource'],
                 '@source_host': 'not_used',
                 '@source_path': alert['origin'],
                 '@tags': alert['tags'],
-                '@timestamp': json.dumps(alert['lastReceiveTime'], cls=DateEncoder),
+                '@timestamp': alert['lastReceiveTime'],
                 '@type': alert['type'],
-                '@fields': str(alert)
+                '@fields': alert
             }
             LOG.debug('Index payload %s', document)
 
@@ -56,7 +49,7 @@ class LoggerMessage(MessageHandler):
             LOG.debug('Index URL: %s', index_url)
 
             try:
-                response = urllib2.urlopen(index_url, json.dumps(document)).read()
+                response = urllib2.urlopen(index_url, json.dumps(document, cls=DateEncoder)).read()
             except Exception, e:
                 LOG.error('%s : Alert indexing to %s failed - %s', alert['lastReceiveId'], index_url, e)
                 return
@@ -64,8 +57,8 @@ class LoggerMessage(MessageHandler):
             try:
                 es_id = json.loads(response)['_id']
                 LOG.info('%s : Alert indexed at %s/%s', alert['lastReceiveId'], index_url, es_id)
-            except Exception:
-                pass
+            except Exception, e:
+                LOG.error('%s : Could not parse elasticsearch reponse: %s', e)
 
     def on_disconnected(self):
         self.mq.reconnect()
