@@ -79,7 +79,7 @@ class SyslogDaemon(Daemon):
                         if syslogAlert:
                             self.mq.send(syslogAlert)
                     count += 1
-                if not ip or count % 10 == 0:
+                if not ip or count % 5 == 0:
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(version=Version)
                     self.mq.send(heartbeat)
