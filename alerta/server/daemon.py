@@ -1,10 +1,7 @@
 
-import sys
 import time
 import threading
 import Queue
-
-import yaml
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -58,7 +55,7 @@ class WorkerThread(threading.Thread):
 
             suppress = incomingAlert.transform_alert()
             if suppress:
-                LOG.warning('Suppressing alert %s', alert.get_id())
+                LOG.warning('Suppressing alert %s', incomingAlert.get_id())
                 self.input_queue.task_done()
                 return
 
