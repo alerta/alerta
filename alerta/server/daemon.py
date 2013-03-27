@@ -10,7 +10,7 @@ from alerta.alert import Alert, Heartbeat, severity, status
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -49,6 +49,7 @@ class WorkerThread(threading.Thread):
                 heartbeat = incomingAlert.get_body()
                 self.db.update_hb(heartbeat['origin'], heartbeat['version'], heartbeat['createTime'],
                                   heartbeat['receiveTime'])
+                self.input_queue.task_done()
                 continue
             else:
                 LOG.info('Alert received...')
