@@ -4,7 +4,7 @@ from alerta.common import config
 from alerta.alert import Alert, Heartbeat
 from alerta.common.api import ApiClient
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
