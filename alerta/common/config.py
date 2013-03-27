@@ -103,8 +103,10 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'fog_file': '/etc/fog/alerta.conf',  # used by alert-aws
         'ec2_regions': ['eu-west-1', 'us-east-1'],
 
-        'gmetric_send': True,
-        'gmetric_spoof': '10.1.1.1:urlmon',
+        'gmetric_host': 'localhost',
+        'gmetric_port': '8649',
+        'gmetric_protocol': 'udp',
+        'gmetric_spoof': '10.1.1.1:%s' % prog,
 
         'nagios_plugins': '/usr/lib64/nagios/plugins',
     }

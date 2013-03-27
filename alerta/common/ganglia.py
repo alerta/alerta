@@ -66,14 +66,20 @@ class Gmetric:
 
     def __init__(self, host='127.0.0.1', port=8649, protocol='udp'):
 
+        host = host or CONF.gmetric_host
+        port = port or CONF.gmetric_port
+        protocol = protocol or CONF.gmetric_protocol
+
         if protocol not in self.protocol:
-            raise ValueError("Protocol must be one of: " + str(self.protocol))
+            LOG.error("Protocol must be one of: %s", str(self.protocol))
+            return
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         if protocol == 'multicast':
             self.socket.setsockopt(socket.IPPROTO_IP,
                                    socket.IP_MULTICAST_TTL, 20)
         self.hostport = (host, int(port))
+        LOG.debug('Gmetric setup to send %s packets to %s:%s', protocol, host, port)
 
     def metric_send(self, name, value, metric_type, units="", slope='both', tmax=60, dmax=0, group=None, title=None,
                     description=None, spoof=None):
@@ -101,11 +107,16 @@ class Gmetric:
                 LOG.error('The value parameter "%s" does not represent a number.', value)
                 return
 
+        LOG.debug('gmetric name=%s, value=%s, type=%s, units=%s, slope=%s, tmax=%s, dmax=%s, group=%s title=%s, description=%s, spoof=%s',
+                  name, value, metric_type, units, slope, tmax, dmax, group, title, description, spoof)
+
         (meta_msg, data_msg) = self._gmetric(name, value, metric_type, units, slope, tmax, dmax, group, title,
                                              description, spoof)
 
-        self.socket.sendto(meta_msg, self.hostport)
-        self.socket.sendto(data_msg, self.hostport)
+        count = self.socket.sendto(meta_msg, self.hostport)
+        LOG.debug('Sent %s metadata packets', count)
+        count = self.socket.sendto(data_msg, self.hostport)
+        LOG.debug('Sent %s data packets', count)
 
     def _gmetric(self, name, val, metric_type, units, slope, tmax, dmax, group, title, description, spoof):
 

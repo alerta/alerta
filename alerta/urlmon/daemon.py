@@ -28,6 +28,8 @@ _CRIT_THRESHOLD = 5000  # ms
 
 _REQUEST_TIMEOUT = 15  # seconds
 
+_GMETRIC_SEND = True
+
 _HTTP_ALERTS = [
     'HttpConnectionError',
     'HttpServerError',
@@ -255,7 +257,7 @@ class WorkerThread(threading.Thread):
             else:
                 avail = 0.0
 
-            if CONF.gmetric_send:
+            if _GMETRIC_SEND:
                 g = Gmetric()
                 g.metric_send('availability-%s' % check['resource'], '%.1f' % avail, 'float',
                               group=','.join(check['service']), spoof=CONF.gmetric_spoof)
