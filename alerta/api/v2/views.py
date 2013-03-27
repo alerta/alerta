@@ -13,10 +13,10 @@ from alerta.api.v2 import app, db, create_mq
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.alert import Alert, severity, status, ATTRIBUTES
+from alerta.alert import Alert, Heartbeat, severity, status, ATTRIBUTES
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -207,27 +207,27 @@ def create_alert():
 
     # Create a new alert
     try:
-        alert = json.loads(request.data)
+        data = json.loads(request.data)
     except Exception, e:
         return jsonify(response={"status": "error", "message": e})
 
     newAlert = Alert(
-        resource=alert.get('resource', None),
-        event=alert.get('event', None),
-        correlate=alert.get('correlatedEvents', None),
-        group=alert.get('group', None),
-        value=alert.get('value', None),
-        severity=severity.parse_severity(alert.get('severity', None)),
-        environment=alert.get('environment', None),
-        service=alert.get('service', None),
-        text=alert.get('text', None),
-        event_type=alert.get('type', 'exceptionAlert'),
-        tags=alert.get('tags', None),
-        origin=alert.get('origin', None),
-        threshold_info=alert.get('thresholdInfo', None),
-        timeout=alert.get('timeout', None),
-        alertid=alert.get('id', None),
-        raw_data=alert.get('rawData', None),
+        resource=data.get('resource', None),
+        event=data.get('event', None),
+        correlate=data.get('correlatedEvents', None),
+        group=data.get('group', None),
+        value=data.get('value', None),
+        severity=severity.parse_severity(data.get('severity', None)),
+        environment=data.get('environment', None),
+        service=data.get('service', None),
+        text=data.get('text', None),
+        event_type=data.get('type', 'exceptionAlert'),
+        tags=data.get('tags', None),
+        origin=data.get('origin', None),
+        threshold_info=data.get('thresholdInfo', None),
+        timeout=data.get('timeout', None),
+        alertid=data.get('id', None),
+        raw_data=data.get('rawData', None),
     )
     LOG.debug('New alert %s', newAlert)
     create_mq.send(newAlert)
@@ -296,14 +296,37 @@ def tag_alert(alertid):
         return jsonify(response={"status": "error", "message": "error tagging alert"})
 
 
-
-# Return heartbeats
-@app.route('/alerta/management/healthcheck')
+# Return a list of heartbeats
+@app.route('/alerta/api/v2/heartbeats', methods=['GET'])
 @jsonp
-def healthcheck():
+def get_heartbeats():
 
     heartbeats = db.get_heartbeats()
     return jsonify(application="alerta", time=int(time.time() * 1000), heartbeats=heartbeats)
+
+
+@app.route('/alerta/api/v2/heartbeats/heartbeat.json', methods=['POST'])
+@jsonp
+def create_heartbeat():
+
+    # Create a new heartbeat
+    try:
+        data = json.loads(request.data)
+    except Exception, e:
+        return jsonify(response={"status": "error", "message": e})
+
+    heartbeat = Heartbeat(
+        origin=data.get('origin', None),
+        version=data.get('version', None),
+        heartbeatid=data.get('id', None),
+    )
+    LOG.debug('New heartbeat %s', heartbeat)
+    create_mq.send(heartbeat)
+
+    if heartbeat:
+        return jsonify(response={"status": "ok", "id": heartbeat.get_id()})
+    else:
+        return jsonify(response={"status": "error", "message": "something went wrong"})
 
 
 # Only use when running API in stand-alone mode during testing

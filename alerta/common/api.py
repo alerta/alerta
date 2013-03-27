@@ -8,6 +8,8 @@ from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
 
+Version = '2.0.1'
+
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
@@ -16,17 +18,24 @@ _API_TIMEOUT = 2  # seconds
 
 class ApiClient(object):
 
-    def send(self, alert, host=None, port=None, endpoint=None):
+    def send(self, msg, host=None, port=None, endpoint=None):
 
         self.api_host = host or CONF.api_host
         self.api_port = port or CONF.api_port
         self.api_endpoint = endpoint or CONF.api_endpoint
 
-        LOG.debug('header = %s', alert.get_header())
-        LOG.debug('message = %s', alert.get_body())
+        LOG.debug('header = %s', msg.get_header())
+        LOG.debug('message = %s', msg.get_body())
 
-        api_url = 'http://%s:%s%s/alerts/alert.json' % (self.api_host, self.api_port, self.api_endpoint)
-        post = json.dumps(alert.get_body(), cls=DateEncoder)
+        if msg.get_type().endswith('Alert'):
+            api_url = 'http://%s:%s%s/alerts/alert.json' % (self.api_host, self.api_port, self.api_endpoint)
+        elif msg.get_type() == 'Heartbeat':
+            api_url = 'http://%s:%s%s/heartbeats/heartbeat.json' % (self.api_host, self.api_port, self.api_endpoint)
+        else:
+            LOG.error('Message type %s not supported by this API endpoint.', msg.get_type())
+            return
+
+        post = json.dumps(msg.get_body(), cls=DateEncoder)
         headers = {'Content-Type': 'application/json'}
 
         request = urllib2.Request(api_url, headers=headers)

@@ -101,7 +101,7 @@ function date2str(datetime) {
 // Update Register Components
 function heartbeatAlerts() {
 
-    $.getJSON('http://' + api_server + '/alerta/management/healthcheck?callback=?', function (data) {
+    $.getJSON('http://' + api_server + '/alerta/api/v2/heartbeats?callback=?', function (data) {
 
         var hbalerts = '';
         $.each(data.heartbeats, function (i, hb) {

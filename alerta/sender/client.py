@@ -4,7 +4,7 @@ from alerta.common import config
 from alerta.alert import Alert, Heartbeat
 from alerta.common.api import ApiClient
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -19,15 +19,25 @@ class SenderClient(object):
 
     def main(self):
 
-        vtag = ''.join(CONF.tags) if CONF.tags else None
-
         if CONF.heartbeat:
-            msg = Heartbeat(
+            vtag = ''.join(CONF.tags) if CONF.tags else None
+
+            heartbeat = Heartbeat(
                 origin=CONF.origin,
                 version=vtag or Version
             )
+            if CONF.dry_run:
+                print heartbeat
+            else:
+                LOG.debug(repr(heartbeat))
+
+                api = ApiClient()
+                api.send(heartbeat)
+
+            return heartbeat.get_id()
+
         else:
-            msg = Alert(
+            exceptionAlert = Alert(
                 resource=CONF.resource,
                 event=CONF.event,
                 correlate=CONF.correlate,
@@ -45,13 +55,12 @@ class SenderClient(object):
                 raw_data='n/a',  # TODO(nsatterl): make this configurable?
             )
 
-        if CONF.dry_run:
-            print msg
-        else:
-            LOG.debug('Message => %s', repr(msg))
+            if CONF.dry_run:
+                print exceptionAlert
+            else:
+                LOG.debug(repr(exceptionAlert))
 
-            api = ApiClient()
-            api.send(msg)
+                api = ApiClient()
+                api.send(exceptionAlert)
 
-        return msg.get_id()
-
+            return exceptionAlert.get_id()
