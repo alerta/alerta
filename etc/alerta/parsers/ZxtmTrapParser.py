@@ -1,5 +1,5 @@
 #
-# ZxtmParser.py
+# ZxtmTrapParser.py
 #
 # @param dict trapvars
 #   $3 is the SNMP trap text

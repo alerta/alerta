@@ -16,5 +16,5 @@ for sd_element in sd_elements:
         param_bits = m.groupdict()
         sd_params = re.findall('(?P<param>[^="\s]+="[^"]+")', param_bits['sd_params'])
         for idx, el in enumerate(sd_params):
-            sd_params[idx] = param_bits['sd_id']+'-'+el.replace('"','')
+            sd_params[idx] = param_bits['sd_id'] + '-' + el.replace('"', '')
         tags.extend(sd_params)
