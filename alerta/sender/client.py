@@ -19,8 +19,13 @@ class SenderClient(object):
 
     def main(self):
 
+        vtag = ''.join(CONF.tags) if CONF.tags else None
+
         if CONF.heartbeat:
-            msg = Heartbeat(version=Version)
+            msg = Heartbeat(
+                origin=CONF.origin,
+                version=vtag or Version
+            )
         else:
             msg = Alert(
                 resource=CONF.resource,
