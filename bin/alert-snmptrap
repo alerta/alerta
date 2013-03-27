@@ -27,4 +27,4 @@ if __name__ == '__main__':
     config.parse_args(sys.argv[1:], version=Version)
     logging.setup('alerta')
     handler = SnmpTrapHandler('alert-snmptrap')
-    handler.run()
+    handler.start()

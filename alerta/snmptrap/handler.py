@@ -1,7 +1,7 @@
+
+import os
 import sys
 import re
-
-import yaml
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -9,13 +9,30 @@ from alerta.alert import Alert, Heartbeat
 from alerta.alert.severity import *
 from alerta.common.mq import Messaging
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
 class SnmpTrapHandler(object):
+
+    def __init__(self, prog, disable_flag=None):
+
+        self.prog = prog
+        self.disable_flag = disable_flag or CONF.disable_flag
+
+    def start(self):
+
+        LOG.info('Starting %s...' % self.prog)
+        self.skip_on_disable()
+        self.run()
+
+    def skip_on_disable(self):
+
+        if os.path.isfile(self.disable_flag):
+            LOG.warning('Disable flag %s exists. Skipping...', self.disable_flag)
+            sys.exit(0)
 
     def run(self):
 
@@ -129,7 +146,7 @@ class SnmpTrapHandler(object):
             threshold_info=threshold_info,
             summary=summary,
             raw_data=data,
-            )
+        )
 
         suppress = snmptrapAlert.transform_alert(trapoid=trapoid)
         if suppress:
