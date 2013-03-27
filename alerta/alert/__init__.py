@@ -195,14 +195,10 @@ class Alert(object):
             raw_data=alert.get('rawData', None),
         )
 
-    def transform_alert(self, **kwargs):
+    def transform_alert(self, trapoid=None, facility=None, level=None, **kwargs):
 
         if not os.path.exists(CONF.yaml_config):
             return
-
-        trapoid = kwargs.get('trapoid', None)
-        facility = kwargs.get('facility', None)
-        level = kwargs.get('level', None)
 
         suppress = False
 
@@ -230,7 +226,7 @@ class Alert(object):
                 pattern = None
 
             if match:
-                LOG.debug('Matched %s for alert', pattern)
+                LOG.debug('Matched %s for %s', pattern, self.get_type())
 
                 # 1. Simple substitutions
                 if 'event' in c:
@@ -263,16 +259,16 @@ class Alert(object):
                 # 2. Complex transformations
                 if 'parser' in c:
                     LOG.debug('Loading parser %s', c['parser'])
+
+                    kwargs.update(self.alert)
                     try:
-                        exec(open('%s/%s.py' % (CONF.parser_dir, c['parser']))) in globals(), self.alert
+                        exec(open('%s/%s.py' % (CONF.parser_dir, c['parser']))) in globals(), kwargs
                         LOG.info('Parser %s/%s exec OK', CONF.parser_dir, c['parser'])
                     except Exception, e:
                         LOG.warning('Parser %s failed: %s', c['parser'], e)
 
-                    # XXX - Suppress flag can only be passed back as alert attribute
-                    if 'suppress' in self.alert:
-                        suppress = self.alert['suppress']
-                        del self.alert['suppress']
+                    if 'suppress' in kwargs:
+                        suppress = kwargs['suppress']
 
                 # 3. Suppress based on results of 1 or 2
                 if 'suppress' in c:
@@ -283,6 +279,8 @@ class Alert(object):
         return suppress
 
     def translate(self, mappings):
+
+        LOG.debug('Translate alert using mappings: %s', mappings)
 
         for k, v in mappings.iteritems():
             LOG.debug('translate %s -> %s', k, v)

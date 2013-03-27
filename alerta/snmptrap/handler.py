@@ -43,7 +43,9 @@ class SnmpTrapHandler(object):
 
         self.mq = Messaging()
         self.mq.connect()
-        self.mq.send(snmptrapAlert)
+
+        if snmptrapAlert:
+            self.mq.send(snmptrapAlert)
 
         LOG.debug('Send heartbeat...')
         heartbeat = Heartbeat(version=Version)
@@ -148,7 +150,7 @@ class SnmpTrapHandler(object):
             raw_data=data,
         )
 
-        suppress = snmptrapAlert.transform_alert(trapoid=trapoid)
+        suppress = snmptrapAlert.transform_alert(trapoid=trapoid, trapvars=trapvars)
         if suppress:
             LOG.warning('Suppressing alert %s', snmptrapAlert.get_id())
             return
