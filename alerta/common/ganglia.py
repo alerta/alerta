@@ -56,30 +56,34 @@ METRIC_TYPES = {
     'double': 135
 }
 
+PROTOCOLS = [
+    'udp',
+    'multicast'
+]
+
 
 class Gmetric:
     """
     Class to send gmetric/gmond 2.X packets
     """
 
-    protocol = ('udp', 'multicast')
+    def __init__(self, host=None, port=None, protocol=None):
 
-    def __init__(self, host='127.0.0.1', port=8649, protocol='udp'):
+        self.host = host or CONF.gmetric_host
+        self.port = port or CONF.gmetric_port
+        self.protocol = protocol or CONF.gmetric_protocol
 
-        host = host or CONF.gmetric_host
-        port = port or CONF.gmetric_port
-        protocol = protocol or CONF.gmetric_protocol
-
-        if protocol not in self.protocol:
-            LOG.error("Protocol must be one of: %s", str(self.protocol))
+        if self.protocol not in PROTOCOLS:
+            LOG.error("Protocol must be one of: %s", ','.join(PROTOCOLS))
             return
 
+        LOG.debug('Gmetric setup to send %s packets to %s:%s', self.protocol, self.host, self.port)
+
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        if protocol == 'multicast':
+        if self.protocol == 'multicast':
             self.socket.setsockopt(socket.IPPROTO_IP,
                                    socket.IP_MULTICAST_TTL, 20)
-        self.hostport = (host, int(port))
-        LOG.debug('Gmetric setup to send %s packets to %s:%s', protocol, host, port)
+        self.hostport = (self.host, int(self.port))
 
     def metric_send(self, name, value, metric_type, units="", slope='both', tmax=60, dmax=0, group=None, title=None,
                     description=None, spoof=None):
@@ -153,8 +157,9 @@ class Gmetric:
 
         meta.pack_int(extra_data)
         if group:
-            meta.pack_string("GROUP")
-            meta.pack_string(group)
+            for g in group.split(','):
+                meta.pack_string("GROUP")
+                meta.pack_string(g)
         if title:
             meta.pack_string("TITLE")
             meta.pack_string(title)
@@ -166,7 +171,7 @@ class Gmetric:
         data = Packer()
         packet_type = METRIC_TYPES[metric_type]
         data.pack_int(packet_type)
-        if spoof:
+        if SPOOF_ENABLED == 1:
             data.pack_string(spoof)
         else:
             data.pack_string(HOSTNAME)

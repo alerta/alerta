@@ -260,9 +260,9 @@ class WorkerThread(threading.Thread):
             if _GMETRIC_SEND:
                 g = Gmetric()
                 g.metric_send('availability-%s' % check['resource'], '%.1f' % avail, 'float',
-                              group=','.join(check['service']), spoof=CONF.gmetric_spoof)
-                g.metric_send('response_time-%s' % check['resource'], '%d' % rtt, 'float',
-                              group=','.join(check['service']), spoof=CONF.gmetric_spoof)
+                              units='%', group=','.join(check['service']), spoof=CONF.gmetric_spoof)
+                g.metric_send('response_time-%s' % check['resource'], '%d' % rtt, 'uint16',
+                              units='ms', group=','.join(check['service']), spoof=CONF.gmetric_spoof)
 
             # Set necessary state variables if currentState is unknown
             res = check['resource']
