@@ -31,7 +31,7 @@ class Messaging(object):
                 reconnect_sleep_increase=_RECONNECT_SLEEP_INCREASE,
                 reconnect_sleep_max=_RECONNECT_SLEEP_MAX,
                 reconnect_attempts_max=_RECONNECT_ATTEMPTS_MAX
-                )
+            )
             if self.callback:
                 self.conn.set_listener('', self.callback)
             self.conn.start()
@@ -67,16 +67,16 @@ class Messaging(object):
         self.destination = destination or CONF.inbound_queue
         self.conn.subscribe(destination=self.destination, ack=ack)
 
-    def send(self, alert, destination=None):
+    def send(self, msg, destination=None):
 
         self.destination = destination or CONF.inbound_queue
 
-        LOG.debug('header = %s', alert.get_header())
-        LOG.debug('message = %s', alert.get_body())
+        LOG.debug('header = %s', msg.get_header())
+        LOG.debug('message = %s', msg.get_body())
 
-        LOG.info('Sending alert to message broker...')
+        LOG.info('Send %s %s to %s', msg.get_type(), msg.get_id(), self.destination)
         try:
-            self.conn.send(message=json.dumps(alert.get_body(), cls=DateEncoder), headers=alert.get_header(),
+            self.conn.send(message=json.dumps(msg.get_body(), cls=DateEncoder), headers=msg.get_header(),
                            destination=self.destination)
         except exception.NotConnectedException, e:
             LOG.error('Could not send message to broker %s:%s : %s', CONF.stomp_host, CONF.stomp_port, e)
