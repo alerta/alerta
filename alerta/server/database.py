@@ -36,8 +36,8 @@ class Mongo(object):
         #     LOG.info('Connected to MongoDB server %s:%s', CONF.mongo_host, CONF.mongo_port)
         #     LOG.debug('MongoDB %s, databases available: %s', self.conn.server_info()['version'], ', '.join(self.conn.database_names()))
 
-        self.db.alerts.create_index([('environment', pymongo.DESCENDING), ('resource', pymongo.DESCENDING),
-                                     ('event', pymongo.DESCENDING)])   # TODO(nsatterl): verify perf of this index
+        self.db.alerts.create_index([('environment', pymongo.ASCENDING), ('resource', pymongo.ASCENDING),
+                                     ('event', pymongo.ASCENDING), ('severity', pymongo.ASCENDING)])
 
     def is_duplicate(self, environment, resource, event, severity=None):
 
