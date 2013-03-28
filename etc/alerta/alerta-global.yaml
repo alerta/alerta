@@ -1,7 +1,0 @@
-endpoint: http://monitoring.gul3.gnl
-
-proxy:
-  http: http://proxy:3128
-  https: http://proxy:3128
-
-# warning: This is the backup server. Do not make changes to this server.
