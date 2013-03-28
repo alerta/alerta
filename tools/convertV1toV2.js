@@ -28,4 +28,6 @@ db.alerts.update({status:'EXPIRED'},{$set:{status: 'expired'}},false, true);
 // add missing attributes
 db.alerts.update({},{$set:{'trendIndication': 'noChange'}},false,true);
 db.alerts.update({rawData: {$exists: false}},{$set:{'rawData': null}},false,true);
+db.alerts.update({moreInfo: {$exists: false}},{$set:{'moreInfo': null}},false,true);
+db.alerts.update({graphUrls: {$exists: false}},{$set:{'graphUrls': []}},false,true);
 db.alerts.update({correlatedEvents: {$exists: false}}, {$set: {correlatedEvents: null}},false,true);
