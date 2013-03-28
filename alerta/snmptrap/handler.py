@@ -5,8 +5,7 @@ import re
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.alert import Alert, Heartbeat
-from alerta.alert.severity import *
+from alerta.alert import Alert, Heartbeat, severity
 from alerta.common.mq import Messaging
 
 Version = '2.0.1'
@@ -120,7 +119,7 @@ class SnmpTrapHandler(object):
         # Defaults
         event = trapoid
         resource = agent.split('.')[0]
-        severity = NORMAL
+        sev = severity.NORMAL
         group = 'SNMP'
         value = trapnumber
         text = trapvars['$3']  # ie. whatever is in varbind 3
@@ -138,7 +137,7 @@ class SnmpTrapHandler(object):
             correlate=correlate,
             group=group,
             value=value,
-            severity=severity,
+            severity=sev,
             environment=environment,
             service=service,
             text=text,

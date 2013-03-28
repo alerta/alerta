@@ -11,7 +11,7 @@ import boto.ec2
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat
+from alerta.alert import Alert, Heartbeat, severity
 from alerta.common.mq import Messaging, MessageHandler
 
 Version = '2.0.1'
@@ -218,24 +218,24 @@ class AwsDaemon(Daemon):
                     # instance-state = pending | running | shutting-down | terminated | stopping | stopped
                     if check == 'state':
                         if self.info[instance][check] == 'running':
-                            severity = 'NORMAL'
+                            sev = severity.NORMAL
                         else:
-                            severity = 'WARNING'
+                            sev = severity.WARNING
 
                     # system-status = ok | impaired | initializing | insufficient-data | not-applicable
                     # instance status = ok | impaired | initializing | insufficient-data | not-applicable
                     elif check == 'status':
                         if self.info[instance][check] == 'ok:ok':
-                            severity = 'NORMAL'
+                            sev = severity.NORMAL
                             text = "System and instance status checks are ok"
                         elif self.info[instance][check].startswith('ok'):
-                            severity = 'WARNING'
+                            sev = severity.WARNING
                             text = 'Instance status check is %s' % self.info[instance][check].split(':')[1]
                         elif self.info[instance][check].endswith('ok'):
-                            severity = 'WARNING'
+                            sev = severity.WARNING
                             text = 'System status check is %s' % self.info[instance][check].split(':')[0]
                         else:
-                            severity = 'WARNING'
+                            sev = severity.WARNING
                             text = 'System status check is %s and instance status check is %s' % tuple(
                                 self.info[instance][check].split(':'))
 
@@ -252,7 +252,7 @@ class AwsDaemon(Daemon):
                         correlate=correlate,
                         group=group,
                         value=value,
-                        severity=severity,
+                        severity=sev,
                         environment=environment,
                         service=service,
                         text=text,

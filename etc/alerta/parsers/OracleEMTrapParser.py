@@ -25,15 +25,15 @@
 resource = trapvars['$3'].split('.',1)[0]
 
 if trapvars['$10'] in ['Serious', 'Critical']:
-    severity = 'CRITICAL'
+    severity = 'critical'
 elif trapvars['$10'] == 'Error':
-    severity = 'MINOR'
+    severity = 'minor'
 elif trapvars['$10'] == 'Warning':
-    severity = 'WARNING'
+    severity = 'warning'
 elif trapvars['$10'] in ['Clear', 'Normal']:
-    severity = 'NORMAL'
+    severity = 'normal'
 else:
-    severity = 'INFORM'
+    severity = 'informational'
 
 if trapvars['$A'].endswith('gudev.gnl'):
     environment = 'DEV'

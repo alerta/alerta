@@ -11,11 +11,11 @@
 
 # Set severity
 if trapvars['$3'].startswith('SERIOUS'):
-    severity = 'MAJOR'
+    severity = 'major'
 elif trapvars['$3'].startswith('WARN'):
-    severity = 'WARNING'
+    severity = 'warning'
 else:
-    severity = 'NORMAL'
+    severity = 'normal'
     
 # Set environment
 env = {

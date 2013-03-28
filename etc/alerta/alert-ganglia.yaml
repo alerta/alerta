@@ -2,7 +2,7 @@
 - event: ServerReboot
   filter: # all
   value: $now - $boottime
-  thresholdInfo: [ 'INFORM:<:7200' ]
+  thresholdInfo: [ 'informational:<:7200' ]
   text: [ 'Server rebooted less than 2 hours ago' ]
   resource: $host
   group: Hardware
@@ -13,7 +13,7 @@
 - event: PuppetLastRun
   filter: # all
   value: $now - $pup_last_run
-  thresholdInfo: [ 'MAJOR:>:7200','NORMAL:<:7200' ]
+  thresholdInfo: [ 'major:>:7200','normal:<:7200' ]
   text: ['Puppet agent has not run for at least 2 hours (last puppet run at $pup_last_run)','Puppet agent is OK (last puppet run at $pup_last_run).']
   resource: $host
   group: Puppet
@@ -26,7 +26,7 @@
 - event: PuppetResFailed
   filter: # all
   value: $pup_res_failed
-  thresholdInfo: [ 'WARNING:>:0','NORMAL:==:0' ]
+  thresholdInfo: [ 'warning:>:0','normal:==:0' ]
   text: [ 'Puppet agent failed to update $pup_res_failed out of $pup_res_total resources','Puppet is updating all $pup_res_total resources' ]
   resource: $host
   group: Puppet
@@ -39,7 +39,7 @@
 - event: GangliaHeartbeat
   filter: # all
   value: $heartbeat
-  thresholdInfo: [ 'CRITICAL:>:90','NORMAL:<:90' ]
+  thresholdInfo: [ 'critical:>:90','normal:<:90' ]
   text: [ 'No heartbeat from Ganglia agent for at least 90 seconds','Heartbeat from Ganglia agent OK' ]
   resource: $host
   group: Ganglia
