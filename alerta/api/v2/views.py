@@ -16,7 +16,7 @@ from alerta.common import log as logging
 from alerta.alert import Alert, Heartbeat, severity, status, ATTRIBUTES
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
