@@ -105,6 +105,8 @@ class Mongo(object):
                     last_receive_time=response['lastReceiveTime'],
                     trend_indication=response['trendIndication'],
                     raw_data=response['rawData'],
+                    more_info=response['moreInfo'],
+                    graph_urls=response['graphUrls'],
                     history=response['history'],
                 )
             )
@@ -151,6 +153,8 @@ class Mongo(object):
             last_receive_time=response['lastReceiveTime'],
             trend_indication=response['trendIndication'],
             raw_data=response['rawData'],
+            more_info=response['moreInfo'],
+            graph_urls=response['graphUrls'],
             history=response['history'],
         )
 
@@ -211,7 +215,9 @@ class Mongo(object):
             last_receive_time=response['lastReceiveTime'],
             trend_indication=response['trendIndication'],
             raw_data=response['rawData'],
-        )
+            more_info=response['moreInfo'],
+            graph_urls=response['graphUrls'],
+            )
 
     def partial_update_alert(self, alertid=None, environment=None, resource=None, event=None, update=None):
 
@@ -295,6 +301,8 @@ class Mongo(object):
             last_receive_time=response['lastReceiveTime'],
             trend_indication=response['trendIndication'],
             raw_data=response['rawData'],
+            more_info=response['moreInfo'],
+            graph_urls=response['graphUrls'],
         )
 
     def update_status(self, alertid=None, environment=None, resource=None, event=None, status=None):

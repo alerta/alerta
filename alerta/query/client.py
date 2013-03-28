@@ -262,9 +262,8 @@ class QueryClient(object):
                 expire_time = datetime.datetime.strptime(alert.get('expireTime', None), '%Y-%m-%dT%H:%M:%S.%fZ')
                 expire_time = expire_time.replace(tzinfo=pytz.utc)
 
-                # TODO(nsatterl): add these to Alert class
-                graphs = alert.get('graphs', ['n/a'])
                 more_info = alert.get('moreInfo', 'n/a')
+                graph_urls = alert.get('graphUrls', ['n/a'])
                 repeat = alert.get('repeat', False)
 
                 delta = receive_time - create_time
@@ -333,10 +332,12 @@ class QueryClient(object):
                     print(line_color + '          service      | %s' % (','.join(service)) + end_color)
                     print(line_color + '          resource     | %s' % resource + end_color)
                     print(line_color + '          type         | %s' % event_type + end_color)
+                    print(line_color + '          repeat       | %s' % repeat + end_color)
                     print(line_color + '          origin       | %s' % origin + end_color)
                     print(line_color + '          more info    | %s' % more_info + end_color)
                     print(line_color + '          threshold    | %s' % threshold_info + end_color)
                     print(line_color + '          correlate    | %s' % (','.join(correlate)) + end_color)
+                    print(line_color + '          graphs       | %s' % (','.join(graph_urls)) + end_color)
 
                 if 'tags' in CONF.show and tags:
                     for t in tags:

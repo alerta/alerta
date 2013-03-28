@@ -4,7 +4,7 @@ from alerta.common import config
 from alerta.alert import Alert, Heartbeat
 from alerta.common.api import ApiClient
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -53,6 +53,8 @@ class SenderClient(object):
                 threshold_info='n/a',   # TODO(nsatterl): make this configurable?
                 timeout=CONF.timeout,
                 raw_data='n/a',  # TODO(nsatterl): make this configurable?
+                more_info=CONF.more_info,
+                graph_urls=CONF.graph_urls,
             )
 
             if CONF.dry_run:

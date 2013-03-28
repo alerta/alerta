@@ -10,7 +10,7 @@ from alerta.alert import Alert, Heartbeat, severity, status
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -176,6 +176,8 @@ class WorkerThread(threading.Thread):
                     last_receive_time=alert['receiveTime'],
                     trend_indication=trend_indication,
                     raw_data=alert['rawData'],
+                    more_info=alert['moreInfo'],
+                    graph_urls=alert['graphUrls'],
                 )
                 self.db.save_alert(newAlert)
 

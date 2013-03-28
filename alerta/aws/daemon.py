@@ -14,7 +14,7 @@ from alerta.common.daemon import Daemon
 from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -77,7 +77,11 @@ class AwsDaemon(Daemon):
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
 
+        LOG.info('Shutdown request received...')
         self.running = False
+
+        LOG.info('Disconnecting from message broker...')
+        self.mq.disconnect()
 
     def ec2_status_check(self):
 
@@ -239,6 +243,8 @@ class AwsDaemon(Daemon):
                     threshold_info = None
                     summary = None
                     raw_data = None
+                    more_info = None
+                    graph_urls = None
 
                     awsAlert = Alert(
                         resource=resource,
@@ -256,5 +262,7 @@ class AwsDaemon(Daemon):
                         threshold_info=threshold_info,
                         summary=summary,
                         raw_data=raw_data,
+                        more_info=more_info,
+                        graph_urls=graph_urls,
                     )
                     self.mq.send(awsAlert)

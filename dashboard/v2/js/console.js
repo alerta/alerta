@@ -254,6 +254,7 @@ function updateAlertsTable(env_filter, asiFilters) {
                             ad.origin,
                             ad.tags,
                             ad.moreInfo,
+                            ad.graphUrls,
                             ad.history
                         );
                         a.push(inner);
@@ -316,7 +317,8 @@ function fnFormatDetails(aData) {
     var origin = aData[23];
     var tags = '';
     var moreInfo = aData[25];
-    var history = aData[26];
+    var graphUrls = '';
+    var history = aData[27];
 
     $.each(aData[24], function (y, tag) {
         tags += '<span class="label">' + tag + '</span> ';
@@ -324,6 +326,10 @@ function fnFormatDetails(aData) {
         if (t[0] == 'cluster') {
             cluster = t[1];
         }
+    });
+
+    $.each(aData[26], function (y, graph) {
+        graphUrls += '<a href="' + graph + '" target="_blank">Graph ' + y + '</a> ';
     });
 
     var historydata = '<table class="table table-condensed"><thead><td colspan="2"><b>History </b></td></thead><tbody><tr><td>';
@@ -348,7 +354,7 @@ function fnFormatDetails(aData) {
                 historydata += // '<hr/>' +
                     '<table class="table table-condensed table-striped">' +
                         '<tr><td><b>Status</b></td><td>' + stat2label(hist.status) + '</td></tr>' +
-                        '<tr><td><b>Update Time</b></td><td>' + hist.updateTime + '</td></tr>' +
+                        '<tr><td><b>Update Time</b></td><td>' + date2str(hist.updateTime) + '</td></tr>' +
                         '</table>' +
                         '';
             }
@@ -393,8 +399,8 @@ function fnFormatDetails(aData) {
     sOut += '<tr class="even"><td><b>Summary</b></td><td>' + summary + '</td></tr>';
     sOut += '<tr class="odd"><td><b>Origin</b></td><td>' + origin + '</td></tr>';
     sOut += '<tr class="even"><td><b>Tags</b></td><td>' + tags + '<a id="' + alertid + '" class="tag-alert" rel="tooltip" title="Tag Alert"><i class="icon-tags"></i></a>' + '</td></tr>';
-    // TODO(nsatterl): Graphs
     sOut += '<tr class="odd"><td><b>More Info</b></td><td>' + moreInfo + '</td></tr>';
+    sOut += '<tr class="odd"><td><b>Graphs</b></td><td>' + graphUrls + '</td></tr>';
     sOut += '</table>'; // 2
 
     sOut += '</td><td>'; // 1

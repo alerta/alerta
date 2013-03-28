@@ -47,6 +47,8 @@ ATTRIBUTES = [
     'lastReceiveTime',
     'trendIndication',
     'rawData',
+    'moreInfo',
+    'graphUrls',
     'history',
 ]
 
@@ -57,7 +59,7 @@ class Alert(object):
                  text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
                  threshold_info='n/a', summary=None, timeout=None, alertid=None, last_receive_id=None,
                  create_time=None, expire_time=None, receive_time=None, last_receive_time=None, trend_indication=None,
-                 raw_data=None, history=None):
+                 raw_data=None, more_info=None, graph_urls=None, history=None):
 
         prog = os.path.basename(sys.argv[0])
 
@@ -70,6 +72,7 @@ class Alert(object):
         service = service or list()
         tags = tags or list()
         timeout = timeout or CONF.alert_timeout
+        graph_urls = graph_urls or list()
 
         create_time = create_time or datetime.datetime.utcnow()
         expire_time = expire_time or create_time + datetime.timedelta(seconds=timeout)
@@ -105,6 +108,8 @@ class Alert(object):
             'createTime': create_time,
             'expireTime': expire_time,
             'rawData': raw_data,
+            'moreInfo': more_info,
+            'graphUrls': graph_urls,
         }
 
         if status:
@@ -193,6 +198,8 @@ class Alert(object):
             last_receive_time=alert.get('lastReceiveTime', None),
             trend_indication=alert.get('trendIndication', None),
             raw_data=alert.get('rawData', None),
+            more_info=alert.get('moreInfo', None),
+            graph_urls=alert.get('graphUrls', None),
         )
 
     def transform_alert(self, trapoid=None, facility=None, level=None, **kwargs):

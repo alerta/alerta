@@ -16,7 +16,7 @@ from alerta.common import log as logging
 from alerta.alert import Alert, Heartbeat, severity, status, ATTRIBUTES
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -234,6 +234,8 @@ def create_alert():
         timeout=data.get('timeout', None),
         alertid=data.get('id', None),
         raw_data=data.get('rawData', None),
+        more_info=data.get('moreInfo', None),
+        graph_urls=data.get('graphUrls', None),
     )
     LOG.debug('New alert %s', newAlert)
     create_mq.send(newAlert)

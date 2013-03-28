@@ -101,6 +101,20 @@ def main(argv):
             help='Freeform alert text eg. Host not responding to ping.'
         )
         parser.add_argument(
+            '--more',
+            dest='more_info',
+            metavar='TEXT',
+            help='More information eg. a link to a Wiki, ticket number or call reference.'
+        )
+        parser.add_argument(
+            '--graphs',
+            action='append',
+            dest='graph_urls',
+            default=list(),
+            metavar='URLS',
+            help='List of graph URLs.'
+        )
+        parser.add_argument(
             '-o',
             '--timeout',
             type=int,

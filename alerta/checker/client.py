@@ -9,7 +9,7 @@ from alerta.common import config
 from alerta.alert import Alert, Heartbeat, severity
 from alerta.common.api import ApiClient
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -76,6 +76,8 @@ class CheckerClient(object):
             LOG.debug('Long Output: %s', long_text)
             LOG.debug('Perf Data: %s', perf_data)
 
+            graph_urls = None
+
             msg = Alert(
                 resource=CONF.resource,
                 event=CONF.event,
@@ -90,8 +92,9 @@ class CheckerClient(object):
                 tags=CONF.tags,
                 threshold_info=CONF.nagios_cmd,
                 timeout=CONF.timeout,
-                # more_info=perf_data,
                 raw_data=stdout,
+                more_info=perf_data,
+                graph_urls=graph_urls,
             )
 
         if CONF.dry_run:
