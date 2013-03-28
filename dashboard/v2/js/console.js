@@ -400,7 +400,7 @@ function fnFormatDetails(aData) {
     sOut += '<tr class="odd"><td><b>Origin</b></td><td>' + origin + '</td></tr>';
     sOut += '<tr class="even"><td><b>Tags</b></td><td>' + tags + '<a id="' + alertid + '" class="tag-alert" rel="tooltip" title="Tag Alert"><i class="icon-tags"></i></a>' + '</td></tr>';
     sOut += '<tr class="odd"><td><b>More Info</b></td><td>' + moreInfo + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>Graphs</b></td><td>' + graphUrls + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Graphs</b></td><td>' + graphUrls + '</td></tr>';
     sOut += '</table>'; // 2
 
     sOut += '</td><td>'; // 1
