@@ -315,6 +315,29 @@ class Mongo(object):
         except pymongo.errors.OperationFailure, e:
             LOG.error('MongoDB error: %s', e)
 
+    def get_resources(self, query=None, sort=None, limit=0):
+
+        query = query or dict()
+        sort = sort or dict()
+
+        response = self.db.alerts.find(query, sort=sort).limit(limit)
+        if not response:
+            LOG.warning('No resources found with query = %s, sort = %s, limit = %s', query, sort, limit)
+            return None
+
+        unique_resources = dict()  # resources are unique to an environment
+        resources = list()
+        for resource in response:
+            if (tuple(resource['environment']), resource['resource']) not in unique_resources:
+                resources.append({
+                    'environment': resource['environment'],
+                    'resource': resource['resource'],
+                    'service': resource['service']
+                })
+                unique_resources[tuple(resource['environment']), resource['resource']] = True
+
+        return resources
+
     def get_heartbeats(self):
 
         heartbeats = list()

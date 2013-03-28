@@ -53,6 +53,7 @@ def jsonp(func):
 
 
 @app.route('/test', methods=['POST', 'GET', 'PUT', 'DELETE'])
+@jsonp
 def test():
 
     return jsonify(response={"status": "ok", "json": request.json, "data": request.data, "args": request.args})
@@ -299,6 +300,77 @@ def tag_alert(alertid):
         return jsonify(response={"status": "ok"})
     else:
         return jsonify(response={"status": "error", "message": "error tagging alert"})
+
+
+# Return a list of resources
+@app.route('/alerta/api/v2/resources', methods=['GET'])
+@jsonp
+def get_resources():
+
+    if 'q' in request.args:
+        query = json.loads(request.args.get('q'))
+    else:
+        query = dict()
+
+    for field in [fields for fields in request.args if fields.lstrip('-') in ATTRIBUTES]:
+        value = request.args.getlist(field)
+        if len(value) == 1:
+            if field.startswith('-'):
+                query[field[1:]] = dict()
+                query[field[1:]]['$not'] = re.compile(value[0])
+            else:
+                query[field] = dict()
+                query[field]['$regex'] = value[0]
+                query[field]['$options'] = 'i'  # case insensitive search
+        else:
+            if field.startswith('-'):
+                query[field[1:]] = dict()
+                query[field[1:]]['$nin'] = value
+            else:
+                query[field] = dict()
+                query[field]['$in'] = value
+
+    sort = list()
+    if request.args.get('sort-by', None):
+        for sort_by in request.args.getlist('sort-by'):
+            if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
+                sort.append((sort_by, -1))  # sort by newest first
+            else:
+                sort.append((sort_by, 1))  # sort by newest first
+    else:
+        sort.append(('lastReceiveTime', -1))
+
+    limit = request.args.get('limit', _LIMIT, int)
+
+    resources = db.get_resources(query=query, sort=sort, limit=limit)
+    total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
+
+    found = 0
+    resource_details = list()
+    if len(resources) > 0:
+
+        for resource in resources:
+            resource_details.append(resource)
+            found += 1
+
+        return jsonify(response={
+            "resources": {
+                "resourceDetails": resource_details,
+            },
+            "status": "ok",
+            "total": found,
+            "more": total > limit
+        })
+    else:
+        return jsonify(response={
+            "resources": {
+                "resourceDetails": list(),
+            },
+            "status": "error",
+            "error": "not found",
+            "total": 0,
+            "more": False,
+        })
 
 
 # Return a list of heartbeats
