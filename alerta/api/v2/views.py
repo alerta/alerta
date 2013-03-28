@@ -63,8 +63,13 @@ def test():
 @jsonp
 def get_alerts():
 
-    query = dict()
     query_time = datetime.datetime.utcnow()
+
+    if 'q' in request.args:
+        query = json.loads(request.args.get('q'))
+    else:
+        query = dict()
+
     from_date = request.args.get('from-date', None)
     if from_date:
         from_date = datetime.datetime.strptime(from_date, '%Y-%m-%dT%H:%M:%S.%fZ')
