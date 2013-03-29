@@ -271,15 +271,19 @@ class QueryClient(object):
 
                 count += 1
 
+                if 'color' in CONF.show or CONF.color:
+                    line_color = severity._COLOR_MAP[current_severity]
+
+                if CONF.json:
+                    print(line_color + json.dumps(alert, indent=4) + end_color)
+                    continue
+
                 if CONF.sortby == 'createTime':
                     displayTime = create_time
                 elif CONF.sortby == 'receiveTime':
                     displayTime = receive_time
                 else:
                     displayTime = last_receive_time
-
-                if 'color' in CONF.show or CONF.color:
-                    line_color = severity._COLOR_MAP[current_severity]
 
                 if 'summary' in CONF.show:
                     print(line_color + '%s' % summary + end_color)
@@ -312,8 +316,7 @@ class QueryClient(object):
                     print(line_color + '    value    | %s' % value + end_color)
 
                 if 'times' in CONF.show:
-                    print(
-                        line_color + '      time created  | %s' % (
+                    print(line_color + '      time created  | %s' % (
                         create_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT)) + end_color)
                     print(line_color + '      time received | %s' % (
                         receive_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT)) + end_color)

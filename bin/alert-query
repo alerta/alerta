@@ -250,6 +250,13 @@ def main(argv):
             help="Synonym for --show=color"
         )
         parser.add_argument(
+            "-j",
+            "--json",
+            action="store_true",
+            default=False,
+            help="JSON formatted output"
+        )
+        parser.add_argument(
             "-d",
             "--dry-run",
             action="store_true",
