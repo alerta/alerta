@@ -71,14 +71,14 @@
             </td>
             <td>
                 <div align="right">
-                    <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)">
+                    <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)" style="width:150px">
                         <option value="0">No limit</option>
                         <option value="10">Only 10</option>
                         <option value="50">Only 50</option>
-                        <option value="100" selected>Only 100</option>
+                        <option value="100">Only 100</option>
                         <option value="500">Only 500</option>
                     </select>
-                    <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)">
+                    <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)" style="width:150px">
                         <option value="0">All alerts</option>
                         <option value="120">Last 2 minutes</option>
                         <option value="300">Last 5 minutes</option>
