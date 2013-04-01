@@ -84,10 +84,13 @@ class Messaging(object):
         LOG.info('Message sent to broker %s:%s', CONF.stomp_host, CONF.stomp_port)
 
     def disconnect(self):
-        if self.conn.is_connected():
+        if self.is_connected():
             LOG.info('Disconnecting from broker %s:%s', CONF.stomp_host, CONF.stomp_port)
             self.conn.disconnect()
         LOG.info('Disconnected!')
+
+    def is_connected(self):
+        return self.conn.is_connected()
 
 
 class MessageHandler(ConnectionListener):

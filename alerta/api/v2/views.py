@@ -16,7 +16,7 @@ from alerta.common import log as logging
 from alerta.alert import Alert, Heartbeat, severity, status, ATTRIBUTES
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -238,7 +238,7 @@ def create_alert():
         graph_urls=data.get('graphUrls', None),
     )
     LOG.debug('New alert %s', newAlert)
-    create_mq.send(newAlert)
+    mq.send(newAlert)
 
     if newAlert:
         return jsonify(response={"status": "ok", "id": newAlert.get_id()})
@@ -406,6 +406,18 @@ def create_heartbeat():
         return jsonify(response={"status": "ok", "id": heartbeat.get_id()})
     else:
         return jsonify(response={"status": "error", "message": "something went wrong"})
+
+
+@app.route('/management/healthcheck')
+def health_check():
+
+    if not create_mq.is_connected():
+        return 'NO_MESSAGE_QUEUE', 503
+
+    if not db.conn.alive():
+        return 'NO_DATABASE', 503
+
+    return 'OK'
 
 
 # Only use when running API in stand-alone mode during testing
