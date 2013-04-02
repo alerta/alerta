@@ -15,7 +15,7 @@
             padding-bottom: 40px;
         }
     </style>
-    <link href="css/custom.css" rel="stylesheet">
+    <link href="assets/css/custom.css" rel="stylesheet">
 
 </head>
 
@@ -32,11 +32,11 @@
             <a class="brand" href="./index.html">Alert Console</a>
             <div class="nav-collapse">
                 <ul class="nav">
-                    <li class=""><a href="./index.html">Production</a></li>
-                    <li class=""><a href="./dev.html">Development</a></li>
-                    <li class=""><a href="./infra.html">Infrastructure</a></li>
+                    <li class=""><a href="index.html">Production</a></li>
+                    <li class=""><a href="dev.html">Development</a></li>
+                    <li class=""><a href="infra.html">Infrastructure</a></li>
                     <li class=""><a href="/Kibana">History</a></li>
-                    <li class="active"><a href="./about.html">About</a></li>
+                    <li class="active"><a href="about.html">About</a></li>
                 </ul>
             </div><!--/.nav-collapse -->
         </div>
@@ -64,7 +64,7 @@
 
     var hb_threshold = 300; // 5 minutes
 
-    var api_server = document.domain + ':80';
+    var api_server = document.domain + ':8000';
 
 
     function date2str(datetime) {

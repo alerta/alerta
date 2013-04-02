@@ -1,5 +1,5 @@
 
-var API_HOST = document.domain + ":80";
+var API_HOST = document.domain + ':8000';
 var REFRESH_INTERVAL = 30; // seconds
 
 var lookup;

@@ -1,13 +1,13 @@
 
 @font-face {
     font-family: Sintony;
-    src: url('../fonts/Sintony-Regular.ttf');
+    src: url('../../fonts/Sintony-Regular.ttf');
 }
 
 @font-face {
     font-family: Sintony;
     font-weight: bold;
-    src: url('../fonts/Sintony-Bold.ttf');
+    src: url('../../fonts/Sintony-Bold.ttf');
 }
 
 table {
@@ -111,7 +111,7 @@ table {
 }
 
 .loader {
-    background-image: url(../img/loading.gif);
+    background-image: url(../../img/loading.gif);
     background-position: right top;
     background-repeat: no-repeat;
 }

@@ -57,7 +57,13 @@ def jsonp(func):
 @jsonp
 def test():
 
-    return jsonify(response={"status": "ok", "json": request.json, "data": request.data, "args": request.args})
+    return jsonify(response={
+        "status": "ok",
+        "json": request.json,
+        "data": request.data,
+        "args": request.args,
+        "app_root": app.root_path,
+    })
 
 
 # Returns a list of alerts
