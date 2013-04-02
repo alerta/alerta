@@ -17,7 +17,7 @@ from alerta.common import log as logging
 from alerta.alert import Alert, Heartbeat, severity, status, ATTRIBUTES
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.6'
+Version = '2.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -427,8 +427,8 @@ def health_check():
     return 'OK'
 
 
-@app.route('/alerta/dashboard/v2/widget')
-def widget():
+@app.route('/alerta/widget/v2/severity')
+def widgets():
 
     label = request.args.get('label')
 
@@ -518,7 +518,7 @@ def widget():
             "unknown": 0,
         }
 
-    return render_template('widget.html', label=label, severity=severityCounts)
+    return render_template('widget/severity.html', label=label, severity=severityCounts)
 
 
 # Only use when running API in stand-alone mode during testing
