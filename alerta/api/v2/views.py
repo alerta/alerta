@@ -16,7 +16,7 @@ from alerta.common import log as logging
 from alerta.alert import Alert, Heartbeat, severity, status, ATTRIBUTES
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.5'
+Version = '2.0.6'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -137,10 +137,7 @@ def get_alerts():
                 body['history'] = []
 
             found += 1
-
-            if body['status'] != status.ACK:    # ack'ed alerts don't contribute to severity counts
-                severity_count[body['severity']] += 1
-
+            severity_count[body['severity']] += 1
             status_count[body['status']] += 1
 
             if not last_time:

@@ -57,7 +57,7 @@
                 <!-- div  id="status-counts" -->
                 <table border=1 class="table table-bordered table-condensed"  id="status-counts">
                     <tbody>
-                    <tr id="Alert-status" class="status">
+                    <tr id="alert-status" class="status">
                         <td><span class="label">Open</span></td>
                         <td id="count-open"><b>0</b></td>
                         <td><span class="label">Ack</span></td>
@@ -71,6 +71,11 @@
             </td>
             <td>
                 <div align="right">
+                    <select id="status-select" class="btn" name="status" onchange="updateStatus(this.value)" style="width:150px">
+                        <option value="open">Open</option>
+                        <option value="ack">Ack</option>
+                        <option value="closed">Closed</option>
+                    </select>
                     <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)" style="width:150px">
                         <option value="0">No limit</option>
                         <option value="10">Only 10</option>

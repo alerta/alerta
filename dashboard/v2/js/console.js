@@ -5,6 +5,7 @@ var REFRESH_INTERVAL = 30; // seconds
 var lookup;
 var gEnvFilter;
 var filter = '';
+var status = '&status=open';
 var limit = '';
 var from = '';
 var timer;
@@ -193,7 +194,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         "bSort": true,
         "bPaginate": true,
         "bDeferRender": true,
-        "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + env_filter + filter,
+        "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'severity-' + aData[0] + ' status-' + aData[1];
             $(nRow).attr('id', 'row-' + aData[11]);
@@ -286,7 +287,6 @@ function updateAlertsTable(env_filter, asiFilters) {
     timer = setTimeout(function() {
         refreshAlerts(true);
     }, REFRESH_INTERVAL * 1000);
-
 }
 
 function fnFormatDetails(aData) {
@@ -429,13 +429,20 @@ $('#alerts tbody tr').live('click', function () {
 });
 
 function refreshAlerts(refresh) {
-    oTable.fnReloadAjax('http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + limit + from);
+    oTable.fnReloadAjax('http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from);
     if (refresh) {
         timer = setTimeout(function() {
             refreshAlerts(refresh);
         }, REFRESH_INTERVAL * 1000);
     }
 }
+
+$('#alert-status').click(function () {
+    filter = '';
+    updateStatusCounts(gEnvFilter, false);
+    updateAllIndicators(gEnvFilter, lookup, false);
+    refreshAlerts(false);
+});
 
 $('#refresh-all').click(function () {
     updateStatusCounts(gEnvFilter, false);
@@ -453,6 +460,13 @@ $('.status-indicator-count').click(function () {
     filter += '&severity=' + this.id.split('-')[1];
     refreshAlerts(false);
 });
+
+function updateStatus(s) {
+    status = '&status=' + s;
+    updateStatusCounts(gEnvFilter, false);
+    updateAllIndicators(gEnvFilter, lookup, false);
+    refreshAlerts(false);
+}
 
 function updateLimit(count) {
     if (count > 0) {
@@ -477,8 +491,8 @@ function updateFromDate(seconds) {
 }
 
 function updateStatusCounts(env_filter, refresh) {
-    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
-        + env_filter + limit + from, function (data) {
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true'
+        + env_filter + from, function (data) {
 
         if (data.response.warning) {
             $('#warning-text').text(data.response.warning);
@@ -490,7 +504,7 @@ function updateStatusCounts(env_filter, refresh) {
         });
         if (refresh) {
             timer = setTimeout(function () {
-                updateStatusIndicator(env_filter, refresh);
+                updateStatusCounts(env_filter, refresh);
             }, REFRESH_INTERVAL * 1000);
         }
     });
@@ -509,8 +523,8 @@ function updateAllIndicators(env_filter, asiFilters, refresh) {
 function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
     $('#' + service + ' th').addClass('loader');
 
-    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
-        + env_filter + asi_filter + limit + from, function (data) {
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true'
+        + env_filter + asi_filter + status + limit + from, function (data) {
 
         var sev_id = '#' + service;
 
