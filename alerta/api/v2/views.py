@@ -16,7 +16,7 @@ from alerta.common import log as logging
 from alerta.alert import Alert, Heartbeat, severity, status, ATTRIBUTES
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -137,7 +137,10 @@ def get_alerts():
                 body['history'] = []
 
             found += 1
-            severity_count[body['severity']] += 1
+
+            if body['status'] != status.ACK:    # ack'ed alerts don't contribute to severity counts
+                severity_count[body['severity']] += 1
+
             status_count[body['status']] += 1
 
             if not last_time:
@@ -190,14 +193,14 @@ def get_alerts():
                     "debug": 0,
                     "auth": 0,
                     "unknown": 0,
-                    },
+                },
                 "statusCounts": {
                     "open": 0,
                     "ack": 0,
                     "closed": 0,
                     "expired": 0,
                     "unknown": 0,
-                    },
+                },
                 "lastTime": query_time,
             },
             "status": "error",
@@ -238,7 +241,7 @@ def create_alert():
         graph_urls=data.get('graphUrls', None),
     )
     LOG.debug('New alert %s', newAlert)
-    mq.send(newAlert)
+    create_mq.send(newAlert)
 
     if newAlert:
         return jsonify(response={"status": "ok", "id": newAlert.get_id()})
@@ -423,5 +426,5 @@ def health_check():
 # Only use when running API in stand-alone mode during testing
 @app.route('/alerta/dashboard/<path:filename>')
 def console(filename):
-    return send_from_directory(CONF.dashboard_dir, filename)
 
+    return send_from_directory(CONF.dashboard_dir, filename)

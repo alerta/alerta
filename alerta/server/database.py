@@ -224,7 +224,7 @@ class Mongo(object):
             raw_data=response['rawData'],
             more_info=response['moreInfo'],
             graph_urls=response['graphUrls'],
-            )
+        )
 
     def partial_update_alert(self, alertid=None, environment=None, resource=None, event=None, update=None):
 
