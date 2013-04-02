@@ -1,5 +1,4 @@
 
-import os
 import json
 import time
 import datetime
@@ -415,19 +414,7 @@ def create_heartbeat():
         return jsonify(response={"status": "error", "message": "something went wrong"})
 
 
-@app.route('/management/healthcheck')
-def health_check():
-
-    if not create_mq.is_connected():
-        return 'NO_MESSAGE_QUEUE', 503
-
-    if not db.conn.alive():
-        return 'NO_DATABASE', 503
-
-    return 'OK'
-
-
-@app.route('/alerta/widget/v2/severity')
+@app.route('/alerta/widgets/v2/severity')
 def widgets():
 
     label = request.args.get('label')
@@ -518,11 +505,16 @@ def widgets():
             "unknown": 0,
         }
 
-    return render_template('widget/severity.html', label=label, severity=severityCounts)
+    return render_template('widget.html', label=label, severity=severityCounts)
 
+
+@app.route('/alerta/dashboard/v2/<name>')
+def console(name):
+
+    return render_template(name)
 
 # Only use when running API in stand-alone mode during testing
-@app.route('/alerta/dashboard/<path:filename>')
-def console(filename):
+@app.route('/alerta/dashboard/v2/assets/<path:filename>')
+def assets(filename):
 
     return send_from_directory(CONF.dashboard_dir, filename)

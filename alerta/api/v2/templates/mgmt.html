@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+
+<h1>Management URLs</h1>
+
+{% for url in endpoints %}
+    <li>
+        <a href="{{ url }}">{{ url }}</a>
+    </li>
+{% endfor %}
+
+</body>
+</html>
