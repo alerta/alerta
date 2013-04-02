@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- link href='http://fonts.googleapis.com/css?family=Sintony:400,700' rel='stylesheet' type='text/css' -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script type="text/javascript" language="javascript" src="assets/DataTables/media/js/jquery.js"></script>
+
+    <link href="assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="css/custom.css" rel="stylesheet">
+
+</head>
+<body class="widget">
+
+<div class="row show-grid">
+    <div class="span3">
+        <table class="table table-bordered table-condensed status-indicator" id="widget" data-label="widget">
+            <thead id="widget-overall" class="status-indicator-overall">
+            <tr>
+                <th colspan="6" id="widget-status">{{ label }}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr id="widget-status-indicator">
+                <td id="widget-critical" class="status-indicator-count"><b>{{ severity['critical'] }}</b></td>
+                <td id="widget-major" class="status-indicator-count"><b>{{ severity['major'] }}</b></td>
+                <td id="widget-minor" class="status-indicator-count"><b>{{ severity['minor'] }}</b></td>
+                <td id="widget-warning" class="status-indicator-count"><b>{{ severity['warning'] }}</b></td>
+                <td id="widget-normal" class="status-indicator-count"><b>{{ severity['normal'] }}</b></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{ response }}
+
+<script>
+
+    var API_HOST = document.domain + ":8000";
+    var REFRESH_INTERVAL = 30; // seconds
+
+    var filter = '';
+    var status = '&status=open';
+    var limit = '';
+    var from = '';
+    var timer;
+
+    function updateStatusIndicator(filter, refresh) {
+        $('#widget th').addClass('loader');
+
+        $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true'
+                + filter + status + limit + from, function (data) {
+
+            var sev_id = '#widget';
+
+            data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.informational;
+
+            $.each(data.response.alerts.severityCounts, function (sev, count) {
+                sev = sev.toLowerCase();
+                $(sev_id + "-" + sev).html('<b>' + count + '</b>');
+
+                switch (count) {
+                    case 0:
+                        $(sev_id + "-" + sev).removeClass("severity-" + sev).addClass('zero');
+                        break;
+                    default:
+                        $(sev_id + "-" + sev).addClass("severity-" + sev).removeClass('zero');
+                }
+            });
+            var scolor;
+            if (data.response.alerts.severityCounts.critical > 0) {
+                scolor = 'red';
+            } else if (data.response.alerts.severityCounts.major > 0) {
+                scolor = 'orange';
+            } else if (data.response.alerts.severityCounts.minor > 0) {
+                scolor = 'yellow';
+            } else if (data.response.alerts.severityCounts.warning > 0) {
+                scolor = 'dodgerblue';
+            } else {
+                scolor = '#00CC00';
+            }
+            $(sev_id + "-status").css('background-color', scolor);
+
+            $('#widget th').removeClass('loader');
+
+            if (refresh) {
+                timer = setTimeout(function () {
+                    updateStatusIndicator(filter, refresh);
+                }, REFRESH_INTERVAL * 1000);
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        updateStatusIndicator(filter, true);
+    });
+</script>
+
+</body>
+</html>

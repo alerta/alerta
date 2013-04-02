@@ -1,4 +1,5 @@
 
+import os
 import json
 import time
 import datetime
@@ -7,7 +8,7 @@ import re
 
 from collections import defaultdict
 
-from flask import request, current_app, send_from_directory
+from flask import request, current_app, render_template, send_from_directory
 from functools import wraps
 from alerta.api.v2 import app, db, create_mq
 
@@ -62,7 +63,7 @@ def test():
 # Returns a list of alerts
 @app.route('/alerta/api/v2/alerts', methods=['GET'])
 @jsonp
-def get_alerts():
+def get_alerts_api():
 
     query_time = datetime.datetime.utcnow()
 
@@ -248,7 +249,7 @@ def create_alert():
 
 @app.route('/alerta/api/v2/alerts/alert/<alertid>', methods=['GET', 'PUT', 'POST', 'DELETE'])
 @jsonp
-def rud_alert(alertid):
+def modify_alert(alertid):
 
     error = None
 
@@ -418,6 +419,100 @@ def health_check():
         return 'NO_DATABASE', 503
 
     return 'OK'
+
+
+@app.route('/alerta/dashboard/v2/widget')
+def widget():
+
+    label = request.args.get('label')
+
+    query_time = datetime.datetime.utcnow()
+
+    if 'q' in request.args:
+        query = json.loads(request.args.get('q'))
+    else:
+        query = dict()
+
+    from_date = request.args.get('from-date', None)
+    if from_date:
+        from_date = datetime.datetime.strptime(from_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+        from_date = from_date.replace(tzinfo=pytz.utc)
+        to_date = query_time
+        to_date = to_date.replace(tzinfo=pytz.utc)
+        query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date}
+
+    if request.args.get('id', None):
+        query['_id'] = dict()
+        query['_id']['$regex'] = '^' + request.args['id']
+
+    for field in [fields for fields in request.args if fields.lstrip('-') in ATTRIBUTES]:
+        value = request.args.getlist(field)
+        if len(value) == 1:
+            if field.startswith('-'):
+                query[field[1:]] = dict()
+                query[field[1:]]['$not'] = re.compile(value[0])
+            else:
+                query[field] = dict()
+                query[field]['$regex'] = value[0]
+                query[field]['$options'] = 'i'  # case insensitive search
+        else:
+            if field.startswith('-'):
+                query[field[1:]] = dict()
+                query[field[1:]]['$nin'] = value
+            else:
+                query[field] = dict()
+                query[field]['$in'] = value
+
+    sort = list()
+    if request.args.get('sort-by', None):
+        for sort_by in request.args.getlist('sort-by'):
+            if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
+                sort.append((sort_by, -1))  # sort by newest first
+            else:
+                sort.append((sort_by, 1))  # sort by newest first
+    else:
+        sort.append(('lastReceiveTime', -1))
+
+    limit = request.args.get('limit', _LIMIT, int)
+
+    alerts = db.get_alerts(query=query, sort=sort, limit=limit)
+
+    if len(alerts) > 0:
+        severity_count = defaultdict(int)
+
+        for alert in alerts:
+            body = alert.get_body()
+            severity_count[body['severity']] += 1
+
+        severityCounts = {
+            "critical": severity_count[severity.CRITICAL],
+            "major": severity_count[severity.MAJOR],
+            "minor": severity_count[severity.MINOR],
+            "warning": severity_count[severity.WARNING],
+            "indeterminate": severity_count[severity.INDETERMINATE],
+            "cleared": severity_count[severity.CLEARED],
+            "normal": severity_count[severity.NORMAL],
+            "informational": severity_count[severity.INFORM],
+            "debug": severity_count[severity.DEBUG],
+            "auth": severity_count[severity.AUTH],
+            "unknown": severity_count[severity.UNKNOWN],
+        }
+    else:
+        severityCounts = {
+            "critical": 0,
+            "major": 0,
+            "minor": 0,
+            "warning": 0,
+            "indeterminate": 0,
+            "cleared": 0,
+            "normal": 0,
+            "informational": 0,
+            "debug": 0,
+            "auth": 0,
+            "unknown": 0,
+        }
+
+    return render_template('widget.html', label=label, severity=severityCounts)
 
 
 # Only use when running API in stand-alone mode during testing

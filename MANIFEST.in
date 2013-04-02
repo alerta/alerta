@@ -1,0 +1,1 @@
+recursive-include alerta/api/v2/templates *

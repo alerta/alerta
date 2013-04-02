@@ -12,6 +12,7 @@ setuptools.setup(
     author='Nick Satterly',
     author_email='nick.satterly@guardian.co.uk',
     packages= setuptools.find_packages(exclude=['bin', 'tests']),
+    include_package_data=True,
     scripts=['bin/alert-aws',
              'bin/alert-checker',
              'bin/alert-dynect',
