@@ -1,6 +1,8 @@
 
-from flask import url_for, render_template
+from flask import Response, url_for, jsonify, render_template
 from alerta.api.v2 import app, db, create_mq
+
+from alerta import get_version
 
 
 @app.route('/alerta/management')
@@ -10,7 +12,7 @@ def management():
         url_for('manifest'),
         url_for('properties'),
         url_for('switchboard'),
-        url_for('healthcheck'),
+        url_for('health_check'),
         url_for('status')
     ]
     return render_template('mgmt.html', endpoints=endpoints)
@@ -19,23 +21,42 @@ def management():
 @app.route('/alerta/management/manifest')
 def manifest():
 
-    return 'manifestly unjust'
+    manifest = {
+        "label": "Alerta",
+        "release": get_version(),
+        "build": "",
+        "date": "",
+        "revision": "",
+        "description": "The Guardian's Alerta monitoring system",
+        "built-by": "rpmbuild",
+        "built-on": "el6gen01.gudev.gnl",
+    }
+
+    return  jsonify(alerta=manifest)
 
 
 @app.route('/alerta/management/properties')
 def properties():
 
-    return 'properties go here'
+    properties = ''
+
+    for k, v in app.__dict__.items():
+        properties += '%s: %s\n' % (k, v)
+
+    for k, v in app.config.items():
+        properties += '%s: %s\n' % (k, v)
+
+    return Response(properties, content_type='text/plain')
 
 
 @app.route('/alerta/management/switchboard')
 def switchboard():
 
-    return 'switch bits on/off'
+    return 'NOT_IMPLEMENTED', 404
 
 
 @app.route('/alerta/management/healthcheck')
-def healthcheck():
+def health_check():
 
     try:
         if not create_mq.is_connected():
@@ -44,8 +65,8 @@ def healthcheck():
         if not db.conn.alive():
             return 'NO_DATABASE', 503
 
-    except Exception, e:
-        return e, 501
+    except Exception:
+        return 'HEALTH_CHECK_FAILED', 503
 
     return 'OK'
 
@@ -53,4 +74,4 @@ def healthcheck():
 @app.route('/alerta/management/status')
 def status():
 
-    return "management status output!"
+    return 'NOT_IMPLEMENTED', 404

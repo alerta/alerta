@@ -133,8 +133,8 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
     config = ConfigParser.SafeConfigParser()
     conf_files = config.read(config_file_order)
     defaults = config.defaults()  # read in [DEFAULTS] section
-    defaults['conf_file'] = ','.join(conf_files)
 
+    defaults['conf_file'] = ','.join(conf_files)
     if conf_files:
         if config.has_section(prog):  # read in program-specific sections
             for name in config.options(prog):
