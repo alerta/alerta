@@ -1,1 +1,5 @@
 recursive-include alerta/api/v2/templates *
+
+exclude .gitignore
+
+global-exclude *.pyc
