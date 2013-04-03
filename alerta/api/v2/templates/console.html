@@ -226,6 +226,10 @@
 <script src="/alerta/dashboard/v2/assets/js/console.js"></script>
 
 <script>
+    var api_port = {{ config['api_port'] }};
+</script>
+
+<script>
     $(document).ready(function() {
 
         var env_filter = '&environment=PROD|DEV|INFRA';

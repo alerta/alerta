@@ -10,6 +10,7 @@ from collections import defaultdict
 from flask import request, current_app, render_template, send_from_directory
 from functools import wraps
 from alerta.api.v2 import app, db, create_mq
+from alerta.api.v2 import switches
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -49,6 +50,7 @@ def test():
 
     return jsonify(response={
         "status": "ok",
+        "method": request.method,
         "json": request.json,
         "data": request.data,
         "args": request.args,
@@ -169,7 +171,8 @@ def get_alerts_api():
             },
             "status": "ok",
             "total": found,
-            "more": total > limit
+            "more": total > limit,
+            "autoRefresh": switches.SWITCH_STATUS[switches.AUTO_REFRESH_ALLOW],
         })
     else:
         return jsonify(response={
@@ -201,6 +204,7 @@ def get_alerts_api():
             "error": "not found",
             "total": 0,
             "more": False,
+            "autoRefresh": switches.SWITCH_STATUS[switches.AUTO_REFRESH_ALLOW],
         })
 
 
@@ -416,7 +420,11 @@ def widgets():
 @app.route('/alerta/dashboard/v2/<name>')
 def console(name):
 
-    return render_template(name)
+    config = {
+        'api_port': CONF.api_port,
+    }
+
+    return render_template(name, config=config)
 
 # Only use when running API in stand-alone mode during testing
 @app.route('/alerta/dashboard/v2/assets/<path:filename>')

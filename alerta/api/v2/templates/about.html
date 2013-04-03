@@ -61,10 +61,14 @@
 </div> <!-- end container -->
 
 <script>
+    var api_port = {{ config['api_port'] }};
+</script>
+
+<script>
 
     var hb_threshold = 300; // 5 minutes
 
-    var api_server = document.domain + ':80';
+    var api_server = document.domain + ':' + window.api_port;
 
 
     function date2str(datetime) {

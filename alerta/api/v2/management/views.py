@@ -1,10 +1,14 @@
 
 import time
 
-from flask import Response, url_for, jsonify, render_template
+from flask import request, Response, url_for, jsonify, render_template
 from alerta.api.v2 import app, db, create_mq
+from alerta.api.v2 import switches
 
 from alerta import get_version
+from alerta.common import log as logging
+
+LOG = logging.getLogger(__name__)
 
 
 @app.route('/alerta/management')
@@ -17,7 +21,7 @@ def management():
         url_for('health_check'),
         url_for('status')
     ]
-    return render_template('mgmt.html', endpoints=endpoints)
+    return render_template('management/index.html', endpoints=endpoints)
 
 
 @app.route('/alerta/management/manifest')
@@ -51,10 +55,39 @@ def properties():
     return Response(properties, content_type='text/plain')
 
 
-@app.route('/alerta/management/switchboard')
+@app.route('/alerta/management/switchboard', methods=['GET', 'POST'])
 def switchboard():
 
-    return 'NOT_IMPLEMENTED', 404
+    if request.method == 'POST':
+        for switch in switches.ALL:
+            try:
+                value = request.form[switch]
+                if value == 'ON':
+                    switches.SWITCH_STATUS[switch] = True
+                elif value == 'OFF':
+                    switches.SWITCH_STATUS[switch] = False
+            except KeyError:
+                pass
+
+        LOG.warning('auto-refresh-allow=%s, console-api-allow=%s, sender-api-allow=%s',
+                    switches.SWITCH_STATUS[switches.AUTO_REFRESH_ALLOW],
+                    switches.SWITCH_STATUS[switches.CONSOLE_API_ALLOW],
+                    switches.SWITCH_STATUS[switches.SENDER_API_ALLOW])
+
+        return render_template('management/switchboard.html',
+                               switches=switches.SWITCH_STATUS,
+                               descriptions=switches.SWITCH_DESCRIPTIONS)
+
+    else:
+        switch = request.args.get('switch', None)
+        if switch:
+            return render_template('management/switchboard.html',
+                                   switches={switch: switches.SWITCH_STATUS[switch]},
+                                   descriptions=switches.SWITCH_DESCRIPTIONS)
+        else:
+            return render_template('management/switchboard.html',
+                                   switches=switches.SWITCH_STATUS,
+                                   descriptions=switches.SWITCH_DESCRIPTIONS)
 
 
 @app.route('/alerta/management/healthcheck')
@@ -66,7 +99,6 @@ def health_check():
 
         if not db.conn.alive():
             return 'NO_DATABASE', 503
-
     except Exception:
         return 'HEALTH_CHECK_FAILED', 503
 
@@ -77,4 +109,15 @@ def health_check():
 def status():
 
     metrics = db.get_metrics()
+
+    kill_auto_refresh = {
+        "group": "switch",
+        "name": "auto_refresh_allow",
+        "type": "text",
+        "title": "Alert console auto-refresh",
+        "description": "Allows auto-refresh of alert consoles to be turned off remotely",
+        "value": switches.SWITCH_STATUS[switches.AUTO_REFRESH_ALLOW],
+    }
+    metrics.append(kill_auto_refresh)
+
     return jsonify(application="alerta", time=int(time.time() * 1000), metrics=metrics)
