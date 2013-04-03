@@ -1,7 +1,6 @@
 
 import os
 import sys
-import socket
 import logging
 import logging.handlers
 
@@ -22,8 +21,12 @@ def setup(name):
 
     if CONF.use_syslog is True:
         facility = CONF.syslog_facility
-        syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
-        log_root.addHandler(syslog)
+        try:
+            syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
+        except IOError:
+            pass
+        else:
+            log_root.addHandler(syslog)
 
     logpath = _get_log_file_path()
     if logpath:
