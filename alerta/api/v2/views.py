@@ -21,21 +21,12 @@ Version = '2.0.7'
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-# TODO(nsatterl): put these constants somewhere appropriate
-_MAX_HISTORY = -10  # 10 most recent
-_LIMIT = 1000
-
 
 # Over-ride jsonify to support Date Encoding
 def jsonify(*args, **kwargs):
     return current_app.response_class(json.dumps(dict(*args, **kwargs), cls=DateEncoder,
                                                  indent=None if request.is_xhr else 2), mimetype='application/json')
 
-
-# TODO(nsatterl): use @before_request and @after_request to attach a unique request id
-# @app.before_request
-# def before_request():
-#     pass
 
 def jsonp(func):
     """Wraps JSONified output for JSONP requests."""
@@ -117,7 +108,7 @@ def get_alerts_api():
     else:
         sort.append(('lastReceiveTime', -1))
 
-    limit = request.args.get('limit', _LIMIT, int)
+    limit = request.args.get('limit', CONF.console_limit, int)
 
     alerts = db.get_alerts(query=query, sort=sort, limit=limit)
     total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
@@ -348,7 +339,7 @@ def get_resources():
     else:
         sort.append(('lastReceiveTime', -1))
 
-    limit = request.args.get('limit', _LIMIT, int)
+    limit = request.args.get('limit', CONF.console_limit, int)
 
     resources = db.get_resources(query=query, sort=sort, limit=limit)
     total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
@@ -419,93 +410,7 @@ def widgets():
 
     label = request.args.get('label')
 
-    query_time = datetime.datetime.utcnow()
-
-    if 'q' in request.args:
-        query = json.loads(request.args.get('q'))
-    else:
-        query = dict()
-
-    from_date = request.args.get('from-date', None)
-    if from_date:
-        from_date = datetime.datetime.strptime(from_date, '%Y-%m-%dT%H:%M:%S.%fZ')
-        from_date = from_date.replace(tzinfo=pytz.utc)
-        to_date = query_time
-        to_date = to_date.replace(tzinfo=pytz.utc)
-        query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date}
-
-    if request.args.get('id', None):
-        query['_id'] = dict()
-        query['_id']['$regex'] = '^' + request.args['id']
-
-    for field in [fields for fields in request.args if fields.lstrip('-') in ATTRIBUTES]:
-        value = request.args.getlist(field)
-        if len(value) == 1:
-            if field.startswith('-'):
-                query[field[1:]] = dict()
-                query[field[1:]]['$not'] = re.compile(value[0])
-            else:
-                query[field] = dict()
-                query[field]['$regex'] = value[0]
-                query[field]['$options'] = 'i'  # case insensitive search
-        else:
-            if field.startswith('-'):
-                query[field[1:]] = dict()
-                query[field[1:]]['$nin'] = value
-            else:
-                query[field] = dict()
-                query[field]['$in'] = value
-
-    sort = list()
-    if request.args.get('sort-by', None):
-        for sort_by in request.args.getlist('sort-by'):
-            if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
-                sort.append((sort_by, -1))  # sort by newest first
-            else:
-                sort.append((sort_by, 1))  # sort by newest first
-    else:
-        sort.append(('lastReceiveTime', -1))
-
-    limit = request.args.get('limit', _LIMIT, int)
-
-    alerts = db.get_alerts(query=query, sort=sort, limit=limit)
-
-    if len(alerts) > 0:
-        severity_count = defaultdict(int)
-
-        for alert in alerts:
-            body = alert.get_body()
-            severity_count[body['severity']] += 1
-
-        severityCounts = {
-            "critical": severity_count[severity.CRITICAL],
-            "major": severity_count[severity.MAJOR],
-            "minor": severity_count[severity.MINOR],
-            "warning": severity_count[severity.WARNING],
-            "indeterminate": severity_count[severity.INDETERMINATE],
-            "cleared": severity_count[severity.CLEARED],
-            "normal": severity_count[severity.NORMAL],
-            "informational": severity_count[severity.INFORM],
-            "debug": severity_count[severity.DEBUG],
-            "auth": severity_count[severity.AUTH],
-            "unknown": severity_count[severity.UNKNOWN],
-        }
-    else:
-        severityCounts = {
-            "critical": 0,
-            "major": 0,
-            "minor": 0,
-            "warning": 0,
-            "indeterminate": 0,
-            "cleared": 0,
-            "normal": 0,
-            "informational": 0,
-            "debug": 0,
-            "auth": 0,
-            "unknown": 0,
-        }
-
-    return render_template('widget.html', label=label, severity=severityCounts)
+    return render_template('widgets/severity.html', label=label, query=request.query_string)
 
 
 @app.route('/alerta/dashboard/v2/<name>')

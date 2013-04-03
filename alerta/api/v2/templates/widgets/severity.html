@@ -24,25 +24,23 @@
             </thead>
             <tbody>
             <tr id="widget-status-indicator">
-                <td id="widget-critical" class="status-indicator-count"><b>{{ severity['critical'] }}</b></td>
-                <td id="widget-major" class="status-indicator-count"><b>{{ severity['major'] }}</b></td>
-                <td id="widget-minor" class="status-indicator-count"><b>{{ severity['minor'] }}</b></td>
-                <td id="widget-warning" class="status-indicator-count"><b>{{ severity['warning'] }}</b></td>
-                <td id="widget-normal" class="status-indicator-count"><b>{{ severity['normal'] }}</b></td>
+                <td id="widget-critical" class="status-indicator-count"><b>0</b></td>
+                <td id="widget-major" class="status-indicator-count"><b>0</b></td>
+                <td id="widget-minor" class="status-indicator-count"><b>0</b></td>
+                <td id="widget-warning" class="status-indicator-count"><b>0</b></td>
+                <td id="widget-normal" class="status-indicator-count"><b>0</b></td>
             </tr>
             </tbody>
         </table>
     </div>
 </div>
 
-{{ response }}
-
 <script>
 
     var API_HOST = document.domain + ":8000";
     var REFRESH_INTERVAL = 30; // seconds
 
-    var filter = '';
+    var filter = '{{ query|safe }}';
     var status = '&status=open';
     var limit = '';
     var from = '';
@@ -51,7 +49,7 @@
     function updateStatusIndicator(filter, refresh) {
         $('#widget th').addClass('loader');
 
-        $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true'
+        $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
                 + filter + status + limit + from, function (data) {
 
             var sev_id = '#widget';

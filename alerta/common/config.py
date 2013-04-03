@@ -55,6 +55,8 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'mongo_db': 'monitoring',
         'mongo_collection': 'alerts',
 
+        'console_limit': 1000,  # max number of alerts sent to console
+
         'stomp_host': 'localhost',
         'stomp_port': 61613,
 
