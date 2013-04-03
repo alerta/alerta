@@ -193,6 +193,9 @@ class WorkerThread(threading.Thread):
                 self.input_queue.task_done()
                 LOG.info('%s : Alert forwarded to %s and %s', alert['id'], CONF.outbound_queue, CONF.outbound_topic)
 
+            # update application stats
+            self.db.update_metrics(alert['createTime'], alert['receiveTime'])
+
         self.input_queue.task_done()
 
 

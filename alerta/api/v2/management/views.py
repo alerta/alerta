@@ -1,4 +1,6 @@
 
+import time
+
 from flask import Response, url_for, jsonify, render_template
 from alerta.api.v2 import app, db, create_mq
 
@@ -74,4 +76,5 @@ def health_check():
 @app.route('/alerta/management/status')
 def status():
 
-    return 'NOT_IMPLEMENTED', 404
+    metrics = db.get_metrics()
+    return jsonify(application="alerta", time=int(time.time() * 1000), metrics=metrics)

@@ -31,10 +31,9 @@ class Mongo(object):
             LOG.error('MongoDB database error : %s', e)
             sys.exit(1)
 
-        # TODO(nsatterl): problems running under pymongo 2.1.1
-        # if self.conn.alive():
-        #     LOG.info('Connected to MongoDB server %s:%s', CONF.mongo_host, CONF.mongo_port)
-        #     LOG.debug('MongoDB %s, databases available: %s', self.conn.server_info()['version'], ', '.join(self.conn.database_names()))
+        if self.conn.alive():
+            LOG.info('Connected to MongoDB server %s:%s', CONF.mongo_host, CONF.mongo_port)
+            LOG.debug('MongoDB %s, databases available: %s', self.conn.server_info()['version'], ', '.join(self.conn.database_names()))
 
         self.create_indexes()
 
@@ -357,8 +356,7 @@ class Mongo(object):
 
         heartbeats = list()
 
-        response = self.db.heartbeats.find({}, {"_id": 0})
-        for heartbeat in response:
+        for heartbeat in self.db.heartbeats.find({}, {"_id": 0}):
             heartbeats.append(heartbeat)
         return heartbeats
 
@@ -372,14 +370,34 @@ class Mongo(object):
         except pymongo.errors.OperationFailure, e:
             LOG.error('MongoDB error: %s', e)
 
-    # TODO(nsatterl): is this needed?
-    # def save_heartbeat(self, heartbeat):
-    #
-    #     body = heartbeat.get_body()
-    #     body['_id'] = body['id']
-    #     del body['id']
-    #
-    #     return self.db.heartbeats.insert(body, safe=True)
+    def get_metrics(self):
+
+        metrics = list()
+
+        for stat in self.db.metrics.find({}, {"_id": 0}):
+            metrics.append(stat)
+        return metrics
+
+    def update_metrics(self, create_time, receive_time):
+
+        delta = receive_time - create_time
+        latency = int(delta.days * 24 * 60 * 60 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000)
+
+        try:
+            self.db.metrics.update(
+                {
+                    "group": "alerts",
+                    "name": "received",
+                    "type": "timer",
+                    "title": "Alert receive rate and latency",
+                    "description": "Time taken for alert to be received by the server"
+                },
+                {
+                    '$inc': {"count": 1, "totalTime": latency}
+                },
+                True)
+        except pymongo.errors.OperationFailure, e:
+            LOG.error('MongoDB error: %s', e)
 
     def disconnect(self):
 
