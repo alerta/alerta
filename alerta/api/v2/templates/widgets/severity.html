@@ -36,8 +36,12 @@
 </div>
 
 <script>
+    var api_port = {{ config['api_port'] }};
+</script>
 
-    var API_HOST = document.domain + ":8000";
+<script>
+
+    var API_HOST = document.domain + ':' + window.api_port;
     var REFRESH_INTERVAL = 30; // seconds
 
     var filter = '{{ query|safe }}';
