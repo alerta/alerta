@@ -10,16 +10,16 @@
     <table border="1">
         <tr><th>Switch name</th><th>Description</th><th>State</th></tr>
 
-{% for switch, value in switches.iteritems() %}
+{% for switch in switches %}
         <tr>
-            <td><a href="?switch={{ switch }}">{{ switch }}</a></td>
-            <td>{{ descriptions[switch] }}</td>
+            <td><a href="?switch={{ switch.name }}">{{ switch.name }}</a></td>
+            <td>{{ switch.description|safe }}</td>
             <td style="width: 100px; text-align: center;">
-                {% if value %}
+                {% if switch.state %}
                     <span style="color: ForestGreen"> ON </span>
-                    <input name="{{ switch }}" type="submit" value="OFF"></input>
+                    <input name="{{ switch.name }}" type="submit" value="OFF"></input>
                 {% else %}
-                    <input name="{{ switch }}" type="submit" value="ON"></input>
+                    <input name="{{ switch.name }}" type="submit" value="ON"></input>
                     <span style="color: DarkRed"> OFF </span>
                 {% endif %}
             </td>

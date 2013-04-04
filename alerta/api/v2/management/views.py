@@ -3,12 +3,19 @@ import time
 
 from flask import request, Response, url_for, jsonify, render_template
 from alerta.api.v2 import app, db, create_mq
-from alerta.api.v2 import switches
+from alerta.api.v2.switch import Switch, SwitchState
 
 from alerta import get_version
 from alerta.common import log as logging
 
 LOG = logging.getLogger(__name__)
+
+
+switches = [
+    Switch('auto-refresh-allow', 'Allow consoles to auto-refresh alerts', SwitchState.ON),
+    Switch('console-api-allow', 'Allow consoles to use the alert API', SwitchState.ON),
+    Switch('sender-api-allow', 'Allow alerts to be submitted via the API', SwitchState.ON),
+]
 
 
 @app.route('/alerta/management')
@@ -59,30 +66,22 @@ def properties():
 def switchboard():
 
     if request.method == 'POST':
-        for switch in switches.ALL:
+        for switch in Switch.get_all():
             try:
-                value = request.form[switch]
-                if value == 'ON':
-                    switches.SWITCH_STATUS[switch] = True
-                elif value == 'OFF':
-                    switches.SWITCH_STATUS[switch] = False
-                LOG.warning('Switch %s set to %s', switch, value)
+                value = request.form[switch.name]
+                switch.set_state(value)
+                LOG.warning('Switch %s set to %s', switch.name, value)
             except KeyError:
                 pass
 
-        return render_template('management/switchboard.html',
-                               switches=switches.SWITCH_STATUS,
-                               descriptions=switches.SWITCH_DESCRIPTIONS)
+        return render_template('management/switchboard.html', switches=switches)
     else:
         switch = request.args.get('switch', None)
         if switch:
             return render_template('management/switchboard.html',
-                                   switches={switch: switches.SWITCH_STATUS[switch]},
-                                   descriptions=switches.SWITCH_DESCRIPTIONS)
+                                   switches=[Switch.get(switch)])
         else:
-            return render_template('management/switchboard.html',
-                                   switches=switches.SWITCH_STATUS,
-                                   descriptions=switches.SWITCH_DESCRIPTIONS)
+            return render_template('management/switchboard.html', switches=switches)
 
 
 @app.route('/alerta/management/healthcheck')

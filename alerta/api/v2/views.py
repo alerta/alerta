@@ -10,7 +10,8 @@ from collections import defaultdict
 from flask import request, current_app, render_template, send_from_directory
 from functools import wraps
 from alerta.api.v2 import app, db, create_mq
-from alerta.api.v2 import switches
+from alerta.api.v2.switch import Switch, SwitchState
+from alerta.api.v2.management.views import switches
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -172,7 +173,7 @@ def get_alerts():
             "status": "ok",
             "total": found,
             "more": total > limit,
-            "autoRefresh": switches.SWITCH_STATUS[switches.AUTO_REFRESH_ALLOW],
+            "autoRefresh": Switch.get('auto-refresh-allow').is_on(),
         })
     else:
         return jsonify(response={
@@ -204,7 +205,7 @@ def get_alerts():
             "error": "not found",
             "total": 0,
             "more": False,
-            "autoRefresh": switches.SWITCH_STATUS[switches.AUTO_REFRESH_ALLOW],
+            "autoRefresh": Switch.get('auto-refresh-allow').is_on(),
         })
 
 
