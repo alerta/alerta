@@ -16,7 +16,7 @@
 
 <div class="row show-grid">
     <div class="span3">
-        <a href="./details?label={{ label }}{% if query %} }}&{{ query|safe }}{% endif %}" target="_blank">
+        <a href="./details{% if query %}?{{ query|safe }}{% endif %}" target="_blank">
         <table class="table table-bordered table-condensed status-indicator" id="widget" data-label="widget">
             <thead id="widget-overall" class="status-indicator-overall">
             <tr>

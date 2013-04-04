@@ -66,18 +66,13 @@ def switchboard():
                     switches.SWITCH_STATUS[switch] = True
                 elif value == 'OFF':
                     switches.SWITCH_STATUS[switch] = False
+                LOG.warning('Switch %s set to %s', switch, value)
             except KeyError:
                 pass
-
-        LOG.warning('auto-refresh-allow=%s, console-api-allow=%s, sender-api-allow=%s',
-                    switches.SWITCH_STATUS[switches.AUTO_REFRESH_ALLOW],
-                    switches.SWITCH_STATUS[switches.CONSOLE_API_ALLOW],
-                    switches.SWITCH_STATUS[switches.SENDER_API_ALLOW])
 
         return render_template('management/switchboard.html',
                                switches=switches.SWITCH_STATUS,
                                descriptions=switches.SWITCH_DESCRIPTIONS)
-
     else:
         switch = request.args.get('switch', None)
         if switch:
