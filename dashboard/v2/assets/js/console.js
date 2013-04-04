@@ -180,6 +180,7 @@ $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallba
 };
 
 var oTable;
+var autoRefresh = true;
 
 function updateAlertsTable(env_filter, asiFilters) {
 
@@ -222,6 +223,7 @@ function updateAlertsTable(env_filter, asiFilters) {
                 "url": sSource,
                 "data": aoData,
                 "success": function (json) {
+                    autoRefresh = json.response.autoRefresh;
                     var a = [];
                     $.each(json.response.alerts.alertDetails, function (i, ad) {
                         var inner = [];
@@ -284,9 +286,11 @@ function updateAlertsTable(env_filter, asiFilters) {
         "sDom": "<'row'<'span6'l><'span6'f>r>t<'row'<'span6'i><'span6'p>>"
     });
 
-    timer = setTimeout(function() {
-        refreshAlerts(true);
-    }, REFRESH_INTERVAL * 1000);
+    if (autoRefresh) {
+        timer = setTimeout(function() {
+            refreshAlerts(true);
+        }, REFRESH_INTERVAL * 1000);
+    }
 }
 
 function fnFormatDetails(aData) {
@@ -430,7 +434,7 @@ $('#alerts tbody tr').live('click', function () {
 
 function refreshAlerts(refresh) {
     oTable.fnReloadAjax('http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from);
-    if (refresh) {
+    if (refresh && autoRefresh) {
         timer = setTimeout(function() {
             refreshAlerts(refresh);
         }, REFRESH_INTERVAL * 1000);
@@ -502,7 +506,7 @@ function updateStatusCounts(env_filter, refresh) {
         $.each(data.response.alerts.statusCounts, function (status, count) {
             $("#count-" + status).html('<b>' + count + '</b>');
         });
-        if (refresh) {
+        if (refresh && autoRefresh) {
             timer = setTimeout(function () {
                 updateStatusCounts(env_filter, refresh);
             }, REFRESH_INTERVAL * 1000);
@@ -522,7 +526,6 @@ function updateAllIndicators(env_filter, asiFilters, refresh) {
 
 function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
     $('#' + service + ' th').addClass('loader');
-
     $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true'
         + env_filter + asi_filter + status + limit + from, function (data) {
 
@@ -558,7 +561,7 @@ function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
 
         $('#' + service + ' th').removeClass('loader');
 
-        if (refresh) {
+        if (refresh && autoRefresh) {
             timer = setTimeout(function () {
                 updateStatusIndicator(env_filter, asi_filter, service, refresh);
             }, REFRESH_INTERVAL * 1000);
