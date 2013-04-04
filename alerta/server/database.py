@@ -380,6 +380,7 @@ class Mongo(object):
 
     def update_metrics(self, create_time, receive_time):
 
+        # receive latency
         delta = receive_time - create_time
         latency = int(delta.days * 24 * 60 * 60 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000)
 
@@ -391,6 +392,26 @@ class Mongo(object):
                     "type": "timer",
                     "title": "Alert receive rate and latency",
                     "description": "Time taken for alert to be received by the server"
+                },
+                {
+                    '$inc': {"count": 1, "totalTime": latency}
+                },
+                True)
+        except pymongo.errors.OperationFailure, e:
+            LOG.error('MongoDB error: %s', e)
+
+        # processing latency
+        delta = datetime.datetime.utcnow() - receive_time
+        latency = int(delta.days * 24 * 60 * 60 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000)
+
+        try:
+            self.db.metrics.update(
+                {
+                    "group": "alerts",
+                    "name": "processed",
+                    "type": "timer",
+                    "title": "Alert process rate and duration",
+                    "description": "Time taken to process the alert on the server"
                 },
                 {
                     '$inc': {"count": 1, "totalTime": latency}
