@@ -72,31 +72,20 @@ $ alerta --log-dir=/tmp --debug --foreground --use-stderr
 $ alerta-api --log-dir=/tmp --debug --use-stderr
 ```
 
-To use the alert consoles modify `$HOME/.alerta.conf` like so:
+To use the alert console modify `$HOME/.alerta.conf` so that the API uses a free port and static content can be found:
 ```
 [DEFAULT]
 api_port = 8000
 
 [alerta-api]
-dashboard_dir = /path/to/alerta/dashboard
+dashboard_dir = /path/to/alerta/dashboard/v2/assets/
 ```
 
-For example, if the repo was cloned to `/home/foobar/git/alerta` then the `dashboard_dir` directory path will be `/home/foobar/git/alerta/dashboard`.
+For example, if the repo was cloned to `/home/foobar/git/alerta` then the `dashboard_dir` directory path will be `/home/foobar/git/alerta/dashboard/v2/assets/`.
 
-Then edit the port in `dashboard/v1/js/console.js`:
-```
-var api_server = document.domain + ':8000';
-```
-
-And edit the port in `dashboard/v2/js/console.js`:
-```
-var API_HOST = document.domain + ":8000";
-```
-
-And then the alert consoles (both version 1 and 2) can be found at:
+And then the alert console can be found at:
 
 ````
-http://localhost:8000/alerta/dashboard/v1/console.html
 http://localhost:8000/alerta/dashboard/v2/console.html
 ```
 
