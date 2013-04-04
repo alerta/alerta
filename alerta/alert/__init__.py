@@ -232,6 +232,8 @@ class Alert(object):
                 match = None
                 pattern = None
 
+            LOG.critical('Transform alert => %s', self.alert)
+
             if match:
                 LOG.debug('Matched %s for %s', pattern, self.get_type())
 
@@ -267,15 +269,19 @@ class Alert(object):
                 if 'parser' in c:
                     LOG.debug('Loading parser %s', c['parser'])
 
-                    kwargs.update(self.alert)
+                    context = kwargs
+                    context.update(self.alert)
+
                     try:
-                        exec(open('%s/%s.py' % (CONF.parser_dir, c['parser']))) in globals(), kwargs
+                        exec(open('%s/%s.py' % (CONF.parser_dir, c['parser']))) in globals(), context
                         LOG.info('Parser %s/%s exec OK', CONF.parser_dir, c['parser'])
                     except Exception, e:
                         LOG.warning('Parser %s failed: %s', c['parser'], e)
 
-                    if 'suppress' in kwargs:
-                        suppress = kwargs['suppress']
+                    self.alert = context
+
+                    if 'suppress' in context:
+                        suppress = context['suppress']
 
                 # 3. Suppress based on results of 1 or 2
                 if 'suppress' in c:

@@ -11,7 +11,7 @@ from alerta.alert import Alert, Heartbeat
 from alerta.alert import syslog
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -75,8 +75,8 @@ class SyslogDaemon(Daemon):
                             client.close()
                             LOG.debug('Syslog TCP data received: %s', data)
 
-                        syslogAlert = self.parse_syslog(data)
-                        if syslogAlert:
+                        syslogAlerts = self.parse_syslog(data)
+                        for syslogAlert in syslogAlerts:
                             self.mq.send(syslogAlert)
                     count += 1
                 if not ip or count % 5 == 0:
@@ -96,10 +96,14 @@ class SyslogDaemon(Daemon):
     def parse_syslog(self, data):
 
         LOG.debug('Parsing syslog message...')
+        syslogAlerts = list()
 
         for msg in data.split('\n'):
 
-            if 'last message repeated' in msg:
+            # NOTE: if syslog msgs aren't being split on newlines and #012 appears instead then
+            #       try adding "$EscapeControlCharactersOnReceive off" to rsyslog.conf
+
+            if not msg or 'last message repeated' in msg:
                 continue
 
             if re.match('<\d+>1', msg):
@@ -117,7 +121,7 @@ class SyslogDaemon(Daemon):
                     LOG.info("Parsed RFC 5424 message OK")
                 else:
                     LOG.error("Could not parse syslog RFC 5424 message: %s", msg)
-                    return
+                    continue
 
             else:
                 # Parse RFC 3164 compliant message
@@ -130,7 +134,7 @@ class SyslogDaemon(Daemon):
                     LOG.info("Parsed RFC 3164 message OK")
                 else:
                     LOG.error("Could not parse syslog RFC 3164 message: %s", msg)
-                    return
+                    continue
 
             facility, level = syslog.decode_priority(PRI)
 
@@ -172,9 +176,11 @@ class SyslogDaemon(Daemon):
             if suppress:
                 LOG.warning('Suppressing %s.%s alert', facility, level)
                 LOG.debug('%s', syslogAlert)
-                return
+                continue
 
-            return syslogAlert
+            syslogAlerts.append(syslogAlert)
+
+        return syslogAlerts
 
 
 
