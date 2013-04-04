@@ -61,7 +61,7 @@ def test():
 # Returns a list of alerts
 @app.route('/alerta/api/v2/alerts', methods=['GET'])
 @jsonp
-def get_alerts_api():
+def get_alerts():
 
     query_time = datetime.datetime.utcnow()
 
