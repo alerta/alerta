@@ -412,7 +412,7 @@ def create_heartbeat():
 @app.route('/alerta/widgets/v2/severity')
 def severity_widget():
 
-    label = request.args.get('label')
+    label = request.args.get('label', 'Alert Severity')
 
     return render_template('widgets/severity.html', config=CONF, label=label, query=request.query_string)
 
@@ -420,7 +420,7 @@ def severity_widget():
 @app.route('/alerta/widgets/v2/details')
 def details_widget():
 
-    label = request.args.get('label')
+    label = request.args.get('label', 'Alert Details')
 
     return render_template('widgets/details.html', config=CONF, label=label, query=request.query_string)
 
@@ -429,6 +429,7 @@ def details_widget():
 def console(name):
 
     return render_template(name, config=CONF)
+
 
 # Only use when running API in stand-alone mode during testing
 @app.route('/alerta/dashboard/v2/assets/<path:filename>')

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <!-- link href='http://fonts.googleapis.com/css?family=Sintony:400,700' rel='stylesheet' type='text/css' -->
 
@@ -16,6 +16,7 @@
 
 <div class="row show-grid">
     <div class="span3">
+        <a href="./details?label={{ label }}{% if query %} }}&{{ query|safe }}{% endif %}" target="_blank">
         <table class="table table-bordered table-condensed status-indicator" id="widget" data-label="widget">
             <thead id="widget-overall" class="status-indicator-overall">
             <tr>
@@ -32,6 +33,7 @@
             </tr>
             </tbody>
         </table>
+        </a>
     </div>
 </div>
 
