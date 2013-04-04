@@ -110,14 +110,14 @@ def status():
 
     metrics = db.get_metrics()
 
-    kill_auto_refresh = {
+    auto_refresh_allow = {
         "group": "switch",
         "name": "auto_refresh_allow",
         "type": "text",
         "title": "Alert console auto-refresh",
         "description": "Allows auto-refresh of alert consoles to be turned off remotely",
-        "value": switches.SWITCH_STATUS[switches.AUTO_REFRESH_ALLOW],
+        "value": "ON" if switches.SWITCH_STATUS[switches.AUTO_REFRESH_ALLOW] else "OFF",
     }
-    metrics.append(kill_auto_refresh)
+    metrics.append(auto_refresh_allow)
 
     return jsonify(application="alerta", time=int(time.time() * 1000), metrics=metrics)
