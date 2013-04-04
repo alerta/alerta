@@ -232,8 +232,6 @@ class Alert(object):
                 match = None
                 pattern = None
 
-            LOG.critical('Transform alert => %s', self.alert)
-
             if match:
                 LOG.debug('Matched %s for %s', pattern, self.get_type())
 
