@@ -12,6 +12,7 @@ from alerta.common import config
 from alerta.alert import Alert, Heartbeat, severity
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
+from alerta.common import dedup
 
 Version = '2.0.0'
 
@@ -52,7 +53,7 @@ def init_targets():
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, mq, queue):
+    def __init__(self, mq, queue, dedup):
 
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
@@ -60,6 +61,7 @@ class WorkerThread(threading.Thread):
         self.last_event = {}
         self.queue = queue   # internal queue
         self.mq = mq               # message broker
+        self.dedup = dedup
 
     def run(self):
 
@@ -114,7 +116,7 @@ class WorkerThread(threading.Thread):
                 LOG.warning('Unknown ping return code: %s', rc)
                 continue
 
-            if self.last_event.get(resource, None) != event:
+            if self.dedup.is_send(environment, resource, event, 5):
 
                 # Defaults
                 group = 'Network'
@@ -141,12 +143,13 @@ class WorkerThread(threading.Thread):
                     summary=summary,
                     raw_data=raw_data,
                 )
-
                 self.mq.send(pingAlert)
-                self.last_event[resource] = event
+
+            self.dedup.update(environment, resource, event)
+            LOG.info(self.dedup)
 
             self.queue.task_done()
-            LOG.info('%s check complete.', self.getName())
+            LOG.info('%s ping complete.', self.getName())
 
         self.queue.task_done()
 
@@ -207,13 +210,15 @@ class PingerDaemon(Daemon):
         self.mq = Messaging()
         self.mq.connect(callback=PingerMessage(self.mq))
 
+        self.dedup = dedup.DeDup()
+
         # Initialiase ping targets
         ping_list = init_targets()
 
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.mq, self.queue)
+            w = WorkerThread(self.mq, self.queue, self.dedup)
             try:
                 w.start()
             except Exception, e:
@@ -235,7 +240,7 @@ class PingerDaemon(Daemon):
                 heartbeat = Heartbeat(version=Version)
                 self.mq.send(heartbeat)
 
-                LOG.critical('Ping queue length is %d', self.queue.qsize())
+                LOG.info('Ping queue length is %d', self.queue.qsize())
                 time.sleep(CONF.loop_every)
 
             except (KeyboardInterrupt, SystemExit):
