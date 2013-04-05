@@ -34,7 +34,6 @@ class CheckerClient(object):
             rc = check.returncode
             LOG.debug('Nagios plugin %s => %s (rc=%d)', CONF.nagios_cmd, stdout, rc)
 
-
             if rc == 0:
                 sev = severity.NORMAL
             elif rc == 1:
