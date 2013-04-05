@@ -35,9 +35,8 @@ class DynectDaemon(Daemon):
 
         self.info = {}
         self.last_info = {}
-        self.count = {}
         self.updating = False
-        self.last_change = {}
+        self.dedup = DeDup()
 
     def run(self):
 
@@ -70,19 +69,10 @@ class DynectDaemon(Daemon):
 
         for resource in self.info:
 
-            LOG.debug('resource %s', resource)
-
             if resource not in self.last_info:
-                self.count[resource] = 0
                 continue
-            LOG.debug('info => %s', self.info[resource])
-            LOG.debug('last info => %s', self.last_info[resource])
 
-            self.count[resource] += 1
-            LOG.debug('count = %s', self.count[resource])
-
-            if (self.last_info[resource]['status'] != self.info[resource]['status']
-                    or self.count[resource] == 1 or self.count[resource] % 10):
+            if self.last_info[resource]['status'] != self.info[resource]['status']:
 
                 if resource.startswith('gslb-'):
 
@@ -137,25 +127,29 @@ class DynectDaemon(Daemon):
                 summary = None
                 raw_data = self.info[resource]['rawData']
 
-                dynectAlert = Alert(
-                    resource=resource,
-                    event=event,
-                    correlate=correlate,
-                    group=group,
-                    value=value,
-                    severity=sev,
-                    environment=environment,
-                    service=service,
-                    text=text,
-                    event_type='dynectAlert',
-                    tags=tags,
-                    timeout=timeout,
-                    threshold_info=threshold_info,
-                    summary=summary,
-                    raw_data=raw_data,
-                )
+                if self.dedup.is_send(environment, resource, event, severity, 5):
 
-                self.mq.send(dynectAlert)
+                    dynectAlert = Alert(
+                        resource=resource,
+                        event=event,
+                        correlate=correlate,
+                        group=group,
+                        value=value,
+                        severity=sev,
+                        environment=environment,
+                        service=service,
+                        text=text,
+                        event_type='dynectAlert',
+                        tags=tags,
+                        timeout=timeout,
+                        threshold_info=threshold_info,
+                        summary=summary,
+                        raw_data=raw_data,
+                    )
+                    self.mq.send(dynectAlert)
+
+                self.dedup.update(environment, resource, event, severity)
+                LOG.info(self.dedup)
 
     def check_weight(self, parent, resource):
         

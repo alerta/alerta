@@ -16,6 +16,7 @@ from alerta.common import config
 from alerta.alert import Alert, Heartbeat, severity
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
+from alerta.common.dedup import DeDup
 from alerta.common.ganglia import Gmetric
 
 Version = '2.0.0'
@@ -87,14 +88,15 @@ class WorkerThread(threading.Thread):
         self.currentState = {}
         self.previousEvent = {}
 
-        self.input_queue = queue   # internal queue
+        self.queue = queue   # internal queue
         self.mq = mq               # message broker
-
+        self.dedup = dedup
+        
     def run(self):
 
         while True:
             LOG.debug('Waiting on input queue...')
-            check = self.input_queue.get()
+            check = self.queue.get()
 
             if not check:
                 LOG.info('%s is shutting down.', self.getName())
@@ -264,48 +266,16 @@ class WorkerThread(threading.Thread):
                 g.metric_send('response_time-%s' % check['resource'], '%d' % rtt, 'uint16',
                               units='ms', group=','.join(check['service']), spoof=CONF.gmetric_spoof)
 
-            # Set necessary state variables if currentState is unknown
-            res = check['resource']
-            if res not in self.currentState:
-                self.currentState[res] = event
-                self.currentCount[(res, event)] = 0
-                self.previousEvent[res] = event
+            resource = check['resource']
+            correlate = _HTTP_ALERTS
+            group = 'Web'
+            environment = check['environment']
+            service = check['service']
+            text = text
+            tags = check.get('tags', list())
+            threshold_info = "%s : RT > %d RT > %d x %s" % (check['url'], warn_thold, crit_thold, check.get('count', 1))
 
-            if self.currentState[res] != event:                                   # Change of threshold state
-                self.currentCount[(res, event)] = self.currentCount.get((res, event), 0) + 1
-                self.currentCount[(res, self.currentState[res])] = 0              # zero-out previous event counter
-                self.currentState[res] = event
-            elif self.currentState[res] == event:                                 # Threshold state has not changed
-                self.currentCount[(res, event)] += 1
-
-            LOG.debug('currentState = %s, currentCount = %d', self.currentState[res], self.currentCount[(res, event)])
-
-            # Determine if should send a repeat alert
-            if self.currentCount[(res, event)] < check.get('count', 1):
-                repeat = False
-                LOG.debug('Send repeat alert = %s (curr %s < threshold %s)', repeat, self.currentCount[(res, event)],
-                          check.get('count', 1))
-            else:
-                repeat = (self.currentCount[(res, event)] - check.get('count', 1)) % check.get('repeat', 1) == 0
-                LOG.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, self.currentCount[(res, event)],
-                          check.get('count', 1), check.get('repeat', 1))
-
-            LOG.debug('Send alert if prevEvent %s != %s AND thresh %d == %s', self.previousEvent[res], event,
-                      self.currentCount[(res, event)], check.get('count', 1))
-
-            # Determine if current threshold count requires an alert
-            if ((self.previousEvent[res] != event and self.currentCount[(res, event)] == check.get('count', 1))
-                    or (self.previousEvent[res] == event and repeat)):
-
-                resource = check['resource']
-                correlate = _HTTP_ALERTS
-                group = 'Web'
-                environment = check['environment']
-                service = check['service']
-                text = text
-                tags = check.get('tags', list())
-                threshold_info = "%s : RT > %d RT > %d x %s" % (
-                    check['url'], warn_thold, crit_thold, check.get('count', 1))
+            if self.dedup.is_send(environment, resource, event, severity, 5):
 
                 urlmonAlert = Alert(
                     resource=resource,
@@ -323,13 +293,13 @@ class WorkerThread(threading.Thread):
                 )
                 self.mq.send(urlmonAlert)
 
-                # Keep track of previous event
-                self.previousEvent[res] = event
+            self.dedup.update(environment, resource, event, severity)
+            LOG.info(self.dedup)
 
-            self.input_queue.task_done()
+            self.queue.task_done()
             LOG.info('%s check complete.', self.getName())
 
-        self.input_queue.task_done()
+        self.queue.task_done()
 
 
 class UrlmonMessage(MessageHandler):
@@ -355,13 +325,15 @@ class UrlmonDaemon(Daemon):
         self.mq = Messaging()
         self.mq.connect(callback=UrlmonMessage(self.mq))
 
+        self.dedup = DeDup()
+
         # Initialiase alert rules
         urls = init_urls()
 
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.mq, self.queue)
+            w = WorkerThread(self.mq, self.queue, self.dedup)
             try:
                 w.start()
             except Exception, e:

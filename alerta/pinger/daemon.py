@@ -12,7 +12,7 @@ from alerta.common import config
 from alerta.alert import Alert, Heartbeat, severity
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
-from alerta.common import dedup
+from alerta.common.dedup import DeDup
 
 Version = '2.0.0'
 
@@ -116,15 +116,15 @@ class WorkerThread(threading.Thread):
                 LOG.warning('Unknown ping return code: %s', rc)
                 continue
 
-            if self.dedup.is_send(environment, resource, event, 5):
+            # Defaults
+            group = 'Network'
+            correlate = _PING_ALERTS
+            timeout = None
+            threshold_info = None
+            summary = None
+            raw_data = stdout
 
-                # Defaults
-                group = 'Network'
-                correlate = _PING_ALERTS
-                timeout = None
-                threshold_info = None
-                summary = None
-                raw_data = stdout
+            if self.dedup.is_send(environment, resource, event, severity, 5):
 
                 pingAlert = Alert(
                     resource=resource,
@@ -145,7 +145,7 @@ class WorkerThread(threading.Thread):
                 )
                 self.mq.send(pingAlert)
 
-            self.dedup.update(environment, resource, event)
+            self.dedup.update(environment, resource, event, severity)
             LOG.info(self.dedup)
 
             self.queue.task_done()
@@ -161,7 +161,7 @@ class WorkerThread(threading.Thread):
         if timeout > _MAX_TIMEOUT:
             timeout = _MAX_TIMEOUT
 
-        cmd = "ping -q -c %s -i %s -w %s %s" % (count, interval, timeout, node)
+        cmd = "ping -q -c %s -i %s -t %s %s" % (count, interval, timeout, node)
         ping = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout = ping.communicate()[0]
         rc = ping.returncode
@@ -210,7 +210,7 @@ class PingerDaemon(Daemon):
         self.mq = Messaging()
         self.mq.connect(callback=PingerMessage(self.mq))
 
-        self.dedup = dedup.DeDup()
+        self.dedup = DeDup()
 
         # Initialiase ping targets
         ping_list = init_targets()

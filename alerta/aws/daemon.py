@@ -11,6 +11,7 @@ import boto.ec2
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
+from alerta.common.dedup import DeDup
 from alerta.alert import Alert, Heartbeat, severity
 from alerta.common.mq import Messaging, MessageHandler
 
@@ -39,6 +40,7 @@ class AwsDaemon(Daemon):
         self.info = {}
         self.last = {}
         self.lookup = {}
+        self.dedup = DeDup()
 
     def run(self):
 
@@ -246,23 +248,28 @@ class AwsDaemon(Daemon):
                     more_info = None
                     graph_urls = None
 
-                    awsAlert = Alert(
-                        resource=resource,
-                        event=event,
-                        correlate=correlate,
-                        group=group,
-                        value=value,
-                        severity=sev,
-                        environment=environment,
-                        service=service,
-                        text=text,
-                        event_type='cloudAlert',
-                        tags=tags,
-                        timeout=timeout,
-                        threshold_info=threshold_info,
-                        summary=summary,
-                        raw_data=raw_data,
-                        more_info=more_info,
-                        graph_urls=graph_urls,
-                    )
-                    self.mq.send(awsAlert)
+                    if self.dedup.is_send(environment, resource, event, severity, 5):
+
+                        awsAlert = Alert(
+                            resource=resource,
+                            event=event,
+                            correlate=correlate,
+                            group=group,
+                            value=value,
+                            severity=sev,
+                            environment=environment,
+                            service=service,
+                            text=text,
+                            event_type='cloudAlert',
+                            tags=tags,
+                            timeout=timeout,
+                            threshold_info=threshold_info,
+                            summary=summary,
+                            raw_data=raw_data,
+                            more_info=more_info,
+                            graph_urls=graph_urls,
+                        )
+                        self.mq.send(awsAlert)
+
+                    self.dedup.update(environment, resource, event, severity)
+                    LOG.info(self.dedup)

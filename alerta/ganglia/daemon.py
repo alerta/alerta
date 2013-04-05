@@ -11,6 +11,7 @@ from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.alert import Alert, Heartbeat, severity
 from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.dedup import DeDup
 
 Version = '2.0.1'
 
@@ -47,9 +48,7 @@ class GangliaDaemon(Daemon):
 
         Daemon.__init__(self, prog)
 
-        self.current_count = {}
-        self.current_state = {}
-        self.previous_severity = {}
+        self.dedup = DeDup()
 
     def run(self):
         
@@ -288,59 +287,19 @@ class GangliaDaemon(Daemon):
 
                     if result:
 
-                        # Set necessary state variables if current_state is unknown
-                        if (resource, rule['event']) not in self.current_state:
-                            self.current_state[(resource, rule['event'])] = sev
-                            self.current_count[(resource, rule['event'], sev)] = 0
-                            self.previous_severity[(resource, rule['event'])] = sev
+                        event = rule['event']
+                        group = rule['group']
+                        value = "%s%s" % (calculated_value, GangliaDaemon.format_units(metric[resource]['units']))
+                        severity = sev
+                        environment = metric[resource]['environment']
+                        service = metric[resource]['service']
+                        text = metric[resource]['text'][index]
+                        tags = metric[resource]['tags']
+                        threshold_info = ','.join(rule['thresholdInfo'])
+                        more_info = metric[resource]['moreInfo']
+                        graph_urls = metric[resource]['graphUrls']
 
-                        if self.current_state[(resource, rule['event'])] != sev:  # Change of threshold state
-                            self.current_count[(resource, rule['event'], sev)] = self.current_count.get(
-                                (resource, rule['event'], sev), 0) + 1
-                            self.current_count[(resource, rule['event'], self.current_state[(resource, rule['event'])])] = 0      # zero-out previous sev counter
-                            self.current_state[(resource, rule['event'])] = sev
-                        elif self.current_state[(resource, rule['event'])] == sev:  # Threshold state has not changed
-                            self.current_count[(resource, rule['event'], sev)] += 1
-
-                        LOG.debug('calculated_value = %s, current_state = %s, current_count = %d',
-                                  calculated_value, self.current_state[(resource, rule['event'])],
-                                  self.current_count[(resource, rule['event'], sev)])
-
-                        # Determine if should send a repeat alert
-                        try:
-                            repeat = (self.current_count[(resource, rule['event'], sev)]
-                                      - rule.get('count', 1)) % rule.get('repeat', 1) == 0
-                        except Exception:
-                            repeat = False
-
-                        LOG.debug('Send alert if prevSev %s != %s AND thresh %d == %s',
-                                  self.previous_severity[(resource, rule['event'])], sev,
-                                  self.current_count[(resource, rule['event'], sev)], rule.get('count', 1))
-                        LOG.debug('Repeat? %s (%d - %d %% %d)', repeat,
-                                  self.current_count[(resource, rule['event'], sev)], rule.get('count', 1),
-                                  rule.get('repeat', 1))
-
-                        # Determine if current threshold count requires an alert
-                        if ((self.previous_severity[(resource, rule['event'])] != sev and self.current_count[
-                            (resource, rule['event'], sev)] == rule.get('count', 1))
-                                or (self.previous_severity[(resource, rule['event'])] == sev and repeat)):
-
-                            LOG.debug('%s %s %s %s rule fired %s %s %s %s',
-                                      ','.join(metric[resource]['environment']),
-                                      ','.join(metric[resource]['service']), sev, rule['event'], resource,
-                                      ti, rule['text'][index], calculated_value)
-
-                            event = rule['event']
-                            group = rule['group']
-                            value = "%s%s" % (calculated_value, GangliaDaemon.format_units(metric[resource]['units']))
-                            severity = sev
-                            environment = metric[resource]['environment']
-                            service = metric[resource]['service']
-                            text = metric[resource]['text'][index]
-                            tags = metric[resource]['tags']
-                            threshold_info = ','.join(rule['thresholdInfo'])
-                            more_info = metric[resource]['moreInfo']
-                            graph_urls = metric[resource]['graphUrls']
+                        if self.dedup.is_send(environment, resource, event, severity, 5):
 
                             gangliaAlert = Alert(
                                 resource=resource,
@@ -360,10 +319,10 @@ class GangliaDaemon(Daemon):
                             )
                             self.mq.send(gangliaAlert)
 
-                            # Keep track of previous severity
-                            self.previous_severity[(resource, rule['event'])] = sev
+                        self.dedup.update(environment, resource, event, severity)
+                        LOG.info(self.dedup)
 
-                            break  # First match wins
+                        break  # First match wins
                     index += 1
 
     @staticmethod
