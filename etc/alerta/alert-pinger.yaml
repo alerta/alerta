@@ -1,0 +1,9 @@
+---
+- environment: [PROD]
+  service: [Web]
+  targets:
+    - search.twitter.com
+    - www.nytimes.com
+    - www.google.com
+    - www.nyc.gov
+    - newyork.yankees.mlb.com
