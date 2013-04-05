@@ -11,6 +11,7 @@ from alerta.common import dedup
 
 # set up local dedup tracker
 dedup = dedup.DeDup()
+print '>>> %s' % dedup
 
 print 'create new alert...'
 print 'is dup? False=%s' % dedup.is_duplicate(['RELEASE'], 'host111', 'node_down')

@@ -57,13 +57,13 @@ class DeDup(object):
 
         str = ''
         for environment, resource in DeDup.current.keys():
-            str += 'DeDup(environment=%s, resource= %s, event=%s, previous=%s, count=%s)' % (
+            str += 'DeDup(environment=%s, resource= %s, event=%s, previous=%s, count=%s)\n' % (
                 ','.join(environment),
                 resource,
                 DeDup.current[(environment, resource)],
                 DeDup.previous.get((environment, resource), 'n/a'),
-                DeDup.count[(environment, resource, DeDup.current[(environment, resource)])]) + '\n'
-        return str
+                DeDup.count[(environment, resource, DeDup.current[(environment, resource)])])
+        return str if str != '' else 'DeDup()'
 
 
 
