@@ -1,3 +1,4 @@
+---
 # Nova = local0
 - priority: local0.*
   service: [Nova]
