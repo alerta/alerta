@@ -15,7 +15,7 @@ import urllib2
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat, status
+from alerta.alert import Alert, Heartbeat, status_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
 
@@ -71,7 +71,7 @@ class IrcbotMessage(MessageHandler):
                 LOG.info('%s : Send IRC message to %s', ircAlert.get_id(), CONF.irc_channel)
                 try:
                     msg = 'PRIVMSG %s :%s [%s] %s' % (CONF.irc_channel, ircAlert.get_id(short=True),
-                                                      ircAlert.alert.get('status', status.UNKNOWN), ircAlert.summary)
+                                                      ircAlert.alert.get('status', status_code.UNKNOWN), ircAlert.summary)
                     self.irc.send(msg + '\r\n')
                 except Exception, e:
                     LOG.error('%s : IRC send failed - %s', ircAlert.get_id(), e)

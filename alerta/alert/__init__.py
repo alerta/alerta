@@ -11,7 +11,7 @@ from __builtin__ import staticmethod
 
 # import pytz
 
-from alerta.alert import severity, status
+from alerta.alert import severity_code, status_code
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
@@ -54,8 +54,8 @@ ATTRIBUTES = [
 
 
 class Alert(object):
-    def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status.UNKNOWN,
-                 severity=severity.NORMAL, previous_severity=severity.UNKNOWN, environment=None, service=None,
+    def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status_code.UNKNOWN,
+                 severity=severity_code.NORMAL, previous_severity=severity_code.UNKNOWN, environment=None, service=None,
                  text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
                  threshold_info='n/a', summary=None, timeout=None, alertid=None, last_receive_id=None,
                  create_time=None, expire_time=None, receive_time=None, last_receive_time=None, trend_indication=None,
@@ -176,9 +176,9 @@ class Alert(object):
             correlate=alert.get('correlatedEvents', None),
             group=alert.get('group', None),
             value=alert.get('value', None),
-            status=status.parse_status(alert.get('status', None)),
-            severity=severity.parse_severity(alert.get('severity', None)),
-            previous_severity=severity.parse_severity(alert.get('previousSeverity', None)),
+            status=status_code.parse_status(alert.get('status', None)),
+            severity=severity_code.parse_severity(alert.get('severity', None)),
+            previous_severity=severity_code.parse_severity(alert.get('previousSeverity', None)),
             environment=alert.get('environment', None),
             service=alert.get('service', None),
             text=alert.get('text', None),

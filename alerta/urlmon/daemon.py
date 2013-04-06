@@ -13,7 +13,7 @@ HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
 from alerta.common import log as logging
 from alerta.common import config
-from alerta.alert import Alert, Heartbeat, severity
+from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
@@ -79,7 +79,7 @@ class NoRedirection(urllib2.HTTPRedirectHandler):
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, mq, queue):
+    def __init__(self, mq, queue, dedup):
 
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
@@ -176,37 +176,37 @@ class WorkerThread(threading.Thread):
 
             if not code:
                 event = 'HttpConnectionError'
-                sev = severity.MAJOR
+                severity = severity_code.MAJOR
                 value = reason
                 text = 'Error during connection or data transfer (timeout=%d).' % _REQUEST_TIMEOUT
             elif code >= 500:
                 event = 'HttpServerError'
-                sev = severity.MAJOR
+                severity = severity_code.MAJOR
                 value = '%s (%d)' % (status, code)
                 text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
             elif code >= 400:
                 event = 'HttpClientError'
-                sev = severity.MINOR
+                severity = severity_code.MINOR
                 value = '%s (%d)' % (status, code)
                 text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
             elif code >= 300:
                 event = 'HttpRedirection'
-                sev = severity.MINOR
+                severity = severity_code.MINOR
                 value = '%s (%d)' % (status, code)
                 text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
             elif code >= 200:
                 event = 'HttpResponseOK'
-                sev = severity.NORMAL
+                severity = severity_code.NORMAL
                 value = '%s (%d)' % (status, code)
                 text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
                 if rtt > crit_thold:
                     event = 'HttpResponseSlow'
-                    sev = severity.CRITICAL
+                    severity = severity_code.CRITICAL
                     value = '%dms' % rtt
                     text = 'Website available but exceeding critical RT thresholds of %dms' % crit_thold
                 elif rtt > warn_thold:
                     event = 'HttpResponseSlow'
-                    sev = severity.WARNING
+                    severity = severity_code.WARNING
                     value = '%dms' % rtt
                     text = 'Website available but exceeding warning RT thresholds of %dms' % warn_thold
                 if search_string and body:
@@ -220,7 +220,7 @@ class WorkerThread(threading.Thread):
                             break
                     if not found:
                         event = 'HttpContentError'
-                        sev = severity.MINOR
+                        severity = severity_code.MINOR
                         value = 'Search failed'
                         text = 'Website available but pattern "%s" not found' % search_string
                 elif rule and body:
@@ -236,17 +236,17 @@ class WorkerThread(threading.Thread):
                     else:
                         if not eval(rule):
                             event = 'HttpContentError'
-                            sev = severity.MINOR
+                            severity = severity_code.MINOR
                             value = 'Rule failed'
                             text = 'Website available but rule evaluation failed (%s)' % rule
             elif code >= 100:
                 event = 'HttpInformational'
-                sev = severity.NORMAL
+                severity = severity_code.NORMAL
                 value = '%s (%d)' % (status, code)
                 text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
             else:
                 event = 'HttpUnknownError'
-                sev = severity.WARNING
+                severity = severity_code.WARNING
                 value = 'UNKNOWN'
                 text = 'HTTP request resulted in an unhandled error.'
 
@@ -275,7 +275,7 @@ class WorkerThread(threading.Thread):
             tags = check.get('tags', list())
             threshold_info = "%s : RT > %d RT > %d x %s" % (check['url'], warn_thold, crit_thold, check.get('count', 1))
 
-            if self.dedup.is_send(environment, resource, event, severity, 5):
+            if self.dedup.is_send(environment, resource, event, severity_code, 5):
 
                 urlmonAlert = Alert(
                     resource=resource,
@@ -283,7 +283,7 @@ class WorkerThread(threading.Thread):
                     correlate=correlate,
                     group=group,
                     value=value,
-                    severity=sev,
+                    severity=severity,
                     environment=environment,
                     service=service,
                     text=text,
@@ -293,7 +293,7 @@ class WorkerThread(threading.Thread):
                 )
                 self.mq.send(urlmonAlert)
 
-            self.dedup.update(environment, resource, event, severity)
+            self.dedup.update(environment, resource, event, severity_code)
             LOG.info(self.dedup)
 
             self.queue.task_done()

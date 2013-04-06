@@ -6,7 +6,7 @@ import Queue
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat, severity, status
+from alerta.alert import Alert, Heartbeat, severity_code, status_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 
@@ -105,7 +105,7 @@ class WorkerThread(threading.Thread):
                 LOG.info('%s : Event and/or severity change %s %s -> %s update details', alert['id'], alert['event'],
                          previous_severity, alert['severity'])
 
-                trend_indication = severity.trend(previous_severity, alert['severity'])
+                trend_indication = severity_code.trend(previous_severity, alert['severity'])
 
                 update = {
                     "event": alert['event'],
@@ -130,7 +130,7 @@ class WorkerThread(threading.Thread):
                 correlatedAlert = self.db.update_alert(environment=alert['environment'], resource=alert['resource'],
                                                        event=alert['event'], update=update)
 
-                new_status = severity.status_from_severity(previous_severity, alert['severity'])
+                new_status = severity_code.status_from_severity(previous_severity, alert['severity'])
                 if new_status:
                     self.db.update_status(environment=alert['environment'], resource=alert['resource'],
                                           event=alert['event'], status=new_status)
@@ -148,7 +148,7 @@ class WorkerThread(threading.Thread):
                 #                  2. push history
                 #                  3. set duplicate count to zero
 
-                trend_indication = severity.trend(severity.UNKNOWN, alert['severity'])
+                trend_indication = severity_code.trend(severity_code.UNKNOWN, alert['severity'])
 
                 newAlert = Alert(
                     resource=alert['resource'],
@@ -156,7 +156,7 @@ class WorkerThread(threading.Thread):
                     correlate=alert['correlatedEvents'],
                     group=alert['group'],
                     value=alert['value'],
-                    status=status.OPEN,
+                    status=status_code.OPEN,
                     severity=alert['severity'],
                     environment=alert['environment'],
                     service=alert['service'],
@@ -181,10 +181,10 @@ class WorkerThread(threading.Thread):
                 )
                 self.db.save_alert(newAlert)
 
-                new_status = severity.status_from_severity(severity.UNKNOWN, alert['severity'])
-                if new_status:
+                status = severity_code.status_from_severity(severity_code.UNKNOWN, alert['severity'])
+                if status:
                     self.db.update_status(environment=alert['environment'], resource=alert['resource'],
-                                          event=alert['event'], status=new_status)
+                                          event=alert['event'], status=status)
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(newAlert, CONF.outbound_queue)

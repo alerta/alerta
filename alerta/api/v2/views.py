@@ -15,7 +15,7 @@ from alerta.api.v2.management.views import switches
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.alert import Alert, Heartbeat, severity, status, ATTRIBUTES
+from alerta.alert import Alert, Heartbeat, severity_code, status_code, ATTRIBUTES
 from alerta.common.utils import DateEncoder
 
 Version = '2.0.7'
@@ -149,24 +149,24 @@ def get_alerts():
             "alerts": {
                 "alertDetails": alert_details,
                 "severityCounts": {
-                    "critical": severity_count[severity.CRITICAL],
-                    "major": severity_count[severity.MAJOR],
-                    "minor": severity_count[severity.MINOR],
-                    "warning": severity_count[severity.WARNING],
-                    "indeterminate": severity_count[severity.INDETERMINATE],
-                    "cleared": severity_count[severity.CLEARED],
-                    "normal": severity_count[severity.NORMAL],
-                    "informational": severity_count[severity.INFORM],
-                    "debug": severity_count[severity.DEBUG],
-                    "auth": severity_count[severity.AUTH],
-                    "unknown": severity_count[severity.UNKNOWN],
+                    "critical": severity_count[severity_code.CRITICAL],
+                    "major": severity_count[severity_code.MAJOR],
+                    "minor": severity_count[severity_code.MINOR],
+                    "warning": severity_count[severity_code.WARNING],
+                    "indeterminate": severity_count[severity_code.INDETERMINATE],
+                    "cleared": severity_count[severity_code.CLEARED],
+                    "normal": severity_count[severity_code.NORMAL],
+                    "informational": severity_count[severity_code.INFORM],
+                    "debug": severity_count[severity_code.DEBUG],
+                    "auth": severity_count[severity_code.AUTH],
+                    "unknown": severity_count[severity_code.UNKNOWN],
                 },
                 "statusCounts": {
-                    "open": status_count[status.OPEN],
-                    "ack": status_count[status.ACK],
-                    "closed": status_count[status.CLOSED],
-                    "expired": status_count[status.EXPIRED],
-                    "unknown": status_count[status.UNKNOWN],
+                    "open": status_count[status_code.OPEN],
+                    "ack": status_count[status_code.ACK],
+                    "closed": status_count[status_code.CLOSED],
+                    "expired": status_count[status_code.EXPIRED],
+                    "unknown": status_count[status_code.UNKNOWN],
                 },
                 "lastTime": last_time,
             },
@@ -225,7 +225,7 @@ def create_alert():
         correlate=data.get('correlatedEvents', None),
         group=data.get('group', None),
         value=data.get('value', None),
-        severity=severity.parse_severity(data.get('severity', None)),
+        severity=severity_code.parse_severity(data.get('severity', None)),
         environment=data.get('environment', None),
         service=data.get('service', None),
         text=data.get('text', None),

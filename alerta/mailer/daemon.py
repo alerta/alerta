@@ -4,7 +4,7 @@ import time
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat, severity
+from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.mail import Mailer
 from alerta.common.tokens import LeakyBucket
@@ -36,8 +36,8 @@ class MailerMessage(MessageHandler):
         current_severity, previous_severity = mailAlert.get_severity()
 
         # Only send email for CRITICAL, MAJOR or related alerts
-        if (current_severity not in [severity.CRITICAL, severity.MAJOR]
-                or previous_severity not in [severity.CRITICAL, severity.MAJOR]):
+        if (current_severity not in [severity_code.CRITICAL, severity_code.MAJOR]
+                or previous_severity not in [severity_code.CRITICAL, severity_code.MAJOR]):
             return
 
         email = Mailer(mailAlert)

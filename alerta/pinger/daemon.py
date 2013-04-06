@@ -9,7 +9,7 @@ import yaml
 
 from alerta.common import log as logging
 from alerta.common import config
-from alerta.alert import Alert, Heartbeat, severity
+from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
@@ -91,25 +91,25 @@ class WorkerThread(threading.Thread):
                 avg, max = rtt
                 if max > _CRIT_THRESHOLD:
                     event = 'PingSlow'
-                    sev = severity.CRITICAL
+                    severity = severity_code.CRITICAL
                     text = 'Node responded to ping in %s ms (> %s ms)' % (max, _CRIT_THRESHOLD)
                 elif max > _WARN_THRESHOLD:
                     event = 'PingSlow'
-                    sev = severity.WARNING
+                    severity = severity_code.WARNING
                     text = 'Node responded to ping in %s ms (> %s ms)' % (max, _WARN_THRESHOLD)
                 else:
                     event = 'PingOK'
-                    sev = severity.NORMAL
+                    severity = severity_code.NORMAL
                     text = 'Node responding to ping avg/max %s/%s ms.' % tuple(rtt)
                 value = '%s/%s ms' % tuple(rtt)
             elif rc == PING_FAILED:
                 event = 'PingFailed'
-                sev = severity.MAJOR
+                severity = severity_code.MAJOR
                 text = 'Node did not respond to ping or timed out within %s seconds' % _MAX_TIMEOUT
                 value = '%s%% packet loss' % loss
             elif rc == PING_ERROR:
                 event = 'PingError'
-                sev = severity.WARNING
+                severity = severity_code.WARNING
                 text = 'Could not ping node %s.' % resource
                 value = stdout
             else:
@@ -124,7 +124,7 @@ class WorkerThread(threading.Thread):
             summary = None
             raw_data = stdout
 
-            if self.dedup.is_send(environment, resource, event, severity, 5):
+            if self.dedup.is_send(environment, resource, event, severity_code, 5):
 
                 pingAlert = Alert(
                     resource=resource,
@@ -132,7 +132,7 @@ class WorkerThread(threading.Thread):
                     correlate=correlate,
                     group=group,
                     value=value,
-                    severity=sev,
+                    severity=severity,
                     environment=environment,
                     service=service,
                     text=text,
@@ -145,7 +145,7 @@ class WorkerThread(threading.Thread):
                 )
                 self.mq.send(pingAlert)
 
-            self.dedup.update(environment, resource, event, severity)
+            self.dedup.update(environment, resource, event, severity_code)
             LOG.info(self.dedup)
 
             self.queue.task_done()

@@ -19,7 +19,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.sender.client import SenderClient, Version
-from alerta.alert import severity
+from alerta.alert import severity_code
 
 LOG = logging.getLogger('alerta.sender')
 CONF = config.CONF
@@ -164,14 +164,14 @@ def main(argv):
             if not CONF.value:
                 parser.error("Must supply event value using -v or --value")
 
-            CONF.severity = severity.parse_severity(CONF.severity) or severity.NORMAL
+            CONF.severity = severity_code.parse_severity(CONF.severity) or severity_code.NORMAL
 
             if not CONF.severity:
-                CONF.severity = severity.NORMAL
+                CONF.severity = severity_code.NORMAL
             else:
-                CONF.severity = severity.parse_severity(CONF.severity)
-                if CONF.severity not in severity.ALL:
-                    parser.error("Severity must be one of %s" % ','.join(severity.ALL))
+                CONF.severity = severity_code.parse_severity(CONF.severity)
+                if CONF.severity not in severity_code.ALL:
+                    parser.error("Severity must be one of %s" % ','.join(severity_code.ALL))
 
             if not CONF.environment:
                 parser.error("Must supply one or more environments using -E or --environment")

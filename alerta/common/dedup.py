@@ -1,4 +1,6 @@
 
+from alerta.alert import severity_code
+
 
 class DeDup(object):
 

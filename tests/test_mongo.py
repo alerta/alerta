@@ -15,7 +15,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.server.database import Mongo
-from alerta.alert import Alert, severity
+from alerta.alert import Alert, severity_code
 
 LOG = logging.getLogger('alerta')
 LOG = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ logging.setup('alerta')
 db = Mongo()
 
 #print db.save_alert({''})
-alert3 = Alert('router55', 'Node_Down', severity=severity.INDETERMINATE, value='FAILED', timeout=600,
+alert3 = Alert('router55', 'Node_Down', severity=severity_code.INDETERMINATE, value='FAILED', timeout=600,
                environment=['PROD'], receive_time="2013-02-23T09:18:05.303Z", last_receive_time="2013-02-23T09:18:05.303Z",
                service=['Network', 'Common'], tags=['london', 'location:london', 'dc:location=london'],
                text="Node is not responding via ping.", origin="test3", correlate=['Node_Up', 'Node_Down'],

@@ -6,7 +6,7 @@ import shlex
 
 from alerta.common import log as logging
 from alerta.common import config
-from alerta.alert import Alert, Heartbeat, severity
+from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.api import ApiClient
 
 Version = '2.0.1'
@@ -35,16 +35,16 @@ class CheckerClient(object):
             LOG.debug('Nagios plugin %s => %s (rc=%d)', CONF.nagios_cmd, stdout, rc)
 
             if rc == 0:
-                sev = severity.NORMAL
+                severity = severity_code.NORMAL
             elif rc == 1:
-                sev = severity.WARNING
+                severity = severity_code.WARNING
             elif rc == 2:
-                sev = severity.CRITICAL
+                severity = severity_code.CRITICAL
             elif rc == 3:
-                sev = severity.UNKNOWN
+                severity = severity_code.UNKNOWN
             else:
                 rc = -1
-                sev = severity.INDETERMINATE
+                severity = severity_code.INDETERMINATE
 
             # Parse Nagios plugin check output
             text = ''
@@ -83,7 +83,7 @@ class CheckerClient(object):
                 correlate=CONF.correlate,
                 group=CONF.group,
                 value=value,
-                severity=sev,
+                severity=severity,
                 environment=CONF.environment,
                 service=CONF.service,
                 text=text + ' ' + long_text,

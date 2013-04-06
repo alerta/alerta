@@ -1,5 +1,5 @@
 
-from alerta.alert import severity
+from alerta.alert import severity_code
 
 SYSLOG_FACILITY_NAMES = [
     "kern",
@@ -40,14 +40,14 @@ SYSLOG_SEVERITY_NAMES = [
 ]
 
 _SYSLOG_SEVERITY_MAP = {
-    'emerg':   severity.CRITICAL,
-    'alert':   severity.CRITICAL,
-    'crit':    severity.MAJOR,
-    'err':     severity.MINOR,
-    'warning': severity.WARNING,
-    'notice':  severity.NORMAL,
-    'info':    severity.INFORM,
-    'debug':   severity.DEBUG,
+    'emerg':   severity_code.CRITICAL,
+    'alert':   severity_code.CRITICAL,
+    'crit':    severity_code.MAJOR,
+    'err':     severity_code.MINOR,
+    'warning': severity_code.WARNING,
+    'notice':  severity_code.NORMAL,
+    'info':    severity_code.INFORM,
+    'debug':   severity_code.DEBUG,
     }
 
 DEFAULT_UDP_PORT = 514
@@ -55,7 +55,7 @@ DEFAULT_TCP_PORT = 514
 
 
 def priority_to_code(name):
-    return _SYSLOG_SEVERITY_MAP.get(name, severity.UNKNOWN_SEV_CODE)
+    return _SYSLOG_SEVERITY_MAP.get(name, severity_code.UNKNOWN_SEV_CODE)
 
 
 

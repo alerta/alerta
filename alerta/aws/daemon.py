@@ -12,7 +12,7 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
-from alerta.alert import Alert, Heartbeat, severity
+from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 
 Version = '2.0.1'
@@ -211,6 +211,7 @@ class AwsDaemon(Daemon):
                     resource = instance
                     group = 'AWS/EC2'
                     value = self.info[instance][check]
+                    severity = severity_code.UNKNOWN
                     text = 'Instance was %s now it is %s' % (self.last[instance][check], self.info[instance][check])
                     environment = [self.info[instance]['stage']]
                     service = ['EC2']  # NOTE: Will be transformed to correct service using Ec2ServiceLookup
@@ -220,24 +221,24 @@ class AwsDaemon(Daemon):
                     # instance-state = pending | running | shutting-down | terminated | stopping | stopped
                     if check == 'state':
                         if self.info[instance][check] == 'running':
-                            sev = severity.NORMAL
+                            severity = severity_code.NORMAL
                         else:
-                            sev = severity.WARNING
+                            severity = severity_code.WARNING
 
                     # system-status = ok | impaired | initializing | insufficient-data | not-applicable
                     # instance status = ok | impaired | initializing | insufficient-data | not-applicable
                     elif check == 'status':
                         if self.info[instance][check] == 'ok:ok':
-                            sev = severity.NORMAL
+                            severity = severity_code.NORMAL
                             text = "System and instance status checks are ok"
                         elif self.info[instance][check].startswith('ok'):
-                            sev = severity.WARNING
+                            severity = severity_code.WARNING
                             text = 'Instance status check is %s' % self.info[instance][check].split(':')[1]
                         elif self.info[instance][check].endswith('ok'):
-                            sev = severity.WARNING
+                            severity = severity_code.WARNING
                             text = 'System status check is %s' % self.info[instance][check].split(':')[0]
                         else:
-                            sev = severity.WARNING
+                            severity = severity_code.WARNING
                             text = 'System status check is %s and instance status check is %s' % tuple(
                                 self.info[instance][check].split(':'))
 
@@ -248,7 +249,7 @@ class AwsDaemon(Daemon):
                     more_info = None
                     graph_urls = None
 
-                    if self.dedup.is_send(environment, resource, event, severity, 5):
+                    if self.dedup.is_send(environment, resource, event, severity_code, 5):
 
                         awsAlert = Alert(
                             resource=resource,
@@ -256,7 +257,7 @@ class AwsDaemon(Daemon):
                             correlate=correlate,
                             group=group,
                             value=value,
-                            severity=sev,
+                            severity=severity,
                             environment=environment,
                             service=service,
                             text=text,
@@ -271,5 +272,5 @@ class AwsDaemon(Daemon):
                         )
                         self.mq.send(awsAlert)
 
-                    self.dedup.update(environment, resource, event, severity)
+                    self.dedup.update(environment, resource, event, severity_code)
                     LOG.info(self.dedup)
