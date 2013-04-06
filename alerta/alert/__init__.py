@@ -63,73 +63,43 @@ class Alert(object):
 
         prog = os.path.basename(sys.argv[0])
 
-        self.alertid = alertid or str(uuid4())
+        self.resource = resource
+        self.event = event
+        self.correlate = correlate or list()
+        self.group = group
+        self.value = value
+        if status:
+            self.status = status
         self.severity = severity
         self.previous_severity = previous_severity
-
-        correlate = correlate or list()
-        environment = environment or ['PROD']
-        service = service or list()
-        tags = tags or list()
-        timeout = timeout or CONF.alert_timeout
-        graph_urls = graph_urls or list()
-
-        create_time = create_time or datetime.datetime.utcnow()
-        expire_time = expire_time or create_time + datetime.timedelta(seconds=timeout)
-
+        self.environment = environment or ['PROD']
+        self.service = service or list()
+        self.text = text
+        self.event_type = event_type
+        self.tags = tags
+        self.origin = origin or '%s/%s' % (prog, os.uname()[1])
+        self.repeat = repeat
+        self.duplicate_count = duplicate_count
+        self.threshold_info = threshold_info
         self.summary = summary or '%s - %s %s is %s on %s %s' % (
-            ','.join(environment), severity, event, value, ','.join(service), resource)
-
-        self.header = {
-            'type': event_type,
-            'correlation-id': self.alertid,
-        }
-
-        self.alert = {
-            'resource': resource,
-            'event': event,
-            'correlatedEvents': correlate,
-            'group': group,
-            'value': value,
-            'severity': severity,
-            'previousSeverity': previous_severity,
-            'environment': environment,
-            'service': service,
-            'text': text,
-            'type': event_type,
-            'tags': tags,
-            'origin': origin or '%s/%s' % (prog, os.uname()[1]),
-            'repeat': repeat,
-            'duplicateCount': duplicate_count,
-            'thresholdInfo': threshold_info,
-            'summary': self.summary,
-            'timeout': timeout,
-            'id': self.alertid,
-            'createTime': create_time,
-            'expireTime': expire_time,
-            'rawData': raw_data,
-            'moreInfo': more_info,
-            'graphUrls': graph_urls,
-        }
-
-        if status:
-            self.alert['status'] = status
-        if receive_time:
-            self.alert['receiveTime'] = receive_time
-        if last_receive_time:
-            self.alert['lastReceiveTime'] = last_receive_time
+            ','.join(self.environment), self.severity, self.event, self.value, ','.join(self.service), self.resource)
+        self.timeout = timeout or CONF.alert_timeout
+        self.alertid = alertid or str(uuid4())
         if last_receive_id:
-            self.alert['lastReceiveId'] = last_receive_id
+            self.last_receive_id = last_receive_id
+        self.create_time = create_time or datetime.datetime.utcnow()
+        self.expire_time = expire_time or self.create_time + datetime.timedelta(seconds=self.timeout)
+        if receive_time:
+            self.receive_time = receive_time
+        if last_receive_time:
+            self.last_receive_time = last_receive_time
         if trend_indication:
-            self.alert['trendIndication'] = trend_indication
+            self.trend_indication = trend_indication
+        self.raw_data = raw_data
+        self.more_info = more_info
+        self.graph_urls = graph_urls or list()
         if history:
-            self.alert['history'] = history
-
-    def __repr__(self):
-        return 'Alert(header=%r, alert=%r)' % (str(self.header), str(self.alert))
-
-    def __str__(self):
-        return json.dumps(self.alert, cls=DateEncoder, indent=4)
+            self.history = history
 
     def get_id(self, short=False):
         if short:
@@ -138,19 +108,71 @@ class Alert(object):
             return self.alertid
 
     def get_header(self):
-        return self.header
+
+        header = {
+            'type': self.event_type,
+            'correlation-id': self.alertid,
+        }
+        return header
 
     def get_body(self):
-        return self.alert
+
+        alert = {
+            'resource': self.resource,
+            'event': self.event,
+            'correlatedEvents': self.correlate,
+            'group': self.group,
+            'value': self.value,
+            'severity': self.severity,
+            'previousSeverity': self.previous_severity,
+            'environment': self.environment,
+            'service': self.service,
+            'text': self.text,
+            'type': self.event_type,
+            'tags': self.tags,
+            'origin': self.origin,
+            'repeat': self.repeat,
+            'duplicateCount': self.duplicate_count,
+            'thresholdInfo': self.threshold_info,
+            'summary': self.summary,
+            'timeout': self.timeout,
+            'id': self.alertid,
+            'createTime': self.create_time,
+            'expireTime': self.expire_time,
+            'rawData': self.raw_data,
+            'moreInfo': self.more_info,
+            'graphUrls': self.graph_urls,
+        }
+
+        if hasattr(self, 'status'):
+            alert['status'] = self.status
+        if hasattr(self, 'receive_time'):
+            alert['receiveTime'] = self.receive_time
+        if hasattr(self, 'last_receive_time'):
+            alert['lastReceiveTime'] = self.last_receive_time
+        if hasattr(self, 'last_receive_id'):
+            alert['lastReceiveId'] = self.last_receive_id
+        if hasattr(self, 'trend_indication'):
+            alert['trendIndication'] = self.trend_indication
+        if hasattr(self, 'history'):
+            alert['history'] = self.history
+
+        return alert
 
     def get_type(self):
-        return self.header['type']
+        return self.event_type
 
     def get_severity(self):
         return self.severity, self.previous_severity
 
     def receive_now(self):
-        self.alert['receiveTime'] = datetime.datetime.utcnow()
+        self.receive_time = datetime.datetime.utcnow()
+
+    def __repr__(self):
+        return 'Alert(header=%r, alert=%r)' % (self.get_header(), self.get_body())
+
+    def __str__(self):
+        return json.dumps(self.get_body(), cls=DateEncoder, indent=4)
 
     @staticmethod
     def parse_alert(alert):

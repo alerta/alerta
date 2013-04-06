@@ -1,5 +1,5 @@
 
-from alerta.alert import severity_code
+from alerta.alert import Alert
 
 
 class DeDup(object):
@@ -9,48 +9,48 @@ class DeDup(object):
     count = {}
 
     @classmethod
-    def update(cls, environment, resource, event, severity):
+    def update(cls, dedupAlert):
 
-        environment = tuple(environment)
+        environment = tuple(dedupAlert.environment)
 
-        if (environment, resource, event) not in DeDup.current:
-            DeDup.previous[(environment, resource, event)] = severity
-            DeDup.current[(environment, resource, event)] = severity
-            DeDup.count[(environment, resource, event, severity)] = 1
+        if (environment, dedupAlert.resource, dedupAlert.event) not in DeDup.current:
+            DeDup.previous[(environment, dedupAlert.resource, dedupAlert.event)] = dedupAlert.severity
+            DeDup.current[(environment, dedupAlert.resource, dedupAlert.event)] = dedupAlert.severity
+            DeDup.count[(environment, dedupAlert.resource, dedupAlert.event, dedupAlert.severity)] = 1
             return
 
-        if DeDup.current[(environment, resource, event)] != severity:
-            previous = DeDup.current[(environment, resource, event)]
-            DeDup.previous[(environment, resource, event)] = previous
-            DeDup.current[(environment, resource, event)] = severity
+        if DeDup.current[(environment, dedupAlert.resource, dedupAlert.event)] != dedupAlert.severity:
+            previous = DeDup.current[(environment, dedupAlert.resource, dedupAlert.event)]
+            DeDup.previous[(environment, dedupAlert.resource, dedupAlert.event)] = previous
+            DeDup.current[(environment, dedupAlert.resource, dedupAlert.event)] = dedupAlert.severity
 
-            DeDup.count[(environment, resource, event, previous)] = 0
-            DeDup.count[(environment, resource, event, severity)] = 1
+            DeDup.count[(environment, dedupAlert.resource, dedupAlert.event, previous)] = 0
+            DeDup.count[(environment, dedupAlert.resource, dedupAlert.event, dedupAlert.severity)] = 1
         else:
-            DeDup.count[(environment, resource, event, severity)] += 1
+            DeDup.count[(environment, dedupAlert.resource, dedupAlert.event, dedupAlert.severity)] += 1
 
     @classmethod
-    def is_duplicate(cls, environment, resource, event, severity):
+    def is_duplicate(cls, dedupAlert):
 
-        environment = tuple(environment)
+        environment = tuple(dedupAlert.environment)
 
-        if (environment, resource, event) not in DeDup.current:
+        if (environment, dedupAlert.resource, dedupAlert.event) not in DeDup.current:
             return False
 
-        if DeDup.current[(environment, resource, event)] != severity:
+        if DeDup.current[(environment, dedupAlert.resource, dedupAlert.event)] != dedupAlert.severity:
             return False
         else:
             return True
 
     @classmethod
-    def is_send(cls, environment, resource, event, severity, every):
+    def is_send(cls, dedupAlert, every):
 
-        environment = tuple(environment)
+        environment = tuple(dedupAlert.environment)
 
-        if not DeDup.is_duplicate(environment, resource, event, severity):
+        if not DeDup.is_duplicate(dedupAlert):
             return True
-        elif (DeDup.is_duplicate(environment, resource, event, severity) and
-                DeDup.count[(environment, resource, event, severity)] % every == 0):
+        elif (DeDup.is_duplicate(dedupAlert) and
+                DeDup.count[(environment, dedupAlert.resource, dedupAlert.event, dedupAlert.severity)] % every == 0):
             return True
         else:
             return False
@@ -59,7 +59,7 @@ class DeDup(object):
 
         str = ''
         for environment, resource, event in DeDup.current.keys():
-            str += 'DeDup(environment=%s, resource= %s, event=%s, severity=%s, previous=%s, count=%s)\n' % (
+            str += 'DeDup(environment=%s, resource=%s, event=%s, severity=%s, previous=%s, count=%s)\n' % (
                 ','.join(environment),
                 resource,
                 event,
