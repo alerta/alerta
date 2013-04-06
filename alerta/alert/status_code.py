@@ -13,6 +13,7 @@ ACK = 'ack'
 CLOSED = 'closed'
 EXPIRED = 'expired'
 UNKNOWN = 'unknown'
+NOT_VALID = 'notValid'
 
 ALL = [OPEN, ACK, CLOSED, EXPIRED, UNKNOWN]
 
@@ -37,4 +38,4 @@ def parse_status(name):
         for st in _STATUS_MAP:
             if name.lower() == st.lower():
                 return st
-    return 'notValid'
+    return NOT_VALID
