@@ -9,8 +9,6 @@ import re
 import fnmatch
 from __builtin__ import staticmethod
 
-# import pytz
-
 from alerta.alert import severity_code, status_code
 from alerta.common import log as logging
 from alerta.common import config
@@ -190,7 +188,6 @@ class Alert(object):
                 except ValueError, e:
                     LOG.error('Could not parse date time string: %s', e)
                     return
-        #         alert[k] = time.replace(tzinfo=pytz.utc)   # TODO(nsatterl): test timezone stuff
 
         return Alert(
             resource=alert.get('resource', None),
@@ -259,31 +256,31 @@ class Alert(object):
 
                 # 1. Simple substitutions
                 if 'event' in c:
-                    self.alert['event'] = c['event']
+                    self.event = c['event']
                 if 'resource' in c:
-                    self.alert['resource'] = c['resource']
+                    self.resource = c['resource']
                 if 'severity' in c:
-                    self.alert['severity'] = c['severity']
+                    self.severity = c['severity']
                 if 'group' in c:
-                    self.alert['group'] = c['group']
+                    self.group = c['group']
                 if 'value' in c:
-                    self.alert['value'] = c['value']
+                    self.value = c['value']
                 if 'text' in c:
-                    self.alert['text'] = c['text']
+                    self.text = c['text']
                 if 'environment' in c:
-                    self.alert['environment'] = c['environment']
+                    self.environment = c['environment']
                 if 'service' in c:
-                    self.alert['service'] = c['service']
+                    self.service = c['service']
                 if 'tags' in c:
-                    self.alert['tags'] = c['tags']
+                    self.tags = c['tags']
                 if 'correlate' in c:
-                    self.alert['correlatedEvents'] = c['correlate']
+                    self.correlate = c['correlate']
                 if 'threshold_info' in c:
-                    self.alert['thresholdInfo'] = c['threshold_info']
+                    self.threshold_info = c['threshold_info']
                 if 'summary' in c:
-                    self.alert['summary'] = c['summary']
+                    self.summary = c['summary']
                 if 'timeout' in c:
-                    self.alert['timeout'] = c['timeout']
+                    self.timeout = c['timeout']
 
                 # 2. Complex transformations
                 if 'parser' in c:
@@ -317,23 +314,23 @@ class Alert(object):
 
         for k, v in mappings.iteritems():
             LOG.debug('translate %s -> %s', k, v)
-            self.alert['event'] = self.alert['event'].replace(k, v)
-            self.alert['resource'] = self.alert['resource'].replace(k, v)
-            self.alert['severity'] = self.alert['severity'].replace(k, v)
-            self.alert['group'] = self.alert['group'].replace(k, v)
-            self.alert['value'] = self.alert['value'].replace(k, v)
-            self.alert['text'] = self.alert['text'].replace(k, v)
-            self.alert['environment'][:] = [e.replace(k, v) for e in self.alert['environment']]
-            self.alert['service'][:] = [s.replace(k, v) for s in self.alert['service']]
+            self.event = self.event.replace(k, v)
+            self.resource = self.resource.replace(k, v)
+            self.severity = self.severity.replace(k, v)
+            self.group = self.group.replace(k, v)
+            self.value = self.value.replace(k, v)
+            self.text = self.text.replace(k, v)
+            self.environment[:] = [e.replace(k, v) for e in self.environment]
+            self.service[:] = [s.replace(k, v) for s in self.service]
 
-            if self.alert['tags'] is not None:
-                self.alert['tags'][:] = [t.replace(k, v) for t in self.alert['tags']]
-            if self.alert['correlatedEvents'] is not None:
-                self.alert['correlatedEvents'] = [c.replace(k, v) for c in self.alert['correlatedEvents']]
-            if self.alert['thresholdInfo'] is not None:
-                self.alert['thresholdInfo'] = self.alert['thresholdInfo'].replace(k, v)
-            if self.alert['summary'] is not None:
-                self.alert['summary'] = self.alert['summary'].replace(k, v)
+            if self.tags is not None:
+                self.tags[:] = [t.replace(k, v) for t in self.tags]
+            if self.correlate is not None:
+                self.correlate = [c.replace(k, v) for c in self.correlate]
+            if self.threshold_info is not None:
+                self.threshold_info = self.threshold_info.replace(k, v)
+            if self.summary is not None:
+                self.summary = self.summary.replace(k, v)
 
 
 class Heartbeat(object):
@@ -343,42 +340,44 @@ class Heartbeat(object):
         prog = os.path.basename(sys.argv[0])
 
         self.heartbeatid = heartbeatid or str(uuid4())
-
-        create_time = create_time or datetime.datetime.utcnow()
-
-        self.header = {
-            'type': 'Heartbeat',
-            'correlation-id': self.heartbeatid,
-        }
-
-        self.heartbeat = {
-            'id': self.heartbeatid,
-            'type': 'Heartbeat',
-            'createTime': create_time,
-            'origin': origin or '%s/%s' % (prog, os.uname()[1]),
-            'version': version,
-        }
-
-    def __repr__(self):
-        return 'Heartbeat(header=%r, heartbeat=%r)' % (str(self.header), str(self.heartbeat))
-
-    def __str__(self):
-        return json.dumps(self.heartbeat, cls=DateEncoder, indent=4)
+        self.event_type = 'Heartbeat'
+        self.create_time = create_time or datetime.datetime.utcnow()
+        self.origin = origin or '%s/%s' % (prog, os.uname()[1])
+        self.version = version
 
     def get_id(self):
         return self.heartbeatid
 
     def get_header(self):
-        return self.header
+
+        header = {
+            'type': self.event_type,
+            'correlation-id': self.heartbeatid,
+        }
+        return header
 
     def get_body(self):
-        return self.heartbeat
+
+        heartbeat = {
+            'id': self.heartbeatid,
+            'type': self.event_type,
+            'createTime': self.create_time,
+            'origin': self.origin,
+            'version': self.version,
+        }
+        return heartbeat
 
     def get_type(self):
-        return self.header['type']
+        return self.event_type
 
     def receive_now(self):
-        self.heartbeat['receiveTime'] = datetime.datetime.utcnow()
+        self.receive_time = datetime.datetime.utcnow()
+
+    def __repr__(self):
+        return 'Heartbeat(header=%r, heartbeat=%r)' % (self.get_header(), self.get_body())
+
+    def __str__(self):
+        return json.dumps(self.get_body(), cls=DateEncoder, indent=4)
 
     @staticmethod
     def parse_heartbeat(heartbeat):
@@ -395,7 +394,6 @@ class Heartbeat(object):
             except ValueError, e:
                 LOG.error('Could not parse date time string: %s', e)
                 return
-            # heartbeat[k] = time.replace(tzinfo=pytz.utc)   # TODO(nsatterl): test timezone stuff
 
         return Heartbeat(
             origin=heartbeat.get('origin', None),
