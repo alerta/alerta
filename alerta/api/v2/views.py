@@ -10,15 +10,14 @@ from collections import defaultdict
 from flask import request, current_app, render_template, send_from_directory
 from functools import wraps
 from alerta.api.v2 import app, db, create_mq
-from alerta.api.v2.switch import Switch, SwitchState
-from alerta.api.v2.management.views import switches
+from alerta.api.v2.switch import Switch
 
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.alert import Alert, Heartbeat, severity_code, status_code, ATTRIBUTES
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.7'
+Version = '2.0.8'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -84,6 +83,9 @@ def get_alerts():
         query['_id']['$regex'] = '^' + request.args['id']
 
     for field in [fields for fields in request.args if fields.lstrip('-') in ATTRIBUTES]:
+        if field == 'id':
+            # Don't process queries on "id" twice
+            continue
         value = request.args.getlist(field)
         if len(value) == 1:
             if field.startswith('-'):
