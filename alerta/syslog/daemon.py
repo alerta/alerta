@@ -8,10 +8,11 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.alert import Alert, Heartbeat
+from alerta.common.dedup import DeDup
 from alerta.alert import syslog
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -59,6 +60,8 @@ class SyslogDaemon(Daemon):
         self.mq = Messaging()
         self.mq.connect(callback=SyslogMessage(self.mq))
 
+        self.dedup = DeDup(by_value=True)
+
         count = 0
         while not self.shuttingdown:
             try:
@@ -77,7 +80,8 @@ class SyslogDaemon(Daemon):
 
                         syslogAlerts = self.parse_syslog(data)
                         for syslogAlert in syslogAlerts:
-                            self.mq.send(syslogAlert)
+                            if self.dedup.is_send(syslogAlert):
+                                self.mq.send(syslogAlert)
                     count += 1
                 if not ip or count % 5 == 0:
                     LOG.debug('Send heartbeat...')

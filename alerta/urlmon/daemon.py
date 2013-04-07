@@ -19,7 +19,7 @@ from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 from alerta.common.ganglia import Gmetric
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -90,7 +90,7 @@ class WorkerThread(threading.Thread):
 
         self.queue = queue   # internal queue
         self.mq = mq               # message broker
-        self.dedup = dedup
+        self.dedup = DeDup()
         
     def run(self):
 
@@ -275,26 +275,23 @@ class WorkerThread(threading.Thread):
             tags = check.get('tags', list())
             threshold_info = "%s : RT > %d RT > %d x %s" % (check['url'], warn_thold, crit_thold, check.get('count', 1))
 
-            if self.dedup.is_send(environment, resource, event, severity_code, 5):
+            urlmonAlert = Alert(
+                resource=resource,
+                event=event,
+                correlate=correlate,
+                group=group,
+                value=value,
+                severity=severity,
+                environment=environment,
+                service=service,
+                text=text,
+                event_type='serviceAlert',
+                tags=tags,
+                threshold_info=threshold_info,
+            )
 
-                urlmonAlert = Alert(
-                    resource=resource,
-                    event=event,
-                    correlate=correlate,
-                    group=group,
-                    value=value,
-                    severity=severity,
-                    environment=environment,
-                    service=service,
-                    text=text,
-                    event_type='serviceAlert',
-                    tags=tags,
-                    threshold_info=threshold_info,
-                )
+            if self.dedup.is_send(urlmonAlert):
                 self.mq.send(urlmonAlert)
-
-            self.dedup.update(environment, resource, event, severity_code)
-            LOG.info(self.dedup)
 
             self.queue.task_done()
             LOG.info('%s check complete.', self.getName())

@@ -13,7 +13,7 @@ from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.dedup import DeDup
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -48,7 +48,7 @@ class GangliaDaemon(Daemon):
 
         Daemon.__init__(self, prog)
 
-        self.dedup = DeDup()
+        self.dedup = DeDup(by_value=True)
 
     def run(self):
         
@@ -276,7 +276,7 @@ class GangliaDaemon(Daemon):
 
                 # Compare final value with each threshold
                 for ti in metric[resource]['thresholdInfo']:
-                    sev, op, threshold = ti.split(':')
+                    severity, op, threshold = ti.split(':')
                     rule_eval = '%s %s %s' % (GangliaDaemon.quote(calculated_value), op, threshold)
                     try:
                         result = eval(rule_eval)
@@ -290,7 +290,6 @@ class GangliaDaemon(Daemon):
                         event = rule['event']
                         group = rule['group']
                         value = "%s%s" % (calculated_value, GangliaDaemon.format_units(metric[resource]['units']))
-                        severity = sev
                         environment = metric[resource]['environment']
                         service = metric[resource]['service']
                         text = metric[resource]['text'][index]
@@ -299,28 +298,25 @@ class GangliaDaemon(Daemon):
                         more_info = metric[resource]['moreInfo']
                         graph_urls = metric[resource]['graphUrls']
 
-                        if self.dedup.is_send(environment, resource, event, severity, 5):
+                        gangliaAlert = Alert(
+                            resource=resource,
+                            event=event,
+                            group=group,
+                            value=value,
+                            severity=severity,
+                            environment=environment,
+                            service=service,
+                            text=text,
+                            event_type='gangliaAlert',
+                            tags=tags,
+                            threshold_info=threshold_info,
+                            more_info=more_info,
+                            graph_urls=graph_urls,
+                            raw_data='',  # TODO(nsatterl): put raw metric values used to do calculation here
+                        )
 
-                            gangliaAlert = Alert(
-                                resource=resource,
-                                event=event,
-                                group=group,
-                                value=value,
-                                severity=severity,
-                                environment=environment,
-                                service=service,
-                                text=text,
-                                event_type='gangliaAlert',
-                                tags=tags,
-                                threshold_info=threshold_info,
-                                more_info=more_info,
-                                graph_urls=graph_urls,
-                                raw_data='',  # TODO(nsatterl): put raw metric values used to do calculation here
-                            )
+                        if self.dedup.is_send(gangliaAlert):
                             self.mq.send(gangliaAlert)
-
-                        self.dedup.update(environment, resource, event, severity)
-                        LOG.info(self.dedup)
 
                         break  # First match wins
                     index += 1

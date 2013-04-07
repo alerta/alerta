@@ -12,7 +12,7 @@ from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.dedup import DeDup
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -128,29 +128,27 @@ class DynectDaemon(Daemon):
                 summary = None
                 raw_data = self.info[resource]['rawData']
 
-                if self.dedup.is_send(environment, resource, event, severity_code, 5):
+                dynectAlert = Alert(
+                    resource=resource,
+                    event=event,
+                    correlate=correlate,
+                    group=group,
+                    value=value,
+                    severity=severity,
+                    environment=environment,
+                    service=service,
+                    text=text,
+                    event_type='dynectAlert',
+                    tags=tags,
+                    timeout=timeout,
+                    threshold_info=threshold_info,
+                    summary=summary,
+                    raw_data=raw_data,
+                )
 
-                    dynectAlert = Alert(
-                        resource=resource,
-                        event=event,
-                        correlate=correlate,
-                        group=group,
-                        value=value,
-                        severity=severity,
-                        environment=environment,
-                        service=service,
-                        text=text,
-                        event_type='dynectAlert',
-                        tags=tags,
-                        timeout=timeout,
-                        threshold_info=threshold_info,
-                        summary=summary,
-                        raw_data=raw_data,
-                    )
+                if self.dedup.is_send(dynectAlert):
                     self.mq.send(dynectAlert)
 
-                self.dedup.update(environment, resource, event, severity_code)
-                LOG.info(self.dedup)
 
     def check_weight(self, parent, resource):
         

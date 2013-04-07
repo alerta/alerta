@@ -15,7 +15,7 @@ from alerta.common.dedup import DeDup
 from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -249,28 +249,25 @@ class AwsDaemon(Daemon):
                     more_info = None
                     graph_urls = None
 
-                    if self.dedup.is_send(environment, resource, event, severity_code, 5):
+                    awsAlert = Alert(
+                        resource=resource,
+                        event=event,
+                        correlate=correlate,
+                        group=group,
+                        value=value,
+                        severity=severity,
+                        environment=environment,
+                        service=service,
+                        text=text,
+                        event_type='cloudAlert',
+                        tags=tags,
+                        timeout=timeout,
+                        threshold_info=threshold_info,
+                        summary=summary,
+                        raw_data=raw_data,
+                        more_info=more_info,
+                        graph_urls=graph_urls,
+                    )
 
-                        awsAlert = Alert(
-                            resource=resource,
-                            event=event,
-                            correlate=correlate,
-                            group=group,
-                            value=value,
-                            severity=severity,
-                            environment=environment,
-                            service=service,
-                            text=text,
-                            event_type='cloudAlert',
-                            tags=tags,
-                            timeout=timeout,
-                            threshold_info=threshold_info,
-                            summary=summary,
-                            raw_data=raw_data,
-                            more_info=more_info,
-                            graph_urls=graph_urls,
-                        )
+                    if self.dedup.is_send(awsAlert):
                         self.mq.send(awsAlert)
-
-                    self.dedup.update(environment, resource, event, severity_code)
-                    LOG.info(self.dedup)

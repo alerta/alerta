@@ -14,7 +14,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -61,7 +61,7 @@ class WorkerThread(threading.Thread):
         self.last_event = {}
         self.queue = queue   # internal queue
         self.mq = mq               # message broker
-        self.dedup = dedup
+        self.dedup = DeDup(by_value=True)
 
     def run(self):
 
@@ -124,29 +124,26 @@ class WorkerThread(threading.Thread):
             summary = None
             raw_data = stdout
 
-            if self.dedup.is_send(environment, resource, event, severity_code, 5):
+            pingAlert = Alert(
+                resource=resource,
+                event=event,
+                correlate=correlate,
+                group=group,
+                value=value,
+                severity=severity,
+                environment=environment,
+                service=service,
+                text=text,
+                event_type='exceptionAlert',
+                tags=None,
+                timeout=timeout,
+                threshold_info=threshold_info,
+                summary=summary,
+                raw_data=raw_data,
+            )
 
-                pingAlert = Alert(
-                    resource=resource,
-                    event=event,
-                    correlate=correlate,
-                    group=group,
-                    value=value,
-                    severity=severity,
-                    environment=environment,
-                    service=service,
-                    text=text,
-                    event_type='exceptionAlert',
-                    tags=None,
-                    timeout=timeout,
-                    threshold_info=threshold_info,
-                    summary=summary,
-                    raw_data=raw_data,
-                )
+            if self.dedup.is_send(pingAlert):
                 self.mq.send(pingAlert)
-
-            self.dedup.update(environment, resource, event, severity_code)
-            LOG.info(self.dedup)
 
             self.queue.task_done()
             LOG.info('%s ping complete.', self.getName())
