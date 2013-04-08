@@ -1,7 +1,6 @@
 
 import datetime
 
-
 from alerta.common import log as logging
 
 LOG = logging.getLogger(__name__)
@@ -9,12 +8,16 @@ LOG = logging.getLogger(__name__)
 
 class DeDup(object):
     """
-    by_severity = alert will be raised on change of severity (event if event name stays the same)
-    by_value = alert will be raised whenever the value changes
+    By default, DeDup will de-duplicate alerts based on severity. ie. if the severity of an alert changes it will
+    allow the alert to be resent. To modify this behaviour to send an alert each time the alert value changes set
+    the "by_value" parameter to True.
 
-    Can call multiple time to create different de-duplication rules for different events.
-    eg.
+     Example. Create different de-duplication rules for different events.
+
     >>> dedup_by_value = DeDup(by_value=True)
+    >>> if dedup_by_value.is_send(gangliaAlert):
+    >>>     mq.send(gangliaAlert)
+
     >>> send_every_5 = DeDup(threshold=5)
     >>> resend_every_2hrs = DeDup(duration=7200)
 
@@ -34,6 +37,8 @@ class DeDup(object):
         self.__class__.by_value = by_value
         self.__class__.threshold = threshold
         self.__class__.duration = duration
+
+        LOG.info('De-duplicate alerts based on: by_value=%s, threshold=%s, duration=%s', by_value, threshold, duration)
 
     @classmethod
     def update(cls, dedupAlert):

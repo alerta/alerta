@@ -11,7 +11,7 @@ import boto.ec2
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.common.dedup import DeDup
+from alerta.alert.dedup import DeDup
 from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 

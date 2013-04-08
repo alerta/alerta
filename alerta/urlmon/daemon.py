@@ -16,7 +16,7 @@ from alerta.common import config
 from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
-from alerta.common.dedup import DeDup
+from alerta.alert.dedup import DeDup
 from alerta.common.ganglia import Gmetric
 
 Version = '2.0.1'
