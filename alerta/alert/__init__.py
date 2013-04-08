@@ -71,10 +71,10 @@ class Alert(object):
         self.severity = severity
         self.previous_severity = previous_severity
         self.environment = environment or ['PROD']
-        self.service = service or list()
+        self.service = service or ['Undefined']
         self.text = text
         self.event_type = event_type
-        self.tags = tags
+        self.tags = tags or list()
         self.origin = origin or '%s/%s' % (prog, os.uname()[1])
         self.repeat = repeat
         self.duplicate_count = duplicate_count
