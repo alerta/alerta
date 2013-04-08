@@ -61,7 +61,7 @@ class WorkerThread(threading.Thread):
         self.last_event = {}
         self.queue = queue   # internal queue
         self.mq = mq               # message broker
-        self.dedup = DeDup(by_value=True)
+        self.dedup = dedup
 
     def run(self):
 

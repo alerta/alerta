@@ -149,7 +149,6 @@ class DynectDaemon(Daemon):
                 if self.dedup.is_send(dynectAlert):
                     self.mq.send(dynectAlert)
 
-
     def check_weight(self, parent, resource):
         
         weight = self.info[resource]['status'].split(':')[2]

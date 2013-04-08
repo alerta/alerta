@@ -52,7 +52,6 @@ class DeDup(object):
             dedup_value = dedupAlert.value
             dedup_count = (tuple(dedupAlert.environment), dedupAlert.resource, dedupAlert.event, dedupAlert.severity, dedupAlert.value)
 
-        print 'dedup by %s value %s' % (dedup_by, dedup_value)
         if dedup_by not in DeDup.current:
             DeDup.previous[dedup_by] = dedup_value
             DeDup.current[dedup_by] = dedup_value

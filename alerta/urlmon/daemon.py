@@ -90,7 +90,7 @@ class WorkerThread(threading.Thread):
 
         self.queue = queue   # internal queue
         self.mq = mq               # message broker
-        self.dedup = DeDup()
+        self.dedup = dedup
         
     def run(self):
 
