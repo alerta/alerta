@@ -42,3 +42,5 @@ if __name__ == '__main__':
     suppress = alert1.transform_alert()
     print 'suppress? %s' % suppress
     print alert1
+
+    print alert1.__dict__

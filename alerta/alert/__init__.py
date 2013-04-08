@@ -245,7 +245,7 @@ class Alert(object):
                 match = fnmatch.fnmatch('%s.%s' % (facility, level), c['priority'])
                 pattern = c['priority']
             elif c.get('match'):
-                match = all(item in self.alert.items() for item in c['match'].items())
+                match = all(item in self.__dict__.items() for item in c['match'].items())
                 pattern = c['match'].items()
             else:
                 match = None
