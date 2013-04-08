@@ -14,7 +14,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.alert.dedup import DeDup
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -82,7 +82,7 @@ class WorkerThread(threading.Thread):
                 rc, rtt, loss, stdout = self.pinger(resource, timeout=_MAX_TIMEOUT)
 
             if rc != PING_OK and retries:
-                LOG.warning('Retrying ping %s %s more times', resource, retries)
+                LOG.info('Retrying ping %s %s more times', resource, retries)
                 self.queue.put((environment, service, resource, retries - 1))
                 self.queue.task_done()
                 continue
@@ -179,7 +179,7 @@ class WorkerThread(threading.Thread):
         if rc == 0:
             LOG.info('%s: is alive %s', node, rtt)
         else:
-            LOG.warning('%s: not responding', node)
+            LOG.info('%s: not responding', node)
 
         return rc, rtt, loss, stdout
 
