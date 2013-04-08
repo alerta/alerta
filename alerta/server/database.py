@@ -170,6 +170,7 @@ class Mongo(object):
             "event": alert.event,
             "severity": alert.severity,
             "createTime": alert.create_time,
+            "receiveTime": alert.receive_time,
             "lastReceiveTime": alert.receive_time,
             "expireTime": alert.expire_time,
             "previousSeverity": previous_severity,
