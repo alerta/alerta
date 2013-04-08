@@ -287,7 +287,7 @@ class Alert(object):
                     LOG.debug('Loading parser %s', c['parser'])
 
                     context = kwargs
-                    context.update(self.alert)
+                    context.update(self.get_body())
 
                     try:
                         exec(open('%s/%s.py' % (CONF.parser_dir, c['parser']))) in globals(), context
@@ -295,7 +295,9 @@ class Alert(object):
                     except Exception, e:
                         LOG.warning('Parser %s failed: %s', c['parser'], e)
 
-                    self.alert = context
+                    for k, v in context.iteritems():
+                        if k in ATTRIBUTES:
+                            setattr(self, k, v)
 
                     if 'suppress' in context:
                         suppress = context['suppress']
