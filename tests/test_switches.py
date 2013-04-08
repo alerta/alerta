@@ -25,5 +25,8 @@ print Switch.get('switch1')
 turn_off = Switch.get('switch1')
 turn_off.set_state('OFF')
 
+print turn_off.is_on()
+print Switch.get('switch2').is_on()
+
 print Switch.get_all()
 

@@ -110,7 +110,7 @@ def status():
         "type": "text",
         "title": "Alert console auto-refresh",
         "description": "Allows auto-refresh of alert consoles to be turned off remotely",
-        "value": "ON" if switches.SWITCH_STATUS[switches.AUTO_REFRESH_ALLOW] else "OFF",
+        "value": "ON" if Switch.get('auto-refresh-allow').is_on() else "OFF",
     }
     metrics.append(auto_refresh_allow)
 
