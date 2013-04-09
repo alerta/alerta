@@ -115,10 +115,10 @@ def trend(previous, current):
         return 'noChange'
 
 
-def status_from_severity(previous, current, current_status=None):
-    if current in [NORMAL, CLEARED]:
+def status_from_severity(previous_severity, current_severity, current_status=None):
+    if current_severity in [NORMAL, CLEARED]:
         return status_code.CLOSED
-    if trend(previous, current) == 'moreSevere':
+    if trend(previous_severity, current_severity) == 'moreSevere':
         return status_code.OPEN
     return current_status
 
