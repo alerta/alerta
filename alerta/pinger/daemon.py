@@ -14,7 +14,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.alert.dedup import DeDup
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -160,7 +160,7 @@ class WorkerThread(threading.Thread):
 
         cmd = "ping -q -c %s -i %s -t %s %s" % (count, interval, timeout, node)
         ping = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        stdout = ping.communicate()[0]
+        stdout = ping.communicate()[0].rstrip('\n')
         rc = ping.returncode
         LOG.debug('Ping %s => %s (rc=%d)', cmd, stdout, rc)
 
