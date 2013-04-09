@@ -1,13 +1,12 @@
 import os
 import sys
+from alerta.common import status_code, severity_code
 
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
                                                 os.pardir,
                                                 os.pardir))
 if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
     sys.path.insert(0, possible_topdir)
-
-from alerta.alert import severity_code, status_code
 
 # while True:
 #     s = raw_input('severity?')

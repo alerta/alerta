@@ -3,9 +3,9 @@ import os
 import sys
 import re
 
-from alerta.common import config
+from alerta.common import config, severity_code
 from alerta.common import log as logging
-from alerta.alert import Alert, Heartbeat, severity_code
+from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging
 
 Version = '2.0.1'

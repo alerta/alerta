@@ -12,10 +12,10 @@ import select
 import json
 import urllib2
 
-from alerta.common import config
+from alerta.common import config, status_code
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat, status_code
+from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
 

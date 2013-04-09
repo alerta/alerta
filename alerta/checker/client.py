@@ -4,9 +4,9 @@ import sys
 import subprocess
 import shlex
 
-from alerta.common import log as logging
+from alerta.common import log as logging, severity_code
 from alerta.common import config
-from alerta.alert import Alert, Heartbeat, severity_code
+from alerta.alert import Alert, Heartbeat
 from alerta.common.api import ApiClient
 
 Version = '2.0.1'

@@ -9,9 +9,8 @@ import datetime
 
 import pytz
 
-from alerta.common import log as logging
+from alerta.common import log as logging, status_code, severity_code
 from alerta.common import config
-from alerta.alert import severity_code, status_code
 
 Version = '2.0.0'
 
@@ -396,13 +395,20 @@ class QueryClient(object):
                 '%3d' % response['alerts']['statusCounts']['ack'] + ' ' +
                 '%6d' % response['alerts']['statusCounts']['closed'] + '  '),
             print(
-                severity_code._COLOR_MAP[severity_code.CRITICAL] + '%4d' % response['alerts']['severityCounts']['critical'] + severity_code.ENDC + ' ' +
-                severity_code._COLOR_MAP[severity_code.MAJOR] + '%4d' % response['alerts']['severityCounts']['major'] + severity_code.ENDC + ' ' +
-                severity_code._COLOR_MAP[severity_code.MINOR] + '%4d' % response['alerts']['severityCounts']['minor'] + severity_code.ENDC + ' ' +
-                severity_code._COLOR_MAP[severity_code.WARNING] + '%4d' % response['alerts']['severityCounts']['warning'] + severity_code.ENDC + ' ' +
-                severity_code._COLOR_MAP[severity_code.NORMAL] + '%4d' % response['alerts']['severityCounts']['normal'] + severity_code.ENDC + ' ' +
-                severity_code._COLOR_MAP[severity_code.INFORM] + '%4d' % response['alerts']['severityCounts']['inform'] + severity_code.ENDC + ' ' +
-                severity_code._COLOR_MAP[severity_code.DEBUG] + '%4d' % response['alerts']['severityCounts']['debug'] + severity_code.ENDC)
+                severity_code._COLOR_MAP[
+                    severity_code.CRITICAL] + '%4d' % response['alerts']['severityCounts']['critical'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[
+                    severity_code.MAJOR] + '%4d' % response['alerts']['severityCounts']['major'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[
+                    severity_code.MINOR] + '%4d' % response['alerts']['severityCounts']['minor'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[
+                    severity_code.WARNING] + '%4d' % response['alerts']['severityCounts']['warning'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[
+                    severity_code.NORMAL] + '%4d' % response['alerts']['severityCounts']['normal'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[
+                    severity_code.INFORM] + '%4d' % response['alerts']['severityCounts']['inform'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[
+                    severity_code.DEBUG] + '%4d' % response['alerts']['severityCounts']['debug'] + severity_code.ENDC)
 
         if not CONF.nofooter:
             now = datetime.datetime.utcnow()

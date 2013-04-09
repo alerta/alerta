@@ -16,10 +16,9 @@ possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
 if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
-from alerta.common import config
+from alerta.common import config, severity_code
 from alerta.common import log as logging
 from alerta.sender.client import SenderClient, Version
-from alerta.alert import severity_code
 
 LOG = logging.getLogger('alerta.sender')
 CONF = config.CONF

@@ -14,8 +14,7 @@ http://www.itu.int/rec/T-REC-X.736-199201-I
            Indeterminate               5 (Notice)
            Cleared                     5 (Notice)
 """
-
-import status_code
+from alerta.common import status_code
 
 CRITICAL_SEV_CODE = 1
 MAJOR_SEV_CODE = 2

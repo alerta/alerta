@@ -1,21 +1,20 @@
-
 import json
 import time
 import datetime
-import pytz
 import re
-
 from collections import defaultdict
-
-from flask import request, current_app, render_template, send_from_directory
 from functools import wraps
+
+import pytz
+from flask import request, current_app, render_template, send_from_directory
+
 from alerta.api.v2 import app, db, create_mq
 from alerta.api.v2.switch import Switch
-
-from alerta.common import config
+from alerta.common import config, status_code
 from alerta.common import log as logging
-from alerta.alert import Alert, Heartbeat, severity_code, status_code, ATTRIBUTES
+from alerta.alert import Alert, Heartbeat, severity_code, ATTRIBUTES
 from alerta.common.utils import DateEncoder
+
 
 Version = '2.0.8'
 

@@ -3,10 +3,10 @@ import time
 import threading
 import Queue
 
-from alerta.common import config
+from alerta.common import config, status_code, severity_code
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat, severity_code, status_code
+from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 

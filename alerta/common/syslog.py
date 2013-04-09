@@ -1,5 +1,4 @@
-
-from alerta.alert import severity_code
+from alerta.common import severity_code
 
 SYSLOG_FACILITY_NAMES = [
     "kern",

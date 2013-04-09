@@ -8,11 +8,11 @@ import yaml
 
 import boto.ec2
 
-from alerta.common import config
+from alerta.common import config, severity_code
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert.dedup import DeDup
-from alerta.alert import Alert, Heartbeat, severity_code
+from alerta.common.dedup import DeDup
+from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 
 Version = '2.0.2'

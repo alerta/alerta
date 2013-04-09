@@ -11,12 +11,12 @@ import yaml
 
 HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
-from alerta.common import log as logging
+from alerta.common import log as logging, severity_code
 from alerta.common import config
-from alerta.alert import Alert, Heartbeat, severity_code
+from alerta.alert import Alert, Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
-from alerta.alert.dedup import DeDup
+from alerta.common.dedup import DeDup
 from alerta.common.ganglia import Gmetric
 
 Version = '2.0.1'
