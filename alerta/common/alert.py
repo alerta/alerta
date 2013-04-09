@@ -48,7 +48,7 @@ ATTRIBUTES = [
     'moreInfo',
     'graphUrls',
     'history',
-    ]
+]
 
 
 class Alert(object):
@@ -110,7 +110,7 @@ class Alert(object):
         header = {
             'type': self.event_type,
             'correlation-id': self.alertid,
-            }
+        }
         return header
 
     def get_body(self):
@@ -140,7 +140,7 @@ class Alert(object):
             'rawData': self.raw_data,
             'moreInfo': self.more_info,
             'graphUrls': self.graph_urls,
-            }
+        }
 
         if hasattr(self, 'status'):
             alert['status'] = self.status
@@ -219,7 +219,7 @@ class Alert(object):
             raw_data=alert.get('rawData', None),
             more_info=alert.get('moreInfo', None),
             graph_urls=alert.get('graphUrls', None),
-            )
+        )
 
     def transform_alert(self, trapoid=None, facility=None, level=None, **kwargs):
 
