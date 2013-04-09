@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <!-- link href='http://fonts.googleapis.com/css?family=Sintony:400,700' rel='stylesheet' type='text/css' -->
 
@@ -16,6 +16,7 @@
 
 <div class="row show-grid">
     <div class="span3">
+        <a href="./details{% if query %}?{{ query|safe }}{% endif %}" target="_blank">
         <table class="table table-bordered table-condensed status-indicator" id="widget" data-label="widget">
             <thead id="widget-overall" class="status-indicator-overall">
             <tr>
@@ -24,25 +25,28 @@
             </thead>
             <tbody>
             <tr id="widget-status-indicator">
-                <td id="widget-critical" class="status-indicator-count"><b>{{ severity['critical'] }}</b></td>
-                <td id="widget-major" class="status-indicator-count"><b>{{ severity['major'] }}</b></td>
-                <td id="widget-minor" class="status-indicator-count"><b>{{ severity['minor'] }}</b></td>
-                <td id="widget-warning" class="status-indicator-count"><b>{{ severity['warning'] }}</b></td>
-                <td id="widget-normal" class="status-indicator-count"><b>{{ severity['normal'] }}</b></td>
+                <td id="widget-critical" class="status-indicator-count"><b>0</b></td>
+                <td id="widget-major" class="status-indicator-count"><b>0</b></td>
+                <td id="widget-minor" class="status-indicator-count"><b>0</b></td>
+                <td id="widget-warning" class="status-indicator-count"><b>0</b></td>
+                <td id="widget-normal" class="status-indicator-count"><b>0</b></td>
             </tr>
             </tbody>
         </table>
+        </a>
     </div>
 </div>
 
-{{ response }}
+<script>
+    var api_port = {{ config['api_port'] }};
+</script>
 
 <script>
 
-    var API_HOST = document.domain + ":8000";
+    var API_HOST = document.domain + ':' + window.api_port;
     var REFRESH_INTERVAL = 30; // seconds
 
-    var filter = '';
+    var filter = '{{ query|safe }}';
     var status = '&status=open';
     var limit = '';
     var from = '';
@@ -51,7 +55,7 @@
     function updateStatusIndicator(filter, refresh) {
         $('#widget th').addClass('loader');
 
-        $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true'
+        $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
                 + filter + status + limit + from, function (data) {
 
             var sev_id = '#widget';

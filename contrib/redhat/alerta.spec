@@ -94,6 +94,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/alert-logger
 %{_bindir}/alert-mailer
 %{_bindir}/alert-notify
+%{_bindir}/alert-pinger
 %{_bindir}/alert-snmptrap
 %{_bindir}/alert-syslog
 %{_bindir}/alert-urlmon
@@ -126,7 +127,7 @@ fi
 
 %post server
 for name in alerta alert-aws alert-dynect alert-ganglia alert-ircbot \
-    alert-logger alert-mailer alert-notify alert-syslog alert-urlmon
+    alert-logger alert-mailer alert-notify alert-pinger alert-syslog alert-urlmon
 do
     /sbin/chkconfig --add $name
 done
@@ -134,7 +135,7 @@ done
 %preun server
 if [ "$1" = "0" ]; then
     for name in alerta alert-aws alert-dynect alert-ganglia alert-ircbot \
-        alert-logger alert-mailer alert-notify alert-syslog alert-urlmon
+        alert-logger alert-mailer alert-notify alert-pinger alert-syslog alert-urlmon
     do
         /sbin/chkconfig $name off
         /sbin/chkconfig --del $name

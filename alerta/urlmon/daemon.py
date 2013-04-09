@@ -13,12 +13,13 @@ HTTP_RESPONSES = dict([(k, v[0]) for k, v in BHRH.responses.items()])
 
 from alerta.common import log as logging
 from alerta.common import config
-from alerta.alert import Alert, Heartbeat, severity
+from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
+from alerta.alert.dedup import DeDup
 from alerta.common.ganglia import Gmetric
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -78,7 +79,7 @@ class NoRedirection(urllib2.HTTPRedirectHandler):
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, mq, queue):
+    def __init__(self, mq, queue, dedup):
 
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
@@ -87,14 +88,15 @@ class WorkerThread(threading.Thread):
         self.currentState = {}
         self.previousEvent = {}
 
-        self.input_queue = queue   # internal queue
+        self.queue = queue   # internal queue
         self.mq = mq               # message broker
-
+        self.dedup = dedup
+        
     def run(self):
 
         while True:
             LOG.debug('Waiting on input queue...')
-            check = self.input_queue.get()
+            check = self.queue.get()
 
             if not check:
                 LOG.info('%s is shutting down.', self.getName())
@@ -174,37 +176,37 @@ class WorkerThread(threading.Thread):
 
             if not code:
                 event = 'HttpConnectionError'
-                sev = severity.MAJOR
+                severity = severity_code.MAJOR
                 value = reason
                 text = 'Error during connection or data transfer (timeout=%d).' % _REQUEST_TIMEOUT
             elif code >= 500:
                 event = 'HttpServerError'
-                sev = severity.MAJOR
+                severity = severity_code.MAJOR
                 value = '%s (%d)' % (status, code)
                 text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
             elif code >= 400:
                 event = 'HttpClientError'
-                sev = severity.MINOR
+                severity = severity_code.MINOR
                 value = '%s (%d)' % (status, code)
                 text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
             elif code >= 300:
                 event = 'HttpRedirection'
-                sev = severity.MINOR
+                severity = severity_code.MINOR
                 value = '%s (%d)' % (status, code)
                 text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
             elif code >= 200:
                 event = 'HttpResponseOK'
-                sev = severity.NORMAL
+                severity = severity_code.NORMAL
                 value = '%s (%d)' % (status, code)
                 text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
                 if rtt > crit_thold:
                     event = 'HttpResponseSlow'
-                    sev = severity.CRITICAL
+                    severity = severity_code.CRITICAL
                     value = '%dms' % rtt
                     text = 'Website available but exceeding critical RT thresholds of %dms' % crit_thold
                 elif rtt > warn_thold:
                     event = 'HttpResponseSlow'
-                    sev = severity.WARNING
+                    severity = severity_code.WARNING
                     value = '%dms' % rtt
                     text = 'Website available but exceeding warning RT thresholds of %dms' % warn_thold
                 if search_string and body:
@@ -218,7 +220,7 @@ class WorkerThread(threading.Thread):
                             break
                     if not found:
                         event = 'HttpContentError'
-                        sev = severity.MINOR
+                        severity = severity_code.MINOR
                         value = 'Search failed'
                         text = 'Website available but pattern "%s" not found' % search_string
                 elif rule and body:
@@ -234,17 +236,17 @@ class WorkerThread(threading.Thread):
                     else:
                         if not eval(rule):
                             event = 'HttpContentError'
-                            sev = severity.MINOR
+                            severity = severity_code.MINOR
                             value = 'Rule failed'
                             text = 'Website available but rule evaluation failed (%s)' % rule
             elif code >= 100:
                 event = 'HttpInformational'
-                sev = severity.NORMAL
+                severity = severity_code.NORMAL
                 value = '%s (%d)' % (status, code)
                 text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
             else:
                 event = 'HttpUnknownError'
-                sev = severity.WARNING
+                severity = severity_code.WARNING
                 value = 'UNKNOWN'
                 text = 'HTTP request resulted in an unhandled error.'
 
@@ -264,72 +266,37 @@ class WorkerThread(threading.Thread):
                 g.metric_send('response_time-%s' % check['resource'], '%d' % rtt, 'uint16',
                               units='ms', group=','.join(check['service']), spoof=CONF.gmetric_spoof)
 
-            # Set necessary state variables if currentState is unknown
-            res = check['resource']
-            if res not in self.currentState:
-                self.currentState[res] = event
-                self.currentCount[(res, event)] = 0
-                self.previousEvent[res] = event
+            resource = check['resource']
+            correlate = _HTTP_ALERTS
+            group = 'Web'
+            environment = check['environment']
+            service = check['service']
+            text = text
+            tags = check.get('tags', list())
+            threshold_info = "%s : RT > %d RT > %d x %s" % (check['url'], warn_thold, crit_thold, check.get('count', 1))
 
-            if self.currentState[res] != event:                                   # Change of threshold state
-                self.currentCount[(res, event)] = self.currentCount.get((res, event), 0) + 1
-                self.currentCount[(res, self.currentState[res])] = 0              # zero-out previous event counter
-                self.currentState[res] = event
-            elif self.currentState[res] == event:                                 # Threshold state has not changed
-                self.currentCount[(res, event)] += 1
+            urlmonAlert = Alert(
+                resource=resource,
+                event=event,
+                correlate=correlate,
+                group=group,
+                value=value,
+                severity=severity,
+                environment=environment,
+                service=service,
+                text=text,
+                event_type='serviceAlert',
+                tags=tags,
+                threshold_info=threshold_info,
+            )
 
-            LOG.debug('currentState = %s, currentCount = %d', self.currentState[res], self.currentCount[(res, event)])
-
-            # Determine if should send a repeat alert
-            if self.currentCount[(res, event)] < check.get('count', 1):
-                repeat = False
-                LOG.debug('Send repeat alert = %s (curr %s < threshold %s)', repeat, self.currentCount[(res, event)],
-                          check.get('count', 1))
-            else:
-                repeat = (self.currentCount[(res, event)] - check.get('count', 1)) % check.get('repeat', 1) == 0
-                LOG.debug('Send repeat alert = %s (%d - %d %% %d)', repeat, self.currentCount[(res, event)],
-                          check.get('count', 1), check.get('repeat', 1))
-
-            LOG.debug('Send alert if prevEvent %s != %s AND thresh %d == %s', self.previousEvent[res], event,
-                      self.currentCount[(res, event)], check.get('count', 1))
-
-            # Determine if current threshold count requires an alert
-            if ((self.previousEvent[res] != event and self.currentCount[(res, event)] == check.get('count', 1))
-                    or (self.previousEvent[res] == event and repeat)):
-
-                resource = check['resource']
-                correlate = _HTTP_ALERTS
-                group = 'Web'
-                environment = check['environment']
-                service = check['service']
-                text = text
-                tags = check.get('tags', list())
-                threshold_info = "%s : RT > %d RT > %d x %s" % (
-                    check['url'], warn_thold, crit_thold, check.get('count', 1))
-
-                urlmonAlert = Alert(
-                    resource=resource,
-                    event=event,
-                    correlate=correlate,
-                    group=group,
-                    value=value,
-                    severity=sev,
-                    environment=environment,
-                    service=service,
-                    text=text,
-                    event_type='serviceAlert',
-                    tags=tags,
-                    threshold_info=threshold_info,
-                )
+            if self.dedup.is_send(urlmonAlert):
                 self.mq.send(urlmonAlert)
 
-                # Keep track of previous event
-                self.previousEvent[res] = event
-
-            self.input_queue.task_done()
+            self.queue.task_done()
             LOG.info('%s check complete.', self.getName())
 
-        self.input_queue.task_done()
+        self.queue.task_done()
 
 
 class UrlmonMessage(MessageHandler):
@@ -355,13 +322,15 @@ class UrlmonDaemon(Daemon):
         self.mq = Messaging()
         self.mq.connect(callback=UrlmonMessage(self.mq))
 
+        self.dedup = DeDup()
+
         # Initialiase alert rules
         urls = init_urls()
 
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.mq, self.queue)
+            w = WorkerThread(self.mq, self.queue, self.dedup)
             try:
                 w.start()
             except Exception, e:

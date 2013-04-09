@@ -6,11 +6,11 @@ import Queue
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat, severity, status
+from alerta.alert import Alert, Heartbeat, severity_code, status_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -23,9 +23,8 @@ class WorkerThread(threading.Thread):
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
 
-        self.input_queue = queue   # internal queue
+        self.queue = queue   # internal queue
         self.mq = mq               # message broker
-
         self.db = Mongo()       # mongo database
 
     def run(self):
@@ -33,7 +32,7 @@ class WorkerThread(threading.Thread):
         while True:
             LOG.debug('Waiting on input queue...')
             try:
-                incomingAlert = self.input_queue.get(True, CONF.loop_every)
+                incomingAlert = self.queue.get(True, CONF.loop_every)
             except Queue.Empty:
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(version=Version)
@@ -46,10 +45,9 @@ class WorkerThread(threading.Thread):
 
             if incomingAlert.get_type() == 'Heartbeat':
                 LOG.info('Heartbeat received...')
-                heartbeat = incomingAlert.get_body()
-                self.db.update_hb(heartbeat['origin'], heartbeat['version'], heartbeat['createTime'],
-                                  heartbeat['receiveTime'])
-                self.input_queue.task_done()
+                heartbeat = incomingAlert
+                self.db.update_hb(heartbeat)
+                self.queue.task_done()
                 continue
             else:
                 LOG.info('Alert received...')
@@ -57,43 +55,26 @@ class WorkerThread(threading.Thread):
             suppress = incomingAlert.transform_alert()
             if suppress:
                 LOG.warning('Suppressing alert %s', incomingAlert.get_id())
-                self.input_queue.task_done()
+                self.queue.task_done()
                 return
 
-            # Get alert attributes into a dict
-            alert = incomingAlert.get_body()
-
-            if self.db.is_duplicate(alert['environment'], alert['resource'], alert['event'], alert['severity']):
+            if self.db.is_duplicate(incomingAlert):
 
                 # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary,
                 #                       value, tags and origin
                 #                    2. increment duplicate count
 
-                LOG.info('%s : Duplicate alert -> update dup count', alert['id'])
-
-                update = {
-                    "lastReceiveTime": alert['receiveTime'],
-                    "expireTime": alert['expireTime'],
-                    "lastReceiveId": alert['id'],
-                    "text": alert['text'],
-                    "summary": alert['summary'],
-                    "value": alert['value'],
-                    "tags": alert['tags'],
-                    "repeat": True,
-                    "origin": alert['origin'],
-                    "rawData": alert['rawData'],
-                }
-                duplicateAlert = self.db.duplicate_alert(environment=alert['environment'], resource=alert['resource'],
-                                                         event=alert['event'], update=update)
+                LOG.info('%s : Duplicate alert -> update dup count', incomingAlert.alertid)
+                duplicateAlert = self.db.duplicate_alert(incomingAlert)
 
                 if CONF.forward_duplicate:
                     # Forward alert to notify topic and logger queue
                     self.mq.send(duplicateAlert, CONF.outbound_queue)
                     self.mq.send(duplicateAlert, CONF.outbound_topic)
 
-                self.input_queue.task_done()
+                self.queue.task_done()
 
-            elif self.db.is_correlated(alert['environment'], alert['resource'], alert['event']):
+            elif self.db.is_correlated(incomingAlert):
 
                 # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime,
                 #                       lastReceiveTime, previousSeverity,
@@ -101,99 +82,58 @@ class WorkerThread(threading.Thread):
                 #                    2. set duplicate count to zero
                 #                    3. push history
 
-                previous_severity = self.db.get_severity(alert['environment'], alert['resource'], alert['event'])
-                LOG.info('%s : Event and/or severity change %s %s -> %s update details', alert['id'], alert['event'],
-                         previous_severity, alert['severity'])
+                previous_severity = self.db.get_severity(incomingAlert)
+                LOG.info('%s : Event and/or severity change %s %s -> %s update details', incomingAlert.get_id(),
+                         incomingAlert.event, previous_severity, incomingAlert.severity)
 
-                trend_indication = severity.trend(previous_severity, alert['severity'])
+                trend_indication = severity_code.trend(previous_severity, incomingAlert.severity)
 
-                update = {
-                    "event": alert['event'],
-                    "severity": alert['severity'],
-                    "createTime": alert['createTime'],
-                    "receiveTime": alert['receiveTime'],
-                    "lastReceiveTime": alert['receiveTime'],
-                    "expireTime": alert['expireTime'],
-                    "previousSeverity": previous_severity,
-                    "lastReceiveId": alert['id'],
-                    "text": alert['text'],
-                    "summary": alert['summary'],
-                    "value": alert['value'],
-                    "tags": alert['tags'],
-                    "repeat": False,
-                    "origin": alert['origin'],
-                    "thresholdInfo": alert['thresholdInfo'],
-                    "trendIndication": trend_indication,
-                    "rawData": alert['rawData'],
-                    "duplicateCount": 0,
-                }
-                correlatedAlert = self.db.update_alert(environment=alert['environment'], resource=alert['resource'],
-                                                       event=alert['event'], update=update)
+                correlatedAlert = self.db.update_alert(incomingAlert, previous_severity, trend_indication)
 
-                new_status = severity.status_from_severity(previous_severity, alert['severity'])
+                new_status = severity_code.status_from_severity(previous_severity, incomingAlert.severity)
                 if new_status:
-                    self.db.update_status(environment=alert['environment'], resource=alert['resource'],
-                                          event=alert['event'], status=new_status)
+                    self.db.update_status(alert=incomingAlert, status=new_status)
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(correlatedAlert, CONF.outbound_queue)
                 self.mq.send(correlatedAlert, CONF.outbound_topic)
 
-                self.input_queue.task_done()
-                LOG.info('%s : Alert forwarded to %s and %s', alert['id'], CONF.outbound_queue, CONF.outbound_topic)
+                self.queue.task_done()
+                LOG.info('%s : Alert forwarded to %s and %s', incomingAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
             else:
-                LOG.info('%s : New alert -> insert', alert['id'])
+                LOG.info('%s : New alert -> insert', incomingAlert.get_id())
                 # New alert so ... 1. insert entire document
                 #                  2. push history
                 #                  3. set duplicate count to zero
 
-                trend_indication = severity.trend(severity.UNKNOWN, alert['severity'])
+                trend_indication = severity_code.trend(severity_code.UNKNOWN, incomingAlert.severity)
 
-                newAlert = Alert(
-                    resource=alert['resource'],
-                    event=alert['event'],
-                    correlate=alert['correlatedEvents'],
-                    group=alert['group'],
-                    value=alert['value'],
-                    status=status.OPEN,
-                    severity=alert['severity'],
-                    environment=alert['environment'],
-                    service=alert['service'],
-                    text=alert['text'],
-                    event_type=alert['type'],
-                    tags=alert['tags'],
-                    origin=alert['origin'],
-                    repeat=False,
-                    duplicate_count=0,
-                    threshold_info=alert['thresholdInfo'],
-                    summary=alert['summary'],
-                    timeout=alert['timeout'],
-                    alertid=alert['id'],
-                    last_receive_id=alert['id'],
-                    create_time=alert['createTime'],
-                    receive_time=alert['receiveTime'],
-                    last_receive_time=alert['receiveTime'],
-                    trend_indication=trend_indication,
-                    raw_data=alert['rawData'],
-                    more_info=alert['moreInfo'],
-                    graph_urls=alert['graphUrls'],
-                )
-                self.db.save_alert(newAlert)
+                incomingAlert.status = status_code.OPEN
+                incomingAlert.repeat = False
+                incomingAlert.duplicate_count = 0
+                incomingAlert.last_receive_id = incomingAlert.alertid
+                incomingAlert.last_receive_time = incomingAlert.receive_time
+                incomingAlert.trend_indication = trend_indication
 
-                new_status = severity.status_from_severity(severity.UNKNOWN, alert['severity'])
-                if new_status:
-                    self.db.update_status(environment=alert['environment'], resource=alert['resource'],
-                                          event=alert['event'], status=new_status)
+                if incomingAlert.alertid != self.db.save_alert(incomingAlert):
+                    LOG.critical('Alert was not saved with submitted alert id. Race condition?')
+
+                status = severity_code.status_from_severity(severity_code.UNKNOWN, incomingAlert.severity)
+                if status:
+                    self.db.update_status(alert=incomingAlert, status=status)
 
                 # Forward alert to notify topic and logger queue
-                self.mq.send(newAlert, CONF.outbound_queue)
-                self.mq.send(newAlert, CONF.outbound_topic)
+                self.mq.send(incomingAlert, CONF.outbound_queue)
+                self.mq.send(incomingAlert, CONF.outbound_topic)
 
-                self.input_queue.task_done()
-                LOG.info('%s : Alert forwarded to %s and %s', alert['id'], CONF.outbound_queue, CONF.outbound_topic)
+                self.queue.task_done()
+                LOG.info('%s : Alert forwarded to %s and %s', incomingAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
-        self.input_queue.task_done()
+            # update application stats
+            self.db.update_metrics(incomingAlert.create_time, incomingAlert.receive_time)
+
+        self.queue.task_done()
 
 
 class ServerMessage(MessageHandler):

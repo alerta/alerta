@@ -8,10 +8,11 @@ from dynect.DynectDNS import DynectRest
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat, severity
+from alerta.alert import Alert, Heartbeat, severity_code
 from alerta.common.mq import Messaging, MessageHandler
+from alerta.alert.dedup import DeDup
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -35,9 +36,8 @@ class DynectDaemon(Daemon):
 
         self.info = {}
         self.last_info = {}
-        self.count = {}
         self.updating = False
-        self.last_change = {}
+        self.dedup = DeDup()
 
     def run(self):
 
@@ -70,19 +70,10 @@ class DynectDaemon(Daemon):
 
         for resource in self.info:
 
-            LOG.debug('resource %s', resource)
-
             if resource not in self.last_info:
-                self.count[resource] = 0
                 continue
-            LOG.debug('info => %s', self.info[resource])
-            LOG.debug('last info => %s', self.last_info[resource])
 
-            self.count[resource] += 1
-            LOG.debug('count = %s', self.count[resource])
-
-            if (self.last_info[resource]['status'] != self.info[resource]['status']
-                    or self.count[resource] == 1 or self.count[resource] % 10):
+            if self.last_info[resource]['status'] != self.info[resource]['status']:
 
                 if resource.startswith('gslb-'):
 
@@ -92,10 +83,10 @@ class DynectDaemon(Daemon):
 
                     if self.info[resource]['status'] == 'ok':
                         event = 'GslbOK'
-                        sev = severity.NORMAL
+                        severity = severity_code.NORMAL
                     else:
                         event = 'GslbNotOK'
-                        sev = severity.CRITICAL
+                        severity = severity_code.CRITICAL
                     correlate = ['GslbOK', 'GslbNotOK']
 
                 elif resource.startswith('pool-'):
@@ -106,19 +97,19 @@ class DynectDaemon(Daemon):
 
                     if 'down' in self.info[resource]['status']:
                         event = 'PoolDown'
-                        sev = severity.MAJOR
+                        severity = severity_code.MAJOR
                         text = 'Pool is down'
                     elif 'obey' not in self.info[resource]['status']:
                         event = 'PoolServe'
-                        sev = severity.MAJOR
+                        severity = severity_code.MAJOR
                         text = 'Pool with an incorrect serve mode'
                     elif self.check_weight(self.info[resource]['gslb'], resource) is False:
                         event = 'PoolWeightError'
-                        sev = severity.MINOR
+                        severity = severity_code.MINOR
                         text = 'Pool with an incorrect weight'
                     else:
                         event = 'PoolUp'
-                        sev = severity.NORMAL
+                        severity = severity_code.NORMAL
                         text = 'Pool status is normal'
                     correlate = ['PoolUp', 'PoolDown', 'PoolServe', 'PoolWeightError']
 
@@ -143,7 +134,7 @@ class DynectDaemon(Daemon):
                     correlate=correlate,
                     group=group,
                     value=value,
-                    severity=sev,
+                    severity=severity,
                     environment=environment,
                     service=service,
                     text=text,
@@ -155,7 +146,8 @@ class DynectDaemon(Daemon):
                     raw_data=raw_data,
                 )
 
-                self.mq.send(dynectAlert)
+                if self.dedup.is_send(dynectAlert):
+                    self.mq.send(dynectAlert)
 
     def check_weight(self, parent, resource):
         

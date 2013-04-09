@@ -10,20 +10,17 @@ from collections import defaultdict
 from flask import request, current_app, render_template, send_from_directory
 from functools import wraps
 from alerta.api.v2 import app, db, create_mq
+from alerta.api.v2.switch import Switch
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.alert import Alert, Heartbeat, severity, status, ATTRIBUTES
+from alerta.alert import Alert, Heartbeat, severity_code, status_code, ATTRIBUTES
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.7'
+Version = '2.0.8'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-# TODO(nsatterl): put these constants somewhere appropriate
-_MAX_HISTORY = -10  # 10 most recent
-_LIMIT = 1000
 
 
 # Over-ride jsonify to support Date Encoding
@@ -31,11 +28,6 @@ def jsonify(*args, **kwargs):
     return current_app.response_class(json.dumps(dict(*args, **kwargs), cls=DateEncoder,
                                                  indent=None if request.is_xhr else 2), mimetype='application/json')
 
-
-# TODO(nsatterl): use @before_request and @after_request to attach a unique request id
-# @app.before_request
-# def before_request():
-#     pass
 
 def jsonp(func):
     """Wraps JSONified output for JSONP requests."""
@@ -58,6 +50,7 @@ def test():
 
     return jsonify(response={
         "status": "ok",
+        "method": request.method,
         "json": request.json,
         "data": request.data,
         "args": request.args,
@@ -68,7 +61,7 @@ def test():
 # Returns a list of alerts
 @app.route('/alerta/api/v2/alerts', methods=['GET'])
 @jsonp
-def get_alerts_api():
+def get_alerts():
 
     query_time = datetime.datetime.utcnow()
 
@@ -90,6 +83,9 @@ def get_alerts_api():
         query['_id']['$regex'] = '^' + request.args['id']
 
     for field in [fields for fields in request.args if fields.lstrip('-') in ATTRIBUTES]:
+        if field == 'id':
+            # Don't process queries on "id" twice
+            continue
         value = request.args.getlist(field)
         if len(value) == 1:
             if field.startswith('-'):
@@ -117,7 +113,7 @@ def get_alerts_api():
     else:
         sort.append(('lastReceiveTime', -1))
 
-    limit = request.args.get('limit', _LIMIT, int)
+    limit = request.args.get('limit', CONF.console_limit, int)
 
     alerts = db.get_alerts(query=query, sort=sort, limit=limit)
     total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
@@ -155,30 +151,31 @@ def get_alerts_api():
             "alerts": {
                 "alertDetails": alert_details,
                 "severityCounts": {
-                    "critical": severity_count[severity.CRITICAL],
-                    "major": severity_count[severity.MAJOR],
-                    "minor": severity_count[severity.MINOR],
-                    "warning": severity_count[severity.WARNING],
-                    "indeterminate": severity_count[severity.INDETERMINATE],
-                    "cleared": severity_count[severity.CLEARED],
-                    "normal": severity_count[severity.NORMAL],
-                    "informational": severity_count[severity.INFORM],
-                    "debug": severity_count[severity.DEBUG],
-                    "auth": severity_count[severity.AUTH],
-                    "unknown": severity_count[severity.UNKNOWN],
+                    "critical": severity_count[severity_code.CRITICAL],
+                    "major": severity_count[severity_code.MAJOR],
+                    "minor": severity_count[severity_code.MINOR],
+                    "warning": severity_count[severity_code.WARNING],
+                    "indeterminate": severity_count[severity_code.INDETERMINATE],
+                    "cleared": severity_count[severity_code.CLEARED],
+                    "normal": severity_count[severity_code.NORMAL],
+                    "informational": severity_count[severity_code.INFORM],
+                    "debug": severity_count[severity_code.DEBUG],
+                    "auth": severity_count[severity_code.AUTH],
+                    "unknown": severity_count[severity_code.UNKNOWN],
                 },
                 "statusCounts": {
-                    "open": status_count[status.OPEN],
-                    "ack": status_count[status.ACK],
-                    "closed": status_count[status.CLOSED],
-                    "expired": status_count[status.EXPIRED],
-                    "unknown": status_count[status.UNKNOWN],
+                    "open": status_count[status_code.OPEN],
+                    "ack": status_count[status_code.ACK],
+                    "closed": status_count[status_code.CLOSED],
+                    "expired": status_count[status_code.EXPIRED],
+                    "unknown": status_count[status_code.UNKNOWN],
                 },
                 "lastTime": last_time,
             },
             "status": "ok",
             "total": found,
-            "more": total > limit
+            "more": total > limit,
+            "autoRefresh": Switch.get('auto-refresh-allow').is_on(),
         })
     else:
         return jsonify(response={
@@ -210,6 +207,7 @@ def get_alerts_api():
             "error": "not found",
             "total": 0,
             "more": False,
+            "autoRefresh": Switch.get('auto-refresh-allow').is_on(),
         })
 
 
@@ -229,7 +227,7 @@ def create_alert():
         correlate=data.get('correlatedEvents', None),
         group=data.get('group', None),
         value=data.get('value', None),
-        severity=severity.parse_severity(data.get('severity', None)),
+        severity=severity_code.parse_severity(data.get('severity', None)),
         environment=data.get('environment', None),
         service=data.get('service', None),
         text=data.get('text', None),
@@ -348,7 +346,7 @@ def get_resources():
     else:
         sort.append(('lastReceiveTime', -1))
 
-    limit = request.args.get('limit', _LIMIT, int)
+    limit = request.args.get('limit', CONF.console_limit, int)
 
     resources = db.get_resources(query=query, sort=sort, limit=limit)
     total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
@@ -415,103 +413,26 @@ def create_heartbeat():
 
 
 @app.route('/alerta/widgets/v2/severity')
-def widgets():
+def severity_widget():
 
-    label = request.args.get('label')
+    label = request.args.get('label', 'Alert Severity')
 
-    query_time = datetime.datetime.utcnow()
+    return render_template('widgets/severity.html', config=CONF, label=label, query=request.query_string)
 
-    if 'q' in request.args:
-        query = json.loads(request.args.get('q'))
-    else:
-        query = dict()
 
-    from_date = request.args.get('from-date', None)
-    if from_date:
-        from_date = datetime.datetime.strptime(from_date, '%Y-%m-%dT%H:%M:%S.%fZ')
-        from_date = from_date.replace(tzinfo=pytz.utc)
-        to_date = query_time
-        to_date = to_date.replace(tzinfo=pytz.utc)
-        query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date}
+@app.route('/alerta/widgets/v2/details')
+def details_widget():
 
-    if request.args.get('id', None):
-        query['_id'] = dict()
-        query['_id']['$regex'] = '^' + request.args['id']
+    label = request.args.get('label', 'Alert Details')
 
-    for field in [fields for fields in request.args if fields.lstrip('-') in ATTRIBUTES]:
-        value = request.args.getlist(field)
-        if len(value) == 1:
-            if field.startswith('-'):
-                query[field[1:]] = dict()
-                query[field[1:]]['$not'] = re.compile(value[0])
-            else:
-                query[field] = dict()
-                query[field]['$regex'] = value[0]
-                query[field]['$options'] = 'i'  # case insensitive search
-        else:
-            if field.startswith('-'):
-                query[field[1:]] = dict()
-                query[field[1:]]['$nin'] = value
-            else:
-                query[field] = dict()
-                query[field]['$in'] = value
-
-    sort = list()
-    if request.args.get('sort-by', None):
-        for sort_by in request.args.getlist('sort-by'):
-            if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
-                sort.append((sort_by, -1))  # sort by newest first
-            else:
-                sort.append((sort_by, 1))  # sort by newest first
-    else:
-        sort.append(('lastReceiveTime', -1))
-
-    limit = request.args.get('limit', _LIMIT, int)
-
-    alerts = db.get_alerts(query=query, sort=sort, limit=limit)
-
-    if len(alerts) > 0:
-        severity_count = defaultdict(int)
-
-        for alert in alerts:
-            body = alert.get_body()
-            severity_count[body['severity']] += 1
-
-        severityCounts = {
-            "critical": severity_count[severity.CRITICAL],
-            "major": severity_count[severity.MAJOR],
-            "minor": severity_count[severity.MINOR],
-            "warning": severity_count[severity.WARNING],
-            "indeterminate": severity_count[severity.INDETERMINATE],
-            "cleared": severity_count[severity.CLEARED],
-            "normal": severity_count[severity.NORMAL],
-            "informational": severity_count[severity.INFORM],
-            "debug": severity_count[severity.DEBUG],
-            "auth": severity_count[severity.AUTH],
-            "unknown": severity_count[severity.UNKNOWN],
-        }
-    else:
-        severityCounts = {
-            "critical": 0,
-            "major": 0,
-            "minor": 0,
-            "warning": 0,
-            "indeterminate": 0,
-            "cleared": 0,
-            "normal": 0,
-            "informational": 0,
-            "debug": 0,
-            "auth": 0,
-            "unknown": 0,
-        }
-
-    return render_template('widget.html', label=label, severity=severityCounts)
+    return render_template('widgets/details.html', config=CONF, label=label, query=request.query_string)
 
 
 @app.route('/alerta/dashboard/v2/<name>')
 def console(name):
 
-    return render_template(name)
+    return render_template(name, config=CONF)
+
 
 # Only use when running API in stand-alone mode during testing
 @app.route('/alerta/dashboard/v2/assets/<path:filename>')

@@ -1,3 +1,4 @@
+---
 # Server reboots within last 2 hours
 - event: ServerReboot
   filter: # all

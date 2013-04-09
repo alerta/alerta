@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alerta Switchboard</title>
+</head>
+<body>
+<h1>Alerta Switchboard</h1>
+
+<form method="POST">
+    <table border="1">
+        <tr><th>Switch name</th><th>Description</th><th>State</th></tr>
+
+{% for switch in switches %}
+        <tr>
+            <td><a href="?switch={{ switch.name }}">{{ switch.name }}</a></td>
+            <td>{{ switch.description|safe }}</td>
+            <td style="width: 100px; text-align: center;">
+                {% if switch.state %}
+                    <span style="color: ForestGreen"> ON </span>
+                    <input name="{{ switch.name }}" type="submit" value="OFF"></input>
+                {% else %}
+                    <input name="{{ switch.name }}" type="submit" value="ON"></input>
+                    <span style="color: DarkRed"> OFF </span>
+                {% endif %}
+            </td>
+        </tr>
+{% endfor %}
+
+    </table>
+</form>
+</body>
+</html>

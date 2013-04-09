@@ -21,6 +21,7 @@ setuptools.setup(
              'bin/alert-logger',
              'bin/alert-mailer',
              'bin/alert-notify',
+             'bin/alert-pinger',
              'bin/alert-query',
              'bin/alert-sender',
              'bin/alert-snmptrap',

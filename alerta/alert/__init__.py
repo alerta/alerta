@@ -9,9 +9,7 @@ import re
 import fnmatch
 from __builtin__ import staticmethod
 
-# import pytz
-
-from alerta.alert import severity, status
+from alerta.alert import severity_code, status_code
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
@@ -54,8 +52,8 @@ ATTRIBUTES = [
 
 
 class Alert(object):
-    def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status.UNKNOWN,
-                 severity=severity.NORMAL, previous_severity=severity.UNKNOWN, environment=None, service=None,
+    def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status_code.UNKNOWN,
+                 severity=severity_code.NORMAL, previous_severity=severity_code.UNKNOWN, environment=None, service=None,
                  text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
                  threshold_info='n/a', summary=None, timeout=None, alertid=None, last_receive_id=None,
                  create_time=None, expire_time=None, receive_time=None, last_receive_time=None, trend_indication=None,
@@ -63,73 +61,43 @@ class Alert(object):
 
         prog = os.path.basename(sys.argv[0])
 
-        self.alertid = alertid or str(uuid4())
+        self.resource = resource
+        self.event = event
+        self.correlate = correlate or list()
+        self.group = group
+        self.value = value
+        if status:
+            self.status = status
         self.severity = severity
         self.previous_severity = previous_severity
-
-        correlate = correlate or list()
-        environment = environment or ['PROD']
-        service = service or list()
-        tags = tags or list()
-        timeout = timeout or CONF.alert_timeout
-        graph_urls = graph_urls or list()
-
-        create_time = create_time or datetime.datetime.utcnow()
-        expire_time = expire_time or create_time + datetime.timedelta(seconds=timeout)
-
+        self.environment = environment or ['PROD']
+        self.service = service or ['Undefined']
+        self.text = text
+        self.event_type = event_type
+        self.tags = tags or list()
+        self.origin = origin or '%s/%s' % (prog, os.uname()[1])
+        self.repeat = repeat
+        self.duplicate_count = duplicate_count
+        self.threshold_info = threshold_info
         self.summary = summary or '%s - %s %s is %s on %s %s' % (
-            ','.join(environment), severity, event, value, ','.join(service), resource)
-
-        self.header = {
-            'type': event_type,
-            'correlation-id': self.alertid,
-        }
-
-        self.alert = {
-            'resource': resource,
-            'event': event,
-            'correlatedEvents': correlate,
-            'group': group,
-            'value': value,
-            'severity': severity,
-            'previousSeverity': previous_severity,
-            'environment': environment,
-            'service': service,
-            'text': text,
-            'type': event_type,
-            'tags': tags,
-            'origin': origin or '%s/%s' % (prog, os.uname()[1]),
-            'repeat': repeat,
-            'duplicateCount': duplicate_count,
-            'thresholdInfo': threshold_info,
-            'summary': self.summary,
-            'timeout': timeout,
-            'id': self.alertid,
-            'createTime': create_time,
-            'expireTime': expire_time,
-            'rawData': raw_data,
-            'moreInfo': more_info,
-            'graphUrls': graph_urls,
-        }
-
-        if status:
-            self.alert['status'] = status
-        if receive_time:
-            self.alert['receiveTime'] = receive_time
-        if last_receive_time:
-            self.alert['lastReceiveTime'] = last_receive_time
+            ','.join(self.environment), self.severity, self.event, self.value, ','.join(self.service), self.resource)
+        self.timeout = timeout or CONF.alert_timeout
+        self.alertid = alertid or str(uuid4())
         if last_receive_id:
-            self.alert['lastReceiveId'] = last_receive_id
+            self.last_receive_id = last_receive_id
+        self.create_time = create_time or datetime.datetime.utcnow()
+        self.expire_time = expire_time or self.create_time + datetime.timedelta(seconds=self.timeout)
+        if receive_time:
+            self.receive_time = receive_time
+        if last_receive_time:
+            self.last_receive_time = last_receive_time
         if trend_indication:
-            self.alert['trendIndication'] = trend_indication
+            self.trend_indication = trend_indication
+        self.raw_data = raw_data
+        self.more_info = more_info
+        self.graph_urls = graph_urls or list()
         if history:
-            self.alert['history'] = history
-
-    def __repr__(self):
-        return 'Alert(header=%r, alert=%r)' % (str(self.header), str(self.alert))
-
-    def __str__(self):
-        return json.dumps(self.alert, cls=DateEncoder, indent=4)
+            self.history = history
 
     def get_id(self, short=False):
         if short:
@@ -138,19 +106,71 @@ class Alert(object):
             return self.alertid
 
     def get_header(self):
-        return self.header
+
+        header = {
+            'type': self.event_type,
+            'correlation-id': self.alertid,
+        }
+        return header
 
     def get_body(self):
-        return self.alert
+
+        alert = {
+            'resource': self.resource,
+            'event': self.event,
+            'correlatedEvents': self.correlate,
+            'group': self.group,
+            'value': self.value,
+            'severity': self.severity,
+            'previousSeverity': self.previous_severity,
+            'environment': self.environment,
+            'service': self.service,
+            'text': self.text,
+            'type': self.event_type,
+            'tags': self.tags,
+            'origin': self.origin,
+            'repeat': self.repeat,
+            'duplicateCount': self.duplicate_count,
+            'thresholdInfo': self.threshold_info,
+            'summary': self.summary,
+            'timeout': self.timeout,
+            'id': self.alertid,
+            'createTime': self.create_time,
+            'expireTime': self.expire_time,
+            'rawData': self.raw_data,
+            'moreInfo': self.more_info,
+            'graphUrls': self.graph_urls,
+        }
+
+        if hasattr(self, 'status'):
+            alert['status'] = self.status
+        if hasattr(self, 'receive_time'):
+            alert['receiveTime'] = self.receive_time
+        if hasattr(self, 'last_receive_time'):
+            alert['lastReceiveTime'] = self.last_receive_time
+        if hasattr(self, 'last_receive_id'):
+            alert['lastReceiveId'] = self.last_receive_id
+        if hasattr(self, 'trend_indication'):
+            alert['trendIndication'] = self.trend_indication
+        if hasattr(self, 'history'):
+            alert['history'] = self.history
+
+        return alert
 
     def get_type(self):
-        return self.header['type']
+        return self.event_type
 
     def get_severity(self):
         return self.severity, self.previous_severity
 
     def receive_now(self):
-        self.alert['receiveTime'] = datetime.datetime.utcnow()
+        self.receive_time = datetime.datetime.utcnow()
+
+    def __repr__(self):
+        return 'Alert(header=%r, alert=%r)' % (self.get_header(), self.get_body())
+
+    def __str__(self):
+        return json.dumps(self.get_body(), cls=DateEncoder, indent=4)
 
     @staticmethod
     def parse_alert(alert):
@@ -168,7 +188,6 @@ class Alert(object):
                 except ValueError, e:
                     LOG.error('Could not parse date time string: %s', e)
                     return
-        #         alert[k] = time.replace(tzinfo=pytz.utc)   # TODO(nsatterl): test timezone stuff
 
         return Alert(
             resource=alert.get('resource', None),
@@ -176,9 +195,9 @@ class Alert(object):
             correlate=alert.get('correlatedEvents', None),
             group=alert.get('group', None),
             value=alert.get('value', None),
-            status=status.parse_status(alert.get('status', None)),
-            severity=severity.parse_severity(alert.get('severity', None)),
-            previous_severity=severity.parse_severity(alert.get('previousSeverity', None)),
+            status=status_code.parse_status(alert.get('status', None)),
+            severity=severity_code.parse_severity(alert.get('severity', None)),
+            previous_severity=severity_code.parse_severity(alert.get('previousSeverity', None)),
             environment=alert.get('environment', None),
             service=alert.get('service', None),
             text=alert.get('text', None),
@@ -226,7 +245,7 @@ class Alert(object):
                 match = fnmatch.fnmatch('%s.%s' % (facility, level), c['priority'])
                 pattern = c['priority']
             elif c.get('match'):
-                match = all(item in self.alert.items() for item in c['match'].items())
+                match = all(item in self.__dict__.items() for item in c['match'].items())
                 pattern = c['match'].items()
             else:
                 match = None
@@ -237,45 +256,51 @@ class Alert(object):
 
                 # 1. Simple substitutions
                 if 'event' in c:
-                    self.alert['event'] = c['event']
+                    self.event = c['event']
                 if 'resource' in c:
-                    self.alert['resource'] = c['resource']
+                    self.resource = c['resource']
                 if 'severity' in c:
-                    self.alert['severity'] = c['severity']
+                    self.severity = c['severity']
                 if 'group' in c:
-                    self.alert['group'] = c['group']
+                    self.group = c['group']
                 if 'value' in c:
-                    self.alert['value'] = c['value']
+                    self.value = c['value']
                 if 'text' in c:
-                    self.alert['text'] = c['text']
+                    self.text = c['text']
                 if 'environment' in c:
-                    self.alert['environment'] = c['environment']
+                    self.environment = c['environment']
                 if 'service' in c:
-                    self.alert['service'] = c['service']
+                    self.service = c['service']
                 if 'tags' in c:
-                    self.alert['tags'] = c['tags']
+                    self.tags = c['tags']
                 if 'correlate' in c:
-                    self.alert['correlatedEvents'] = c['correlate']
+                    self.correlate = c['correlate']
                 if 'threshold_info' in c:
-                    self.alert['thresholdInfo'] = c['threshold_info']
+                    self.threshold_info = c['threshold_info']
                 if 'summary' in c:
-                    self.alert['summary'] = c['summary']
+                    self.summary = c['summary']
                 if 'timeout' in c:
-                    self.alert['timeout'] = c['timeout']
+                    self.timeout = c['timeout']
 
                 # 2. Complex transformations
                 if 'parser' in c:
                     LOG.debug('Loading parser %s', c['parser'])
 
-                    kwargs.update(self.alert)
+                    context = kwargs
+                    context.update(self.get_body())
+
                     try:
-                        exec(open('%s/%s.py' % (CONF.parser_dir, c['parser']))) in globals(), kwargs
+                        exec(open('%s/%s.py' % (CONF.parser_dir, c['parser']))) in globals(), context
                         LOG.info('Parser %s/%s exec OK', CONF.parser_dir, c['parser'])
                     except Exception, e:
                         LOG.warning('Parser %s failed: %s', c['parser'], e)
 
-                    if 'suppress' in kwargs:
-                        suppress = kwargs['suppress']
+                    for k, v in context.iteritems():
+                        if k in ATTRIBUTES:
+                            setattr(self, k, v)
+
+                    if 'suppress' in context:
+                        suppress = context['suppress']
 
                 # 3. Suppress based on results of 1 or 2
                 if 'suppress' in c:
@@ -291,23 +316,23 @@ class Alert(object):
 
         for k, v in mappings.iteritems():
             LOG.debug('translate %s -> %s', k, v)
-            self.alert['event'] = self.alert['event'].replace(k, v)
-            self.alert['resource'] = self.alert['resource'].replace(k, v)
-            self.alert['severity'] = self.alert['severity'].replace(k, v)
-            self.alert['group'] = self.alert['group'].replace(k, v)
-            self.alert['value'] = self.alert['value'].replace(k, v)
-            self.alert['text'] = self.alert['text'].replace(k, v)
-            self.alert['environment'][:] = [e.replace(k, v) for e in self.alert['environment']]
-            self.alert['service'][:] = [s.replace(k, v) for s in self.alert['service']]
+            self.event = self.event.replace(k, v)
+            self.resource = self.resource.replace(k, v)
+            self.severity = self.severity.replace(k, v)
+            self.group = self.group.replace(k, v)
+            self.value = self.value.replace(k, v)
+            self.text = self.text.replace(k, v)
+            self.environment[:] = [e.replace(k, v) for e in self.environment]
+            self.service[:] = [s.replace(k, v) for s in self.service]
 
-            if self.alert['tags'] is not None:
-                self.alert['tags'][:] = [t.replace(k, v) for t in self.alert['tags']]
-            if self.alert['correlatedEvents'] is not None:
-                self.alert['correlatedEvents'] = [c.replace(k, v) for c in self.alert['correlatedEvents']]
-            if self.alert['thresholdInfo'] is not None:
-                self.alert['thresholdInfo'] = self.alert['thresholdInfo'].replace(k, v)
-            if self.alert['summary'] is not None:
-                self.alert['summary'] = self.alert['summary'].replace(k, v)
+            if self.tags is not None:
+                self.tags[:] = [t.replace(k, v) for t in self.tags]
+            if self.correlate is not None:
+                self.correlate = [c.replace(k, v) for c in self.correlate]
+            if self.threshold_info is not None:
+                self.threshold_info = self.threshold_info.replace(k, v)
+            if self.summary is not None:
+                self.summary = self.summary.replace(k, v)
 
 
 class Heartbeat(object):
@@ -317,42 +342,44 @@ class Heartbeat(object):
         prog = os.path.basename(sys.argv[0])
 
         self.heartbeatid = heartbeatid or str(uuid4())
-
-        create_time = create_time or datetime.datetime.utcnow()
-
-        self.header = {
-            'type': 'Heartbeat',
-            'correlation-id': self.heartbeatid,
-        }
-
-        self.heartbeat = {
-            'id': self.heartbeatid,
-            'type': 'Heartbeat',
-            'createTime': create_time,
-            'origin': origin or '%s/%s' % (prog, os.uname()[1]),
-            'version': version,
-        }
-
-    def __repr__(self):
-        return 'Heartbeat(header=%r, heartbeat=%r)' % (str(self.header), str(self.heartbeat))
-
-    def __str__(self):
-        return json.dumps(self.heartbeat, cls=DateEncoder, indent=4)
+        self.event_type = 'Heartbeat'
+        self.create_time = create_time or datetime.datetime.utcnow()
+        self.origin = origin or '%s/%s' % (prog, os.uname()[1])
+        self.version = version
 
     def get_id(self):
         return self.heartbeatid
 
     def get_header(self):
-        return self.header
+
+        header = {
+            'type': self.event_type,
+            'correlation-id': self.heartbeatid,
+        }
+        return header
 
     def get_body(self):
-        return self.heartbeat
+
+        heartbeat = {
+            'id': self.heartbeatid,
+            'type': self.event_type,
+            'createTime': self.create_time,
+            'origin': self.origin,
+            'version': self.version,
+        }
+        return heartbeat
 
     def get_type(self):
-        return self.header['type']
+        return self.event_type
 
     def receive_now(self):
-        self.heartbeat['receiveTime'] = datetime.datetime.utcnow()
+        self.receive_time = datetime.datetime.utcnow()
+
+    def __repr__(self):
+        return 'Heartbeat(header=%r, heartbeat=%r)' % (self.get_header(), self.get_body())
+
+    def __str__(self):
+        return json.dumps(self.get_body(), cls=DateEncoder, indent=4)
 
     @staticmethod
     def parse_heartbeat(heartbeat):
@@ -369,7 +396,6 @@ class Heartbeat(object):
             except ValueError, e:
                 LOG.error('Could not parse date time string: %s', e)
                 return
-            # heartbeat[k] = time.replace(tzinfo=pytz.utc)   # TODO(nsatterl): test timezone stuff
 
         return Heartbeat(
             origin=heartbeat.get('origin', None),

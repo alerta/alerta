@@ -1,3 +1,4 @@
+---
 # Assign a service to EC2 alerts based on cluster tag
 - match:
     service: [ EC2 ]

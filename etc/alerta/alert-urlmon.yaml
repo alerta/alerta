@@ -1,3 +1,4 @@
+---
 - resource: guardian-sport
   url: http://www.guardian.co.uk/sport
   search: sport

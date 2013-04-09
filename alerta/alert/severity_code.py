@@ -15,7 +15,7 @@ http://www.itu.int/rec/T-REC-X.736-199201-I
            Cleared                     5 (Notice)
 """
 
-import status
+import status_code
 
 CRITICAL_SEV_CODE = 1
 MAJOR_SEV_CODE = 2
@@ -101,9 +101,9 @@ def name_to_code(name):
 
 def parse_severity(name):
     if name:
-        for sev in _SEVERITY_MAP:
-            if name.lower() == sev.lower():
-                return sev
+        for severity in _SEVERITY_MAP:
+            if name.lower() == severity.lower():
+                return severity
     return 'notValid'
 
 
@@ -118,8 +118,8 @@ def trend(previous, current):
 
 def status_from_severity(previous, current, current_status=None):
     if current in [NORMAL, CLEARED]:
-        return status.CLOSED
+        return status_code.CLOSED
     if trend(previous, current) == 'moreSevere':
-        return status.OPEN
+        return status_code.OPEN
     return current_status
 

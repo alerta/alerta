@@ -18,7 +18,7 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.query.client import QueryClient, Version
-from alerta.alert import severity, status
+from alerta.alert import severity_code, status_code
 
 LOG = logging.getLogger('alerta.query')
 CONF = config.CONF
@@ -105,7 +105,7 @@ def main(argv):
             "--severity",
             action="append",
             dest="severity",
-            help="Severity eg. %s" % ','.join(severity.ALL)
+            help="Severity eg. %s" % ','.join(severity_code.ALL)
         )
         parser.add_argument(
             "--not-severity",
@@ -116,7 +116,7 @@ def main(argv):
             "--status",
             action="append",
             dest="status",
-            help="Status eg. %s" % ','.join(status.ALL)
+            help="Status eg. %s" % ','.join(status_code.ALL)
         )
         parser.add_argument(
             "--not-status",

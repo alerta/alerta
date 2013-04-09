@@ -11,7 +11,7 @@ import pytz
 
 from alerta.common import log as logging
 from alerta.common import config
-from alerta.alert import severity, status
+from alerta.alert import severity_code, status_code
 
 Version = '2.0.0'
 
@@ -69,7 +69,7 @@ class QueryClient(object):
             query['-severity'] = '|'.join(CONF.not_severity)
 
         if not CONF.status:
-            query['status'] = '%s|%s|%s' % (status.OPEN, status.ACK, status.CLOSED)
+            query['status'] = '%s|%s|%s' % (status_code.OPEN, status_code.ACK, status_code.CLOSED)
 
         if CONF.status:
             query['status'] = '|'.join(CONF.status)
@@ -205,7 +205,7 @@ class QueryClient(object):
         line_color = ''
         end_color = ''
         if 'color' in CONF.show or CONF.color:
-            end_color = severity.ENDC
+            end_color = severity_code.ENDC
 
         # Query API for alerts
         while True:
@@ -234,9 +234,9 @@ class QueryClient(object):
                 correlate = alert.get('correlatedEvents', None)
                 group = alert.get('group', None)
                 value = alert.get('value', None)
-                current_status = status.parse_status(alert.get('status', None))
-                current_severity = severity.parse_severity(alert.get('severity', None))
-                previous_severity = severity.parse_severity(alert.get('previousSeverity', None))
+                current_status = status_code.parse_status(alert.get('status', None))
+                current_severity = severity_code.parse_severity(alert.get('severity', None))
+                previous_severity = severity_code.parse_severity(alert.get('previousSeverity', None))
                 environment = alert.get('environment', None)
                 service = alert.get('service', None)
                 text = alert.get('text', None)
@@ -272,7 +272,7 @@ class QueryClient(object):
                 count += 1
 
                 if 'color' in CONF.show or CONF.color:
-                    line_color = severity._COLOR_MAP[current_severity]
+                    line_color = severity_code._COLOR_MAP[current_severity]
 
                 if CONF.json:
                     print(line_color + json.dumps(alert, indent=4) + end_color)
@@ -291,7 +291,7 @@ class QueryClient(object):
                     print(line_color + '%s|%s|%s|%5d|%-5s|%-10s|%-18s|%12s|%16s|%12s' % (
                         alertid[0:8],
                         displayTime.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT),
-                        severity._ABBREV_SEVERITY_MAP[current_severity],
+                        severity_code._ABBREV_SEVERITY_MAP[current_severity],
                         duplicate_count,
                         ','.join(environment),
                         ','.join(service),
@@ -306,8 +306,8 @@ class QueryClient(object):
                 if 'attributes' in CONF.show:
                     print(
                         line_color + '    severity | %s (%s) -> %s (%s)' % (
-                            previous_severity.capitalize(), severity.name_to_code(previous_severity),
-                            current_severity.capitalize(), severity.name_to_code(current_severity)) + end_color)
+                            previous_severity.capitalize(), severity_code.name_to_code(previous_severity),
+                            current_severity.capitalize(), severity_code.name_to_code(current_severity)) + end_color)
                     print(line_color + '    trend    | %s' % trend_indication + end_color)
                     print(line_color + '    status   | %s' % current_status.capitalize() + end_color)
                     print(line_color + '    resource | %s' % resource + end_color)
@@ -364,7 +364,7 @@ class QueryClient(object):
                             print(line_color + '  %s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
                                                                                     receive_time.astimezone(tz).strftime(
                                                                                         _DEFAULT_CONSOLE_DATE_FORMAT),
-                                                                                    severity._ABBREV_SEVERITY_MAP[historical_severity],
+                                                                                    severity_code._ABBREV_SEVERITY_MAP[historical_severity],
                                                                                     resource,
                                                                                     group,
                                                                                     event,
@@ -389,20 +389,20 @@ class QueryClient(object):
 
         if 'counts' in CONF.show:
             print
-            print('%s|%s|%s' + '  ' % (status.OPEN, status.ACK, status.CLOSED)),
+            print('%s|%s|%s' + '  ' % (status_code.OPEN, status_code.ACK, status_code.CLOSED)),
             print('Crit|Majr|Minr|Warn|Norm|Info|Dbug')
             print(
                 '%4d' % response['alerts']['statusCounts']['open'] + ' ' +
                 '%3d' % response['alerts']['statusCounts']['ack'] + ' ' +
                 '%6d' % response['alerts']['statusCounts']['closed'] + '  '),
             print(
-                severity._COLOR_MAP[severity.CRITICAL] + '%4d' % response['alerts']['severityCounts']['critical'] + severity.ENDC + ' ' +
-                severity._COLOR_MAP[severity.MAJOR] + '%4d' % response['alerts']['severityCounts']['major'] + severity.ENDC + ' ' +
-                severity._COLOR_MAP[severity.MINOR] + '%4d' % response['alerts']['severityCounts']['minor'] + severity.ENDC + ' ' +
-                severity._COLOR_MAP[severity.WARNING] + '%4d' % response['alerts']['severityCounts']['warning'] + severity.ENDC + ' ' +
-                severity._COLOR_MAP[severity.NORMAL] + '%4d' % response['alerts']['severityCounts']['normal'] + severity.ENDC + ' ' +
-                severity._COLOR_MAP[severity.INFORM] + '%4d' % response['alerts']['severityCounts']['inform'] + severity.ENDC + ' ' +
-                severity._COLOR_MAP[severity.DEBUG] + '%4d' % response['alerts']['severityCounts']['debug'] + severity.ENDC)
+                severity_code._COLOR_MAP[severity_code.CRITICAL] + '%4d' % response['alerts']['severityCounts']['critical'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[severity_code.MAJOR] + '%4d' % response['alerts']['severityCounts']['major'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[severity_code.MINOR] + '%4d' % response['alerts']['severityCounts']['minor'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[severity_code.WARNING] + '%4d' % response['alerts']['severityCounts']['warning'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[severity_code.NORMAL] + '%4d' % response['alerts']['severityCounts']['normal'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[severity_code.INFORM] + '%4d' % response['alerts']['severityCounts']['inform'] + severity_code.ENDC + ' ' +
+                severity_code._COLOR_MAP[severity_code.DEBUG] + '%4d' % response['alerts']['severityCounts']['debug'] + severity_code.ENDC)
 
         if not CONF.nofooter:
             now = datetime.datetime.utcnow()
