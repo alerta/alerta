@@ -214,6 +214,13 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         action='store_true',
         help="Output evaluated configuration options"
     )
+    parser.add_argument(
+        '--yaml-config',
+        metavar="FILE",
+        default=SYSTEM_DEFAULTS['yaml_config'],
+        help="path to the rules configuration",
+        action="store",
+    )
 
     if daemon:
         parser.add_argument(
