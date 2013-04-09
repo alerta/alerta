@@ -5,10 +5,8 @@ import json
 from uuid import uuid4
 import re
 import fnmatch
-from __builtin__ import staticmethod
 
 import yaml
-
 
 from alerta.common import log as logging
 from alerta.common import config
@@ -83,7 +81,7 @@ class Alert(object):
         self.threshold_info = threshold_info
         self.summary = summary or '%s - %s %s is %s on %s %s' % (
             ','.join(self.environment), self.severity, self.event, self.value, ','.join(self.service), self.resource)
-        self.timeout = timeout or CONF.alert_timeout
+        self.timeout = timeout or 86400  # FIXME(nsatterl) - should be CONF.alert_timeout
         self.alertid = alertid or str(uuid4())
         if last_receive_id:
             self.last_receive_id = last_receive_id
