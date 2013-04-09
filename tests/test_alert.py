@@ -1,4 +1,50 @@
 #!/usr/bin/env python
+import unittest
+
+import sys
+
+from alerta.alert.cef import Alert, severity_code
+
+
+class TestAlert(unittest.TestCase):
+    """
+    Ensures my Alert class is working as expected.
+    """
+
+    def setUp(self):
+        """
+        sets stuff up
+        """
+        config.parse_args(sys.argv)
+        self.ENVIRONMENT = ['RELEASE', 'QA']
+
+    def test_init_default(self):
+        """
+        Ensures the default arguments to the __init__ method result in an instance that looks correct.
+        """
+        alert = Alert('http://www.guardian.co.uk', 'HttpResponseSlow', ['HttpResponseOK','HttpResponseSlow'],
+                      'HTTP', '505 ms', severity_code.CRITICAL, self.ENVIRONMENT,
+                      ['gu.com'], 'The website is slow to respond.', 'httpAlert', ['web','dc1','user'],
+                      'python-webtest', 'n/a', 1200)
+        # tests go here
+        self.assertEquals(alert.environment, self.ENVIRONMENT)
+
+"""
+nose test_dir
+"""
+
+"""
+from mock import MagicMock
+
+foo = Bar()
+foo.qux = MagicMock
+
+... do stuff ...
+
+foo.qux.assert_called_once_with('hello')
+
+
+
 
 import os
 import sys
@@ -43,4 +89,4 @@ if __name__ == '__main__':
     print 'suppress? %s' % suppress
     print alert1
 
-    print alert1.__dict__
+    print alert1.__dict__"""
