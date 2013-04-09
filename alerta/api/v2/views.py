@@ -10,9 +10,11 @@ from flask import request, current_app, render_template, send_from_directory
 
 from alerta.api.v2 import app, db, create_mq
 from alerta.api.v2.switch import Switch
-from alerta.common import config, status_code
+from alerta.common import config
 from alerta.common import log as logging
-from alerta.alert import Alert, Heartbeat, severity_code, ATTRIBUTES
+from alerta.common.alert import Alert, ATTRIBUTES
+from alerta.common.heartbeat import Heartbeat
+from alerta.common import status_code, severity_code
 from alerta.common.utils import DateEncoder
 
 

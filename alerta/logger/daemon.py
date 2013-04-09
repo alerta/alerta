@@ -8,7 +8,8 @@ from alerta.common import config
 
 from alerta.common.daemon import Daemon
 from alerta.common.mq import Messaging, MessageHandler
-from alerta.alert import Alert, Heartbeat
+from alerta.common.alert import Alert
+from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
 
 Version = '2.0.0'

@@ -9,7 +9,8 @@ import datetime
 
 import pytz
 
-from alerta.common import log as logging, status_code, severity_code
+from alerta.common import log as logging
+from alerta.common import status_code, severity_code
 from alerta.common import config
 
 Version = '2.0.0'

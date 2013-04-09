@@ -6,12 +6,15 @@ import re
 
 import yaml
 
+
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.alert import Alert, Heartbeat
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.alert import Alert
+from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
+from alerta.common.mq import Messaging, MessageHandler
+
 
 Version = '2.0.2'
 

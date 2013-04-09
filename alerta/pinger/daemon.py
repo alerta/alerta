@@ -7,9 +7,11 @@ import re
 
 import yaml
 
-from alerta.common import log as logging, severity_code
+from alerta.common import log as logging
 from alerta.common import config
-from alerta.alert import Alert, Heartbeat
+from alerta.common.alert import Alert
+from alerta.common.heartbeat import Heartbeat
+from alerta.common import severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
