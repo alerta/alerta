@@ -3,6 +3,8 @@
 *.swp
 *.egg
 *.BAK
-build/
 alerta.egg-info/
-.idea/
+ve
+dist
+build
+.idea
