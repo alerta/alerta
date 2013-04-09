@@ -9,9 +9,10 @@ from __builtin__ import staticmethod
 
 import yaml
 
-from alerta.alert import severity_code
-from alerta.common import log as logging, status_code
+
+from alerta.common import log as logging
 from alerta.common import config
+from alerta.common import status_code, severity_code
 from alerta.common.utils import DateEncoder
 
 

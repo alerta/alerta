@@ -6,7 +6,7 @@ import pymongo
 
 from alerta.common import log as logging
 from alerta.common import config
-from alerta.alert import Alert
+from alerta.common.alert import Alert
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
