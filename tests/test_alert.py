@@ -18,7 +18,7 @@ from alerta.common.alert import Alert, status_code, severity_code
 
 class TestAlert(unittest.TestCase):
     """
-    Ensures my Alert class is working as expected.
+    Ensures Alert class is working as expected.
     """
 
     def setUp(self):

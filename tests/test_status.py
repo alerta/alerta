@@ -26,7 +26,6 @@ class TestStatus(unittest.TestCase):
         """
         When alert Clears or becomes Normal, then status is Closed
         """
-
         self.assertEquals(severity_code.status_from_severity(severity_code.CRITICAL, severity_code.CLEARED), status_code.CLOSED)
         self.assertEquals(severity_code.status_from_severity(severity_code.WARNING, severity_code.CLEARED), status_code.CLOSED)
         self.assertEquals(severity_code.status_from_severity(severity_code.UNKNOWN, severity_code.NORMAL), status_code.CLOSED)
