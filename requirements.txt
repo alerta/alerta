@@ -5,3 +5,4 @@ PyYAML
 pytz
 boto
 dynect
+CoilMQ
