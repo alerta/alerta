@@ -1,5 +1,8 @@
 *.pyc
 *.pyo
 *.swp
+*.egg
 *.BAK
+build/
 alerta.egg-info/
+.idea/
