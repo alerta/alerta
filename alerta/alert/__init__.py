@@ -71,10 +71,10 @@ class Alert(object):
         self.severity = severity
         self.previous_severity = previous_severity
         self.environment = environment or ['PROD']
-        self.service = service or list()
+        self.service = service or ['Undefined']
         self.text = text
         self.event_type = event_type
-        self.tags = tags
+        self.tags = tags or list()
         self.origin = origin or '%s/%s' % (prog, os.uname()[1])
         self.repeat = repeat
         self.duplicate_count = duplicate_count
@@ -245,7 +245,7 @@ class Alert(object):
                 match = fnmatch.fnmatch('%s.%s' % (facility, level), c['priority'])
                 pattern = c['priority']
             elif c.get('match'):
-                match = all(item in self.alert.items() for item in c['match'].items())
+                match = all(item in self.__dict__.items() for item in c['match'].items())
                 pattern = c['match'].items()
             else:
                 match = None

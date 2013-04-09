@@ -1,8 +1,10 @@
 *.pyc
 *.pyo
 *.swp
+*.egg
 *.BAK
 alerta.egg-info/
 ve
 dist
 build
+.idea
