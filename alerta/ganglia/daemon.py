@@ -32,26 +32,29 @@ class GangliaMessage(MessageHandler):
         self.mq.reconnect()
 
 
-def init_rules():
+def init_rules(rules_filepath):
 
-    rules = list()
     LOG.info('Loading rules...')
     try:
-        rules = yaml.load(open(CONF.yaml_config))
+        rules = yaml.load(open(rules_filepath))
+        LOG.info('Loaded %d rules OK', len(rules))
+        return rules
     except Exception, e:
         LOG.error('Failed to load alert rules: %s', e)
-    LOG.info('Loaded %d rules OK', len(rules))
 
-    return rules
+    return list()
 
+def valid_rule(rule):
+    return len(rule['thresholdInfo']) == len(rule['text'])
 
 class GangliaDaemon(Daemon):
 
-    def __init__(self, prog):
+    def __init__(self, prog, rules_filepath = CONF.yaml_config):
 
         Daemon.__init__(self, prog)
 
         self.dedup = DeDup(by_value=True)
+        self.rules_filepath = rules_filepath
 
     def run(self):
         
@@ -63,7 +66,7 @@ class GangliaDaemon(Daemon):
 
         while not self.shuttingdown:
             try:
-                rules = init_rules()  # re-read rule config each time
+                rules = init_rules(self.rules_filepath)  # re-read rule config each time
                 self.metric_check(rules)
 
                 LOG.debug('Send heartbeat...')
@@ -85,38 +88,36 @@ class GangliaDaemon(Daemon):
 
         for rule in rules:
             # Check rule is valid
-            if len(rule['thresholdInfo']) != len(rule['text']):
+            if not valid_rule(rule):
                 LOG.warning('Skipping invalid rule %s - MUST define alert text for each threshold.', rule['event'])
                 continue
 
             # Get list of metrics required to evaluate each rule
-            params = dict()
-            if 'filter' in rule and rule['filter'] is not None:
-                params[rule['filter']] = 1
+            params = list()
 
             for s in (' '.join(rule['text']), ' '.join(rule['thresholdInfo']), rule['value']):
                 matches = re.findall('\$([a-z0-9A-Z_]+)', s)
-                for m in matches:
-                    if m != 'now':
-                        params['metric=' + m] = 1
-            metric_filter = '&'.join(params.keys())
-            LOG.debug('Metric filter = %s', metric_filter)
+                params = ["metric={metric_name}".format(metric_name = m) for m in matches if not m == "now"]
+
+            if 'filter' in rule and rule['filter']:
+                params.append("filter")
+
+            api_query_params = '&'.join(params)
+            LOG.debug('Metric filter query paramters = %s', api_query_params)
 
             # Get metric data for each rule
-            response = GangliaDaemon.get_metrics(metric_filter)
+            response = GangliaDaemon.get_metrics(api_query_params)
             LOG.debug('Ganglia API response: %s', response)
 
             # Make non-metric substitutions in value, thresholdInfo and text
             now = int(time.time())
             rule['value'] = re.sub('\$now', str(now), rule['value'])
-            idx = 0
-            for threshold in rule['thresholdInfo']:
+
+            for idx, threshold in enumerate(rule['thresholdInfo']):
                 rule['thresholdInfo'][idx] = re.sub('\$now', str(now), threshold)
-                idx += 1
-            idx = 0
-            for text in rule['text']:
+
+            for idx, text in enumerate(rule['text']):
                 rule['text'][idx] = re.sub('\$now', time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(now)), text)
-                idx += 1
 
             metric = dict()
             for m in response:
@@ -223,11 +224,9 @@ class GangliaDaemon(Daemon):
                         except ZeroDivisionError:
                             v = 0.0
 
-                    idx = 0
-                    for threshold in metric[resource]['thresholdInfo']:
+                    for idx, threshold in enumerate(metric[resource]['thresholdInfo']):
                         metric[resource]['thresholdInfo'][idx] = re.sub('\$%s(\.sum)?' % m['metric'], str(v),
                                                                         threshold)
-                        idx += 1
 
                 # Substitutions for text
                 if m['metric'] in ''.join(rule['text']):
@@ -246,15 +245,14 @@ class GangliaDaemon(Daemon):
                         v = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(float(v)))
 
                     LOG.debug('Metric resource text %s', metric)
-                    idx = 0
-                    for text in metric[resource]['text']:
+
+                    for idx, text in enumerate(metric[resource]['text']):
                         metric[resource]['text'][idx] = re.sub('\$%s(\.sum)?' % m['metric'], str(v), text)
-                        idx += 1
+
                 LOG.debug('end of metric loop')
 
-            for resource in metric:
+            for index, resource in enumerate(metric):
                 LOG.debug('Calculate final value for resource %s', resource)
-                index = 0
                 try:
                     calculated_value = eval(metric[resource]['value'])
                 except KeyError:
@@ -322,31 +320,32 @@ class GangliaDaemon(Daemon):
                             self.mq.send(gangliaAlert)
 
                         break  # First match wins
-                    index += 1
 
     @staticmethod
-    def get_metrics(filter):
-        url = "http://%s:%s/ganglia/api/v1/metrics?%s" % (CONF.ganglia_host, CONF.ganglia_port,  filter)
+    def get_metrics(filter, ganglia_host = CONF.ganglia_host, ganglia_port = CONF.ganglia_port):
+        url = "http://%s:%s/ganglia/api/v1/metrics?%s" % (ganglia_host, ganglia_port,  filter)
+
         LOG.info('Metric request %s', url)
 
         try:
             r = urllib2.urlopen(url, None, 15)
+            if r.getcode():
+                response = json.loads(r.read())['response']
+                if not response['status'] == 'error':
+                    LOG.info('Retrieved %s matching metrics in %ss', response['total'], response['time'])
+
+                    return response['metrics']
+
+                if response['status'] == 'error':
+                    LOG.error('No metrics retrieved - %s', response['message'])
+
+            if not r.getcode():
+                LOG.error('Error during connection or data transfer (timeout=%d)', 15)                
+
         except urllib2.URLError, e:
             LOG.error('Could not retrieve metric data from %s - %s', url, e)
-            return dict()
-
-        if r.getcode() is None:
-            LOG.error('Error during connection or data transfer (timeout=%d)', 15)
-            return dict()
-
-        response = json.loads(r.read())['response']
-        if response['status'] == 'error':
-            LOG.error('No metrics retreived - %s', response['message'])
-            return dict()
-
-        LOG.info('Retreived %s matching metrics in %ss', response['total'], response['time'])
-
-        return response['metrics']
+        
+        return dict()
 
     @staticmethod
     def quote(s):
