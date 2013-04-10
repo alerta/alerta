@@ -24,6 +24,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'use_syslog': True,
         'use_stderr': False,
         'foreground': False,
+        'yaml_config': '/etc/alerta/%s.yaml' % prog,
         'show_settings': False,
     }
 
@@ -43,7 +44,6 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'server_threads': 4,
         'disable_flag': '/tmp/%s.disable' % prog,
         'alert_timeout': 86400,  # seconds
-        'yaml_config': '/etc/alerta/%s.yaml' % prog,
         'parser_dir': '/etc/alerta/parsers',
         'loop_every': 30,   # seconds
 
@@ -209,17 +209,17 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         help="Send to console stderr"
     )
     parser.add_argument(
+        '--yaml-config',
+        metavar="FILE",
+        default=OPTION_DEFAULTS['yaml_config'],
+        action="store",
+        help="Path to the YAML configuration",
+    )
+    parser.add_argument(
         '--show-settings',
         default=OPTION_DEFAULTS['show_settings'],
         action='store_true',
         help="Output evaluated configuration options"
-    )
-    parser.add_argument(
-        '--yaml-config',
-        metavar="FILE",
-        default=SYSTEM_DEFAULTS['yaml_config'],
-        help="path to the rules configuration",
-        action="store",
     )
 
     if daemon:
