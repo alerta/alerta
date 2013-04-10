@@ -65,7 +65,7 @@ class Alert(object):
         self.event = event
         self.correlate = correlate or list()
         self.group = group
-        self.value = value
+        self.value = value or 'n/a'
         if status:
             self.status = status
         self.severity = severity

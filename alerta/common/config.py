@@ -231,7 +231,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         )
     parser.set_defaults(**defaults)
 
-    args = parser.parse_args(argv_left)
+    args, argv = parser.parse_known_args(argv_left)
     CONF.update(vars(args))
 
     if CONF.show_settings:
