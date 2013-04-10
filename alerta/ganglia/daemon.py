@@ -100,7 +100,7 @@ class GangliaDaemon(Daemon):
                 params = ["metric={metric_name}".format(metric_name = m) for m in matches if not m == "now"]
 
             if 'filter' in rule and rule['filter']:
-                params.append("filter")
+                params.append(rule["filter"])
 
             api_query_params = '&'.join(params)
             LOG.debug('Metric filter query paramters = %s', api_query_params)
