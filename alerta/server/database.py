@@ -293,7 +293,6 @@ class Mongo(object):
             "text": alert.text,
             "summary": alert.summary,
             "value": alert.value,
-            "tags": alert.tags,
             "repeat": True,
             "origin": alert.origin,
             "rawData": alert.raw_data,
