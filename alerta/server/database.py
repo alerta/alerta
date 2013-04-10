@@ -253,6 +253,9 @@ class Mongo(object):
 
         response = self.db.alerts.update(query, {'$set': update}, multi=False)
 
+        if 'status' in update:
+            self.update_status(alertid=alertid, alert=alert, status=update['status'])
+
         return True if 'ok' in response else False
 
     def delete_alert(self, alertid):
