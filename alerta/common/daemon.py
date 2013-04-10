@@ -110,7 +110,7 @@ class Daemon:
             except OSError, e:
                 LOG.error('Could not run %s as user %s: %s', self.prog, self.user, e)
                 sys.exit(1)
-            LOG.info('Running %s as user %s', self.prog, self.user)
+            LOG.warning('Running %s as user %s', self.prog, self.user)
 
         # decouple from parent environment
         os.chdir("/")
@@ -181,7 +181,7 @@ class Daemon:
                 pass
 
         # Start the daemon
-        LOG.info('Starting %s...' % self.prog)
+        LOG.warning('Starting %s...' % self.prog)
         if not CONF.foreground:
             self.daemonize()
         self.wait_on_disable()
