@@ -13,10 +13,11 @@ from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
+from alerta.common.alert import severity_code
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -88,7 +89,7 @@ class AwsDaemon(Daemon):
 
     def ec2_status_check(self):
 
-        query_url = 'http://%s:%s%s?tags=cloud:AWS/EC2' % (CONF.api_host, CONF.api_port, CONF.api_endpoint)
+        query_url = 'http://%s:%s%s/resources?tags=cloud:AWS/EC2' % (CONF.api_host, CONF.api_port, CONF.api_endpoint)
 
         self.last = self.info.copy()
         self.info = {}
