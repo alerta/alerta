@@ -330,9 +330,13 @@ class GangliaDaemon(Daemon):
         try:
             r = urllib2.urlopen(url, None, 15)
             if r.getcode():
-                response = json.loads(r.read())['response']
-                if not response['status'] == 'error':
-                    LOG.info('Retrieved %s matching metrics in %ss', response['total'], response['time'])
+                data = json.loads(r.read())
+
+                if 'response' in data:
+                    response = data['response']
+
+                    if not response['status'] == 'error':
+                        LOG.info('Retrieved %s matching metrics in %ss', response['total'], response['time'])
 
                     return response['metrics']
 
