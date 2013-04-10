@@ -1,6 +1,7 @@
 
 import os
 import sys
+import datetime
 import unittest
 
 # If ../alerta/__init__.py exists, add ../ to Python search path, so that
@@ -18,7 +19,7 @@ from alerta.common import config
 CONF = config.CONF
 
 
-class TestStatus(unittest.TestCase):
+class TestTags(unittest.TestCase):
     """
     Ensures Alert tagging is working as expected.
     """
@@ -32,12 +33,16 @@ class TestStatus(unittest.TestCase):
         self.TAGS = ['location:london', 'vendor:ibm']
 
         self.db = Mongo()
-        self.alert = Alert(self.RESOURCE, self.EVENT)
 
-    def test_tag_alert(self):
+    def test_save_and_tag_alert(self):
         """
-        Tag an alert.
+        Save an alert to database and tag it.
         """
-        self.db.tag_alert(self.alert.alertid, self.TAGS)
+        alert = Alert(self.RESOURCE, self.EVENT, receive_time=datetime.datetime.utcnow())
+        ret = self.db.save_alert(alert)
+        self.assertIsInstance(ret, basestring)
 
-        self.assertEquals(self.db.get_alert(self.alert.alertid).tags, self.TAGS)
+        self.db.tag_alert(alert.alertid, self.TAGS)
+
+        self.assertItemsEqual(self.db.get_alert(alert.alertid).tags, [self.TAGS])
+

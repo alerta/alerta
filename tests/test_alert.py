@@ -86,6 +86,14 @@ class TestAlert(unittest.TestCase):
         self.assertEquals(alert.severity, self.SEVERITY)
         self.assertEquals(alert.environment, self.ENVIRONMENT)
 
+    def test_alert_receive_now(self):
+        """
+        Ensure receive time is stamped.
+        """
+        alert = Alert(self.RESOURCE, self.EVENT, severity=self.SEVERITY, environment=self.ENVIRONMENT)
+
+        alert.receive_now()
+        self.assertIsInstance(alert.receive_time, datetime.datetime)
 
     def test_alert_with_all_values(self):
         """
