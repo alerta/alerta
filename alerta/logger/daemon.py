@@ -1,66 +1,70 @@
+
 import time
 import json
 import urllib2
 import datetime
 
-from alerta.common import log as logging
 from alerta.common import config
-
+from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
 class LoggerMessage(MessageHandler):
+
     def __init__(self, mq):
+
         self.mq = mq
+
         MessageHandler.__init__(self)
 
     def on_message(self, headers, body):
 
         LOG.debug("Received: %s", body)
-        alert = Alert.parse_alert(body).get_body()
+        logAlert = Alert.parse_alert(body)
 
-        if alert:
-            LOG.info('%s : [%s] %s', alert['lastReceiveId'], alert['status'], alert['summary'])
+        if logAlert:
+            LOG.info('%s : [%s] %s', logAlert.last_receive_id, logAlert.status, logAlert.summary)
 
-            source_host, _, source_path = alert['resource'].partition(':')
+            source_host, _, source_path = logAlert.resource.partition(':')
             document = {
-                '@message': alert['summary'],
-                '@source': alert['resource'],
+                '@message': logAlert.summary,
+                '@source': logAlert.resource,
                 '@source_host': source_host,
                 '@source_path': source_path,
-                '@tags': alert['tags'],
-                '@timestamp': alert['lastReceiveTime'],
-                '@type': alert['type'],
-                '@fields': alert
+                '@tags': logAlert.tags,
+                '@timestamp': logAlert.last_receive_time,
+                '@type': logAlert.event_type,
+                '@fields': logAlert.get_body()
             }
             LOG.debug('Index payload %s', document)
 
             index_url = "http://%s:%s/%s/%s" % (CONF.es_host, CONF.es_port,
-                                                datetime.datetime.utcnow().strftime(CONF.es_index), alert['type'])
+                                                datetime.datetime.utcnow().strftime(CONF.es_index), logAlert.event_type)
             LOG.debug('Index URL: %s', index_url)
 
             try:
                 response = urllib2.urlopen(index_url, json.dumps(document, cls=DateEncoder)).read()
             except Exception, e:
-                LOG.error('%s : Alert indexing to %s failed - %s', alert['lastReceiveId'], index_url, e)
+                LOG.error('%s : Alert indexing to %s failed - %s', logAlert.last_receive_id, index_url, e)
                 return
 
             try:
                 es_id = json.loads(response)['_id']
-                LOG.info('%s : Alert indexed at %s/%s', alert['lastReceiveId'], index_url, es_id)
+                LOG.info('%s : Alert indexed at %s/%s', logAlert.last_receive_id, index_url, es_id)
             except Exception, e:
                 LOG.error('%s : Could not parse elasticsearch reponse: %s', e)
 
     def on_disconnected(self):
+
         self.mq.reconnect()
 
 

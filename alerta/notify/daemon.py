@@ -111,7 +111,7 @@ class NotifyDaemon(Daemon):
         # Connect to message queue
         self.mq = Messaging()
         self.mq.connect(callback=NotifyMessage(self.mq))
-        self.mq.subscribe(destination=CONF.outbound_queue)
+        self.mq.subscribe(destination=CONF.outbound_topic)
 
         while not self.shuttingdown:
             try:

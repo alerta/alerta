@@ -1,12 +1,5 @@
-#!/usr/bin/env python
-########################################
-#
-# alert-ircbot.py - Alert IRC client
-#
-########################################
 
 import sys
-
 import socket
 import select
 import json
@@ -20,28 +13,39 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-# TODO(nsatterl): this should be in the Alert class
 def ack_alert(alertid):
 
-    url = "http://%s:%s/%s/alerts/alert/%s" % (CONF.api_host, CONF.api_port, CONF.api_endpoint, alertid)
-    params = json.dumps({'status': 'ACK'})
+    url = "http://%s:%s%s/alerts/alert/%s" % (CONF.api_host, CONF.api_port, CONF.api_endpoint, alertid)
+    data = json.dumps({'status': 'ack'})
+    headers = {'Content-type': 'application/json'}
     LOG.info('ACK request %s', url)
 
     try:
-        output = urllib2.urlopen(url, params).read()
-        response = json.loads(output)['response']
+        request = urllib2.Request(url=url, data=data, headers=headers)
+        request.get_method = lambda: 'PUT'
+        response = urllib2.urlopen(request)
     except urllib2.URLError, e:
-        LOG.error('Could not post request and/or parse response from %s - %s', url, e)
+        LOG.error('Request %s failed: %s', url, e)
         return
 
-    if response['status'] == 'error':
-        LOG.error('Message not ACKed - %s', response['message'])
+    else:
+        code = response.getcode()
+        body = response.read()
+        LOG.debug('HTTP response code=%s', code)
+
+    try:
+        body = json.loads(body)
+    except Exception, e:
+        LOG.error('Failed to parse JSON response: %s', body, e)
+
+    if code != 200 or body['response']['status'] == 'error':
+        LOG.error('Message not ACKed - %s', body['response']['message'])
         return
 
     LOG.info('Successfully ACKed alert %s', alertid)
@@ -65,19 +69,19 @@ class IrcbotMessage(MessageHandler):
             return
 
         LOG.debug("Received: %s", body)
+        ircAlert = Alert.parse_alert(body)
 
-        if headers['type'].endswith('Alert'):
-            ircAlert = Alert.parse_alert(body)
-            if ircAlert:
-                LOG.info('%s : Send IRC message to %s', ircAlert.get_id(), CONF.irc_channel)
-                try:
-                    msg = 'PRIVMSG %s :%s [%s] %s' % (CONF.irc_channel, ircAlert.get_id(short=True),
-                                                      ircAlert.alert.get('status', status_code.UNKNOWN), ircAlert.summary)
-                    self.irc.send(msg + '\r\n')
-                except Exception, e:
-                    LOG.error('%s : IRC send failed - %s', ircAlert.get_id(), e)
+        if ircAlert:
+            LOG.info('%s : Send IRC message to %s', ircAlert.get_id(), CONF.irc_channel)
+            try:
+                msg = 'PRIVMSG %s :%s [%s] %s' % (CONF.irc_channel, ircAlert.get_id(short=True),
+                                                  ircAlert.status, ircAlert.summary)
+                self.irc.send(msg + '\r\n')
+            except Exception, e:
+                LOG.error('%s : IRC send failed - %s', ircAlert.get_id(), e)
 
     def on_disconnected(self):
+
         self.mq.reconnect()
 
 
@@ -110,7 +114,7 @@ class IrcbotDaemon(Daemon):
         # Connect to message queue
         self.mq = Messaging()
         self.mq.connect(callback=IrcbotMessage(self.mq, irc, tokens))
-        self.mq.subscribe(destination=CONF.outbound_queue)
+        self.mq.subscribe(destination=CONF.outbound_topic)
 
         while not self.shuttingdown:
             try:

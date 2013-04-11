@@ -12,7 +12,7 @@ from alerta.common import status_code, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -73,6 +73,7 @@ class WorkerThread(threading.Thread):
                     # Forward alert to notify topic and logger queue
                     self.mq.send(duplicateAlert, CONF.outbound_queue)
                     self.mq.send(duplicateAlert, CONF.outbound_topic)
+                    LOG.info('%s : Alert forwarded to %s and %s', incomingAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
                 self.queue.task_done()
 
@@ -99,9 +100,9 @@ class WorkerThread(threading.Thread):
                 # Forward alert to notify topic and logger queue
                 self.mq.send(correlatedAlert, CONF.outbound_queue)
                 self.mq.send(correlatedAlert, CONF.outbound_topic)
+                LOG.info('%s : Alert forwarded to %s and %s', incomingAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
                 self.queue.task_done()
-                LOG.info('%s : Alert forwarded to %s and %s', incomingAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
             else:
                 LOG.info('%s : New alert -> insert', incomingAlert.get_id())
@@ -128,9 +129,9 @@ class WorkerThread(threading.Thread):
                 # Forward alert to notify topic and logger queue
                 self.mq.send(incomingAlert, CONF.outbound_queue)
                 self.mq.send(incomingAlert, CONF.outbound_topic)
+                LOG.info('%s : Alert forwarded to %s and %s', incomingAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
                 self.queue.task_done()
-                LOG.info('%s : Alert forwarded to %s and %s', incomingAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
             # update application stats
             self.db.update_metrics(incomingAlert.create_time, incomingAlert.receive_time)

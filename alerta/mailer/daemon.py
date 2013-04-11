@@ -46,6 +46,7 @@ class MailerMessage(MessageHandler):
         email.send()
 
     def on_disconnected(self):
+
         self.mq.reconnect()
 
 
@@ -62,7 +63,7 @@ class MailerDaemon(Daemon):
         # Connect to message queue
         self.mq = Messaging()
         self.mq.connect(callback=MailerMessage(self.mq, tokens))
-        self.mq.subscribe(destination=CONF.outbound_queue)
+        self.mq.subscribe(destination=CONF.outbound_topic)
 
         while not self.shuttingdown:
             try:
