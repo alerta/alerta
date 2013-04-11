@@ -12,7 +12,7 @@ from alerta.common import status_code, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -60,7 +60,7 @@ class WorkerThread(threading.Thread):
                 self.queue.task_done()
                 return
 
-            if self.db.is_duplicate(incomingAlert):
+            if self.db.is_duplicate(incomingAlert, incomingAlert.severity):
 
                 # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary,
                 #                       value, tags and origin
