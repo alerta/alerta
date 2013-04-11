@@ -80,8 +80,8 @@ def get_alerts():
         query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date}
 
     if request.args.get('id', None):
-        query['_id'] = dict()
-        query['_id']['$regex'] = '^' + request.args['id']
+        query['$or'] = [{'_id': {'$regex': '^' + request.args['id']}},
+                        {'lastReceiveId': {'$regex': '^' + request.args['id']}}]
 
     for field in [fields for fields in request.args if fields.lstrip('-') in ATTRIBUTES]:
         if field == 'id':

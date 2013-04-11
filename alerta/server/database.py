@@ -120,11 +120,15 @@ class Mongo(object):
     def get_alert(self, alertid=None, environment=None, resource=None, event=None, severity=None):
 
         if alertid:
-            response = self.db.alerts.find_one({'_id': {'$regex': '^' + alertid}})
+            query = {'$or': [{'_id': {'$regex': '^' + alertid}},
+                    {'lastReceiveId': {'$regex': '^' + alertid}}]}
         elif severity:
-            response = self.db.alerts.find_one({"environment": environment, "resource": resource, "event": event, "severity": severity})
+            query = {"environment": environment, "resource": resource, "event": event, "severity": severity}
         else:
-            response = self.db.alerts.find_one({"environment": environment, "resource": resource, "event": event})
+            query = {"environment": environment, "resource": resource, "event": event}
+
+        response = self.db.alerts.find_one(query)
+        LOG.critical('db.alerts.findOne(query=%s)', query)
 
         if not response:
             LOG.warning('Alert not found with environment, resource, event, severity = %s %s %s %s', environment, resource, event, severity)
@@ -245,7 +249,8 @@ class Mongo(object):
     def partial_update_alert(self, alertid=None, alert=None, update=None):
 
         if alertid:
-            query = {'_id': {'$regex': '^' + alertid}}
+            query = {'$or': [{'_id': {'$regex': '^' + alertid}},
+                    {'lastReceiveId': {'$regex': '^' + alertid}}]}
         else:
             query = {"environment": alert.environment, "resource": alert.resource,
                      '$or': [{"event": alert.event}, {"correlatedEvents": alert.event}]}
@@ -349,7 +354,7 @@ class Mongo(object):
         update_time = update_time.replace(tzinfo=pytz.utc)
 
         if alertid:
-            query = {"_id": alertid}
+            query = {'_id': {'$regex': '^' + alertid}}
         else:
             query = {"environment": alert.environment, "resource": alert.resource,
                      '$or': [{"event": alert.event}, {"correlatedEvents": alert.event}]}
@@ -357,7 +362,8 @@ class Mongo(object):
         update = {'$set': {"status": status}, '$push': {"history": {"status": status, "updateTime": update_time}}}
 
         try:
-            self.db.alerts.update(query, update)
+            response = self.db.alerts.update(query, update)
+            LOG.debug('db.alerts.update(query=%s, update=%s) = %s', query, update, response)
         except pymongo.errors.OperationFailure, e:
             LOG.error('MongoDB error: %s', e)
 
