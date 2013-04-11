@@ -128,7 +128,7 @@ class Mongo(object):
             query = {"environment": environment, "resource": resource, "event": event}
 
         response = self.db.alerts.find_one(query)
-        LOG.critical('db.alerts.findOne(query=%s)', query)
+        LOG.debug('db.alerts.findOne(query=%s)', query)
 
         if not response:
             LOG.warning('Alert not found with environment, resource, event, severity = %s %s %s %s', environment, resource, event, severity)
