@@ -16,7 +16,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -24,7 +24,7 @@ CONF = config.CONF
 _WARN_THRESHOLD = 5  # ms
 _CRIT_THRESHOLD = 10  # ms
 
-_MAX_TIMEOUT = 5  # seconds
+_MAX_TIMEOUT = 15  # seconds
 _MAX_RETRIES = 2  # number of retries
 
 _PING_ALERTS = [
@@ -79,9 +79,9 @@ class WorkerThread(threading.Thread):
 
             LOG.info('%s pinging %s', self.getName(), resource)
             if retries > 1:
-                rc, rtt, loss, stdout = self.pinger(resource, count=3)
+                rc, rtt, loss, stdout = self.pinger(resource)
             else:
-                rc, rtt, loss, stdout = self.pinger(resource, timeout=_MAX_TIMEOUT)
+                rc, rtt, loss, stdout = self.pinger(resource, count=5, timeout=_MAX_TIMEOUT)
 
             if rc != PING_OK and retries:
                 LOG.info('Retrying ping %s %s more times', resource, retries)
@@ -94,11 +94,11 @@ class WorkerThread(threading.Thread):
                 if max > _CRIT_THRESHOLD:
                     event = 'PingSlow'
                     severity = severity_code.CRITICAL
-                    text = 'Node responded to ping in %s ms (> %s ms)' % (max, _CRIT_THRESHOLD)
+                    text = 'Node responded to ping in %s ms avg (> %s ms)' % (avg, _CRIT_THRESHOLD)
                 elif max > _WARN_THRESHOLD:
                     event = 'PingSlow'
                     severity = severity_code.WARNING
-                    text = 'Node responded to ping in %s ms (> %s ms)' % (max, _WARN_THRESHOLD)
+                    text = 'Node responded to ping in %s ms avg (> %s ms)' % (avg, _WARN_THRESHOLD)
                 else:
                     event = 'PingOK'
                     severity = severity_code.NORMAL
@@ -119,6 +119,7 @@ class WorkerThread(threading.Thread):
                 continue
 
             # Defaults
+            resource += ':icmp'
             group = 'Network'
             correlate = _PING_ALERTS
             timeout = None
@@ -153,14 +154,14 @@ class WorkerThread(threading.Thread):
         self.queue.task_done()
 
     @staticmethod
-    def pinger(node, count=1, interval=1, timeout=2):
+    def pinger(node, count=3, interval=1, timeout=5):
 
         if timeout < count * interval:
             timeout = count * interval + 1
         if timeout > _MAX_TIMEOUT:
             timeout = _MAX_TIMEOUT
 
-        cmd = "ping -q -c %s -i %s -t %s %s" % (count, interval, timeout, node)
+        cmd = "ping -q -c %s -i %s -w %s %s" % (count, interval, timeout, node)
         ping = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout = ping.communicate()[0].rstrip('\n')
         rc = ping.returncode
