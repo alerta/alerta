@@ -11,7 +11,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.mail import Mailer
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -28,22 +28,33 @@ class MailerMessage(MessageHandler):
 
     def on_message(self, headers, body):
 
+        LOG.debug("Received: %s", body)
+
+        mailAlert = Alert.parse_alert(body)
+
+        if mailAlert.severity == severity_code.NORMAL and mailAlert.previous_severity == severity_code.UNKNOWN:
+            LOG.info('%s: Skip alert because not clearing a known alarm', mailAlert.get_id())
+            return
+
+        # Only send email for CRITICAL, MAJOR, MINOR or related alerts
+        if ((mailAlert.severity == severity_code.WARNING
+                and mailAlert.previous_severity in [severity_code.NORMAL, severity_code.UNKNOWN])
+            or (mailAlert.severity == severity_code.NORMAL
+                and mailAlert.previous_severity == severity_code.WARNING)):
+            LOG.debug('Alert %s not of sufficient severity to warrant an email. Skipping.', mailAlert.get_id())
+            return
+
         if not self.tokens.get_token():
             LOG.warning('%s : No tokens left, rate limiting this alert', headers['correlation-id'])
             return
 
-        LOG.debug("Received: %s", body)
-
-        mailAlert = Alert.parse_alert(body)
-        current_severity, previous_severity = mailAlert.get_severity()
-
-        # Only send email for CRITICAL, MAJOR or related alerts
-        if (current_severity not in [severity_code.CRITICAL, severity_code.MAJOR]
-                or previous_severity not in [severity_code.CRITICAL, severity_code.MAJOR]):
-            return
-
         email = Mailer(mailAlert)
-        email.send()
+
+        mail_to = CONF.mail_list.split(',')
+        for tag in mailAlert.tags:
+            if tag.startswith('email'):
+                mail_to.append(tag.split(':')[1])
+        email.send(mail_to=mail_to)
 
     def on_disconnected(self):
 
