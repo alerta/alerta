@@ -42,8 +42,13 @@ INFORM = 'informational'
 DEBUG = 'debug'
 AUTH = 'security'
 UNKNOWN = 'unknown'
+NOT_VALID = 'notvalid'
 
 ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN]
+
+MORE_SEVERE = 'moreSevere'
+LESS_SEVERE = 'lessSevere'
+NO_CHANGE = 'noChange'
 
 _SEVERITY_MAP = {
     CRITICAL: CRITICAL_SEV_CODE,
@@ -103,22 +108,22 @@ def parse_severity(name):
         for severity in _SEVERITY_MAP:
             if name.lower() == severity.lower():
                 return severity
-    return 'notValid'
+    return NOT_VALID
 
 
 def trend(previous, current):
     if name_to_code(previous) > name_to_code(current):
-        return 'moreSevere'
+        return MORE_SEVERE
     elif name_to_code(previous) < name_to_code(current):
-        return 'lessSevere'
+        return LESS_SEVERE
     else:
-        return 'noChange'
+        return NO_CHANGE
 
 
 def status_from_severity(previous_severity, current_severity, current_status=None):
     if current_severity in [NORMAL, CLEARED]:
         return status_code.CLOSED
-    if trend(previous_severity, current_severity) == 'moreSevere':
+    if trend(previous_severity, current_severity) == MORE_SEVERE:
         return status_code.OPEN
     return current_status
 
