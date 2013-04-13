@@ -13,7 +13,7 @@ from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
-from alerta.common.alert import severity_code
+from alerta.common.alert import severity_code, status_code
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 
@@ -176,19 +176,19 @@ class AwsDaemon(Daemon):
                 # Delete alerts for instances that are no longer listed by EC2 API
                 if resource not in self.info:
                     LOG.info('%s : EC2 instance %s is no longer listed, DELETE associated alert', alertid, resource)
-                    data = '{ "_method": "delete" }'
+                    data = {"_method": "delete"}
                     # data = '{ "status": "DELETED" }' # XXX - debug only
-                elif (self.info[resource]['state'] == 'terminated' and alert['status'] != 'ACK'
+                elif (self.info[resource]['state'] == 'terminated' and alert['status'] != status_code.ACK
                         and alert['event'] not in ['Ec2InstanceState', 'Ec2StatusChecks']):
-                    LOG.info('%s : EC2 instance %s is terminated, ACK associated alert', alertid, resource)
-                    data = '{ "status": "ACK" }'
+                    LOG.info('%s : EC2 instance %s is terminated, acknowledge associated alert', alertid, resource)
+                    data = {"status": status_code.ACK}
                 else:
                     continue
 
                 # Delete alert or update alert status
                 delete_url = 'http://%s:%s%s/alerts/alert/%s' % (CONF.api_host, CONF.api_port, CONF.api_endpont, alertid)
                 LOG.debug('%s : %s %s', alertid, delete_url, data)
-                req = urllib2.Request(delete_url, data)
+                req = urllib2.Request(delete_url, json.dumps(data))
                 try:
                     response = json.loads(urllib2.urlopen(req).read())['response']
                 except urllib2.URLError, e:

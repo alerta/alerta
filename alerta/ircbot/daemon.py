@@ -9,6 +9,7 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
+from alerta.common import status_code
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
@@ -22,7 +23,7 @@ CONF = config.CONF
 def ack_alert(alertid):
 
     url = "http://%s:%s%s/alerts/alert/%s" % (CONF.api_host, CONF.api_port, CONF.api_endpoint, alertid)
-    data = json.dumps({'status': 'ack'})
+    data = json.dumps({'status': status_code.ACK})
     headers = {'Content-type': 'application/json'}
     LOG.info('ACK request %s', url)
 
