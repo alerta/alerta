@@ -1,6 +1,5 @@
 
 import json
-import datetime
 import urllib2
 
 from alerta.common import config
@@ -21,7 +20,20 @@ class PagerDutyClient(object):
             "event_type": "trigger",
             "description": alert.summary,
             "incident_key": incident_key,
-            "details": str(alert.get_body())
+            "details": {
+                "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
+                "status": alert.status,
+                "lastReceiveTime": alert.get_last_receive_time(),
+                "environment": ",".join(alert.environment),
+                "service": ",".join(alert.service),
+                "resource": alert.resource,
+                "event": alert.event,
+                "value": alert.value,
+                "text": alert.text,
+                "id": alert.get_id(),
+                "tags": " ".join(alert.tags),
+                "moreInfo": alert.more_info
+            }
         }
         LOG.info('PagerDuty trigger event => %s', pagerduty_event)
 
@@ -36,7 +48,7 @@ class PagerDutyClient(object):
             "event_type": "acknowledge",
             "description": "someone is working on the problem",  # FIXME
             "incident_key": incident_key,
-            "details": {"acked_at": str(datetime.datetime.utcnow())}  # FIXME
+            "details": {"acked_at": alert.get_last_receive_time()}
         }
         LOG.info('PagerDuty acknowledge event => %s', pagerduty_event)
 
@@ -51,7 +63,7 @@ class PagerDutyClient(object):
             "event_type": "resolve",
             "description": "someone fixed the problem",  # FIXME
             "incident_key": incident_key,
-            "details": {"fixed_at": str(datetime.datetime.utcnow())}  # FIXME
+            "details": {"fixed_at": alert.get_last_receive_time()}
         }
         LOG.info('PagerDuty resolve event => %s', pagerduty_event)
 
