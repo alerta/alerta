@@ -93,6 +93,9 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'es_port': 9200,
         'es_index': 'alerta-%Y.%m.%d',  # NB. Kibana config must match this index
 
+        'pagerduty_endpoint': 'https://events.pagerduty.com/generic/2010-04-15/create_event.json',
+        'pagerduty_api_key': '',
+
         'aql_endpoint': 'http://gw.aql.com/sms/sms_gw.php',
         'aql_user': '',
         'aql_password': '',
