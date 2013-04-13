@@ -46,9 +46,22 @@ class PagerDutyClient(object):
         pagerduty_event = {
             "service_key": CONF.pagerduty_api_key,
             "event_type": "acknowledge",
-            "description": "someone is working on the problem",  # FIXME
+            "description": alert.summary,
             "incident_key": incident_key,
-            "details": {"acked_at": alert.get_last_receive_time()}
+            "details": {
+                "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
+                "status": alert.status,
+                "lastReceiveTime": alert.get_last_receive_time(),
+                "environment": ",".join(alert.environment),
+                "service": ",".join(alert.service),
+                "resource": alert.resource,
+                "event": alert.event,
+                "value": alert.value,
+                "text": alert.text,
+                "id": alert.get_id(),
+                "tags": " ".join(alert.tags),
+                "moreInfo": alert.more_info
+            }
         }
         LOG.info('PagerDuty acknowledge event => %s', pagerduty_event)
 
@@ -61,9 +74,22 @@ class PagerDutyClient(object):
         pagerduty_event = {
             "service_key": CONF.pagerduty_api_key,
             "event_type": "resolve",
-            "description": "someone fixed the problem",  # FIXME
+            "description": alert.summary,
             "incident_key": incident_key,
-            "details": {"fixed_at": alert.get_last_receive_time()}
+            "details": {
+                "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
+                "status": alert.status,
+                "lastReceiveTime": alert.get_last_receive_time(),
+                "environment": ",".join(alert.environment),
+                "service": ",".join(alert.service),
+                "resource": alert.resource,
+                "event": alert.event,
+                "value": alert.value,
+                "text": alert.text,
+                "id": alert.get_id(),
+                "tags": " ".join(alert.tags),
+                "moreInfo": alert.more_info
+            }
         }
         LOG.info('PagerDuty resolve event => %s', pagerduty_event)
 
