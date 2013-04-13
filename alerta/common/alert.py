@@ -80,7 +80,7 @@ class Alert(object):
         self.duplicate_count = duplicate_count
         self.threshold_info = threshold_info
         self.summary = summary or '%s - %s %s is %s on %s %s' % (
-            ','.join(self.environment), self.severity, self.event, self.value, ','.join(self.service), self.resource)
+            ','.join(self.environment), self.severity.capitalize(), self.event, self.value, ','.join(self.service), self.resource)
         self.timeout = timeout or 86400  # FIXME(nsatterl) - should be CONF.alert_timeout
         self.alertid = alertid or str(uuid4())
         if last_receive_id:
@@ -162,6 +162,15 @@ class Alert(object):
 
     def get_severity(self):
         return self.severity, self.previous_severity
+
+    def get_create_time(self):
+        return self.create_time.replace(microsecond=0).isoformat() + ".%03dZ" % (self.create_time.microsecond // 1000)
+
+    def get_receive_time(self):
+        return self.receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (self.receive_time.microsecond // 1000)
+
+    def get_last_receive_time(self):
+        return self.last_receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (self.last_receive_time.microsecond // 1000)
 
     def receive_now(self):
         self.receive_time = datetime.datetime.utcnow()
