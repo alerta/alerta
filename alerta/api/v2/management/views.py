@@ -3,7 +3,7 @@ import time
 import datetime
 
 from flask import request, Response, url_for, jsonify, render_template
-from alerta.api.v2 import app, db, create_mq
+from alerta.api.v2 import app, db, mq
 from alerta.api.v2.switch import Switch, SwitchState
 
 from alerta import get_version
@@ -91,7 +91,7 @@ def switchboard():
 def health_check():
 
     try:
-        if not create_mq.is_connected():
+        if not mq.is_connected():
             return 'NO_MESSAGE_QUEUE', 503
 
         if not db.conn.alive():

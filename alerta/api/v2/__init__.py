@@ -20,8 +20,8 @@ app = Flask(__name__)
 app.config.from_object(__name__)
 db = Mongo()
 
-create_mq = Messaging()
-create_mq.connect()
+mq = Messaging()
+mq.connect()
 
 import views
 import management.views

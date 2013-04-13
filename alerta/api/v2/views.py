@@ -8,7 +8,7 @@ from functools import wraps
 import pytz
 from flask import request, current_app, render_template, send_from_directory
 
-from alerta.api.v2 import app, db, create_mq
+from alerta.api.v2 import app, db, mq
 from alerta.api.v2.switch import Switch
 from alerta.common import config
 from alerta.common import log as logging
@@ -243,7 +243,7 @@ def create_alert():
         graph_urls=data.get('graphUrls', None),
     )
     LOG.debug('New alert %s', newAlert)
-    create_mq.send(newAlert)
+    mq.send(newAlert)
 
     if newAlert:
         return jsonify(response={"status": "ok", "id": newAlert.get_id()})
@@ -268,12 +268,20 @@ def modify_alert(alertid):
     # Update a single alert
     elif request.method == 'PUT':
         if request.json:
-            response = db.partial_update_alert(alertid, update=request.json)
+            modifiedAlert = db.modify_alert(alertid=alertid, update=request.json)
+            if 'status' in request.json:
+                modifiedAlert = db.update_status(alertid=alertid, status=request.json['status'])
+
+                # Forward alert to notify topic and logger queue
+                mq.send(modifiedAlert, CONF.outbound_queue)
+                mq.send(modifiedAlert, CONF.outbound_topic)
+                LOG.info('%s : Alert forwarded to %s and %s', modifiedAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
+
         else:
-            response = None
+            modifiedAlert = None
             error = "no post data"
 
-        if response:
+        if modifiedAlert:
             return jsonify(response={"status": "ok"})
         else:
             return jsonify(response={"status": "error", "message": error})
@@ -405,7 +413,7 @@ def create_heartbeat():
         heartbeatid=data.get('id', None),
     )
     LOG.debug('New heartbeat %s', heartbeat)
-    create_mq.send(heartbeat)
+    mq.send(heartbeat)
 
     if heartbeat:
         return jsonify(response={"status": "ok", "id": heartbeat.get_id()})

@@ -7,6 +7,7 @@ import pymongo
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.alert import Alert
+from alerta.common import severity_code
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -169,6 +170,9 @@ class Mongo(object):
 
     def update_alert(self, alert, previous_severity=None, trend_indication=None):
 
+        previous_severity = previous_severity or severity_code.UNKNOWN
+        trend_indication = trend_indication or severity_code.NO_CHANGE
+
         update = {
             "event": alert.event,
             "severity": alert.severity,
@@ -246,7 +250,57 @@ class Mongo(object):
             graph_urls=response['graphUrls'],
         )
 
-    def partial_update_alert(self, alertid=None, alert=None, update=None):
+    def modify_alert(self, alertid=None, alert=None, update=None):
+
+        if alertid:
+            query = {'$or': [{'_id': {'$regex': '^' + alertid}},
+                             {'lastReceiveId': {'$regex': '^' + alertid}}]}
+        else:
+            query = {"environment": alert.environment, "resource": alert.resource,
+                     '$or': [{"event": alert.event}, {"correlatedEvents": alert.event}]}
+
+        # FIXME - no native find_and_modify method in this version of pymongo
+        no_obj_error = "No matching object found"
+        response = self.db.command("findAndModify", 'alerts',
+                                   allowable_errors=[no_obj_error],
+                                   query=query,
+                                   update={'$set': update},
+                                   multi=False,
+                                   fields={"history": 0})['value']
+
+        return Alert(
+            alertid=response['_id'],
+            resource=response['resource'],
+            event=response['event'],
+            correlate=response['correlatedEvents'],
+            group=response['group'],
+            value=response['value'],
+            status=response['status'],
+            severity=response['severity'],
+            previous_severity=response['previousSeverity'],
+            environment=response['environment'],
+            service=response['service'],
+            text=response['text'],
+            event_type=response['type'],
+            tags=response['tags'],
+            origin=response['origin'],
+            repeat=response['repeat'],
+            duplicate_count=response['duplicateCount'],
+            threshold_info=response['thresholdInfo'],
+            summary=response['summary'],
+            timeout=response['timeout'],
+            last_receive_id=response['lastReceiveId'],
+            create_time=response['createTime'],
+            expire_time=response['expireTime'],
+            receive_time=response['receiveTime'],
+            last_receive_time=response['lastReceiveTime'],
+            trend_indication=response['trendIndication'],
+            raw_data=response['rawData'],
+            more_info=response['moreInfo'],
+            graph_urls=response['graphUrls'],
+        )
+
+    def update_status(self, alertid=None, alert=None, status=None):
 
         if alertid:
             query = {'$or': [{'_id': {'$regex': '^' + alertid}},
@@ -255,12 +309,56 @@ class Mongo(object):
             query = {"environment": alert.environment, "resource": alert.resource,
                      '$or': [{"event": alert.event}, {"correlatedEvents": alert.event}]}
 
-        response = self.db.alerts.update(query, {'$set': update}, multi=False)
+        update_time = datetime.datetime.utcnow()
+        update_time = update_time.replace(tzinfo=pytz.utc)
 
-        if 'status' in update:
-            self.update_status(alertid=alertid, alert=alert, status=update['status'])
+        # FIXME - no native find_and_modify method in this version of pymongo
+        no_obj_error = "No matching object found"
+        response = self.db.command("findAndModify", 'alerts',
+                                   allowable_errors=[no_obj_error],
+                                   query=query,
+                                   update={'$set': {"status": status},
+                                           '$push': {
+                                               "history": {
+                                                   "status": status,
+                                                   "updateTime": update_time
+                                               }
+                                           }
+                                   },
+                                   multi=False,
+                                   fields={"history": 0})['value']
 
-        return True if 'ok' in response else False
+        return Alert(
+            alertid=response['_id'],
+            resource=response['resource'],
+            event=response['event'],
+            correlate=response['correlatedEvents'],
+            group=response['group'],
+            value=response['value'],
+            status=response['status'],
+            severity=response['severity'],
+            previous_severity=response['previousSeverity'],
+            environment=response['environment'],
+            service=response['service'],
+            text=response['text'],
+            event_type=response['type'],
+            tags=response['tags'],
+            origin=response['origin'],
+            repeat=response['repeat'],
+            duplicate_count=response['duplicateCount'],
+            threshold_info=response['thresholdInfo'],
+            summary=response['summary'],
+            timeout=response['timeout'],
+            last_receive_id=response['lastReceiveId'],
+            create_time=response['createTime'],
+            expire_time=response['expireTime'],
+            receive_time=response['receiveTime'],
+            last_receive_time=response['lastReceiveTime'],
+            trend_indication=response['trendIndication'],
+            raw_data=response['rawData'],
+            more_info=response['moreInfo'],
+            graph_urls=response['graphUrls'],
+        )
 
     def delete_alert(self, alertid):
 
@@ -347,25 +445,6 @@ class Mongo(object):
             more_info=response['moreInfo'],
             graph_urls=response['graphUrls'],
         )
-
-    def update_status(self, alertid=None, alert=None, status=None):
-
-        update_time = datetime.datetime.utcnow()
-        update_time = update_time.replace(tzinfo=pytz.utc)
-
-        if alertid:
-            query = {'_id': {'$regex': '^' + alertid}}
-        else:
-            query = {"environment": alert.environment, "resource": alert.resource,
-                     '$or': [{"event": alert.event}, {"correlatedEvents": alert.event}]}
-
-        update = {'$set': {"status": status}, '$push': {"history": {"status": status, "updateTime": update_time}}}
-
-        try:
-            response = self.db.alerts.update(query, update)
-            LOG.debug('db.alerts.update(query=%s, update=%s) = %s', query, update, response)
-        except pymongo.errors.OperationFailure, e:
-            LOG.error('MongoDB error: %s', e)
 
     def get_resources(self, query=None, sort=None, limit=0):
 
