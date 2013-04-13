@@ -12,7 +12,7 @@ from alerta.common import status_code, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 
-Version = '2.0.5'
+Version = '2.0.6'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -73,7 +73,7 @@ class WorkerThread(threading.Thread):
                     # Forward alert to notify topic and logger queue
                     self.mq.send(duplicateAlert, CONF.outbound_queue)
                     self.mq.send(duplicateAlert, CONF.outbound_topic)
-                    LOG.info('%s : Alert forwarded to %s and %s', incomingAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
+                    LOG.info('%s : Alert forwarded to %s and %s', duplicateAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
                 self.queue.task_done()
 
@@ -93,14 +93,15 @@ class WorkerThread(threading.Thread):
 
                 correlatedAlert = self.db.update_alert(incomingAlert, previous_severity, trend_indication)
 
-                new_status = severity_code.status_from_severity(previous_severity, incomingAlert.severity)
-                if new_status:
-                    self.db.update_status(alert=incomingAlert, status=new_status)
+                status = severity_code.status_from_severity(previous_severity, correlatedAlert.severity)
+                if status:
+                    self.db.update_status(alert=correlatedAlert, status=status)
+                    correlatedAlert.status = status
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(correlatedAlert, CONF.outbound_queue)
                 self.mq.send(correlatedAlert, CONF.outbound_topic)
-                LOG.info('%s : Alert forwarded to %s and %s', incomingAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
+                LOG.info('%s : Alert forwarded to %s and %s', correlatedAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
                 self.queue.task_done()
 
@@ -125,6 +126,7 @@ class WorkerThread(threading.Thread):
                 status = severity_code.status_from_severity(severity_code.UNKNOWN, incomingAlert.severity)
                 if status:
                     self.db.update_status(alert=incomingAlert, status=status)
+                    incomingAlert.status = status
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(incomingAlert, CONF.outbound_queue)
