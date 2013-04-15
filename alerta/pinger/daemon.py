@@ -16,7 +16,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 
-Version = '2.0.5'
+Version = '2.0.6'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -91,14 +91,14 @@ class WorkerThread(threading.Thread):
 
             if rc == PING_OK:
                 avg, max = rtt
-                if max > _CRIT_THRESHOLD:
+                if avg > _CRIT_THRESHOLD:
                     event = 'PingSlow'
                     severity = severity_code.CRITICAL
-                    text = 'Node responded to ping in %s ms max (> %s ms)' % (max, _CRIT_THRESHOLD)
-                elif max > _WARN_THRESHOLD:
+                    text = 'Node responded to ping in %s ms avg (> %s ms)' % (avg, _CRIT_THRESHOLD)
+                elif avg > _WARN_THRESHOLD:
                     event = 'PingSlow'
                     severity = severity_code.WARNING
-                    text = 'Node responded to ping in %s ms max (> %s ms)' % (max, _WARN_THRESHOLD)
+                    text = 'Node responded to ping in %s ms avg (> %s ms)' % (avg, _WARN_THRESHOLD)
                 else:
                     event = 'PingOK'
                     severity = severity_code.NORMAL
