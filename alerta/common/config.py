@@ -96,11 +96,6 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'pagerduty_endpoint': 'https://events.pagerduty.com/generic/2010-04-15/create_event.json',
         'pagerduty_api_key': '',
 
-        'aql_endpoint': 'http://gw.aql.com/sms/sms_gw.php',
-        'aql_user': '',
-        'aql_password': '',
-        'notify_wait': 300,  # seconds to wait before sending SMS
-
         'dynect_customer': 'theguardian',
         'dynect_username': '',
         'dynect_password': '',
