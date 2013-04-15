@@ -42,7 +42,7 @@ INFORM = 'informational'
 DEBUG = 'debug'
 AUTH = 'security'
 UNKNOWN = 'unknown'
-NOT_VALID = 'notvalid'
+NOT_VALID = 'notValid'
 
 ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN]
 

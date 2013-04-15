@@ -13,7 +13,7 @@ from alerta.common import log as logging
 from alerta.common import status_code, severity_code
 from alerta.common import config
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -291,7 +291,7 @@ class QueryClient(object):
                     print(line_color + '%s|%s|%s|%5d|%-5s|%-10s|%-18s|%12s|%16s|%12s' % (
                         alertid[0:8],
                         displayTime.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT),
-                        severity_code._ABBREV_SEVERITY_MAP[current_severity],
+                        severity_code._ABBREV_SEVERITY_MAP.get(current_severity, '****'),
                         duplicate_count,
                         ','.join(environment),
                         ','.join(service),
