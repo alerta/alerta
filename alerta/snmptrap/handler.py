@@ -10,7 +10,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.mq import Messaging
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -101,7 +101,10 @@ class SnmpTrapHandler(object):
                 trapvars['$E'] = varbinds['SNMPv2-MIB::snmpTrapEnterprise.0']
             else:
                 trapvars['$E'] = '1.3.6.1.6.3.1.1.5'
-            trapvars['$G'] = str(int(trapnumber) - 1)
+            if trapnumber.isdigit():
+                trapvars['$G'] = str(int(trapnumber) - 1)
+            else:
+                trapvars['$G'] = trapnumber
             trapvars['$S'] = '0'
         else:
             trapvars['$E'] = enterprise
