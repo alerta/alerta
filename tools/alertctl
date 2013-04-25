@@ -8,7 +8,7 @@ import urllib2
 import json
 import datetime
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 DISABLED_DIR = '/var/run/alerta'
 
@@ -27,8 +27,8 @@ SERVICES = {
     'httpd': 1,
 }
 
-MGMT_ENDPOINT = 'http://monitoring.gudev.gnl/alerta/management'
-API_ENDPOINT = 'http://monitoring.gudev.gnl/alerta/api/v2'
+MGMT_ENDPOINT = 'http://monitoring/alerta/management'
+API_ENDPOINT = 'http://monitoring/alerta/api/v2'
 
 def start():
     for service in SERVICES:
