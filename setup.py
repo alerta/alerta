@@ -16,7 +16,6 @@ setuptools.setup(
     scripts=['bin/alert-aws',
              'bin/alert-checker',
              'bin/alert-dynect',
-             'bin/alert-ganglia',
              'bin/alert-ircbot',
              'bin/alert-logger',
              'bin/alert-mailer',
