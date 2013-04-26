@@ -8,7 +8,7 @@ import urllib2
 import json
 import datetime
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 DISABLE_DIR = '/var/run/alerta'
 
@@ -39,7 +39,7 @@ def start():
         rc = start.returncode
 
         if rc:
-            print 'ERROR %s' % stdout
+            print 'ERROR %s (rc=%s)' % (stdout, rc)
         else:
             print stdout
 
@@ -52,7 +52,7 @@ def stop():
         rc = stop.returncode
 
         if rc:
-            print 'ERROR %s' % stdout
+            print 'ERROR %s (rc=%s)' % (stdout, rc)
         else:
             print stdout
 
@@ -70,7 +70,7 @@ def status():
         rc = status.returncode
 
         if rc:
-            print 'ERROR %s' % stdout
+            print 'ERROR %s (rc=%s)' % (stdout, rc)
         else:
             print stdout
 
@@ -93,7 +93,7 @@ def pgrep():
         rc = pgrep.returncode
 
         if rc:
-            print 'ERROR %s' % stdout
+            print 'ERROR %s (rc=%s)' % (stdout, rc)
         else:
             print stdout
 
@@ -186,6 +186,8 @@ def main(argv):
             status()
             print
             pgrep()
+        else:
+            parser.print_help()
 
     except Exception, e:
         print 'ERROR %s' % e
