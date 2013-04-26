@@ -8,9 +8,9 @@ import urllib2
 import json
 import datetime
 
-Version = '2.0.1'
+Version = '2.0.2'
 
-DISABLED_DIR = '/var/run/alerta'
+DISABLE_DIR = '/var/run/alerta'
 
 SERVICES = {
 
@@ -30,6 +30,7 @@ SERVICES = {
 MGMT_ENDPOINT = 'http://monitoring/alerta/management'
 API_ENDPOINT = 'http://monitoring/alerta/api/v2'
 
+
 def start():
     for service in SERVICES:
         start = subprocess.Popen(["/etc/init.d/%s" % service, "start"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -41,6 +42,7 @@ def start():
             print 'ERROR %s' % stdout
         else:
             print stdout
+
 
 def stop():
     for service in SERVICES:
@@ -74,9 +76,13 @@ def status():
 
 
 def disables():
+    disabled = False
     for service in SERVICES:
-        if os.path.exists("%s/%s.disabled" % (DISABLED_DIR, service)):
-            print "# DISABLED : %s" % service
+        if os.path.exists("%s/%s.disable" % (DISABLE_DIR, service)):
+            print "DISABLED : %s" % service
+            disabled = True
+    if not disabled:
+        print 'DISABLED: No services have been administratively disabled.'
 
 
 def pgrep():
@@ -150,7 +156,13 @@ def main(argv):
             "--status",
             action="store_true",
             default=False,
-            help='Report status of all daemons'
+            help='Status of all daemons'
+        )
+        parser.add_argument(
+            "--report",
+            action="store_true",
+            default=False,
+            help='Report on API status, disables, services and processes'
         )
         args = parser.parse_args(argv)
 
@@ -164,13 +176,16 @@ def main(argv):
             restart()
 
         elif args.status:
+            status()
+
+        elif args.report:
+            api()
+            print
             disables()
             print
             status()
             print
             pgrep()
-            print
-            api()
 
     except Exception, e:
         print 'ERROR %s' % e
