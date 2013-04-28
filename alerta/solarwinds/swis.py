@@ -63,7 +63,7 @@ class SwisClient(object):
             return []
 
         query = (
-            "SELECT EventID, EventTime, N.NodeName, NetObjectID, ET.Name, Message, Acknowledged, ET.Icon " +
+            "SELECT EventID, EventTime, N.NodeName, N.ObjectSubType, ET.Name, Message, Acknowledged, ET.Icon " +
             "FROM Orion.Events E " +
             "INNER JOIN Orion.EventTypes AS ET ON E.EventType = ET.EventType " +
             "INNER JOIN Orion.Nodes AS N ON E.NetworkNode = N.NodeID " +
@@ -144,5 +144,6 @@ class SwisClient(object):
         LOG.debug(x)
 
         return x.queryResult.data.row
+
 
 
