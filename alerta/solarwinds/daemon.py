@@ -87,20 +87,31 @@ class SolarWindsDaemon(Daemon):
 
     def parse_events(self, data):
 
-        LOG.debug('Parsing solarwinds events...')
+        LOG.debug('Parsing solarwinds event data...')
+        LOG.debug(data)
+
+        try:
+            data[0]
+        except IndexError:
+            return []
+
+        try:
+            data[0].c0
+        except AttributeError:
+            data = [data]
+
         solarwindsAlerts = list()
 
-        for d in data:
-            LOG.debug(d)
-            LOG.debug(SOLAR_WINDS_SEVERITY_LEVELS[d.c7])
+        for row in data:
+            LOG.debug(row)
 
-            event = d.c4
-            resource = '%s:%s' % (d.c2, d.c3)
-            severity = SOLAR_WINDS_SEVERITY_LEVELS[d.c7]
-            status = 'ack' if d.c6 == 'True' else 'open'
+            event = row.c4
+            resource = '%s:%s' % (row.c2, row.c3)
+            severity = SOLAR_WINDS_SEVERITY_LEVELS.get(row.c7, None)
+            status = 'ack' if row.c6 == 'True' else 'open'
             group = 'Orion'
-            value = ''
-            text = d.c5
+            value = '%s' % row.c7
+            text = '%s' % row.c5
             environment = ['INFRA']
             service = ['Network']
             tags = None
@@ -108,10 +119,10 @@ class SolarWindsDaemon(Daemon):
             timeout = None
             threshold_info = None
             summary = None
-            raw_data = str(d)
-            create_time = datetime.datetime.strptime(d.c1[:-5]+'Z', '%Y-%m-%dT%H:%M:%S.%fZ')
+            raw_data = str(row)
+            create_time = datetime.datetime.strptime(row.c1[:-5]+'Z', '%Y-%m-%dT%H:%M:%S.%fZ')
 
-            syslogAlert = Alert(
+            solarwindsAlert = Alert(
                 resource=resource,
                 event=event,
                 correlate=correlate,
@@ -131,13 +142,13 @@ class SolarWindsDaemon(Daemon):
                 raw_data=raw_data,
             )
 
-            # suppress = syslogAlert.transform_alert(facility=facility, level=level)
-            # if suppress:
-            #     LOG.warning('Suppressing %s.%s alert', facility, level)
-            #     LOG.debug('%s', syslogAlert)
-            #     continue
+            suppress = solarwindsAlert.transform_alert()
+            if suppress:
+                LOG.warning('Suppressing alert %s', solarwindsAlert.get_id())
+                LOG.debug('%s', solarwindsAlert)
+                continue
 
-            solarwindsAlerts.append(syslogAlert)
+            solarwindsAlerts.append(solarwindsAlert)
 
         return solarwindsAlerts
 

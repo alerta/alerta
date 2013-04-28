@@ -43,12 +43,17 @@ class SwisClient(object):
 
         self.wsdl = 'https://%s:17778/SolarWinds/InformationService/v3?wsdl' % CONF.solarwinds_host
         LOG.debug('wsdl = %s', self.wsdl)
+
         self.client = Client(self.wsdl, username=username, password=password)
         self.client.set_options(port='BasicHttpBinding_InformationService')
+        LOG.debug('client = %s', self.client)
 
-        self.nw_event_id_cursor = 0
-        self.if_event_id_cursor = 0
-        self.vol_event_id_cursor = 0
+        query = 'SELECT MAX(EventID) AS MaxEventID FROM Orion.Events'
+        max = self.client.service.QueryXml(query)
+
+        self.nw_event_id_cursor = max.queryResult.data.row.c0
+        self.if_event_id_cursor = max.queryResult.data.row.c0
+        self.vol_event_id_cursor = max.queryResult.data.row.c0
 
     def get_nw_events(self):
 
@@ -79,7 +84,10 @@ class SwisClient(object):
 
         LOG.debug(x)
 
-        return x.queryResult.data.row
+        try:
+            return x.queryResult.data.row
+        except AttributeError:
+            return []
 
     def get_if_events(self):
 
@@ -111,7 +119,10 @@ class SwisClient(object):
 
         LOG.debug(x)
 
-        return x.queryResult.data.row
+        try:
+            return x.queryResult.data.row
+        except AttributeError:
+            return []
 
     def get_vol_events(self):
 
@@ -143,7 +154,11 @@ class SwisClient(object):
 
         LOG.debug(x)
 
-        return x.queryResult.data.row
+        try:
+            return x.queryResult.data.row
+        except AttributeError:
+            return []
+
 
 
 
