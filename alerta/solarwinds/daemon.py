@@ -52,9 +52,20 @@ class SolarWindsDaemon(Daemon):
             try:
                 LOG.debug('Polling SolarWinds...')
 
-                events = swis.get_events()
+                events = swis.get_nw_events()
+                solarwindsAlerts = self.parse_nw_events(events)
+                for solarwindsAlert in solarwindsAlerts:
+                    if self.dedup.is_send(solarwindsAlert):
+                        self.mq.send(solarwindsAlert)
 
-                solarwindsAlerts = self.parse_events(events)
+                events = swis.get_if_events()
+                solarwindsAlerts = self.parse_if_events(events)
+                for solarwindsAlert in solarwindsAlerts:
+                    if self.dedup.is_send(solarwindsAlert):
+                        self.mq.send(solarwindsAlert)
+
+                events = swis.get_vol_events()
+                solarwindsAlerts = self.parse_if_events(events)
                 for solarwindsAlert in solarwindsAlerts:
                     if self.dedup.is_send(solarwindsAlert):
                         self.mq.send(solarwindsAlert)
@@ -74,7 +85,61 @@ class SolarWindsDaemon(Daemon):
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()
 
-    def parse_events(self, data):
+    def parse_nw_events(self, data):
+
+        LOG.debug('Parsing solarwinds events...')
+        solarwindsAlerts = list()
+
+        for d in data:
+            LOG.debug(d)
+            LOG.debug(SOLAR_WINDS_SEVERITY_LEVELS[d.c7])
+
+            event = d.c4
+            resource = d.c2
+            severity = SOLAR_WINDS_SEVERITY_LEVELS[d.c7]
+            status = 'ack' if d.c6 == 'True' else 'open'
+            group = 'Orion'
+            value = ''
+            text = d.c5
+            environment = ['INFRA']
+            service = ['Network']
+            tags = None
+            correlate = list()
+            timeout = None
+            threshold_info = None
+            summary = None
+            raw_data = str(d)
+            create_time = datetime.datetime.strptime(d.c1[:-5]+'Z', '%Y-%m-%dT%H:%M:%S.%fZ'),
+
+            syslogAlert = Alert(
+                resource=resource,
+                event=event,
+                correlate=correlate,
+                group=group,
+                value=value,
+                severity=severity,
+                environment=environment,
+                service=service,
+                text=text,
+                event_type='solarwindsAlert',
+                tags=tags,
+                timeout=timeout,
+                threshold_info=threshold_info,
+                summary=summary,
+                raw_data=raw_data,
+            )
+
+            # suppress = syslogAlert.transform_alert(facility=facility, level=level)
+            # if suppress:
+            #     LOG.warning('Suppressing %s.%s alert', facility, level)
+            #     LOG.debug('%s', syslogAlert)
+            #     continue
+
+            solarwindsAlerts.append(syslogAlert)
+
+        return solarwindsAlerts
+
+    def parse_if_events(self, data):
 
         LOG.debug('Parsing solarwinds events...')
         solarwindsAlerts = list()
