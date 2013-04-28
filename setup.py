@@ -24,6 +24,7 @@ setuptools.setup(
              'bin/alert-query',
              'bin/alert-sender',
              'bin/alert-snmptrap',
+             'bin/alert-solarwinds',
              'bin/alert-syslog',
              'bin/alert-urlmon',
              'bin/alerta',

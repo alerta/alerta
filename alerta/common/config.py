@@ -86,8 +86,10 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'irc_channel': '#alerts',
         'irc_user': 'alerta',
 
-        'ganglia_host': 'ganglia',
-        'ganglia_port': 8080,
+        'solarwinds_host': 'solarwinds',
+        'solarwinds_username': 'admin',
+        'solarwinds_password': '',
+        'solarwinds_group': 'websys',
 
         'es_host': 'localhost',
         'es_port': 9200,

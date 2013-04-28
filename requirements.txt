@@ -4,5 +4,6 @@ Flask
 PyYAML
 pytz
 boto
+suds
 dynect
 CoilMQ
