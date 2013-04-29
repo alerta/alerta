@@ -12,7 +12,7 @@ from alerta.common.dedup import DeDup
 from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -34,7 +34,6 @@ class SolarWindsDaemon(Daemon):
 
         self.running = True
 
-        LOG.info('Starting SolarWinds poller %s %s...', CONF.solarwinds_username, CONF.solarwinds_password)
         try:
             swis = SwisClient(username=CONF.solarwinds_username, password=CONF.solarwinds_password)
         except Exception, e:
@@ -110,7 +109,7 @@ class SolarWindsDaemon(Daemon):
             severity = SOLAR_WINDS_SEVERITY_LEVELS.get(row.c7, None)
             status = 'ack' if row.c6 == 'True' else 'open'
             group = 'Orion'
-            value = '%s' % row.c7
+            value = '%s' % row.c8
             text = '%s' % row.c5
             environment = ['INFRA']
             service = ['Network']
