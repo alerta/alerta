@@ -1,0 +1,329 @@
+<html lang="en">
+<head>
+    <!-- link href='http://fonts.googleapis.com/css?family=Sintony:400,700' rel='stylesheet' type='text/css' -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+
+    <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.js"></script>
+    <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.dataTables.min.js"></script>
+
+    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            padding-top: 40px;
+            padding-bottom: 40px;
+        }
+    </style>
+    <link href="/alerta/dashboard/v2/assets/css/custom.css" rel="stylesheet">
+
+</head>
+
+<body>
+<div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </a>
+            <a class="brand" href="index.html">Alert Console</a>
+            <div class="nav-collapse">
+                <ul class="nav">
+                    <li class=""><a href="index.html">Production</a></li>
+                    <li class=""><a href="dev.html">Development</a></li>
+                    <li class="active"><a href="./infra.html">Infrastructure</a></li>
+                    <li class=""><a href="/Kibana">History</a></li>
+                    <li class=""><a href="about.html">About</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <table width="100%">
+        <tr>
+            <span id="heartbeat-alerts"></span>
+            <div id="console-alert" class="alert alert-info initially-hidden">
+                <button class="close" data-dismiss="alert" onclick="">&times;</button>
+                <strong>Warning!</strong> <span id="warning-text"></span>
+            </div>
+        </tr>
+        <tr>
+            <td>
+                <!-- div  id="status-counts" -->
+                <table border=1 class="table table-bordered table-condensed"  id="status-counts">
+                    <tbody>
+                    <tr id="alert-status" class="status">
+                        <td><span class="label">Open</span></td>
+                        <td id="count-open"><b>0</b></td>
+                        <td><span class="label">Ack</span></td>
+                        <td id="count-ack"><b>0</b></td>
+                        <td><span class="label">Closed</span></td>
+                        <td id="count-closed"><b>0</b></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <!-- /div -->
+            </td>
+            <td>
+                <div align="right">
+                    <select id="status-select" class="btn" name="status" onchange="updateStatus(this.value)" style="width:150px">
+                        <option value="open">Open</option>
+                        <option value="ack">Ack</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                    <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)" style="width:150px">
+                        <option value="0">No limit</option>
+                        <option value="10">Only 10</option>
+                        <option value="50">Only 50</option>
+                        <option value="100">Only 100</option>
+                        <option value="500">Only 500</option>
+                    </select>
+                    <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)" style="width:150px">
+                        <option value="0">All alerts</option>
+                        <option value="120">Last 2 minutes</option>
+                        <option value="300">Last 5 minutes</option>
+                        <option value="600">Last 10 minutes</option>
+                        <option value="1800">Last 30 minutes</option>
+                        <option value="3600">Last 1 hour</option>
+                    </select>
+                    <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh Now</button>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="row show-grid">
+        <div class="span12">
+
+            <div class="row show-grid">
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="EC2" data-label="EC2">
+                        <thead id="EC2-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="EC2-status">AWS/EC2</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="EC2-status-indicator">
+                            <td id="EC2-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="EC2-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="EC2-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="EC2-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="EC2-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="Dynect" data-label="Dynect">
+                        <thead id="Dynect-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="Dynect-status">Dynect</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="Dynect-status-indicator">
+                            <td id="Dynect-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Dynect-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Dynect-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Dynect-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Dynect-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="Ping" data-label="Ping">
+                        <thead id="Ping-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="Ping-status">Ping</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="Ping-status-indicator">
+                            <td id="Ping-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Ping-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Ping-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Ping-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Ping-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="SNMP" data-label="SNMP">
+                        <thead id="SNMP-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="SNMP-status">SNMP</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="SNMP-status-indicator">
+                            <td id="SNMP-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="SNMP-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="SNMP-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="SNMP-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="SNMP-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div> <!-- row -->
+
+            <div class="row show-grid">
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="SolarWinds" data-label="SolarWinds">
+                        <thead id="SolarWinds-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="SolarWinds-status">SolarWinds</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="SolarWinds-status-indicator">
+                            <td id="SolarWinds-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="SolarWinds-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="SolarWinds-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="SolarWinds-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="SolarWinds-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="Syslog" data-label="Syslog">
+                        <thead id="Syslog-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="Syslog-status">Syslog</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="Syslog-status-indicator">
+                            <td id="Syslog-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Syslog-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Syslog-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Syslog-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Syslog-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="HTTP" data-label="HTTP">
+                        <thead id="HTTP-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="HTTP-status">HTTP</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="HTTP-status-indicator">
+                            <td id="HTTP-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="HTTP-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="HTTP-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="HTTP-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="HTTP-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="span3">
+                    <table class="table table-bordered table-condensed status-indicator" id="Riemann" data-label="Riemann">
+                        <thead id="Riemann-overall" class="status-indicator-overall">
+                        <tr>
+                            <th colspan="6" id="Riemann-status">Riemann</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr id="Riemann-status-indicator">
+                            <td id="Riemann-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Riemann-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Riemann-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Riemann-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Riemann-normal" class="status-indicator-count"><b>0</b></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div> <!-- row -->
+        </div>
+    </div>
+    <!-- Alert Details -->
+    <div class="row show-grid">
+        <div class="span12">
+
+            <table cellpadding="0" cellspacing="0" border="0" class="display table table-bordered table-condensed"
+                   id="alerts">
+                <thead>
+                <tr>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Last Receive Time</th>
+                    <th>Dupl.</th>
+                    <th>Environment</th>
+                    <th>Service</th>
+                    <th>Resource</th>
+                    <th>Event</th>
+                    <th>Value</th>
+                    <th>Text</th>
+                    <th>Severity Code</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Last Receive Time</th>
+                    <th>Dupl.</th>
+                    <th>Environment</th>
+                    <th>Service</th>
+                    <th>Resource</th>
+                    <th>Event</th>
+                    <th>Value</th>
+                    <th>Text</th>
+                    <th>Severity Code</th>
+                </tr>
+                </tfoot>
+            </table>
+
+        </div>
+    </div>
+    <!-- end Alert Details -->
+
+</div>
+<!-- end container -->
+
+<script>
+    var api_port = {{ config['api_port'] }};
+</script>
+
+<script src="/alerta/dashboard/v2/assets/js/console.js"></script>
+
+<script>
+    $(document).ready(function() {
+
+        var env_filter = ''; // all environments
+        var asiFilters = {
+            'EC2':           '&origin=alert-aws',
+            'Dynect':        '&origin=alert-dynect',
+            'Ping':          '&origin=alert-pinger',
+            'SNMP':          '&origin=alert-snmptrap',
+            'SolarWinds':    '&origin=alert-solarwinds',
+            'Syslog':        '&origin=alert-syslog',
+            'HTTP':          '&origin=alert-urlmon',
+            'Riemann':       '&origin=riemann'
+        };
+        updateStatusCounts(env_filter, true);
+        updateAllIndicators(env_filter, asiFilters, true);
+        updateAlertsTable(env_filter, asiFilters);
+    });
+</script>
+
+</body>
+</html>
