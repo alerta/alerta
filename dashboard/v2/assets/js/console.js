@@ -461,7 +461,12 @@ $('.status-indicator-overall').click(function () {
 
 $('.status-indicator-count').click(function () {
     filter = lookup[this.id.split('-')[0]];
-    filter += '&severity=' + this.id.split('-')[1];
+    var severity = this.id.split('-')[1];
+    filter += '&severity=' + severity;
+
+    if (severity == NORMAL) {
+        filter += '&severity=' + INFORM;
+    }
     refreshAlerts(false);
 });
 
