@@ -80,6 +80,7 @@ class SwisClient(object):
         last_event_id = self._get_max_event_id()
 
         if not last_event_id or last_event_id == self.nw_event_id_cursor:
+            LOG.debug('No new events since event id %s. Skipping network event query...', last_event_id)
             return []
 
         LOG.debug('Get network events in range %s -> %s', self.if_event_id_cursor, last_event_id)
@@ -109,7 +110,8 @@ class SwisClient(object):
 
         last_event_id = self._get_max_event_id()
 
-        if not last_event_id or last_event_id == self.nw_event_id_cursor:
+        if not last_event_id or last_event_id == self.if_event_id_cursor:
+            LOG.debug('No new events since event id %s. Skipping interface event query...', last_event_id)
             return []
 
         LOG.debug('Get interface events in range %s -> %s', self.if_event_id_cursor, last_event_id)
@@ -140,7 +142,8 @@ class SwisClient(object):
 
         last_event_id = self._get_max_event_id()
 
-        if not last_event_id or last_event_id == self.nw_event_id_cursor:
+        if not last_event_id or last_event_id == self.vol_event_id_cursor:
+            LOG.debug('No new events since event id %s. Skipping volume event query...', last_event_id)
             return []
 
         LOG.debug('Get volume events in range %s -> %s', self.vol_event_id_cursor, last_event_id)
@@ -180,6 +183,8 @@ class SwisClient(object):
 
         query = 'SELECT MAX(EventID) AS MaxEventID FROM Orion.Events'
         max = self._query_xml(query)
+
+        LOG.debug('Max event id query response = %s', max)
 
         if max:
             return max.queryResult.data.row.c0
