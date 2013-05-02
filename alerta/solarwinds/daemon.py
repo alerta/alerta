@@ -34,11 +34,14 @@ class SolarWindsDaemon(Daemon):
 
         self.running = True
 
-        try:
-            swis = SwisClient(username=CONF.solarwinds_username, password=CONF.solarwinds_password)
-        except Exception, e:
-            LOG.error('SolarWinds SWIS Client error: %s', e)
-            sys.exit(2)
+        while True:
+            try:
+                swis = SwisClient(username=CONF.solarwinds_username, password=CONF.solarwinds_password)
+            except Exception, e:
+                LOG.error('SolarWinds SWIS Client error: %s', e)
+                time.sleep(30)
+            else:
+                break
         LOG.info('Polling for SolarWinds events on %s' % CONF.solarwinds_host)
 
         # Connect to message queue

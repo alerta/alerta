@@ -1,6 +1,8 @@
 Alerta monitoring system and console
 ====================================
 
+[![Build Status](https://travis-ci.org/satterly/alerta.png)](https://travis-ci.org/satterly/alerta)
+
 The alerta monitoring tool was developed with the following aims in mind:
 
 *   distributed and de-coupled so that it is **SCALABLE**
