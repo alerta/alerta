@@ -1,4 +1,6 @@
 
+import urllib2
+
 from suds.client import Client
 
 from alerta.common import config
@@ -67,24 +69,20 @@ class SwisClient(object):
         self.client.set_options(port='BasicHttpBinding_InformationService')
         LOG.debug('client = %s', self.client)
 
-        query = 'SELECT MAX(EventID) AS MaxEventID FROM Orion.Events'
-        max = self.client.service.QueryXml(query)
+        last_event_id = self._get_max_event_id()
 
-        self.nw_event_id_cursor = max.queryResult.data.row.c0
-        self.if_event_id_cursor = max.queryResult.data.row.c0
-        self.vol_event_id_cursor = max.queryResult.data.row.c0
+        self.nw_event_id_cursor = last_event_id
+        self.if_event_id_cursor = last_event_id
+        self.vol_event_id_cursor = last_event_id
 
     def get_nw_events(self):
 
-        query = 'SELECT MAX(EventID) AS MaxEventID FROM Orion.Events'
+        last_event_id = self._get_max_event_id()
 
-        max = self.client.service.QueryXml(query)
-        last_event_id = max.queryResult.data.row.c0
-
-        LOG.debug('%s -> %s', self.nw_event_id_cursor, last_event_id)
-
-        if last_event_id == self.nw_event_id_cursor:
+        if not last_event_id or last_event_id == self.nw_event_id_cursor:
             return []
+
+        LOG.debug('Get network events in range %s -> %s', self.if_event_id_cursor, last_event_id)
 
         query = (
             "SELECT EventID, EventTime, N.NodeName, N.ObjectSubType, ET.Name, Message, Acknowledged, ET.Icon, N.StatusDescription " +
@@ -95,11 +93,10 @@ class SwisClient(object):
             "AND NetObjectType = 'N' " +
             "ORDER BY EventID"
         )
-
         LOG.debug('query = %s', query)
 
         self.nw_event_id_cursor = last_event_id
-        x = self.client.service.QueryXml(query)
+        x = self._query_xml(query)
 
         LOG.debug(x)
 
@@ -110,15 +107,12 @@ class SwisClient(object):
 
     def get_if_events(self):
 
-        query = 'SELECT MAX(EventID) AS MaxEventID FROM Orion.Events'
+        last_event_id = self._get_max_event_id()
 
-        max = self.client.service.QueryXml(query)
-        last_event_id = max.queryResult.data.row.c0
-
-        LOG.debug('%s -> %s', self.if_event_id_cursor, last_event_id)
-
-        if last_event_id == self.if_event_id_cursor:
+        if not last_event_id or last_event_id == self.nw_event_id_cursor:
             return []
+
+        LOG.debug('Get interface events in range %s -> %s', self.if_event_id_cursor, last_event_id)
 
         query = (
             "SELECT EventID, EventTime, N.NodeName, I.IfName, ET.Name, Message, Acknowledged, ET.Icon, I.StatusDescription " +
@@ -130,11 +124,10 @@ class SwisClient(object):
             "AND NetObjectType = 'I' " +
             "ORDER BY EventID"
         )
-
         LOG.debug('query = %s', query)
 
         self.if_event_id_cursor = last_event_id
-        x = self.client.service.QueryXml(query)
+        x = self._query_xml(query)
 
         LOG.debug(x)
 
@@ -145,15 +138,12 @@ class SwisClient(object):
 
     def get_vol_events(self):
 
-        query = 'SELECT MAX(EventID) AS MaxEventID FROM Orion.Events'
+        last_event_id = self._get_max_event_id()
 
-        max = self.client.service.QueryXml(query)
-        last_event_id = max.queryResult.data.row.c0
-
-        LOG.debug('%s -> %s', self.vol_event_id_cursor, last_event_id)
-
-        if last_event_id == self.vol_event_id_cursor:
+        if not last_event_id or last_event_id == self.nw_event_id_cursor:
             return []
+
+        LOG.debug('Get volume events in range %s -> %s', self.vol_event_id_cursor, last_event_id)
 
         query = (
             "SELECT EventID, EventTime, N.NodeName, V.DisplayName, ET.Name, Message, Acknowledged, ET.Icon, V.VolumePercentUsed " +
@@ -165,11 +155,10 @@ class SwisClient(object):
             "AND NetObjectType = 'V' " +
             "ORDER BY EventID"
         )
-
         LOG.debug('query = %s', query)
 
         self.vol_event_id_cursor = last_event_id
-        x = self.client.service.QueryXml(query)
+        x = self._query_xml(query)
 
         LOG.debug(x)
 
@@ -178,6 +167,22 @@ class SwisClient(object):
         except AttributeError:
             return []
 
+    def _query_xml(self, query):
+
+        LOG.debug('Running SWQL query => %s', query)
+        try:
+            return self.client.service.QueryXml(query)
+        except urllib2.URLError, e:
+            LOG.warning('SWIS QueryXML() failed: %s', e)
+            return None
+
+    def _get_max_event_id(self):
+
+        query = 'SELECT MAX(EventID) AS MaxEventID FROM Orion.Events'
+        max = self._query_xml(query)
+
+        if max:
+            return max.queryResult.data.row.c0
 
 
 
