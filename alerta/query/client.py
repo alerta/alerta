@@ -13,7 +13,7 @@ from alerta.common import log as logging
 from alerta.common import status_code, severity_code
 from alerta.common import config
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -394,7 +394,7 @@ class QueryClient(object):
 
         if 'counts' in CONF.show:
             print
-            print('%s|%s|%s' + '  ' % (status_code.OPEN, status_code.ACK, status_code.CLOSED)),
+            print('%s|%s|%s' + '  ') % (status_code.OPEN, status_code.ACK, status_code.CLOSED),
             print('Crit|Majr|Minr|Warn|Norm|Info|Dbug')
             print(
                 '%4d' % response['alerts']['statusCounts']['open'] + ' ' +
@@ -412,7 +412,7 @@ class QueryClient(object):
                 severity_code._COLOR_MAP[
                     severity_code.NORMAL] + '%4d' % response['alerts']['severityCounts']['normal'] + severity_code.ENDC + ' ' +
                 severity_code._COLOR_MAP[
-                    severity_code.INFORM] + '%4d' % response['alerts']['severityCounts']['inform'] + severity_code.ENDC + ' ' +
+                    severity_code.INFORM] + '%4d' % response['alerts']['severityCounts']['informational'] + severity_code.ENDC + ' ' +
                 severity_code._COLOR_MAP[
                     severity_code.DEBUG] + '%4d' % response['alerts']['severityCounts']['debug'] + severity_code.ENDC)
 
