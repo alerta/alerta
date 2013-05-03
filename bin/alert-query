@@ -232,6 +232,12 @@ def main(argv):
             default=0
         )
         parser.add_argument(
+            "-q",
+            "--query",
+            dest="query",
+            help="Mongo-compliant query. Must be valid JSON."
+        )
+        parser.add_argument(
             "--no-header",
             action="store_true",
             dest="noheader"

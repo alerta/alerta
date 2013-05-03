@@ -13,7 +13,7 @@ from alerta.common import log as logging
 from alerta.common import status_code, severity_code
 from alerta.common import config
 
-Version = '2.0.1'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -122,6 +122,9 @@ class QueryClient(object):
         if CONF.show == ['counts']:
             query['hide-alert-details'] = 'true'
 
+        if CONF.query:
+            query['q'] = CONF.query
+
         url = "%s?%s" % (API_URL, urllib.urlencode(query))
 
         if CONF.dry_run:
@@ -190,6 +193,8 @@ class QueryClient(object):
                 print "        tags: (not) %s" % ','.join(CONF.not_tags)
             if CONF.limit:
                 print "       count: %d" % CONF.limit
+            if CONF.query:
+                print "       query: %s" % CONF.query
             print
 
         if 'some' in CONF.show:
