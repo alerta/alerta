@@ -16,7 +16,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 
-Version = '2.0.6'
+Version = '2.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -28,7 +28,7 @@ _MAX_TIMEOUT = 15  # seconds
 _MAX_RETRIES = 2  # number of retries
 
 _PING_ALERTS = [
-    'PingFail',
+    'PingFailed',
     'PingSlow',
     'PingOK',
     'PingError',
