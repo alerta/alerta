@@ -2,6 +2,7 @@
 import os
 import sys
 import urllib2
+import atexit
 
 from suds.client import Client
 
@@ -94,12 +95,15 @@ class SwisClient(object):
         self.npm_event_id_cursor = npm_id
         self.ucs_event_id_cursor = ucs_id
 
+        atexit.register(self.shutdown)
+
     def shutdown(self):
 
         try:
             f = open(self.cursor_file, 'w')
             f.write('%s\n%s\n' % (self.npm_event_id_cursor, self.ucs_event_id_cursor))
             f.close()
+            LOG.info('Wrote event ID cursors to file %s: %s, %s', self.cursor_file, self.npm_event_id_cursor, self.ucs_event_id_cursor)
         except IOError, e:
             LOG.error('Failed to write event ID cursor to file %s: %s', self.cursor_file, e)
 
@@ -114,7 +118,7 @@ class SwisClient(object):
         LOG.debug('Get network events in range %s -> %s', self.npm_event_id_cursor, last_event_id)
 
         query = (
-            "SELECT EventID, EventTime, N.NodeName, N.ObjectSubType AS Object, ET.Name, Message, ET.Name, ET.Icon " +
+            "SELECT EventID, EventTime, N.NodeName, N.ObjectSubType AS Object, ET.Name, Message, ET.Icon, ET.Icon " +
             "FROM Orion.Events E " +
             "INNER JOIN Orion.EventTypes AS ET ON E.EventType = ET.EventType " +
             "INNER JOIN Orion.Nodes AS N ON E.NetworkNode = N.NodeID " +
@@ -124,7 +128,7 @@ class SwisClient(object):
         )
 
         query += (
-            "(SELECT EventID, EventTime, N.NodeName, I.IfName AS Object, ET.Name, Message, ET.Name, ET.Icon " +
+            "(SELECT EventID, EventTime, N.NodeName, I.IfName AS Object, ET.Name, Message, ET.Icon, ET.Icon " +
             "FROM Orion.Events E " +
             "INNER JOIN Orion.EventTypes AS ET ON E.EventType = ET.EventType " +
             "INNER JOIN Orion.Nodes AS N ON E.NetworkNode = N.NodeID " +
@@ -135,7 +139,7 @@ class SwisClient(object):
         )
 
         query += (
-            "(SELECT EventID, EventTime, N.NodeName, V.DisplayName AS Object, ET.Name, Message, ET.Name, ET.Icon " +
+            "(SELECT EventID, EventTime, N.NodeName, V.DisplayName AS Object, ET.Name, Message, ET.Icon, ET.Icon " +
             "FROM Orion.Events E " +
             "INNER JOIN Orion.EventTypes AS ET ON E.EventType = ET.EventType " +
             "INNER JOIN Orion.Nodes AS N ON E.NetworkNode = N.NodeID " +
@@ -175,7 +179,7 @@ class SwisClient(object):
         LOG.debug('Get UCS events in range %s -> %s', self.ucs_event_id_cursor, last_event_id)
 
         query = (
-            "SELECT E.EventID, E.Created, M.Name, F.DistinguishedName, E.DistinguishedName, E.Description, F.Status, E.Severity " +
+            "SELECT E.EventID, E.Created, M.Name, F.DistinguishedName, E.Name, E.Description, F.Status, E.Severity " +
             "FROM Orion.NPM.UCSEvents E " +
             "INNER JOIN Orion.NPM.UCSFabrics AS F ON E.HostNodeID = F.HostNodeID " +
             "INNER JOIN Orion.NPM.UCSManagers AS M ON F.NodeID = M.NodeID " +

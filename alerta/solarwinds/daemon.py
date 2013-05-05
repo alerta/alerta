@@ -79,9 +79,6 @@ class SolarWindsDaemon(Daemon):
         LOG.info('Shutdown request received...')
         self.running = False
 
-        LOG.info('Writing event ID cursor to file...')
-        swis.shutdown()
-
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()
 
@@ -105,7 +102,7 @@ class SolarWindsDaemon(Daemon):
         for row in data:
             LOG.debug(row)
 
-            event = row.c4
+            event = row.c4.replace(" ", "")
             resource = '%s:%s' % (row.c2, row.c3.lower())
             severity = SOLAR_WINDS_SEVERITY_LEVELS.get(row.c7, None)
             group = 'Orion'
