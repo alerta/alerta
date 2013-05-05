@@ -114,7 +114,7 @@ class SwisClient(object):
         LOG.debug('Get network events in range %s -> %s', self.npm_event_id_cursor, last_event_id)
 
         query = (
-            "SELECT EventID, EventTime, N.NodeName, N.ObjectSubType AS Object, ET.Name, Message, Acknowledged, ET.Icon " +
+            "SELECT EventID, EventTime, N.NodeName, N.ObjectSubType AS Object, ET.Name, Message, ET.Name, ET.Icon " +
             "FROM Orion.Events E " +
             "INNER JOIN Orion.EventTypes AS ET ON E.EventType = ET.EventType " +
             "INNER JOIN Orion.Nodes AS N ON E.NetworkNode = N.NodeID " +
@@ -124,7 +124,7 @@ class SwisClient(object):
         )
 
         query += (
-            "(SELECT EventID, EventTime, N.NodeName, I.IfName AS Object, ET.Name, Message, Acknowledged, ET.Icon " +
+            "(SELECT EventID, EventTime, N.NodeName, I.IfName AS Object, ET.Name, Message, ET.Name, ET.Icon " +
             "FROM Orion.Events E " +
             "INNER JOIN Orion.EventTypes AS ET ON E.EventType = ET.EventType " +
             "INNER JOIN Orion.Nodes AS N ON E.NetworkNode = N.NodeID " +
@@ -135,7 +135,7 @@ class SwisClient(object):
         )
 
         query += (
-            "(SELECT EventID, EventTime, N.NodeName, V.DisplayName AS Object, ET.Name, Message, Acknowledged, ET.Icon " +
+            "(SELECT EventID, EventTime, N.NodeName, V.DisplayName AS Object, ET.Name, Message, ET.Name, ET.Icon " +
             "FROM Orion.Events E " +
             "INNER JOIN Orion.EventTypes AS ET ON E.EventType = ET.EventType " +
             "INNER JOIN Orion.Nodes AS N ON E.NetworkNode = N.NodeID " +
@@ -175,7 +175,7 @@ class SwisClient(object):
         LOG.debug('Get UCS events in range %s -> %s', self.ucs_event_id_cursor, last_event_id)
 
         query = (
-            "SELECT E.EventID, E.Created, M.Name, F.DistinguishedName, E.DistinguishedName, E.Description, E.Name, E.Severity, F.Status " +
+            "SELECT E.EventID, E.Created, M.Name, F.DistinguishedName, E.DistinguishedName, E.Description, F.Status, E.Severity " +
             "FROM Orion.NPM.UCSEvents E " +
             "INNER JOIN Orion.NPM.UCSFabrics AS F ON E.HostNodeID = F.HostNodeID " +
             "INNER JOIN Orion.NPM.UCSManagers AS M ON F.NodeID = M.NodeID " +

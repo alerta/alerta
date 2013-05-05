@@ -11,7 +11,7 @@ from alerta.common.dedup import DeDup
 from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -108,9 +108,8 @@ class SolarWindsDaemon(Daemon):
             event = row.c4
             resource = '%s:%s' % (row.c2, row.c3.lower())
             severity = SOLAR_WINDS_SEVERITY_LEVELS.get(row.c7, None)
-            status = 'ack' if row.c6 == 'True' else 'open'
             group = 'Orion'
-            value = '%s' % row.c7
+            value = '%s' % row.c6
             text = '%s' % row.c5
             environment = ['INFRA']
             service = ['Network']
