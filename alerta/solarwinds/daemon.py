@@ -127,7 +127,6 @@ class SolarWindsDaemon(Daemon):
                 correlate=correlate,
                 group=group,
                 value=value,
-                status=status,
                 severity=severity,
                 environment=environment,
                 service=service,
