@@ -1,5 +1,4 @@
 
-import sys
 import time
 import datetime
 
@@ -12,7 +11,7 @@ from alerta.common.dedup import DeDup
 from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -54,19 +53,15 @@ class SolarWindsDaemon(Daemon):
             try:
                 LOG.debug('Polling SolarWinds...')
 
-                events = swis.get_nw_events()
+                # network, interface and volume events
+                events = swis.get_npm_events()
                 solarwindsAlerts = self.parse_events(events)
                 for solarwindsAlert in solarwindsAlerts:
                     if self.dedup.is_send(solarwindsAlert):
                         self.mq.send(solarwindsAlert)
 
-                events = swis.get_if_events()
-                solarwindsAlerts = self.parse_events(events)
-                for solarwindsAlert in solarwindsAlerts:
-                    if self.dedup.is_send(solarwindsAlert):
-                        self.mq.send(solarwindsAlert)
-
-                events = swis.get_vol_events()
+                # ucs events
+                events = swis.get_ucs_events()
                 solarwindsAlerts = self.parse_events(events)
                 for solarwindsAlert in solarwindsAlerts:
                     if self.dedup.is_send(solarwindsAlert):
@@ -83,6 +78,9 @@ class SolarWindsDaemon(Daemon):
 
         LOG.info('Shutdown request received...')
         self.running = False
+
+        LOG.info('Writing event ID cursor to file...')
+        swis.shutdown()
 
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()
@@ -108,11 +106,11 @@ class SolarWindsDaemon(Daemon):
             LOG.debug(row)
 
             event = row.c4
-            resource = '%s:%s' % (row.c2, row.c3)
+            resource = '%s:%s' % (row.c2, row.c3.lower())
             severity = SOLAR_WINDS_SEVERITY_LEVELS.get(row.c7, None)
             status = 'ack' if row.c6 == 'True' else 'open'
             group = 'Orion'
-            value = '%s' % row.c8
+            value = '%s' % row.c7
             text = '%s' % row.c5
             environment = ['INFRA']
             service = ['Network']
@@ -153,10 +151,3 @@ class SolarWindsDaemon(Daemon):
             solarwindsAlerts.append(solarwindsAlert)
 
         return solarwindsAlerts
-
-
-
-
-
-
-

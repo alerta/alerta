@@ -1,4 +1,6 @@
 
+import os
+import sys
 import urllib2
 
 from suds.client import Client
@@ -37,6 +39,7 @@ SOLAR_WINDS_STATUS_LEVELS = {
 }
 
 SOLAR_WINDS_SEVERITY_LEVELS = {
+    # SolarWinds icon severity
     'Add': 'informational',
     'Critical': 'critical',
     'Disabled': 'warning',
@@ -54,7 +57,15 @@ SOLAR_WINDS_SEVERITY_LEVELS = {
     'Unmanged': 'informational',
     'Unplugged': 'warning',
     'Unreachable': 'minor',
-    'Warn': 'warning'
+    'Warn': 'warning',
+
+    # Cisco UCS fault severity
+    'critical': 'critical',
+    'major': 'major',
+    'minor': 'minor',
+    'warning': 'warning',
+    'info': 'informational',
+    'cleared': 'normal'
 }
 
 
@@ -69,66 +80,76 @@ class SwisClient(object):
         self.client.set_options(port='BasicHttpBinding_InformationService')
         LOG.debug('client = %s', self.client)
 
-        last_event_id = self._get_max_event_id()
+        prog = os.path.basename(sys.argv[0])
+        self.cursor_file = '%s/%s.cursor' % (CONF.pid_dir, prog)
 
-        self.nw_event_id_cursor = last_event_id
-        self.if_event_id_cursor = last_event_id
-        self.vol_event_id_cursor = last_event_id
+        if os.path.isfile(self.cursor_file):
+            npm_id, ucs_id = open(self.cursor_file).read().splitlines()
+            LOG.info('Event IDs cursor read from file: %s, %s', npm_id, ucs_id)
+        else:
+            npm_id = self._get_max_npm_event_id()
+            ucs_id = self._get_max_ucs_event_id()
+            LOG.info('Event ID cursor queried from db: %s, %s', npm_id, ucs_id)
 
-    def get_nw_events(self):
+        self.npm_event_id_cursor = npm_id
+        self.ucs_event_id_cursor = ucs_id
 
-        last_event_id = self._get_max_event_id()
+    def shutdown(self):
 
-        if not last_event_id or last_event_id == self.nw_event_id_cursor:
-            LOG.debug('No new events since event id %s. Skipping network event query...', last_event_id)
+        try:
+            f = open(self.cursor_file, 'w')
+            f.write('%s\n%s\n' % (self.npm_event_id_cursor, self.ucs_event_id_cursor))
+            f.close()
+        except IOError, e:
+            LOG.error('Failed to write event ID cursor to file %s: %s', self.cursor_file, e)
+
+    def get_npm_events(self):
+
+        last_event_id = self._get_max_npm_event_id()
+
+        if not last_event_id or last_event_id == self.npm_event_id_cursor:
+            LOG.debug('No new events since event id %s. Skipping NPM event query...', last_event_id)
             return []
 
-        LOG.debug('Get network events in range %s -> %s', self.if_event_id_cursor, last_event_id)
+        LOG.debug('Get network events in range %s -> %s', self.npm_event_id_cursor, last_event_id)
 
         query = (
-            "SELECT EventID, EventTime, N.NodeName, N.ObjectSubType, ET.Name, Message, Acknowledged, ET.Icon, N.StatusDescription " +
+            "SELECT EventID, EventTime, N.NodeName, N.ObjectSubType AS Object, ET.Name, Message, Acknowledged, ET.Icon " +
             "FROM Orion.Events E " +
             "INNER JOIN Orion.EventTypes AS ET ON E.EventType = ET.EventType " +
             "INNER JOIN Orion.Nodes AS N ON E.NetworkNode = N.NodeID " +
-            "WHERE EventID > %s AND EventID <= %s " % (self.nw_event_id_cursor, last_event_id) +
+            "WHERE EventID > %s AND EventID <= %s " % (self.npm_event_id_cursor, last_event_id) +
             "AND NetObjectType = 'N' " +
-            "ORDER BY EventID"
+            "UNION ALL "
         )
-        LOG.debug('query = %s', query)
 
-        self.nw_event_id_cursor = last_event_id
-        x = self._query_xml(query)
-
-        LOG.debug(x)
-
-        try:
-            return x.queryResult.data.row
-        except AttributeError:
-            return []
-
-    def get_if_events(self):
-
-        last_event_id = self._get_max_event_id()
-
-        if not last_event_id or last_event_id == self.if_event_id_cursor:
-            LOG.debug('No new events since event id %s. Skipping interface event query...', last_event_id)
-            return []
-
-        LOG.debug('Get interface events in range %s -> %s', self.if_event_id_cursor, last_event_id)
-
-        query = (
-            "SELECT EventID, EventTime, N.NodeName, I.IfName, ET.Name, Message, Acknowledged, ET.Icon, I.StatusDescription " +
+        query += (
+            "(SELECT EventID, EventTime, N.NodeName, I.IfName AS Object, ET.Name, Message, Acknowledged, ET.Icon " +
             "FROM Orion.Events E " +
             "INNER JOIN Orion.EventTypes AS ET ON E.EventType = ET.EventType " +
             "INNER JOIN Orion.Nodes AS N ON E.NetworkNode = N.NodeID " +
             "INNER JOIN Orion.NPM.Interfaces AS I ON E.NetObjectID = I.InterfaceID " +
-            "WHERE EventID > %s AND EventID <= %s " % (self.if_event_id_cursor, last_event_id) +
-            "AND NetObjectType = 'I' " +
-            "ORDER BY EventID"
+            "WHERE EventID > %s AND EventID <= %s " % (self.npm_event_id_cursor, last_event_id) +
+            "AND NetObjectType = 'I') " +
+            "UNION ALL "
         )
+
+        query += (
+            "(SELECT EventID, EventTime, N.NodeName, V.DisplayName AS Object, ET.Name, Message, Acknowledged, ET.Icon " +
+            "FROM Orion.Events E " +
+            "INNER JOIN Orion.EventTypes AS ET ON E.EventType = ET.EventType " +
+            "INNER JOIN Orion.Nodes AS N ON E.NetworkNode = N.NodeID " +
+            "INNER JOIN Orion.Volumes AS V ON E.NetObjectID = V.VolumeID " +
+            "WHERE EventID > %s AND EventID <= %s " % (self.npm_event_id_cursor, last_event_id) +
+            "AND NetObjectType = 'V') "
+        )
+        query += (
+            "ORDER BY 1"
+        )
+
         LOG.debug('query = %s', query)
 
-        self.if_event_id_cursor = last_event_id
+        self.npm_event_id_cursor = last_event_id
         x = self._query_xml(query)
 
         LOG.debug(x)
@@ -138,29 +159,32 @@ class SwisClient(object):
         except AttributeError:
             return []
 
-    def get_vol_events(self):
+    def get_ucs_events(self):
 
-        last_event_id = self._get_max_event_id()
+        query = 'SELECT MAX(EventID) AS MaxEventID FROM Orion.NPM.UCSEvents'
+        max = self._query_xml(query)
 
-        if not last_event_id or last_event_id == self.vol_event_id_cursor:
-            LOG.debug('No new events since event id %s. Skipping volume event query...', last_event_id)
+        LOG.debug('Max UCS event id query response = %s', max)
+
+        last_event_id = max.queryResult.data.row.c0
+
+        if not last_event_id or last_event_id == self.ucs_event_id_cursor:
+            LOG.debug('No new events since event id %s. Skipping UCS event query...', last_event_id)
             return []
 
-        LOG.debug('Get volume events in range %s -> %s', self.vol_event_id_cursor, last_event_id)
+        LOG.debug('Get UCS events in range %s -> %s', self.ucs_event_id_cursor, last_event_id)
 
         query = (
-            "SELECT EventID, EventTime, N.NodeName, V.DisplayName, ET.Name, Message, Acknowledged, ET.Icon, V.VolumePercentUsed " +
-            "FROM Orion.Events E " +
-            "INNER JOIN Orion.EventTypes AS ET ON E.EventType = ET.EventType " +
-            "INNER JOIN Orion.Nodes AS N ON E.NetworkNode = N.NodeID " +
-            "INNER JOIN Orion.Volumes AS V ON E.NetObjectID = V.VolumeID " +
-            "WHERE EventID > %s AND EventID <= %s " % (self.vol_event_id_cursor, last_event_id) +
-            "AND NetObjectType = 'V' " +
+            "SELECT E.EventID, E.Created, M.Name, F.DistinguishedName, E.DistinguishedName, E.Description, E.Name, E.Severity, F.Status " +
+            "FROM Orion.NPM.UCSEvents E " +
+            "INNER JOIN Orion.NPM.UCSFabrics AS F ON E.HostNodeID = F.HostNodeID " +
+            "INNER JOIN Orion.NPM.UCSManagers AS M ON F.NodeID = M.NodeID " +
+            "WHERE EventID > %s AND EventID <= %s " % (self.ucs_event_id_cursor, last_event_id) +
             "ORDER BY EventID"
         )
         LOG.debug('query = %s', query)
 
-        self.vol_event_id_cursor = last_event_id
+        self.ucs_event_id_cursor = last_event_id
         x = self._query_xml(query)
 
         LOG.debug(x)
@@ -179,12 +203,22 @@ class SwisClient(object):
             LOG.warning('SWIS QueryXML() failed: %s', e)
             return None
 
-    def _get_max_event_id(self):
+    def _get_max_npm_event_id(self):
 
         query = 'SELECT MAX(EventID) AS MaxEventID FROM Orion.Events'
         max = self._query_xml(query)
 
-        LOG.debug('Max event id query response = %s', max)
+        LOG.debug('Max NPM event id query response = %s', max)
+
+        if max:
+            return max.queryResult.data.row.c0
+
+    def _get_max_ucs_event_id(self):
+
+        query = 'SELECT MAX(EventID) AS MaxEventID FROM Orion.NPM.UCSEvents'
+        max = self._query_xml(query)
+
+        LOG.debug('Max UCS event id query response = %s', max)
 
         if max:
             return max.queryResult.data.row.c0
