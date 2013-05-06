@@ -14,7 +14,7 @@ from alerta.common import severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.dedup import DeDup
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -39,7 +39,7 @@ class DynectDaemon(Daemon):
         self.info = {}
         self.last_info = {}
         self.updating = False
-        self.dedup = DeDup()
+        self.dedup = DeDup(threshold=10)
 
     def run(self):
 
@@ -75,81 +75,79 @@ class DynectDaemon(Daemon):
             if resource not in self.last_info:
                 continue
 
-            if self.last_info[resource]['status'] != self.info[resource]['status']:
+            if resource.startswith('gslb-'):
 
-                if resource.startswith('gslb-'):
+                # gslb status       = ok | unk | trouble | failover
 
-                    # gslb status       = ok | unk | trouble | failover
+                text = 'GSLB status is %s.' % self.info[resource]['status']
 
-                    text = 'GSLB status is %s.' % self.info[resource]['status']
-
-                    if self.info[resource]['status'] == 'ok':
-                        event = 'GslbOK'
-                        severity = severity_code.NORMAL
-                    else:
-                        event = 'GslbNotOK'
-                        severity = severity_code.CRITICAL
-                    correlate = ['GslbOK', 'GslbNotOK']
-
-                elif resource.startswith('pool-'):
-
-                    # pool status       = up | unk | down
-                    # pool serve_mode   = obey | always | remove | no
-                    # pool weight	(1-15)
-
-                    if 'down' in self.info[resource]['status']:
-                        event = 'PoolDown'
-                        severity = severity_code.MAJOR
-                        text = 'Pool is down'
-                    elif 'obey' not in self.info[resource]['status']:
-                        event = 'PoolServe'
-                        severity = severity_code.MAJOR
-                        text = 'Pool with an incorrect serve mode'
-                    elif self.check_weight(self.info[resource]['gslb'], resource) is False:
-                        event = 'PoolWeightError'
-                        severity = severity_code.MINOR
-                        text = 'Pool with an incorrect weight'
-                    else:
-                        event = 'PoolUp'
-                        severity = severity_code.NORMAL
-                        text = 'Pool status is normal'
-                    correlate = ['PoolUp', 'PoolDown', 'PoolServe', 'PoolWeightError']
-
+                if self.info[resource]['status'] == 'ok':
+                    event = 'GslbOK'
+                    severity = severity_code.NORMAL
                 else:
-                    LOG.warning('Unknown resource type: %s', resource)
-                    continue
+                    event = 'GslbNotOK'
+                    severity = severity_code.CRITICAL
+                correlate = ['GslbOK', 'GslbNotOK']
 
-                # Defaults
-                group = 'GSLB'
-                value = self.info[resource]['status']
-                environment = ['PROD']
-                service = ['Network']
-                tags = list()
-                timeout = None
-                threshold_info = None
-                summary = None
-                raw_data = self.info[resource]['rawData']
+            elif resource.startswith('pool-'):
 
-                dynectAlert = Alert(
-                    resource=resource,
-                    event=event,
-                    correlate=correlate,
-                    group=group,
-                    value=value,
-                    severity=severity,
-                    environment=environment,
-                    service=service,
-                    text=text,
-                    event_type='dynectAlert',
-                    tags=tags,
-                    timeout=timeout,
-                    threshold_info=threshold_info,
-                    summary=summary,
-                    raw_data=raw_data,
-                )
+                # pool status       = up | unk | down
+                # pool serve_mode   = obey | always | remove | no
+                # pool weight	(1-15)
 
-                if self.dedup.is_send(dynectAlert):
-                    self.mq.send(dynectAlert)
+                if 'down' in self.info[resource]['status']:
+                    event = 'PoolDown'
+                    severity = severity_code.MAJOR
+                    text = 'Pool is down'
+                elif 'obey' not in self.info[resource]['status']:
+                    event = 'PoolServe'
+                    severity = severity_code.MAJOR
+                    text = 'Pool with an incorrect serve mode'
+                elif self.check_weight(self.info[resource]['gslb'], resource) is False:
+                    event = 'PoolWeightError'
+                    severity = severity_code.MINOR
+                    text = 'Pool with an incorrect weight'
+                else:
+                    event = 'PoolUp'
+                    severity = severity_code.NORMAL
+                    text = 'Pool status is normal'
+                correlate = ['PoolUp', 'PoolDown', 'PoolServe', 'PoolWeightError']
+
+            else:
+                LOG.warning('Unknown resource type: %s', resource)
+                continue
+
+            # Defaults
+            group = 'GSLB'
+            value = self.info[resource]['status']
+            environment = ['PROD']
+            service = ['Network']
+            tags = list()
+            timeout = None
+            threshold_info = None
+            summary = None
+            raw_data = self.info[resource]['rawData']
+
+            dynectAlert = Alert(
+                resource=resource,
+                event=event,
+                correlate=correlate,
+                group=group,
+                value=value,
+                severity=severity,
+                environment=environment,
+                service=service,
+                text=text,
+                event_type='dynectAlert',
+                tags=tags,
+                timeout=timeout,
+                threshold_info=threshold_info,
+                summary=summary,
+                raw_data=raw_data,
+            )
+
+            if self.dedup.is_send(dynectAlert):
+                self.mq.send(dynectAlert)
 
     def check_weight(self, parent, resource):
         
@@ -223,7 +221,3 @@ class DynectDaemon(Daemon):
             self.updating = False
 
         self.updating = True
-
-
-
-
