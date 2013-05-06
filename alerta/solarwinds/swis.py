@@ -2,7 +2,6 @@
 import os
 import sys
 import urllib2
-import atexit
 
 from suds.client import Client
 
@@ -95,18 +94,6 @@ class SwisClient(object):
         self.npm_event_id_cursor = npm_id
         self.ucs_event_id_cursor = ucs_id
 
-        atexit.register(self.shutdown)
-
-    def shutdown(self):
-
-        try:
-            f = open(self.cursor_file, 'w')
-            f.write('%s\n%s\n' % (self.npm_event_id_cursor, self.ucs_event_id_cursor))
-            f.close()
-            LOG.info('Wrote event ID cursors to file %s: %s, %s', self.cursor_file, self.npm_event_id_cursor, self.ucs_event_id_cursor)
-        except IOError, e:
-            LOG.error('Failed to write event ID cursor to file %s: %s', self.cursor_file, e)
-
     def get_npm_events(self):
 
         last_event_id = self._get_max_npm_event_id()
@@ -155,9 +142,9 @@ class SwisClient(object):
 
         self.npm_event_id_cursor = last_event_id
         x = self._query_xml(query)
-
         LOG.debug(x)
 
+        self._save_cursor()
         try:
             return x.queryResult.data.row
         except AttributeError:
@@ -190,9 +177,9 @@ class SwisClient(object):
 
         self.ucs_event_id_cursor = last_event_id
         x = self._query_xml(query)
-
         LOG.debug(x)
 
+        self._save_cursor()
         try:
             return x.queryResult.data.row
         except AttributeError:
@@ -227,5 +214,13 @@ class SwisClient(object):
         if max:
             return max.queryResult.data.row.c0
 
+    def _save_cursor(self):
 
+        try:
+            f = open(self.cursor_file, 'w')
+            f.write('%s\n%s\n' % (self.npm_event_id_cursor, self.ucs_event_id_cursor))
+            f.close()
+            LOG.info('Wrote event ID cursors to file %s: %s, %s', self.cursor_file, self.npm_event_id_cursor, self.ucs_event_id_cursor)
+        except IOError, e:
+            LOG.error('Failed to write event ID cursor to file %s: %s', self.cursor_file, e)
 
