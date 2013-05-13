@@ -8,10 +8,10 @@ from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
-from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS
+from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS, SOLAR_WINDS_CORRELATED_EVENTS
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -103,6 +103,7 @@ class SolarWindsDaemon(Daemon):
             LOG.debug(row)
 
             event = row.c4.replace(" ", "")
+            correlate = SOLAR_WINDS_CORRELATED_EVENTS.get(event, None)
             resource = '%s:%s' % (row.c2, row.c3.lower())
             severity = SOLAR_WINDS_SEVERITY_LEVELS.get(row.c7, None)
             group = 'Orion'
@@ -111,7 +112,6 @@ class SolarWindsDaemon(Daemon):
             environment = ['INFRA']
             service = ['Network']
             tags = None
-            correlate = list()
             timeout = None
             threshold_info = None
             summary = None

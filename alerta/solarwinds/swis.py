@@ -68,6 +68,204 @@ SOLAR_WINDS_SEVERITY_LEVELS = {
     'cleared': 'normal'
 }
 
+SOLAR_WINDS_CORRELATED_EVENTS = {
+    'AlertReset':     ['AlertReset', 'AlertTriggered'],  # 5001
+    'AlertTriggered': ['AlertReset', 'AlertTriggered'],  # 5000
+
+    'ApplicationRestart': ['ApplicationRestart', 'ApplicationStopped'],  # 31
+    'ApplicationStopped': ['ApplicationRestart', 'ApplicationStopped'],  # 30
+
+    'CoreBLServiceStarted': ['CoreBLServiceStarted', 'CoreBLServiceStopped', 'CoreBLLicensing'],  # 1500
+    'CoreBLServiceStopped': ['CoreBLServiceStarted', 'CoreBLServiceStopped', 'CoreBLLicensing'],  # 1501
+    'CoreBLLicensing':      ['CoreBLServiceStarted', 'CoreBLServiceStopped', 'CoreBLLicensing'],  # 1502
+
+    'Critical':      ['Critical', 'Warning', 'Informational'],  # 1002
+    'Warning':       ['Critical', 'Warning', 'Informational'],  # 1001
+    'Informational': ['Critical', 'Warning', 'Informational'],  # 1000
+
+    'CriticalSystemError': ['', ''],  # 15
+
+    'FailBack': ['FailBack', 'FailOver'],  # 26
+    'FailOver': ['FailBack', 'FailOver'],  # 25
+
+    'GroupCreated':        ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 56
+    'GroupCritical':       ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 58
+    'GroupDisabled':       ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 66
+    'GroupDown':           ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 50
+    'GroupExternal':       ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 59
+    'GroupMembersChanged': ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 53
+    'GroupRemoved':        ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 57
+    'GroupShutdown':       ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 60
+    'GroupTesting':        ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 61
+    'GroupUnknown':        ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 62
+    'GroupUnmanaged':      ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 63
+    'GroupUnplugged':      ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 65
+    'GroupUnreachable':    ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 64
+    'GroupUp':             ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 52
+    'GroupWarning':        ['GroupCreated', 'GroupCritical', 'GroupDisabled', 'GroupDown', 'GroupExternal',
+                            'GroupMembersChanged', 'GroupRemoved', 'GroupShutdown', 'GroupTesting', 'GroupUnknown',
+                            'GroupUnmanaged', 'GroupUnplugged', 'GroupUnreachable', 'GroupUp', 'GroupWarning'],  # 51
+
+    'HardwareCritical':      ['HardwareCritical', 'HardwareDown', 'HardwareManaged', 'HardwareUndefined',
+                              'HardwareUnknown', 'HardwareUnmanaged', 'HardwareUnreachable', 'HardwareUp',
+                              'HardwareWarning'],  # 521
+    'HardwareDown':          ['HardwareCritical', 'HardwareDown', 'HardwareManaged', 'HardwareUndefined',
+                              'HardwareUnknown', 'HardwareUnmanaged', 'HardwareUnreachable', 'HardwareUp',
+                              'HardwareWarning'],  # 522
+    'HardwareManaged':       ['HardwareCritical', 'HardwareDown', 'HardwareManaged', 'HardwareUndefined',
+                              'HardwareUnknown', 'HardwareUnmanaged', 'HardwareUnreachable', 'HardwareUp',
+                              'HardwareWarning'],  # 517
+    'HardwareUndefined':     ['HardwareCritical', 'HardwareDown', 'HardwareManaged', 'HardwareUndefined',
+                              'HardwareUnknown', 'HardwareUnmanaged', 'HardwareUnreachable', 'HardwareUp',
+                              'HardwareWarning'],  # 515
+    'HardwareUnknown':       ['HardwareCritical', 'HardwareDown', 'HardwareManaged', 'HardwareUndefined',
+                              'HardwareUnknown', 'HardwareUnmanaged', 'HardwareUnreachable', 'HardwareUp',
+                              'HardwareWarning'],  # 514
+    'HardwareUnmanaged':     ['HardwareCritical', 'HardwareDown', 'HardwareManaged', 'HardwareUndefined',
+                              'HardwareUnknown', 'HardwareUnmanaged', 'HardwareUnreachable', 'HardwareUp',
+                              'HardwareWarning'],  # 516
+    'HardwareUnreachable':   ['HardwareCritical', 'HardwareDown', 'HardwareManaged', 'HardwareUndefined',
+                              'HardwareUnknown', 'HardwareUnmanaged', 'HardwareUnreachable', 'HardwareUp',
+                              'HardwareWarning'],  # 518
+    'HardwareUp':            ['HardwareCritical', 'HardwareDown', 'HardwareManaged', 'HardwareUndefined',
+                              'HardwareUnknown', 'HardwareUnmanaged', 'HardwareUnreachable', 'HardwareUp',
+                              'HardwareWarning'],  # 519
+    'HardwareWarning':       ['HardwareCritical', 'HardwareDown', 'HardwareManaged', 'HardwareUndefined',
+                              'HardwareUnknown', 'HardwareUnmanaged', 'HardwareUnreachable', 'HardwareUp',
+                              'HardwareWarning'],  # 520
+
+    'HardwareSensorCritical': ['HardwareSensorCritical', 'HardwareSensorDown', 'HardwareSensorUnknown',
+                               'HardwareSensorUp', 'HardwareSensorWarning'],  # 531
+    'HardwareSensorDown':     ['HardwareSensorCritical', 'HardwareSensorDown', 'HardwareSensorUnknown',
+                               'HardwareSensorUp', 'HardwareSensorWarning'],  # 532
+    'HardwareSensorUnknown':  ['HardwareSensorCritical', 'HardwareSensorDown', 'HardwareSensorUnknown',
+                               'HardwareSensorUp', 'HardwareSensorWarning'],  # 528
+    'HardwareSensorUp':       ['HardwareSensorCritical', 'HardwareSensorDown', 'HardwareSensorUnknown',
+                               'HardwareSensorUp', 'HardwareSensorWarning'],  # 529
+    'HardwareSensorWarning':  ['HardwareSensorCritical', 'HardwareSensorDown', 'HardwareSensorUnknown',
+                               'HardwareSensorUp', 'HardwareSensorWarning'],  # 530
+
+    'HardwareTypeCritical': ['HardwareTypeCritical', 'HardwareTypeDown', 'HardwareTypeUnknown', 'HardwareTypeUp',
+                             'HardwareTypeWarning'],  # 526
+    'HardwareTypeDown':     ['HardwareTypeCritical', 'HardwareTypeDown', 'HardwareTypeUnknown', 'HardwareTypeUp',
+                             'HardwareTypeWarning'],  # 527
+    'HardwareTypeUnknown':  ['HardwareTypeCritical', 'HardwareTypeDown', 'HardwareTypeUnknown', 'HardwareTypeUp',
+                             'HardwareTypeWarning'],  # 523
+    'HardwareTypeUp':       ['HardwareTypeCritical', 'HardwareTypeDown', 'HardwareTypeUnknown', 'HardwareTypeUp',
+                             'HardwareTypeWarning'],  # 524
+    'HardwareTypeWarning':  ['HardwareTypeCritical', 'HardwareTypeDown', 'HardwareTypeUnknown', 'HardwareTypeUp',
+                             'HardwareTypeWarning'],  # 525
+
+    'InterfaceAdded':       ['InterfaceAdded', 'InterfaceChanged', 'InterfaceDisappeared', 'InterfaceDown',
+                             'InterfaceEnabled', 'InterfaceReappeared', 'InterfaceRemapped', 'InterfaceRemoved',
+                             'InterfaceShutdown', 'InterfaceUnknown', 'InterfaceUp'],  # 16
+    'InterfaceChanged':     ['InterfaceAdded', 'InterfaceChanged', 'InterfaceDisappeared', 'InterfaceDown',
+                             'InterfaceEnabled', 'InterfaceReappeared', 'InterfaceRemapped', 'InterfaceRemoved',
+                             'InterfaceShutdown', 'InterfaceUnknown', 'InterfaceUp'],  # 19
+    'InterfaceDisappeared': ['InterfaceAdded', 'InterfaceChanged', 'InterfaceDisappeared', 'InterfaceDown',
+                             'InterfaceEnabled', 'InterfaceReappeared', 'InterfaceRemapped', 'InterfaceRemoved',
+                             'InterfaceShutdown', 'InterfaceUnknown', 'InterfaceUp'],  # 23
+    'InterfaceDown':        ['InterfaceAdded', 'InterfaceChanged', 'InterfaceDisappeared', 'InterfaceDown',
+                             'InterfaceEnabled', 'InterfaceReappeared', 'InterfaceRemapped', 'InterfaceRemoved',
+                             'InterfaceShutdown', 'InterfaceUnknown', 'InterfaceUp'],  # 10
+    'InterfaceEnabled':     ['InterfaceAdded', 'InterfaceChanged', 'InterfaceDisappeared', 'InterfaceDown',
+                             'InterfaceEnabled', 'InterfaceReappeared', 'InterfaceRemapped', 'InterfaceRemoved',
+                             'InterfaceShutdown', 'InterfaceUnknown', 'InterfaceUp'],  # 22
+    'InterfaceReappeared':  ['InterfaceAdded', 'InterfaceChanged', 'InterfaceDisappeared', 'InterfaceDown',
+                             'InterfaceEnabled', 'InterfaceReappeared', 'InterfaceRemapped', 'InterfaceRemoved',
+                             'InterfaceShutdown', 'InterfaceUnknown', 'InterfaceUp'],  # 24
+    'InterfaceRemapped':    ['InterfaceAdded', 'InterfaceChanged', 'InterfaceDisappeared', 'InterfaceDown',
+                             'InterfaceEnabled', 'InterfaceReappeared', 'InterfaceRemapped', 'InterfaceRemoved',
+                             'InterfaceShutdown', 'InterfaceUnknown', 'InterfaceUp'],  # 18
+    'InterfaceRemoved':     ['InterfaceAdded', 'InterfaceChanged', 'InterfaceDisappeared', 'InterfaceDown',
+                             'InterfaceEnabled', 'InterfaceReappeared', 'InterfaceRemapped', 'InterfaceRemoved',
+                             'InterfaceShutdown', 'InterfaceUnknown', 'InterfaceUp'],  # 17
+    'InterfaceShutdown':    ['InterfaceAdded', 'InterfaceChanged', 'InterfaceDisappeared', 'InterfaceDown',
+                             'InterfaceEnabled', 'InterfaceReappeared', 'InterfaceRemapped', 'InterfaceRemoved',
+                             'InterfaceShutdown', 'InterfaceUnknown', 'InterfaceUp'],  # 12
+    'InterfaceUnknown':     ['InterfaceAdded', 'InterfaceChanged', 'InterfaceDisappeared', 'InterfaceDown',
+                             'InterfaceEnabled', 'InterfaceReappeared', 'InterfaceRemapped', 'InterfaceRemoved',
+                             'InterfaceShutdown', 'InterfaceUnknown', 'InterfaceUp'],  # 13
+    'InterfaceUp':          ['InterfaceAdded', 'InterfaceChanged', 'InterfaceDisappeared', 'InterfaceDown',
+                             'InterfaceEnabled', 'InterfaceReappeared', 'InterfaceRemapped', 'InterfaceRemoved',
+                             'InterfaceShutdown', 'InterfaceUnknown', 'InterfaceUp'],  # 11
+
+    'UnManageInterface': ['UnManageInterface', 'ManageInterface'],  # 140
+    'ManageInterface':   ['UnManageInterface', 'ManageInterface'],  # 141
+
+    'UnManageNode': ['UnManageNode', 'ManageNode'],  # 40
+    'ManageNode':   ['UnManageNode', 'ManageNode'],  # 41
+
+    'MonitoringStarted': ['MonitoringStarted', 'MonitoringStopped'],  # 20
+    'MonitoringStopped': ['MonitoringStarted', 'MonitoringStopped'],  # 21
+
+    'NodeAdded':    ['NodeAdded', 'NodeChanged', 'NodeDown', 'NodeRebooted', 'NodeRemoved', 'NodeUp', 'NodeWarning'],  # 9
+    'NodeChanged':  ['NodeAdded', 'NodeChanged', 'NodeDown', 'NodeRebooted', 'NodeRemoved', 'NodeUp', 'NodeWarning'],  # 100
+    'NodeDown':     ['NodeAdded', 'NodeChanged', 'NodeDown', 'NodeRebooted', 'NodeRemoved', 'NodeUp', 'NodeWarning'],  # 1
+    'NodeRebooted': ['NodeAdded', 'NodeChanged', 'NodeDown', 'NodeRebooted', 'NodeRemoved', 'NodeUp', 'NodeWarning'],  # 14
+    'NodeRemoved':  ['NodeAdded', 'NodeChanged', 'NodeDown', 'NodeRebooted', 'NodeRemoved', 'NodeUp', 'NodeWarning'],  # 8
+    'NodeUp':       ['NodeAdded', 'NodeChanged', 'NodeDown', 'NodeRebooted', 'NodeRemoved', 'NodeUp', 'NodeWarning'],  # 5
+    'NodeWarning':  ['NodeAdded', 'NodeChanged', 'NodeDown', 'NodeRebooted', 'NodeRemoved', 'NodeUp', 'NodeWarning'],  # 2
+
+    'NPMBLServiceStarted': ['NPMBLServiceStarted', 'NPMBLServiceStopped', 'NPMBLLicensing'],  # 150
+    'NPMBLServiceStopped': ['NPMBLServiceStarted', 'NPMBLServiceStopped', 'NPMBLLicensing'],  # 151
+    'NPMBLLicensing':      ['NPMBLServiceStarted', 'NPMBLServiceStopped', 'NPMBLLicensing'],  # 152
+
+    'NPMModuleEngineStarted': ['NPMModuleEngineStarted', 'NPMModuleEngineStopped', 'NPMLicensing'],  # 600
+    'NPMModuleEngineStopped': ['NPMModuleEngineStarted', 'NPMModuleEngineStopped', 'NPMLicensing'],  # 601
+    'NPMLicensing':           ['NPMModuleEngineStarted', 'NPMModuleEngineStopped', 'NPMLicensing'],  # 602
+
+    'PollingMethodChanged': [],  # 99
+
+    'RogueDetected': [],  # 603
+    'ThinAPDisappeared': [],  # 604
+
+    'VIMServiceStarted': ['VIMServiceStarted', 'VIMServiceStopped'],  # 700
+    'VIMServiceStopped': ['VIMServiceStarted', 'VIMServiceStopped'],  # 701
+
+    'VolumeAdded':       ['VolumeAdded', 'VolumeChanged', 'VolumeDisappeared', 'VolumeReappeared', 'VolumeRemapped',
+                          'VolumeRemoved'],  # 202
+    'VolumeChanged':     ['VolumeAdded', 'VolumeChanged', 'VolumeDisappeared', 'VolumeReappeared', 'VolumeRemapped',
+                          'VolumeRemoved'],  # 201
+    'VolumeDisappeared': ['VolumeAdded', 'VolumeChanged', 'VolumeDisappeared', 'VolumeReappeared', 'VolumeRemapped',
+                          'VolumeRemoved'],  # 210
+    'VolumeReappeared':  ['VolumeAdded', 'VolumeChanged', 'VolumeDisappeared', 'VolumeReappeared', 'VolumeRemapped',
+                          'VolumeRemoved'],  # 211
+    'VolumeRemapped':    ['VolumeAdded', 'VolumeChanged', 'VolumeDisappeared', 'VolumeReappeared', 'VolumeRemapped',
+                          'VolumeRemoved'],  # 200
+    'VolumeRemoved':     ['VolumeAdded', 'VolumeChanged', 'VolumeDisappeared', 'VolumeReappeared', 'VolumeRemapped',
+                          'VolumeRemoved'],  # 203
+
+}
+
 
 class SwisClient(object):
 
@@ -152,12 +350,7 @@ class SwisClient(object):
 
     def get_ucs_events(self):
 
-        query = 'SELECT MAX(EventID) AS MaxEventID FROM Orion.NPM.UCSEvents'
-        max = self._query_xml(query)
-
-        LOG.debug('Max UCS event id query response = %s', max)
-
-        last_event_id = max.queryResult.data.row.c0
+        last_event_id = self._get_max_ucs_event_id()
 
         if not last_event_id or last_event_id == self.ucs_event_id_cursor:
             LOG.debug('No new events since event id %s. Skipping UCS event query...', last_event_id)
