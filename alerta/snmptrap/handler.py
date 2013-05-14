@@ -10,7 +10,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.mq import Messaging
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -57,27 +57,59 @@ class SnmpTrapHandler(object):
     @staticmethod
     def parse_snmptrap(data):
 
-        split = data.splitlines()
+        lines = data.splitlines()
 
         trapvars = dict()
-        trapvars['$$'] = '$'
+        trapvars['$$'] = '$'  # special case
 
-        agent = split.pop(0)
-        transport = split.pop(0)
+        agent = lines.pop(0)
+        transport = lines.pop(0)
 
         # Get varbinds
         varbinds = dict()
-        for idx, line in enumerate(split, start=1):
-            oid, value = line.split(None, 1)
+        multiline = False
+        idx = 1
+        for line in lines:
+            if not multiline:
+                try:
+                    oid, value = line.split(None, 1)
+                except ValueError:
+                    break
+            else:
+                value = line
+
+            LOG.debug('%s %s', idx, value)
+
             if value.startswith('"'):
-                value = value[1:-1]
-            varbinds[oid] = value
-            trapvars['$' + str(idx)] = value  # $n
+                if value.endswith('"'):
+                    value = value[1:-1]
+                    multiline = False
+                else:
+                    varbinds[oid] = value[1:]
+                    trapvars['$' + str(idx)] = value[1:]  # $n
+                    multiline = True
+                    continue
+
+            if multiline:
+                if value.endswith('"'):
+                    varbinds[oid] += value[:-1]
+                    trapvars['$' + str(idx)] += value[:-1]  # $n
+                    idx += 1
+                    multiline = False
+                else:
+                    varbinds[oid] += value
+                    trapvars['$' + str(idx)] += value  # $n
+            else:
+                varbinds[oid] = value
+                trapvars['$' + str(idx)] = value  # $n
+                idx += 1
+
+        LOG.debug('varbinds = %s', varbinds)
 
         trapoid = trapvars['$O'] = trapvars['$2']
         try:
             enterprise, trapnumber = trapoid.rsplit('.', 1)
-        except:
+        except ValueError:
             enterprise, trapnumber = trapoid.rsplit('::', 1)
         enterprise = enterprise.strip('.0')
 
