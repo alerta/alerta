@@ -455,8 +455,19 @@ $('#refresh-all').click(function () {
 });
 
 $('.status-indicator-overall').click(function () {
-    filter = lookup[this.id.split('-')[0]];
-    refreshAlerts(false);
+    var statusIndicator = $(this).parent(".status-indicator");
+
+    if(statusIndicator.hasClass("current-filter")) {
+        filter = '';
+        refreshAlerts(false);
+        statusIndicator.removeClass("current-filter")
+        $(".status-indicator").removeClass("status-indicator-inactive");
+    } else {
+        filter = lookup[this.id.split('-')[0]];
+        refreshAlerts(false);
+        $(".status-indicator").addClass("status-indicator-inactive").removeClass("current-filter");
+        statusIndicator.addClass("current-filter");;
+    }
 });
 
 $('.status-indicator-count').click(function () {
