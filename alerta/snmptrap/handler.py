@@ -42,14 +42,14 @@ class SnmpTrapHandler(object):
 
         snmptrapAlert = SnmpTrapHandler.parse_snmptrap(data)
 
-        api = ApiClient()
+        self.api = ApiClient()
 
         if snmptrapAlert:
-            api.send(snmptrapAlert)
+            self.api.send(snmptrapAlert)
 
         LOG.debug('Send heartbeat...')
         heartbeat = Heartbeat(version=Version)
-        api.send(heartbeat)
+        self.api.send(heartbeat)
 
     @staticmethod
     def parse_snmptrap(data):
