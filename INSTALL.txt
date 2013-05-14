@@ -1,5 +1,0 @@
-
-
-pip install stompy
-pip install pytz (is this really needed?)
-pip install kombu (instead of stompy which isn't in pip, and openstack uses kombu by default)
