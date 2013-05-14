@@ -26,6 +26,7 @@ table {
 
 .status-indicator, #alerts {
     cursor: pointer;
+    transition: opacity .4s;
 }
 
 .status-indicator {
@@ -123,3 +124,4 @@ table {
 td {
     white-space: nowrap;
 }
+
