@@ -69,28 +69,17 @@ $ pip install -r requirements.txt
 $ python setup.py install
 ```
 
-To start alerta with a configuration that logs to /tmp:
-
-```
-$ alerta --log-dir=/tmp
-$ alerta-api --log-dir=/tmp
-```
-
-To run in the foreground:
-
-```
-$ alerta --log-dir=/tmp --debug --foreground --use-stderr
-$ alerta-api --log-dir=/tmp --debug --use-stderr
-```
-
 To use the alert console modify `$HOME/.alerta.conf` so that the API uses a free port and static content can be found:
 ```
 [DEFAULT]
 api_port = 8000
+log_dir = /tmp
 
 [alerta-api]
 dashboard_dir = /path/to/alerta/dashboard/v2/assets/
 ```
+
+For example, if the repo was cloned to `/home/foobar/git/alerta` then the `dashboard_dir` directory path will be `/home/foobar/git/alerta/dashboard/v2/assets/`.
 
 If using Apache ActiveMQ change the inbound queue from an AMQP exchange to a STOMP queue:
 ```
@@ -98,7 +87,19 @@ If using Apache ActiveMQ change the inbound queue from an AMQP exchange to a STO
 inbound_queue = /queue/alerts
 ```
 
-For example, if the repo was cloned to `/home/foobar/git/alerta` then the `dashboard_dir` directory path will be `/home/foobar/git/alerta/dashboard/v2/assets/`.
+To start alerta with the above configuration in addition to system defaults:
+
+```
+$ alerta
+$ alerta-api
+```
+
+To run in DEBUG mode in the foreground and send log output to stderr:
+
+```
+$ alerta --debug --foreground --use-stderr
+$ alerta-api --debug --use-stderr
+```
 
 And then the alert console can be found at:
 
