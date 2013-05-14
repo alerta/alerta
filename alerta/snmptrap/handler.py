@@ -8,9 +8,9 @@ from alerta.common import log as logging
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
-from alerta.common.mq import Messaging
+from alerta.common.api import ApiClient
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -42,17 +42,14 @@ class SnmpTrapHandler(object):
 
         snmptrapAlert = SnmpTrapHandler.parse_snmptrap(data)
 
-        self.mq = Messaging()
-        self.mq.connect()
+        api = ApiClient()
 
         if snmptrapAlert:
-            self.mq.send(snmptrapAlert)
+            api.send(snmptrapAlert)
 
         LOG.debug('Send heartbeat...')
         heartbeat = Heartbeat(version=Version)
-        self.mq.send(heartbeat)
-
-        self.mq.disconnect()
+        api.send(heartbeat)
 
     @staticmethod
     def parse_snmptrap(data):
@@ -155,7 +152,7 @@ class SnmpTrapHandler(object):
 
         # Defaults
         event = trapoid
-        resource = agent.split('.')[0]
+        resource = trapvars['$A'] if trapvars['$A'] != '<UNKNOWN>' else trapvars['$a']
         severity = severity_code.NORMAL
         group = 'SNMP'
         value = trapnumber
