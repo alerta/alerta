@@ -29,6 +29,14 @@ table {
     transition: opacity .4s;
 }
 
+.status-indicator.current-filter {
+    opacity: 1;
+}
+
+.status-indicator-inactive {
+    opacity: 0.4;
+}
+
 .status-indicator {
     font-size: 14px;
 }

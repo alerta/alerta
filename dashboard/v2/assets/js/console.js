@@ -461,12 +461,12 @@ $('.status-indicator-overall').click(function () {
         filter = '';
         refreshAlerts(false);
         statusIndicator.removeClass("current-filter")
-        $(".status-indicator").css("opacity", "1");
+        $(".status-indicator").removeClass("status-indicator-inactive");
     } else {
         filter = lookup[this.id.split('-')[0]];
         refreshAlerts(false);
-        $(".status-indicator").css("opacity", "0.4").removeClass("current-filter");
-        statusIndicator.css("opacity", "1").addClass("current-filter");;
+        $(".status-indicator").addClass("status-indicator-inactive").removeClass("current-filter");
+        statusIndicator.addClass("current-filter");;
     }
 });
 
