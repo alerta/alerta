@@ -262,6 +262,13 @@ def main(argv):
             help="JSON formatted output"
         )
         parser.add_argument(
+            "-X",
+            "--delete",
+            action="store_true",
+            default=False,
+            help="Delete alerts that match the query. Use with caution."
+        )
+        parser.add_argument(
             "-d",
             "--dry-run",
             action="store_true",
