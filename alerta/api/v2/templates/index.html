@@ -3,13 +3,15 @@
     <!-- link href='http://fonts.googleapis.com/css?family=Sintony:400,700' rel='stylesheet' type='text/css' -->
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
 
     <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.js"></script>
     <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.dataTables.min.js"></script>
 
     <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap.css" rel="stylesheet">
     <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+
+    <link href="/alerta/dashboard/v2/assets/DataTables/bootstrap/dataTables.bootstrap.css" rel="stylesheet">
+
     <style type="text/css">
         body {
             padding-top: 40px;
@@ -30,6 +32,7 @@
                 <span class="icon-bar"></span>
             </a>
             <a class="brand" href="index.html">Alert Console</a>
+            {% block navigation %}
             <div class="nav-collapse">
                 <ul class="nav">
                     <li class="active"><a href="index.html">Production</a></li>
@@ -39,6 +42,7 @@
                     <li class=""><a href="about.html">About</a></li>
                 </ul>
             </div><!--/.nav-collapse -->
+            {% endblock %}
         </div>
     </div>
 </div>
@@ -97,7 +101,9 @@
         </tr>
     </table>
 
-    <div class="row show-grid">
+
+    {% block status_indicators %}   
+    <div class="row show-grid status-indicators">
         <div class="span12">
 
             <div class="row show-grid">
@@ -175,6 +181,7 @@
                 </div>
             </div> <!-- row -->
 
+
             <div class="row show-grid">
                 <div class="span3">
                     <table class="table table-bordered table-condensed status-indicator" id="D2MicroApps" data-label="D2MicroApps">
@@ -251,6 +258,8 @@
             </div> <!-- row -->
         </div>
     </div>
+    {% endblock %}
+
     <!-- Alert Details -->
     <div class="row show-grid">
         <div class="span12">
@@ -305,6 +314,7 @@
 
 <script src="/alerta/dashboard/v2/assets/js/console.js"></script>
 
+{% block initialiser %}
 <script>
     $(document).ready(function() {
 
@@ -324,6 +334,9 @@
         updateAlertsTable(env_filter, asiFilters);
     });
 </script>
+{% endblock %}
+
+<script src="/alerta/dashboard/v2/assets/DataTables/bootstrap/dataTables.bootstrap.js"></script>
 
 </body>
 </html>
