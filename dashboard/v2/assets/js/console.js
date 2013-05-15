@@ -127,6 +127,10 @@ function date2str(datetime) {
 
 $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
 {
+    var openRows = $("#alerts tr").filter(function () { return oTable.fnIsOpen(this); });
+
+    if(openRows.length > 0) { return; }
+
     if ( typeof sNewSource != 'undefined' && sNewSource != null ) {
         oSettings.sAjaxSource = sNewSource;
     }
