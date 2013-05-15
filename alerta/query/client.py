@@ -13,7 +13,7 @@ from alerta.common import log as logging
 from alerta.common import status_code, severity_code
 from alerta.common import config
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -195,6 +195,8 @@ class QueryClient(object):
                 print "       count: %d" % CONF.limit
             if CONF.query:
                 print "       query: %s" % CONF.query
+            if CONF.delete:
+                print "      action: DELETE"
             print
 
         if 'some' in CONF.show:
@@ -275,6 +277,23 @@ class QueryClient(object):
                 latency = int(delta.days * 24 * 60 * 60 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000)
 
                 count += 1
+
+                if CONF.delete:
+                    url = "%s/alert/%s" % (API_URL, alertid)
+
+                    try:
+                        request = urllib2.Request(url=url)
+                        request.get_method = lambda: 'DELETE'
+                        output = urllib2.urlopen(request)
+                        status = json.loads(output.read())['response']
+                    except urllib2.URLError, e:
+                        print "ERROR: Alert delete %s failed - %s" % (url, e)
+                        sys.exit(1)
+                    except (KeyboardInterrupt, SystemExit):
+                        sys.exit(0)
+
+                    print(line_color + 'DELETE %s %s' % (alertid, status['status']) + end_color)
+                    continue
 
                 if 'color' in CONF.show or CONF.color:
                     line_color = severity_code._COLOR_MAP[current_severity]
