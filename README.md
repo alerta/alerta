@@ -28,16 +28,25 @@ To install and configure the requirements on Debian/Ubuntu:
 
 ```
 $ sudo apt-get install mongodb-server
+
+```
+
+To use RabbitMQ with STOMP plugin enabled and configure the broker:
+
+```
 $ sudo apt-get install rabbitmq-server
-```
-
-To enable STOMP in RabbitMQ and configure the broker:
-
-```
 $ sudo /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_stomp
 $ sudo service rabbitmq-server restart
 $ wget http://guest:guest@localhost:55672/cli/rabbitmqadmin && chmod +x rabbitmqadmin
 $ ./rabbitmqadmin declare exchange name=alerts type=fanout
+```
+
+To use Apache ActiveMQ with STOMP transport enabled and configure the broker:
+
+```
+$ wget http://mirror.rmg.io/apache/activemq/apache-activemq/5.8.0/apache-activemq-5.8.0-bin.tar.gz
+$ tar zxvf apache-activemq-5.8.0-bin.tar.gz && cd apache-activemq-5.8.0
+$ sudo bin/activemq console xbean:conf/activemq-stomp.xml
 ```
 
 To run Alerta in a python virtual environment:
@@ -60,30 +69,37 @@ $ pip install -r requirements.txt
 $ python setup.py install
 ```
 
-To start alerta with a configuration that logs to /tmp:
-
-```
-$ alerta --log-dir=/tmp
-$ alerta-api --log-dir=/tmp
-```
-
-To run in the foreground:
-
-```
-$ alerta --log-dir=/tmp --debug --foreground --use-stderr
-$ alerta-api --log-dir=/tmp --debug --use-stderr
-```
-
 To use the alert console modify `$HOME/.alerta.conf` so that the API uses a free port and static content can be found:
 ```
 [DEFAULT]
 api_port = 8000
+log_dir = /tmp
 
 [alerta-api]
 dashboard_dir = /path/to/alerta/dashboard/v2/assets/
 ```
 
 For example, if the repo was cloned to `/home/foobar/git/alerta` then the `dashboard_dir` directory path will be `/home/foobar/git/alerta/dashboard/v2/assets/`.
+
+If using Apache ActiveMQ change the inbound queue from an AMQP exchange to a STOMP queue:
+```
+[DEFAULT]
+inbound_queue = /queue/alerts
+```
+
+To start alerta with the above configuration in addition to system defaults:
+
+```
+$ alerta
+$ alerta-api
+```
+
+To run in DEBUG mode in the foreground and send log output to stderr:
+
+```
+$ alerta --debug --foreground --use-stderr
+$ alerta-api --debug --use-stderr
+```
 
 And then the alert console can be found at:
 
