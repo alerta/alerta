@@ -133,3 +133,45 @@ td {
     white-space: nowrap;
 }
 
+.paginate_previous, .paginate_next {
+    cursor: pointer;
+    opacity: 0.5;
+}
+
+.paginate_disabled_previous, .paginate_disabled_next {
+    opacity: 0.2;
+}
+
+.paginate_previous, .paginate_disabled_previous {
+    margin-right: 1rem;
+}
+
+.paginate_previous, .paginate_next, .paginate_disabled_previous, .paginate_disabled_next {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border: solid 1px black;
+    color: black;
+}
+
+.paginate_previous:before, .paginate_disabled_previous:before {
+    content: '\00AB\0020';
+}
+
+.paginate_next:after, .paginate_disabled_next:after {
+    content: '\0020\00BB';
+}
+
+.paginate_previous:visited, .paginate_next:visited,
+.paginate_disabled_previous:visited, .paginate_disabled_next:visited,
+.paginate_previous:hover, .paginate_next:hover,
+.paginate_disabled_previous:hover, .paginate_disabled_next:hover {
+    color:black;
+}
+
+.paginate_disabled_previous:hover, .paginate_disabled_next:hover {
+    text-decoration: none;
+}
+
+.dataTables_paginate {
+    float:right;
+}
