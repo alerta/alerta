@@ -133,3 +133,7 @@ td {
     white-space: nowrap;
 }
 
+.row-fluid {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
