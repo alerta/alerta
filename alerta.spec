@@ -2,6 +2,13 @@
 %define release 1
 # %%define version # Specified in the wrapper script
 
+%define pyver 26
+%define pybasever 2.6
+
+%define __python /usr/bin/python%{pybasever}
+
+%{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+
 Name: %{name}
 Summary: Alerta monitoring framework
 Version: %{version}
@@ -46,10 +53,10 @@ UNKNOWN
 # we ensure that the sources are in the right place before calling rpmbuild
 
 %build
-python2.6 setup.py build
+%{__python} setup.py build
 
 %install
-python2.6 setup.py install --single-version-externally-managed --root=%{buildroot} --record=INSTALLED_FILES
+%{__python} setup.py install --single-version-externally-managed --root=%{buildroot} --record=INSTALLED_FILES
 
 %__mkdir_p %{buildroot}%{_initrddir}/
 %__install -m 0755 etc/init.d/* %{buildroot}%{_initrddir}/
