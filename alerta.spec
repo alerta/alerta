@@ -46,10 +46,10 @@ UNKNOWN
 # we ensure that the sources are in the right place before calling rpmbuild
 
 %build
-python setup.py build
+python2.6 setup.py build
 
 %install
-python setup.py install --single-version-externally-managed --root=%{buildroot} --record=INSTALLED_FILES
+python2.6 setup.py install --single-version-externally-managed --root=%{buildroot} --record=INSTALLED_FILES
 
 %__mkdir_p %{buildroot}%{_initrddir}/
 %__install -m 0755 etc/init.d/* %{buildroot}%{_initrddir}/
