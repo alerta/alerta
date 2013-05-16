@@ -10,7 +10,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.api import ApiClient
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -57,48 +57,19 @@ class SnmpTrapHandler(object):
         lines = data.splitlines()
 
         trapvars = dict()
-        trapvars['$$'] = '$'  # special case
-
-        agent = lines.pop(0)
-        transport = lines.pop(0)
+        for line in lines:
+            if line.startswith('$'):
+                special, value = line.split(None, 1)
+                trapvars[special] = value
 
         # Get varbinds
         varbinds = dict()
-        multiline = False
         idx = 1
-        for line in lines:
-            if not multiline:
-                try:
-                    oid, value = line.split(None, 1)
-                except ValueError:
-                    break
-            else:
-                value = line
-
-            LOG.debug('%s %s', idx, value)
-
-            if value.startswith('"'):
-                if value.endswith('"'):
-                    value = value[1:-1]
-                    multiline = False
-                else:
-                    varbinds[oid] = value[1:]
-                    trapvars['$' + str(idx)] = value[1:]  # $n
-                    multiline = True
-                    continue
-
-            if multiline:
-                if value.endswith('"'):
-                    varbinds[oid] += value[:-1]
-                    trapvars['$' + str(idx)] += value[:-1]  # $n
-                    idx += 1
-                    multiline = False
-                else:
-                    varbinds[oid] += value
-                    trapvars['$' + str(idx)] += value  # $n
-            else:
+        for varbind in lines[-1].split('~%~'):
+                oid, value = varbind.split(None, 1)
                 varbinds[oid] = value
                 trapvars['$' + str(idx)] = value  # $n
+                LOG.debug('$%s %s', str(idx), value)
                 idx += 1
 
         LOG.debug('varbinds = %s', varbinds)
@@ -117,10 +88,6 @@ class SnmpTrapHandler(object):
             trapvars['$T'] = trapvars['$1']  # assume 1st varbind is sysUpTime
 
         # Get agent address and IP
-        trapvars['$A'] = agent
-        m = re.match('UDP: \[(\d+\.\d+\.\d+\.\d+)]', transport)
-        if m:
-            trapvars['$a'] = m.group(1)
         if 'SNMP-COMMUNITY-MIB::snmpTrapAddress.0' in varbinds:
             trapvars['$R'] = varbinds['SNMP-COMMUNITY-MIB::snmpTrapAddress.0']  # snmpTrapAddress
 
@@ -146,17 +113,17 @@ class SnmpTrapHandler(object):
         else:
             trapvars['$C'] = '<UNKNOWN>'
 
-        LOG.info('agent=%s, ip=%s, uptime=%s, enterprise=%s, generic=%s, specific=%s', trapvars['$A'],
-                 trapvars['$a'], trapvars['$T'], trapvars['$E'], trapvars['$G'], trapvars['$S'])
+        LOG.info('PDU source=%s, %s, uptime=%s, enterprise=%s, generic=%s, specific=%s', trapvars['$B'],
+                 trapvars['$b'], trapvars['$T'], trapvars['$E'], trapvars['$G'], trapvars['$S'])
         LOG.debug('trapvars = %s', trapvars)
 
         # Defaults
         event = trapoid
-        resource = trapvars['$A'] if trapvars['$A'] != '<UNKNOWN>' else trapvars['$a']
+        resource = trapvars['$B']
         severity = severity_code.NORMAL
         group = 'SNMP'
         value = trapnumber
-        text = trapvars['$3']  # ie. whatever is in varbind 3
+        text = trapvars['$W']  # TRAP-TYPE DESCRIPTION
         environment = ['INFRA']
         service = ['Network']
         tags = list()

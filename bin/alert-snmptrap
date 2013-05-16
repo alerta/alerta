@@ -5,6 +5,19 @@
 #
 ########################################
 
+"""
+    Usage:
+
+        /etc/snmp/snmptrapd.conf
+
+        authCommunity log,execute,net public
+        format execute $a %a\n$A %A\n$b %b\n$B %B\n$h %h\n$H %H\n$j %j\n$J %J\n$k %k\n$K %K\n$l %l\n$L %L\n$m %m\n$M %M\n$N %N\n$q %q\n$P %P\n$t %t\n$T %T\n$w %w\n$W %W\n$y %y\n$Y %Y\n%V~\%~%v\n
+        traphandle default alert-snmptrap --debug
+
+
+    NB. Default trap handler output format = "%B\n%b\n%V\n%v\n"
+"""
+
 import os
 import sys
 
