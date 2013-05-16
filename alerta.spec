@@ -49,7 +49,7 @@ UNKNOWN
 python2.6 setup.py build
 
 %install
-python2.6 setup.py install --single-version-externally-managed --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
+python2.6 setup.py install --single-version-externally-managed --root=%{buildroot} --record=INSTALLED_FILES
 
 %__mkdir_p %{buildroot}%{_initrddir}/
 %__install -m 0755 etc/init.d/* %{buildroot}%{_initrddir}/
