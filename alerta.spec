@@ -8,7 +8,7 @@ Version: %{version}
 Release: %{release}
 License: Apache License 2.0
 Group: Utilities/System
-# BuildRoot: Specified in the wrapper script
+BuildRoot: %{_builddir}
 Prefix: %{_prefix}
 BuildArch: noarch
 Vendor: Nick Satterly <nick.satterly@guardian.co.uk>
