@@ -11,10 +11,12 @@ fi
 VERSION="2.0.${BUILD_NUMBER}"
 
 # work out the directory we are in
-ALERTA_VCS_ROOT=`dirname $0`
+SCRIPT=$(readlink -f $0)
+ALERTA_VCS_ROOT=`dirname $SCRIPT`
 
 # create a build root for the rpms
 BUILDROOT=${ALERTA_VCS_ROOT}/rpmtarget
+rm -rf ${BUILDROOT}
 mkdir ${BUILDROOT} \
 	${BUILDROOT}/SOURCES \
 	${BUILDROOT}/SRPMS \
@@ -24,10 +26,10 @@ mkdir ${BUILDROOT} \
 	${BUILDROOT}/RPMS
 
 # copy files for the RPM build into the build root sources
-rsync -az --exclude='rpmtarget/' ${ALERTA_VCS_ROOT}/ ${BUILDROOT}/BUILD/alerta-${BUILD_NUMBER}/
+rsync -av --exclude='.git/' --exclude-from=$ALERTA_VCS_ROOT/.gitignore ${ALERTA_VCS_ROOT}/ ${BUILDROOT}/BUILD/ || exit 1
 
 # now run the rpm build with a spec file
-rpmbuild --define "version ${VERSION}" --buildroot ${BUILDROOT} -ba ${ALERTA_VCS_ROOT}/alerta.spec
+rpmbuild --define "version ${VERSION}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
 
 # now we have a bunch of RPM files which we should flag as artifacts
 echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/noarch/alerta-*-${VERSION}-1-noarch.rpm => .']"

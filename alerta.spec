@@ -1,6 +1,6 @@
 %define name alerta
 %define release 1
-# %define version # Specified in the wrapper script
+# %%define version # Specified in the wrapper script
 
 Name: %{name}
 Summary: Alerta monitoring framework

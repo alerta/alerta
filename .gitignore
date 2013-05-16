@@ -8,3 +8,4 @@ ve
 dist
 build
 .idea
+rpmtarget/
