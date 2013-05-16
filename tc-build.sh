@@ -22,7 +22,7 @@ mkdir ${BUILDROOT} \
 	${BUILDROOT}/SRPMS \
 	${BUILDROOT}/SPECS \
 	${BUILDROOT}/BUILD \
-	${BUILDROOT}/BUILD/alerta-${BUILD_NUMBER} \
+	${BUILDROOT}/WORKING \
 	${BUILDROOT}/RPMS
 
 # copy files for the RPM build into the build root sources
