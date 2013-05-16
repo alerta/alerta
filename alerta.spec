@@ -51,6 +51,7 @@ UNKNOWN
 
 %prep
 # we ensure that the sources are in the right place before calling rpmbuild
+sed -i '1s/.*/VERSION = (2, 0, %{version}, 'final', 1)/' alerta/__init__.py
 
 %build
 %{__python} setup.py build
