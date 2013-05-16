@@ -81,12 +81,6 @@ class SnmpTrapHandler(object):
             enterprise, trapnumber = trapoid.rsplit('::', 1)
         enterprise = enterprise.strip('.0')
 
-        # Get sysUpTime
-        if 'DISMAN-EVENT-MIB::sysUpTimeInstance' in varbinds:
-            trapvars['$T'] = varbinds['DISMAN-EVENT-MIB::sysUpTimeInstance']
-        else:
-            trapvars['$T'] = trapvars['$1']  # assume 1st varbind is sysUpTime
-
         # Get agent address and IP
         if 'SNMP-COMMUNITY-MIB::snmpTrapAddress.0' in varbinds:
             trapvars['$R'] = varbinds['SNMP-COMMUNITY-MIB::snmpTrapAddress.0']  # snmpTrapAddress
@@ -106,12 +100,6 @@ class SnmpTrapHandler(object):
             trapvars['$E'] = enterprise
             trapvars['$G'] = '6'
             trapvars['$S'] = trapnumber
-
-        # Get community string
-        if 'SNMP-COMMUNITY-MIB::snmpTrapCommunity.0' in varbinds: # snmpTrapCommunity
-            trapvars['$C'] = varbinds['SNMP-COMMUNITY-MIB::snmpTrapCommunity.0']
-        else:
-            trapvars['$C'] = '<UNKNOWN>'
 
         LOG.info('PDU source=%s, %s, uptime=%s, enterprise=%s, generic=%s, specific=%s', trapvars['$B'],
                  trapvars['$b'], trapvars['$T'], trapvars['$E'], trapvars['$G'], trapvars['$S'])
