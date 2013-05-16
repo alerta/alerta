@@ -32,6 +32,6 @@ rsync -av --exclude='.git/' --exclude-from=$ALERTA_VCS_ROOT/.gitignore ${ALERTA_
 rpmbuild --define "version ${VERSION}" --define "buildnumber ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
 
 # now we have a bunch of RPM files which we should flag as artifacts
-echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/noarch/alerta-common-${VERSION}-1-noarch.rpm => .']"
-echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/noarch/alerta-client-${VERSION}-1-noarch.rpm => .']"
-echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/noarch/alerta-server-${VERSION}-1-noarch.rpm => .']"
+echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/noarch/alerta-common-${VERSION}-1.noarch.rpm => .']"
+echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/noarch/alerta-client-${VERSION}-1.noarch.rpm => .']"
+echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/noarch/alerta-server-${VERSION}-1.noarch.rpm => .']"
