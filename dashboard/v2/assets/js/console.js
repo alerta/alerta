@@ -125,6 +125,13 @@ function date2str(datetime) {
     return d.toLocaleString();
 }
 
+var Alerta = {
+    highlightStatusIndicator: function(statusIndicator) {
+        $(".status-indicator").addClass("status-indicator-inactive").removeClass("current-filter");
+        statusIndicator.addClass("current-filter");
+    }
+};
+
 $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
 {
     var openRows = $("#alerts tr").filter(function () { return oTable.fnIsOpen(this); });
@@ -468,8 +475,7 @@ $('.status-indicator-overall').click(function () {
     } else {
         filter = lookup[this.id.split('-')[0]];
         refreshAlerts(false);
-        $(".status-indicator").addClass("status-indicator-inactive").removeClass("current-filter");
-        statusIndicator.addClass("current-filter");;
+        Alerta.highlightStatusIndicator(statusIndicator);
     }
 });
 
@@ -482,6 +488,8 @@ $('.status-indicator-count').click(function () {
         filter += '&severity=' + INFORM;
     }
     refreshAlerts(false);
+    var statusIndicator = $(this).parents(".status-indicator");
+    Alerta.highlightStatusIndicator(statusIndicator);
 });
 
 function updateStatus(s) {
