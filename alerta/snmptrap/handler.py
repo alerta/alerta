@@ -10,7 +10,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.api import ApiClient
 
-Version = '2.0.6'
+Version = '2.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -90,21 +90,28 @@ class SnmpTrapHandler(object):
 
         LOG.debug('version = %s', version)
 
+        correlate = list()
+
         if version == 'SNMPv1':
             if trapvars['$w'] == '0':
                 trapvars['$O'] = 'coldStart'
+                correlate = ['coldStart', 'warmStart']
             elif trapvars['$w'] == '1':
                 trapvars['$O'] = 'warmStart'
+                correlate = ['coldStart', 'warmStart']
             elif trapvars['$w'] == '2':
                 trapvars['$O'] = 'linkDown'
+                correlate = ['linkUp', 'linkDown']
             elif trapvars['$w'] == '3':
                 trapvars['$O'] = 'linkUp'
+                correlate = ['linkUp', 'linkDown']
             elif trapvars['$w'] == '4':
                 trapvars['$O'] = 'authenticationFailure'
             elif trapvars['$w'] == '5':
                 trapvars['$O'] = 'egpNeighborLoss'
             elif trapvars['$w'] == '6':
                 trapvars['$O'] = trapvars['$q']  # enterpriseSpecific(6)
+
         elif version == 'SNMPv2c':
             if 'coldStart' in trapvars['$2']:
                 trapvars['$w'] = '0'
@@ -143,7 +150,6 @@ class SnmpTrapHandler(object):
         environment = ['INFRA']
         service = ['Network']
         tags = [version]
-        correlate = list()
         timeout = None
         threshold_info = None
         summary = None
