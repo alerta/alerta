@@ -285,7 +285,8 @@ function updateAlertsTable(env_filter, asiFilters) {
             { "bVisible": false }
         ],
         "aaSorting": [
-            [2, 'desc']
+            [0, 'asc'],
+            [2, 'asc']
         ],
     });
 
