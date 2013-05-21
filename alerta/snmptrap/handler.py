@@ -54,13 +54,15 @@ class SnmpTrapHandler(object):
     @staticmethod
     def parse_snmptrap(data):
 
-        lines = data.splitlines()
+        pdu_data = data.splitlines()
+        varbind_list = pdu_data[:]
 
         trapvars = dict()
-        for line in lines:
+        for line in pdu_data:
             if line.startswith('$'):
                 special, value = line.split(None, 1)
                 trapvars[special] = value
+                varbind_list.pop(0)
 
         if '$s' in trapvars:
             if trapvars['$s'] == '0':
@@ -76,7 +78,7 @@ class SnmpTrapHandler(object):
         # Get varbinds
         varbinds = dict()
         idx = 0
-        for varbind in lines[-1].split('~%~'):
+        for varbind in ' '.join(varbind_list).split('~%~'):
             if varbind == '':
                 break
             idx += 1
@@ -84,6 +86,8 @@ class SnmpTrapHandler(object):
             varbinds[oid] = value
             trapvars['$' + str(idx)] = value  # $n
             LOG.debug('$%s %s', str(idx), value)
+
+        trapvars['$q'] = trapvars['$q'].lstrip('.')  # if numeric, remove leading '.'
         trapvars['$#'] = str(idx)
 
         LOG.debug('varbinds = %s', varbinds)
