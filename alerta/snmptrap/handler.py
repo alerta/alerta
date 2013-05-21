@@ -78,7 +78,7 @@ class SnmpTrapHandler(object):
         # Get varbinds
         varbinds = dict()
         idx = 0
-        for varbind in ' '.join(varbind_list).split('~%~'):
+        for varbind in '\n'.join(varbind_list).split('~%~'):
             if varbind == '':
                 break
             idx += 1
@@ -113,8 +113,11 @@ class SnmpTrapHandler(object):
                 trapvars['$O'] = 'authenticationFailure'
             elif trapvars['$w'] == '5':
                 trapvars['$O'] = 'egpNeighborLoss'
-            elif trapvars['$w'] == '6':
-                trapvars['$O'] = trapvars['$q']  # enterpriseSpecific(6)
+            elif trapvars['$w'] == '6':  # enterpriseSpecific(6)
+                if trapvars['$q'].isdigit():  # XXX - specific trap number was not decoded
+                    trapvars['$O'] = '%s.0.%s' % (trapvars['$N'], trapvars['$q'])
+                else:
+                    trapvars['$O'] = trapvars['$q']
 
         elif version == 'SNMPv2c':
             if 'coldStart' in trapvars['$2']:
@@ -178,7 +181,7 @@ class SnmpTrapHandler(object):
             raw_data=data,
         )
 
-        suppress = snmptrapAlert.transform_alert(trapoid=trapvars['$O'], trapvars=trapvars)
+        suppress = snmptrapAlert.transform_alert(trapoid=trapvars['$O'], trapvars=trapvars, varbinds=varbinds)
         if suppress:
             LOG.warning('Suppressing alert %s', snmptrapAlert.get_id())
             return
