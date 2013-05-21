@@ -125,6 +125,13 @@ function date2str(datetime) {
     return d.toLocaleString();
 }
 
+var Alerta = {
+    highlightStatusIndicator: function(statusIndicator) {
+        $(".status-indicator").addClass("status-indicator-inactive").removeClass("current-filter");
+        statusIndicator.addClass("current-filter");
+    }
+};
+
 $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
 {
     var openRows = $("#alerts tr").filter(function () { return oTable.fnIsOpen(this); });
@@ -211,12 +218,17 @@ function updateAlertsTable(env_filter, asiFilters) {
             } else {
                 ti = '<i class="icon-random"></i>&nbsp;'
             }
+
             $('td:eq(0)', nRow).html(ti + sev2label(aData[0]));
             $('td:eq(1)', nRow).html(stat2label(aData[1]));
 
             var d = new Date(aData[2]);
             // $('td:eq(2)', nRow).html(d.toLocaleString());
             $('td:eq(2)', nRow).html(date2iso8601(d));
+            var alertText = aData[9];
+            if(alertText.length > 28) {
+                $('td:eq(9)', nRow).html(alertText.substring(0, 25) + "...").attr("title", alertText);
+            }
         },
         "fnServerData": function (sSource, aoData, fnCallback) {
             $.ajax( {
@@ -283,7 +295,8 @@ function updateAlertsTable(env_filter, asiFilters) {
             { "bVisible": false }
         ],
         "aaSorting": [
-            [2, 'desc']
+            [0, 'asc'],
+            [2, 'asc']
         ],
     });
 
@@ -466,8 +479,7 @@ $('.status-indicator-overall').click(function () {
     } else {
         filter = lookup[this.id.split('-')[0]];
         refreshAlerts(false);
-        $(".status-indicator").addClass("status-indicator-inactive").removeClass("current-filter");
-        statusIndicator.addClass("current-filter");;
+        Alerta.highlightStatusIndicator(statusIndicator);
     }
 });
 
@@ -480,6 +492,8 @@ $('.status-indicator-count').click(function () {
         filter += '&severity=' + INFORM;
     }
     refreshAlerts(false);
+    var statusIndicator = $(this).parents(".status-indicator");
+    Alerta.highlightStatusIndicator(statusIndicator);
 });
 
 function updateStatus(s) {

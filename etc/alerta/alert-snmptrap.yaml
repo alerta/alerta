@@ -1,30 +1,38 @@
 ---
-# Standard variables found in the trap
+# SNMP Trap Special variables
 #
-# $$ = dollar sign
-# $T = sysUpTime
-# $A = agent-addr
+# $$ = a literal dollar sign
 # $a = agent-addr (IP)
-# $R = true source
+# $A = agent-addr
+# $s = SNMP version
+# $b = PDU source address
+# $B = PDU source hostname
+# $x = time on local system
+# $X = date on local system
+# $N = enterprise string
+# $q = trap sub-type
+# $P = security information from the PDU
 # $O = trap oid
-# $E = enterprise oid
-# $C = community string
-# $G = generic trap
-# $S = specific trap
+# $t = seconds since system epoch
+# $T = sysUpTime
+# $w = trap type
+# $W = trap description
 # $n = varbind 'n'
+# $# = number of varbinds
+
 
 # Defaults
 #
-# resource: (str) $A
+# resource: (str) $B or $A
 # event: (str) $O
 # severity: NORMAL (CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN)
 # group: (str) SNMP
-# value: (str) Trap=[$G|$S]
-# text: (str) $3
+# value: (str) $w
+# text: (str) $W
 # environment: (list) INFRA
 # service: (list) Network
 # correlate: (list) null
-# tags: (list) null
+# tags: (list) $s
 # threshold_info: (str) null
 # summary: (str) system default
 # timeout: (int) system default
@@ -37,73 +45,79 @@
 # Oracle Enterprise Manager
 
 - trapoid: ORACLE-ENTERPRISE-MANAGER-4-MIB
-  parser: OracleEMTrapParser
   group: Database
   service: R2
+  parser: OracleEMTrapParser
 
 # ZXTM Pool Traps
 
 - trapoid: ZXTM-MIB::pooldied
-  parser: ZxtmTrapParser
   event: ZxtmPoolStatus
   value: Died
   resource: $4
   group: ZXTM
+  parser: ZxtmTrapParser
 
 - trapoid: ZXTM-MIB::poolok
-  parser: ZxtmTrapParser
   event: ZxtmPoolStatus
   value: OK
   resource: $4
   group: ZXTM
+  parser: ZxtmTrapParser
 
 # ZXTM Node Traps
 
 - trapoid: ZXTM-MIB::nodefail
-  parser: ZxtmTrapParser
   event: ZxtmNodeStatus
   value: Fail
   resource: $4
   group: ZXTM
+  parser: ZxtmTrapParser
 
 - trapoid: ZXTM-MIB::nodeworking
-  parser: ZxtmTrapParser
   event: ZxtmNodeStatus
   value: Working
   resource: $4
   group: ZXTM
+  parser: ZxtmTrapParser
 
 # ZXTM Monitor Traps
 
 - trapoid: ZXTM-MIB::monitorfail
-  parser: ZxtmTrapParser
   event: ZxtmMonitorStatus
   value: Fail
   resource: $4
   group: ZXTM
+  parser: ZxtmTrapParser
 
 - trapoid: ZXTM-MIB::monitorok
-  parser: ZxtmTrapParser
   event: ZxtmMonitorStatus
   value: OK
   resource: $4
   group: ZXTM
+  parser: ZxtmTrapParser
 
 # ZXTM Rule Msg Traps
 
 - trapoid: ZXTM-MIB::rulelogmsginfo
-  parser: ZxtmTrapParser
   event: ZxtmRuleMsg
   value: Info
   resource: $4
   group: ZXTM
+  parser: ZxtmTrapParser
 
 # ZXTM Trap catch-all
 
 - trapoid: ZXTM-MIB
-  parser: ZxtmTrapParser
   resource: $4
   group: ZXTM
+  parser: ZxtmTrapParser
+
+# IPMI PET Event Traps
+
+- trapoid: PET-EVENTS
+  group: Hardware
+  parser: IpmiTrapParser
 
 # NetApp Traps
 
