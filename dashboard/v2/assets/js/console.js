@@ -213,12 +213,17 @@ function updateAlertsTable(env_filter, asiFilters) {
             } else {
                 ti = '<i class="icon-random"></i>&nbsp;'
             }
+
             $('td:eq(0)', nRow).html(ti + sev2label(aData[0]));
             $('td:eq(1)', nRow).html(stat2label(aData[1]));
 
             var d = new Date(aData[2]);
             // $('td:eq(2)', nRow).html(d.toLocaleString());
             $('td:eq(2)', nRow).html(date2iso8601(d));
+            var alertText = aData[9];
+            if(alertText.length > 28) {
+                $('td:eq(9)', nRow).html(alertText.substring(0, 25) + "...").attr("title", alertText);
+            }
         },
         "fnServerData": function (sSource, aoData, fnCallback) {
             $.ajax( {
