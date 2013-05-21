@@ -206,6 +206,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         "bSort": true,
         "bPaginate": true,
         "bDeferRender": true,
+        "bAutoWidth" :false,
         "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'severity-' + aData[0] + ' status-' + aData[1];
@@ -284,16 +285,16 @@ function updateAlertsTable(env_filter, asiFilters) {
             });
         },
         "aoColumns": [
-            { "sWidth": "5%", "iDataSort": 10, "sClass": "align-center" },
-            { "sWidth": "5%", "sClass": "align-center" },
-            { "sWidth": "10%", "sType": "date", "sClass": "align-center" },
-            { "sWidth": "5%", "sClass": "align-center" },
-            { "sWidth": "5%", "sClass": "align-center" },
-            { "sWidth": "5%", "sClass": "align-center" },
-            { "sWidth": "10%", "sClass": "align-center" },
-            { "sWidth": "10%", "sClass": "align-center" },
-            { "sWidth": "10%", "sClass": "align-center" },
-            { "sWidth": "35%" },
+            { "iDataSort": 10, "sClass": "essential align-center no-wrap" },
+            { "sClass": "optional align-center" },
+            { "sType": "date", "sClass": "optional align-center" },
+            { "sClass": "full align-center" },
+            { "sClass": "essential align-center" },
+            { "sClass": "optional align-center" },
+            { "sClass": "essential align-center" },
+            { "sClass": "essential align-center" },
+            { "sClass": "essential align-center" },
+            { "sClass" : "full" },
             { "bVisible": false }
         ],
         "aaSorting": [

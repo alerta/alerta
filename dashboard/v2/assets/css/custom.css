@@ -129,11 +129,31 @@ table {
     display: none;
 }
 
-td {
-    white-space: nowrap;
-}
-
 .row-fluid {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
+}
+
+.alerts-display .no-wrap {
+    white-space: nowrap;
+}
+
+.alerts-display td, .alerts-display th {
+    display: none;
+}
+
+.alerts-display .essential {
+    display: table-cell;
+}
+
+@media screen and (min-width: 700px) {
+    .alerts-display .optional {
+        display: table-cell;
+    }
+}
+
+@media screen and (min-width: 1000px) {
+    .alerts-display .full {
+        display: table-cell;
+    }
 }
