@@ -46,70 +46,12 @@
 
 - trapoid: ORACLE-ENTERPRISE-MANAGER-4-MIB
   group: Database
-  service: R2
+  service: [R2]
   parser: OracleEMTrapParser
 
 # ZXTM Pool Traps
 
-- trapoid: ZXTM-MIB::pooldied
-  event: ZxtmPoolStatus
-  value: Died
-  resource: $4
-  group: ZXTM
-  parser: ZxtmTrapParser
-
-- trapoid: ZXTM-MIB::poolok
-  event: ZxtmPoolStatus
-  value: OK
-  resource: $4
-  group: ZXTM
-  parser: ZxtmTrapParser
-
-# ZXTM Node Traps
-
-- trapoid: ZXTM-MIB::nodefail
-  event: ZxtmNodeStatus
-  value: Fail
-  resource: $4
-  group: ZXTM
-  parser: ZxtmTrapParser
-
-- trapoid: ZXTM-MIB::nodeworking
-  event: ZxtmNodeStatus
-  value: Working
-  resource: $4
-  group: ZXTM
-  parser: ZxtmTrapParser
-
-# ZXTM Monitor Traps
-
-- trapoid: ZXTM-MIB::monitorfail
-  event: ZxtmMonitorStatus
-  value: Fail
-  resource: $4
-  group: ZXTM
-  parser: ZxtmTrapParser
-
-- trapoid: ZXTM-MIB::monitorok
-  event: ZxtmMonitorStatus
-  value: OK
-  resource: $4
-  group: ZXTM
-  parser: ZxtmTrapParser
-
-# ZXTM Rule Msg Traps
-
-- trapoid: ZXTM-MIB::rulelogmsginfo
-  event: ZxtmRuleMsg
-  value: Info
-  resource: $4
-  group: ZXTM
-  parser: ZxtmTrapParser
-
-# ZXTM Trap catch-all
-
 - trapoid: ZXTM-MIB
-  resource: $4
   group: ZXTM
   parser: ZxtmTrapParser
 
@@ -117,6 +59,7 @@
 
 - trapoid: PET-EVENTS
   group: Hardware
+  service: [Common]
   parser: IpmiTrapParser
 
 # NetApp Traps
@@ -125,4 +68,3 @@
   value: $S
   group: NetApp
   tags: [ serial_num=$4 ]
-
