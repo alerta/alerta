@@ -83,7 +83,7 @@ SOLAR_WINDS_CORRELATED_EVENTS = {
     'Warning':       ['Critical', 'Warning', 'Informational'],  # 1001
     'Informational': ['Critical', 'Warning', 'Informational'],  # 1000
 
-    'CriticalSystemError': ['', ''],  # 15
+    'CriticalSystemError': [],  # 15
 
     'FailBack': ['FailBack', 'FailOver'],  # 26
     'FailOver': ['FailBack', 'FailOver'],  # 25
