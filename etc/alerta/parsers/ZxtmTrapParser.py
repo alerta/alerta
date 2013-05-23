@@ -1,7 +1,11 @@
 
-resource = '%s:%s' % (resource, varbinds['ZXTM-MIB-SMIv2::fullLogLine.0'].split('\t')[1])
+for var in varbinds:
+    if 'fullLogLine' in var:
+        full_log_line = varbinds[var].strip('"').split('\t')
 
-event = event.replace('ZXTM-MIB-SMIv2::', '')
+resource = '%s:%s' % (resource.split('.')[0], full_log_line[1])
+
+event = event.split('::')[1].rstrip('.0')
 
 ZXTM_CORRELATED_EVENTS = {
     # fault tolerance
@@ -55,18 +59,15 @@ ZXTM_CORRELATED_EVENTS = {
     'glbserviceok': ['glbmissingips', 'glbdeadlocmissingips', 'glbnolocations', 'glbnewmaster', 'glblogwritefail', 'glbfailalter', 'glbservicedied', 'glbserviceok'],
 }
 
-correlate_events = ZXTM_CORRELATED_EVENTS.get(event, list())
+correlate = ZXTM_CORRELATED_EVENTS.get(event, list())
 
-value = varbinds['ZXTM-MIB-SMIv2::fullLogLine.0'].split('\t')[0]
+value = full_log_line[0]
 
-if varbinds['ZXTM-MIB-SMIv2::fullLogLine.0'].startswith('SERIOUS'):
+if value == 'SERIOUS':
     severity = 'major'
-elif varbinds['ZXTM-MIB-SMIv2::fullLogLine.0'].startswith('WARN'):
+elif value == 'WARN':
     severity = 'warning'
 else:
     severity = 'normal'
 
-text = varbinds['ZXTM-MIB-SMIv2::fullLogLine.0'].split('\t')[-1]
-
-if '$4' in trapvars:
-    tags.append(trapvars['$4'])
+text = full_log_line[-1]
