@@ -1,13 +1,13 @@
 import sys
 import datetime
 import pytz
-
+from collections import defaultdict
 import pymongo
 
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.alert import Alert
-from alerta.common import severity_code
+from alerta.common import severity_code, status_code
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -69,6 +69,27 @@ class Mongo(object):
     def get_count(self, query=None):
 
         return self.db.alerts.find(query).count()
+
+    def get_counts(self, query=None):
+
+        query = query or dict()
+
+        severity_count = defaultdict(int)
+        status_count = defaultdict(int)
+        found = 0
+
+        responses = self.db.alerts.find(query)
+        if not responses:
+            LOG.warning('No alerts found with query = %s', query)
+            return None
+
+        alerts = list()
+        for response in responses:
+            severity_count[response['severity']] += 1
+            status_count[response['status']] += 1
+            found += 1
+
+        return found, severity_count, status_count
 
     def get_alerts(self, query=None, sort=None, limit=0):
 

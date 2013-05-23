@@ -18,7 +18,7 @@ from alerta.common import status_code, severity_code
 from alerta.common.utils import DateEncoder
 
 
-Version = '2.0.8'
+Version = '2.0.9'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -181,7 +181,7 @@ def get_alerts():
     else:
         return jsonify(response={
             "alerts": {
-                "alertDetails": list(),
+                "alertDetails": [],
                 "severityCounts": {
                     "critical": 0,
                     "major": 0,
@@ -315,6 +315,85 @@ def tag_alert(alertid):
         return jsonify(response={"status": "ok"})
     else:
         return jsonify(response={"status": "error", "message": "error tagging alert"})
+
+# Return severity and status counts
+@app.route('/alerta/api/v2/alerts/counts', methods=['GET'])
+@jsonp
+def get_counts():
+
+    query_time = datetime.datetime.utcnow()
+
+    if 'q' in request.args:
+        query = json.loads(request.args.get('q'))
+    else:
+        query = dict()
+
+    from_date = request.args.get('from-date', None)
+    if from_date:
+        from_date = datetime.datetime.strptime(from_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+        from_date = from_date.replace(tzinfo=pytz.utc)
+        to_date = query_time
+        to_date = to_date.replace(tzinfo=pytz.utc)
+        query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date}
+
+    if request.args.get('id', None):
+        query['$or'] = [{'_id': {'$regex': '^' + request.args['id']}},
+                        {'lastReceiveId': {'$regex': '^' + request.args['id']}}]
+
+    for field in [fields for fields in request.args if fields.lstrip('-') in ATTRIBUTES]:
+        if field == 'id':
+            # Don't process queries on "id" twice
+            continue
+        value = request.args.getlist(field)
+        if len(value) == 1:
+            if field.startswith('-'):
+                query[field[1:]] = dict()
+                query[field[1:]]['$not'] = re.compile(value[0])
+            else:
+                query[field] = dict()
+                query[field]['$regex'] = value[0]
+                query[field]['$options'] = 'i'  # case insensitive search
+        else:
+            if field.startswith('-'):
+                query[field[1:]] = dict()
+                query[field[1:]]['$nin'] = value
+            else:
+                query[field] = dict()
+                query[field]['$in'] = value
+
+
+    found, severity_count, status_count = db.get_counts(query=query)
+
+    return jsonify(response={
+        "alerts": {
+            "alertDetails": [],
+            "severityCounts": {
+                "critical": severity_count[severity_code.CRITICAL],
+                "major": severity_count[severity_code.MAJOR],
+                "minor": severity_count[severity_code.MINOR],
+                "warning": severity_count[severity_code.WARNING],
+                "indeterminate": severity_count[severity_code.INDETERMINATE],
+                "cleared": severity_count[severity_code.CLEARED],
+                "normal": severity_count[severity_code.NORMAL],
+                "informational": severity_count[severity_code.INFORM],
+                "debug": severity_count[severity_code.DEBUG],
+                "auth": severity_count[severity_code.AUTH],
+                "unknown": severity_count[severity_code.UNKNOWN],
+            },
+            "statusCounts": {
+                "open": status_count[status_code.OPEN],
+                "ack": status_count[status_code.ACK],
+                "closed": status_count[status_code.CLOSED],
+                "expired": status_count[status_code.EXPIRED],
+                "unknown": status_count[status_code.UNKNOWN],
+            },
+            "lastTime": query_time,
+        },
+        "status": "ok",
+        "total": found,
+        "more": False,
+        "autoRefresh": Switch.get('auto-refresh-allow').is_on(),
+    })
 
 
 # Return a list of resources
