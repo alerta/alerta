@@ -528,7 +528,7 @@ function updateFromDate(seconds) {
 }
 
 function updateStatusCounts(env_filter, refresh) {
-    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts/counts?callback=?&'
         + env_filter + from, function (data) {
 
         if (data.response.warning) {
@@ -559,7 +559,7 @@ function updateAllIndicators(env_filter, asiFilters, refresh) {
 
 function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
     $('#' + service + ' th').addClass('loader');
-    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts/counts?callback=?&'
         + env_filter + asi_filter + status + limit + from, function (data) {
 
         var sev_id = '#' + service;
