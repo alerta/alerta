@@ -298,7 +298,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         ],
         "aaSorting": [
             [0, 'asc'],
-            [2, 'asc']
+            [2, 'desc']
         ],
     });
 
