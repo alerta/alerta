@@ -83,7 +83,6 @@ class Mongo(object):
             LOG.warning('No alerts found with query = %s', query)
             return None
 
-        alerts = list()
         for response in responses:
             severity_count[response['severity']] += 1
             status_count[response['status']] += 1
