@@ -58,28 +58,14 @@
         </tr>
         <tr>
             <td>
-                <!-- div  id="status-counts" -->
-                <table border=1 class="table table-bordered table-condensed"  id="status-counts">
-                    <tbody>
-                    <tr id="alert-status" class="status">
-                        <td><span class="label">Open</span></td>
-                        <td id="count-open"><b>0</b></td>
-                        <td><span class="label">Ack</span></td>
-                        <td id="count-ack"><b>0</b></td>
-                        <td><span class="label">Closed</span></td>
-                        <td id="count-closed"><b>0</b></td>
-                    </tr>
-                    </tbody>
-                </table>
-                <!-- /div -->
+                <div id="status-select" class="btn-group" data-toggle="buttons-checkbox">
+                  <button type="button" class="status-select btn active" value="open">Open <span id="count-open" class="label">0</span></button>
+                  <button type="button" class="status-select btn" value="ack">Ack <span id="count-ack" class="label">0</span></button>
+                  <button type="button" class="status-select btn" value="closed">Closed <span id="count-closed" class="label">0</span></button>
+                </div>
             </td>
             <td>
                 <div align="right">
-                    <div id="status-select" class="btn-group" data-toggle="buttons-checkbox">
-                      <button type="button" class="status-select btn active" value="open">Open</button>
-                      <button type="button" class="status-select btn" value="ack">Ack</button>
-                      <button type="button" class="status-select btn" value="closed">Closed</button>
-                    </div>
                     <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)" style="width:150px">
                         <option value="0">No limit</option>
                         <option value="10">Only 10</option>
