@@ -1,13 +1,12 @@
 import sys
 import datetime
 import pytz
-
 import pymongo
 
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.alert import Alert
-from alerta.common import severity_code
+from alerta.common import severity_code, status_code
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -69,6 +68,26 @@ class Mongo(object):
     def get_count(self, query=None):
 
         return self.db.alerts.find(query).count()
+
+    def get_counts(self, query=None):
+
+        query = query or dict()
+
+        found = 0
+        severity_count = dict.fromkeys(severity_code.ALL, 0)
+        status_count = dict.fromkeys(status_code.ALL, 0)
+
+        responses = self.db.alerts.find(query, {"severity": 1, "status": 1})
+        if not responses:
+            LOG.warning('No alerts found with query = %s', query)
+            return None
+
+        for response in responses:
+            severity_count[response['severity']] += 1
+            status_count[response['status']] += 1
+            found += 1
+
+        return found, severity_count, status_count
 
     def get_alerts(self, query=None, sort=None, limit=0):
 
@@ -463,7 +482,8 @@ class Mongo(object):
                 resources.append({
                     'environment': resource['environment'],
                     'resource': resource['resource'],
-                    'service': resource['service']
+                    'service': resource['service'],
+                    'lastReceiveTime': resource['lastReceiveTime'],
                 })
                 unique_resources[tuple(resource['environment']), resource['resource']] = True
 
@@ -544,3 +564,4 @@ class Mongo(object):
             self.conn.disconnect()
 
         LOG.info('Mongo disconnected.')
+
