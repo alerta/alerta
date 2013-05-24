@@ -498,26 +498,36 @@ $('.status-indicator-count').click(function () {
     Alerta.highlightStatusIndicator(statusIndicator);
 });
 
-var status_buttons = {
-    'open': true,
-    'ack': false,
-    'closed': false
-};
-
-$('body').on('click', '#status-select .btn', function() {
-        if ($(this).hasClass('active')) {
-            status_buttons[$(this).attr("value")] = false;
+$('body').on('click', '#status-select .btn', function(e) {
+    if (!e.shiftKey) {
+        if ( $('#status-select .active').length > 1) {
+            $(this).addClass('active');
         } else {
-            status_buttons[$(this).attr("value")] = true;
+            $(this).toggleClass('active');
         }
-
-    var status_array = [];
-    for (var key in status_buttons) {
-        if (status_buttons[key]) {
-            status_array.push('status=' + key);
+        if ($(this).attr("value") != 'open') {
+            $('#status-select-open').removeClass('active');
         }
+        if ($(this).attr("value") != 'ack') {
+            $('#status-select-ack').removeClass('active');
+        }
+        if ($(this).attr("value") != 'closed') {
+            $('#status-select-closed').removeClass('active');
+        }
+    } else {
+        $(this).toggleClass('active');
     }
-    status = '&' + status_array.join('&');
+
+    status = '';
+    if ($('button#status-select-open.btn').hasClass('active')) {
+        status += '&status=open';
+    }
+    if ($('button#status-select-ack.btn').hasClass('active')) {
+        status += '&status=ack';
+    }
+    if ($('button#status-select-closed.btn').hasClass('active')) {
+        status += '&status=closed';
+    }
 
     updateStatusCounts(gEnvFilter, false);
     updateAllIndicators(gEnvFilter, lookup, false);
