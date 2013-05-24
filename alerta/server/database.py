@@ -483,7 +483,8 @@ class Mongo(object):
                 resources.append({
                     'environment': resource['environment'],
                     'resource': resource['resource'],
-                    'service': resource['service']
+                    'service': resource['service'],
+                    'lastReceiveTime': resource['lastReceiveTime'],
                 })
                 unique_resources[tuple(resource['environment']), resource['resource']] = True
 
@@ -564,3 +565,4 @@ class Mongo(object):
             self.conn.disconnect()
 
         LOG.info('Mongo disconnected.')
+
