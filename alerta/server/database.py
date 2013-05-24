@@ -1,7 +1,6 @@
 import sys
 import datetime
 import pytz
-from collections import defaultdict
 import pymongo
 
 from alerta.common import log as logging
@@ -74,9 +73,9 @@ class Mongo(object):
 
         query = query or dict()
 
-        severity_count = defaultdict(int)
-        status_count = defaultdict(int)
         found = 0
+        severity_count = dict.fromkeys(severity_code.ALL, 0)
+        status_count = dict.fromkeys(status_code.ALL, 0)
 
         responses = self.db.alerts.find(query, {"severity": 1, "status": 1})
         if not responses:

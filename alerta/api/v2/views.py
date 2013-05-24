@@ -1,8 +1,7 @@
 import json
 import time
-from collections import defaultdict
-from functools import wraps
 
+from functools import wraps
 from flask import request, current_app, render_template, send_from_directory
 
 from alerta.api.v2 import app, db, mq
@@ -16,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields
 
 
-Version = '2.0.10'
+Version = '2.0.11'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -68,11 +67,12 @@ def get_alerts():
     total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
 
     found = 0
+    severity_count = dict.fromkeys(severity_code.ALL, 0)
+    status_count = dict.fromkeys(status_code.ALL, 0)
+
     alert_details = list()
     if len(alerts) > 0:
 
-        severity_count = defaultdict(int)
-        status_count = defaultdict(int)
         last_time = None
 
         for alert in alerts:
@@ -99,26 +99,8 @@ def get_alerts():
         return jsonify(response={
             "alerts": {
                 "alertDetails": alert_details,
-                "severityCounts": {
-                    "critical": severity_count[severity_code.CRITICAL],
-                    "major": severity_count[severity_code.MAJOR],
-                    "minor": severity_count[severity_code.MINOR],
-                    "warning": severity_count[severity_code.WARNING],
-                    "indeterminate": severity_count[severity_code.INDETERMINATE],
-                    "cleared": severity_count[severity_code.CLEARED],
-                    "normal": severity_count[severity_code.NORMAL],
-                    "informational": severity_count[severity_code.INFORM],
-                    "debug": severity_count[severity_code.DEBUG],
-                    "auth": severity_count[severity_code.AUTH],
-                    "unknown": severity_count[severity_code.UNKNOWN],
-                },
-                "statusCounts": {
-                    "open": status_count[status_code.OPEN],
-                    "ack": status_count[status_code.ACK],
-                    "closed": status_count[status_code.CLOSED],
-                    "expired": status_count[status_code.EXPIRED],
-                    "unknown": status_count[status_code.UNKNOWN],
-                },
+                "severityCounts": severity_count,
+                "statusCounts": status_count,
                 "lastTime": last_time,
             },
             "status": "ok",
@@ -130,26 +112,8 @@ def get_alerts():
         return jsonify(response={
             "alerts": {
                 "alertDetails": [],
-                "severityCounts": {
-                    "critical": 0,
-                    "major": 0,
-                    "minor": 0,
-                    "warning": 0,
-                    "indeterminate": 0,
-                    "cleared": 0,
-                    "normal": 0,
-                    "informational": 0,
-                    "debug": 0,
-                    "auth": 0,
-                    "unknown": 0,
-                },
-                "statusCounts": {
-                    "open": 0,
-                    "ack": 0,
-                    "closed": 0,
-                    "expired": 0,
-                    "unknown": 0,
-                },
+                "severityCounts": severity_code,
+                "statusCounts": status_count,
                 "lastTime": query_time,
             },
             "status": "error",
@@ -275,26 +239,8 @@ def get_counts():
     return jsonify(response={
         "alerts": {
             "alertDetails": [],
-            "severityCounts": {
-                "critical": severity_count[severity_code.CRITICAL],
-                "major": severity_count[severity_code.MAJOR],
-                "minor": severity_count[severity_code.MINOR],
-                "warning": severity_count[severity_code.WARNING],
-                "indeterminate": severity_count[severity_code.INDETERMINATE],
-                "cleared": severity_count[severity_code.CLEARED],
-                "normal": severity_count[severity_code.NORMAL],
-                "informational": severity_count[severity_code.INFORM],
-                "debug": severity_count[severity_code.DEBUG],
-                "auth": severity_count[severity_code.AUTH],
-                "unknown": severity_count[severity_code.UNKNOWN],
-            },
-            "statusCounts": {
-                "open": status_count[status_code.OPEN],
-                "ack": status_count[status_code.ACK],
-                "closed": status_count[status_code.CLOSED],
-                "expired": status_count[status_code.EXPIRED],
-                "unknown": status_count[status_code.UNKNOWN],
-            },
+            "severityCounts": severity_count,
+            "statusCounts": status_count,
             "lastTime": query_time,
         },
         "status": "ok",

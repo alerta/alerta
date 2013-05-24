@@ -127,3 +127,4 @@ def status_from_severity(previous_severity, current_severity, current_status=Non
         return status_code.OPEN
     return current_status
 
+
