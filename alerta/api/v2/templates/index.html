@@ -75,11 +75,11 @@
             </td>
             <td>
                 <div align="right">
-                    <select id="status-select" class="btn" name="status" onchange="updateStatus(this.value)" style="width:150px">
-                        <option value="open">Open</option>
-                        <option value="ack">Ack</option>
-                        <option value="closed">Closed</option>
-                    </select>
+                    <div id="status-select" class="btn-group" data-toggle="buttons-checkbox">
+                      <button type="button" class="status-select btn active" value="open">Open</button>
+                      <button type="button" class="status-select btn" value="ack">Ack</button>
+                      <button type="button" class="status-select btn" value="closed">Closed</button>
+                    </div>
                     <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)" style="width:150px">
                         <option value="0">No limit</option>
                         <option value="10">Only 10</option>
@@ -312,6 +312,7 @@
     var api_port = {{ config['api_port'] }};
 </script>
 
+<script src="assets/bootstrap/js/bootstrap-button.js"></script>
 <script src="/alerta/dashboard/v2/assets/js/console.js"></script>
 
 {% block initialiser %}
