@@ -299,7 +299,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         "aaSorting": [
             [0, 'asc'],
             [2, 'asc']
-        ],
+        ]
     });
 
     if (autoRefresh) {
@@ -496,6 +496,32 @@ $('.status-indicator-count').click(function () {
     refreshAlerts(false);
     var statusIndicator = $(this).parents(".status-indicator");
     Alerta.highlightStatusIndicator(statusIndicator);
+});
+
+var status_buttons = {
+    'open': true,
+    'ack': false,
+    'closed': false
+};
+
+$('body').on('click', '#status-select .btn', function() {
+        if ($(this).hasClass('active')) {
+            status_buttons[$(this).attr("value")] = false;
+        } else {
+            status_buttons[$(this).attr("value")] = true;
+        }
+
+    var status_array = [];
+    for (var key in status_buttons) {
+        if (status_buttons[key]) {
+            status_array.push('status=' + key);
+        }
+    }
+    status = '&' + status_array.join('&');
+
+    updateStatusCounts(gEnvFilter, false);
+    updateAllIndicators(gEnvFilter, lookup, false);
+    refreshAlerts(false);
 });
 
 function updateStatus(s) {
