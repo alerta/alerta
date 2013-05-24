@@ -11,7 +11,7 @@ import yaml
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.common import status_code, severity_code
-from alerta.common.utils import DateEncoder
+from alerta.common.utils import DateEncoder, isfloat
 
 
 LOG = logging.getLogger(__name__)
@@ -65,7 +65,11 @@ class Alert(object):
         self.event = event
         self.correlate = correlate or list()
         self.group = group
-        self.value = value or 'n/a'
+
+        if isfloat(value):
+            self.value = '%.2f' % float(value)
+        else:
+            self.value = value or 'n/a'
         if status:
             self.status = status
         self.severity = severity

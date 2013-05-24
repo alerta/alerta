@@ -4,6 +4,14 @@ import json
 import datetime
 
 
+def isfloat(v):
+    try:
+        float(v)
+        return True
+    except ValueError:
+        return False
+
+
 # Extend JSON Encoder to support ISO 8601 format dates
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
