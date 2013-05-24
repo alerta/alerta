@@ -78,7 +78,7 @@ class Mongo(object):
         status_count = defaultdict(int)
         found = 0
 
-        responses = self.db.alerts.find(query)
+        responses = self.db.alerts.find(query, {"severity": 1, "status": 1})
         if not responses:
             LOG.warning('No alerts found with query = %s', query)
             return None
