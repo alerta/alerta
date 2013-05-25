@@ -61,91 +61,19 @@
 </div> <!-- end container -->
 
 <script>
+
     var api_port = {{ config['api_port'] }};
+
 </script>
+
+<script src="/alerta/dashboard/v2/assets/js/console.js"></script>
 
 <script>
 
     var hb_threshold = 300; // 5 minutes
-
     var api_server = document.domain + ':' + window.api_port;
 
-
-    function date2str(datetime) {
-        var d = new Date(datetime);
-        return d.toLocaleString();
-    }
-
-    // Update Register Components
-    function heartbeatAlerts() {
-
-        $.getJSON('http://' + api_server + '/alerta/management/healthcheck?callback=?', function (data) {
-
-            var hbalerts = '';
-            $.each(data.heartbeats, function (i, hb) {
-
-                var diff = (new Date().getTime() - new Date(hb.receiveTime).getTime()) / 1000;
-                var mins = Math.floor(diff / 60);
-                var secs = Math.floor(diff % 60);
-
-                var since = '';
-                if (mins > 0) {
-                    since = mins + ' minutes ' + secs + ' seconds';
-                } else {
-                    since = secs + ' seconds';
-                }
-
-                if (diff > hb_threshold) {
-                    hbalerts += '<div class="alert alert-error">' +
-                            '<button class="close" data-dismiss="alert" onclick="">&times;</button>' +
-                            '<strong>Important!</strong> ' + hb.origin + ' has not sent a heartbeat for ' + since +
-                            '</div>';
-                }
-            });
-            $('#heartbeat-alerts').html(hbalerts);
-        });
-    };
-
-    function getHeartbeats(refresh) {
-
-        $.getJSON('http://' + api_server + '/alerta/api/v2/heartbeats?callback=?', function (data) {
-
-            var rows = '';
-            $.each(data.heartbeats, function (i, hb) {
-
-                var diff = (new Date().getTime() - new Date(hb.receiveTime).getTime()) / 1000;
-                var mins = Math.floor(diff / 60);
-                var secs = Math.floor(diff % 60);
-
-                var latency = new Date(hb.receiveTime).getTime() - new Date(hb.createTime).getTime();
-
-                var since = '';
-                if (mins > 0) {
-                    since = mins + ' minutes ' + secs + ' seconds';
-                } else {
-                    since = secs + ' seconds';
-                }
-
-                rows += '<tr class="">' +
-                        '<td>' + hb.origin + '</td>' +
-                        '<td>' + hb.version + '</td>' +
-                        '<td>' + date2str(hb.createTime) + '</td>' +
-                        '<td>' + since + '</td>' +
-                        '<td>' + latency + ' ms' + '</td>' +
-                        '</tr>';
-            });
-            $('#heartbeat-info').html(rows);
-
-            if (refresh) {
-                timer = setTimeout(function () {
-                    getHeartbeats(refresh);
-                }, 120000);
-            }
-        });
-    };
-
     $(document).ready(function() {
-
         getHeartbeats(true);
     });
 

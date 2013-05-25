@@ -2,6 +2,8 @@
 var API_HOST = document.domain + ':' + window.api_port;
 var REFRESH_INTERVAL = 30; // seconds
 
+var hb_threshold = 300; // 5 minutes
+var show_hb_alerts = true;
 var lookup;
 var gEnvFilter;
 var filter = '';
@@ -124,6 +126,77 @@ function date2str(datetime) {
     var d = new Date(datetime);
     return d.toLocaleString();
 }
+
+function heartbeatAlerts() {
+
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/heartbeats?callback=?', function (data) {
+
+        var hbalerts = '';
+        $.each(data.heartbeats, function (i, hb) {
+
+            var diff = (new Date().getTime() - new Date(hb.receiveTime).getTime()) / 1000;
+            var mins = Math.floor(diff / 60);
+            var secs = Math.floor(diff % 60);
+
+            var since = '';
+            if (mins > 0) {
+                since = mins + ' minutes ' + secs + ' seconds';
+            } else {
+                since = secs + ' seconds';
+            }
+
+            if (diff > hb_threshold && show_hb_alerts) {
+                hbalerts += '<div class="alert alert-error">' +
+                        '<a class="close" data-dismiss="alert" href="#">&times;</a>' +
+                        '<strong>Important!</strong> ' + hb.origin + ' has not sent a heartbeat for ' + since +
+                        '</div>';
+            }
+        });
+        $('#heartbeat-alerts').html(hbalerts);
+    });
+};
+
+function getHeartbeats(refresh) {
+
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/heartbeats?callback=?', function (data) {
+
+        var rows = '';
+        $.each(data.heartbeats, function (i, hb) {
+
+            var diff = (new Date().getTime() - new Date(hb.receiveTime).getTime()) / 1000;
+            var mins = Math.floor(diff / 60);
+            var secs = Math.floor(diff % 60);
+
+            var latency = new Date(hb.receiveTime).getTime() - new Date(hb.createTime).getTime();
+
+            var since = '';
+            if (mins > 0) {
+                since = mins + ' minutes ' + secs + ' seconds';
+            } else {
+                since = secs + ' seconds';
+            }
+
+            rows += '<tr class="">' +
+                    '<td>' + hb.origin + '</td>' +
+                    '<td>' + hb.version + '</td>' +
+                    '<td>' + date2str(hb.createTime) + '</td>' +
+                    '<td>' + since + '</td>' +
+                    '<td>' + latency + ' ms' + '</td>' +
+                    '</tr>';
+        });
+        $('#heartbeat-info').html(rows);
+
+        if (refresh) {
+            timer = setTimeout(function () {
+                getHeartbeats(refresh);
+            }, 120000);
+        }
+    });
+};
+
+$('#heartbeat-alerts').bind('closed', function () {
+  show_hb_alerts = false;
+});
 
 var Alerta = {
     highlightStatusIndicator: function(statusIndicator) {
