@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block status_indicators %}
-    <div class="row show-grid">
+    <div class="row show-grid status-indicators">
         <div class="span12">
 
             <div class="row show-grid">
@@ -172,6 +172,8 @@
 {% block initialiser %}
 <script>
     $(document).ready(function() {
+
+        heartbeatAlerts();
 
         var env_filter = ''; // all environments
         var asiFilters = {

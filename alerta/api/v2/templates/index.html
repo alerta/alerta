@@ -52,7 +52,7 @@
         <tr>
             <span id="heartbeat-alerts"></span>
             <div id="console-alert" class="alert alert-info initially-hidden">
-                <button class="close" data-dismiss="alert" onclick="">&times;</button>
+                <a class="close" data-dismiss="alert" href="#">&times;</a>
                 <strong>Warning!</strong> <span id="warning-text"></span>
             </div>
         </tr>
@@ -301,8 +301,11 @@
 <script src="/alerta/dashboard/v2/assets/js/console.js"></script>
 
 {% block initialiser %}
+
 <script>
     $(document).ready(function() {
+
+        heartbeatAlerts();
 
         var env_filter = '&environment=PROD|INFRA';
         var asiFilters = {
@@ -323,6 +326,6 @@
 {% endblock %}
 
 <script src="/alerta/dashboard/v2/assets/DataTables/bootstrap/dataTables.bootstrap.js"></script>
-
+<script src="/alerta/dashboard/v2/assets/bootstrap/js/bootstrap-alert.js"></script>
 </body>
 </html>
