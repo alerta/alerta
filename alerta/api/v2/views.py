@@ -112,7 +112,7 @@ def get_alerts():
         return jsonify(response={
             "alerts": {
                 "alertDetails": [],
-                "severityCounts": severity_code,
+                "severityCounts": severity_count,
                 "statusCounts": status_count,
                 "lastTime": query_time,
             },
