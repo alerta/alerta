@@ -11,7 +11,7 @@ from alerta.common.dedup import DeDup
 from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS, SOLAR_WINDS_CORRELATED_EVENTS
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -52,24 +52,38 @@ class SolarWindsDaemon(Daemon):
         while not self.shuttingdown:
             try:
                 LOG.debug('Polling SolarWinds...')
+                send_heartbeat = True
 
                 # network, interface and volume events
-                events = swis.get_npm_events()
+                try:
+                    events = swis.get_npm_events()
+                except IOError:
+                    events = []
+                    send_heartbeat = False
+
                 solarwindsAlerts = self.parse_events(events)
                 for solarwindsAlert in solarwindsAlerts:
                     if self.dedup.is_send(solarwindsAlert):
                         self.mq.send(solarwindsAlert)
 
-                # ucs events
-                events = swis.get_ucs_events()
+                # Cisco UCS events
+                try:
+                    events = swis.get_ucs_events()
+                except IOError:
+                    events = []
+                    send_heartbeat = False
+
                 solarwindsAlerts = self.parse_events(events)
                 for solarwindsAlert in solarwindsAlerts:
                     if self.dedup.is_send(solarwindsAlert):
                         self.mq.send(solarwindsAlert)
 
-                LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version)
-                self.mq.send(heartbeat)
+                if send_heartbeat:
+                    LOG.debug('Send heartbeat...')
+                    heartbeat = Heartbeat(version=Version)
+                    self.mq.send(heartbeat)
+                else:
+                    LOG.error('SolarWinds failure. Skipping heartbeat.')
 
                 time.sleep(CONF.loop_every)
 
