@@ -11,6 +11,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
+from alerta.common.graphite import Carbon
 
 Version = '2.0.6'
 
@@ -28,6 +29,7 @@ class WorkerThread(threading.Thread):
         self.queue = queue   # internal queue
         self.mq = mq               # message broker
         self.db = Mongo()       # mongo database
+        self.carbon = Carbon()  # graphite metrics
 
     def run(self):
 
@@ -136,6 +138,8 @@ class WorkerThread(threading.Thread):
                 self.queue.task_done()
 
             # update application stats
+            self.carbon.metric_send('alerta.alerts.total', 1)
+            self.carbon.metric_send('alerta.alerts.%s' % incomingAlert.severity, 1)
             self.db.update_metrics(incomingAlert.create_time, incomingAlert.receive_time)
 
         self.queue.task_done()

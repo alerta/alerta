@@ -110,6 +110,10 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'gmetric_protocol': 'udp',
         'gmetric_spoof': '10.1.1.1:%s' % prog,
 
+        'carbon_host': 'localhost',
+        'carbon_port': '2003',
+        'carbon_protocol': 'udp',
+
         'nagios_plugins': '/usr/lib64/nagios/plugins',
     }
     CONF.update(SYSTEM_DEFAULTS)
