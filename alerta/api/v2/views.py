@@ -301,7 +301,7 @@ def delete_resource(resource):
 
     error = None
 
-    # Delete a single alert
+    # Delete all alerts for a single resource
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
         response = db.delete_resource(resource)
 
