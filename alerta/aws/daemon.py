@@ -17,7 +17,7 @@ from alerta.common.alert import severity_code, status_code
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -89,8 +89,6 @@ class AwsDaemon(Daemon):
 
     def ec2_status_check(self):
 
-        query_url = 'http://%s:%s%s/resources?tags=cloud:AWS/EC2' % (CONF.api_host, CONF.api_port, CONF.api_endpoint)
-
         self.last = self.info.copy()
         self.info = {}
 
@@ -149,7 +147,8 @@ class AwsDaemon(Daemon):
                     else:
                         self.info[i.id]['status'] = u'not-available:not-available'
 
-        # Get list of all alerts from EC2
+        # Delete all alerts from EC2 if instance has expired
+        query_url = 'http://%s:%s%s/resources?tags=cloud:AWS/EC2' % (CONF.api_host, CONF.api_port, CONF.api_endpoint)
         LOG.info('Get list of EC2 alerts from %s', query_url)
         try:
             response = json.loads(urllib2.urlopen(query_url, None, 15).read())['response']
@@ -157,48 +156,38 @@ class AwsDaemon(Daemon):
             LOG.error('Could not get list of alerts from resources located in EC2: %s', e)
             response = None
 
-        if response and 'alerts' in response and 'alertDetails' in response['alerts']:
-            LOG.info('Retreived %s EC2 alerts', response['total'])
-            alertDetails = response['alerts']['alertDetails']
+        if response and 'resources' in response and 'resourceDetails' in response['resources']:
+            LOG.info('Retrieved list of %s EC2 instances', response['total'])
+            resource_details = response['resources']['resourceDetails']
 
-            for alert in alertDetails:
-                alertid = alert['id']
-                resource = alert['resource']
+            for r in resource_details:
+                resource = r['resource']
+                LOG.debug('Delete all alerts for %s', resource)
 
                 # resource might be 'i-01234567:/tmp'
                 if ':' in resource:
                     resource = resource.split(':')[0]
 
                 if resource.startswith('ip-'):  # FIXME - transform ip-10-x-x-x to i-01234567
-                    LOG.debug('%s : Transforming resource %s -> %s', alertid, resource, self.lookup.get(resource, resource))
+                    LOG.debug('Transforming resource %s -> %s', resource, self.lookup.get(resource, resource))
                     resource = self.lookup.get(resource, resource)
 
                 # Delete alerts for instances that are no longer listed by EC2 API
                 if resource not in self.info:
-                    LOG.info('%s : EC2 instance %s is no longer listed, DELETE associated alert', alertid, resource)
-                    data = {"_method": "delete"}
-                    # data = '{ "status": "DELETED" }' # XXX - debug only
-                elif (self.info[resource]['state'] == 'terminated' and alert['status'] != status_code.ACK
-                        and alert['event'] not in ['Ec2InstanceState', 'Ec2StatusChecks']):
-                    LOG.info('%s : EC2 instance %s is terminated, acknowledge associated alert', alertid, resource)
-                    data = {"status": status_code.ACK}
-                else:
-                    continue
+                    url = 'http://%s:%s%s/resources/resource/%s' % (CONF.api_host, CONF.api_port, CONF.api_endpoint, resource)
+                    LOG.info('EC2 instance %s is no longer listed, DELETE all associated alerts', resource)
+                    try:
+                        request = urllib2.Request(url=url)
+                        request.get_method = lambda: 'DELETE'
+                        response = urllib2.urlopen(request).read()['response']
+                    except urllib2.URLError, e:
+                        LOG.error('API Request %s failed: %s', url, e)
+                        continue
 
-                # Delete alert or update alert status
-                delete_url = 'http://%s:%s%s/alerts/alert/%s' % (CONF.api_host, CONF.api_port, CONF.api_endpont, alertid)
-                LOG.debug('%s : %s %s', alertid, delete_url, data)
-                req = urllib2.Request(delete_url, json.dumps(data))
-                try:
-                    response = json.loads(urllib2.urlopen(req).read())['response']
-                except urllib2.URLError, e:
-                    LOG.error('%s : API endpoint error: %s', alertid, e)
-                    continue
-
-                if response['status'] == 'ok':
-                    LOG.info('%s : Successfully updated alert', alertid)
-                else:
-                    LOG.warning('%s : Failed to update alert: %s', alertid, response['message'])
+                    if response['status'] == 'ok':
+                        LOG.info('Successfully deleted alerts for resource %s', resource)
+                    else:
+                        LOG.warning('Failed to delete alerts for resource %s: %s', resource, response['message'])
 
         for instance in self.info:
             for check, event in [('state', 'Ec2InstanceState'),

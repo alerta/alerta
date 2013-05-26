@@ -295,6 +295,23 @@ def get_resources():
             "more": False,
         })
 
+@app.route('/alerta/api/v2/resources/resource/<resource>', methods=['POST', 'DELETE'])
+@jsonp
+def delete_resource(resource):
+
+    error = None
+
+    # Delete a single alert
+    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+        response = db.delete_resource(resource)
+
+        if response:
+            return jsonify(response={"status": "ok"})
+        else:
+            return jsonify(response={"status": "error", "message": error})
+
+    else:
+        return jsonify(response={"status": "error", "message": "POST request without '_method' override?"})
 
 # Return a list of heartbeats
 @app.route('/alerta/api/v2/heartbeats', methods=['GET'])
