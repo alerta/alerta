@@ -489,6 +489,12 @@ class Mongo(object):
 
         return resources
 
+    def delete_resource(self, resource):
+
+        response = self.db.alerts.remove({'resource': {'$regex': '^' + resource}})
+
+        return True if 'ok' in response else False
+
     def get_heartbeats(self):
 
         heartbeats = list()
