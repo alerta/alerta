@@ -138,7 +138,7 @@ table {
     white-space: nowrap;
 }
 
-.alerts-display td, .alerts-display th {
+.alerts-display .alert-summary-cell {
     display: none;
 }
 
@@ -155,5 +155,15 @@ table {
 @media screen and (min-width: 1000px) {
     .alerts-display .full {
         display: table-cell;
+    }
+
+    .alert-detail-summary {
+        max-width: 40rem;
+    }
+}
+
+@media screen and (max-width: 400px) {
+    .details td {
+        display: inline-block;
     }
 }

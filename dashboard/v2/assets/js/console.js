@@ -285,16 +285,16 @@ function updateAlertsTable(env_filter, asiFilters) {
             });
         },
         "aoColumns": [
-            { "iDataSort": 10, "sClass": "essential align-center no-wrap" },
-            { "sClass": "optional align-center" },
-            { "sType": "date", "sClass": "optional align-center" },
-            { "sClass": "full align-center" },
-            { "sClass": "essential align-center" },
-            { "sClass": "optional align-center" },
-            { "sClass": "essential align-center" },
-            { "sClass": "essential align-center" },
-            { "sClass": "essential align-center" },
-            { "sClass" : "full" },
+            { "iDataSort": 10, "sClass": "alert-summary-cell essential align-center no-wrap" },
+            { "sClass": "alert-summary-cell optional align-center" },
+            { "sType": "date", "sClass": "alert-summary-cell optional align-center" },
+            { "sClass": "alert-summary-cell full align-center" },
+            { "sClass": "alert-summary-cell essential align-center" },
+            { "sClass": "alert-summary-cell optional align-center" },
+            { "sClass": "alert-summary-cell essential align-center" },
+            { "sClass": "alert-summary-cell essential align-center" },
+            { "sClass": "alert-summary-cell essential align-center" },
+            { "sClass" : "alert-summary-cell full" },
             { "bVisible": false }
         ],
         "aaSorting": [
@@ -360,7 +360,7 @@ function fnFormatDetails(aData) {
         $.each(reverseHistory, function (y, hist) {
             if (hist.event) {
                 historydata += // '<hr/>' +
-                    '<table class="table table-condensed table-striped">' +
+                    '<table class="table table-condensed table-striped alert-detail-history">' +
                         '<tr><td><b>Event</b></td><td>' + hist.event + '</td></tr>' +
                         '<tr><td><b>Severity</b></td><td>' + sev2label(hist.severity) + '</td></tr>' +
                         '<tr><td><b>Alert ID</b></td><td>' + hist.id + '</td></tr>' +
@@ -383,9 +383,9 @@ function fnFormatDetails(aData) {
         historydata += '</td></tr></tbody></table>'
     }
 
-    var sOut = '<table border=1><tbody><tr><td>'; // 1
+    var sOut = '<div class="alert-detail">'; // 1
 
-    sOut += '<table class="table table-condensed table-striped">';  // 2
+    sOut += '<table class="table table-condensed table-striped alert-detail-summary">';  // 2
     sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid;
 
     if (status == OPEN) {
@@ -426,7 +426,7 @@ function fnFormatDetails(aData) {
 
     sOut += '</td><td>'; // 1
     sOut += historydata;
-    sOut += '</td></tr></tbody></table>'; // 1
+    sOut += '</div>'; // 1
 
     return sOut;
 }
