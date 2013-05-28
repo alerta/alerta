@@ -90,19 +90,9 @@ class WorkerThread(threading.Thread):
                 continue
 
             if rc == PING_OK:
-                avg, max = rtt
-                if avg > _CRIT_THRESHOLD:
-                    event = 'PingSlow'
-                    severity = severity_code.CRITICAL
-                    text = 'Node responded to ping in %s ms avg (> %s ms)' % (avg, _CRIT_THRESHOLD)
-                elif avg > _WARN_THRESHOLD:
-                    event = 'PingSlow'
-                    severity = severity_code.WARNING
-                    text = 'Node responded to ping in %s ms avg (> %s ms)' % (avg, _WARN_THRESHOLD)
-                else:
-                    event = 'PingOK'
-                    severity = severity_code.NORMAL
-                    text = 'Node responding to ping avg/max %s/%s ms.' % tuple(rtt)
+                event = 'PingOK'
+                severity = severity_code.NORMAL
+                text = 'Node responding to ping avg/max %s/%s ms.' % tuple(rtt)
                 value = '%s/%s ms' % tuple(rtt)
             elif rc == PING_FAILED:
                 event = 'PingFailed'
