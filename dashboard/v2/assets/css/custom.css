@@ -37,6 +37,9 @@ table {
     opacity: 0.4;
 }
 
+.status-indicators {
+    padding-top: 10px;
+}
 .status-indicator {
     font-size: 14px;
 }

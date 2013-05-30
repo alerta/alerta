@@ -11,7 +11,7 @@ import yaml
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.common import status_code, severity_code
-from alerta.common.utils import DateEncoder
+from alerta.common.utils import DateEncoder, isfloat
 
 
 LOG = logging.getLogger(__name__)
@@ -65,7 +65,11 @@ class Alert(object):
         self.event = event
         self.correlate = correlate or list()
         self.group = group
-        self.value = value or 'n/a'
+
+        if isfloat(value):
+            self.value = '%.2f' % float(value)
+        else:
+            self.value = value or 'n/a'
         if status:
             self.status = status
         self.severity = severity
@@ -296,7 +300,7 @@ class Alert(object):
                     LOG.debug('Loading parser %s', c['parser'])
 
                     context = kwargs
-                    context.update(self.get_body())
+                    context.update(self.__dict__)
 
                     try:
                         exec(open('%s/%s.py' % (CONF.parser_dir, c['parser']))) in globals(), context
@@ -305,7 +309,7 @@ class Alert(object):
                         LOG.warning('Parser %s failed: %s', c['parser'], e)
 
                     for k, v in context.iteritems():
-                        if k in ATTRIBUTES:
+                        if hasattr(self, k):
                             setattr(self, k, v)
 
                     if 'suppress' in context:
@@ -337,7 +341,7 @@ class Alert(object):
             if self.tags is not None:
                 self.tags[:] = [t.replace(k, v) for t in self.tags]
             if self.correlate is not None:
-                self.correlate = [c.replace(k, v) for c in self.correlate]
+                self.correlate[:] = [c.replace(k, v) for c in self.correlate]
             if self.threshold_info is not None:
                 self.threshold_info = self.threshold_info.replace(k, v)
             if self.summary is not None:

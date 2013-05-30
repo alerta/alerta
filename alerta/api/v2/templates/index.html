@@ -14,7 +14,7 @@
 
     <style type="text/css">
         body {
-            padding-top: 40px;
+            padding-top: 50px;
             padding-bottom: 40px;
         }
     </style>
@@ -52,34 +52,20 @@
         <tr>
             <span id="heartbeat-alerts"></span>
             <div id="console-alert" class="alert alert-info initially-hidden">
-                <button class="close" data-dismiss="alert" onclick="">&times;</button>
+                <a class="close" data-dismiss="alert" href="#">&times;</a>
                 <strong>Warning!</strong> <span id="warning-text"></span>
             </div>
         </tr>
         <tr>
             <td>
-                <!-- div  id="status-counts" -->
-                <table border=1 class="table table-bordered table-condensed"  id="status-counts">
-                    <tbody>
-                    <tr id="alert-status" class="status">
-                        <td><span class="label">Open</span></td>
-                        <td id="count-open"><b>0</b></td>
-                        <td><span class="label">Ack</span></td>
-                        <td id="count-ack"><b>0</b></td>
-                        <td><span class="label">Closed</span></td>
-                        <td id="count-closed"><b>0</b></td>
-                    </tr>
-                    </tbody>
-                </table>
-                <!-- /div -->
+                <div id="status-select" class="btn-group" data-toggle="buttons-checkbox">
+                  <button id="status-select-open" type="button" class="btn active" value="open">Open <span id="count-open" class="label">0</span></button>
+                  <button id="status-select-ack" type="button" class="btn" value="ack">Ack <span id="count-ack" class="label">0</span></button>
+                  <button id="status-select-closed" type="button" class="btn" value="closed">Closed <span id="count-closed" class="label">0</span></button>
+                </div>
             </td>
             <td>
                 <div align="right">
-                    <select id="status-select" class="btn" name="status" onchange="updateStatus(this.value)" style="width:150px">
-                        <option value="open">Open</option>
-                        <option value="ack">Ack</option>
-                        <option value="closed">Closed</option>
-                    </select>
                     <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)" style="width:150px">
                         <option value="0">No limit</option>
                         <option value="10">Only 10</option>
@@ -103,7 +89,7 @@
 
 
     {% block status_indicators %}   
-    <div class="row-fluid show-grid status-indicators">
+    <div class="row show-grid status-indicators">
         <div class="span12">
 
             <div class="row show-grid">
@@ -314,8 +300,11 @@
 <script src="/alerta/dashboard/v2/assets/js/console.js"></script>
 
 {% block initialiser %}
+
 <script>
     $(document).ready(function() {
+
+        heartbeatAlerts();
 
         var env_filter = '&environment=PROD|INFRA';
         var asiFilters = {
@@ -336,6 +325,7 @@
 {% endblock %}
 
 <script src="/alerta/dashboard/v2/assets/DataTables/bootstrap/dataTables.bootstrap.js"></script>
-
+<script src="/alerta/dashboard/v2/assets/bootstrap/js/bootstrap-collapse.js"></script>
+<script src="/alerta/dashboard/v2/assets/bootstrap/js/bootstrap-alert.js"></script>
 </body>
 </html>

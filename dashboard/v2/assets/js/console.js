@@ -2,6 +2,8 @@
 var API_HOST = document.domain + ':' + window.api_port;
 var REFRESH_INTERVAL = 30; // seconds
 
+var hb_threshold = 300; // 5 minutes
+var show_hb_alerts = true;
 var lookup;
 var gEnvFilter;
 var filter = '';
@@ -125,6 +127,77 @@ function date2str(datetime) {
     return d.toLocaleString();
 }
 
+function heartbeatAlerts() {
+
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/heartbeats?callback=?', function (data) {
+
+        var hbalerts = '';
+        $.each(data.heartbeats, function (i, hb) {
+
+            var diff = (new Date().getTime() - new Date(hb.receiveTime).getTime()) / 1000;
+            var mins = Math.floor(diff / 60);
+            var secs = Math.floor(diff % 60);
+
+            var since = '';
+            if (mins > 0) {
+                since = mins + ' minutes ' + secs + ' seconds';
+            } else {
+                since = secs + ' seconds';
+            }
+
+            if (diff > hb_threshold && show_hb_alerts) {
+                hbalerts += '<div class="alert alert-error">' +
+                        '<a class="close" data-dismiss="alert" href="#">&times;</a>' +
+                        '<strong>Important!</strong> ' + hb.origin + ' has not sent a heartbeat for ' + since +
+                        '</div>';
+            }
+        });
+        $('#heartbeat-alerts').html(hbalerts);
+    });
+};
+
+function getHeartbeats(refresh) {
+
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/heartbeats?callback=?', function (data) {
+
+        var rows = '';
+        $.each(data.heartbeats, function (i, hb) {
+
+            var diff = (new Date().getTime() - new Date(hb.receiveTime).getTime()) / 1000;
+            var mins = Math.floor(diff / 60);
+            var secs = Math.floor(diff % 60);
+
+            var latency = new Date(hb.receiveTime).getTime() - new Date(hb.createTime).getTime();
+
+            var since = '';
+            if (mins > 0) {
+                since = mins + ' minutes ' + secs + ' seconds';
+            } else {
+                since = secs + ' seconds';
+            }
+
+            rows += '<tr class="">' +
+                    '<td>' + hb.origin + '</td>' +
+                    '<td>' + hb.version + '</td>' +
+                    '<td>' + date2str(hb.createTime) + '</td>' +
+                    '<td>' + since + '</td>' +
+                    '<td>' + latency + ' ms' + '</td>' +
+                    '</tr>';
+        });
+        $('#heartbeat-info').html(rows);
+
+        if (refresh) {
+            timer = setTimeout(function () {
+                getHeartbeats(refresh);
+            }, 120000);
+        }
+    });
+};
+
+$('#heartbeat-alerts').bind('closed', function () {
+  show_hb_alerts = false;
+});
+
 var Alerta = {
     highlightStatusIndicator: function(statusIndicator) {
         $(".status-indicator").addClass("status-indicator-inactive").removeClass("current-filter");
@@ -230,7 +303,7 @@ function updateAlertsTable(env_filter, asiFilters) {
             $('td:eq(2)', nRow).html(date2iso8601(d));
             var alertText = aData[9];
             if(alertText.length > 28) {
-                $('td:eq(9)', nRow).html(alertText.substring(0, 25) + "...").attr("title", alertText);
+                $('td:eq(9)', nRow).html(alertText.substring(0, 40) + "...").attr("title", alertText);
             }
         },
         "fnServerData": function (sSource, aoData, fnCallback) {
@@ -299,7 +372,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         ],
         "aaSorting": [
             [0, 'asc'],
-            [2, 'asc']
+            [2, 'desc']
         ],
     });
 
@@ -499,6 +572,42 @@ $('.status-indicator-count').click(function () {
     Alerta.highlightStatusIndicator(statusIndicator);
 });
 
+$('body').on('click', '#status-select .btn', function(e) {
+    if (!e.shiftKey) {
+        if ( $('#status-select .active').length > 1) {
+            $(this).addClass('active');
+        } else {
+            $(this).toggleClass('active');
+        }
+        if ($(this).attr("value") != 'open') {
+            $('#status-select-open').removeClass('active');
+        }
+        if ($(this).attr("value") != 'ack') {
+            $('#status-select-ack').removeClass('active');
+        }
+        if ($(this).attr("value") != 'closed') {
+            $('#status-select-closed').removeClass('active');
+        }
+    } else {
+        $(this).toggleClass('active');
+    }
+
+    status = '';
+    if ($('button#status-select-open.btn').hasClass('active')) {
+        status += '&status=open';
+    }
+    if ($('button#status-select-ack.btn').hasClass('active')) {
+        status += '&status=ack';
+    }
+    if ($('button#status-select-closed.btn').hasClass('active')) {
+        status += '&status=closed';
+    }
+
+    updateStatusCounts(gEnvFilter, false);
+    updateAllIndicators(gEnvFilter, lookup, false);
+    refreshAlerts(false);
+});
+
 function updateStatus(s) {
     status = '&status=' + s;
     updateStatusCounts(gEnvFilter, false);
@@ -529,7 +638,7 @@ function updateFromDate(seconds) {
 }
 
 function updateStatusCounts(env_filter, refresh) {
-    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts/counts?callback=?&'
         + env_filter + from, function (data) {
 
         if (data.response.warning) {
@@ -560,7 +669,7 @@ function updateAllIndicators(env_filter, asiFilters, refresh) {
 
 function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
     $('#' + service + ' th').addClass('loader');
-    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
+    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts/counts?callback=?&'
         + env_filter + asi_filter + status + limit + from, function (data) {
 
         var sev_id = '#' + service;

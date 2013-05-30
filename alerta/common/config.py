@@ -106,9 +106,16 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'ec2_regions': ['eu-west-1', 'us-east-1'],
 
         'gmetric_host': 'localhost',
-        'gmetric_port': '8649',
+        'gmetric_port': 8649,
         'gmetric_protocol': 'udp',
         'gmetric_spoof': '10.1.1.1:%s' % prog,
+
+        'carbon_host': 'localhost',
+        'carbon_port': 2003,
+        'carbon_protocol': 'udp',
+
+        'statsd_host': 'localhost',
+        'statsd_port': 8125,
 
         'nagios_plugins': '/usr/lib64/nagios/plugins',
     }

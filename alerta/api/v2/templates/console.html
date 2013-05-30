@@ -97,7 +97,7 @@
         </tr>
     </table>
 
-    <div class="row show-grid">
+    <div class="row show-grid status-indicators">
         <div class="span12">
             <div class="row show-grid">
                 <div class="span3">
@@ -231,6 +231,8 @@
 
 <script>
     $(document).ready(function() {
+
+        heartbeatAlerts();
 
         var env_filter = '&environment=PROD|DEV|INFRA';
         var asiFilters = {

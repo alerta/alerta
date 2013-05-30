@@ -12,7 +12,7 @@
     <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
     <style type="text/css">
         body {
-            padding-top: 40px;
+            padding-top: 50px;
             padding-bottom: 40px;
         }
     </style>
@@ -97,7 +97,7 @@
         </tr>
     </table>
 
-    <div class="row show-grid">
+    <div class="row show-grid status-indicators">
         <div class="span12">
 
             <div class="row show-grid">
@@ -307,6 +307,8 @@
 
 <script>
     $(document).ready(function() {
+
+        heartbeatAlerts();
 
         var env_filter = '&environment=PROD|DEV|INFRA';
         var asiFilters = {

@@ -83,7 +83,7 @@ SOLAR_WINDS_CORRELATED_EVENTS = {
     'Warning':       ['Critical', 'Warning', 'Informational'],  # 1001
     'Informational': ['Critical', 'Warning', 'Informational'],  # 1000
 
-    'CriticalSystemError': ['', ''],  # 15
+    'CriticalSystemError': [],  # 15
 
     'FailBack': ['FailBack', 'FailOver'],  # 26
     'FailOver': ['FailBack', 'FailOver'],  # 25
@@ -296,7 +296,9 @@ class SwisClient(object):
 
         last_event_id = self._get_max_npm_event_id()
 
-        if not last_event_id or last_event_id == self.npm_event_id_cursor:
+        if not last_event_id:
+            raise IOError
+        if last_event_id == self.npm_event_id_cursor:
             LOG.debug('No new events since event id %s. Skipping NPM event query...', last_event_id)
             return []
 
@@ -352,7 +354,9 @@ class SwisClient(object):
 
         last_event_id = self._get_max_ucs_event_id()
 
-        if not last_event_id or last_event_id == self.ucs_event_id_cursor:
+        if not last_event_id:
+            raise IOError
+        if last_event_id == self.ucs_event_id_cursor:
             LOG.debug('No new events since event id %s. Skipping UCS event query...', last_event_id)
             return []
 
