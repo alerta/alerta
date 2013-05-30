@@ -170,3 +170,19 @@ table {
         display: inline-block;
     }
 }
+
+.alert-detail-summary-wrapper, .history-wrapper {
+    display: block;
+    width: 100%;
+}
+
+
+@media screen and (min-width: 30rem) {
+    .alert-detail-summary-wrapper, .history-wrapper {
+        display: inline-block;
+        max-width: 30rem;
+        width: auto;
+        margin: 0.25rem 0.5rem;
+        vertical-align: top;
+    }
+}

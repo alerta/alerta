@@ -426,7 +426,7 @@ function fnFormatDetails(aData) {
         graphUrls += '<a href="' + graph + '" target="_blank">Graph ' + y + '</a> ';
     });
 
-    var historydata = '<table class="table table-condensed"><thead><td colspan="2"><b>History </b></td></thead><tbody><tr><td>';
+    var historydata = '<section class="history-wrapper"><table class="table table-condensed"><thead><td colspan="2"><b>History </b></td></thead><tbody><tr><td>';
 
     if (history) {
         var reverseHistory = history.reverse();
@@ -453,11 +453,12 @@ function fnFormatDetails(aData) {
                         '';
             }
         });
-        historydata += '</td></tr></tbody></table>'
+        historydata += '</td></tr></tbody></table></section>'
     }
 
     var sOut = '<div class="alert-detail">'; // 1
 
+    sOut += '<section class="alert-detail-summary-wrapper">'
     sOut += '<table class="table table-condensed table-striped alert-detail-summary">';  // 2
     sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid;
 
@@ -497,7 +498,7 @@ function fnFormatDetails(aData) {
     sOut += '<tr class="even"><td><b>Graphs</b></td><td>' + graphUrls + '</td></tr>';
     sOut += '</table>'; // 2
 
-    sOut += '</td><td>'; // 1
+    sOut += '</section>'
     sOut += historydata;
     sOut += '</div>'; // 1
 
