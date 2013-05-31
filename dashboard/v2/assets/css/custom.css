@@ -186,3 +186,22 @@ table {
         vertical-align: top;
     }
 }
+
+.select-full-text, .refresh-button-text {
+    display: none;
+}
+
+@media screen and (min-width: 30rem) {
+    .select-full-text, .refresh-button-text {
+        display: inline;
+    }
+}
+
+.filters {
+    display:inline-block;
+    max-width: 25rem;
+}
+
+.alert-filter {
+    width: auto;
+}
