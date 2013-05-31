@@ -1,18 +1,7 @@
 
-@font-face {
-    font-family: Sintony;
-    src: url('../fonts/Sintony-Regular.ttf');
-}
-
-@font-face {
-    font-family: Sintony;
-    font-weight: bold;
-    src: url('../fonts/Sintony-Bold.ttf');
-}
-
 table {
     margin: 0;
-    font-family: Sintony, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 12px;
     line-height: 14px;
     color: #333333;
@@ -24,7 +13,15 @@ table {
     background-color: #ddd;
 }
 
-.status-indicator, #alerts {
+.alert-summary, .ack-alert, .delete-alert {
+    cursor: pointer;
+}
+
+.alert-summary-actions {
+    margin: 0.5rem;
+}
+
+.status-indicator {
     cursor: pointer;
     transition: opacity .4s;
 }
