@@ -15,8 +15,9 @@ from alerta.common import severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
+from alerta.common.graphite import Carbon
 
-Version = '2.0.7'
+Version = '2.0.8'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -55,7 +56,7 @@ def init_targets():
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, mq, queue, dedup):
+    def __init__(self, mq, queue, dedup, carbon):
 
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
@@ -64,6 +65,7 @@ class WorkerThread(threading.Thread):
         self.queue = queue   # internal queue
         self.mq = mq               # message broker
         self.dedup = dedup
+        self.carbon = carbon  # graphite metrics
 
     def run(self):
 
@@ -91,6 +93,8 @@ class WorkerThread(threading.Thread):
 
             if rc == PING_OK:
                 avg, max = rtt
+                self.carbon.metric_send('alert.pinger.%s.avg' % resource, avg)
+                self.carbon.metric_send('alert.pinger.%s.max' % resource, max)
                 if avg > _CRIT_THRESHOLD:
                     event = 'PingSlow'
                     severity = severity_code.CRITICAL
@@ -212,13 +216,15 @@ class PingerDaemon(Daemon):
 
         self.dedup = DeDup()
 
+        self.carbon = Carbon()  # graphite metrics
+
         # Initialiase ping targets
         ping_list = init_targets()
 
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.mq, self.queue, self.dedup)
+            w = WorkerThread(self.mq, self.queue, self.dedup, self.carbon)
             try:
                 w.start()
             except Exception, e:
@@ -255,8 +261,3 @@ class PingerDaemon(Daemon):
 
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()
-
-
-
-
-
