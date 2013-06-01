@@ -411,15 +411,22 @@ class Mongo(object):
     def duplicate_alert(self, alert):
 
         update = {
-            "lastReceiveTime": alert.receive_time,
-            "expireTime": alert.expire_time,
-            "lastReceiveId": alert.alertid,
-            "text": alert.text,
-            "summary": alert.summary,
+            "correlatedEvents": alert.correlate,
+            "group": alert.group,
             "value": alert.value,
-            "repeat": True,
+            "service": alert.service,
+            "text": alert.text,
             "origin": alert.origin,
+            "repeat": True,
+            "thresholdInfo": alert.threshold_info,
+            "summary": alert.summary,
+            "timeout": alert.timeout,
+            "lastReceiveId": alert.alertid,
+            "expireTime": alert.expire_time,
+            "lastReceiveTime": alert.receive_time,
             "rawData": alert.raw_data,
+            "moreInfo": alert.more_info,
+            "graphUrls": alert.graph_urls,
         }
 
         # FIXME - no native find_and_modify method in this version of pymongo
