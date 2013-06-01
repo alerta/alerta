@@ -56,6 +56,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'mongo_collection': 'alerts',
 
         'console_limit': 1000,  # max number of alerts sent to console
+        'history_limit': -10,   # show last x most recent history entries
 
         'stomp_host': 'localhost',
         'stomp_port': 61613,

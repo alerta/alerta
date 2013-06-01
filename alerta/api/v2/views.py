@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields
 
 
-Version = '2.0.11'
+Version = '2.0.12'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -63,7 +63,10 @@ def get_alerts():
 
     query, sort, limit, query_time = parse_fields(request)
 
-    alerts = db.get_alerts(query=query, sort=sort, limit=limit)
+    fields = dict()
+    fields['history'] = {'$slice': CONF.history_limit}
+
+    alerts = db.get_alerts(query=query, fields=fields, sort=sort, limit=limit)
     total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
 
     found = 0
