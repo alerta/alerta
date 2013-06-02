@@ -17,7 +17,7 @@ from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
-Version = '2.0.8'
+Version = '2.0.9'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
