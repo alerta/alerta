@@ -101,8 +101,8 @@ class WorkerThread(threading.Thread):
             # TODO(nsatterl): add to system defaults
             search_string = check.get('search', None)
             rule = check.get('rule', None)
-            warn_thold = check.get('warning', CONF.urlmon_rtt_warning)
-            crit_thold = check.get('critical', CONF.urlmon_rtt_critical)
+            warn_thold = check.get('warning', CONF.urlmon_slow_warning)
+            crit_thold = check.get('critical', CONF.urlmon_slow_critical)
             post = check.get('post', None)
 
             LOG.info('%s checking %s', self.getName(), check['url'])
