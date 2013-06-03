@@ -202,6 +202,61 @@ var Alerta = {
     highlightStatusIndicator: function(statusIndicator) {
         $(".status-indicator").addClass("status-indicator-inactive").removeClass("current-filter");
         statusIndicator.addClass("current-filter");
+    },
+    dropDownText: function(window) {
+        var currentWidth = $(window).width();
+        var dropDownLabels = {
+            long: {
+                "#from-date-select" : {
+                    "0" : "All alerts",
+                    "120" : "Last two minutes",
+                    "300" : "Last five minutes",
+                    "600" : "Last 10 minutes",
+                    "1800" : "Last 30 minutes",
+                    "3600" : "Last hour"
+                },
+                "#limit-select" : {
+                    "0" : "No limit",
+                    "10" : "Only 10",
+                    "50" : "Only 50",
+                    "100" : "Only 100",
+                    "500" : "Only 500"
+                }
+            },
+            short: {
+                "#from-date-select" : {
+                    "0" : "None",
+                    "120" : "2m",
+                    "300" : "5m",
+                    "600" : "10m",
+                    "1800" : "30m",
+                    "3600" : "1h"
+                },
+                "#limit-select" : {
+                    "0" : "All",
+                    "10" : "10",
+                    "50" : "50",
+                    "100" : "100",
+                    "500" : "500"
+                }
+            },
+        };
+
+        var rewriteValues = function(id, labelsLookup) {
+            $(id + " option").each(function(index, elem) {
+                $(elem).text(labelsLookup[$(elem).val()]);
+            });
+        };
+
+        var labels = currentWidth >= 300 ? dropDownLabels.long : dropDownLabels.short;
+
+        console.log(labels);
+
+        for(var id in labels) {
+            if(labels.hasOwnProperty(id)) {
+                rewriteValues(id, labels[id]);
+            }
+        }
     }
 };
 
@@ -761,5 +816,11 @@ $(document).ready(function () {
                 data: JSON.stringify({ tag: tag })
             });
         }
+    });
+
+    Alerta.dropDownText(window);
+
+    $(window).resize(function() {
+        Alerta.dropDownText(window);
     });
 });

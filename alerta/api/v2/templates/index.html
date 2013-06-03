@@ -71,7 +71,7 @@
                 <option value="120">2m</option>
                 <option value="300">5m</option>
                 <option value="600">10m</option>
-                <option value="1800">3m</option>
+                <option value="1800">30m</option>
                 <option value="3600">1h</option>
             </select>
             <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i><span class="refresh-button-text"> Refresh Now</span></button>
@@ -322,6 +322,7 @@
         updateStatusCounts(env_filter, true);
         updateAllIndicators(env_filter, asiFilters, true);
         updateAlertsTable(env_filter, asiFilters);
+
     });
 </script>
 {% endblock %}
