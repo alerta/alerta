@@ -250,8 +250,6 @@ var Alerta = {
 
         var labels = currentWidth >= 300 ? dropDownLabels.long : dropDownLabels.short;
 
-        console.log(labels);
-
         for(var id in labels) {
             if(labels.hasOwnProperty(id)) {
                 rewriteValues(id, labels[id]);
@@ -335,9 +333,10 @@ function updateAlertsTable(env_filter, asiFilters) {
         "bPaginate": true,
         "bDeferRender": true,
         "bAutoWidth" :false,
+        "bStateSave" : true,
         "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-            nRow.className = 'severity-' + aData[0] + ' status-' + aData[1];
+            nRow.className = 'alert-summary' + ' severity-' + aData[0] + ' status-' + aData[1];
             $(nRow).attr('id', 'row-' + aData[11]);
 
             if (aData[17] == "noChange") {
@@ -511,19 +510,26 @@ function fnFormatDetails(aData) {
         historydata += '</td></tr></tbody></table></section>'
     }
 
-    var sOut = '<div class="alert-detail">'; // 1
+    var sOut = "";
+
+    sOut += '<div class="alert-detail">'; // 1
 
     sOut += '<section class="alert-detail-summary-wrapper">'
-    sOut += '<table class="table table-condensed table-striped alert-detail-summary">';  // 2
-    sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid;
+
+    sOut += '<div class="btn-group alert-summary-actions">';
 
     if (status == OPEN) {
-        sOut += '<a id="' + alertid + '" class="ack-alert" rel="tooltip" title="Acknowledge Alert"><i class="icon-star-empty"></i></a>';
+        sOut += '<button id="' + alertid + '" class="btn-mini ack-alert" rel="tooltip" title="Acknowledge Alert"><i class="icon-star-empty"></i> Ack</button>';
     }
     if (status == ACK) {
-        sOut += '<a id="' + alertid + '" class="unack-alert" rel="tooltip" title="Unacknowledge Alert"><i class="icon-star"></i></a>';
+        sOut += '<button id="' + alertid + '" class="btn-mini unack-alert" rel="tooltip" title="Unacknowledge Alert"><i class="icon-star"></i> Unack</button>';
     }
-    sOut += '<a id="' + alertid + '" class="delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i></a>';
+    sOut += '<button id="' + alertid + '" class="btn-mini delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i> Delete</button>';
+
+    sOut += '</div>'
+
+    sOut += '<table class="table table-condensed table-striped">';  // 2
+    sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid;
     sOut += '</td></tr>';
 
     sOut += '<tr class="even"><td><b>Last Receive Alert ID</b></td><td>' + lastReceiveId + '</td></tr>';

@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields
 
 
-Version = '2.0.11'
+Version = '2.0.12'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -63,7 +63,10 @@ def get_alerts():
 
     query, sort, limit, query_time = parse_fields(request)
 
-    alerts = db.get_alerts(query=query, sort=sort, limit=limit)
+    fields = dict()
+    fields['history'] = {'$slice': CONF.history_limit}
+
+    alerts = db.get_alerts(query=query, fields=fields, sort=sort, limit=limit)
     total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
 
     found = 0
@@ -295,6 +298,23 @@ def get_resources():
             "more": False,
         })
 
+@app.route('/alerta/api/v2/resources/resource/<resource>', methods=['POST', 'DELETE'])
+@jsonp
+def delete_resource(resource):
+
+    error = None
+
+    # Delete all alerts for a single resource
+    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+        response = db.delete_resource(resource)
+
+        if response:
+            return jsonify(response={"status": "ok"})
+        else:
+            return jsonify(response={"status": "error", "message": error})
+
+    else:
+        return jsonify(response={"status": "error", "message": "POST request without '_method' override?"})
 
 # Return a list of heartbeats
 @app.route('/alerta/api/v2/heartbeats', methods=['GET'])

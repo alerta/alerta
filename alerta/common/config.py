@@ -56,6 +56,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'mongo_collection': 'alerts',
 
         'console_limit': 1000,  # max number of alerts sent to console
+        'history_limit': -10,   # show last x most recent history entries
 
         'stomp_host': 'localhost',
         'stomp_port': 61613,
@@ -75,6 +76,15 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'syslog_udp_port': 514,
         'syslog_tcp_port': 514,
         'syslog_facility': 'local7',
+
+        'ping_max_timeout': 15,  # seconds
+        'ping_max_retries': 2,
+        'ping_slow_warning': 5,    # ms
+        'ping_slow_critical': 10,  # ms
+
+        'urlmon_max_timeout': 15,  # seconds
+        'urlmon_slow_warning': 2000,   # ms
+        'urlmon_slow_critical': 5000,  # ms
 
         'smtp_host': 'smtp',
         'smtp_port': 25,

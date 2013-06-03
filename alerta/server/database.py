@@ -89,12 +89,13 @@ class Mongo(object):
 
         return found, severity_count, status_count
 
-    def get_alerts(self, query=None, sort=None, limit=0):
+    def get_alerts(self, query=None, fields=None, sort=None, limit=0):
 
         query = query or dict()
+        fields = fields or list()
         sort = sort or dict()
 
-        responses = self.db.alerts.find(query, sort=sort).limit(limit)
+        responses = self.db.alerts.find(query, fields=fields, sort=sort).limit(limit)
         if not responses:
             LOG.warning('Alert not found with query = %s, sort = %s, limit = %s', query, sort, limit)
             return None
@@ -411,15 +412,22 @@ class Mongo(object):
     def duplicate_alert(self, alert):
 
         update = {
-            "lastReceiveTime": alert.receive_time,
-            "expireTime": alert.expire_time,
-            "lastReceiveId": alert.alertid,
-            "text": alert.text,
-            "summary": alert.summary,
+            "correlatedEvents": alert.correlate,
+            "group": alert.group,
             "value": alert.value,
-            "repeat": True,
+            "service": alert.service,
+            "text": alert.text,
             "origin": alert.origin,
+            "repeat": True,
+            "thresholdInfo": alert.threshold_info,
+            "summary": alert.summary,
+            "timeout": alert.timeout,
+            "lastReceiveId": alert.alertid,
+            "expireTime": alert.expire_time,
+            "lastReceiveTime": alert.receive_time,
             "rawData": alert.raw_data,
+            "moreInfo": alert.more_info,
+            "graphUrls": alert.graph_urls,
         }
 
         # FIXME - no native find_and_modify method in this version of pymongo
@@ -488,6 +496,12 @@ class Mongo(object):
                 unique_resources[tuple(resource['environment']), resource['resource']] = True
 
         return resources
+
+    def delete_resource(self, resource):
+
+        response = self.db.alerts.remove({'resource': {'$regex': '^' + resource}})
+
+        return True if 'ok' in response else False
 
     def get_heartbeats(self):
 

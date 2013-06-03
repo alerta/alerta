@@ -15,17 +15,13 @@ from alerta.common import severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
+from alerta.common.graphite import Carbon
 
-Version = '2.0.7'
+Version = '2.0.9'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-_WARN_THRESHOLD = 5  # ms
-_CRIT_THRESHOLD = 10  # ms
-
-_MAX_TIMEOUT = 15  # seconds
-_MAX_RETRIES = 2  # number of retries
 
 _PING_ALERTS = [
     'PingFailed',
@@ -55,7 +51,7 @@ def init_targets():
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, mq, queue, dedup):
+    def __init__(self, mq, queue, dedup, carbon):
 
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
@@ -64,6 +60,7 @@ class WorkerThread(threading.Thread):
         self.queue = queue   # internal queue
         self.mq = mq               # message broker
         self.dedup = dedup
+        self.carbon = carbon  # graphite metrics
 
     def run(self):
 
@@ -81,7 +78,7 @@ class WorkerThread(threading.Thread):
             if retries > 1:
                 rc, rtt, loss, stdout = self.pinger(resource)
             else:
-                rc, rtt, loss, stdout = self.pinger(resource, count=5, timeout=_MAX_TIMEOUT)
+                rc, rtt, loss, stdout = self.pinger(resource, count=5, timeout=CONF.ping_max_timeout)
 
             if rc != PING_OK and retries:
                 LOG.info('Retrying ping %s %s more times', resource, retries)
@@ -91,14 +88,16 @@ class WorkerThread(threading.Thread):
 
             if rc == PING_OK:
                 avg, max = rtt
-                if avg > _CRIT_THRESHOLD:
+                self.carbon.metric_send('alert.pinger.%s.avg' % resource, avg)
+                self.carbon.metric_send('alert.pinger.%s.max' % resource, max)
+                if avg > CONF.ping_slow_critical:
                     event = 'PingSlow'
                     severity = severity_code.CRITICAL
-                    text = 'Node responded to ping in %s ms avg (> %s ms)' % (avg, _CRIT_THRESHOLD)
-                elif avg > _WARN_THRESHOLD:
+                    text = 'Node responded to ping in %s ms avg (> %s ms)' % (avg, CONF.ping_slow_critical)
+                elif avg > CONF.ping_slow_warning:
                     event = 'PingSlow'
                     severity = severity_code.WARNING
-                    text = 'Node responded to ping in %s ms avg (> %s ms)' % (avg, _WARN_THRESHOLD)
+                    text = 'Node responded to ping in %s ms avg (> %s ms)' % (avg, CONF.ping_slow_warning)
                 else:
                     event = 'PingOK'
                     severity = severity_code.NORMAL
@@ -107,7 +106,7 @@ class WorkerThread(threading.Thread):
             elif rc == PING_FAILED:
                 event = 'PingFailed'
                 severity = severity_code.MAJOR
-                text = 'Node did not respond to ping or timed out within %s seconds' % _MAX_TIMEOUT
+                text = 'Node did not respond to ping or timed out within %s seconds' % CONF.ping_max_timeout
                 value = '%s%% packet loss' % loss
             elif rc == PING_ERROR:
                 event = 'PingError'
@@ -158,8 +157,8 @@ class WorkerThread(threading.Thread):
 
         if timeout < count * interval:
             timeout = count * interval + 1
-        if timeout > _MAX_TIMEOUT:
-            timeout = _MAX_TIMEOUT
+        if timeout > CONF.ping_max_timeout:
+            timeout = CONF.ping_max_timeout
 
         cmd = "ping -q -c %s -i %s -w %s %s" % (count, interval, timeout, node)
         ping = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -212,13 +211,15 @@ class PingerDaemon(Daemon):
 
         self.dedup = DeDup()
 
+        self.carbon = Carbon()  # graphite metrics
+
         # Initialiase ping targets
         ping_list = init_targets()
 
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.mq, self.queue, self.dedup)
+            w = WorkerThread(self.mq, self.queue, self.dedup, self.carbon)
             try:
                 w.start()
             except Exception, e:
@@ -233,7 +234,7 @@ class PingerDaemon(Daemon):
                         for target in p['targets']:
                             environment = p['environment']
                             service = p['service']
-                            retries = p.get('retries', _MAX_RETRIES)
+                            retries = p.get('retries', CONF.ping_max_retries)
                             self.queue.put((environment, service, target, retries))
 
                 LOG.debug('Send heartbeat...')
@@ -255,8 +256,3 @@ class PingerDaemon(Daemon):
 
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()
-
-
-
-
-
