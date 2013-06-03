@@ -82,6 +82,10 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'ping_slow_warning': 5,    # ms
         'ping_slow_critical': 10,  # ms
 
+        'urlmon_max_timeout': 15,  # seconds
+        'urlmon_slow_warning': 2000,   # ms
+        'urlmon_slow_critical': 5000,  # ms
+
         'smtp_host': 'smtp',
         'smtp_port': 25,
         'mail_user': 'alerta@guardian.co.uk',
