@@ -19,19 +19,12 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
-from alerta.common.ganglia import Gmetric
+from alerta.common.graphite import StatsD
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-_WARN_THRESHOLD = 2000  # ms
-_CRIT_THRESHOLD = 5000  # ms
-
-_REQUEST_TIMEOUT = 15  # seconds
-
-_GMETRIC_SEND = True
 
 _HTTP_ALERTS = [
     'HttpConnectionError',
@@ -81,7 +74,7 @@ class NoRedirection(urllib2.HTTPRedirectHandler):
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, mq, queue, dedup):
+    def __init__(self, mq, queue, dedup, statsd):
 
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
@@ -93,6 +86,7 @@ class WorkerThread(threading.Thread):
         self.queue = queue   # internal queue
         self.mq = mq               # message broker
         self.dedup = dedup
+        self.statsd = statsd
         
     def run(self):
 
@@ -107,8 +101,8 @@ class WorkerThread(threading.Thread):
             # TODO(nsatterl): add to system defaults
             search_string = check.get('search', None)
             rule = check.get('rule', None)
-            warn_thold = check.get('warning', _WARN_THRESHOLD)
-            crit_thold = check.get('critical', _CRIT_THRESHOLD)
+            warn_thold = check.get('warning', CONF.urlmon_slow_warning)
+            crit_thold = check.get('critical', CONF.urlmon_slow_critical)
             post = check.get('post', None)
 
             LOG.info('%s checking %s', self.getName(), check['url'])
@@ -154,7 +148,7 @@ class WorkerThread(threading.Thread):
                     req = urllib2.Request(check['url'], json.dumps(post), headers=headers)
                 else:
                     req = urllib2.Request(check['url'], headers=headers)
-                response = urllib2.urlopen(req, None, _REQUEST_TIMEOUT)
+                response = urllib2.urlopen(req, None, CONF.urlmon_max_timeout)
             except ValueError, e:
                 LOG.error('Request failed: %s', e)
                 continue
@@ -261,12 +255,8 @@ class WorkerThread(threading.Thread):
             else:
                 avail = 0.0
 
-            if _GMETRIC_SEND:
-                g = Gmetric()
-                g.metric_send('availability-%s' % check['resource'], '%.1f' % avail, 'float',
-                              units='%', group=','.join(check['service']), spoof=CONF.gmetric_spoof)
-                g.metric_send('response_time-%s' % check['resource'], '%d' % rtt, 'uint16',
-                              units='ms', group=','.join(check['service']), spoof=CONF.gmetric_spoof)
+            self.statsd.metric_send('alert.urlmon.availablity.%s' % check['resource'], '%.1f' % avail, 'g')
+            self.statsd.metric_send('alert.urlmon.response_time.%s' % check['resource'], '%d' % rtt, 'ms')
 
             resource = check['resource']
             correlate = _HTTP_ALERTS
@@ -326,13 +316,15 @@ class UrlmonDaemon(Daemon):
 
         self.dedup = DeDup()
 
+        self.statsd = StatsD()  # graphite metrics
+
         # Initialiase alert rules
         urls = init_urls()
 
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.mq, self.queue, self.dedup)
+            w = WorkerThread(self.mq, self.queue, self.dedup, self.statsd)
             try:
                 w.start()
             except Exception, e:
