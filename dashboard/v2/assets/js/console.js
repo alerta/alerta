@@ -279,6 +279,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         "bSort": true,
         "bPaginate": true,
         "bDeferRender": true,
+        "bStateSave" : true,
         "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'severity-' + aData[0] + ' status-' + aData[1];
