@@ -24,7 +24,15 @@ table {
     background-color: #ddd;
 }
 
-.status-indicator, #alerts {
+.alert-summary, .ack-alert, .delete-alert {
+    cursor: pointer;
+}
+
+.alert-summary-actions {
+    margin: 0.5rem;
+}
+
+.status-indicator {
     cursor: pointer;
     transition: opacity .4s;
 }
