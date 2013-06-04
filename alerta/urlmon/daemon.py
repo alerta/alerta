@@ -174,7 +174,7 @@ class WorkerThread(threading.Thread):
                 event = 'HttpConnectionError'
                 severity = severity_code.MAJOR
                 value = reason
-                text = 'Error during connection or data transfer (timeout=%d).' % _REQUEST_TIMEOUT
+                text = 'Error during connection or data transfer (timeout=%d).' % CONF.urlmon_max_timeout
             elif code >= 500:
                 event = 'HttpServerError'
                 severity = severity_code.MAJOR
