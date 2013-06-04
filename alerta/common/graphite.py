@@ -47,7 +47,7 @@ class Carbon(object):
         if not timestamp:
             timestamp = int(time.time())
 
-        LOG.debug('carbon name=%s, value=%s, timestamp=%s', name, value, timestamp)
+        LOG.debug('Carbon name=%s, value=%s, timestamp=%s', name, value, timestamp)
 
         if self.protocol == 'udp':
             count = self.socket.sendto('%s %s %s\n' % (name, value, timestamp), self.addr)
@@ -67,6 +67,7 @@ class Carbon(object):
 
             if self._connected:
                 try:
+                    LOG.debug('Carbon metric send: %s %s %s', (name, value, timestamp))
                     self.socket.sendall('%s %s %s\n' % (name, value, timestamp))
                     LOG.debug('Sent all TCP metric data')
                 except socket.error:
@@ -105,6 +106,8 @@ class StatsD(object):
 
         type = type or 'c'  # default is 'counter'
         rate = rate or self.rate
+
+        LOG.debug('Statsd name=%s, value=%s, type=%s rate=%s', name, value, type, rate)
 
         data = '%s:%s|%s' % (name, value, type)
 
