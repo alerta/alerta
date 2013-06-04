@@ -48,6 +48,37 @@
 </div>
 
 <div class="container">
+
+<div class="row-fluid">
+    <div class ="span6">
+        <div id="status-select" class="btn-group" data-toggle="buttons-checkbox">
+            <button id="status-select-open" type="button" class="btn active" value="open">Open <span id="count-open" class="label">0</span></button>
+            <button id="status-select-ack" type="button" class="btn" value="ack">Ack <span id="count-ack" class="label">0</span></button>
+            <button id="status-select-closed" type="button" class="btn" value="closed">Closed <span id="count-closed" class="label">0</span></button>
+        </div>
+    </div>
+    <div class="span6">
+        <div class="btn-group filters">
+            <select id="limit-select" class="btn alert-filter" name="limit" onchange="updateLimit(this.value)">
+                <option value="0">None</option>
+                <option value="10">10</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="500">500</option>
+            </select>
+            <select id="from-date-select" class="btn alert-filter" name="last" onchange="updateFromDate(this.value)">
+                <option value="0">All</option>
+                <option value="120">2m</option>
+                <option value="300">5m</option>
+                <option value="600">10m</option>
+                <option value="1800">30m</option>
+                <option value="3600">1h</option>
+            </select>
+            <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i><span class="refresh-button-text"> Refresh Now</span></button>
+        </div>
+    </div>
+</div>
+
     <table width="100%">
         <tr>
             <span id="heartbeat-alerts"></span>
@@ -55,35 +86,6 @@
                 <a class="close" data-dismiss="alert" href="#">&times;</a>
                 <strong>Warning!</strong> <span id="warning-text"></span>
             </div>
-        </tr>
-        <tr>
-            <td>
-                <div id="status-select" class="btn-group" data-toggle="buttons-checkbox">
-                  <button id="status-select-open" type="button" class="btn active" value="open">Open <span id="count-open" class="label">0</span></button>
-                  <button id="status-select-ack" type="button" class="btn" value="ack">Ack <span id="count-ack" class="label">0</span></button>
-                  <button id="status-select-closed" type="button" class="btn" value="closed">Closed <span id="count-closed" class="label">0</span></button>
-                </div>
-            </td>
-            <td>
-                <div align="right">
-                    <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)" style="width:150px">
-                        <option value="0">No limit</option>
-                        <option value="10">Only 10</option>
-                        <option value="50">Only 50</option>
-                        <option value="100">Only 100</option>
-                        <option value="500">Only 500</option>
-                    </select>
-                    <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)" style="width:150px">
-                        <option value="0">All alerts</option>
-                        <option value="120">Last 2 minutes</option>
-                        <option value="300">Last 5 minutes</option>
-                        <option value="600">Last 10 minutes</option>
-                        <option value="1800">Last 30 minutes</option>
-                        <option value="3600">Last 1 hour</option>
-                    </select>
-                    <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh Now</button>
-                </div>
-            </td>
         </tr>
     </table>
 
@@ -250,8 +252,7 @@
     <div class="row-fluid show-grid">
         <div class="span12">
 
-            <table cellpadding="0" cellspacing="0" border="0" class="display table table-bordered table-condensed"
-                   id="alerts">
+            <table cellpadding="0" cellspacing="0" border="0" class="display table table-bordered table-condensed alerts-display" id="alerts">
                 <thead>
                 <tr>
                     <th>Severity</th>
@@ -321,6 +322,7 @@
         updateStatusCounts(env_filter, true);
         updateAllIndicators(env_filter, asiFilters, true);
         updateAlertsTable(env_filter, asiFilters);
+
     });
 </script>
 {% endblock %}

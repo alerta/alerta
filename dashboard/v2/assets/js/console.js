@@ -202,6 +202,59 @@ var Alerta = {
     highlightStatusIndicator: function(statusIndicator) {
         $(".status-indicator").addClass("status-indicator-inactive").removeClass("current-filter");
         statusIndicator.addClass("current-filter");
+    },
+    dropDownText: function(window) {
+        var currentWidth = $(window).width();
+        var dropDownLabels = {
+            long: {
+                "#from-date-select" : {
+                    "0" : "All alerts",
+                    "120" : "Last two minutes",
+                    "300" : "Last five minutes",
+                    "600" : "Last 10 minutes",
+                    "1800" : "Last 30 minutes",
+                    "3600" : "Last hour"
+                },
+                "#limit-select" : {
+                    "0" : "No limit",
+                    "10" : "Only 10",
+                    "50" : "Only 50",
+                    "100" : "Only 100",
+                    "500" : "Only 500"
+                }
+            },
+            short: {
+                "#from-date-select" : {
+                    "0" : "None",
+                    "120" : "2m",
+                    "300" : "5m",
+                    "600" : "10m",
+                    "1800" : "30m",
+                    "3600" : "1h"
+                },
+                "#limit-select" : {
+                    "0" : "All",
+                    "10" : "10",
+                    "50" : "50",
+                    "100" : "100",
+                    "500" : "500"
+                }
+            },
+        };
+
+        var rewriteValues = function(id, labelsLookup) {
+            $(id + " option").each(function(index, elem) {
+                $(elem).text(labelsLookup[$(elem).val()]);
+            });
+        };
+
+        var labels = currentWidth >= 300 ? dropDownLabels.long : dropDownLabels.short;
+
+        for(var id in labels) {
+            if(labels.hasOwnProperty(id)) {
+                rewriteValues(id, labels[id]);
+            }
+        }
     }
 };
 
@@ -279,6 +332,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         "bSort": true,
         "bPaginate": true,
         "bDeferRender": true,
+        "bAutoWidth" :false,
         "bStateSave" : true,
         "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
@@ -358,16 +412,16 @@ function updateAlertsTable(env_filter, asiFilters) {
             });
         },
         "aoColumns": [
-            { "sWidth": "5%", "iDataSort": 10, "sClass": "align-center" },
-            { "sWidth": "5%", "sClass": "align-center" },
-            { "sWidth": "10%", "sType": "date", "sClass": "align-center" },
-            { "sWidth": "5%", "sClass": "align-center" },
-            { "sWidth": "5%", "sClass": "align-center" },
-            { "sWidth": "5%", "sClass": "align-center" },
-            { "sWidth": "10%", "sClass": "align-center" },
-            { "sWidth": "10%", "sClass": "align-center" },
-            { "sWidth": "10%", "sClass": "align-center" },
-            { "sWidth": "35%" },
+            { "iDataSort": 10, "sClass": "alert-summary-cell essential align-center no-wrap" },
+            { "sClass": "alert-summary-cell optional align-center" },
+            { "sType": "date", "sClass": "alert-summary-cell optional align-center" },
+            { "sClass": "alert-summary-cell full align-center" },
+            { "sClass": "alert-summary-cell essential align-center" },
+            { "sClass": "alert-summary-cell optional align-center" },
+            { "sClass": "alert-summary-cell essential align-center" },
+            { "sClass": "alert-summary-cell essential align-center" },
+            { "sClass": "alert-summary-cell essential align-center" },
+            { "sClass" : "alert-summary-cell full" },
             { "bVisible": false }
         ],
         "aaSorting": [
@@ -426,14 +480,14 @@ function fnFormatDetails(aData) {
         graphUrls += '<a href="' + graph + '" target="_blank">Graph ' + y + '</a> ';
     });
 
-    var historydata = '<table class="table table-condensed"><thead><td colspan="2"><b>History </b></td></thead><tbody><tr><td>';
+    var historydata = '<section class="history-wrapper"><table class="table table-condensed"><thead><td colspan="2"><b>History </b></td></thead><tbody><tr><td>';
 
     if (history) {
         var reverseHistory = history.reverse();
         $.each(reverseHistory, function (y, hist) {
             if (hist.event) {
                 historydata += // '<hr/>' +
-                    '<table class="table table-condensed table-striped">' +
+                    '<table class="table table-condensed table-striped alert-detail-history">' +
                         '<tr><td><b>Event</b></td><td>' + hist.event + '</td></tr>' +
                         '<tr><td><b>Severity</b></td><td>' + sev2label(hist.severity) + '</td></tr>' +
                         '<tr><td><b>Alert ID</b></td><td>' + hist.id + '</td></tr>' +
@@ -453,10 +507,14 @@ function fnFormatDetails(aData) {
                         '';
             }
         });
-        historydata += '</td></tr></tbody></table>'
+        historydata += '</td></tr></tbody></table></section>'
     }
 
     var sOut = "";
+
+    sOut += '<div class="alert-detail">'; // 1
+
+    sOut += '<section class="alert-detail-summary-wrapper">'
 
     sOut += '<div class="btn-group alert-summary-actions">';
 
@@ -469,8 +527,6 @@ function fnFormatDetails(aData) {
     sOut += '<button id="' + alertid + '" class="btn-mini delete-alert" rel="tooltip" title="Delete Alert"><i class="icon-trash"></i> Delete</button>';
 
     sOut += '</div>'
-
-    sOut += '<table border=1><tbody><tr><td>'; // 1
 
     sOut += '<table class="table table-condensed table-striped">';  // 2
     sOut += '<tr class="odd"><td><b>Alert ID</td><td>' + alertid;
@@ -503,9 +559,9 @@ function fnFormatDetails(aData) {
     sOut += '<tr class="even"><td><b>Graphs</b></td><td>' + graphUrls + '</td></tr>';
     sOut += '</table>'; // 2
 
-    sOut += '</td><td>'; // 1
+    sOut += '</section>'
     sOut += historydata;
-    sOut += '</td></tr></tbody></table>'; // 1
+    sOut += '</div>'; // 1
 
     return sOut;
 }
@@ -766,5 +822,11 @@ $(document).ready(function () {
                 data: JSON.stringify({ tag: tag })
             });
         }
+    });
+
+    Alerta.dropDownText(window);
+
+    $(window).resize(function() {
+        Alerta.dropDownText(window);
     });
 });

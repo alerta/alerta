@@ -140,11 +140,76 @@ table {
     display: none;
 }
 
-td {
-    white-space: nowrap;
-}
-
 .row-fluid {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
+}
+
+.alerts-display .no-wrap {
+    white-space: nowrap;
+}
+
+.alerts-display .alert-summary-cell {
+    display: none;
+}
+
+.alerts-display .essential {
+    display: table-cell;
+}
+
+@media screen and (min-width: 700px) {
+    .alerts-display .optional {
+        display: table-cell;
+    }
+}
+
+@media screen and (min-width: 1000px) {
+    .alerts-display .full {
+        display: table-cell;
+    }
+
+    .alert-detail-summary {
+        max-width: 40rem;
+    }
+}
+
+@media screen and (max-width: 400px) {
+    .details td {
+        display: inline-block;
+    }
+}
+
+.alert-detail-summary-wrapper, .history-wrapper {
+    display: block;
+    width: 100%;
+}
+
+
+@media screen and (min-width: 30rem) {
+    .alert-detail-summary-wrapper, .history-wrapper {
+        display: inline-block;
+        max-width: 30rem;
+        width: auto;
+        margin: 0.25rem 0.5rem;
+        vertical-align: top;
+    }
+}
+
+.select-full-text, .refresh-button-text {
+    display: none;
+}
+
+@media screen and (min-width: 30rem) {
+    .select-full-text, .refresh-button-text {
+        display: inline;
+    }
+}
+
+.filters {
+    display:inline-block;
+    max-width: 25rem;
+}
+
+.alert-filter {
+    width: auto;
 }
