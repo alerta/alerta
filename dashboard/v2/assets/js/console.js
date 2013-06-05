@@ -257,7 +257,17 @@ var Alerta = {
         }
     },
     deleteRows: function (button, config, flash) {
-        console.log("Hello delete button!");
+        $('#alerts .active').each(function(index, elem) {
+            Alerta.deleteAlert($(elem).data("alert-id"));
+        });
+    },
+    deleteAlert: function(alertId) {
+        $.ajax({
+            type: 'POST',
+            contentType: 'application/json',
+            url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + alertId,
+            data: JSON.stringify({ _method: 'delete' })
+        });
     }
 };
 
@@ -341,7 +351,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'alert-summary' + ' severity-' + aData[0] + ' status-' + aData[1];
-            $(nRow).attr('id', 'row-' + aData[11]);
+            $(nRow).attr('id', 'row-' + aData[11]).data("alert-id", aData[11]);
 
             if (aData[17] == "noChange") {
                 ti = '<i class="icon-minus"></i>&nbsp;'
@@ -797,12 +807,7 @@ $(document).ready(function () {
             + 'remove the alert from all user consoles.\n\n'
             + 'Cancel to return to the console or OK to delete.')) {
 
-            $.ajax({
-                type: 'POST',
-                contentType: 'application/json',
-                url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id,
-                data: JSON.stringify({ _method: 'delete' })
-            });
+            Alerta.deleteAlert(this.id);
             // FIXME(nsatterl): Should immediately delete the row from the console
             // oTable.fnDeleteRow(
             //    oTable.fnGetPosition(
