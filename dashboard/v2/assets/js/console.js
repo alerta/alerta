@@ -255,6 +255,9 @@ var Alerta = {
                 rewriteValues(id, labels[id]);
             }
         }
+    },
+    deleteRows: function (button, config, flash) {
+        console.log("Hello delete button!");
     }
 };
 
@@ -431,7 +434,13 @@ function updateAlertsTable(env_filter, asiFilters) {
         ],
         "oTableTools" : {
             "sRowSelect" : "multi",
-            "aButtons" : ["select_all", "select_none"]
+            "aButtons" : [
+                {
+                    "sExtends" : "ajax",
+                    "sButtonText" : "Delete",
+                    "fnClick" : Alerta.deleteRows
+                },
+                "select_all", "select_none"]
         }
     });
 
