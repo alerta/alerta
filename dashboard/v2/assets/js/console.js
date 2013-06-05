@@ -334,6 +334,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         "bDeferRender": true,
         "bAutoWidth" :false,
         "bStateSave" : true,
+        "sDom": "<'row-fluid'<'span4'l><'span4'f><'span4'T>r>t<'row-fluid'<'span6'i><'span6'p>>",
         "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'alert-summary' + ' severity-' + aData[0] + ' status-' + aData[1];
@@ -428,6 +429,10 @@ function updateAlertsTable(env_filter, asiFilters) {
             [0, 'asc'],
             [2, 'desc']
         ],
+        "oTableTools" : {
+            "sRowSelect" : "multi",
+            "aButtons" : ["select_all", "select_none"]
+        }
     });
 
     if (autoRefresh) {
@@ -566,7 +571,7 @@ function fnFormatDetails(aData) {
     return sOut;
 }
 
-$('#alerts tbody tr').live('click', function () {
+$('#alerts tbody tr').live('dblclick', function (event) {
 
     var nTr = this;
 
@@ -576,11 +581,13 @@ $('#alerts tbody tr').live('click', function () {
         /* This row is already open - close it */
         // this.src = "../examples_support/details_open.png";
         oTable.fnClose(nTr);
+        $(this).removeClass("active");
     }
     else {
         /* Open this row */
         // this.src = "../examples_support/details_close.png";
         oTable.fnOpen(nTr, fnFormatDetails(oTable.fnGetData(nTr)), 'details');
+        $(this).addClass("active");
     }
 });
 
