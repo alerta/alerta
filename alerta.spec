@@ -2,10 +2,7 @@
 %define release 1
 # %%define version # Specified in the wrapper script
 
-%define pyver 26
-%define pybasever 2.6
-
-%define __python /usr/bin/python%{pybasever}
+%define __python /usr/bin/python
 
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
