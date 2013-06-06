@@ -274,8 +274,9 @@ var Alerta = {
 $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
 {
     var openRows = $("#alerts tr").filter(function () { return oTable.fnIsOpen(this); });
+    var selectedRows = $("#alerts tr.active");
 
-    if(openRows.length > 0) { return; }
+    if(openRows.length > 0 || selectedRows.length > 0) { return; }
 
     if ( typeof sNewSource != 'undefined' && sNewSource != null ) {
         oSettings.sAjaxSource = sNewSource;
