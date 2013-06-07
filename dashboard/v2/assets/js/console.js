@@ -437,14 +437,21 @@ function updateAlertsTable(env_filter, asiFilters) {
     }
 
     var searchTerm = $.url().param('search');
-    var statusIndicator = $.url().param('status-indicator');
+    var statusIndicator = $.url().param('service');
+    var severityLevel = $.url().param('level');
+
+    console.log(severityLevel);
 
     if(searchTerm) {
         oTable.fnFilter(searchTerm);
     }
 
     if(statusIndicator) {
-        $('#' + statusIndicator + "-status").click();
+        if(severityLevel) {
+            $('#' + statusIndicator + "-" + severityLevel).click();
+        } else {
+            $('#' + statusIndicator + "-status").click();
+        }
     }
 }
 
