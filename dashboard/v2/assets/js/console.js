@@ -437,8 +437,14 @@ function updateAlertsTable(env_filter, asiFilters) {
     }
 
     var searchTerm = $.url().param('search');
+    var statusIndicator = $.url().param('status-indicator');
+
     if(searchTerm) {
         oTable.fnFilter(searchTerm);
+    }
+
+    if(statusIndicator) {
+        $('#' + statusIndicator + "-status").click();
     }
 }
 
