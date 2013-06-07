@@ -435,6 +435,11 @@ function updateAlertsTable(env_filter, asiFilters) {
             refreshAlerts(true);
         }, REFRESH_INTERVAL * 1000);
     }
+
+    var searchTerm = $.url().param('search');
+    if(searchTerm) {
+        oTable.fnFilter(searchTerm);
+    }
 }
 
 function fnFormatDetails(aData) {
@@ -829,4 +834,5 @@ $(document).ready(function () {
     $(window).resize(function() {
         Alerta.dropDownText(window);
     });
+
 });
