@@ -260,8 +260,7 @@ var Alerta = {
         }
     },
     clearTableFilter: function() {
-        console.log("Clearing filter");
-        oTable.fnFilter("");
+         oTable.fnFilter("");
     }
 };
 
