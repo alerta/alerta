@@ -439,9 +439,9 @@ function updateAlertsTable(env_filter, asiFilters) {
         }, REFRESH_INTERVAL * 1000);
     }
 
-    var searchTerm = $.url().param('search');
-    var statusIndicator = $.url().param('service');
-    var severityLevel = $.url().param('level');
+    var searchTerm = $.url().fparam('search');
+    var statusIndicator = $.url().fparam('service');
+    var severityLevel = $.url().fparam('level');
 
     if(searchTerm) {
         oTable.fnFilter(searchTerm);
@@ -585,7 +585,7 @@ function fnFormatDetails(aData) {
     return sOut;
 }
 
-$('#alerts tbody tr').live('click', function () {
+$('#alerts tbody tr').on('click', function () {
 
     var nTr = this;
 
