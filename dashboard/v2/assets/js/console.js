@@ -202,6 +202,7 @@ $('#heartbeat-alerts').bind('closed', function () {
 });
 
 var Alerta = {
+    dashboardSelection: {},
     highlightStatusIndicator: function(statusIndicator) {
         $(".status-indicator").addClass("status-indicator-inactive").removeClass("current-filter");
         statusIndicator.addClass("current-filter");
@@ -261,6 +262,11 @@ var Alerta = {
     },
     clearTableFilter: function() {
          oTable.fnFilter("");
+    },
+    updateUrl: function() {
+        console.log(Alerta.dashboardSelection);
+        var currentUrl = $.url().attr('path') + '?' + $.param(Alerta.dashboardSelection);
+        history.pushState(null, null, currentUrl);
     }
 };
 
@@ -439,9 +445,9 @@ function updateAlertsTable(env_filter, asiFilters) {
         }, REFRESH_INTERVAL * 1000);
     }
 
-    var searchTerm = $.url().fparam('search');
-    var statusIndicator = $.url().fparam('service');
-    var severityLevel = $.url().fparam('level');
+    var searchTerm = $.url().param('search');
+    var statusIndicator = $.url().param('service');
+    var severityLevel = $.url().param('level');
 
     if(searchTerm) {
         oTable.fnFilter(searchTerm);
@@ -633,11 +639,16 @@ $('.status-indicator-overall').click(function () {
         refreshAlerts(false);
         statusIndicator.removeClass("current-filter")
         $(".status-indicator").removeClass("status-indicator-inactive");
-    } else {
+        delete Alerta.dashboardSelection["service"];
+     } else {
         filter = lookup[this.id.split('-')[0]];
         refreshAlerts(false);
         Alerta.highlightStatusIndicator(statusIndicator);
+        Alerta.dashboardSelection.service = statusIndicator.attr('id');
     }
+
+    delete Alerta.dashboardSelection["level"];
+    Alerta.updateUrl();
 });
 
 $('.status-indicator-count').click(function () {
@@ -652,6 +663,8 @@ $('.status-indicator-count').click(function () {
     refreshAlerts(false);
     var statusIndicator = $(this).parents(".status-indicator");
     Alerta.highlightStatusIndicator(statusIndicator);
+    Alerta.dashboardSelection.level = severity;
+    Alerta.updateUrl();
 });
 
 $('body').on('click', '#status-select .btn', function(e) {
