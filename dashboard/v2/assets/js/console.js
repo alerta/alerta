@@ -629,9 +629,7 @@ $('#refresh-all').click(function () {
 $('.status-indicator-overall').click(function () {
     var statusIndicator = $(this).parent(".status-indicator");
 
-    Alerta.clearTableFilter();
-
-    if(statusIndicator.hasClass("current-filter")) {
+   if(statusIndicator.hasClass("current-filter")) {
         filter = '';
         refreshAlerts(false);
         statusIndicator.removeClass("current-filter")
@@ -644,8 +642,7 @@ $('.status-indicator-overall').click(function () {
 });
 
 $('.status-indicator-count').click(function () {
-    Alerta.clearTableFilter();
-    
+
     filter = lookup[this.id.split('-')[0]];
     var severity = this.id.split('-')[1];
     filter += '&severity=' + severity;
@@ -852,6 +849,11 @@ $(document).ready(function () {
 
     $(window).resize(function() {
         Alerta.dropDownText(window);
+    });
+
+    var searchFilterClearingSelectors = ['.status-indicator-overall', '.status-indicator-count'];
+    jQuery.map(searchFilterClearingSelectors, function (value, idx) {
+        $(value).asEventStream("click").subscribe(Alerta.clearTableFilter);
     });
 
 });
