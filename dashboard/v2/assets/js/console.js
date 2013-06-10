@@ -2,6 +2,9 @@
 var API_HOST = document.domain + ':' + window.api_port;
 var REFRESH_INTERVAL = 30; // seconds
 
+var oTable;
+var autoRefresh = true;
+
 var hb_threshold = 300; // 5 minutes
 var show_hb_alerts = true;
 var lookup;
@@ -255,6 +258,10 @@ var Alerta = {
                 rewriteValues(id, labels[id]);
             }
         }
+    },
+    clearTableFilter: function() {
+        console.log("Clearing filter");
+        oTable.fnFilter("");
     }
 };
 
@@ -315,9 +322,6 @@ $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallba
         }
     }, oSettings );
 };
-
-var oTable;
-var autoRefresh = true;
 
 function updateAlertsTable(env_filter, asiFilters) {
 
@@ -439,8 +443,6 @@ function updateAlertsTable(env_filter, asiFilters) {
     var searchTerm = $.url().param('search');
     var statusIndicator = $.url().param('service');
     var severityLevel = $.url().param('level');
-
-    console.log(severityLevel);
 
     if(searchTerm) {
         oTable.fnFilter(searchTerm);
@@ -627,6 +629,8 @@ $('#refresh-all').click(function () {
 $('.status-indicator-overall').click(function () {
     var statusIndicator = $(this).parent(".status-indicator");
 
+    Alerta.clearTableFilter();
+
     if(statusIndicator.hasClass("current-filter")) {
         filter = '';
         refreshAlerts(false);
@@ -640,6 +644,8 @@ $('.status-indicator-overall').click(function () {
 });
 
 $('.status-indicator-count').click(function () {
+    Alerta.clearTableFilter();
+    
     filter = lookup[this.id.split('-')[0]];
     var severity = this.id.split('-')[1];
     filter += '&severity=' + severity;
