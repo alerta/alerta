@@ -264,9 +264,25 @@ var Alerta = {
          oTable.fnFilter("");
     },
     updateUrl: function() {
-        console.log(Alerta.dashboardSelection);
         var currentUrl = $.url().attr('path') + '?' + $.param(Alerta.dashboardSelection);
         history.pushState(null, null, currentUrl);
+    },
+    restoreDashboardState: function (dataTable, url) {
+        var searchTerm = url.param('search');
+        var statusIndicator = url.param('service');
+        var severityLevel = url.param('level');
+
+        if(searchTerm) {
+            dataTable.fnFilter(searchTerm);
+        }
+
+        if(statusIndicator) {
+            if(severityLevel) {
+                $('#' + statusIndicator + "-" + severityLevel).click();
+            } else {
+                $('#' + statusIndicator + "-status").click();
+            }
+        }
     }
 };
 
@@ -445,21 +461,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         }, REFRESH_INTERVAL * 1000);
     }
 
-    var searchTerm = $.url().param('search');
-    var statusIndicator = $.url().param('service');
-    var severityLevel = $.url().param('level');
-
-    if(searchTerm) {
-        oTable.fnFilter(searchTerm);
-    }
-
-    if(statusIndicator) {
-        if(severityLevel) {
-            $('#' + statusIndicator + "-" + severityLevel).click();
-        } else {
-            $('#' + statusIndicator + "-status").click();
-        }
-    }
+    Alerta.restoreDashboardState(oTable, $.url());
 }
 
 function fnFormatDetails(aData) {
@@ -855,6 +857,10 @@ $(document).ready(function () {
                 data: JSON.stringify({ tag: tag })
             });
         }
+    });
+
+    window.addEventListener("popstate", function (event) {
+        Alerta.restoreDashboardState(oTable, $.url());
     });
 
     Alerta.dropDownText(window);
