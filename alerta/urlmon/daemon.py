@@ -21,7 +21,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import StatsD
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -59,17 +59,6 @@ def init_urls():
     LOG.info('Loaded %d URLs OK', len(urls))
 
     return urls
-
-
-# Do not follow redirects
-class NoRedirection(urllib2.HTTPRedirectHandler):
-    def http_error_302(self, req, fp, code, msg, headers):
-        result = urllib2.HTTPRedirectHandler.http_error_302(self, req, fp, code, msg, headers)
-        result.status = code
-        result.code = code
-        return result
-
-    http_error_301 = http_error_303 = http_error_307 = http_error_302
 
 
 class WorkerThread(threading.Thread):
@@ -133,7 +122,6 @@ class WorkerThread(threading.Thread):
                 else:
                     opener = urllib2.build_opener(auth_handler)
             else:
-                redir_handler = NoRedirection()
                 if proxy:
                     opener = urllib2.build_opener(redir_handler, proxy_handler)
                 else:
