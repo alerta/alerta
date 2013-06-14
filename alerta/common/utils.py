@@ -8,7 +8,7 @@ def isfloat(v):
     try:
         float(v)
         return True
-    except ValueError:
+    except (ValueError, TypeError):
         return False
 
 
