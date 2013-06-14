@@ -13,7 +13,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 from alerta.common.graphite import StatsD
 
-Version = '2.0.6'
+Version = '2.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -166,7 +166,11 @@ class ServerMessage(MessageHandler):
                 LOG.debug('Queueing successfully parsed heartbeat %s', heartbeat.get_body())
                 self.queue.put(heartbeat)
         elif headers['type'].endswith('Alert'):
-            alert = Alert.parse_alert(body)
+            try:
+                alert = Alert.parse_alert(body)
+            except ValueError, e:
+                LOG.error('Malformed alert could not be parsed - %s: %s', e, body)
+                return
             if alert:
                 alert.receive_now()
                 LOG.debug('Queueing successfully parsed alert %s', alert.get_body())

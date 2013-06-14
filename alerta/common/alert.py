@@ -61,6 +61,11 @@ class Alert(object):
 
         prog = os.path.basename(sys.argv[0])
 
+        if not resource:
+            raise ValueError('Missing mandatory value for resource')
+        if not event:
+            raise ValueError('Missing mandatory value for event')
+
         self.resource = resource
         self.event = event
         self.correlate = correlate or list()
@@ -76,7 +81,7 @@ class Alert(object):
         self.previous_severity = previous_severity
         self.environment = environment or ['PROD']
         self.service = service or ['Undefined']
-        self.text = text
+        self.text = text or ''
         self.event_type = event_type
         self.tags = tags or list()
         self.origin = origin or '%s/%s' % (prog, os.uname()[1])
