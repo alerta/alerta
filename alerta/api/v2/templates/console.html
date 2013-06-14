@@ -1,35 +1,6 @@
-<html lang="en">
-<head>
-    <!-- link href='http://fonts.googleapis.com/css?family=Sintony:400,700' rel='stylesheet' type='text/css' -->
+{% extends "index.html" %}
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
-
-    <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.js"></script>
-    <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.dataTables.min.js"></script>
-
-    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
-    <style type="text/css">
-        body {
-            padding-top: 40px;
-            padding-bottom: 40px;
-        }
-    </style>
-    <link href="/alerta/dashboard/v2/assets/css/custom.css" rel="stylesheet">
-
-</head>
-
-<body>
-<div class="navbar navbar-inverse navbar-fixed-top">
-    <div class="navbar-inner">
-        <div class="container">
-            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </a>
-            <a class="brand" href="index.html">Alert Console</a>
+{% block navigation %}
             <div class="nav-collapse">
                 <ul class="nav">
                     <li class="active"><a href="console.html">Production</a></li>
@@ -39,64 +10,9 @@
                     <li class=""><a href="null.html">About</a></li>
                 </ul>
             </div><!--/.nav-collapse -->
-        </div>
-    </div>
-</div>
+{% endblock %}
 
-<div class="container">
-    <table width="100%">
-        <tr>
-            <span id="heartbeat-alerts"></span>
-            <div id="console-alert" class="alert alert-info initially-hidden">
-                <button class="close" data-dismiss="alert" onclick="">&times;</button>
-                <strong>Warning!</strong> <span id="warning-text"></span>
-            </div>
-        </tr>
-        <tr>
-            <td>
-                <!-- div  id="status-counts" -->
-                <table border=1 class="table table-bordered table-condensed"  id="status-counts">
-                    <tbody>
-                    <tr id="alert-status" class="status">
-                        <td><span class="label">Open</span></td>
-                        <td id="count-open"><b>0</b></td>
-                        <td><span class="label">Ack</span></td>
-                        <td id="count-ack"><b>0</b></td>
-                        <td><span class="label">Closed</span></td>
-                        <td id="count-closed"><b>0</b></td>
-                    </tr>
-                    </tbody>
-                </table>
-                <!-- /div -->
-            </td>
-            <td>
-                <div align="right">
-                    <select id="status-select" class="btn" name="status" onchange="updateStatus(this.value)" style="width:150px">
-                        <option value="open">Open</option>
-                        <option value="ack">Ack</option>
-                        <option value="closed">Closed</option>
-                    </select>
-                    <select id="limit-select" class="btn" name="limit" onchange="updateLimit(this.value)" style="width:150px">
-                        <option value="0">No limit</option>
-                        <option value="10">Only 10</option>
-                        <option value="50">Only 50</option>
-                        <option value="100">Only 100</option>
-                        <option value="500">Only 500</option>
-                    </select>
-                    <select id="from-date-select" class="btn" name="last" onchange="updateFromDate(this.value)" style="width:150px">
-                        <option value="0">All alerts</option>
-                        <option value="120">Last 2 minutes</option>
-                        <option value="300">Last 5 minutes</option>
-                        <option value="600">Last 10 minutes</option>
-                        <option value="1800">Last 30 minutes</option>
-                        <option value="3600">Last 1 hour</option>
-                    </select>
-                    <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i> Refresh Now</button>
-                </div>
-            </td>
-        </tr>
-    </table>
-
+{% block status_indicators %}
     <div class="row show-grid status-indicators">
         <div class="span12">
             <div class="row show-grid">
@@ -175,60 +91,9 @@
             </div>
         </div>
     </div>
-    <!-- Alert Details -->
-    <div class="row show-grid">
-        <div class="span12">
+{% endblock %}
 
-            <table cellpadding="0" cellspacing="0" border="0" class="display table table-bordered table-condensed"
-                   id="alerts">
-                <thead>
-                <tr>
-                    <th>Severity</th>
-                    <th>Status</th>
-                    <th>Last Receive Time</th>
-                    <th>Dupl.</th>
-                    <th>Environment</th>
-                    <th>Service</th>
-                    <th>Resource</th>
-                    <th>Event</th>
-                    <th>Value</th>
-                    <th>Text</th>
-                    <th>Severity Code</th>
-                </tr>
-                </thead>
-                <tbody>
-
-                </tbody>
-                <tfoot>
-                <tr>
-                    <th>Severity</th>
-                    <th>Status</th>
-                    <th>Last Receive Time</th>
-                    <th>Dupl.</th>
-                    <th>Environment</th>
-                    <th>Service</th>
-                    <th>Resource</th>
-                    <th>Event</th>
-                    <th>Value</th>
-                    <th>Text</th>
-                    <th>Severity Code</th>
-                </tr>
-                </tfoot>
-            </table>
-
-        </div>
-    </div>
-    <!-- end Alert Details -->
-
-</div>
-<!-- end container -->
-
-<script>
-    var api_port = {{ config['api_port'] }};
-</script>
-
-<script src="/alerta/dashboard/v2/assets/js/console.js"></script>
-
+{% block initialiser %}
 <script>
     $(document).ready(function() {
 
@@ -246,6 +111,4 @@
         updateAlertsTable(env_filter, asiFilters);
     });
 </script>
-
-</body>
-</html>
+{% endblock %}
