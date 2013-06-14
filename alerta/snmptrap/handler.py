@@ -38,7 +38,9 @@ class SnmpTrapHandler(object):
     def run(self):
 
         data = sys.stdin.read()
-        LOG.info('snmptrapd -> %s', data)
+        LOG.info('snmptrapd -> %r', data)
+        data = unicode(data, errors='ignore')
+        LOG.debug('unicoded -> %s', data)
 
         snmptrapAlert = SnmpTrapHandler.parse_snmptrap(data)
 
