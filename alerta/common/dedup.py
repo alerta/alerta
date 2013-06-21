@@ -87,6 +87,9 @@ class DeDup(object):
     @classmethod
     def is_send(cls, dedupAlert):
 
+        if dedupAlert.event_type == 'Heartbeat':
+            return True
+
         dedup_by = (tuple(dedupAlert.environment), dedupAlert.resource, dedupAlert.event)
         dedup_count = (tuple(dedupAlert.environment), dedupAlert.resource, dedupAlert.event, dedupAlert.severity)
 
