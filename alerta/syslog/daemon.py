@@ -12,7 +12,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -201,6 +201,9 @@ class SyslogDaemon(Daemon):
                 LOG.warning('Suppressing %s.%s alert', facility, level)
                 LOG.debug('%s', syslogAlert)
                 continue
+
+            if syslogAlert.get_type() == 'Heartbeat':
+                syslogAlert = Heartbeat(origin=syslogAlert.origin, version='n/a')
 
             syslogAlerts.append(syslogAlert)
 

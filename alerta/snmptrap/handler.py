@@ -10,7 +10,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.api import ApiClient
 
-Version = '2.0.8'
+Version = '2.0.9'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -189,6 +189,9 @@ class SnmpTrapHandler(object):
             return
 
         snmptrapAlert.translate(trapvars)
+
+        if snmptrapAlert.get_type() == 'Heartbeat':
+            snmptrapAlert = Heartbeat(origin=snmptrapAlert.origin, version='n/a')
 
         return snmptrapAlert
 
