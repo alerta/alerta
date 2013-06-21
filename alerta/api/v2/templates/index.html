@@ -57,23 +57,17 @@
             <button id="status-select-closed" type="button" class="btn" value="closed">Closed <span id="count-closed" class="label">0</span></button>
         </div>
     </div>
-    <div class="span6" align="right">
-        <div class="btn-group filters">
-            <select id="limit-select" class="btn alert-filter" name="limit" onchange="updateLimit(this.value)">
-                <option value="0">None</option>
-                <option value="10">10</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="500">500</option>
-            </select>
-            <select id="from-date-select" class="btn alert-filter" name="last" onchange="updateFromDate(this.value)">
-                <option value="0">All</option>
-                <option value="120">2m</option>
-                <option value="300">5m</option>
-                <option value="600">10m</option>
-                <option value="1800">30m</option>
-                <option value="3600">1h</option>
-            </select>
+    <div class ="span4">
+        <div id="from-date-select" class="btn-group" data-toggle="buttons-radio">
+            <button type="button" class="btn" name="last" value="300">5m</button>
+            <button type="button" class="btn" name="last" value="900">15m</button>
+            <button type="button" class="btn" name="last" value="3600">1h</button>
+            <button type="button" class="btn" name="last" value="86400">1d</button>
+            <button type="button" class="btn active" name="last" value="0">All</button>
+        </div>
+    </div>
+    <div class ="span2" align="right">
+        <div>
             <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i><span class="refresh-button-text"> Refresh Now</span></button>
         </div>
     </div>

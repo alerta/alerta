@@ -239,7 +239,7 @@ var Alerta = {
                     "100" : "100",
                     "500" : "500"
                 }
-            },
+            }
         };
 
         var rewriteValues = function(id, labelsLookup) {
@@ -697,30 +697,26 @@ $('body').on('click', '#status-select .btn', function(e) {
     refreshAlerts(false);
 });
 
-function updateStatus(s) {
-    status = '&status=' + s;
-    updateStatusCounts(gEnvFilter, false);
-    updateAllIndicators(gEnvFilter, lookup, false);
-    refreshAlerts(false);
-}
+$('body').on('click', '#from-date-select .btn', function() {
 
-function updateLimit(count) {
-    if (count > 0) {
-        limit = '&limit=' + count;
-    } else {
-        limit = '';
-    }
-    updateStatusCounts(gEnvFilter, false);
-    updateAllIndicators(gEnvFilter, lookup, false);
-    refreshAlerts(false);
-}
+    $('#from-date-select button').removeClass('active');
+    $(this).addClass('active');
 
-function updateFromDate(seconds) {
+    var seconds = $(this).val();
+
     if (seconds > 0) {
         from = '&from-date=' + new Date(new Date() - seconds * 1000).toISOString();
     } else {
         from = '';
     }
+
+    updateStatusCounts(gEnvFilter, false);
+    updateAllIndicators(gEnvFilter, lookup, false);
+    refreshAlerts(false);
+});
+
+function updateStatus(s) {
+    status = '&status=' + s;
     updateStatusCounts(gEnvFilter, false);
     updateAllIndicators(gEnvFilter, lookup, false);
     refreshAlerts(false);
