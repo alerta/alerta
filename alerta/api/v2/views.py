@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields
 
 
-Version = '2.0.13'
+Version = '2.0.14'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -343,6 +343,7 @@ def create_heartbeat():
         origin=data.get('origin', None),
         version=data.get('version', None),
         heartbeatid=data.get('id', None),
+        interval=data.get('interval', None),
     )
     LOG.debug('New heartbeat %s', heartbeat)
     mq.send(heartbeat)
