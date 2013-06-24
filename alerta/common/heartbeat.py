@@ -12,7 +12,7 @@ from alerta.common.utils import DateEncoder
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-DEFAULT_HEARTBEAT = 300  # seconds
+DEFAULT_HEARTBEAT = 3600  # seconds
 
 
 class Heartbeat(object):
