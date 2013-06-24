@@ -256,6 +256,9 @@ class Alert(object):
         for c in conf:
             LOG.debug('YAML config: %s', c)
 
+            match = None
+            pattern = None
+
             if self.get_type() == 'snmptrapAlert' and trapoid and c.get('trapoid'):
                 match = re.match(c['trapoid'], trapoid)
                 pattern = trapoid
@@ -263,11 +266,11 @@ class Alert(object):
                 match = fnmatch.fnmatch('%s.%s' % (facility, level), c['priority'])
                 pattern = c['priority']
             elif c.get('match'):
-                match = all(item in self.__dict__.items() for item in c['match'].items())
-                pattern = c['match'].items()
-            else:
-                match = None
-                pattern = None
+                try:
+                    match = all(item in self.__dict__.items() for item in c['match'].items())
+                    pattern = c['match'].items()
+                except AttributeError:
+                    pass
 
             if match:
                 LOG.debug('Matched %s for %s', pattern, self.get_type())
