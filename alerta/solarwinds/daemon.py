@@ -11,7 +11,7 @@ from alerta.common.dedup import DeDup
 from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS, SOLAR_WINDS_CORRELATED_EVENTS
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.6'
+Version = '2.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -122,14 +122,14 @@ class SolarWindsDaemon(Daemon):
             severity = SOLAR_WINDS_SEVERITY_LEVELS.get(row.c7, None)
             group = 'Orion'
             value = '%s' % row.c6
-            text = '%s' % row.c5
+            text = '%s' % unicode(row.c5, 'utf-8', errors='ignore')
             environment = ['INFRA']
             service = ['Network']
             tags = None
             timeout = None
             threshold_info = None
             summary = None
-            raw_data = str(row)
+            raw_data = unicode(row, 'utf-8', errors='ignore')
             create_time = datetime.datetime.strptime(row.c1[:-5]+'Z', '%Y-%m-%dT%H:%M:%S.%fZ')
 
             solarwindsAlert = Alert(

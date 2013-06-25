@@ -10,7 +10,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.api import ApiClient
 
-Version = '2.0.10'
+Version = '2.0.11'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -39,7 +39,7 @@ class SnmpTrapHandler(object):
 
         data = sys.stdin.read()
         LOG.info('snmptrapd -> %r', data)
-        data = unicode(data, errors='ignore')
+        data = unicode(data, 'utf-8', errors='ignore')
         LOG.debug('unicoded -> %s', data)
 
         snmptrapAlert = SnmpTrapHandler.parse_snmptrap(data)

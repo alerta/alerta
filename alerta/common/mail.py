@@ -75,7 +75,7 @@ class Mailer(object):
         msg['To'] = ", ".join(mail_to)
         msg.preamble = self.subject
 
-        msg_text = MIMEText(self.text, 'plain')
+        msg_text = MIMEText(self.text, 'plain', 'utf-8')
         msg.attach(msg_text)
 
         for graph in self.graph_urls:

@@ -12,7 +12,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -71,10 +71,12 @@ class SyslogDaemon(Daemon):
                     for i in ip:
                         if i == udp:
                             data, addr = udp.recvfrom(4096)
+                            data = unicode(data, 'utf-8', errors='ignore')
                             LOG.debug('Syslog UDP data received from %s: %s', addr, data)
                         if i == tcp:
                             client, addr = tcp.accept()
                             data = client.recv(4096)
+                            data = unicode(data, 'utf-8', errors='ignore')
                             client.close()
                             LOG.debug('Syslog TCP data received from %s: %s', addr, data)
 

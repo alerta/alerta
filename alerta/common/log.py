@@ -31,7 +31,7 @@ def setup(name):
     logpath = _get_log_file_path()
     if logpath:
         try:
-            filelog = logging.handlers.WatchedFileHandler(logpath)
+            filelog = logging.handlers.WatchedFileHandler(logpath, encoding='utf-8')
         except IOError:
             raise
         log_root.addHandler(filelog)
