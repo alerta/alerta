@@ -144,7 +144,7 @@ function heartbeatAlerts() {
                 since = secs + ' seconds';
             }
 
-            if (diff > hb.interval * 4 && show_hb_alerts) {
+            if (diff > hb.timeout * 4 && show_hb_alerts) {
                 hbalerts += '<div class="alert alert-error">' +
                         '<a class="close" data-dismiss="alert" href="#">&times;</a>' +
                         '<strong>Important!</strong> ' + hb.origin + ' has not sent a heartbeat for ' + since +

@@ -343,7 +343,7 @@ def create_heartbeat():
         origin=data.get('origin', None),
         version=data.get('version', None),
         heartbeatid=data.get('id', None),
-        interval=data.get('interval', None),
+        timeout=data.get('timeout', None),
     )
     LOG.debug('New heartbeat %s', heartbeat)
     mq.send(heartbeat)

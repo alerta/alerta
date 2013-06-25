@@ -191,7 +191,7 @@ class SnmpTrapHandler(object):
         snmptrapAlert.translate(trapvars)
 
         if snmptrapAlert.get_type() == 'Heartbeat':
-            snmptrapAlert = Heartbeat(origin=snmptrapAlert.origin, version='n/a')
+            snmptrapAlert = Heartbeat(origin=snmptrapAlert.origin, version='n/a', timeout=snmptrapAlert.timeout)
 
         return snmptrapAlert
 

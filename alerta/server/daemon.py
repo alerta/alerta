@@ -39,7 +39,7 @@ class WorkerThread(threading.Thread):
                 incomingAlert = self.queue.get(True, CONF.loop_every)
             except Queue.Empty:
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version, interval=CONF.loop_every)
+                heartbeat = Heartbeat(version=Version, timeout=CONF.loop_every)
                 self.mq.send(heartbeat)
                 continue
 
@@ -208,7 +208,7 @@ class AlertaDaemon(Daemon):
         while not self.shuttingdown:
             try:
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version, interval=CONF.loop_every)
+                heartbeat = Heartbeat(version=Version, timeout=CONF.loop_every)
                 self.mq.send(heartbeat)
 
                 LOG.debug('Internal queue size is %s messages', self.queue.qsize())

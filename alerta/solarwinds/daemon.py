@@ -157,8 +157,8 @@ class SolarWindsDaemon(Daemon):
                 LOG.debug('%s', solarwindsAlert)
                 continue
 
-            if solarwindsAlerts.get_type() == 'Heartbeat':
-                solarwindsAlerts = Heartbeat(origin=solarwindsAlerts.origin, version='n/a')
+            if solarwindsAlert.get_type() == 'Heartbeat':
+                solarwindsAlert = Heartbeat(origin=solarwindsAlert.origin, version='n/a', timeout=solarwindsAlert.timeout)
 
             solarwindsAlerts.append(solarwindsAlert)
 

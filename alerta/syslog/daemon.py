@@ -203,7 +203,7 @@ class SyslogDaemon(Daemon):
                 continue
 
             if syslogAlert.get_type() == 'Heartbeat':
-                syslogAlert = Heartbeat(origin=syslogAlert.origin, version='n/a')
+                syslogAlert = Heartbeat(origin=syslogAlert.origin, version='n/a', timeout=syslogAlert.timeout)
 
             syslogAlerts.append(syslogAlert)
 
