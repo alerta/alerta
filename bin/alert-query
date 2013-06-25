@@ -193,6 +193,13 @@ def main(argv):
             dest="not_text"
         )
         parser.add_argument(
+            "--repeat",
+            action="store",
+            choices=['true', 'false'],
+            default='true',
+            dest="repeat"
+        )
+        parser.add_argument(
             "--show",
             action="append",
             dest="show",

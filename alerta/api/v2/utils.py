@@ -34,9 +34,12 @@ def parse_fields(request):
         query['$or'] = [{'_id': {'$regex': '^' + request.args['id']}},
                         {'lastReceiveId': {'$regex': '^' + request.args['id']}}]
 
+    if request.args.get('repeat', None):
+        query['repeat'] = True if request.args.get('repeat', 'true') == 'true' else False
+
     for field in [fields for fields in request.args if fields.lstrip('-') in ATTRIBUTES]:
-        if field == 'id':
-            # Don't process queries on "id" twice
+        if field in ['id', 'repeat']:
+            # Don't process queries on "id" or "repeat" twice
             continue
         value = request.args.getlist(field)
         if len(value) == 1:

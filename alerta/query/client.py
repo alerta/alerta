@@ -113,6 +113,9 @@ class QueryClient(object):
         if CONF.not_text:
             query['-text'] = '|'.join(CONF.not_text)
 
+        if CONF.repeat:
+            query['repeat'] = CONF.repeat
+
         if CONF.sortby:
             query['sort-by'] = CONF.sortby
 
