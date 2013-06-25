@@ -21,7 +21,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import StatsD
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -123,9 +123,9 @@ class WorkerThread(threading.Thread):
                     opener = urllib2.build_opener(auth_handler)
             else:
                 if proxy:
-                    opener = urllib2.build_opener(redir_handler, proxy_handler)
+                    opener = urllib2.build_opener(proxy_handler)
                 else:
-                    opener = urllib2.build_opener(redir_handler)
+                    opener = urllib2.build_opener()
             urllib2.install_opener(opener)
 
             if 'User-agent' not in headers:
