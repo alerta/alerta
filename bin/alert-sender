@@ -144,7 +144,7 @@ def main(argv):
             '--dry-run',
             action='store_true',
             default=False,
-            help='Do not send alert.'
+            help='Do not send alert. Output as Curl.'
         )
 
         config.parse_args(argv, version=Version, cli_parser=parser, daemon=False)
@@ -157,12 +157,6 @@ def main(argv):
             if not CONF.event:
                 parser.error("Must supply event name using -e or --event")
 
-            if not CONF.group:
-                parser.error("Must supply group using -g or --group")
-
-            if not CONF.value:
-                parser.error("Must supply event value using -v or --value")
-
             CONF.severity = severity_code.parse_severity(CONF.severity) or severity_code.NORMAL
 
             if not CONF.severity:
@@ -171,17 +165,6 @@ def main(argv):
                 CONF.severity = severity_code.parse_severity(CONF.severity)
                 if CONF.severity not in severity_code.ALL:
                     parser.error("Severity must be one of %s" % ','.join(severity_code.ALL))
-
-            if not CONF.environment:
-                parser.error("Must supply one or more environments using -E or --environment")
-            else:
-                CONF.environment = [x.upper() for x in CONF.environment]
-
-            if not CONF.service:
-                parser.error("Must supply one or more service using -S or --service")
-
-            if not CONF.text:
-                parser.error("Must supply alert text using -t or --text.")
 
             if CONF.correlate and CONF.event not in CONF.correlate:
                 CONF.correlate.append(CONF.event)
