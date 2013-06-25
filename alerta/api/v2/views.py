@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields
 
 
-Version = '2.0.14'
+Version = '2.0.15'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -84,10 +84,10 @@ def get_alerts():
             if body['severity'] in request.args.getlist('hide-alert-repeats') and body['repeat']:
                 continue
 
-            if not request.args.get('hide-alert-details', False, bool):
+            if not request.args.get('hide-alert-details', 'false') == 'true':
                 alert_details.append(body)
 
-            if request.args.get('hide-alert-history', False, bool):
+            if request.args.get('hide-alert-history', 'false') == 'true':
                 body['history'] = []
 
             found += 1
