@@ -1,0 +1,30 @@
+Source: alerta
+Maintainer: Nick Satterly <nick.satterly@guardian.co.uk>
+Section: python
+Priority: optional
+Build-Depends: python-setuptools (>= 0.6b3), debhelper (>= 7), python-support (>= 0.8.4)
+Standards-Version: 3.8.4
+XS-Python-Version: current
+
+Package: alerta
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+XB-Python-Version: >= 2.7
+Provides: ${python:Provides}
+Description: Alerta monitoring framework
+
+Package: alerta-server
+Architecture: all
+Depends: python-argparse, python-tz, alerta-common, python-flask, python-yaml, python-boto, python-pymongo, python-suds, apache2, mongodb, rabbitmq-server, logrotate
+# missing: stomppy, python-dynect
+Description: Alerta monitoring framework
+
+Package: alerta-client
+Architecture: all
+Depends: python-argparse, python-tz, alerta-common
+Description: Alerta monitoring framework
+
+Package: alerta-common
+Architecture: all
+Depends: alerta
+Description: Alerta monitoring framework
