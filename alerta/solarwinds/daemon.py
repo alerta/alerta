@@ -122,14 +122,14 @@ class SolarWindsDaemon(Daemon):
             severity = SOLAR_WINDS_SEVERITY_LEVELS.get(row.c7, None)
             group = 'Orion'
             value = '%s' % row.c6
-            text = '%s' % unicode(row.c5, 'utf-8', errors='ignore')
+            text = '%s' % row.c5
             environment = ['INFRA']
             service = ['Network']
             tags = None
             timeout = None
             threshold_info = None
             summary = None
-            raw_data = unicode(row, 'utf-8', errors='ignore')
+            raw_data = repr(row)
             create_time = datetime.datetime.strptime(row.c1[:-5]+'Z', '%Y-%m-%dT%H:%M:%S.%fZ')
 
             solarwindsAlert = Alert(

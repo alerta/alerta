@@ -13,7 +13,7 @@ from alerta.common import log as logging
 from alerta.common import status_code, severity_code
 from alerta.common import config
 
-Version = '2.0.5'
+Version = '2.0.6'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -194,6 +194,8 @@ class QueryClient(object):
                 print "        tags: %s" % ','.join(CONF.tags)
             if CONF.not_tags:
                 print "        tags: (not) %s" % ','.join(CONF.not_tags)
+            if CONF.repeat:
+                print "     repeats: %s" % CONF.repeat
             if CONF.limit:
                 print "       count: %d" % CONF.limit
             if CONF.query:
@@ -328,6 +330,7 @@ class QueryClient(object):
                         value) + end_color)
 
                 if 'text' in CONF.show:
+                    print(line_color + '   |%s' % (text.encode('utf-8')) + end_color)
                     print(line_color + '   |%s' % (text) + end_color)
 
                 if 'attributes' in CONF.show:
@@ -396,7 +399,7 @@ class QueryClient(object):
                                                                                     group,
                                                                                     event,
                                                                                     value) + end_color)
-                            print(line_color + '    |%s' % (text) + end_color)
+                            print(line_color + '    |%s' % (text.encode('utf-8')) + end_color)
                         if 'status' in hist:
                             update_time = datetime.datetime.strptime(hist['updateTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
                             update_time = update_time.replace(tzinfo=pytz.utc)
