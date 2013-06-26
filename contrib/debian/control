@@ -9,7 +9,7 @@ XS-Python-Version: current
 Package: alerta
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}
-XB-Python-Version: >= 2.7
+XB-Python-Version: >= 2.6
 Provides: ${python:Provides}
 Description: Alerta monitoring framework
 
