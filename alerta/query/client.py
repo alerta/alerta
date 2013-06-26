@@ -331,7 +331,6 @@ class QueryClient(object):
 
                 if 'text' in CONF.show:
                     print(line_color + '   |%s' % (text.encode('utf-8')) + end_color)
-                    print(line_color + '   |%s' % (text) + end_color)
 
                 if 'attributes' in CONF.show:
                     print(
