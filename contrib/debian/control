@@ -21,7 +21,7 @@ Description: Alerta monitoring framework
 
 Package: alerta-client
 Architecture: all
-Depends: python-argparse, python-tz, alerta-common
+Depends: python-argparse, python-tz, python-yaml, alerta-common
 Description: Alerta monitoring framework
 
 Package: alerta-common
