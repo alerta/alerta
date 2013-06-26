@@ -22,4 +22,6 @@ if [ -d /var/log/alerta ]; then
     chmod 0755 /var/log/alerta
 fi
 
+#DEBHELPER#
+
 exit 0
