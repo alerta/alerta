@@ -230,6 +230,7 @@ class QueryClient(object):
                 response = json.loads(output.read())['response']
             except urllib2.URLError, e:
                 print "ERROR: Alert query %s failed - %s" % (url, e)
+                LOG.error('Alert query %s failed - %s', url, e)
                 sys.exit(1)
             except (KeyboardInterrupt, SystemExit):
                 sys.exit(0)
@@ -294,6 +295,7 @@ class QueryClient(object):
                         status = json.loads(output.read())['response']
                     except urllib2.URLError, e:
                         print "ERROR: Alert delete %s failed - %s" % (url, e)
+                        LOG.error('Alert delete %s failed - %s', url, e)
                         sys.exit(1)
                     except (KeyboardInterrupt, SystemExit):
                         sys.exit(0)
