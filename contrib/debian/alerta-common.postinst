@@ -14,14 +14,6 @@ if ! getent passwd alerta >/dev/null; then
     usermod -s "/bin/false" alerta
 fi
 
-if [ ! -d /var/log/alerta ]; then
-    mkdir -p /var/log/alerta
-fi
-if [ -d /var/log/alerta ]; then
-    chown -R alerta:alerta /var/log/alerta
-    chmod 0755 /var/log/alerta
-fi
-
 #DEBHELPER#
 
 exit 0
