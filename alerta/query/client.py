@@ -12,8 +12,9 @@ import pytz
 from alerta.common import log as logging
 from alerta.common import status_code, severity_code
 from alerta.common import config
+from alerta.common.graphite import StatsD
 
-Version = '2.0.6'
+Version = '2.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -440,6 +441,8 @@ class QueryClient(object):
                 severity_code._COLOR_MAP[
                     severity_code.DEBUG] + '%4d' % response['alerts']['severityCounts']['debug'] + severity_code.ENDC)
 
+        response_time = int((end - start) * 1000)
+
         if not CONF.nofooter:
             now = datetime.datetime.utcnow()
             now = now.replace(tzinfo=pytz.utc)
@@ -450,5 +453,8 @@ class QueryClient(object):
             print
             print "Total: %d%s (produced on %s at %s by %s,v%s on %s in %sms)" % (
                 count, has_more, now.astimezone(tz).strftime("%d/%m/%y"), now.astimezone(tz).strftime("%H:%M:%S %Z"),
-                os.path.basename(sys.argv[0]), Version, os.uname()[1], int((end - start) * 1000))
+                os.path.basename(sys.argv[0]), Version, os.uname()[1], response_time)
+
+        statsd = StatsD()
+        statsd.metric_send('alert.query.response_time.client', response_time, 'ms')
 
