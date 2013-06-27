@@ -19,7 +19,7 @@ def setup(name):
 
     log_root = getLogger(name)
 
-    if CONF.use_syslog is True:
+    if CONF.use_syslog:
         facility = CONF.syslog_facility
         try:
             syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
