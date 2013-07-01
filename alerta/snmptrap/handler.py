@@ -10,7 +10,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.api import ApiClient
 
-Version = '2.0.7'
+Version = '2.0.11'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -38,7 +38,9 @@ class SnmpTrapHandler(object):
     def run(self):
 
         data = sys.stdin.read()
-        LOG.info('snmptrapd -> %s', data)
+        LOG.info('snmptrapd -> %r', data)
+        data = unicode(data, 'utf-8', errors='ignore')
+        LOG.debug('unicoded -> %s', data)
 
         snmptrapAlert = SnmpTrapHandler.parse_snmptrap(data)
 
@@ -183,10 +185,13 @@ class SnmpTrapHandler(object):
 
         suppress = snmptrapAlert.transform_alert(trapoid=trapvars['$O'], trapvars=trapvars, varbinds=varbinds)
         if suppress:
-            LOG.warning('Suppressing alert %s', snmptrapAlert.get_id())
+            LOG.info('Suppressing %s SNMP trap', snmptrapAlert.event)
             return
 
         snmptrapAlert.translate(trapvars)
+
+        if snmptrapAlert.get_type() == 'Heartbeat':
+            snmptrapAlert = Heartbeat(origin=snmptrapAlert.origin, version='n/a', timeout=snmptrapAlert.timeout)
 
         return snmptrapAlert
 

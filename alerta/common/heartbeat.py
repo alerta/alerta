@@ -12,18 +12,21 @@ from alerta.common.utils import DateEncoder
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
+DEFAULT_TIMEOUT = 300  # seconds
+
 
 class Heartbeat(object):
 
-    def __init__(self, origin=None, version='unknown', heartbeatid=None, create_time=None):
+    def __init__(self, origin=None, version='unknown', heartbeatid=None, create_time=None, timeout=None):
 
         prog = os.path.basename(sys.argv[0])
 
         self.heartbeatid = heartbeatid or str(uuid4())
         self.event_type = 'Heartbeat'
-        self.create_time = create_time or datetime.datetime.utcnow()
         self.origin = origin or '%s/%s' % (prog, os.uname()[1])
         self.version = version
+        self.create_time = create_time or datetime.datetime.utcnow()
+        self.timeout = timeout or DEFAULT_TIMEOUT
 
     def get_id(self):
         return self.heartbeatid
@@ -42,6 +45,7 @@ class Heartbeat(object):
             'id': self.heartbeatid,
             'type': self.event_type,
             'createTime': self.create_time,
+            'timeout': self.timeout,
             'origin': self.origin,
             'version': self.version,
         }
@@ -80,4 +84,5 @@ class Heartbeat(object):
             version=heartbeat.get('version', None),
             heartbeatid=heartbeat.get('id', None),
             create_time=heartbeat.get('createTime', None),
+            timeout=heartbeat.get('timeout', None),
         )

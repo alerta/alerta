@@ -61,6 +61,11 @@ class Alert(object):
 
         prog = os.path.basename(sys.argv[0])
 
+        if not resource:
+            raise ValueError('Missing mandatory value for resource')
+        if not event:
+            raise ValueError('Missing mandatory value for event')
+
         self.resource = resource
         self.event = event
         self.correlate = correlate or list()
@@ -76,7 +81,7 @@ class Alert(object):
         self.previous_severity = previous_severity
         self.environment = environment or ['PROD']
         self.service = service or ['Undefined']
-        self.text = text
+        self.text = text or ''
         self.event_type = event_type
         self.tags = tags or list()
         self.origin = origin or '%s/%s' % (prog, os.uname()[1])
@@ -251,6 +256,9 @@ class Alert(object):
         for c in conf:
             LOG.debug('YAML config: %s', c)
 
+            match = None
+            pattern = None
+
             if self.get_type() == 'snmptrapAlert' and trapoid and c.get('trapoid'):
                 match = re.match(c['trapoid'], trapoid)
                 pattern = trapoid
@@ -258,11 +266,11 @@ class Alert(object):
                 match = fnmatch.fnmatch('%s.%s' % (facility, level), c['priority'])
                 pattern = c['priority']
             elif c.get('match'):
-                match = all(item in self.__dict__.items() for item in c['match'].items())
-                pattern = c['match'].items()
-            else:
-                match = None
-                pattern = None
+                try:
+                    match = all(item in self.__dict__.items() for item in c['match'].items())
+                    pattern = c['match'].items()
+                except AttributeError:
+                    pass
 
             if match:
                 LOG.debug('Matched %s for %s', pattern, self.get_type())

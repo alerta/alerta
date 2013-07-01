@@ -11,7 +11,7 @@ from alerta.common.dedup import DeDup
 from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS, SOLAR_WINDS_CORRELATED_EVENTS
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.5'
+Version = '2.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -129,7 +129,7 @@ class SolarWindsDaemon(Daemon):
             timeout = None
             threshold_info = None
             summary = None
-            raw_data = str(row)
+            raw_data = repr(row)
             create_time = datetime.datetime.strptime(row.c1[:-5]+'Z', '%Y-%m-%dT%H:%M:%S.%fZ')
 
             solarwindsAlert = Alert(
@@ -153,9 +153,12 @@ class SolarWindsDaemon(Daemon):
 
             suppress = solarwindsAlert.transform_alert()
             if suppress:
-                LOG.warning('Suppressing alert %s', solarwindsAlert.get_id())
+                LOG.warning('Suppressing %s alert', solarwindsAlert.event)
                 LOG.debug('%s', solarwindsAlert)
                 continue
+
+            if solarwindsAlert.get_type() == 'Heartbeat':
+                solarwindsAlert = Heartbeat(origin=solarwindsAlert.origin, version='n/a', timeout=solarwindsAlert.timeout)
 
             solarwindsAlerts.append(solarwindsAlert)
 

@@ -515,7 +515,7 @@ class Mongo(object):
 
         query = {"origin": heartbeat.origin}
         update = {"origin": heartbeat.origin, "version": heartbeat.version, "createTime": heartbeat.create_time,
-                  "receiveTime": heartbeat.receive_time}
+                  "receiveTime": heartbeat.receive_time, "timeout": heartbeat.timeout}
 
         try:
             self.db.heartbeats.update(query, update, True)

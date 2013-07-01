@@ -58,12 +58,9 @@ class SenderClient(object):
                 graph_urls=CONF.graph_urls,
             )
 
-            if CONF.dry_run:
-                print exceptionAlert
-            else:
-                LOG.debug(repr(exceptionAlert))
+            LOG.debug(repr(exceptionAlert))
 
-                api = ApiClient()
-                api.send(exceptionAlert)
+            api = ApiClient()
+            api.send(exceptionAlert, dry_run=CONF.dry_run)
 
             return exceptionAlert.get_id()

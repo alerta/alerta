@@ -148,7 +148,7 @@ function heartbeatAlerts() {
                 since = secs + ' seconds';
             }
 
-            if (diff > hb_threshold && show_hb_alerts) {
+            if (diff > hb.timeout * 4 && show_hb_alerts) {
                 hbalerts += '<div class="alert alert-error">' +
                         '<a class="close" data-dismiss="alert" href="#">&times;</a>' +
                         '<strong>Important!</strong> ' + hb.origin + ' has not sent a heartbeat for ' + since +
@@ -243,7 +243,7 @@ var Alerta = {
                     "100" : "100",
                     "500" : "500"
                 }
-            },
+            }
         };
 
         var rewriteValues = function(id, labelsLookup) {
@@ -283,14 +283,28 @@ var Alerta = {
                 $('#' + statusIndicator + "-status").click();
             }
         }
+    },
+    deleteRows: function (button, config, flash) {
+        $('#alerts .active').each(function(index, elem) {
+            Alerta.deleteAlert($(elem).data("alert-id"));
+        });
+    },
+    deleteAlert: function(alertId) {
+        $.ajax({
+            type: 'POST',
+            contentType: 'application/json',
+            url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + alertId,
+            data: JSON.stringify({ _method: 'delete' })
+        });
     }
 };
 
 $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
 {
     var openRows = $("#alerts tr").filter(function () { return oTable.fnIsOpen(this); });
+    var selectedRows = $("#alerts tr.active");
 
-    if(openRows.length > 0) { return; }
+    if(openRows.length > 0 || selectedRows.length > 0) { return; }
 
     if ( typeof sNewSource != 'undefined' && sNewSource != null ) {
         oSettings.sAjaxSource = sNewSource;
@@ -359,10 +373,11 @@ function updateAlertsTable(env_filter, asiFilters) {
         "bDeferRender": true,
         "bAutoWidth" :false,
         "bStateSave" : true,
+        "sDom": "<'row-fluid'<'span4'l><'span4'f><'span4'T>r>t<'row-fluid'<'span6'i><'span6'p>>",
         "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'alert-summary' + ' severity-' + aData[0] + ' status-' + aData[1];
-            $(nRow).attr('id', 'row-' + aData[11]);
+            $(nRow).attr('id', 'row-' + aData[11]).data("alert-id", aData[11]);
 
             if (aData[17] == "noChange") {
                 ti = '<i class="icon-minus"></i>&nbsp;'
@@ -453,6 +468,16 @@ function updateAlertsTable(env_filter, asiFilters) {
             [0, 'asc'],
             [2, 'desc']
         ],
+        "oTableTools" : {
+            "sRowSelect" : "multi",
+            "aButtons" : [
+                {
+                    "sExtends" : "ajax",
+                    "sButtonText" : "Delete",
+                    "fnClick" : Alerta.deleteRows
+                },
+                "select_all", "select_none"]
+        }
     });
 
     if (autoRefresh) {
@@ -593,7 +618,7 @@ function fnFormatDetails(aData) {
     return sOut;
 }
 
-$('#alerts tbody tr').on('click', function () {
+$('#alerts tbody tr').live('dblclick', function (event) {
 
     var nTr = this;
 
@@ -603,11 +628,13 @@ $('#alerts tbody tr').on('click', function () {
         /* This row is already open - close it */
         // this.src = "../examples_support/details_open.png";
         oTable.fnClose(nTr);
+        $(this).removeClass("active");
     }
     else {
         /* Open this row */
         // this.src = "../examples_support/details_close.png";
         oTable.fnOpen(nTr, fnFormatDetails(oTable.fnGetData(nTr)), 'details');
+        $(this).addClass("active");
     }
 });
 
@@ -705,30 +732,26 @@ $('body').on('click', '#status-select .btn', function(e) {
     refreshAlerts(false);
 });
 
-function updateStatus(s) {
-    status = '&status=' + s;
-    updateStatusCounts(gEnvFilter, false);
-    updateAllIndicators(gEnvFilter, lookup, false);
-    refreshAlerts(false);
-}
+$('body').on('click', '#from-date-select .btn', function() {
 
-function updateLimit(count) {
-    if (count > 0) {
-        limit = '&limit=' + count;
-    } else {
-        limit = '';
-    }
-    updateStatusCounts(gEnvFilter, false);
-    updateAllIndicators(gEnvFilter, lookup, false);
-    refreshAlerts(false);
-}
+    $('#from-date-select button').removeClass('active');
+    $(this).addClass('active');
 
-function updateFromDate(seconds) {
+    var seconds = $(this).val();
+
     if (seconds > 0) {
         from = '&from-date=' + new Date(new Date() - seconds * 1000).toISOString();
     } else {
         from = '';
     }
+
+    updateStatusCounts(gEnvFilter, false);
+    updateAllIndicators(gEnvFilter, lookup, false);
+    refreshAlerts(false);
+});
+
+function updateStatus(s) {
+    status = '&status=' + s;
     updateStatusCounts(gEnvFilter, false);
     updateAllIndicators(gEnvFilter, lookup, false);
     refreshAlerts(false);
@@ -816,12 +839,7 @@ $(document).ready(function () {
             + 'remove the alert from all user consoles.\n\n'
             + 'Cancel to return to the console or OK to delete.')) {
 
-            $.ajax({
-                type: 'POST',
-                contentType: 'application/json',
-                url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id,
-                data: JSON.stringify({ _method: 'delete' })
-            });
+            Alerta.deleteAlert(this.id);
             // FIXME(nsatterl): Should immediately delete the row from the console
             // oTable.fnDeleteRow(
             //    oTable.fnGetPosition(

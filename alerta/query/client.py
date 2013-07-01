@@ -12,8 +12,9 @@ import pytz
 from alerta.common import log as logging
 from alerta.common import status_code, severity_code
 from alerta.common import config
+from alerta.common.graphite import StatsD
 
-Version = '2.0.5'
+Version = '2.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -113,6 +114,9 @@ class QueryClient(object):
         if CONF.not_text:
             query['-text'] = '|'.join(CONF.not_text)
 
+        if CONF.repeat:
+            query['repeat'] = CONF.repeat
+
         if CONF.sortby:
             query['sort-by'] = CONF.sortby
 
@@ -191,6 +195,8 @@ class QueryClient(object):
                 print "        tags: %s" % ','.join(CONF.tags)
             if CONF.not_tags:
                 print "        tags: (not) %s" % ','.join(CONF.not_tags)
+            if CONF.repeat:
+                print "     repeats: %s" % CONF.repeat
             if CONF.limit:
                 print "       count: %d" % CONF.limit
             if CONF.query:
@@ -224,6 +230,7 @@ class QueryClient(object):
                 response = json.loads(output.read())['response']
             except urllib2.URLError, e:
                 print "ERROR: Alert query %s failed - %s" % (url, e)
+                LOG.error('Alert query %s failed - %s', url, e)
                 sys.exit(1)
             except (KeyboardInterrupt, SystemExit):
                 sys.exit(0)
@@ -288,6 +295,7 @@ class QueryClient(object):
                         status = json.loads(output.read())['response']
                     except urllib2.URLError, e:
                         print "ERROR: Alert delete %s failed - %s" % (url, e)
+                        LOG.error('Alert delete %s failed - %s', url, e)
                         sys.exit(1)
                     except (KeyboardInterrupt, SystemExit):
                         sys.exit(0)
@@ -325,7 +333,7 @@ class QueryClient(object):
                         value) + end_color)
 
                 if 'text' in CONF.show:
-                    print(line_color + '   |%s' % (text) + end_color)
+                    print(line_color + '   |%s' % (text.encode('utf-8')) + end_color)
 
                 if 'attributes' in CONF.show:
                     print(
@@ -393,7 +401,7 @@ class QueryClient(object):
                                                                                     group,
                                                                                     event,
                                                                                     value) + end_color)
-                            print(line_color + '    |%s' % (text) + end_color)
+                            print(line_color + '    |%s' % (text.encode('utf-8')) + end_color)
                         if 'status' in hist:
                             update_time = datetime.datetime.strptime(hist['updateTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
                             update_time = update_time.replace(tzinfo=pytz.utc)
@@ -435,6 +443,8 @@ class QueryClient(object):
                 severity_code._COLOR_MAP[
                     severity_code.DEBUG] + '%4d' % response['alerts']['severityCounts']['debug'] + severity_code.ENDC)
 
+        response_time = int((end - start) * 1000)
+
         if not CONF.nofooter:
             now = datetime.datetime.utcnow()
             now = now.replace(tzinfo=pytz.utc)
@@ -445,5 +455,8 @@ class QueryClient(object):
             print
             print "Total: %d%s (produced on %s at %s by %s,v%s on %s in %sms)" % (
                 count, has_more, now.astimezone(tz).strftime("%d/%m/%y"), now.astimezone(tz).strftime("%H:%M:%S %Z"),
-                os.path.basename(sys.argv[0]), Version, os.uname()[1], int((end - start) * 1000))
+                os.path.basename(sys.argv[0]), Version, os.uname()[1], response_time)
+
+        statsd = StatsD()
+        statsd.metric_send('alert.query.response_time.client', response_time, 'ms')
 

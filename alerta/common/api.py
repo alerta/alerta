@@ -18,7 +18,7 @@ _API_TIMEOUT = 2  # seconds
 
 class ApiClient(object):
 
-    def send(self, msg, host=None, port=None, endpoint=None):
+    def send(self, msg, host=None, port=None, endpoint=None, dry_run=False):
 
         self.api_host = host or CONF.api_host
         self.api_port = port or CONF.api_port
@@ -41,6 +41,10 @@ class ApiClient(object):
         request = urllib2.Request(api_url, headers=headers)
         request.add_data(post)
         LOG.debug('url=%s, data=%s, headers=%s', request.get_full_url(), request.data, request.headers)
+
+        if dry_run:
+            print "curl '%s' -H 'Content-Type: application/json' -d '%s'" % (api_url, post)
+            return
 
         LOG.debug('Sending alert to API endpoint...')
         try:

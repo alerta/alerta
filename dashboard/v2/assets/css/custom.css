@@ -213,3 +213,19 @@ table {
 .alert-filter {
     width: auto;
 }
+
+@media only screen and (max-width: 800px) {
+
+    #heartbeats td:nth-child(3),
+    #heartbeats th:nth-child(3){display: none;}
+}
+
+@media only screen and (max-width: 640px) {
+
+    #heartbeats td:nth-child(2),
+    #heartbeats th:nth-child(2),
+    #heartbeats td:nth-child(3),
+    #heartbeats th:nth-child(3),
+    #heartbeats td:nth-child(5),
+    #heartbeats th:nth-child(5){display: none;}
+}

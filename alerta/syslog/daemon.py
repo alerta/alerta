@@ -12,7 +12,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.2'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -70,15 +70,17 @@ class SyslogDaemon(Daemon):
                 if ip:
                     for i in ip:
                         if i == udp:
-                            data = udp.recv(4096)
-                            LOG.debug('Syslog UDP data received: %s', data)
+                            data, addr = udp.recvfrom(4096)
+                            data = unicode(data, 'utf-8', errors='ignore')
+                            LOG.debug('Syslog UDP data received from %s: %s', addr, data)
                         if i == tcp:
                             client, addr = tcp.accept()
                             data = client.recv(4096)
+                            data = unicode(data, 'utf-8', errors='ignore')
                             client.close()
-                            LOG.debug('Syslog TCP data received: %s', data)
+                            LOG.debug('Syslog TCP data received from %s: %s', addr, data)
 
-                        syslogAlerts = self.parse_syslog(data)
+                        syslogAlerts = self.parse_syslog(addr[0], data)
                         for syslogAlert in syslogAlerts:
                             if self.dedup.is_send(syslogAlert):
                                 self.mq.send(syslogAlert)
@@ -97,10 +99,13 @@ class SyslogDaemon(Daemon):
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()
 
-    def parse_syslog(self, data):
+    def parse_syslog(self, source, data):
 
         LOG.debug('Parsing syslog message...')
         syslogAlerts = list()
+
+        event = None
+        resource = None
 
         for msg in data.split('\n'):
 
@@ -124,10 +129,10 @@ class SyslogDaemon(Daemon):
                     MSG = m.group(7)
                     LOG.info("Parsed RFC 5424 message OK")
                 else:
-                    LOG.error("Could not parse syslog RFC 5424 message: %s", msg)
+                    LOG.error("Could not parse RFC 5424 syslog message: %s", msg)
                     continue
 
-            else:
+            elif re.match(r'<(\d{1,3})>\S{3}\s', msg):
                 # Parse RFC 3164 compliant message
                 m = re.match(r'<(\d{1,3})>\S{3}\s{1,2}\d?\d \d{2}:\d{2}:\d{2} (\S+)( (\S+):)? (.*)', msg)
                 if m:
@@ -137,14 +142,31 @@ class SyslogDaemon(Daemon):
                     MSG = m.group(5)
                     LOG.info("Parsed RFC 3164 message OK")
                 else:
-                    LOG.error("Could not parse syslog RFC 3164 message: %s", msg)
+                    LOG.error("Could not parse RFC 3164 syslog message: %s", msg)
+                    continue
+
+            elif re.match('<\d+>.*%[A-Z0-9_-]+', msg):
+                # Parse Cisco Syslog message
+                m = re.match('<(\d+)>.*(%([A-Z0-9_-]+)):? (.*)', msg)
+                if m:
+                    LOG.debug(m.groups())
+                    PRI = int(m.group(1))
+                    CISCO_SYSLOG = m.group(2)
+                    CISCO_FACILITY, CISCO_SEVERITY, CISCO_MNEMONIC = m.group(3).split('-')
+                    TAG = CISCO_MNEMONIC
+                    MSG = m.group(4)
+
+                    event = CISCO_SYSLOG
+                    resource = '%s:%s' % (source, CISCO_FACILITY)
+                else:
+                    LOG.error("Could not parse Cisco syslog message: %s", msg)
                     continue
 
             facility, level = syslog.decode_priority(PRI)
 
             # Defaults
-            event = '%s%s' % (facility.capitalize(), level.capitalize())
-            resource = '%s%s' % (HOSTNAME, ':' + TAG if TAG else '')
+            event = event or '%s%s' % (facility.capitalize(), level.capitalize())
+            resource = resource or '%s%s' % (HOSTNAME, ':' + TAG if TAG else '')
             severity = syslog.priority_to_code(level)
             group = 'Syslog'
             value = level
@@ -182,13 +204,9 @@ class SyslogDaemon(Daemon):
                 LOG.debug('%s', syslogAlert)
                 continue
 
+            if syslogAlert.get_type() == 'Heartbeat':
+                syslogAlert = Heartbeat(origin=syslogAlert.origin, version='n/a', timeout=syslogAlert.timeout)
+
             syslogAlerts.append(syslogAlert)
 
         return syslogAlerts
-
-
-
-
-
-
-

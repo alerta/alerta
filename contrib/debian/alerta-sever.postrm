@@ -1,0 +1,19 @@
+#!/bin/sh -e
+
+if [ "$1" = "purge" ] ; then
+    if [ ! -f /usr/bin/alerta ] ; then
+        if [ -d /var/log/alerta ]; then
+            rm -rf /var/log/alerta
+        fi
+        if getent passwd alerta >/dev/null; then
+            userdel alerta
+        fi
+        if getent group alerta >/dev/null; then
+            groupdel alerta
+        fi
+    fi
+fi
+
+#DEBHELPER#
+
+exit 0

@@ -8,18 +8,16 @@
     <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.dataTables.min.js"></script>
 
     <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
-
-    <link href="/alerta/dashboard/v2/assets/DataTables/bootstrap/dataTables.bootstrap.css" rel="stylesheet">
-
     <style type="text/css">
         body {
-            padding-top: 50px;
+            padding-top: 60px;
             padding-bottom: 40px;
         }
     </style>
+    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="/alerta/dashboard/v2/assets/DataTables/bootstrap/dataTables.bootstrap.css" rel="stylesheet">
     <link href="/alerta/dashboard/v2/assets/css/custom.css" rel="stylesheet">
-
+    <link href="/alerta/dashboard/v2/assets/DataTables/extras/TableTools/media/css/TableTools.css" rel="stylesheet">
 </head>
 
 <body>
@@ -57,25 +55,17 @@
             <button id="status-select-closed" type="button" class="btn" value="closed">Closed <span id="count-closed" class="label">0</span></button>
         </div>
     </div>
-    <div class="span6">
-        <div class="btn-group filters">
-            <select id="limit-select" class="btn alert-filter" name="limit" onchange="updateLimit(this.value)">
-                <option value="0">None</option>
-                <option value="10">10</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="500">500</option>
-            </select>
-            <select id="from-date-select" class="btn alert-filter" name="last" onchange="updateFromDate(this.value)">
-                <option value="0">All</option>
-                <option value="120">2m</option>
-                <option value="300">5m</option>
-                <option value="600">10m</option>
-                <option value="1800">30m</option>
-                <option value="3600">1h</option>
-            </select>
-            <button id="refresh-all" class="console-button btn"><i class="icon-refresh"></i><span class="refresh-button-text"> Refresh Now</span></button>
-        </div>
+    <div class ="span6" align="right">
+        <span id="from-date-select" class="btn-group" data-toggle="buttons-radio">
+            <button type="button" class="btn" name="last" value="300">5m</button>
+            <button type="button" class="btn" name="last" value="900">15m</button>
+            <button type="button" class="btn" name="last" value="3600">1h</button>
+            <button type="button" class="btn" name="last" value="86400">1d</button>
+            <button type="button" class="btn active" name="last" value="0">All</button>
+        </span>
+        <span>
+            <button id="refresh-all" class="console-button btn" align="right"><i class="icon-refresh"></i><span class="refresh-button-text"> Refresh</span></button>
+        </span>
     </div>
 </div>
 
@@ -329,8 +319,10 @@
 </script>
 {% endblock %}
 
+<script src="/alerta/dashboard/v2/assets/DataTables/extras/TableTools/media/js/TableTools.min.js"></script>
 <script src="/alerta/dashboard/v2/assets/DataTables/bootstrap/dataTables.bootstrap.js"></script>
 <script src="/alerta/dashboard/v2/assets/bootstrap/js/bootstrap-collapse.js"></script>
 <script src="/alerta/dashboard/v2/assets/bootstrap/js/bootstrap-alert.js"></script>
+
 </body>
 </html>

@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields
 
 
-Version = '2.0.12'
+Version = '2.0.15'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -84,10 +84,10 @@ def get_alerts():
             if body['severity'] in request.args.getlist('hide-alert-repeats') and body['repeat']:
                 continue
 
-            if not request.args.get('hide-alert-details', False, bool):
+            if not request.args.get('hide-alert-details', 'false') == 'true':
                 alert_details.append(body)
 
-            if request.args.get('hide-alert-history', False, bool):
+            if request.args.get('hide-alert-history', 'false') == 'true':
                 body['history'] = []
 
             found += 1
@@ -135,28 +135,32 @@ def create_alert():
     try:
         data = json.loads(request.data)
     except Exception, e:
-        return jsonify(response={"status": "error", "message": e})
+        return jsonify(response={"status": "error", "message": str(e)})
 
-    newAlert = Alert(
-        resource=data.get('resource', None),
-        event=data.get('event', None),
-        correlate=data.get('correlatedEvents', None),
-        group=data.get('group', None),
-        value=data.get('value', None),
-        severity=severity_code.parse_severity(data.get('severity', None)),
-        environment=data.get('environment', None),
-        service=data.get('service', None),
-        text=data.get('text', None),
-        event_type=data.get('type', 'exceptionAlert'),
-        tags=data.get('tags', None),
-        origin=data.get('origin', None),
-        threshold_info=data.get('thresholdInfo', None),
-        timeout=data.get('timeout', None),
-        alertid=data.get('id', None),
-        raw_data=data.get('rawData', None),
-        more_info=data.get('moreInfo', None),
-        graph_urls=data.get('graphUrls', None),
-    )
+    try:
+        newAlert = Alert(
+            resource=data.get('resource', None),
+            event=data.get('event', None),
+            correlate=data.get('correlatedEvents', None),
+            group=data.get('group', None),
+            value=data.get('value', None),
+            severity=severity_code.parse_severity(data.get('severity', None)),
+            environment=data.get('environment', None),
+            service=data.get('service', None),
+            text=data.get('text', None),
+            event_type=data.get('type', 'exceptionAlert'),
+            tags=data.get('tags', None),
+            origin=data.get('origin', None),
+            threshold_info=data.get('thresholdInfo', None),
+            timeout=data.get('timeout', None),
+            alertid=data.get('id', None),
+            raw_data=data.get('rawData', None),
+            more_info=data.get('moreInfo', None),
+            graph_urls=data.get('graphUrls', None),
+        )
+    except ValueError, e:
+        return jsonify(response={"status": "error", "message": str(e)})
+
     LOG.debug('New alert %s', newAlert)
     mq.send(newAlert)
 
@@ -333,12 +337,13 @@ def create_heartbeat():
     try:
         data = json.loads(request.data)
     except Exception, e:
-        return jsonify(response={"status": "error", "message": e})
+        return jsonify(response={"status": "error", "message": str(e)})
 
     heartbeat = Heartbeat(
         origin=data.get('origin', None),
         version=data.get('version', None),
         heartbeatid=data.get('id', None),
+        timeout=data.get('timeout', None),
     )
     LOG.debug('New heartbeat %s', heartbeat)
     mq.send(heartbeat)

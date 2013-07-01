@@ -19,7 +19,7 @@ def setup(name):
 
     log_root = getLogger(name)
 
-    if CONF.use_syslog is True:
+    if CONF.use_syslog:
         facility = CONF.syslog_facility
         try:
             syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
@@ -31,7 +31,7 @@ def setup(name):
     logpath = _get_log_file_path()
     if logpath:
         try:
-            filelog = logging.handlers.WatchedFileHandler(logpath)
+            filelog = logging.handlers.WatchedFileHandler(logpath, encoding='utf-8')
         except IOError:
             raise
         log_root.addHandler(filelog)
