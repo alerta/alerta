@@ -2,6 +2,10 @@
 var API_HOST = document.domain + ':' + window.api_port;
 var REFRESH_INTERVAL = 30; // seconds
 
+var oTable;
+var autoRefresh = true;
+
+var hb_threshold = 300; // 5 minutes
 var show_hb_alerts = true;
 var lookup;
 var gEnvFilter;
@@ -198,6 +202,7 @@ $('#heartbeat-alerts').bind('closed', function () {
 });
 
 var Alerta = {
+    dashboardSelection: {},
     highlightStatusIndicator: function(statusIndicator) {
         $(".status-indicator").addClass("status-indicator-inactive").removeClass("current-filter");
         statusIndicator.addClass("current-filter");
@@ -252,6 +257,30 @@ var Alerta = {
         for(var id in labels) {
             if(labels.hasOwnProperty(id)) {
                 rewriteValues(id, labels[id]);
+            }
+        }
+    },
+    clearTableFilter: function() {
+         oTable.fnFilter("");
+    },
+    updateUrl: function() {
+        var currentUrl = $.url().attr('path') + '?' + $.param(Alerta.dashboardSelection);
+        history.pushState(null, null, currentUrl);
+    },
+    restoreDashboardState: function (dataTable, url) {
+        var searchTerm = url.param('search');
+        var statusIndicator = url.param('service');
+        var severityLevel = url.param('level');
+
+        if(searchTerm) {
+            dataTable.fnFilter(searchTerm);
+        }
+
+        if(statusIndicator) {
+            if(severityLevel) {
+                $('#' + statusIndicator + "-" + severityLevel).click();
+            } else {
+                $('#' + statusIndicator + "-status").click();
             }
         }
     },
@@ -328,9 +357,6 @@ $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallba
         }
     }, oSettings );
 };
-
-var oTable;
-var autoRefresh = true;
 
 function updateAlertsTable(env_filter, asiFilters) {
 
@@ -459,6 +485,8 @@ function updateAlertsTable(env_filter, asiFilters) {
             refreshAlerts(true);
         }, REFRESH_INTERVAL * 1000);
     }
+
+    Alerta.restoreDashboardState(oTable, $.url());
 }
 
 function fnFormatDetails(aData) {
@@ -635,19 +663,25 @@ $('#refresh-all').click(function () {
 $('.status-indicator-overall').click(function () {
     var statusIndicator = $(this).parent(".status-indicator");
 
-    if(statusIndicator.hasClass("current-filter")) {
+   if(statusIndicator.hasClass("current-filter")) {
         filter = '';
         refreshAlerts(false);
         statusIndicator.removeClass("current-filter")
         $(".status-indicator").removeClass("status-indicator-inactive");
-    } else {
+        delete Alerta.dashboardSelection["service"];
+     } else {
         filter = lookup[this.id.split('-')[0]];
         refreshAlerts(false);
         Alerta.highlightStatusIndicator(statusIndicator);
+        Alerta.dashboardSelection.service = statusIndicator.attr('id');
     }
+
+    delete Alerta.dashboardSelection["level"];
+    Alerta.updateUrl();
 });
 
 $('.status-indicator-count').click(function () {
+
     filter = lookup[this.id.split('-')[0]];
     var severity = this.id.split('-')[1];
     filter += '&severity=' + severity;
@@ -658,6 +692,8 @@ $('.status-indicator-count').click(function () {
     refreshAlerts(false);
     var statusIndicator = $(this).parents(".status-indicator");
     Alerta.highlightStatusIndicator(statusIndicator);
+    Alerta.dashboardSelection.level = severity;
+    Alerta.updateUrl();
 });
 
 $('body').on('click', '#status-select .btn', function(e) {
@@ -841,9 +877,19 @@ $(document).ready(function () {
         }
     });
 
+    window.addEventListener("popstate", function (event) {
+        Alerta.restoreDashboardState(oTable, $.url());
+    });
+
     Alerta.dropDownText(window);
 
     $(window).resize(function() {
         Alerta.dropDownText(window);
     });
+
+    var searchFilterClearingSelectors = ['.status-indicator-overall', '.status-indicator-count'];
+    jQuery.map(searchFilterClearingSelectors, function (value, idx) {
+        $(value).asEventStream("click").subscribe(Alerta.clearTableFilter);
+    });
+
 });
