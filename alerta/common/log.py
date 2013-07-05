@@ -3,6 +3,8 @@ import os
 import sys
 import logging
 import logging.handlers
+import cStringIO
+import traceback
 
 from alerta.common import config
 
@@ -11,11 +13,23 @@ CONF = config.CONF
 _DEFAULT_LOG_FORMAT = "%(asctime)s.%(msecs).03d %(name)s[%(process)d] %(threadName)s %(levelname)s - %(message)s"
 _DEFAULT_LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-# TODO(nsatterl): log exceptions (checkout how OpenStack do it)
+
+def _create_logging_excepthook(name):
+    def logging_excepthook(type, value, tb):
+
+        stringbuffer = cStringIO.StringIO()
+        traceback.print_exception(type, value, tb,
+                                  None, stringbuffer)
+        lines = stringbuffer.getvalue()
+        stringbuffer.close()
+
+        getLogger(name).critical(lines)
+    return logging_excepthook
 
 
 def setup(name):
     """Setup logging."""
+    sys.excepthook = _create_logging_excepthook(name)
 
     log_root = getLogger(name)
 
@@ -114,5 +128,3 @@ class ColorHandler(logging.StreamHandler):
     def format(self, record):
         record.color = self.LEVEL_COLORS[record.levelno]
         return logging.StreamHandler.format(self, record)
-
-
