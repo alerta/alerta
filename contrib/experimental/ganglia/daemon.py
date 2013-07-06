@@ -173,7 +173,6 @@ class GangliaDaemon(Daemon):
                     LOG.debug('Value for %s on %s is %s', m['id'], resource, v)
 
                     # If no value assign rule value
-                    # FIXME(nsatterl): what does this do?
                     if 'value' not in metric[resource]:
                         metric[resource]['value'] = rule['value']
                     metric[resource]['value'] = re.sub('\$%s(\.sum)?' % m['metric'], str(v),

@@ -98,7 +98,6 @@ class NotifyDaemon(Daemon):
 
         # Initialiase alert config
         init_config()
-        #config_mod_time = os.path.getmtime(CONFIGFILE)  # FIXME
 
         # Start token bucket thread
         _TokenThread = TokenTopUp()
