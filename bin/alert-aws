@@ -26,5 +26,3 @@ if __name__ == '__main__':
     logging.setup('alerta')
     aws = AwsDaemon('alert-aws')
     aws.start()
-
-

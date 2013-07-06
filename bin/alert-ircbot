@@ -26,5 +26,3 @@ if __name__ == '__main__':
     logging.setup('alerta')
     ircbot = IrcbotDaemon('alert-ircbot')
     ircbot.start()
-
-

@@ -26,4 +26,3 @@ if __name__ == '__main__':
     logging.setup('alerta')
     logger = LoggerDaemon('alert-logger')
     logger.start()
-
