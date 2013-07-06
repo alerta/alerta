@@ -93,7 +93,7 @@ class StatsD(object):
         self.addr = (self.host, int(self.port))
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    def metric_send(self, name, value, type=None, rate=None):
+    def metric_send(self, name, value, mtype=None, rate=None):
         """
         >>> statsd = StatsD()
         >>> statsd.metric_send('gorets', 1, 'c', 0.1)  # counters  => 'gorets:1|c@0.1'
@@ -104,12 +104,12 @@ class StatsD(object):
         >>> statsd.metric_send('uniques', 765, 's')    # sets      => 'uniques:765|s
         """
 
-        type = type or 'c'  # default is 'counter'
+        mtype = mtype or 'c'  # default is 'counter'
         rate = rate or self.rate
 
-        LOG.debug('Statsd name=%s, value=%s, type=%s rate=%s', name, value, type, rate)
+        LOG.debug('Statsd name=%s, value=%s, type=%s rate=%s', name, value, mtype, rate)
 
-        data = '%s:%s|%s' % (name, value, type)
+        data = '%s:%s|%s' % (name, value, mtype)
 
         if rate < 1:
             if random() <= rate:
