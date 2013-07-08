@@ -85,7 +85,6 @@ def main(argv):
             '-o',
             '--timeout',
             type=int,
-            default=86400,
             help='Timeout in seconds that OPEN alert will persist in webapp.'
         )
         parser.add_argument(

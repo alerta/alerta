@@ -14,7 +14,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         prog = os.path.basename(sys.argv[0])
 
     OPTION_DEFAULTS = {
-        'config': '/etc/alerta/alerta.conf',
+        'conf_file': '/etc/alerta/alerta.conf',
         'version': 'unknown',
         'debug': False,
         'verbose': False,
@@ -43,7 +43,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'user_id': 'alerta',
         'server_threads': 4,
         'disable_flag': '/var/run/alerta/%s.disable' % prog,
-        'alert_timeout': 86400,  # seconds
+        'timeout': 86400,  # seconds
         'parser_dir': '/etc/alerta/parsers',
         'loop_every': 30,   # seconds
 
@@ -108,7 +108,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'pagerduty_endpoint': 'https://events.pagerduty.com/generic/2010-04-15/create_event.json',
         'pagerduty_api_key': '',
 
-        'dynect_customer': 'theguardian',
+        'dynect_customer': '',
         'dynect_username': '',
         'dynect_password': '',
 
@@ -136,9 +136,9 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
     )
     cfg_parser.add_argument(
         '-c', '--conf-file',
-        help="Specify config file (default: %s)" % OPTION_DEFAULTS['config'],
+        help="Specify config file (default: %s)" % OPTION_DEFAULTS['conf_file'],
         metavar="FILE",
-        default=OPTION_DEFAULTS['config']
+        default=OPTION_DEFAULTS['conf_file']
     )
     args, argv_left = cfg_parser.parse_known_args(argv)
 

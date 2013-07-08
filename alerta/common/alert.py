@@ -52,6 +52,7 @@ ATTRIBUTES = [
 
 
 class Alert(object):
+
     def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status_code.UNKNOWN,
                  severity=severity_code.NORMAL, previous_severity=severity_code.UNKNOWN, environment=None, service=None,
                  text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
@@ -90,7 +91,7 @@ class Alert(object):
         self.threshold_info = threshold_info
         self.summary = summary or '%s - %s %s is %s on %s %s' % (
             ','.join(self.environment), self.severity.capitalize(), self.event, self.value, ','.join(self.service), self.resource)
-        self.timeout = timeout or 86400  # FIXME(nsatterl) - should be CONF.alert_timeout
+        self.timeout = timeout or CONF.timeout
         self.alertid = alertid or str(uuid4())
         if last_receive_id:
             self.last_receive_id = last_receive_id
