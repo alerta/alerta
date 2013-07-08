@@ -91,7 +91,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'mail_user': 'alerta@guardian.co.uk',
         'mail_list': 'websys@guardian.co.uk',
 
-        'irc_host': 'irc.gudev.gnl',
+        'irc_host': 'irc',
         'irc_port': 6667,
         'irc_channel': '#alerts',
         'irc_user': 'alerta',
