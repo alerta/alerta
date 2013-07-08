@@ -12,7 +12,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.5'
+Version = '2.0.6'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -99,7 +99,7 @@ class SyslogDaemon(Daemon):
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()
 
-    def parse_syslog(self, source, data):
+    def parse_syslog(self, addr, data):
 
         LOG.debug('Parsing syslog message...')
         syslogAlerts = list()
@@ -157,7 +157,15 @@ class SyslogDaemon(Daemon):
                     MSG = m.group(4)
 
                     event = CISCO_SYSLOG
-                    resource = '%s:%s' % (source, CISCO_FACILITY)
+
+                    # replace IP address with a hostname, if necessary
+                    try:
+                        socket.inet_aton(addr)
+                        (resource, _, _) = socket.gethostbyaddr(addr)
+                    except (socket.error, socket.herror):
+                        resource = addr
+
+                    resource = '%s:%s' % (resource, CISCO_FACILITY)
                 else:
                     LOG.error("Could not parse Cisco syslog message: %s", msg)
                     continue
