@@ -2,6 +2,7 @@
 import os
 import sys
 import smtplib
+import socket
 import urllib2
 import datetime
 
@@ -88,6 +89,11 @@ class Mailer(object):
 
         try:
             mx = smtplib.SMTP(CONF.smtp_host)
+        except (socket.error, socket.herror, socket.gaierror), e:
+            LOG.error('Mail server connection error: %s', e)
+            return
+
+        try:
             if CONF.debug:
                 mx.set_debuglevel(True)
             mx.sendmail(CONF.mail_user, mail_to, msg.as_string())
