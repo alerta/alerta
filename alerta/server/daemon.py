@@ -13,7 +13,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 from alerta.common.graphite import StatsD
 
-Version = '2.0.7'
+Version = '2.0.8'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -21,7 +21,7 @@ CONF = config.CONF
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, mq, queue):
+    def __init__(self, mq, queue, statsd):
 
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
@@ -29,7 +29,7 @@ class WorkerThread(threading.Thread):
         self.queue = queue   # internal queue
         self.mq = mq               # message broker
         self.db = Mongo()       # mongo database
-        self.statsd = StatsD()  # graphite metrics
+        self.statsd = statsd  # graphite metrics
 
     def run(self):
 
@@ -147,10 +147,11 @@ class WorkerThread(threading.Thread):
 
 class ServerMessage(MessageHandler):
 
-    def __init__(self, mq, queue):
+    def __init__(self, mq, queue, statsd):
 
         self.mq = mq
         self.queue = queue
+        self.statsd = statsd
 
         MessageHandler.__init__(self)
 
@@ -170,6 +171,7 @@ class ServerMessage(MessageHandler):
                 alert = Alert.parse_alert(body)
             except ValueError, e:
                 LOG.error('Malformed alert could not be parsed - %s: %s', e, body)
+                self.statsd.metric_send('alerta.alerts.rejected', 1)
                 return
             if alert:
                 alert.receive_now()
@@ -186,18 +188,18 @@ class AlertaDaemon(Daemon):
 
         self.running = True
 
-        # Create internal queue
-        self.queue = Queue.Queue()
+        self.queue = Queue.Queue()  # Create internal queue
+        self.statsd = StatsD()  # graphite metrics
 
         # Connect to message queue
         self.mq = Messaging()
-        self.mq.connect(callback=ServerMessage(self.mq, self.queue))
+        self.mq.connect(callback=ServerMessage(self.mq, self.queue, self.statsd))
         self.mq.subscribe()
 
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.mq, self.queue)
+            w = WorkerThread(self.mq, self.queue, self.statsd)
             try:
                 w.start()
             except Exception, e:
