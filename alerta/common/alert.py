@@ -171,7 +171,7 @@ class Alert(object):
         return self.event_type
 
     def get_severity(self):
-        return self.severity, self.previous_severity
+        return self.severity
 
     def get_create_time(self):
         return self.create_time.replace(microsecond=0).isoformat() + ".%03dZ" % (self.create_time.microsecond // 1000)
