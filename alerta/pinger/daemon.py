@@ -17,7 +17,7 @@ from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
-Version = '2.0.9'
+Version = '2.0.10'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -90,6 +90,7 @@ class WorkerThread(threading.Thread):
                 avg, max = rtt
                 self.carbon.metric_send('alert.pinger.%s.avg' % resource, avg)
                 self.carbon.metric_send('alert.pinger.%s.max' % resource, max)
+                self.statsd.metric_send('alert.pinger.availablity.%s' % resource, 100.0, 'g')
                 if avg > CONF.ping_slow_critical:
                     event = 'PingSlow'
                     severity = severity_code.CRITICAL
@@ -108,11 +109,13 @@ class WorkerThread(threading.Thread):
                 severity = severity_code.MAJOR
                 text = 'Node did not respond to ping or timed out within %s seconds' % CONF.ping_max_timeout
                 value = '%s%% packet loss' % loss
+                self.statsd.metric_send('alert.pinger.availablity.%s' % resource, 100.0 - float(loss), 'g')
             elif rc == PING_ERROR:
                 event = 'PingError'
                 severity = severity_code.WARNING
                 text = 'Could not ping node %s.' % resource
                 value = stdout
+                self.statsd.metric_send('alert.pinger.availablity.%s' % resource, 0.0, 'g')
             else:
                 LOG.warning('Unknown ping return code: %s', rc)
                 continue
