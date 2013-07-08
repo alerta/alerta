@@ -87,7 +87,6 @@ class WorkerThread(threading.Thread):
                 LOG.info('%s is shutting down.', self.getName())
                 break
 
-            # TODO(nsatterl): add to system defaults
             search_string = check.get('search', None)
             rule = check.get('rule', None)
             warn_thold = check.get('warning', CONF.urlmon_slow_warning)
@@ -237,7 +236,7 @@ class WorkerThread(threading.Thread):
             LOG.debug("URL: %s, Status: %s (%s), Round-Trip Time: %dms -> %s", check['url'], status, code, rtt,
                       event)
 
-            # Forward metric data to Ganglia
+            # Forward metric data to Graphite
             if code and code < 300:
                 avail = 100.0   # 1xx, 2xx -> 100% available
             else:
