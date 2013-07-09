@@ -14,7 +14,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -50,6 +50,38 @@ def ack_alert(alertid):
         return
 
     LOG.info('Successfully ACKed alert %s', alertid)
+    return
+
+
+def delete_alert(alertid):
+
+    url = "http://%s:%s%s/alerts/alert/%s" % (CONF.api_host, CONF.api_port, CONF.api_endpoint, alertid)
+    headers = {'Content-type': 'application/json'}
+    LOG.info('DELETE request %s', url)
+
+    try:
+        request = urllib2.Request(url=url, headers=headers)
+        request.get_method = lambda: 'DELETE'
+        response = urllib2.urlopen(request)
+    except urllib2.URLError, e:
+        LOG.error('Request %s failed: %s', url, e)
+        return
+
+    else:
+        code = response.getcode()
+        body = response.read()
+        LOG.debug('HTTP response code=%s', code)
+
+    try:
+        body = json.loads(body)
+    except Exception, e:
+        LOG.error('Failed to parse JSON response: %s', body, e)
+
+    if code != 200 or body['response']['status'] == 'error':
+        LOG.error('Message not DELETED - %s', body['response']['message'])
+        return
+
+    LOG.info('Successfully DELETED alert %s', alertid)
     return
 
 
@@ -136,9 +168,12 @@ class IrcbotDaemon(Daemon):
                             if 'PING' in data:
                                 LOG.info('IRC PING received -> PONG ' + data.split()[1])
                                 irc.send('PONG ' + data.split()[1] + '\r\n')
-                            elif 'ACK' in data:
+                            elif 'ack' in data.lower():
                                 LOG.info('Request to ACK %s by %s', data.split()[4], data.split()[0])
                                 ack_alert(data.split()[4])
+                            elif 'delete' in data.lower():
+                                LOG.info('Request to DELETE %s by %s', data.split()[4], data.split()[0])
+                                delete_alert(data.split()[4])
                             elif data.find('!alerta quit') != -1:
                                 irc.send('QUIT\r\n')
                             else:
