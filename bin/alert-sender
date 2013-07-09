@@ -25,6 +25,7 @@ CONF = config.CONF
 
 
 def main(argv):
+
     try:
         parser = argparse.ArgumentParser(
             add_help=False,
@@ -165,6 +166,9 @@ def main(argv):
 
             if CONF.correlate and CONF.event not in CONF.correlate:
                 CONF.correlate.append(CONF.event)
+
+            if not CONF.timeout:
+                CONF.timeout = CONF.global_timeout
 
         sender = SenderClient()
         msg_id = sender.main()

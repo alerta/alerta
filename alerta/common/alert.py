@@ -91,7 +91,7 @@ class Alert(object):
         self.threshold_info = threshold_info
         self.summary = summary or '%s - %s %s is %s on %s %s' % (
             ','.join(self.environment), self.severity.capitalize(), self.event, self.value, ','.join(self.service), self.resource)
-        self.timeout = timeout or CONF.timeout
+        self.timeout = timeout or CONF.global_timeout
         self.alertid = alertid or str(uuid4())
         if last_receive_id:
             self.last_receive_id = last_receive_id

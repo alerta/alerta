@@ -43,7 +43,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'user_id': 'alerta',
         'server_threads': 4,
         'disable_flag': '/var/run/alerta/%s.disable' % prog,
-        'timeout': 86400,  # seconds
+        'global_timeout': 86400,  # seconds
         'parser_dir': '/etc/alerta/parsers',
         'loop_every': 30,   # seconds
 
