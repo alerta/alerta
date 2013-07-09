@@ -153,7 +153,7 @@ class SolarWindsDaemon(Daemon):
 
             suppress = solarwindsAlert.transform_alert()
             if suppress:
-                LOG.warning('Suppressing %s alert', solarwindsAlert.event)
+                LOG.info('Suppressing %s alert', solarwindsAlert.event)
                 LOG.debug('%s', solarwindsAlert)
                 continue
 

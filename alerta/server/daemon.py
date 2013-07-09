@@ -58,7 +58,7 @@ class WorkerThread(threading.Thread):
 
             suppress = incomingAlert.transform_alert()
             if suppress:
-                LOG.warning('Suppressing alert %s', incomingAlert.get_id())
+                LOG.info('Suppressing alert %s', incomingAlert.get_id())
                 self.queue.task_done()
                 return
 
