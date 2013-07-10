@@ -66,7 +66,7 @@ class WorkerThread(threading.Thread):
             if suppress:
                 LOG.info('Suppressing alert %s', incomingAlert.get_id())
                 self.queue.task_done()
-                return
+                continue
 
             if self.db.is_duplicate(incomingAlert, incomingAlert.severity):
 
