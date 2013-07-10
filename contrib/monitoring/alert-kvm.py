@@ -33,7 +33,7 @@ def main():
 
             cmd = ('alert-sender --resource {instance_id} --group GWS/GC2 --event Gc2InstanceState --value {state} '
                    '--severity {severity} --environment INFRA --service OpenStack --text "Instance is {state}" '
-                   '--origin alert-virsh.py').format(instance_id=instance_id, severity=severity, state=state)
+                   '--origin alert-kvm').format(instance_id=instance_id, severity=severity, state=state)
             #print cmd
             os.system(cmd)
 
