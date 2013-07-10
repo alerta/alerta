@@ -197,8 +197,8 @@ class Alert(object):
         try:
             alert = json.loads(alert)
         except ValueError, e:
-            LOG.error('Could not parse alert: %s', e)
-            return
+            LOG.error('Could not parse alert - %s: %s', e, alert)
+            raise
 
         for k, v in alert.iteritems():
             if k in ['createTime', 'receiveTime', 'lastReceiveTime', 'expireTime']:
@@ -206,7 +206,7 @@ class Alert(object):
                     alert[k] = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S.%fZ')
                 except ValueError, e:
                     LOG.error('Could not parse date time string: %s', e)
-                    return
+                    raise
 
         return Alert(
             resource=alert.get('resource', None),
@@ -252,7 +252,7 @@ class Alert(object):
             LOG.info('Loaded %d transformer configurations OK', len(conf))
         except Exception, e:
             LOG.error('Failed to load transformer configuration %s: %s', CONF.yaml_config, e)
-            return
+            raise RuntimeError
 
         for c in conf:
             LOG.debug('YAML config: %s', c)
@@ -316,6 +316,7 @@ class Alert(object):
                         LOG.info('Parser %s/%s exec OK', CONF.parser_dir, c['parser'])
                     except Exception, e:
                         LOG.warning('Parser %s failed: %s', c['parser'], e)
+                        raise RuntimeError
 
                     for k, v in context.iteritems():
                         if hasattr(self, k):

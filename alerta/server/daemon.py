@@ -13,7 +13,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 from alerta.common.graphite import StatsD
 
-Version = '2.0.8'
+Version = '2.0.9'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -48,15 +48,21 @@ class WorkerThread(threading.Thread):
                 break
 
             if incomingAlert.get_type() == 'Heartbeat':
-                LOG.info('Heartbeat received...')
                 heartbeat = incomingAlert
+                LOG.info('Heartbeat received from %s...', heartbeat.origin)
                 self.db.update_hb(heartbeat)
                 self.queue.task_done()
                 continue
             else:
-                LOG.info('Alert received...')
+                LOG.info('Alert received from %s...', incomingAlert.origin)
 
-            suppress = incomingAlert.transform_alert()
+            try:
+                suppress = incomingAlert.transform_alert()
+            except RuntimeError:
+                self.statsd.metric_send('alerta.alerts.error', 1)
+                self.queue.task_done()
+                continue
+
             if suppress:
                 LOG.info('Suppressing alert %s', incomingAlert.get_id())
                 self.queue.task_done()
@@ -169,8 +175,7 @@ class ServerMessage(MessageHandler):
         elif headers['type'].endswith('Alert'):
             try:
                 alert = Alert.parse_alert(body)
-            except ValueError, e:
-                LOG.error('Malformed alert could not be parsed - %s: %s', e, body)
+            except ValueError:
                 self.statsd.metric_send('alerta.alerts.rejected', 1)
                 return
             if alert:
