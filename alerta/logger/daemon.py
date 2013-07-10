@@ -12,7 +12,7 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -29,7 +29,10 @@ class LoggerMessage(MessageHandler):
     def on_message(self, headers, body):
 
         LOG.debug("Received: %s", body)
-        logAlert = Alert.parse_alert(body)
+        try:
+            logAlert = Alert.parse_alert(body)
+        except ValueError:
+            return
 
         if logAlert:
             LOG.info('%s : [%s] %s', logAlert.last_receive_id, logAlert.status, logAlert.summary)

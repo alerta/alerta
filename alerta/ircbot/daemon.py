@@ -14,7 +14,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -102,7 +102,10 @@ class IrcbotMessage(MessageHandler):
             return
 
         LOG.debug("Received: %s", body)
-        ircAlert = Alert.parse_alert(body)
+        try:
+            ircAlert = Alert.parse_alert(body)
+        except ValueError:
+            return
 
         if ircAlert:
             LOG.info('%s : Send IRC message to %s', ircAlert.get_id(), CONF.irc_channel)

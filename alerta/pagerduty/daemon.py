@@ -10,7 +10,7 @@ from alerta.common import severity_code, status_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.pagerduty.pdclientapi import PagerDutyClient
 
-Version = '2.0.0'
+Version = '2.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -29,8 +29,11 @@ class PagerDutyMessage(MessageHandler):
     def on_message(self, headers, body):
 
         LOG.debug("Received: %s", body)
+        try:
+            pdAlert = Alert.parse_alert(body)
+        except ValueError:
+            return
 
-        pdAlert = Alert.parse_alert(body)
         if 'pagerduty' not in pdAlert.tags:
             return
 

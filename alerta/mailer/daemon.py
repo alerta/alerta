@@ -11,7 +11,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.mail import Mailer
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -32,8 +32,10 @@ class MailerMessage(MessageHandler):
     def on_message(self, headers, body):
 
         LOG.debug("Received: %s", body)
-
-        mailAlert = Alert.parse_alert(body)
+        try:
+            mailAlert = Alert.parse_alert(body)
+        except ValueError:
+            return
 
         alertid = mailAlert.get_id()
         severity = mailAlert.get_severity()
