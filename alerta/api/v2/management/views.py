@@ -11,8 +11,6 @@ from alerta.common import log as logging
 
 LOG = logging.getLogger(__name__)
 
-_HEARTBEAT_TIMEOUT = 300  # seconds
-
 
 switches = [
     Switch('auto-refresh-allow', 'Allow consoles to auto-refresh alerts', SwitchState.ON),
@@ -100,7 +98,8 @@ def health_check():
         heartbeats = db.get_heartbeats()
         for heartbeat in heartbeats:
             delta = datetime.datetime.utcnow() - heartbeat['receiveTime']
-            if delta.seconds > _HEARTBEAT_TIMEOUT:
+            threshold = float(heartbeat['timeout']) * 4
+            if delta.seconds > threshold:
                 return 'HEARTBEAT_STALE', 503
 
     except Exception:
