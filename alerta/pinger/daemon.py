@@ -15,9 +15,9 @@ from alerta.common import severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
-from alerta.common.graphite import Carbon
+from alerta.common.graphite import Carbon, StatsD
 
-Version = '2.0.10'
+Version = '2.0.11'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -51,7 +51,7 @@ def init_targets():
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, mq, queue, dedup, carbon):
+    def __init__(self, mq, queue, dedup, carbon, statsd):
 
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
@@ -61,6 +61,7 @@ class WorkerThread(threading.Thread):
         self.mq = mq               # message broker
         self.dedup = dedup
         self.carbon = carbon  # graphite metrics
+        self.statsd = statsd  # graphite metrics
 
     def run(self):
 
@@ -215,6 +216,7 @@ class PingerDaemon(Daemon):
         self.dedup = DeDup()
 
         self.carbon = Carbon()  # graphite metrics
+        self.statsd = StatsD()  # graphite metrics
 
         # Initialiase ping targets
         ping_list = init_targets()
@@ -222,7 +224,7 @@ class PingerDaemon(Daemon):
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.mq, self.queue, self.dedup, self.carbon)
+            w = WorkerThread(self.mq, self.queue, self.dedup, self.carbon, self.statsd)
             try:
                 w.start()
             except Exception, e:
