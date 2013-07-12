@@ -11,7 +11,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.mail import Mailer
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -41,26 +41,24 @@ class MailerMessage(MessageHandler):
         severity = mailAlert.get_severity()
         previous_severity = mailAlert.previous_severity
 
-        if severity == severity_code.NORMAL and previous_severity == severity_code.UNKNOWN:
-            LOG.info('%s: Skip alert because not clearing a known alarm', alertid)
-            return
-
-        # Only send email for CRITICAL, MAJOR, MINOR or related alerts
-        if ((severity == severity_code.WARNING
-                and previous_severity in [severity_code.NORMAL, severity_code.UNKNOWN])
-            or (severity == severity_code.NORMAL
-                and previous_severity == severity_code.WARNING)):
-            LOG.debug('Alert %s not of sufficient severity to warrant an email. Skipping.', alertid)
+        if severity in [severity_code.CRITICAL, severity_code.MAJOR]:
+            LOG.info('%s : Queue email because alert severity is important', alertid)
+        elif previous_severity in [severity_code.CRITICAL, severity_code.MAJOR]:
+            LOG.info('%s : Queue email because alert severity was important', alertid)
+        else:
+            LOG.info('%s : Do not queue email, not important enough', alertid)
             return
 
         hold_time = time.time() + _EMAIL_HOLD_TIME
         if alertid in self.onhold:
             if severity == severity_code.NORMAL:
-                LOG.info('Transient alert %s suppressed', alertid)
+                LOG.info('%s : De-queue alert because it has been cleared', alertid)
                 del self.onhold[alertid]
             else:
+                LOG.info('%s : Extend queue on-hold time to %s', alertid, hold_time)
                 self.onhold[alertid] = (mailAlert, hold_time)
         else:
+            LOG.info('%s : Queued alert on hold until %s', alertid, hold_time)
             self.onhold[alertid] = (mailAlert, hold_time)
 
     def on_disconnected(self):
@@ -89,7 +87,10 @@ class MailerDaemon(Daemon):
             try:
                 LOG.debug('Send email messages...')
                 for alertid in self.onhold.keys():
-                    (mailAlert, hold_time) = self.onhold[alertid]
+                    try:
+                        (mailAlert, hold_time) = self.onhold[alertid]
+                    except KeyError:
+                        continue
 
                     if time.time() > hold_time:
                         if not self.tokens.get_token():
@@ -103,7 +104,10 @@ class MailerDaemon(Daemon):
                             if tag.startswith('email'):
                                 mail_to.append(tag.split(':')[1])
                         email.send(mail_to=mail_to)
-                        del self.onhold[alertid]
+                        try:
+                            del self.onhold[alertid]
+                        except KeyError:
+                            continue
 
                 time.sleep(CONF.loop_every)
 
