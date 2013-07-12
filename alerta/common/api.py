@@ -8,7 +8,7 @@ from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -35,7 +35,7 @@ class ApiClient(object):
             LOG.error('Message type %s not supported by this API endpoint.', msg.get_type())
             return
 
-        post = json.dumps(msg.get_body(), cls=DateEncoder)
+        post = json.dumps(msg.get_body(), ensure_ascii=False, cls=DateEncoder)
         headers = {'Content-Type': 'application/json'}
 
         request = urllib2.Request(api_url, headers=headers)
