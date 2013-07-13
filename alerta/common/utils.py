@@ -26,6 +26,8 @@ def relative_date(from_date, now=None):
     days = diff.days
 
     if days == 0:
+        if secs == 0:
+            return 'just now'
         if secs < 90:
             return '{} seconds {}'.format(secs, when)
         mins = (secs + 30) / 60
