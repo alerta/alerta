@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.10'
+Version = '2.0.11'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -29,15 +29,17 @@ class QueryClient(object):
                                              CONF.api_endpoint if CONF.api_endpoint != '/' else '')
         query = dict()
 
+        self.now = datetime.datetime.utcnow()
+        from_time = self.now
+
         if CONF.minutes or CONF.hours or CONF.days:
-            now = datetime.datetime.utcnow()
-            from_time = now - datetime.timedelta(days=CONF.days, minutes=CONF.minutes + CONF.hours * 60)
+            from_time = self.now - datetime.timedelta(days=CONF.days, minutes=CONF.minutes + CONF.hours * 60)
             query['from-date'] = from_time.replace(microsecond=0).isoformat() + ".%03dZ" % (from_time.microsecond // 1000)
-            now = now.replace(tzinfo=pytz.utc)
-            from_time = from_time.replace(tzinfo=pytz.utc)
         elif CONF.watch:
-            from_time = datetime.datetime.utcnow()
             query['from-date'] = from_time.replace(microsecond=0).isoformat() + ".%03dZ" % (from_time.microsecond // 1000)
+
+        self.now = self.now.replace(tzinfo=pytz.utc)
+        from_time = from_time.replace(tzinfo=pytz.utc)
 
         if CONF.alertid:
             query['id'] = '|'.join(CONF.alertid)
@@ -141,7 +143,7 @@ class QueryClient(object):
             if CONF.minutes or CONF.hours or CONF.days:
                 print "    interval: %s - %s" % (
                     self._format_date(from_time),
-                    self._format_date(now))
+                    self._format_date(self.now))
             if CONF.show:
                 print "        show: %s" % ','.join(CONF.show)
             if CONF.sortby:
@@ -223,7 +225,6 @@ class QueryClient(object):
             start = time.time()
             try:
                 output = urllib2.urlopen(url)
-                from_time = datetime.datetime.utcnow()
                 response = json.loads(output.read())['response']
             except urllib2.URLError, e:
                 print "ERROR: Alert query %s failed - %s" % (url, e)
@@ -514,15 +515,13 @@ class QueryClient(object):
         response_time = int((end - start) * 1000)
 
         if not CONF.nofooter:
-            now = datetime.datetime.utcnow()
-            now = now.replace(tzinfo=pytz.utc)
             if response['more']:
                 has_more = '+'
             else:
                 has_more = ''
             print
             print "Total: %d%s (produced on %s at %s by %s,v%s on %s in %sms)" % (
-                count, has_more, now.astimezone(self.tz).strftime("%d/%m/%y"), now.astimezone(self.tz).strftime("%H:%M:%S %Z"),
+                count, has_more, self.now.astimezone(self.tz).strftime("%d/%m/%y"), self.now.astimezone(self.tz).strftime("%H:%M:%S %Z"),
                 os.path.basename(sys.argv[0]), Version, os.uname()[1], response_time)
 
         statsd = StatsD()
@@ -533,9 +532,7 @@ class QueryClient(object):
         if CONF.date == 'relative':
             event_time = event_time.replace(tzinfo=pytz.utc)
             event_time = event_time.astimezone(self.tz)
-            now = datetime.datetime.utcnow()
-            now = now.replace(tzinfo=pytz.utc)
-            return relative_date(event_time, now)
+            return relative_date(event_time, self.now)
         elif CONF.date == 'local':
             return event_time.astimezone(self.tz).strftime('%Y/%m/%d %H:%M:%S')
         elif CONF.date == 'iso' or CONF.date == 'iso8601':
