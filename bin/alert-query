@@ -33,6 +33,7 @@ def main(argv):
         )
         parser.add_argument(
             "--minutes",
+            "--mins",
             type=int,
             dest="minutes",
             default=0,
@@ -208,7 +209,7 @@ def main(argv):
         parser.add_argument(
             "--date",
             dest="date",
-            default="short",
+            default="local",
             help="Date format of 'relative', 'local', 'iso', 'rfc', 'short' or 'raw'"
         )
         parser.add_argument(
