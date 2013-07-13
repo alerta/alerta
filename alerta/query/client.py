@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.8'
+Version = '2.0.9'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -297,7 +297,11 @@ class QueryClient(object):
                     'v': value,
                     'st': current_status.capitalize(),
                     's': current_severity.capitalize(),
+                    'sa': severity_code._ABBREV_SEVERITY_MAP.get(current_severity, '****'),
+                    'sc': severity_code.name_to_code(current_severity),
                     'sP': previous_severity.capitalize(),
+                    'sPa': severity_code._ABBREV_SEVERITY_MAP.get(previous_severity, '****'),
+                    'sPc': severity_code.name_to_code(previous_severity),
                     'E': ','.join(environment),
                     'S': ','.join(service),
                     't': text,
