@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.11'
+Version = '2.0.12'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -124,6 +124,9 @@ class QueryClient(object):
 
         if CONF.show == ['counts']:
             query['hide-alert-details'] = 'true'
+
+        if CONF.oneline:
+            CONF.format = '{i} {rd} {sa} {E} {S} {r} {g} {e} {v} {t}'
 
         if CONF.query:
             query['q'] = CONF.query

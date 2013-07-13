@@ -207,6 +207,13 @@ def main(argv):
             help="Show 'text', 'summary', 'times', 'attributes', 'details', 'tags', 'raw', 'history', 'counts' and 'color'"
         )
         parser.add_argument(
+            "--oneline",
+            action="store_true",
+            dest="oneline",
+            default=False,
+            help="Shorthand for \"--format '{i} {rd} {sa} {E} {S} {r} {g} {e} {v} {t}'\""
+        )
+        parser.add_argument(
             "--date",
             dest="date",
             default="local",
