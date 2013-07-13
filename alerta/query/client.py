@@ -4,22 +4,21 @@ import urllib
 import urllib2
 import json
 import time
-
 import datetime
-
 import pytz
+
+from email import utils
 
 from alerta.common import log as logging
 from alerta.common import status_code, severity_code
 from alerta.common import config
+from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.7'
+Version = '2.0.8'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-_DEFAULT_CONSOLE_DATE_FORMAT = '%d/%m/%y %H:%M:%S'
 
 
 class QueryClient(object):
@@ -133,7 +132,7 @@ class QueryClient(object):
             print "DEBUG: %s" % (url)
             sys.exit(0)
 
-        tz = pytz.timezone(CONF.timezone)
+        self.tz = pytz.timezone(CONF.timezone)
 
         if not CONF.noheader:
             print "Alerta Report Tool"
@@ -141,8 +140,8 @@ class QueryClient(object):
             print "    timezone: %s" % CONF.timezone
             if CONF.minutes or CONF.hours or CONF.days:
                 print "    interval: %s - %s" % (
-                    from_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT),
-                    now.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT))
+                    self._format_date(from_time),
+                    self._format_date(now))
             if CONF.show:
                 print "        show: %s" % ','.join(CONF.show)
             if CONF.sortby:
@@ -255,7 +254,7 @@ class QueryClient(object):
                 event_type = alert.get('type', None)
                 tags = alert.get('tags', None)
                 origin = alert.get('origin', None)
-                repeat = alert.get('repeat', None)
+                repeat = alert.get('repeat', False)
                 duplicate_count = int(alert.get('duplicateCount', 0))
                 threshold_info = alert.get('thresholdInfo', None)
                 summary = alert.get('summary', None)
@@ -264,22 +263,77 @@ class QueryClient(object):
                 raw_data = alert.get('rawData', None)
 
                 last_receive_id = alert.get('lastReceiveId', None)
+
                 create_time = datetime.datetime.strptime(alert.get('createTime', None), '%Y-%m-%dT%H:%M:%S.%fZ')
                 create_time = create_time.replace(tzinfo=pytz.utc)
+                create_time_epoch = time.mktime(create_time.timetuple())
+
                 receive_time = datetime.datetime.strptime(alert.get('receiveTime', None), '%Y-%m-%dT%H:%M:%S.%fZ')
                 receive_time = receive_time.replace(tzinfo=pytz.utc)
+                receive_time_epoch = time.mktime(receive_time.timetuple())
+
                 last_receive_time = datetime.datetime.strptime(alert.get('lastReceiveTime', None), '%Y-%m-%dT%H:%M:%S.%fZ')
                 last_receive_time = last_receive_time.replace(tzinfo=pytz.utc)
-                trend_indication = alert.get('trendIndication', None)
+                last_receive_time_epoch = time.mktime(last_receive_time.timetuple())
+
                 expire_time = datetime.datetime.strptime(alert.get('expireTime', None), '%Y-%m-%dT%H:%M:%S.%fZ')
                 expire_time = expire_time.replace(tzinfo=pytz.utc)
+                expire_time_epoch = time.mktime(expire_time.timetuple())
 
+                trend_indication = alert.get('trendIndication', None)
                 more_info = alert.get('moreInfo', 'n/a')
                 graph_urls = alert.get('graphUrls', ['n/a'])
-                repeat = alert.get('repeat', False)
 
                 delta = receive_time - create_time
                 latency = int(delta.days * 24 * 60 * 60 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000)
+
+                format_kwargs = {
+                    'I': alertid,
+                    'i': alertid[0:8],
+                    'r': resource,
+                    'e': event,
+                    'C': ','.join(correlate),
+                    'g': group,
+                    'v': value,
+                    'st': current_status.capitalize(),
+                    's': current_severity.capitalize(),
+                    'sP': previous_severity.capitalize(),
+                    'E': ','.join(environment),
+                    'S': ','.join(service),
+                    't': text,
+                    'eT': event_type,
+                    'T': ','.join(tags),
+                    'O': origin,
+                    'R': repeat,
+                    'D': duplicate_count,
+                    'th': threshold_info,
+                    'y': summary,
+                    'o': timeout,
+                    'B': raw_data,
+                    'ti': trend_indication,
+                    'm': more_info,
+                    'u': ','.join(graph_urls),
+                    'L': latency,
+                    'lrI': last_receive_id,
+                    'lri': last_receive_id[0:8],
+                    'ci': create_time.replace(microsecond=0).isoformat() + ".%03dZ" % (create_time.microsecond // 1000),
+                    'ct': create_time_epoch,
+                    'cd': self._format_date(create_time),
+                    'cD': utils.formatdate(create_time_epoch),
+                    'ri': receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (receive_time.microsecond // 1000),
+                    'rt': receive_time_epoch,
+                    'rd': self._format_date(receive_time),
+                    'rD': utils.formatdate(receive_time_epoch),
+                    'li': last_receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (last_receive_time.microsecond // 1000),
+                    'lt': last_receive_time_epoch,
+                    'ld': self._format_date(last_receive_time),
+                    'lD': utils.formatdate(last_receive_time_epoch),
+                    'ei': expire_time.replace(microsecond=0).isoformat() + ".%03dZ" % (expire_time.microsecond // 1000),
+                    'et': expire_time_epoch,
+                    'ed': self._format_date(expire_time),
+                    'eD': utils.formatdate(expire_time_epoch),
+                    'n': '\n',
+                }
 
                 count += 1
 
@@ -315,12 +369,20 @@ class QueryClient(object):
                 else:
                     displayTime = last_receive_time
 
+                if CONF.format:
+                    try:
+                        print line_color + CONF.format.format(**format_kwargs) + end_color
+                    except (KeyError, IndexError), e:
+                        print 'Format error: %s' % e
+                        LOG.error('Format error: %s', e)
+                    continue
+
                 if 'summary' in CONF.show:
                     print(line_color + '%s' % summary + end_color)
                 else:
                     print(line_color + '%s|%s|%s|%5d|%-5s|%-10s|%-18s|%12s|%16s|%12s' % (
                         alertid[0:8],
-                        displayTime.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT),
+                        self._format_date(displayTime),
                         severity_code._ABBREV_SEVERITY_MAP.get(current_severity, '****'),
                         duplicate_count,
                         ','.join(environment),
@@ -347,16 +409,16 @@ class QueryClient(object):
 
                 if 'times' in CONF.show:
                     print(line_color + '      time created  | %s' % (
-                        create_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT)) + end_color)
+                        self._format_date(create_time)) + end_color)
                     print(line_color + '      time received | %s' % (
-                        receive_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT)) + end_color)
+                        self._format_date(receive_time)) + end_color)
                     print(line_color + '      last received | %s' % (
-                        last_receive_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT)) + end_color)
+                        self._format_date(last_receive_time)) + end_color)
                     print(line_color + '      latency       | %sms' % latency + end_color)
                     print(line_color + '      timeout       | %ss' % timeout + end_color)
                     if expire_time:
                         print(line_color + '      expire time   | %s' % (
-                            expire_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT)) + end_color)
+                            self._format_date(expire_time)) + end_color)
 
                 if 'details' in CONF.show:
                     print(line_color + '          alert id     | %s' % alertid + end_color)
@@ -392,8 +454,7 @@ class QueryClient(object):
                             value = hist['value']
                             text = hist['text']
                             print(line_color + '  %s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
-                                                                                    receive_time.astimezone(tz).strftime(
-                                                                                        _DEFAULT_CONSOLE_DATE_FORMAT),
+                                                                                    self._format_date(receive_time),
                                                                                     severity_code._ABBREV_SEVERITY_MAP[historical_severity],
                                                                                     resource,
                                                                                     group,
@@ -405,7 +466,7 @@ class QueryClient(object):
                             update_time = update_time.replace(tzinfo=pytz.utc)
                             historical_status = hist['status']
                             print(line_color + '    %s|%s' % (
-                                update_time.astimezone(tz).strftime(_DEFAULT_CONSOLE_DATE_FORMAT), historical_status) + end_color)
+                                self._format_date(update_time), historical_status) + end_color)
 
             if CONF.watch:
                 try:
@@ -452,9 +513,32 @@ class QueryClient(object):
                 has_more = ''
             print
             print "Total: %d%s (produced on %s at %s by %s,v%s on %s in %sms)" % (
-                count, has_more, now.astimezone(tz).strftime("%d/%m/%y"), now.astimezone(tz).strftime("%H:%M:%S %Z"),
+                count, has_more, now.astimezone(self.tz).strftime("%d/%m/%y"), now.astimezone(self.tz).strftime("%H:%M:%S %Z"),
                 os.path.basename(sys.argv[0]), Version, os.uname()[1], response_time)
 
         statsd = StatsD()
         statsd.metric_send('alert.query.response_time.client', response_time, 'ms')
 
+    def _format_date(self, event_time):
+
+        if CONF.date == 'relative':
+            event_time = event_time.replace(tzinfo=pytz.utc)
+            event_time = event_time.astimezone(self.tz)
+            now = datetime.datetime.utcnow()
+            now = now.replace(tzinfo=pytz.utc)
+            return relative_date(event_time, now)
+        elif CONF.date == 'local':
+            return event_time.astimezone(self.tz).strftime('%Y/%m/%d %H:%M:%S')
+        elif CONF.date == 'iso' or CONF.date == 'iso8601':
+            return event_time.replace(microsecond=0).isoformat() + ".%03dZ" % (event_time.microsecond // 1000)
+        elif CONF.date == 'rfc' or CONF.date == 'rfc2822':
+            return utils.formatdate(time.mktime(event_time.timetuple()))
+        elif CONF.date == 'short':
+            return event_time.astimezone(self.tz).strftime('%a %d %H:%M:%S')
+        elif CONF.date == 'epoch':
+            return time.mktime(event_time.timetuple())
+        elif CONF.date == 'raw':
+            return event_time
+        else:
+            print "Unknown date format %s" % CONF.date
+            sys.exit(1)

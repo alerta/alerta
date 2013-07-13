@@ -206,6 +206,17 @@ def main(argv):
             help="Show 'text', 'summary', 'times', 'attributes', 'details', 'tags', 'raw', 'history', 'counts' and 'color'"
         )
         parser.add_argument(
+            "--date",
+            dest="date",
+            default="short",
+            help="Date format of 'relative', 'local', 'iso', 'rfc', 'short' or 'raw'"
+        )
+        parser.add_argument(
+            "--format",
+            dest="format",
+            help="Format allows you to specify which information you want to show."
+        )
+        parser.add_argument(
             "-o",
             "--orderby",
             "--sortby",

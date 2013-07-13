@@ -12,6 +12,50 @@ def isfloat(v):
         return False
 
 
+def relative_date(from_date, now=None):
+
+    now = now or datetime.datetime.utcnow()
+    diff = now - from_date
+
+    if now < from_date:
+        return 'in the future'
+    else:
+        when = 'ago'
+
+    secs = diff.seconds
+    days = diff.days
+
+    if days == 0:
+        if secs < 90:
+            return '{} seconds {}'.format(secs, when)
+        mins = (secs + 30) / 60
+        if mins < 90:
+            return '{} minutes {}'.format(mins, when)
+        else:
+            hrs = (mins + 30) / 60
+            return '{} hours {}'.format(hrs, when)
+
+    if days == 1:
+        hrs = 24 + ((secs + 1800) / 3600)
+        return '{} hours {}'.format(hrs, when)
+
+    days += (((((secs + 30) / 60) + 30) / 60) + 12) / 24
+    if days < 14:
+        return '{} days {}'.format(days, when)
+    elif days < 70:
+        return '{} weeks {}'.format((days + 3) / 7, when)
+    elif days < 365:
+        return '{} months {}'.format((days + 15) / 30, when)
+    elif days < 1825:
+        total_months = (days * 12 * 2 + 365) / (365 * 2)
+        years = total_months / 12
+        months = total_months % 12
+        return '{} year{}, {} month{} {}'.format(years, ('s' if years > 1 else ''),
+                                                 months, ('s' if months > 1 else ''), when)
+    else:
+        return '{} years {}'.format((days + 183) / 365, when)
+
+
 # Extend JSON Encoder to support ISO 8601 format dates
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
