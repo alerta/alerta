@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields
 
 
-Version = '2.0.15'
+Version = '2.0.16'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -61,7 +61,10 @@ def test():
 @jsonp
 def get_alerts():
 
-    query, sort, limit, query_time = parse_fields(request)
+    try:
+        query, sort, limit, query_time = parse_fields(request)
+    except Exception, e:
+        return jsonify(response={"status": "error", "message": str(e)})
 
     fields = dict()
     fields['history'] = {'$slice': CONF.history_limit}
@@ -119,8 +122,8 @@ def get_alerts():
                 "statusCounts": status_count,
                 "lastTime": query_time,
             },
-            "status": "error",
-            "error": "not found",
+            "status": "ok",
+            "message": "not found",
             "total": 0,
             "more": False,
             "autoRefresh": Switch.get('auto-refresh-allow').is_on(),
@@ -182,7 +185,7 @@ def modify_alert(alertid):
         if alert:
             return jsonify(response={"alert": alert.get_body(), "status": "ok", "total": 1})
         else:
-            return jsonify(response={"alert": None, "status": "error", "message": "not found", "total": 0})
+            return jsonify(response={"alert": None, "status": "ok", "message": "not found", "total": 0})
 
     # Update a single alert
     elif request.method == 'PUT':
@@ -240,7 +243,11 @@ def tag_alert(alertid):
 @jsonp
 def get_counts():
 
-    query, _, _, query_time = parse_fields(request)
+    try:
+        query, _, _, query_time = parse_fields(request)
+    except Exception, e:
+        return jsonify(response={"status": "error", "message": str(e)})
+
     found, severity_count, status_count = db.get_counts(query=query)
 
     return jsonify(response={
@@ -296,8 +303,8 @@ def get_resources():
                 "resourceDetails": list(),
                 "lastTime": query_time,
             },
-            "status": "error",
-            "error": "not found",
+            "status": "ok",
+            "message": "not found",
             "total": 0,
             "more": False,
         })

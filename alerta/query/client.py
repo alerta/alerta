@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.9'
+Version = '2.0.10'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -232,6 +232,11 @@ class QueryClient(object):
             except (KeyboardInterrupt, SystemExit):
                 sys.exit(0)
             end = time.time()
+
+            if response['status'] == 'error':
+                print "ERROR: %s" % (response['message'])
+                LOG.error('%s', response['message'])
+                sys.exit(1)
 
             if CONF.sortby in ['createTime', 'receiveTime', 'lastReceiveTime']:
                 alertDetails = reversed(response['alerts']['alertDetails'])

@@ -24,7 +24,11 @@ def parse_fields(request):
 
     from_date = request.args.get('from-date', None)
     if from_date:
-        from_date = datetime.datetime.strptime(from_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+        try:
+            from_date = datetime.datetime.strptime(from_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+        except ValueError, e:
+            LOG.warning('Could not parse from_date query parameter: %s', e)
+            raise
         from_date = from_date.replace(tzinfo=pytz.utc)
         to_date = query_time
         to_date = to_date.replace(tzinfo=pytz.utc)
