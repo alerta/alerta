@@ -10,7 +10,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.api import ApiClient
 
-Version = '2.0.11'
+Version = '2.0.12'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -84,7 +84,11 @@ class SnmpTrapHandler(object):
             if varbind == '':
                 break
             idx += 1
-            oid, value = varbind.split(None, 1)
+            try:
+                oid, value = varbind.split(None, 1)
+            except ValueError:
+                oid = varbind
+                value = ''
             varbinds[oid] = value
             trapvars['$' + str(idx)] = value  # $n
             LOG.debug('$%s %s', str(idx), value)
