@@ -369,6 +369,14 @@ def severity_widget():
     return render_template('widgets/severity.html', config=CONF, label=label, query=request.query_string)
 
 
+@app.route('/alerta/widgets/v2/status')
+def status_widget():
+
+    label = request.args.get('label', None)
+
+    return render_template('widgets/status.html', config=CONF, label=label, query=request.query_string)
+
+
 @app.route('/alerta/widgets/v2/details')
 def details_widget():
 
