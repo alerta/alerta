@@ -12,7 +12,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.6'
+Version = '2.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -152,7 +152,12 @@ class SyslogDaemon(Daemon):
                     LOG.debug(m.groups())
                     PRI = int(m.group(1))
                     CISCO_SYSLOG = m.group(2)
-                    CISCO_FACILITY, CISCO_SEVERITY, CISCO_MNEMONIC = m.group(3).split('-')
+                    try:
+                        CISCO_FACILITY, CISCO_SEVERITY, CISCO_MNEMONIC = m.group(3).split('-')
+                    except ValueError, e:
+                        LOG.error('Could not parse Cisco syslog - %s: %s', e, m.group(3))
+                        CISCO_FACILITY = CISCO_SEVERITY = CISCO_MNEMONIC = 'na'
+
                     TAG = CISCO_MNEMONIC
                     MSG = m.group(4)
 
