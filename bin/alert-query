@@ -64,12 +64,14 @@ def main(argv):
         parser.add_argument(
             "-E",
             "--environment",
+            metavar='ENV',
             action="append",
             dest="environment",
             help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA"
         )
         parser.add_argument(
             "--not-environment",
+            metavar='ENV',
             action="append",
             dest="not_environment"
         )
@@ -85,6 +87,7 @@ def main(argv):
         )
         parser.add_argument(
             "--not-service",
+            metavar='SERVICE',
             action="append",
             dest="not_service"
         )
@@ -97,6 +100,7 @@ def main(argv):
         )
         parser.add_argument(
             "--not-resource",
+            metavar='RESOURCE',
             action="append",
             dest="not_resource"
         )
@@ -109,6 +113,7 @@ def main(argv):
         )
         parser.add_argument(
             "--not-severity",
+            metavar='SEVERITY',
             action="append",
             dest="not_severity"
         )
@@ -120,6 +125,7 @@ def main(argv):
         )
         parser.add_argument(
             "--not-status",
+            metavar='STATUS',
             action="append",
             dest="not_status"
         )
@@ -132,6 +138,7 @@ def main(argv):
         )
         parser.add_argument(
             "--not-event",
+            metavar='EVENT',
             action="append",
             dest="not_event"
         )
@@ -145,6 +152,7 @@ def main(argv):
         )
         parser.add_argument(
             "--not-group",
+            metavar='GROUP',
             action="append",
             dest="not_group"
         )
@@ -156,6 +164,7 @@ def main(argv):
         )
         parser.add_argument(
             "--not-origin",
+            metavar='ORIGIN',
             action="append",
             dest="not_origin"
         )
@@ -168,6 +177,7 @@ def main(argv):
         )
         parser.add_argument(
             "--not-value",
+            metavar='VALUE',
             action="append",
             dest="not_value"
         )
@@ -179,6 +189,7 @@ def main(argv):
         )
         parser.add_argument(
             "--not-tags",
+            metavar='TAGS',
             action="append",
             dest="not_tags"
         )
@@ -190,8 +201,21 @@ def main(argv):
         )
         parser.add_argument(
             "--not-text",
+            metavar='TEXT',
             action="append",
             dest="not_text"
+        )
+        parser.add_argument(
+            "--type",
+            action="append",
+            dest="event_type",
+            help="Event type eg. snmptrapAlert, syslogAlert"
+        )
+        parser.add_argument(
+            "--not-type",
+            metavar='TYPE',
+            action="append",
+            dest="not_event_type"
         )
         parser.add_argument(
             "--repeat",

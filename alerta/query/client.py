@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.12'
+Version = '2.0.13'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -113,6 +113,12 @@ class QueryClient(object):
         if CONF.not_text:
             query['-text'] = '|'.join(CONF.not_text)
 
+        if CONF.event_type:
+            query['type'] = '|'.join(CONF.event_type)
+
+        if CONF.not_event_type:
+            query['-type'] = '|'.join(CONF.not_event_type)
+
         if CONF.repeat:
             query['repeat'] = CONF.repeat
 
@@ -197,6 +203,10 @@ class QueryClient(object):
                 print "        tags: %s" % ','.join(CONF.tags)
             if CONF.not_tags:
                 print "        tags: (not) %s" % ','.join(CONF.not_tags)
+            if CONF.event_type:
+                print "  event type: %s" % ','.join(CONF.event_type)
+            if CONF.not_event_type:
+                print "  event type: (not) %s" % ','.join(CONF.not_event_type)
             if CONF.repeat:
                 print "     repeats: %s" % CONF.repeat
             if CONF.limit:
