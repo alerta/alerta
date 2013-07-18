@@ -5,7 +5,7 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.api import ApiClient
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -47,7 +47,7 @@ class SenderClient(object):
                 environment=CONF.environment,
                 service=CONF.service,
                 text=CONF.text,
-                event_type='exceptionAlert',  # TODO(nsatterl): make this configurable?
+                event_type=CONF.event_type,
                 tags=CONF.tags,
                 origin=CONF.origin,
                 threshold_info='n/a',   # TODO(nsatterl): make this configurable?

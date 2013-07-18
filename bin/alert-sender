@@ -119,6 +119,12 @@ def main(argv):
             help='Timeout in seconds that OPEN alert will persist in webapp.'
         )
         parser.add_argument(
+            '--type',
+            dest='event_type',
+            default='exceptionAlert',
+            help='Event type eg. exceptionAlert, serviceAlert'
+        )
+        parser.add_argument(
             '-H',
             '--heartbeat',
             action='store_true',
