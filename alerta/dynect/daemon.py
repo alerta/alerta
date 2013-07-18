@@ -14,7 +14,7 @@ from alerta.common import severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.dedup import DeDup
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -138,7 +138,7 @@ class DynectDaemon(Daemon):
                 environment=environment,
                 service=service,
                 text=text,
-                event_type='dynectAlert',
+                event_type='serviceAlert',
                 tags=tags,
                 timeout=timeout,
                 threshold_info=threshold_info,
