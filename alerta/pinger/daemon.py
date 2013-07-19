@@ -17,7 +17,7 @@ from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon, StatsD
 
-Version = '2.0.12'
+Version = '2.0.13'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -148,7 +148,12 @@ class WorkerThread(threading.Thread):
                 raw_data=raw_data,
             )
 
-            if self.dedup.is_send(pingAlert):
+            suppress = pingAlert.transform_alert()
+            if suppress:
+                LOG.info('Suppressing %s alert', pingAlert.event)
+                LOG.debug('%s', pingAlert)
+
+            elif self.dedup.is_send(pingAlert):
                 self.mq.send(pingAlert)
 
             self.queue.task_done()

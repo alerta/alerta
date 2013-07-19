@@ -14,7 +14,7 @@ from alerta.common import severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.dedup import DeDup
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -145,6 +145,12 @@ class DynectDaemon(Daemon):
                 summary=summary,
                 raw_data=raw_data,
             )
+
+            suppress = dynectAlert.transform_alert()
+            if suppress:
+                LOG.info('Suppressing %s alert', dynectAlert.event)
+                LOG.debug('%s', dynectAlert)
+                continue
 
             if self.dedup.is_send(dynectAlert):
                 self.mq.send(dynectAlert)

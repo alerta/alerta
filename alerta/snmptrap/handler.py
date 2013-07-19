@@ -190,6 +190,7 @@ class SnmpTrapHandler(object):
         suppress = snmptrapAlert.transform_alert(trapoid=trapvars['$O'], trapvars=trapvars, varbinds=varbinds)
         if suppress:
             LOG.info('Suppressing %s SNMP trap', snmptrapAlert.event)
+            LOG.debug('%s', snmptrapAlert)
             return
 
         snmptrapAlert.translate(trapvars)

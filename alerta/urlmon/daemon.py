@@ -21,7 +21,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import StatsD
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -269,7 +269,12 @@ class WorkerThread(threading.Thread):
                 threshold_info=threshold_info,
             )
 
-            if self.dedup.is_send(urlmonAlert):
+            suppress = urlmonAlert.transform_alert()
+            if suppress:
+                LOG.info('Suppressing %s alert', urlmonAlert.event)
+                LOG.debug('%s', urlmonAlert)
+
+            elif self.dedup.is_send(urlmonAlert):
                 self.mq.send(urlmonAlert)
 
             self.queue.task_done()
