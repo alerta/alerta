@@ -500,6 +500,10 @@ function fnFormatDetails(aData) {
         }
     });
 
+    if (moreInfo && moreInfo.substring(0, 4) === 'http') {
+        moreInfo = '<a href="' + moreInfo + '">' + moreInfo + '</a>';
+    }
+
     $.each(aData[26], function (y, graph) {
         graphUrls += '<a href="' + graph + '" target="_blank">Graph ' + y + '</a> ';
     });
