@@ -9,3 +9,5 @@ dist
 build
 .idea
 rpmtarget/
+.DS_Store
+dist
