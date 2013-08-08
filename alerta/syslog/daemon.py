@@ -11,8 +11,9 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.graphite import StatsD
 
-Version = '2.0.7'
+Version = '2.0.8'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -56,6 +57,8 @@ class SyslogDaemon(Daemon):
             sys.exit(2)
         LOG.info('Listening on syslog port %s/tcp' % CONF.syslog_tcp_port)
 
+        self.statsd = StatsD()  # graphite metrics
+
         # Connect to message queue
         self.mq = Messaging()
         self.mq.connect(callback=SyslogMessage(self.mq))
@@ -84,6 +87,9 @@ class SyslogDaemon(Daemon):
                         for syslogAlert in syslogAlerts:
                             if self.dedup.is_send(syslogAlert):
                                 self.mq.send(syslogAlert)
+                                self.statsd.metric_send('alert.syslog.alerts.total', 1)
+                                self.statsd.metric_send('alert.syslog.alerts.%s' % syslogAlert.severity, 1)
+
                     count += 1
                 if not ip or count % 5 == 0:
                     LOG.debug('Send heartbeat...')
