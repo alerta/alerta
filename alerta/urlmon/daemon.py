@@ -21,7 +21,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import StatsD
 
-Version = '2.0.5'
+Version = '2.0.6'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -53,7 +53,7 @@ def init_urls():
     urls = list()
     LOG.info('Loading URLs...')
     try:
-        urls = yaml.load(open(CONF.yaml_config))
+        urls = yaml.load(open(CONF.urlmon_file))
     except Exception, e:
         LOG.error('Failed to load URLs: %s', e)
     LOG.info('Loaded %d URLs OK', len(urls))

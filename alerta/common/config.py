@@ -78,11 +78,13 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'syslog_tcp_port': 514,
         'syslog_facility': 'local7',
 
+        'ping_file': '/etc/alerta/alert-pinger.targets',
         'ping_max_timeout': 15,  # seconds
         'ping_max_retries': 2,
         'ping_slow_warning': 5,    # ms
         'ping_slow_critical': 10,  # ms
 
+        'urlmon_file': '/etc/alerta/alert-urlmon.targets',
         'urlmon_max_timeout': 15,  # seconds
         'urlmon_slow_warning': 2000,   # ms
         'urlmon_slow_critical': 5000,  # ms

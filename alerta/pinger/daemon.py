@@ -41,7 +41,7 @@ def init_targets():
     targets = list()
     LOG.info('Loading Ping targets...')
     try:
-        targets = yaml.load(open(CONF.yaml_config))
+        targets = yaml.load(open(CONF.ping_file))
     except Exception, e:
         LOG.error('Failed to load Ping targets: %s', e)
     LOG.info('Loaded %d Ping targets OK', len(targets))
