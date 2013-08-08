@@ -1,6 +1,7 @@
 import os
 import sys
 import argparse
+import socket
 import ConfigParser
 
 from alerta.common.utils import Bunch
@@ -120,6 +121,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'gmetric_protocol': 'udp',
         'gmetric_spoof': '10.1.1.1:%s' % prog,
 
+        'graphite_prefix': 'alerta.%s' % socket.gethostname(),
         'carbon_host': 'localhost',
         'carbon_port': 2003,
         'carbon_protocol': 'udp',

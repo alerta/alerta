@@ -47,10 +47,15 @@ class Carbon(object):
         if not timestamp:
             timestamp = int(time.time())
 
-        LOG.debug('Carbon name=%s, value=%s, timestamp=%s', name, value, timestamp)
+        if CONF.graphite_prefix and len(CONF.graphite_prefix) > 0:
+            prefix = CONF.graphite_prefix + '.'
+        else:
+            prefix = ''
+
+        LOG.debug('Carbon name=%s%s, value=%s, timestamp=%s', prefix, name, value, timestamp)
 
         if self.protocol == 'udp':
-            count = self.socket.sendto('%s %s %s\n' % (name, value, timestamp), self.addr)
+            count = self.socket.sendto('%s%s %s %s\n' % (prefix, name, value, timestamp), self.addr)
             LOG.debug('Sent %s UDP metric packets', count)
         else:
             if not self._connected:
@@ -107,9 +112,15 @@ class StatsD(object):
         mtype = mtype or 'c'  # default is 'counter'
         rate = rate or self.rate
 
-        LOG.debug('Statsd name=%s, value=%s, type=%s rate=%s', name, value, mtype, rate)
 
-        data = '%s:%s|%s' % (name, value, mtype)
+        if CONF.graphite_prefix and len(CONF.graphite_prefix) > 0:
+            prefix = CONF.graphite_prefix + '.'
+        else:
+            prefix = ''
+
+        LOG.debug('Statsd name=%s%s, value=%s, type=%s rate=%s', prefix, name, value, mtype, rate)
+
+        data = '%s%s:%s|%s' % (prefix, name, value, mtype)
 
         if rate < 1:
             if random() <= rate:
