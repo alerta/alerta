@@ -55,8 +55,12 @@ class Carbon(object):
         LOG.debug('Carbon name=%s%s, value=%s, timestamp=%s', prefix, name, value, timestamp)
 
         if self.protocol == 'udp':
-            count = self.socket.sendto('%s%s %s %s\n' % (prefix, name, value, timestamp), self.addr)
-            LOG.debug('Sent %s UDP metric packets', count)
+            try:
+                count = self.socket.sendto('%s%s %s %s\n' % (prefix, name, value, timestamp), self.addr)
+            except socket.error, e:
+                LOG.error('Failed to send metric to UDP Carbon server %s:%s: %s', self.host, self.port, e)
+            else:
+                LOG.debug('Sent %s UDP metric packets', count)
         else:
             if not self._connected:
                 LOG.info('Attempting reconnect to Carbon server %s:%s', self.host, self.port)
@@ -72,12 +76,12 @@ class Carbon(object):
 
             if self._connected:
                 try:
-                    LOG.debug('Carbon metric send: %s %s %s', (name, value, timestamp))
                     self.socket.sendall('%s %s %s\n' % (name, value, timestamp))
-                    LOG.debug('Sent all TCP metric data')
-                except socket.error:
+                except socket.error, e:
+                    LOG.warning('Failed to send metric to TCP Carbon server %s:%s: e', self.host, self.port, e)
                     self._connected = False
-                    LOG.warning('Carbon server %s not responding on TCP port %s', self.host, self.port)
+                else:
+                    LOG.debug('Sent all TCP metric data')
 
     def shutdown(self):
 
