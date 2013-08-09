@@ -19,9 +19,9 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
-from alerta.common.graphite import StatsD
+from alerta.common.graphite import Carbon
 
-Version = '2.0.6'
+Version = '2.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -63,7 +63,7 @@ def init_urls():
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, mq, queue, dedup, statsd):
+    def __init__(self, mq, queue, dedup, carbon):
 
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
@@ -75,7 +75,7 @@ class WorkerThread(threading.Thread):
         self.queue = queue   # internal queue
         self.mq = mq               # message broker
         self.dedup = dedup
-        self.statsd = statsd
+        self.carbon = carbon
         
     def run(self):
 
@@ -242,8 +242,8 @@ class WorkerThread(threading.Thread):
             else:
                 avail = 0.0
 
-            self.statsd.metric_send('alert.urlmon.availablity.%s' % check['resource'], '%.1f' % avail, 'g')
-            self.statsd.metric_send('alert.urlmon.response_time.%s' % check['resource'], '%d' % rtt, 'ms')
+            self.carbon.metric_send('alert.urlmon.%s.availability' % check['resource'], '%.1f' % avail)  # %
+            self.carbon.metric_send('alert.urlmon.%s.responseTime' % check['resource'], '%d' % rtt)  # ms
 
             resource = check['resource']
             correlate = _HTTP_ALERTS
@@ -308,7 +308,7 @@ class UrlmonDaemon(Daemon):
 
         self.dedup = DeDup()
 
-        self.statsd = StatsD()  # graphite metrics
+        self.carbon = Carbon()  # graphite metrics
 
         # Initialiase alert rules
         urls = init_urls()
@@ -316,7 +316,7 @@ class UrlmonDaemon(Daemon):
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.mq, self.queue, self.dedup, self.statsd)
+            w = WorkerThread(self.mq, self.queue, self.dedup, self.carbon)
             try:
                 w.start()
             except Exception, e:
@@ -333,9 +333,9 @@ class UrlmonDaemon(Daemon):
                 heartbeat = Heartbeat(version=Version)
                 self.mq.send(heartbeat)
 
-                LOG.info('URL check queue length is %d', self.queue.qsize())
-
                 time.sleep(CONF.loop_every)
+                LOG.info('URL check queue length is %d', self.queue.qsize())
+                self.carbon.metric_send('alert.urlmon.queueLength', self.queue.qsize())
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True

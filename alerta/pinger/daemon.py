@@ -17,7 +17,7 @@ from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
-Version = '2.0.15'
+Version = '2.0.16'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -88,9 +88,9 @@ class WorkerThread(threading.Thread):
 
             if rc == PING_OK:
                 avg, max = rtt
-                self.carbon.metric_send('alert.pinger.%s.avg' % resource, avg)
-                self.carbon.metric_send('alert.pinger.%s.max' % resource, max)
-                self.carbon.metric_send('alert.pinger.%s.avail' % resource, 100.0)
+                self.carbon.metric_send('alert.pinger.%s.avgRoundTrip' % resource, avg)
+                self.carbon.metric_send('alert.pinger.%s.maxRoundTrip' % resource, max)
+                self.carbon.metric_send('alert.pinger.%s.availability' % resource, 100.0)
                 if avg > CONF.ping_slow_critical:
                     event = 'PingSlow'
                     severity = severity_code.CRITICAL
@@ -109,13 +109,13 @@ class WorkerThread(threading.Thread):
                 severity = severity_code.MAJOR
                 text = 'Node did not respond to ping or timed out within %s seconds' % CONF.ping_max_timeout
                 value = '%s%% packet loss' % loss
-                self.carbon.metric_send('alert.pinger.%s.avail' % resource, 100.0 - float(loss))
+                self.carbon.metric_send('alert.pinger.%s.availability' % resource, 100.0 - float(loss))
             elif rc == PING_ERROR:
                 event = 'PingError'
                 severity = severity_code.WARNING
                 text = 'Could not ping node %s.' % resource
                 value = stdout
-                self.carbon.metric_send('alert.pinger.%s.avail' % resource, 0.0)
+                self.carbon.metric_send('alert.pinger.%s.availability' % resource, 0.0)
             else:
                 LOG.warning('Unknown ping return code: %s', rc)
                 continue
@@ -251,7 +251,7 @@ class PingerDaemon(Daemon):
 
                 time.sleep(CONF.loop_every)
                 LOG.info('Ping queue length is %d', self.queue.qsize())
-                self.carbon.metric_send('alert.pinger.queue_length', self.queue.qsize())
+                self.carbon.metric_send('alert.pinger.queueLength', self.queue.qsize())
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
