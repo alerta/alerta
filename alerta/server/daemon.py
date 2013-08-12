@@ -11,9 +11,9 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
-from alerta.common.graphite import StatsD
+from alerta.common.graphite import Carbon, StatsD
 
-Version = '2.0.9'
+Version = '2.0.10'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -194,6 +194,7 @@ class AlertaDaemon(Daemon):
         self.running = True
 
         self.queue = Queue.Queue()  # Create internal queue
+        self.carbon = Carbon()  # carbon metrics
         self.statsd = StatsD()  # graphite metrics
 
         # Connect to message queue
@@ -218,9 +219,10 @@ class AlertaDaemon(Daemon):
                 heartbeat = Heartbeat(version=Version, timeout=CONF.loop_every)
                 self.mq.send(heartbeat)
 
-                LOG.debug('Internal queue size is %s messages', self.queue.qsize())
-
                 time.sleep(CONF.loop_every)
+                LOG.info('Alert processing queue length is %d', self.queue.qsize())
+                self.carbon.metric_send('alerta.alerts.queueLength', self.queue.qsize())
+
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
 
