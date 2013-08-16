@@ -13,11 +13,12 @@ CONF = config.CONF
 
 class Carbon(object):
 
-    def __init__(self, host=None, port=None, protocol=None):
+    def __init__(self, host=None, port=None, protocol=None, prefix=None):
 
         self.host = host or CONF.carbon_host
         self.port = port or CONF.carbon_port
         self.protocol = protocol or CONF.carbon_protocol
+        self.prefix = prefix or CONF.graphite_prefix
 
         if self.protocol not in ['udp', 'tcp']:
             LOG.error("Protocol must be one of: udp, tcp")
@@ -47,8 +48,8 @@ class Carbon(object):
         if not timestamp:
             timestamp = int(time.time())
 
-        if CONF.graphite_prefix and len(CONF.graphite_prefix) > 0:
-            prefix = CONF.graphite_prefix + '.'
+        if len(self.prefix) > 0:
+            prefix = self.prefix + '.'
         else:
             prefix = ''
 
@@ -91,11 +92,12 @@ class Carbon(object):
 
 class StatsD(object):
 
-    def __init__(self, host=None, port=None, rate=1):
+    def __init__(self, host=None, port=None, rate=1, prefix=None):
 
         self.host = host or CONF.statsd_host
         self.port = port or CONF.statsd_port
         self.rate = rate
+        self.prefix = prefix or CONF.graphite_prefix
 
         LOG.debug('Statsd setup to send packets to %s:%s with sample rate of %d', self.host, self.port, self.rate)
 
@@ -116,9 +118,8 @@ class StatsD(object):
         mtype = mtype or 'c'  # default is 'counter'
         rate = rate or self.rate
 
-
-        if CONF.graphite_prefix and len(CONF.graphite_prefix) > 0:
-            prefix = CONF.graphite_prefix + '.'
+        if len(self.prefix) > 0:
+            prefix = self.prefix + '.'
         else:
             prefix = ''
 
