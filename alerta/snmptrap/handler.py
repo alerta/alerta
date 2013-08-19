@@ -9,8 +9,10 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.api import ApiClient
+from alerta.common.graphite import StatsD
 
-Version = '2.0.12'
+
+Version = '2.0.13'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -37,6 +39,8 @@ class SnmpTrapHandler(object):
 
     def run(self):
 
+        self.statsd = StatsD()  # graphite metrics
+
         data = sys.stdin.read()
         LOG.info('snmptrapd -> %r', data)
         data = unicode(data, 'utf-8', errors='ignore')
@@ -48,6 +52,7 @@ class SnmpTrapHandler(object):
 
         if snmptrapAlert:
             self.api.send(snmptrapAlert)
+            self.statsd.metric_send('alert.snmptrap.alerts.total', 1)
 
         LOG.debug('Send heartbeat...')
         heartbeat = Heartbeat(version=Version)
