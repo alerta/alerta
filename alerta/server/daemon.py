@@ -13,7 +13,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 from alerta.common.graphite import Carbon, StatsD
 
-Version = '2.0.10'
+Version = '2.0.11'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -162,6 +162,11 @@ class ServerMessage(MessageHandler):
         MessageHandler.__init__(self)
 
     def on_message(self, headers, body):
+
+        if 'type' not in headers or 'correlation-id' not in headers:
+            LOG.warning('Malformed header missing "type" or "correlation-id": %s', headers)
+            self.statsd.metric_send('alerta.alerts.rejected', 1)
+            return
 
         LOG.info("Received %s %s", headers['type'], headers['correlation-id'])
         LOG.debug("Received body : %s", body)
