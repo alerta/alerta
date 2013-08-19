@@ -13,7 +13,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.graphite import StatsD
 
-Version = '2.0.8'
+Version = '2.0.9'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -88,7 +88,6 @@ class SyslogDaemon(Daemon):
                             if self.dedup.is_send(syslogAlert):
                                 self.mq.send(syslogAlert)
                                 self.statsd.metric_send('alert.syslog.alerts.total', 1)
-                                self.statsd.metric_send('alert.syslog.alerts.%s' % syslogAlert.severity, 1)
 
                     count += 1
                 if not ip or count % 5 == 0:
