@@ -280,17 +280,23 @@ class SwisClient(object):
 
         prog = os.path.basename(sys.argv[0])
         self.cursor_file = '%s/%s.cursor' % (CONF.pid_dir, prog)
+        self.npm_event_id_cursor = None
+        self.ucs_event_id_cursor = None
 
         if os.path.isfile(self.cursor_file):
-            npm_id, ucs_id = open(self.cursor_file).read().splitlines()
-            LOG.info('Event IDs cursor read from file: %s, %s', npm_id, ucs_id)
-        else:
-            npm_id = self._get_max_npm_event_id()
-            ucs_id = self._get_max_ucs_event_id()
-            LOG.info('Event ID cursor queried from db: %s, %s', npm_id, ucs_id)
+            try:
+                self.npm_event_id_cursor, self.ucs_event_id_cursor = open(self.cursor_file).read().splitlines()
+                LOG.info('Event IDs cursor read from file: %s, %s', self.npm_event_id_cursor, self.ucs_event_id_cursor)
+            except Exception, e:
+                LOG.error('Failed to read event IDs from cursor file: %s', e)
 
-        self.npm_event_id_cursor = npm_id
-        self.ucs_event_id_cursor = ucs_id
+        if not self.npm_event_id_cursor:
+            self.npm_event_id_cursor = self._get_max_npm_event_id()
+            LOG.info('NPM Event ID cursor queried from db: %s', self.npm_event_id_cursor)
+
+        if not self.ucs_event_id_cursor:
+            self.ucs_event_id_cursor = self._get_max_ucs_event_id()
+            LOG.info('UCS Event ID cursor queried from db: %s', self.ucs_event_id_cursor)
 
     def get_npm_events(self):
 
@@ -300,6 +306,7 @@ class SwisClient(object):
             raise IOError
         if last_event_id == self.npm_event_id_cursor:
             LOG.debug('No new events since event id %s. Skipping NPM event query...', last_event_id)
+            self._save_cursor()
             return []
 
         LOG.debug('Get network events in range %s -> %s', self.npm_event_id_cursor, last_event_id)
@@ -358,6 +365,7 @@ class SwisClient(object):
             raise IOError
         if last_event_id == self.ucs_event_id_cursor:
             LOG.debug('No new events since event id %s. Skipping UCS event query...', last_event_id)
+            self._save_cursor()
             return []
 
         LOG.debug('Get UCS events in range %s -> %s', self.ucs_event_id_cursor, last_event_id)
