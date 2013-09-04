@@ -1,4 +1,5 @@
 recursive-include alerta/api/v2/templates *
+recursive-include alerta/dashboard/v2/templates *
 
 exclude .gitignore
 

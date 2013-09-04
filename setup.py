@@ -30,6 +30,7 @@ setuptools.setup(
              'bin/alert-urlmon',
              'bin/alerta',
              'bin/alerta-api',
+             'bin/alerta-dashboard',
              ],
     keywords='alert monitoring system'
 )

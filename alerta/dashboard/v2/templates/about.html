@@ -1,0 +1,85 @@
+<html lang="en">
+<head>
+    <!-- link href='http://fonts.googleapis.com/css?family=Sintony:400,700' rel='stylesheet' type='text/css' -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+
+    <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.js"></script>
+
+    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            padding-top: 60px;
+            padding-bottom: 40px;
+        }
+    </style>
+    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="/alerta/dashboard/v2/assets/css/custom.css" rel="stylesheet">
+
+</head>
+
+
+<body>
+<div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="navbar-inner">
+        <div class="container">
+            <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </a>
+            <a class="brand" href="/alerta/dashboard/v2/templates/index.html">Alert Console</a>
+            <div class="nav-collapse">
+                <ul class="nav">
+                    <li class=""><a href="/alerta/dashboard/v2/templates/index.html">Production</a></li>
+                    <li class=""><a href="/alerta/dashboard/v2/templates/dev.html">Development</a></li>
+                    <li class=""><a href="/alerta/dashboard/v2/templates/infra.html">Infrastructure</a></li>
+                    <li class=""><a href="/Kibana">History</a></li>
+                    <li class="active"><a href="about.html">About</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row show-grid">
+        <div class="span12">
+            <div class="row show-grid">
+            <table class="table table-bordered table-condensed" id="heartbeats">
+                <thead>
+                <tr><th>Origin</th><th>Version</th><th>Heartbeat Sent</th><th>Time Since Received</th><th>Latency</th></tr>
+                </thead>
+                <tbody id="heartbeat-info">
+                <tr><td>...</td><td>...</td><td>...</td><td>...</td><td>...</td></tr>
+                </tbody>
+            </table>
+            </div> <!-- row -->
+        </div> <!-- end span12 -->
+    </div> <!-- end row -->
+</div> <!-- end container -->
+
+<script>
+
+    var api_port = {{ config['api_port'] }};
+
+</script>
+
+<script src="/alerta/dashboard/v2/assets/js/console.js"></script>
+
+<script>
+
+    var hb_threshold = 300; // 5 minutes
+    var api_server = document.domain + ':' + window.api_port;
+
+    $(document).ready(function() {
+        getHeartbeats(true);
+    });
+
+</script>
+
+<script src="/alerta/dashboard/v2/assets/bootstrap/js/bootstrap-collapse.js"></script>
+
+</body>
+</html>
