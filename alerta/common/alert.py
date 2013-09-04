@@ -329,8 +329,6 @@ class Alert(object):
                 if 'suppress' in c:
                     suppress = suppress or c['suppress']
 
-                break
-
         return suppress
 
     def translate(self, mappings):
