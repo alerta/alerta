@@ -16,7 +16,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.15'
+Version = '2.0.16'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -151,6 +151,7 @@ class QueryClient(object):
 
         if CONF.output == 'table':
             pt = prettytable.PrettyTable(["Alert ID", "Last Receive Time", "Severity", "Dupl.", "Environment", "Service", "Resource", "Group", "Event", "Value"])
+            col_text = []
         elif not CONF.noheader:
             print "Alerta Report Tool"
             print "  api server: %s:%s" % (CONF.api_host, CONF.api_port)
@@ -411,6 +412,8 @@ class QueryClient(object):
                         event,
                         value]
                     )
+                    if 'text' in CONF.show:
+                        col_text.append(text)
                     continue
 
                 if CONF.format:
@@ -512,10 +515,6 @@ class QueryClient(object):
                             print(line_color + '    %s|%s' % (
                                 self._format_date(update_time), historical_status) + end_color)
 
-            if CONF.output == 'table':
-                print pt
-                break
-
             if CONF.watch:
                 try:
                     time.sleep(CONF.interval)
@@ -553,7 +552,9 @@ class QueryClient(object):
         response_time = int((end - start) * 1000)
 
         if CONF.output == 'table':
-            pass
+            if 'text' in CONF.show:
+                pt.add_column("Text", col_text)
+            print pt
         elif not CONF.nofooter:
             if response['more']:
                 has_more = '+'
