@@ -304,6 +304,12 @@ def main(argv):
             help="Synonym for --show=color"
         )
         parser.add_argument(
+            "--output",
+            dest="output",
+            default="text",
+            help="Output format of 'text', 'table' or 'json'"
+        )
+        parser.add_argument(
             "-j",
             "--json",
             action="store_true",

@@ -5,6 +5,7 @@ import urllib2
 import json
 import time
 import datetime
+import prettytable
 import pytz
 
 from email import utils
@@ -15,7 +16,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.14'
+Version = '2.0.15'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -139,13 +140,18 @@ class QueryClient(object):
 
         url = "%s?%s" % (API_URL, urllib.urlencode(query))
 
+        if CONF.json:
+            CONF.output = 'json'
+
         if CONF.dry_run:
-            print "DEBUG: %s" % (url)
+            print "DEBUG: %s" % url
             sys.exit(0)
 
         self.tz = pytz.timezone(CONF.timezone)
 
-        if not CONF.noheader:
+        if CONF.output == 'table':
+            pt = prettytable.PrettyTable(["Alert ID", "Last Receive Time", "Severity", "Dupl.", "Environment", "Service", "Resource", "Group", "Event", "Value"])
+        elif not CONF.noheader:
             print "Alerta Report Tool"
             print "  api server: %s:%s" % (CONF.api_host, CONF.api_port)
             print "    timezone: %s" % CONF.timezone
@@ -381,7 +387,7 @@ class QueryClient(object):
                 if 'color' in CONF.show or CONF.color:
                     line_color = severity_code._COLOR_MAP[current_severity]
 
-                if CONF.json:
+                if CONF.output == 'json':
                     print(line_color + json.dumps(alert, indent=4) + end_color)
                     continue
 
@@ -391,6 +397,21 @@ class QueryClient(object):
                     displayTime = receive_time
                 else:
                     displayTime = last_receive_time
+
+                if CONF.output == 'table':
+                    pt.add_row([
+                        alertid,
+                        self._format_date(displayTime),
+                        severity_code._ABBREV_SEVERITY_MAP.get(current_severity, '****'),
+                        duplicate_count,
+                        ','.join(environment),
+                        ','.join(service),
+                        resource,
+                        group,
+                        event,
+                        value]
+                    )
+                    continue
 
                 if CONF.format:
                     try:
@@ -491,6 +512,10 @@ class QueryClient(object):
                             print(line_color + '    %s|%s' % (
                                 self._format_date(update_time), historical_status) + end_color)
 
+            if CONF.output == 'table':
+                print pt
+                break
+
             if CONF.watch:
                 try:
                     time.sleep(CONF.interval)
@@ -527,7 +552,9 @@ class QueryClient(object):
 
         response_time = int((end - start) * 1000)
 
-        if not CONF.nofooter:
+        if CONF.output == 'table':
+            pass
+        elif not CONF.nofooter:
             if response['more']:
                 has_more = '+'
             else:
