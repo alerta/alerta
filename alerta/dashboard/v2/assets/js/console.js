@@ -1,5 +1,5 @@
 
-var API_HOST = document.domain + ':' + window.api_port;
+var API_HOST = window.api_host + ':' + window.api_port;
 var REFRESH_INTERVAL = 30; // seconds
 
 var show_hb_alerts = true;

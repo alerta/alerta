@@ -12,10 +12,10 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
 from alerta.common.utils import DateEncoder
-from alerta.api.v2.utils import parse_fields
+from alerta.api.v2.utils import parse_fields, crossdomain
 
 
-Version = '2.0.17'
+Version = '2.0.18'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -42,7 +42,8 @@ def jsonp(func):
     return decorated_function
 
 
-@app.route('/test', methods=['POST', 'GET', 'PUT', 'DELETE'])
+@app.route('/test', methods=['OPTIONS', 'PUT', 'POST', 'DELETE', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def test():
 
@@ -130,7 +131,8 @@ def get_alerts():
         })
 
 
-@app.route('/alerta/api/v2/alerts/alert.json', methods=['POST'])
+@app.route('/alerta/api/v2/alerts/alert.json', methods=['OPTIONS', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def create_alert():
 
@@ -173,7 +175,8 @@ def create_alert():
         return jsonify(response={"status": "error", "message": "something went wrong"})
 
 
-@app.route('/alerta/api/v2/alerts/alert/<alertid>', methods=['GET', 'PUT', 'POST', 'DELETE'])
+@app.route('/alerta/api/v2/alerts/alert/<alertid>', methods=['OPTIONS', 'PUT', 'POST', 'DELETE', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def modify_alert(alertid):
 
@@ -222,7 +225,8 @@ def modify_alert(alertid):
 
 
 # Tag an alert
-@app.route('/alerta/api/v2/alerts/alert/<alertid>/tag', methods=['PUT'])
+@app.route('/alerta/api/v2/alerts/alert/<alertid>/tag', methods=['OPTIONS', 'PUT'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def tag_alert(alertid):
 
@@ -309,7 +313,8 @@ def get_resources():
             "more": False,
         })
 
-@app.route('/alerta/api/v2/resources/resource/<resource>', methods=['POST', 'DELETE'])
+@app.route('/alerta/api/v2/resources/resource/<resource>', methods=['OPTIONS', 'POST', 'DELETE'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def delete_resource(resource):
 
@@ -336,7 +341,8 @@ def get_heartbeats():
     return jsonify(application="alerta", time=int(time.time() * 1000), heartbeats=heartbeats)
 
 
-@app.route('/alerta/api/v2/heartbeats/heartbeat.json', methods=['POST'])
+@app.route('/alerta/api/v2/heartbeats/heartbeat.json', methods=['OPTIONS', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def create_heartbeat():
 
@@ -359,5 +365,3 @@ def create_heartbeat():
         return jsonify(response={"status": "ok", "id": heartbeat.get_id()})
     else:
         return jsonify(response={"status": "error", "message": "something went wrong"})
-
-
