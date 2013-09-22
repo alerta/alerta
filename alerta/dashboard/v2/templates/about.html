@@ -61,9 +61,8 @@
 </div> <!-- end container -->
 
 <script>
-
+    var api_host = "{{ config['api_host'] }}";
     var api_port = {{ config['api_port'] }};
-
 </script>
 
 <script src="/alerta/dashboard/v2/assets/js/console.js"></script>
@@ -71,7 +70,6 @@
 <script>
 
     var hb_threshold = 300; // 5 minutes
-    var api_server = document.domain + ':' + window.api_port;
 
     $(document).ready(function() {
         getHeartbeats(true);
