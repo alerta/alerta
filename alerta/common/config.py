@@ -138,7 +138,8 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         add_help=False
     )
     cfg_parser.add_argument(
-        '-c', '--conf-file',
+        '-c',
+        '--conf-file',
         help="Specify config file (default: %s)" % OPTION_DEFAULTS['conf_file'],
         metavar="FILE",
         default=OPTION_DEFAULTS['conf_file']
@@ -244,10 +245,11 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
 
     if daemon:
         parser.add_argument(
+            '-f',
             '--foreground',
             default=OPTION_DEFAULTS['foreground'],
             action='store_true',
-            help="Run in foreground"
+            help="Do not fork, run in the foreground"
         )
     parser.set_defaults(**defaults)
 
