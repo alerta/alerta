@@ -17,7 +17,7 @@ from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
-Version = '2.0.16'
+Version = '2.0.17'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -72,17 +72,22 @@ class WorkerThread(threading.Thread):
                 LOG.info('%s is shutting down.', self.getName())
                 break
 
-            environment, service, resource, retries = item
+            environment, service, resource, retries, queue_time = item
 
-            LOG.info('%s pinging %s', self.getName(), resource)
+            if time.time() - queue_time > CONF.loop_every:
+                LOG.warning('%s ping request to %s expired.', self.getName(), resource)
+                self.queue.task_done()
+                continue
+
+            LOG.info('%s pinging %s...', self.getName(), resource)
             if retries > 1:
-                rc, rtt, loss, stdout = self.pinger(resource, count=2, timeout=2)
+                rc, rtt, loss, stdout = self.pinger(resource, count=2, timeout=5)
             else:
                 rc, rtt, loss, stdout = self.pinger(resource, count=5, timeout=CONF.ping_max_timeout)
 
             if rc != PING_OK and retries:
                 LOG.info('Retrying ping %s %s more times', resource, retries)
-                self.queue.put((environment, service, resource, retries - 1))
+                self.queue.put((environment, service, resource, retries - 1, time.time()))
                 self.queue.task_done()
                 continue
 
@@ -156,14 +161,14 @@ class WorkerThread(threading.Thread):
                 self.mq.send(pingAlert)
 
             self.queue.task_done()
-            LOG.info('%s ping complete.', self.getName())
+            LOG.info('%s ping %s complete.', self.getName(), resource)
 
         self.queue.task_done()
 
     @staticmethod
     def pinger(node, count=1, interval=1, timeout=5):
 
-        if timeout < count * interval:
+        if timeout <= count * interval:
             timeout = count * interval + 1
         if timeout > CONF.ping_max_timeout:
             timeout = CONF.ping_max_timeout
@@ -243,7 +248,7 @@ class PingerDaemon(Daemon):
                             environment = p['environment']
                             service = p['service']
                             retries = p.get('retries', CONF.ping_max_retries)
-                            self.queue.put((environment, service, target, retries))
+                            self.queue.put((environment, service, target, retries, time.time()))
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(version=Version)

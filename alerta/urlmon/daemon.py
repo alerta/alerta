@@ -21,7 +21,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-Version = '2.0.7'
+Version = '2.0.8'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -81,7 +81,12 @@ class WorkerThread(threading.Thread):
 
         while True:
             LOG.debug('Waiting on input queue...')
-            check = self.queue.get()
+            check, queue_time = self.queue.get()
+
+            if time.time() - queue_time > CONF.loop_every:
+                LOG.warning('%s check request expired.', self.getName())
+                self.queue.task_done()
+                continue
 
             if not check:
                 LOG.info('%s is shutting down.', self.getName())
@@ -327,7 +332,7 @@ class UrlmonDaemon(Daemon):
         while not self.shuttingdown:
             try:
                 for url in urls:
-                    self.queue.put(url)
+                    self.queue.put((url, time.time()))
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(version=Version)
