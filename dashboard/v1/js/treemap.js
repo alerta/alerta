@@ -1,7 +1,7 @@
 var w = 940,
     h = 500;
 
-var api_server = document.domain + ':80';
+var api_server = document.domain + ':8080';
 
 function color(sev) {
     if (sev == "critical") {

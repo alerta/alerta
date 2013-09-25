@@ -6,7 +6,7 @@ var logger = 0,
 
 var hb_threshold = 300; // 5 minutes
 
-var api_server = document.domain + ':80';
+var api_server = document.domain + ':8080';
 
 function updateLimit(lim) {
     if (lim > 0) {

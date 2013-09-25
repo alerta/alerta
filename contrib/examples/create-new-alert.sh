@@ -1,6 +1,6 @@
 #!/bin/bash
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8000/alerta/api/v2/alerts/alert.json' -d '
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '
 {
   "resource": "host678:eth0",
   "event": "HW:NIC:FAILED",
@@ -19,7 +19,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8000/alerta/ap
 echo
 sleep 1
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8000/alerta/api/v2/alerts/alert.json' -d '{
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '{
     "resource": "fw010",
     "event": "NodeDown",
     "group": "Firewall",
@@ -41,7 +41,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8000/alerta/ap
 echo
 sleep 2
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8000/alerta/api/v2/alerts/alert.json' -d '{
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '{
     "resource": "router0011",
     "event": "node_up",
     "group": "Network",
@@ -62,7 +62,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8000/alerta/ap
 echo
 sleep 3
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8000/alerta/api/v2/alerts/alert.json' -d '{
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '{
     "resource": "mydb",
     "event": "OraError",
     "group": "Database",
@@ -84,7 +84,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8000/alerta/ap
 echo
 sleep 1
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8000/alerta/api/v2/alerts/alert.json' -d '{
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '{
     "resource": "myapp",
     "event": "SlowResponse",
     "group": "Application",
@@ -105,7 +105,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8000/alerta/ap
 echo
 sleep 1
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8000/alerta/api/v2/alerts/alert.json' -d '{
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '{
     "resource": "host44",
     "event": "SwapUtil",
     "group": "OS",
