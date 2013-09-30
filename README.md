@@ -39,7 +39,7 @@ MongoDB shell version: 2.0.4
 connecting to: test
 > use monitoring
 switched to db monitoring
-> db.addUser({"alerta","8l3rt8", false})
+> db.addUser("alerta","8l3rt8", false)
 ```
 
 To use RabbitMQ with STOMP plugin enabled and configure the broker:
@@ -92,6 +92,7 @@ To use the alert console modify `$HOME/.alerta.conf` so that the API uses a free
 ```
 [DEFAULT]
 log_dir = /tmp
+mongo_username = alerta
 mongo_password = 8l3rt8
 api_host = x.x.x.x             <---- replace with actual IP address
 
