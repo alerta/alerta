@@ -9,7 +9,7 @@ The alerta monitoring tool was developed with the following aims in mind:
 *   minimal **CONFIGURATION** that easily accepts alerts from any source
 *   quick at-a-glance **VISUALISATION** with drill-down to detail
 
-![console](/doc/images/alerta-console-small.png?raw=true)
+![console](/doc/images/alerta-dashboard-v2.png?raw=true)
 
 More screenshots are available [here](/doc/images/)
 
