@@ -27,8 +27,19 @@ The backend components are written in Python and the web frontend in JavaScript 
 To install and configure the requirements on Debian/Ubuntu:
 
 ```
+$ sudo apt-get update
 $ sudo apt-get install mongodb-server
+```
 
+Create a mongo user:
+
+```
+$ mongo
+MongoDB shell version: 2.0.4
+connecting to: test
+> use monitoring
+switched to db monitoring
+> db.addUser({"admin","admin", false})
 ```
 
 To use RabbitMQ with STOMP plugin enabled and configure the broker:
@@ -36,8 +47,10 @@ To use RabbitMQ with STOMP plugin enabled and configure the broker:
 ```
 $ sudo apt-get install rabbitmq-server
 $ sudo /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_stomp
+$ sudo /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management
 $ sudo service rabbitmq-server restart
-$ wget http://guest:guest@localhost:55672/cli/rabbitmqadmin && chmod +x rabbitmqadmin
+$ wget http://guest:guest@localhost:55672/cli/rabbitmqadmin && chmod +x rabbitmqadmin    <--- rabbitmq 2.x
+$ wget http://guest:guest@localhost:15672/cli/rabbitmqadmin && chmod +x rabbitmqadmin    <--- rabbitmq 3.x
 $ ./rabbitmqadmin declare exchange name=alerts type=fanout
 ```
 
@@ -47,6 +60,12 @@ To use Apache ActiveMQ with STOMP transport enabled and configure the broker:
 $ wget http://mirror.rmg.io/apache/activemq/apache-activemq/5.8.0/apache-activemq-5.8.0-bin.tar.gz
 $ tar zxvf apache-activemq-5.8.0-bin.tar.gz && cd apache-activemq-5.8.0
 $ sudo bin/activemq console xbean:conf/activemq-stomp.xml
+```
+
+Install python PIP:
+
+```
+$ sudo apt-get install python-pip
 ```
 
 To run Alerta in a python virtual environment:
@@ -63,16 +82,15 @@ $ mkvirtualenv alerta
 To install and configure a test implementation of alerta:
 
 ```
-$ git clone git://github.com/guardian/alerta.git alerta
+$ git clone https://github.com/guardian/alerta.git alerta
 $ cd alerta
-$ pip install -r requirements.txt
-$ python setup.py install
+$ sudo pip install -r requirements.txt
+$ sudo python setup.py install
 ```
 
 To use the alert console modify `$HOME/.alerta.conf` so that the API uses a free port and static content can be found:
 ```
 [DEFAULT]
-api_port = 8000
 log_dir = /tmp
 
 [alerta-api]
@@ -97,7 +115,7 @@ $ alerta-api
 To run in DEBUG mode in the foreground and send log output to stderr:
 
 ```
-$ alerta --debug --foreground --use-stderr
+$ alerta -f --debug --use-stderr
 $ alerta-api --debug --use-stderr
 ```
 
