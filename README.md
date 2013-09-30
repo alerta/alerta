@@ -118,8 +118,8 @@ To run in DEBUG mode in the foreground and send log output to stderr:
 
 ```
 $ alerta -f --debug --use-stderr
-$ alerta-api --debug --use-stderr
-$ alerta-dashboard --debug --use-stderr
+$ alerta-api --debug --use-stderr                <--- listens on port 8080
+$ alerta-dashboard --debug --use-stderr          <--- listens on port 5000 in dev, 80 in prod
 ```
 
 And then the alert console can be found at:
