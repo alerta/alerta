@@ -119,12 +119,13 @@ To run in DEBUG mode in the foreground and send log output to stderr:
 ```
 $ alerta -f --debug --use-stderr
 $ alerta-api --debug --use-stderr
+$ alerta-dashboard --debug --use-stderr
 ```
 
 And then the alert console can be found at:
 
 ````
-http://localhost:8000/alerta/dashboard/v2/console.html
+http://localhost:5000/alerta/dashboard/v2/index.html
 ```
 
 To see some test alerts in the console run:
