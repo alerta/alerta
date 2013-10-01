@@ -53,7 +53,7 @@ ATTRIBUTES = [
 
 class Alert(object):
 
-    def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status_code.UNKNOWN,
+    def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status_code.OPEN,
                  severity=severity_code.NORMAL, previous_severity=severity_code.UNKNOWN, environment=None, service=None,
                  text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
                  threshold_info='n/a', summary=None, timeout=None, alertid=None, last_receive_id=None,
@@ -76,8 +76,7 @@ class Alert(object):
             self.value = '%.2f' % float(value)
         else:
             self.value = value or 'n/a'
-        if status:
-            self.status = status
+        self.status = status
         self.severity = severity
         self.previous_severity = previous_severity
         self.environment = environment or ['PROD']

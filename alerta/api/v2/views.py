@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields, crossdomain
 
 
-Version = '2.0.18'
+Version = '2.0.19'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -149,6 +149,7 @@ def create_alert():
             correlate=data.get('correlatedEvents', None),
             group=data.get('group', None),
             value=data.get('value', None),
+            status=status_code.parse_status(data.get('status', None)),
             severity=severity_code.parse_severity(data.get('severity', None)),
             environment=data.get('environment', None),
             service=data.get('service', None),
@@ -157,6 +158,7 @@ def create_alert():
             tags=data.get('tags', None),
             origin=data.get('origin', None),
             threshold_info=data.get('thresholdInfo', None),
+            summary=data.get('summary', None),
             timeout=data.get('timeout', None),
             alertid=data.get('id', None),
             raw_data=data.get('rawData', None),

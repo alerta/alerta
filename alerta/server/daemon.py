@@ -121,7 +121,6 @@ class WorkerThread(threading.Thread):
 
                 trend_indication = severity_code.trend(severity_code.UNKNOWN, incomingAlert.severity)
 
-                incomingAlert.status = status_code.OPEN
                 incomingAlert.repeat = False
                 incomingAlert.duplicate_count = 0
                 incomingAlert.last_receive_id = incomingAlert.alertid
@@ -130,11 +129,6 @@ class WorkerThread(threading.Thread):
 
                 if incomingAlert.alertid != self.db.save_alert(incomingAlert):
                     LOG.critical('Alert was not saved with submitted alert id. Race condition?')
-
-                status = severity_code.status_from_severity(severity_code.UNKNOWN, incomingAlert.severity)
-                if status:
-                    self.db.update_status(alert=incomingAlert, status=status)
-                    incomingAlert.status = status
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(incomingAlert, CONF.outbound_queue)
