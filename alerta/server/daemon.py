@@ -13,7 +13,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 from alerta.common.graphite import Carbon, StatsD
 
-Version = '2.0.11'
+Version = '2.0.12'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -71,7 +71,7 @@ class WorkerThread(threading.Thread):
             if self.db.is_duplicate(incomingAlert, incomingAlert.severity):
 
                 # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary,
-                #                       value, tags and origin
+                #                       value, status, tags and origin
                 #                    2. increment duplicate count
 
                 LOG.info('%s : Duplicate alert -> update dup count', incomingAlert.alertid)

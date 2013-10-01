@@ -421,6 +421,7 @@ class Mongo(object):
             "correlatedEvents": alert.correlate,
             "group": alert.group,
             "value": alert.value,
+            "status": alert.status,
             "service": alert.service,
             "text": alert.text,
             "origin": alert.origin,
