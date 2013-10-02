@@ -13,7 +13,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 from alerta.common.graphite import Carbon, StatsD
 
-Version = '2.0.13'
+Version = '2.0.14'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -106,7 +106,10 @@ class WorkerThread(threading.Thread):
 
                 correlatedAlert = self.db.correlate_alert(incomingAlert, previous_severity, trend_indication)
 
-                if incomingAlert.status != status_code.UNKNOWN and incomingAlert.status != correlatedAlert.status:
+                if incomingAlert.status == status_code.UNKNOWN:
+                    incomingAlert.status = severity_code.status_from_severity(previous_severity, incomingAlert.severity,
+                                                                              correlatedAlert.status)
+                if incomingAlert.status != correlatedAlert.status:
                     self.db.update_status(alert=correlatedAlert, status=incomingAlert.status)
                     correlatedAlert.status = incomingAlert.status
 
