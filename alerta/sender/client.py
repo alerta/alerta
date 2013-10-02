@@ -5,7 +5,7 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.api import ApiClient
 
-Version = '2.0.5'
+Version = '2.0.6'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -43,6 +43,7 @@ class SenderClient(object):
                 correlate=CONF.correlate,
                 group=CONF.group,
                 value=CONF.value,
+                status=CONF.status,
                 severity=CONF.severity,
                 environment=CONF.environment,
                 service=CONF.service,
@@ -51,6 +52,7 @@ class SenderClient(object):
                 tags=CONF.tags,
                 origin=CONF.origin,
                 threshold_info='n/a',   # TODO(nsatterl): make this configurable?
+                summary=CONF.summary,
                 timeout=CONF.timeout,
                 raw_data='n/a',  # TODO(nsatterl): make this configurable?
                 more_info=CONF.more_info,

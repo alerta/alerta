@@ -64,10 +64,15 @@ def main(argv):
             help='Event value eg. 100%%, Down, PingFail, 55tps, ORA-1664'
         )
         parser.add_argument(
+            '--status',
+            default='Open',
+            help='Status eg. Open, Ack, Closed (default: %(default)s)'
+        )
+        parser.add_argument(
             '-s',
             '--severity',
             default='Normal',
-            help='Severity eg. Critical, Major, Minor, Warning, Normal, Inform (default: %(default)s)'
+            help='Severity eg. Critical, Major, Minor, Warning, Normal, Informational, Debug (default: %(default)s)'
         )
         parser.add_argument(
             '-E',
@@ -97,6 +102,11 @@ def main(argv):
             '-t',
             '--text',
             help='Freeform alert text eg. Host not responding to ping.'
+        )
+        parser.add_argument(
+            '--summary',
+            metavar='TEXT',
+            help='Summary text suitable for SMS, pager or email subject.'
         )
         parser.add_argument(
             '--more',
