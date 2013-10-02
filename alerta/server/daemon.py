@@ -13,7 +13,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 from alerta.common.graphite import Carbon, StatsD
 
-Version = '2.0.12'
+Version = '2.0.13'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -126,6 +126,9 @@ class WorkerThread(threading.Thread):
                 incomingAlert.last_receive_id = incomingAlert.alertid
                 incomingAlert.last_receive_time = incomingAlert.receive_time
                 incomingAlert.trend_indication = trend_indication
+
+                if incomingAlert.status == status_code.OPEN:
+                    incomingAlert.status = severity_code.status_from_severity(severity_code.UNKNOWN, incomingAlert.severity)
 
                 if incomingAlert.alertid != self.db.save_alert(incomingAlert):
                     LOG.critical('Alert was not saved with submitted alert id. Race condition?')
