@@ -194,30 +194,36 @@ class Mongo(object):
             history=response.get('history', None),
         )
 
-    def update_alert(self, alert, previous_severity=None, trend_indication=None):
+    def correlate_alert(self, alert, previous_severity=None, trend_indication=None):
 
         previous_severity = previous_severity or severity_code.UNKNOWN
         trend_indication = trend_indication or severity_code.NO_CHANGE
 
         update = {
             "event": alert.event,
+            "correlatedEvents": alert.correlate,
+            "group": alert.group,
+            "value": alert.value,
             "severity": alert.severity,
+            "previousSeverity": previous_severity,
+            "service": alert.service,
+            "text": alert.text,
+            "tags": alert.tags,
+            "origin": alert.origin,
+            "repeat": False,
+            "duplicateCount": 0,
+            "thresholdInfo": alert.threshold_info,
+            "summary": alert.summary,
+            "timeout": alert.timeout,
+            "lastReceiveId": alert.alertid,
             "createTime": alert.create_time,
+            "expireTime": alert.expire_time,
             "receiveTime": alert.receive_time,
             "lastReceiveTime": alert.receive_time,
-            "expireTime": alert.expire_time,
-            "previousSeverity": previous_severity,
-            "lastReceiveId": alert.alertid,
-            "text": alert.text,
-            "summary": alert.summary,
-            "value": alert.value,
-            "tags": alert.tags,
-            "repeat": False,
-            "origin": alert.origin,
-            "thresholdInfo": alert.threshold_info,
             "trendIndication": trend_indication,
             "rawData": alert.raw_data,
-            "duplicateCount": 0,
+            "moreInfo": alert.more_info,
+            "graphUrls": alert.graph_urls,
         }
 
         query = {"environment": alert.environment, "resource": alert.resource,
@@ -231,13 +237,13 @@ class Mongo(object):
                                    update={'$set': update,
                                            '$push': {
                                                "history": {
-                                                    "createTime": update['createTime'],
-                                                    "receiveTime": update['receiveTime'],
-                                                    "severity": update['severity'],
+                                                    "id": update['lastReceiveId'],
                                                     "event": update['event'],
+                                                    "severity": update['severity'],
                                                     "value": update['value'],
                                                     "text": update['text'],
-                                                    "id": update['lastReceiveId']
+                                                    "createTime": update['createTime'],
+                                                    "receiveTime": update['receiveTime'],
                                                }
                                            }
                                            },
@@ -421,9 +427,9 @@ class Mongo(object):
             "correlatedEvents": alert.correlate,
             "group": alert.group,
             "value": alert.value,
-            "status": alert.status,
             "service": alert.service,
             "text": alert.text,
+            "tags": alert.tags,
             "origin": alert.origin,
             "repeat": True,
             "thresholdInfo": alert.threshold_info,

@@ -65,8 +65,8 @@ def main(argv):
         )
         parser.add_argument(
             '--status',
-            default='Open',
-            help='Status eg. Open, Ack, Closed (default: %(default)s)'
+            default='Unknown',
+            help='Status eg. Open, Ack, Closed, Unknown (default: %(default)s)'
         )
         parser.add_argument(
             '-s',

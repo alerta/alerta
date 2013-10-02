@@ -73,9 +73,14 @@ class WorkerThread(threading.Thread):
                 # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary,
                 #                       value, status, tags and origin
                 #                    2. increment duplicate count
+                #                    3. update and push status if changed
 
                 LOG.info('%s : Duplicate alert -> update dup count', incomingAlert.alertid)
                 duplicateAlert = self.db.duplicate_alert(incomingAlert)
+
+                if incomingAlert.status != status_code.UNKNOWN and incomingAlert.status != duplicateAlert.status:
+                    self.db.update_status(alert=duplicateAlert, status=incomingAlert.status)
+                    duplicateAlert.status = incomingAlert.status
 
                 if CONF.forward_duplicate:
                     # Forward alert to notify topic and logger queue
@@ -91,7 +96,7 @@ class WorkerThread(threading.Thread):
                 #                       lastReceiveTime, previousSeverity,
                 #                       severityCode, lastReceiveId, text, summary, value, tags and origin
                 #                    2. set duplicate count to zero
-                #                    3. push history
+                #                    3. push history and status if changed
 
                 previous_severity = self.db.get_severity(incomingAlert)
                 LOG.info('%s : Event and/or severity change %s %s -> %s update details', incomingAlert.get_id(),
@@ -99,12 +104,11 @@ class WorkerThread(threading.Thread):
 
                 trend_indication = severity_code.trend(previous_severity, incomingAlert.severity)
 
-                correlatedAlert = self.db.update_alert(incomingAlert, previous_severity, trend_indication)
+                correlatedAlert = self.db.correlate_alert(incomingAlert, previous_severity, trend_indication)
 
-                status = severity_code.status_from_severity(previous_severity, correlatedAlert.severity)
-                if status:
-                    self.db.update_status(alert=correlatedAlert, status=status)
-                    correlatedAlert.status = status
+                if incomingAlert.status != status_code.UNKNOWN and incomingAlert.status != correlatedAlert.status:
+                    self.db.update_status(alert=correlatedAlert, status=incomingAlert.status)
+                    correlatedAlert.status = incomingAlert.status
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(correlatedAlert, CONF.outbound_queue)
@@ -116,7 +120,7 @@ class WorkerThread(threading.Thread):
             else:
                 LOG.info('%s : New alert -> insert', incomingAlert.get_id())
                 # New alert so ... 1. insert entire document
-                #                  2. push history
+                #                  2. push history and status
                 #                  3. set duplicate count to zero
 
                 trend_indication = severity_code.trend(severity_code.UNKNOWN, incomingAlert.severity)
@@ -127,11 +131,13 @@ class WorkerThread(threading.Thread):
                 incomingAlert.last_receive_time = incomingAlert.receive_time
                 incomingAlert.trend_indication = trend_indication
 
-                if incomingAlert.status == status_code.OPEN:
+                if incomingAlert.status == status_code.UNKNOWN:
                     incomingAlert.status = severity_code.status_from_severity(severity_code.UNKNOWN, incomingAlert.severity)
 
                 if incomingAlert.alertid != self.db.save_alert(incomingAlert):
                     LOG.critical('Alert was not saved with submitted alert id. Race condition?')
+
+                self.db.update_status(alert=incomingAlert, status=incomingAlert.status)
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(incomingAlert, CONF.outbound_queue)
