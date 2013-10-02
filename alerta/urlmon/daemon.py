@@ -21,7 +21,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-Version = '2.0.8'
+Version = '2.0.9'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -84,7 +84,8 @@ class WorkerThread(threading.Thread):
             check, queue_time = self.queue.get()
 
             if time.time() - queue_time > CONF.loop_every:
-                LOG.warning('%s check request expired.', self.getName())
+                LOG.warning('URL request for %s to %s expired after %d seconds.', check['resource'], check['url'],
+                            int(time.time() - queue_time))
                 self.queue.task_done()
                 continue
 
@@ -151,6 +152,9 @@ class WorkerThread(threading.Thread):
                 elif hasattr(e, 'code'):
                     reason = None
                     code = e.code
+            except Exception:
+                LOG.warning('Connection terminated unexpectedly?')
+                continue
             else:
                 code = response.getcode()
                 body = response.read()

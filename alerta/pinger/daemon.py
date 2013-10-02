@@ -17,7 +17,7 @@ from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
-Version = '2.0.17'
+Version = '2.0.18'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -75,7 +75,7 @@ class WorkerThread(threading.Thread):
             environment, service, resource, retries, queue_time = item
 
             if time.time() - queue_time > CONF.loop_every:
-                LOG.warning('%s ping request to %s expired.', self.getName(), resource)
+                LOG.warning('Ping request to %s expired after %d seconds.', resource, int(time.time() - queue_time))
                 self.queue.task_done()
                 continue
 
