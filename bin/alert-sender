@@ -16,7 +16,7 @@ possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
 if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
-from alerta.common import config, severity_code
+from alerta.common import config, severity_code, status_code
 from alerta.common import log as logging
 from alerta.sender.client import SenderClient, Version
 
@@ -171,14 +171,13 @@ def main(argv):
             if not CONF.event:
                 parser.error("Must supply event name using -e or --event")
 
-            CONF.severity = severity_code.parse_severity(CONF.severity) or severity_code.NORMAL
+            CONF.status = status_code.parse_status(CONF.status) or status_code.UNKNOWN
+            if CONF.status not in status_code.ALL:
+                parser.error("Status must be one of %s" % ','.join(status_code.ALL))
 
-            if not CONF.severity:
-                CONF.severity = severity_code.NORMAL
-            else:
-                CONF.severity = severity_code.parse_severity(CONF.severity)
-                if CONF.severity not in severity_code.ALL:
-                    parser.error("Severity must be one of %s" % ','.join(severity_code.ALL))
+            CONF.severity = severity_code.parse_severity(CONF.severity) or severity_code.NORMAL
+            if CONF.severity not in severity_code.ALL:
+                parser.error("Severity must be one of %s" % ','.join(severity_code.ALL))
 
             if CONF.correlate and CONF.event not in CONF.correlate:
                 CONF.correlate.append(CONF.event)
