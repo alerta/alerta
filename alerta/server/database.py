@@ -18,9 +18,9 @@ class Mongo(object):
 
         # Connect to MongoDB
         try:
-            self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port)  # version >= 2.4
+            self.conn = pymongo.MongoClient(CONF.mongo_host, int(CONF.mongo_port))  # version >= 2.4
         except AttributeError:
-            self.conn = pymongo.Connection(CONF.mongo_host, CONF.mongo_port)  # version < 2.4
+            self.conn = pymongo.Connection(CONF.mongo_host, int(CONF.mongo_port))  # version < 2.4
         except Exception, e:
             LOG.error('MongoDB Client connection error : %s', e)
             sys.exit(1)
