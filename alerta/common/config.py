@@ -52,9 +52,9 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
 
         'mongo_host': 'localhost',
         'mongo_port': 27017,
-        'mongo_db': 'monitoring',
+        'mongo_database': 'monitoring',
         'mongo_collection': 'alerts',
-        'mongo_username': 'alerta',
+        'mongo_username': 'admin',
         'mongo_password': '',
 
         'console_limit': 1000,  # max number of alerts sent to console
