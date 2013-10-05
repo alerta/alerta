@@ -1,19 +1,16 @@
 
 import sys
 import json
-import urllib2
-
+import requests
 
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-_API_TIMEOUT = 2  # seconds
 
 
 class ApiClient(object):
@@ -28,62 +25,59 @@ class ApiClient(object):
         LOG.debug('message = %s', msg.get_body())
 
         if msg.get_type().endswith('Alert'):
-            api_url = 'http://%s:%s%s/alerts/alert.json' % (self.api_host, self.api_port, self.api_endpoint)
+            url = 'http://%s:%s%s/alerts/alert.json' % (self.api_host, self.api_port, self.api_endpoint)
         elif msg.get_type() == 'Heartbeat':
-            api_url = 'http://%s:%s%s/heartbeats/heartbeat.json' % (self.api_host, self.api_port, self.api_endpoint)
+            url = 'http://%s:%s%s/heartbeats/heartbeat.json' % (self.api_host, self.api_port, self.api_endpoint)
         else:
             LOG.error('Message type %s not supported by this API endpoint.', msg.get_type())
-            return
+            raise
 
-        post = json.dumps(msg.get_body(), ensure_ascii=False, cls=DateEncoder)
+        payload = json.dumps(msg.get_body(), ensure_ascii=False, cls=DateEncoder)
         headers = {'Content-Type': 'application/json'}
 
-        request = urllib2.Request(api_url, headers=headers)
-        request.add_data(post)
-        LOG.debug('url=%s, data=%s, headers=%s', request.get_full_url(), request.data, request.headers)
-
         if dry_run:
-            print "curl '%s' -H 'Content-Type: application/json' -d '%s'" % (api_url, post)
+            print "curl '%s' -H 'Content-Type: application/json' -d '%s'" % (url, payload)
             return
 
         LOG.debug('Sending alert to API endpoint...')
         try:
-            response = urllib2.urlopen(request, post, _API_TIMEOUT)
-        except ValueError, e:
-            LOG.error('Could not send alert to API endpoint %s : %s', api_url, e)
-            print >>sys.stderr, 'Could not send alert to API endpoint %s : status=%s' % (api_url, e)
-            sys.exit(1)
-        except urllib2.URLError, e:
-            if hasattr(e, 'reason'):
-                error = str(e.reason)
-            elif hasattr(e, 'code'):
-                error = e.code
-            else:
-                error = 'Unknown Send Error'
-            LOG.error('Could not send to API endpoint %s : %s', api_url, error)
-            print >>sys.stderr, 'Could not send to API endpoint %s : status=%s' % (api_url, error)
-            sys.exit(2)
-        else:
-            code = response.getcode()
-        LOG.info('Alert sent to API endpoint %s : status=%s', api_url, code)
+            r = requests.post(url, data=payload, headers=headers)
+        except requests.Timeout, e:
+            LOG.warning('API request timed out: %s', e)
+            raise
+        except requests.ConnectionError, e:
+            LOG.error('API request connection error: %s', e)
+            raise
+        except requests.TooManyRedirects, e:
+            LOG.error('Too many redirects: %s', e)
+            raise
+        except requests.RequestException, e:
+            LOG.error('API request send failed: %s', e)
+            raise
+
+        LOG.debug('HTTP status: %s', r.status_code)
+        LOG.debug('HTTP response: %s', r.text)
 
         try:
-            data = json.loads(response.read())
+            r.raise_for_status()
+        except requests.HTTPError, e:
+            LOG.error('API request HTTP error: %s', e)
+            raise
+
+        try:
+            response = r.json()['response']
         except Exception, e:
-            LOG.error('Error with response from API endpoint %s : %s', api_url, e)
-            sys.exit(3)
+            LOG.error('API bad response - %s: %s', e, r.text)
+            raise
 
-        LOG.debug('Response from API endpoint: %s', data)
-
-        response = data['response']
         if response.get('status', None) == 'ok':
-            LOG.info('Response from API endpoint %s: %s', api_url, response)
+            LOG.debug('API request successful: %s', response)
             return response['id']
         elif response.get('status', None) == 'error' and 'message' in response:
-            LOG.error('Error with response from API endpoint %s : %s', api_url, response['message'])
-            sys.exit(4)
+            LOG.error('API request failed: %s', response['message'])
+            raise
         else:
-            LOG.error('Error with response from API endpoint %s : Unknown Receive Error', api_url)
-            sys.exit(5)
+            LOG.error('API request unknown error: %s', response)
+            raise
 
 

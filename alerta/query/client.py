@@ -1,7 +1,7 @@
 import os
 import sys
 import urllib
-import urllib2
+import requests
 import json
 import time
 import datetime
@@ -16,7 +16,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.16'
+Version = '2.0.17'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -244,9 +244,9 @@ class QueryClient(object):
 
             start = time.time()
             try:
-                output = urllib2.urlopen(url)
-                response = json.loads(output.read())['response']
-            except urllib2.URLError, e:
+                r = requests.get(url)
+                response = r.json()['response']
+            except (requests.RequestException, requests.ConnectionError), e:
                 print "ERROR: Alert query %s failed - %s" % (url, e)
                 LOG.error('Alert query %s failed - %s', url, e)
                 sys.exit(1)
@@ -369,20 +369,17 @@ class QueryClient(object):
 
                 if CONF.delete:
                     url = "%s/alert/%s" % (API_URL, alertid)
-
                     try:
-                        request = urllib2.Request(url=url)
-                        request.get_method = lambda: 'DELETE'
-                        output = urllib2.urlopen(request)
-                        status = json.loads(output.read())['response']
-                    except urllib2.URLError, e:
+                        r = requests.delete(url)
+                        response = r.json()['response']
+                    except (requests.RequestException, requests.ConnectionError), e:
                         print "ERROR: Alert delete %s failed - %s" % (url, e)
                         LOG.error('Alert delete %s failed - %s', url, e)
                         sys.exit(1)
                     except (KeyboardInterrupt, SystemExit):
                         sys.exit(0)
 
-                    print(line_color + 'DELETE %s %s' % (alertid, status['status']) + end_color)
+                    print(line_color + 'DELETE %s %s' % (alertid, response['status']) + end_color)
                     continue
 
                 if 'color' in CONF.show or CONF.color:
@@ -556,7 +553,7 @@ class QueryClient(object):
                 pt.add_column("Text", col_text)
             print pt
         elif not CONF.nofooter:
-            if response['more']:
+            if 'more' in response and response['more']:
                 has_more = '+'
             else:
                 has_more = ''

@@ -5,6 +5,7 @@ pymongo
 Flask
 PyYAML
 pytz
+requests
 boto
 suds
 dynect
