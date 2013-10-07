@@ -7,7 +7,7 @@ from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -36,7 +36,7 @@ class ApiClient(object):
         headers = {'Content-Type': 'application/json'}
 
         if dry_run:
-            print "curl '%s' -H 'Content-Type: application/json' -d '%s'" % (url, payload)
+            print "curl -v '%s' -H 'Content-Type: application/json' -d '%s'" % (url, payload)
             return
 
         LOG.debug('Sending alert to API endpoint...')

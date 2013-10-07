@@ -16,7 +16,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.17'
+Version = '2.0.18'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -144,7 +144,7 @@ class QueryClient(object):
             CONF.output = 'json'
 
         if CONF.dry_run:
-            print "DEBUG: %s" % url
+            print "curl -v '%s' -H 'Content-Type: application/json'" % url
             sys.exit(0)
 
         self.tz = pytz.timezone(CONF.timezone)
