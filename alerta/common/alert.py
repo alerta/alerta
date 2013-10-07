@@ -53,9 +53,9 @@ ATTRIBUTES = [
 
 class Alert(object):
 
-    def __init__(self, resource, event, correlate=None, group='Misc', value=None, status=status_code.UNKNOWN,
+    def __init__(self, resource, event, correlate=None, group=None, value=None, status=status_code.UNKNOWN,
                  severity=severity_code.NORMAL, previous_severity=severity_code.UNKNOWN, environment=None, service=None,
-                 text=None, event_type='exceptionAlert', tags=None, origin=None, repeat=False, duplicate_count=0,
+                 text=None, event_type=None, tags=None, origin=None, repeat=False, duplicate_count=0,
                  threshold_info='n/a', summary=None, timeout=None, alertid=None, last_receive_id=None,
                  create_time=None, expire_time=None, receive_time=None, last_receive_time=None, trend_indication=None,
                  raw_data=None, more_info=None, graph_urls=None, history=None):
@@ -70,7 +70,7 @@ class Alert(object):
         self.resource = resource
         self.event = event
         self.correlate = correlate or list()
-        self.group = group
+        self.group = group or 'Misc'
 
         if isfloat(value):
             self.value = '%.2f' % float(value)
@@ -82,7 +82,7 @@ class Alert(object):
         self.environment = environment or ['PROD']
         self.service = service or ['Undefined']
         self.text = text or ''
-        self.event_type = event_type
+        self.event_type = event_type or 'exceptionAlert'
         self.tags = tags or list()
         self.origin = origin or '%s/%s' % (prog, os.uname()[1])
         self.repeat = repeat
@@ -213,17 +213,17 @@ class Alert(object):
             correlate=alert.get('correlatedEvents', None),
             group=alert.get('group', None),
             value=alert.get('value', None),
-            status=status_code.parse_status(alert.get('status', None)),
-            severity=severity_code.parse_severity(alert.get('severity', None)),
-            previous_severity=severity_code.parse_severity(alert.get('previousSeverity', None)),
+            status=status_code.parse_status(alert.get('status', status_code.UNKNOWN)),
+            severity=severity_code.parse_severity(alert.get('severity', severity_code.NORMAL)),
+            previous_severity=severity_code.parse_severity(alert.get('previousSeverity', status_code.UNKNOWN)),
             environment=alert.get('environment', None),
             service=alert.get('service', None),
             text=alert.get('text', None),
             event_type=alert.get('type', None),
-            tags=alert.get('tags', None),
+            tags=alert.get('tags', list()),
             origin=alert.get('origin', None),
-            repeat=alert.get('repeat', None),
-            duplicate_count=alert.get('duplicateCount', None),
+            repeat=alert.get('repeat', False),
+            duplicate_count=alert.get('duplicateCount', 0),
             threshold_info=alert.get('thresholdInfo', None),
             summary=alert.get('summary', None),
             timeout=alert.get('timeout', None),

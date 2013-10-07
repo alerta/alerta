@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields, crossdomain
 
 
-Version = '2.0.20'
+Version = '2.0.21'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -138,33 +138,7 @@ def create_alert():
 
     # Create a new alert
     try:
-        data = json.loads(request.data)
-    except Exception, e:
-        return jsonify(response={"status": "error", "message": str(e)})
-
-    try:
-        newAlert = Alert(
-            resource=data.get('resource', None),
-            event=data.get('event', None),
-            correlate=data.get('correlatedEvents', None),
-            group=data.get('group', None),
-            value=data.get('value', None),
-            status=status_code.parse_status(data.get('status', status_code.UNKNOWN)),
-            severity=severity_code.parse_severity(data.get('severity', severity_code.NORMAL)),
-            environment=data.get('environment', None),
-            service=data.get('service', None),
-            text=data.get('text', None),
-            event_type=data.get('type', 'exceptionAlert'),
-            tags=data.get('tags', None),
-            origin=data.get('origin', None),
-            threshold_info=data.get('thresholdInfo', None),
-            summary=data.get('summary', None),
-            timeout=data.get('timeout', None),
-            alertid=data.get('id', None),
-            raw_data=data.get('rawData', None),
-            more_info=data.get('moreInfo', None),
-            graph_urls=data.get('graphUrls', None),
-        )
+        newAlert = Alert.parse_alert(request.data)
     except ValueError, e:
         return jsonify(response={"status": "error", "message": str(e)})
 
@@ -350,16 +324,10 @@ def create_heartbeat():
 
     # Create a new heartbeat
     try:
-        data = json.loads(request.data)
+        heartbeat = Heartbeat.parse_heartbeat(request.data)
     except Exception, e:
         return jsonify(response={"status": "error", "message": str(e)})
 
-    heartbeat = Heartbeat(
-        origin=data.get('origin', None),
-        version=data.get('version', None),
-        heartbeatid=data.get('id', None),
-        timeout=data.get('timeout', None),
-    )
     LOG.debug('New heartbeat %s', heartbeat)
     mq.send(heartbeat)
 
