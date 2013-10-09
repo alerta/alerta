@@ -16,8 +16,8 @@ More screenshots are available [here](/doc/images/)
 Requirements
 ------------
 
-- [ActiveMQ][1] or [RabbitMQ][2] ie. a message broker that supports STOMP
-- [MongoDB][3]
+- [ActiveMQ][1], [RabbitMQ][2] or [CoilMQ][3] ie. a message broker that supports STOMP
+- [MongoDB][4]
 
 Installation
 ------------
@@ -137,15 +137,15 @@ $ contrib/examples/create-new-alert.sh
 Optional (for alert history)
 --------
 
-- [elasticsearch][4]
-- [Kibana][5]
+- [elasticsearch][5]
+- [Kibana][6]
 
 > Note: None of these packages require special configuration to work with Alerta.
 
 More Information
 ----------------
 
-See the alerta [wiki][6]
+See the alerta [wiki][7]
 
 Contribute
 ----------
@@ -174,7 +174,8 @@ License
 
 [1]: <http://activemq.apache.org/> "Apache ActiveMQ"
 [2]: <http://www.rabbitmq.com> "RabbitMQ"
-[3]: <http://www.10gen.com/> "10gen MongoDB"
-[4]: <http://www.elasticsearch.org/> "elasticsearch"
-[5]: <https://github.com/rashidkpc/Kibana> "Kibana"
-[6]: <https://github.com/guardian/alerta/wiki> "Alerta wiki"
+[3]: <https://github.com/hozn/coilmq/> "CoilMQ"
+[4]: <http://www.10gen.com/> "10gen MongoDB"
+[5]: <http://www.elasticsearch.org/> "elasticsearch"
+[6]: <https://github.com/rashidkpc/Kibana> "Kibana"
+[7]: <https://github.com/guardian/alerta/wiki> "Alerta wiki"
