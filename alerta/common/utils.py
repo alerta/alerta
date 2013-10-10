@@ -178,7 +178,7 @@ class Bunch(dict):
             try:
                 return self[k]
             except KeyError:
-                raise AttributeError(k)
+                return None
 
     def __setattr__(self, k, v):
         """ Sets attribute k if it exists, otherwise sets key k. A KeyError

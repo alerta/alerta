@@ -32,7 +32,7 @@ class SenderClient(object):
             LOG.debug(repr(heartbeat))
 
             api = ApiClient()
-            api.send(heartbeat, dry_run=CONF.dry_run)
+            api.send(heartbeat)
 
             return heartbeat.get_id()
 
@@ -62,6 +62,6 @@ class SenderClient(object):
             LOG.debug(repr(exceptionAlert))
 
             api = ApiClient()
-            api.send(exceptionAlert, dry_run=CONF.dry_run)
+            api.send(exceptionAlert)
 
             return exceptionAlert.get_id()

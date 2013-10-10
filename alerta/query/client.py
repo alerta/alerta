@@ -24,10 +24,16 @@ CONF = config.CONF
 
 class QueryClient(object):
 
+    def __init__(self, host=None, port=None, version='v2'):
+
+        self.host = host or CONF.api_host
+        self.port = port or CONF.api_port
+        self.version = version or CONF.api_version
+
+        self.url = 'http://%s:%s/alerta/api/%s/alerts' % (self.host, self.port, self.version)
+
     def main(self):
 
-        API_URL = 'http://%s:%s%s/alerts' % (CONF.api_host, CONF.api_port,
-                                             CONF.api_endpoint if CONF.api_endpoint != '/' else '')
         query = dict()
 
         self.now = datetime.datetime.utcnow()
@@ -138,7 +144,7 @@ class QueryClient(object):
         if CONF.query:
             query['q'] = CONF.query
 
-        url = "%s?%s" % (API_URL, urllib.urlencode(query))
+        url = "%s?%s" % (self.url, urllib.urlencode(query))
 
         if CONF.json:
             CONF.output = 'json'
@@ -368,7 +374,7 @@ class QueryClient(object):
                 count += 1
 
                 if CONF.delete:
-                    url = "%s/alert/%s" % (API_URL, alertid)
+                    url = "%s/alert/%s" % (self.url, alertid)
                     try:
                         r = requests.delete(url)
                         response = r.json()['response']
@@ -518,7 +524,7 @@ class QueryClient(object):
                 except (KeyboardInterrupt, SystemExit):
                     sys.exit(0)
                 query['from-date'] = response['alerts']['lastTime']
-                url = "%s?%s" % (API_URL, urllib.urlencode(query))
+                url = "%s?%s" % (self.url, urllib.urlencode(query))
             else:
                 break
 

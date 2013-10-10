@@ -35,7 +35,7 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
 
         'api_host': 'localhost',
         'api_port': 8080,
-        'api_endpoint': '/alerta/api/v2',
+        'api_version': 'v2',
 
         'http_proxy': None,
         'https_proxy': None,

@@ -7,7 +7,7 @@ from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -15,19 +15,22 @@ CONF = config.CONF
 
 class ApiClient(object):
 
-    def send(self, msg, host=None, port=None, endpoint=None, dry_run=False):
+    def __init__(self, host=None, port=None, version='v2'):
 
-        self.api_host = host or CONF.api_host
-        self.api_port = port or CONF.api_port
-        self.api_endpoint = endpoint or CONF.api_endpoint
+        self.host = host or CONF.api_host
+        self.port = port or CONF.api_port
+        self.version = version or CONF.api_version
+
+    def send(self, msg):
+
 
         LOG.debug('header = %s', msg.get_header())
         LOG.debug('message = %s', msg.get_body())
 
         if msg.get_type().endswith('Alert'):
-            url = 'http://%s:%s%s/alerts/alert.json' % (self.api_host, self.api_port, self.api_endpoint)
+            self.url = 'http://%s:%s/alerta/api/%s/alerts/alert.json' % (self.host, self.port, self.version)
         elif msg.get_type() == 'Heartbeat':
-            url = 'http://%s:%s%s/heartbeats/heartbeat.json' % (self.api_host, self.api_port, self.api_endpoint)
+            self.url = 'http://%s:%s/alerta/api/%s/heartbeats/heartbeat.json' % (self.host, self.port, self.version)
         else:
             LOG.error('Message type %s not supported by this API endpoint.', msg.get_type())
             raise
@@ -35,13 +38,13 @@ class ApiClient(object):
         payload = json.dumps(msg.get_body(), ensure_ascii=False, cls=DateEncoder)
         headers = {'Content-Type': 'application/json'}
 
-        if dry_run:
-            print "curl -v '%s' -H 'Content-Type: application/json' -d '%s'" % (url, payload)
-            return
+        if CONF.dry_run:
+            print "curl -v '%s' -H 'Content-Type: application/json' -d '%s'" % (self.url, payload)
+            sys.exit(0)
 
         LOG.debug('Sending alert to API endpoint...')
         try:
-            r = requests.post(url, data=payload, headers=headers)
+            r = requests.post(self.url, data=payload, headers=headers)
         except requests.Timeout, e:
             LOG.warning('API request timed out: %s', e)
             raise
