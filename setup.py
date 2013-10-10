@@ -12,6 +12,7 @@ setuptools.setup(
     author='Nick Satterly',
     author_email='nick.satterly@theguardian.com',
     packages=setuptools.find_packages(exclude=['bin', 'tests']),
+    install_requires=['requests', 'pytz', 'prettytable'],
     include_package_data=True,
     zip_safe=False,
     scripts=['bin/alert-aws',
