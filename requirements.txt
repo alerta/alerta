@@ -1,11 +1,11 @@
 argparse
+requests
+PyYAML
+pytz
 prettytable
 stomp.py
 pymongo
 Flask
-PyYAML
-pytz
-requests
 boto
 suds
 dynect
