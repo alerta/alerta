@@ -54,7 +54,8 @@ Abbreviated usage for both commands is shown below.
                        [--use-stderr] [--yaml-config FILE] [--show-settings]
 
 
-Examples::
+Examples
+--------
 
 To send a DiskFull warning alert for /tmp on myhost, use:
 
