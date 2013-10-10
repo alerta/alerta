@@ -1,42 +1,12 @@
 [DEFAULT]
-debug = False
-foreground = False
-timezone = Europe/London
-use_stderr = True
-use_syslog = False
-verbose = False
-log_dir = /var/log/alerta
-
-server_threads = 4
-
-alert_timeout = 86400
-
-api_endpoint = /
-api_host = monitoring
+api_host = api.alerta.io
 api_port = 80
 
-mongo_collection = alerts
-mongo_db = monitoring
-mongo_host = localhost
-mongo_port = 27017
+; log errors to syslog not local log file
+use_syslog = yes
+log_file = /dev/null
 
-stomp_host = localhost
-stomp_port = 61613
+[alert-query]
+timezone = Europe/London
+color = yes
 
-inbound_queue = /queue/alerts
-outbound_queue = /queue/logger
-outbound_topic = /topic/notify
-
-parser_dir = /opt/alerta/bin/parsers
-
-rabbit_host = localhost
-rabbit_password = guest
-rabbit_port = 5672
-rabbit_use_ssl = False
-rabbit_userid = guest
-rabbit_virtual_host = /
-
-[alert-syslog]
-syslog_facility = local7
-syslog_tcp_port = 666
-syslog_udp_port = 514
