@@ -31,7 +31,7 @@ For a basic configuration that can be used to test the client tools against a de
     api_host = api.alerta.io
     api_port = 80
 
-    [query]
+    [alert-query]
     colour = yes
 
 Copy this configuration to ``/etc/alerta/alerta.conf`` or ``$HOME/.alerta.conf`` files::
