@@ -34,7 +34,6 @@ setuptools.setup(
         'bin/alerta-api',
         'bin/alerta-dashboard',
     ],
-    data_files=[('', ['etc/alerta/alerta.conf.sample'])],
     keywords='alert monitoring system',
     classifiers=[
         'Development Status :: 5 - Production/Stable',

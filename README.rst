@@ -5,7 +5,7 @@ Introduction
 Alerta is a monitoring tool that allows alerts from many different systems to be consolidated into a single view.
 
 Currently there are integrations for tools that support standard protocols such as ``SNMP``, ``syslog`` and ``HTTP``.
-There are also specific integrations for popular monitoiring tools such as `nagios`, `zabbix` and `riemann`.
+There are also specific integrations for popular monitoiring tools such as Nagios_, Zabbix_ and Riemann_.
 
 .. _`nagios`: https://github.com/alerta/nagios3-alerta
 .. _`zabbix`: https://github.com/alerta/zabbix-alerta
@@ -16,17 +16,37 @@ Installation
 ============
 
 Installing this package makes available a ``alert-sender`` and ``alert-query`` tool that can be used to send alerts
-to the alerta system and to query the alert database.
+to the alerta system and to query the alert database::
 
     $ pip install alerta
+
+
+Configuration
+=============
+
+For a basic configuration that can be used to test the client tools against a demo alerta server, use::
+
+    [DEFAULT]
+    timezone = Europe/London
+    api_host = api.alerta.io
+    api_port = 80
+
+    [query]
+    colour = yes
+
+Copy this configuration to ``/etc/alerta/alerta.conf`` or ``$HOME/.alerta.conf`` files::
+
     $ mv /path/to/alerta.conf.sample $HOME/.alerta.conf
-    or
-    $ export ALERTA_CONF=/path/to/alerta.conf.sample
+
+or use the ``ALERTA_CONF`` environment variable::
+
+    $ export ALERTA_CONF=/path/to/alerta.conf
+
 
 Basic Usage
 ===========
 
-Abbreviated usage for both commands is shown below.
+Abbreviated usage for both commands is shown below::
 
     usage: alert-sender [-r RESOURCE] [-e EVENT] [-C CORRELATE] [-g GROUP]
                         [-v VALUE] [--status STATUS] [-s SEVERITY] [-E ENV]
@@ -55,43 +75,25 @@ Abbreviated usage for both commands is shown below.
 
 
 Examples
---------
+========
 
-To send a DiskFull warning alert for /tmp on myhost, use:
+To send a DiskFull warning alert for /tmp on myhost, use::
 
     $ alert-sender --resource myhost:/tmp --event DiskFull --severity warning
 
-To list all alerts for myhost, use:
+To list all alerts for myhost, use::
 
     $ alert-query --resource myhost
-
-
-Configuration
-=============
-
-A basic configuration that can be used to test the client tools is included with the package.
-
-    $ alert-query -c alerta.conf.sample
-
-Example::
-
-    [DEFAULT]
-    timezone = Europe/London
-    api_host = api.alerta.io
-    api_port = 80
-
-    [query]
-    colour = yes
 
 
 Trouble-shooting
 ================
 
-To use ``curl`` to request the same URL for a query, use:
+To use ``curl`` to request the same URL for a query, use::
 
     $ alert-query --dry-run | sh
 
-And for an alert send, use:
+And for an alert send, use::
 
     $ alert-sender -r myhost -e test --dry-run | sh
 
@@ -99,7 +101,7 @@ And for an alert send, use:
 Python API
 ==========
 
-A python API can be used to generate alerts:
+A python API can be used to generate alerts::
 
     >>> from alerta.common.api import ApiClient
     >>> from alerta.common.alert import Alert
@@ -108,7 +110,7 @@ A python API can be used to generate alerts:
     >>> alert = Alert(resource="foo", event="bar")
     >>>
     >>> client.send(alert)
-	u'8e9c4736-c2a8-4b4d-8638-07dad6ed1d2b'
-	>>> 
+    u'8e9c4736-c2a8-4b4d-8638-07dad6ed1d2b'
+    >>>
 
 The API to allow for querying alerts is in development.
