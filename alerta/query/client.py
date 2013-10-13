@@ -1,7 +1,5 @@
 import os
 import sys
-import urllib
-import requests
 import json
 import time
 import datetime
@@ -11,12 +9,13 @@ import pytz
 from email import utils
 
 from alerta.common import log as logging
+from alerta.common.api import ApiClient
 from alerta.common import status_code, severity_code
 from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.19'
+Version = '2.0.20'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -24,16 +23,9 @@ CONF = config.CONF
 
 class QueryClient(object):
 
-    def __init__(self, host=None, port=None, version='v2'):
-
-        self.host = host or CONF.api_host
-        self.port = port or CONF.api_port
-        self.version = version or CONF.api_version
-
-        self.url = 'http://%s:%s/alerta/api/%s/alerts' % (self.host, self.port, self.version)
-
     def main(self):
 
+        api = ApiClient()
         query = dict()
 
         self.now = datetime.datetime.utcnow()
@@ -144,14 +136,8 @@ class QueryClient(object):
         if CONF.query:
             query['q'] = CONF.query
 
-        url = "%s?%s" % (self.url, urllib.urlencode(query))
-
         if CONF.json:
             CONF.output = 'json'
-
-        if CONF.dry_run:
-            print "curl -v '%s' -H 'Content-Type: application/json'" % url
-            sys.exit(0)
 
         self.tz = pytz.timezone(CONF.timezone)
 
@@ -250,12 +236,7 @@ class QueryClient(object):
 
             start = time.time()
             try:
-                r = requests.get(url)
-                response = r.json()['response']
-            except (requests.RequestException, requests.ConnectionError), e:
-                print "ERROR: Alert query %s failed - %s" % (url, e)
-                LOG.error('Alert query %s failed - %s', url, e)
-                sys.exit(1)
+                response = api.query(query)
             except (KeyboardInterrupt, SystemExit):
                 sys.exit(0)
             end = time.time()
@@ -374,14 +355,8 @@ class QueryClient(object):
                 count += 1
 
                 if CONF.delete:
-                    url = "%s/alert/%s" % (self.url, alertid)
                     try:
-                        r = requests.delete(url)
-                        response = r.json()['response']
-                    except (requests.RequestException, requests.ConnectionError), e:
-                        print "ERROR: Alert delete %s failed - %s" % (url, e)
-                        LOG.error('Alert delete %s failed - %s', url, e)
-                        sys.exit(1)
+                        response = api.delete(alertid)
                     except (KeyboardInterrupt, SystemExit):
                         sys.exit(0)
 
@@ -524,7 +499,6 @@ class QueryClient(object):
                 except (KeyboardInterrupt, SystemExit):
                     sys.exit(0)
                 query['from-date'] = response['alerts']['lastTime']
-                url = "%s?%s" % (self.url, urllib.urlencode(query))
             else:
                 break
 
