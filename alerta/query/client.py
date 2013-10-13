@@ -16,7 +16,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.18'
+Version = '2.0.19'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -242,7 +242,7 @@ class QueryClient(object):
 
         line_color = ''
         end_color = ''
-        if 'color' in CONF.show or CONF.color:
+        if 'color' in CONF.show or CONF.color or os.environ.get('CLICOLOR', None):
             end_color = severity_code.ENDC
 
         # Query API for alerts
@@ -388,7 +388,7 @@ class QueryClient(object):
                     print(line_color + 'DELETE %s %s' % (alertid, response['status']) + end_color)
                     continue
 
-                if 'color' in CONF.show or CONF.color:
+                if 'color' in CONF.show or CONF.color or os.environ.get('CLICOLOR', None):
                     line_color = severity_code._COLOR_MAP[current_severity]
 
                 if CONF.output == 'json':
