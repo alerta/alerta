@@ -116,8 +116,8 @@ A python API can be used to generate alerts::
 The python API can also be used to query for alerts::
 
     >>> from alerta.common.api import ApiClient
-    >>> client = ApiClient(host='api.alerta.io', port=80)
     >>>
+    >>> client = ApiClient(host='api.alerta.io', port=80)
     >>> r = client.query()
     >>> r['status']
     u'ok'
