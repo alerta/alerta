@@ -113,7 +113,7 @@ A python API can be used to generate alerts::
     u'8e9c4736-c2a8-4b4d-8638-07dad6ed1d2b'
     >>>
 
-The python API can also be used to query for alerts:
+The python API can also be used to query for alerts::
 
     >>> from alerta.common.api import ApiClient
     >>> client = ApiClient(host='api.alerta.io', port=80)
