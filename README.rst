@@ -113,4 +113,24 @@ A python API can be used to generate alerts::
     u'8e9c4736-c2a8-4b4d-8638-07dad6ed1d2b'
     >>>
 
-The API to allow for querying alerts is in development.
+The python API can also be used to query for alerts:
+
+    >>> from alerta.common.api import ApiClient
+    >>> client = ApiClient(host='api.alerta.io', port=80)
+    >>>
+    >>> r = client.query()
+    >>> r['status']
+    u'ok'
+    >>> pp = pprint.PrettyPrinter(indent=4)
+    >>> pp.pprint(r['alerts']['severityCounts'])
+    {   u'cleared': 0,
+        u'critical': 1,
+        u'debug': 0,
+        u'indeterminate': 0,
+        u'informational': 0,
+        u'major': 2,
+        u'minor': 1,
+        u'normal': 4,
+        u'security': 0,
+        u'unknown': 0,
+        u'warning': 1}
