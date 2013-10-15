@@ -17,7 +17,7 @@ from alerta.common.alert import severity_code, status_code
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -148,10 +148,10 @@ class AwsDaemon(Daemon):
                         self.info[i.id]['status'] = u'not-available:not-available'
 
         # Delete all alerts from EC2 if instance has expired
-        query_url = 'http://%s:%s%s/resources?tags=cloud:AWS/EC2' % (CONF.api_host, CONF.api_port, CONF.api_endpoint)
-        LOG.info('Get list of EC2 alerts from %s', query_url)
+        url = 'http://%s:%s/alerta/api/%s/resources?tags=cloud:AWS/EC2' % (CONF.api_host, CONF.api_port, CONF.api_version)
+        LOG.info('Get list of EC2 alerts from %s', url)
         try:
-            response = json.loads(urllib2.urlopen(query_url, None, 15).read())['response']
+            response = json.loads(urllib2.urlopen(url, None, 15).read())['response']
         except urllib2.URLError, e:
             LOG.error('Could not get list of alerts from resources located in EC2: %s', e)
             response = None
@@ -174,7 +174,8 @@ class AwsDaemon(Daemon):
 
                 # Delete alerts for instances that are no longer listed by EC2 API
                 if resource not in self.info:
-                    url = 'http://%s:%s%s/resources/resource/%s' % (CONF.api_host, CONF.api_port, CONF.api_endpoint, resource)
+                    url = 'http://%s:%s/alerta/api/%s/resources/resource/%s' % \
+                          (CONF.api_host, CONF.api_port, CONF.api_version, resource)
                     LOG.info('EC2 instance %s is no longer listed, DELETE all associated alerts', resource)
                     try:
                         request = urllib2.Request(url=url)

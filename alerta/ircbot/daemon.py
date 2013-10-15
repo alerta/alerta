@@ -14,7 +14,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -22,7 +22,7 @@ CONF = config.CONF
 
 def ack_alert(alertid):
 
-    url = "http://%s:%s%s/alerts/alert/%s" % (CONF.api_host, CONF.api_port, CONF.api_endpoint, alertid)
+    url = 'http://%s:%s/alerta/api/%s/alerts/alert/%s' % (CONF.api_host, CONF.api_port, CONF.api_version, alertid)
     data = json.dumps({'status': status_code.ACK})
     headers = {'Content-type': 'application/json'}
     LOG.info('ACK request %s', url)
@@ -55,7 +55,7 @@ def ack_alert(alertid):
 
 def delete_alert(alertid):
 
-    url = "http://%s:%s%s/alerts/alert/%s" % (CONF.api_host, CONF.api_port, CONF.api_endpoint, alertid)
+    url = 'http://%s:%s/alerta/api/%s/alerts/alert/%s' % (CONF.api_host, CONF.api_port, CONF.api_version, alertid)
     headers = {'Content-type': 'application/json'}
     LOG.info('DELETE request %s', url)
 
