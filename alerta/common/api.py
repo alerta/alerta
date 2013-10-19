@@ -8,7 +8,7 @@ from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.6'
+Version = '2.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -16,14 +16,21 @@ CONF = config.CONF
 
 class ApiClient(object):
 
+    api_opts = {
+        'api_host': 'localhost',
+        'api_port': 8080,
+        'api_version': 'v2',
+    }
+
     def __init__(self, host=None, port=None, version='v2'):
+
+        config.register_opts(ApiClient.api_opts)
 
         self.host = host or CONF.api_host
         self.port = port or CONF.api_port
         self.version = version or CONF.api_version
 
     def send(self, msg):
-
 
         LOG.debug('header = %s', msg.get_header())
         LOG.debug('message = %s', msg.get_body())

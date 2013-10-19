@@ -13,7 +13,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.graphite import StatsD
 
-Version = '2.0.9'
+Version = '2.0.10'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -30,6 +30,18 @@ class SyslogMessage(MessageHandler):
 
 
 class SyslogDaemon(Daemon):
+
+    syslog_opts = {
+        'syslog_udp_port': 514,
+        'syslog_tcp_port': 514,
+        'syslog_facility': 'local7',
+    }
+
+    def __init__(self, prog, **kwargs):
+
+        config.register_opts(SyslogDaemon.pinger_opts)
+
+        Daemon.__init__(self, prog, kwargs)
 
     def run(self):
 

@@ -14,7 +14,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -122,6 +122,19 @@ class IrcbotMessage(MessageHandler):
 
 
 class IrcbotDaemon(Daemon):
+
+    ircbot_opts = {
+        'irc_host': 'irc',
+        'irc_port': 6667,
+        'irc_channel': '#alerts',
+        'irc_user': 'alerta',
+    }
+
+    def __init__(self, prog, **kwargs):
+
+        config.register_opts(IrcbotDaemon.ircbot_opts)
+
+        Daemon.__init__(self, prog, kwargs)
 
     def run(self):
 

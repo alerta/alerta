@@ -11,13 +11,21 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.api import ApiClient
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
 class CheckerClient(object):
+
+    nagios_opts = {
+        'nagios_plugins': '/usr/lib64/nagios/plugins',
+    }
+
+    def __init__(self):
+
+        config.register_opts(CheckerClient.nagios_opts)
 
     def main(self):
 

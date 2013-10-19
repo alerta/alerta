@@ -11,7 +11,7 @@ from alerta.common.dedup import DeDup
 from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS, SOLAR_WINDS_CORRELATED_EVENTS
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.7'
+Version = '2.0.8'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -28,6 +28,19 @@ class SolarWindsMessage(MessageHandler):
 
 
 class SolarWindsDaemon(Daemon):
+
+    solarwinds_opts = {
+        'solarwinds_host': 'solarwinds',
+        'solarwinds_username': 'admin',
+        'solarwinds_password': '',
+        'solarwinds_group': 'websys',
+    }
+
+    def __init__(self, prog, **kwargs):
+
+        config.register_opts(SolarWindsDaemon.solarwinds_opts)
+
+        Daemon.__init__(self, prog, kwargs)
 
     def run(self):
 

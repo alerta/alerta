@@ -9,6 +9,11 @@ from alerta.common.utils import Bunch
 CONF = Bunch()  # config options can be accessed using CONF.verbose or CONF.use_syslog
 
 
+def register_opts(opts):
+
+    CONF.update(opts)
+
+
 def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True):
 
     if prog is None:
@@ -33,13 +38,6 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
 
         'timezone': 'Europe/London',
 
-        'api_host': 'localhost',
-        'api_port': 8080,
-        'api_version': 'v2',
-
-        'http_proxy': None,
-        'https_proxy': None,
-
         'user_id': 'alerta',
         'server_threads': 4,
         'disable_flag': '/var/run/alerta/%s.disable' % prog,
@@ -50,89 +48,11 @@ def parse_args(argv, prog=None, version='unknown', cli_parser=None, daemon=True)
         'token_limit': 20,
         'token_rate': 2,
 
-        'mongo_host': 'localhost',
-        'mongo_port': 27017,
-        'mongo_database': 'monitoring',
-        'mongo_collection': 'alerts',
-        'mongo_username': 'admin',
-        'mongo_password': '',
-
         'console_limit': 1000,  # max number of alerts sent to console
         'history_limit': -10,   # show last x most recent history entries
+        'dashboard_dir': '/',
 
-        'stomp_host': 'localhost',
-        'stomp_port': 61613,
-
-        'inbound_queue': '/exchange/alerts',
-        'outbound_queue': '/queue/logger',
-        'outbound_topic': '/topic/notify',
         'forward_duplicate': False,
-
-        'rabbit_host': 'localhost',
-        'rabbit_port': 5672,
-        'rabbit_use_ssl': False,
-        'rabbit_userid': 'guest',
-        'rabbit_password': 'guest',
-        'rabbit_virtual_host': '/',
-
-        'syslog_udp_port': 514,
-        'syslog_tcp_port': 514,
-        'syslog_facility': 'local7',
-
-        'ping_file': '/etc/alerta/alert-pinger.targets',
-        'ping_max_timeout': 15,  # seconds
-        'ping_max_retries': 2,
-        'ping_slow_warning': 5,    # ms
-        'ping_slow_critical': 10,  # ms
-
-        'urlmon_file': '/etc/alerta/alert-urlmon.targets',
-        'urlmon_max_timeout': 15,  # seconds
-        'urlmon_slow_warning': 2000,   # ms
-        'urlmon_slow_critical': 5000,  # ms
-
-        'smtp_host': 'smtp',
-        'smtp_port': 25,
-        'mail_user': 'alerta@guardian.co.uk',
-        'mail_list': 'websys@guardian.co.uk',
-
-        'irc_host': 'irc',
-        'irc_port': 6667,
-        'irc_channel': '#alerts',
-        'irc_user': 'alerta',
-
-        'solarwinds_host': 'solarwinds',
-        'solarwinds_username': 'admin',
-        'solarwinds_password': '',
-        'solarwinds_group': 'websys',
-
-        'es_host': 'localhost',
-        'es_port': 9200,
-        'es_index': 'alerta-%Y.%m.%d',  # NB. Kibana config must match this index
-
-        'pagerduty_endpoint': 'https://events.pagerduty.com/generic/2010-04-15/create_event.json',
-        'pagerduty_api_key': '',
-
-        'dynect_customer': '',
-        'dynect_username': '',
-        'dynect_password': '',
-
-        'fog_file': '/etc/fog/alerta.conf',  # used by alert-aws
-        'ec2_regions': ['eu-west-1', 'us-east-1'],
-
-        'gmetric_host': 'localhost',
-        'gmetric_port': 8649,
-        'gmetric_protocol': 'udp',
-        'gmetric_spoof': '10.1.1.1:%s' % prog,
-
-        'graphite_prefix': 'alerta.%s' % socket.gethostname(),
-        'carbon_host': 'localhost',
-        'carbon_port': 2003,
-        'carbon_protocol': 'udp',
-
-        'statsd_host': 'localhost',
-        'statsd_port': 8125,
-
-        'nagios_plugins': '/usr/lib64/nagios/plugins',
     }
     CONF.update(SYSTEM_DEFAULTS)
 

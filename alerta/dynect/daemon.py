@@ -14,7 +14,7 @@ from alerta.common import severity_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.dedup import DeDup
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -32,9 +32,17 @@ class DynectMessage(MessageHandler):
 
 class DynectDaemon(Daemon):
 
-    def __init__(self, prog):
+    dynect_opts = {
+        'dynect_customer': '',
+        'dynect_username': '',
+        'dynect_password': '',
+    }
 
-        Daemon.__init__(self, prog)
+    def __init__(self, prog, **kwargs):
+
+        config.register_opts(DynectDaemon.dynect_opts)
+
+        Daemon.__init__(self, prog, kwargs)
 
         self.info = {}
         self.last_info = {}

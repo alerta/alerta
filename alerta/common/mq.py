@@ -18,7 +18,26 @@ _RECONNECT_ATTEMPTS_MAX = 20
 
 class Messaging(object):
 
+    mq_opts = {
+        'stomp_host': 'localhost',
+        'stomp_port': 61613,
+
+        'inbound_queue': '/exchange/alerts',
+        'outbound_queue': '/queue/logger',
+        'outbound_topic': '/topic/notify',
+
+        'rabbit_host': 'localhost',
+        'rabbit_port': 5672,
+        'rabbit_use_ssl': False,
+        'rabbit_userid': 'guest',
+        'rabbit_password': 'guest',
+        'rabbit_virtual_host': '/',
+    }
+
     def __init__(self):
+
+        config.register_opts(Messaging.mq_opts)
+
         logging.setup('stomp.py')
 
     def connect(self, callback=None, wait=False):
