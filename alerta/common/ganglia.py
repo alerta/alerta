@@ -71,7 +71,7 @@ class Gmetric:
         'gmetric_host': 'localhost',
         'gmetric_port': 8649,
         'gmetric_protocol': 'udp',
-        'gmetric_spoof': '10.1.1.1:%s' % prog,
+        'gmetric_spoof': '10.1.1.1:%(prog)s',
     }
 
     def __init__(self, host=None, port=None, protocol=None):

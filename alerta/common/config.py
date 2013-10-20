@@ -10,6 +10,7 @@ CONF = Bunch()  # config options can be accessed using CONF.verbose or CONF.use_
 
 DEFAULTS = {
     'config_file': '/etc/alerta/alerta.conf',
+    'timezone': 'Europe/London',  # Australia/Sydney, America/Los_Angeles, etc.
     'version': 'unknown',
     'debug': 'no',
     'verbose': 'no',
@@ -19,24 +20,18 @@ DEFAULTS = {
     'use_syslog': 'yes',
     'use_stderr': 'no',
     'foreground': 'no',
-    'yaml_config': '/etc/alerta/%(prog)s.yaml',
     'user_id': 'alerta',
     'server_threads': '4',
     'disable_flag': '/var/run/alerta/%(prog)s.disable',
     'loop_every': '30',
+    'global_timeout': '86400',  # seconds
+    'console_limit': '1000',  # max number of alerts sent to console
+    'history_limit': '-10',   # show last x most recent history entries
+    'dashboard_dir': '/',
 }
 
-# -        'timezone': 'Europe/London',
-# -
-# -        'global_timeout': 86400,  # seconds
-# -        'parser_dir': '/etc/alerta/parsers',
-# -
-# -        'token_limit': 20,
-# -        'token_rate': 2,
-# -
-# -        'console_limit': 1000,  # max number of alerts sent to console
-# -        'history_limit': -10,   # show last x most recent history entries
-# -        'dashboard_dir': '/',
+_TRUE = {'yes': True, 'true': True, 'on': True}
+_FALSE = {'no': False, 'false': False, 'off': False}
 
 
 def register_opts(opts):
@@ -46,18 +41,13 @@ def register_opts(opts):
     parse_args()
 
 
-def parse_args(args=None, prog=None, version=None, cli_parser=None, daemon=True):
+def parse_args(args=None, prog=None, version='unknown', cli_parser=None, daemon=True):
 
     if args is None:
         args = sys.argv[1:]
 
     if prog is None:
         prog = os.path.basename(sys.argv[0])
-
-    # read in system-wide defaults
-    config = ConfigParser.SafeConfigParser(DEFAULTS)
-
-    config.set('DEFAULT', 'prog', prog)
 
     # get config file from command line, if defined
     cfg_parser = argparse.ArgumentParser(
@@ -70,24 +60,32 @@ def parse_args(args=None, prog=None, version=None, cli_parser=None, daemon=True)
         metavar="FILE",
         default=DEFAULTS['config_file']
     )
-    cli, args = cfg_parser.parse_known_args(args)
+    c, args = cfg_parser.parse_known_args(args)
 
     config_file_order = [
+        c.config_file,
         os.path.expanduser('~/.alerta.conf'),
         os.environ.get('ALERTA_CONF', ''),
-        cli.config_file,
     ]
 
-    config_files_read = config.read(config_file_order)
-    for section in config.sections():
-        print '6. ConfigParser [%s] %s' % (section, config.items(section))
+    # read in system-wide defaults
+    config = ConfigParser.SafeConfigParser(DEFAULTS)
+    config.set('DEFAULT', 'prog', prog)
+    config_files = config.read(config_file_order)
 
-    cli_defaults = config.defaults()  # read in [DEFAULTS] section
+    defaults = config.defaults()  # read in [DEFAULTS] section
+    defaults['config_file'] = ','.join(config_files)
 
-    if config_files_read:
+    if config_files:
         if config.has_section(prog):  # read in program-specific sections
             for name in config.options(prog):
-                cli_defaults[name] = config.get(prog, name)
+                try:
+                    defaults[name] = config.getint(prog, name)
+                except ValueError:
+                    if defaults[name].lower() in [_TRUE, _FALSE]:
+                        defaults[name] = config.getboolean(prog, name)
+                    else:
+                        defaults[name] = config.get(prog, name)
 
     # read in command line options
     parents = [cfg_parser]
@@ -153,14 +151,21 @@ def parse_args(args=None, prog=None, version=None, cli_parser=None, daemon=True)
             action='store_true',
             help="Do not fork, run in the foreground"
         )
-    parser.set_defaults(**cli_defaults)
+    parser.set_defaults(**defaults)
 
-    args, argv = parser.parse_known_args(args)
-    CONF.update(vars(args))
+    args, extra = parser.parse_known_args(args)
 
-    for k in CONF.keys():
+    copy = vars(args)
+    for k, v in vars(args).iteritems():
         try:
-            v = int(CONF[k])
-            CONF[k] = v
+            v = int(v)
+            copy[k] = v
         except ValueError:
+            if v.lower() in _TRUE:
+                copy[k] = True
+            elif v.lower() in _FALSE:
+                copy[k] = False
+        except TypeError:
             pass
+    CONF.update(copy)
+

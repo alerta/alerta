@@ -14,10 +14,10 @@ CONF = config.CONF
 class Carbon(object):
 
     carbon_opts = {
-        'graphite_prefix': 'alerta.%s' % socket.gethostname(),
         'carbon_host': 'localhost',
         'carbon_port': 2003,
         'carbon_protocol': 'udp',
+        'graphite_prefix': 'alerta.%s' % socket.gethostname(),
     }
 
     def __init__(self, host=None, port=None, protocol=None, prefix=None):
@@ -104,6 +104,7 @@ class StatsD(object):
     statsd_opts = {
         'statsd_host': 'localhost',
         'statsd_port': 8125,
+        'graphite_prefix': 'alerta.%s' % socket.gethostname(),
     }
 
     def __init__(self, host=None, port=None, rate=1, prefix=None):
