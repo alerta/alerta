@@ -21,24 +21,27 @@ class TestConfig(unittest.TestCase):
     def setUp(self):
 
         self.cli_args = ['--debug', '--pid-dir', '/tmp/test', '--log-file', 'foo']
-        config.parse_args(self.cli_args)
 
-        SYS_OPTS = {
+        self.TEST_OPTS = {
             'host': 'host44',
             'port': 55,
             'ack': False,
         }
-        config.register_opts(SYS_OPTS)
 
     def test_cli_options(self):
 
+        config.parse_args(self.cli_args)
+
         self.assertEqual(CONF.debug, True)
         self.assertEqual(CONF.server_threads, 4)
-        # self.assertEqual(CONF.pid_dir, '/tmp/test')
+        self.assertEqual(CONF.pid_dir, '/tmp/test')
         self.assertEqual(CONF.log_file, 'foo')
 
     def test_sys_options(self):
 
+        config.register_opts(self.TEST_OPTS)
+
         self.assertEqual(CONF.host, 'host44')
         self.assertEqual(CONF.port, 55)
         self.assertEqual(CONF.ack, False)
+        self.assertEqual(CONF.global_timeout, 86400)
