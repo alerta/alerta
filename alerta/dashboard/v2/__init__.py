@@ -11,7 +11,7 @@ Version = '2.0.1'
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-config.parse_args(sys.argv[1:], version=Version)
+config.parse_args(version=Version)
 logging.setup('alerta')
 
 app = Flask(__name__)

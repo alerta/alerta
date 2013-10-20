@@ -30,7 +30,7 @@ LOG = logging.getLogger('alerta.snmptrap')
 CONF = config.CONF
 
 if __name__ == '__main__':
-    config.parse_args(sys.argv[1:], version=Version)
+    config.parse_args(version=Version)
     logging.setup('alerta')
     handler = SnmpTrapHandler('alert-snmptrap')
     handler.start()

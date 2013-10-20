@@ -23,7 +23,7 @@ LOG = logging.getLogger('alerta.query')
 CONF = config.CONF
 
 
-def main(argv):
+def main():
 
     try:
         parser = argparse.ArgumentParser(
@@ -332,7 +332,7 @@ def main(argv):
             help="Do not run. Output query and filter."
         )
 
-        config.parse_args(argv, version=Version, cli_parser=parser, daemon=False)
+        config.parse_args(version=Version, cli_parser=parser, daemon=False)
         logging.setup('alerta')
 
         query = QueryClient()
@@ -343,4 +343,4 @@ def main(argv):
         sys.exit(1)
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
