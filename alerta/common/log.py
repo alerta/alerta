@@ -13,6 +13,10 @@ CONF = config.CONF
 _DEFAULT_LOG_FORMAT = "%(asctime)s.%(msecs).03d %(name)s[%(process)d] %(threadName)s %(levelname)s - %(message)s"
 _DEFAULT_LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+log_opts = {
+    'syslog_facility': 'local7',
+}
+
 
 def _create_logging_excepthook(name):
     def logging_excepthook(type, value, tb):
@@ -29,6 +33,9 @@ def _create_logging_excepthook(name):
 
 def setup(name):
     """Setup logging."""
+
+    config.register_opts(log_opts)
+
     sys.excepthook = _create_logging_excepthook(name)
 
     log_root = getLogger(name)

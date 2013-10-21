@@ -1,8 +1,10 @@
 
 import datetime
 
+from alerta.common import config
 from alerta.common import log as logging
 
+CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -28,17 +30,22 @@ class DeDup(object):
     count = {}
     last_create_time = {}
 
-    by_value = False
-    threshold = 1
-    duration = 7200
+    dedup_opts = {
+        'dedup_by_value': 'false',
+        'dedup_threshold': '1',
+        'dedup_duration': '600',
+    }
 
-    def __init__(self, by_value=False, threshold=1, duration=600):
+    def __init__(self, by_value=None, threshold=None, duration=None):
 
-        self.__class__.by_value = by_value
-        self.__class__.threshold = threshold
-        self.__class__.duration = duration
+        config.register_opts(DeDup.dedup_opts)
 
-        LOG.info('De-duplicate alerts based on: by_value=%s, threshold=%s, duration=%s', by_value, threshold, duration)
+        self.__class__.by_value = by_value or CONF.dedup_by_value
+        self.__class__.threshold = threshold or CONF.dedup_threshold
+        self.__class__.duration = duration or CONF.dedup_duration
+
+        LOG.info('De-duplicate alerts based on: by_value=%s, threshold=%s, duration=%s',
+                 self.__class__.by_value, self.__class__.threshold, self.__class__.duration)
 
     @classmethod
     def update(cls, dedupAlert):

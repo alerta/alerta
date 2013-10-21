@@ -68,19 +68,6 @@ class MailerMessage(MessageHandler):
 
 class MailerDaemon(Daemon):
 
-    mailer_opt = {
-        'smtp_host': 'smtp',
-        'smtp_port': 25,
-        'mail_user': 'alerta@guardian.co.uk',
-        'mail_list': 'websys@guardian.co.uk',
-    }
-
-    def __init__(self, prog, **kwargs):
-
-        config.register_opts(MailerDaemon.mailer_opt)
-
-        Daemon.__init__(self, prog, kwargs)
-
     def run(self):
 
         self.running = True

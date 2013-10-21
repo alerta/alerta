@@ -82,7 +82,7 @@ def parse_args(args=None, prog=None, version='unknown', cli_parser=None, daemon=
                 try:
                     defaults[name] = config.getint(prog, name)
                 except ValueError:
-                    if defaults[name].lower() in [_TRUE, _FALSE]:
+                    if config.get(prog, name).lower() in [_TRUE, _FALSE]:
                         defaults[name] = config.getboolean(prog, name)
                     else:
                         defaults[name] = config.get(prog, name)
@@ -157,9 +157,10 @@ def parse_args(args=None, prog=None, version='unknown', cli_parser=None, daemon=
 
     copy = vars(args)
     for k, v in vars(args).iteritems():
+        if type(v) == bool:
+            continue
         try:
-            v = int(v)
-            copy[k] = v
+            copy[k] = int(v)
         except ValueError:
             if v.lower() in _TRUE:
                 copy[k] = True
