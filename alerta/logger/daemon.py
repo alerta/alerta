@@ -12,7 +12,7 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -75,6 +75,18 @@ class LoggerDaemon(Daemon):
     """
     Index alerts in ElasticSearch using Logstash format so that logstash GUI and/or Kibana can be used as front-ends
     """
+
+    logger_opts = {
+        'es_host': 'localhost',
+        'es_port': 9200,
+        'es_index': 'alerta-%Y.%m.%d',  # NB. Kibana config must match this index
+    }
+
+    def __init__(self, prog, **kwargs):
+
+        config.register_opts(LoggerDaemon.logger_opts)
+
+        Daemon.__init__(self, prog, kwargs)
 
     def run(self):
 

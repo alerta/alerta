@@ -13,22 +13,35 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 
+CONF = config.CONF
+
 
 class TestConfig(unittest.TestCase):
 
     def setUp(self):
 
-        config.parse_args(list())
-        self.CONF = config.CONF
-        # print self.CONF
+        self.cli_args = ['--debug', '--pid-dir', '/tmp/test', '--log-file', 'foo']
 
-        self.CONF_FILE = '/etc/alerta/alerta.conf'
-        self.ALERT_TIMEOUT = 86400
+        self.TEST_OPTS = {
+            'host': 'host44',
+            'port': 55,
+            'ack': False,
+        }
 
-    def test_option_defaults(self):
+    def test_cli_options(self):
 
-        self.assertEquals(self.CONF.conf_file, self.CONF_FILE)
-        self.assertTrue(self.CONF.use_syslog)
+        config.parse_args(self.cli_args)
 
-    def test_system_defaults(self):
-        self.assertEquals(self.CONF.global_timeout, self.ALERT_TIMEOUT)
+        self.assertEqual(CONF.debug, True)
+        self.assertEqual(CONF.server_threads, 4)
+        self.assertEqual(CONF.pid_dir, '/tmp/test')
+        self.assertEqual(CONF.log_file, 'foo')
+
+    def test_sys_options(self):
+
+        config.register_opts(self.TEST_OPTS)
+
+        self.assertEqual(CONF.host, 'host44')
+        self.assertEqual(CONF.port, 55)
+        self.assertEqual(CONF.ack, False)
+        self.assertEqual(CONF.global_timeout, 86400)

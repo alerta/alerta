@@ -21,7 +21,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-Version = '2.0.9'
+Version = '2.0.10'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -303,6 +303,19 @@ class UrlmonMessage(MessageHandler):
 
 
 class UrlmonDaemon(Daemon):
+
+    urlmon_opts = {
+        'urlmon_file': '/etc/alerta/alert-urlmon.targets',
+        'urlmon_max_timeout': 15,  # seconds
+        'urlmon_slow_warning': 2000,   # ms
+        'urlmon_slow_critical': 5000,  # ms
+    }
+
+    def __init__(self, prog, **kwargs):
+
+        config.register_opts(UrlmonDaemon.urlmon_opts)
+
+        Daemon.__init__(self, prog, kwargs)
 
     def run(self):
 

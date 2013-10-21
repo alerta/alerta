@@ -14,7 +14,18 @@ CONF = config.CONF
 
 class Mongo(object):
 
+    mongo_opts = {
+        'mongo_host': 'localhost',
+        'mongo_port': 27017,
+        'mongo_database': 'monitoring',
+        'mongo_collection': 'alerts',
+        'mongo_username': 'admin',
+        'mongo_password': '',
+    }
+
     def __init__(self):
+
+        config.register_opts(Mongo.mongo_opts)
 
         # Connect to MongoDB
         try:

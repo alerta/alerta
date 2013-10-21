@@ -11,7 +11,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.mail import Mailer
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -67,6 +67,19 @@ class MailerMessage(MessageHandler):
 
 
 class MailerDaemon(Daemon):
+
+    mailer_opt = {
+        'smtp_host': 'smtp',
+        'smtp_port': 25,
+        'mail_user': 'alerta@guardian.co.uk',
+        'mail_list': 'websys@guardian.co.uk',
+    }
+
+    def __init__(self, prog, **kwargs):
+
+        config.register_opts(MailerDaemon.mailer_opt)
+
+        Daemon.__init__(self, prog, kwargs)
 
     def run(self):
 

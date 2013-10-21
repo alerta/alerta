@@ -12,7 +12,14 @@ lock = threading.Lock()
 
 class LeakyBucket(threading.Thread):
 
+    token_opts = {
+        'token_limit': 20,
+        'token_rate': 2,
+    }
+
     def __init__(self, tokens=None, limit=None, rate=None):
+
+        config.register_opts(LeakyBucket.token_opts)
 
         self.tokens = tokens or CONF.token_limit
         self.limit = limit or tokens or CONF.token_limit

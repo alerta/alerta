@@ -13,7 +13,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 from alerta.common.graphite import Carbon, StatsD
 
-Version = '2.0.14'
+Version = '2.0.15'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -199,6 +199,16 @@ class ServerMessage(MessageHandler):
 
 
 class AlertaDaemon(Daemon):
+
+    alerta_opts = {
+        'forward_duplicate': 'no',
+    }
+
+    def __init__(self, prog, **kwargs):
+
+        config.register_opts(AlertaDaemon.alerta_opts)
+
+        Daemon.__init__(self, prog, kwargs)
 
     def run(self):
 

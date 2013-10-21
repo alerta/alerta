@@ -53,12 +53,19 @@ ATTRIBUTES = [
 
 class Alert(object):
 
+    alert_opts = {
+        'yaml_config': '/etc/alerta/%(prog)s.yaml',
+        'parser_dir': '/etc/alerta/parsers',
+    }
+
     def __init__(self, resource, event, correlate=None, group=None, value=None, status=status_code.UNKNOWN,
                  severity=severity_code.NORMAL, previous_severity=severity_code.UNKNOWN, environment=None, service=None,
                  text=None, event_type=None, tags=None, origin=None, repeat=False, duplicate_count=0,
                  threshold_info='n/a', summary=None, timeout=86400, alertid=None, last_receive_id=None,
                  create_time=None, expire_time=None, receive_time=None, last_receive_time=None, trend_indication=None,
                  raw_data=None, more_info=None, graph_urls=None, history=None):
+
+        config.register_opts(Alert.alert_opts)
 
         prog = os.path.basename(sys.argv[0])
 

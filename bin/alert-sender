@@ -24,7 +24,7 @@ LOG = logging.getLogger('alerta.sender')
 CONF = config.CONF
 
 
-def main(argv):
+def main():
 
     try:
         parser = argparse.ArgumentParser(
@@ -161,7 +161,7 @@ def main(argv):
             help='Do not send alert. Output as Curl.'
         )
 
-        config.parse_args(argv, version=Version, cli_parser=parser, daemon=False)
+        config.parse_args(version=Version, cli_parser=parser, daemon=False)
         logging.setup('alerta')
 
         if not CONF.heartbeat:
@@ -196,4 +196,4 @@ def main(argv):
         sys.exit(1)
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()

@@ -17,7 +17,7 @@ from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
-Version = '2.0.18'
+Version = '2.0.19'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -210,6 +210,21 @@ class PingerMessage(MessageHandler):
 
 
 class PingerDaemon(Daemon):
+
+    pinger_opts = {
+        'ping_file': '/etc/alerta/alert-pinger.targets',
+        'ping_max_timeout': 15,  # seconds
+        'ping_max_retries': 2,
+        'ping_slow_warning': 5,    # ms
+        'ping_slow_critical': 10,  # ms
+        'server_threads': 20,
+    }
+
+    def __init__(self, prog, **kwargs):
+
+        config.register_opts(PingerDaemon.pinger_opts)
+
+        Daemon.__init__(self, prog, kwargs)
 
     def run(self):
 

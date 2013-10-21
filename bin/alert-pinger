@@ -22,7 +22,7 @@ LOG = logging.getLogger('alerta.pinger')
 CONF = config.CONF
 
 if __name__ == '__main__':
-    config.parse_args(sys.argv[1:], version=Version)
+    config.parse_args(version=Version)
     logging.setup('alerta')
     pinger = PingerDaemon('alert-pinger')
     pinger.start()

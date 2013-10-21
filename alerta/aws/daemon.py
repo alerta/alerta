@@ -34,10 +34,19 @@ class AwsMessage(MessageHandler):
 
 
 class AwsDaemon(Daemon):
-    
-    def __init__(self, prog):
+
+    aws_opts = {
+        'fog_file': '/etc/fog/alerta.conf',
+        'ec2_regions': ['eu-west-1', 'us-east-1'],
+        'http_proxy': None,
+        'https_proxy': None,
+    }
+
+    def __init__(self, prog, **kwargs):
+
+        config.register_opts(AwsDaemon.aws_opts)
         
-        Daemon.__init__(self, prog)
+        Daemon.__init__(self, prog, kwargs)
 
         self.info = {}
         self.last = {}

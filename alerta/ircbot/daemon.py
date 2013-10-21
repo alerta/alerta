@@ -123,6 +123,19 @@ class IrcbotMessage(MessageHandler):
 
 class IrcbotDaemon(Daemon):
 
+    ircbot_opts = {
+        'irc_host': 'irc',
+        'irc_port': 6667,
+        'irc_channel': '#alerts',
+        'irc_user': 'alerta',
+    }
+
+    def __init__(self, prog, **kwargs):
+
+        config.register_opts(IrcbotDaemon.ircbot_opts)
+
+        Daemon.__init__(self, prog, kwargs)
+
     def run(self):
 
         self.running = True

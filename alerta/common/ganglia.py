@@ -67,7 +67,16 @@ class Gmetric:
     Class to send gmetric/gmond 2.X packets
     """
 
+    ganglia_opts ={
+        'gmetric_host': 'localhost',
+        'gmetric_port': 8649,
+        'gmetric_protocol': 'udp',
+        'gmetric_spoof': '10.1.1.1:%(prog)s',
+    }
+
     def __init__(self, host=None, port=None, protocol=None):
+
+        config.register_opts(Gmetric.ganglia_opts)
 
         self.host = host or CONF.gmetric_host
         self.port = port or CONF.gmetric_port
