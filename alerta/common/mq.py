@@ -45,7 +45,7 @@ class Messaging(object):
         self.wait = wait
         try:
             self.conn = stomp.Connection(
-                [(CONF.stomp_host, int(CONF.stomp_port))],
+                [(CONF.stomp_host, CONF.stomp_port)],
                 reconnect_sleep_initial=_RECONNECT_SLEEP_INITIAL,
                 reconnect_sleep_increase=_RECONNECT_SLEEP_INCREASE,
                 reconnect_sleep_max=_RECONNECT_SLEEP_MAX,
@@ -65,7 +65,7 @@ class Messaging(object):
         LOG.warning('Reconnecting to message broker...')
         try:
             self.conn = stomp.Connection(
-                [(CONF.stomp_host, int(CONF.stomp_port))],
+                [(CONF.stomp_host, CONF.stomp_port)],
                 reconnect_sleep_initial=_RECONNECT_SLEEP_INITIAL,
                 reconnect_sleep_increase=_RECONNECT_SLEEP_INCREASE,
                 reconnect_sleep_max=_RECONNECT_SLEEP_MAX,
