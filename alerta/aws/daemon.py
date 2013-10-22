@@ -17,10 +17,14 @@ from alerta.common.alert import severity_code, status_code
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 
-Version = '2.0.5'
+Version = '2.0.6'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
+
+CONF.api_host = 'monitoring.dc1.gnm'
+CONF.api_port = 8080
+CONF.api_version = 'v2'
 
 
 class AwsMessage(MessageHandler):
@@ -189,11 +193,12 @@ class AwsDaemon(Daemon):
                     try:
                         request = urllib2.Request(url=url)
                         request.get_method = lambda: 'DELETE'
-                        response = urllib2.urlopen(request).read()['response']
+                        response = urllib2.urlopen(request).read()
                     except urllib2.URLError, e:
                         LOG.error('API Request %s failed: %s', url, e)
                         continue
 
+                    response = json.loads(response)['response']
                     if response['status'] == 'ok':
                         LOG.info('Successfully deleted alerts for resource %s', resource)
                     else:
