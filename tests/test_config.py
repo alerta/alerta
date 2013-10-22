@@ -69,3 +69,16 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(CONF.ham, 567)
         self.assertEqual(CONF.xyz, ['qux', 'wibble', 'wobble'])
 
+    def test_shared_component(self):
+
+        self.shared_component()
+
+        self.assertEqual(CONF.foo, 'qux')
+
+    def shared_component(self):
+
+        self.shared_opts = {
+            'foo': 'qux'
+        }
+
+        config.register_opts(self.shared_opts, section='alert-test')

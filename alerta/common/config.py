@@ -32,19 +32,19 @@ DEFAULTS = {
     'dashboard_dir': '/',
 }
 
+config = ConfigParser.RawConfigParser(DEFAULTS)
+config.set('DEFAULT', 'prog', prog)
+
 _TRUE = ['yes', 'true', 'on']
 _FALSE = ['no', 'false', 'off']
 _boolean = _TRUE + _FALSE
 
-config = ConfigParser.RawConfigParser(DEFAULTS)
-config.set('DEFAULT', 'prog', prog)
-
 
 def register_opts(opts, section=None):
 
-    if not section:
-        section = 'DEFAULT'
-    elif not config.has_section(section):
+    section = section or prog
+
+    if not config.has_section(section):
         config.add_section(section)
 
     # True, False, numbers & lists
