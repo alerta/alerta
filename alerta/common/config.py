@@ -8,6 +8,7 @@ from alerta.common.utils import Bunch
 
 CONF = Bunch()  # config options can be accessed using CONF.verbose or CONF.use_syslog
 
+prog = os.path.basename(sys.argv[0])
 
 DEFAULTS = {
     'config_file': '/etc/alerta/alerta.conf',
@@ -16,14 +17,14 @@ DEFAULTS = {
     'debug': 'no',
     'verbose': 'no',
     'log_dir': '/var/log/alerta',
-    'log_file': '%(prog)s.log',
+    'log_file': '%s.log' % prog,
     'pid_dir': '/var/run/alerta',
     'use_syslog': 'yes',
     'use_stderr': 'no',
     'foreground': 'no',
     'user_id': 'alerta',
     'server_threads': 4,
-    'disable_flag': '/var/run/alerta/%(prog)s.disable',
+    'disable_flag': '/var/run/alerta/%s.disable' % prog,
     'loop_every': 30,
     'global_timeout': 86400,  # seconds
     'console_limit': 1000,  # max number of alerts sent to console
@@ -31,12 +32,9 @@ DEFAULTS = {
     'dashboard_dir': '/',
 }
 
-_TRUE = {'yes': True, 'true': True, 'on': True}
-_FALSE = {'no': False, 'false': False, 'off': False}
-
-_boolean = ['yes', 'no', 'true', 'false', 'on', 'off']
-
-prog = os.path.basename(sys.argv[0])
+_TRUE = ['yes', 'true', 'on']
+_FALSE = ['no', 'false', 'off']
+_boolean = _TRUE + _FALSE
 
 config = ConfigParser.RawConfigParser(DEFAULTS)
 config.set('DEFAULT', 'prog', prog)
