@@ -12,4 +12,4 @@ CONF = config.CONF
 if __name__ == '__main__':
     config.parse_args(version=Version)
     logging.setup('alerta')
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug=CONF.debug)

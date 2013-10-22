@@ -41,10 +41,15 @@ _boolean = _TRUE + _FALSE
 
 
 def register_opts(opts, section=None):
+    '''
+        Options are registered to the 'DEFAULT' section
+        unless specified because it is assumed they are
+        system defaults eg. api_host, api_port.
+    '''
 
-    section = section or prog
-
-    if not config.has_section(section):
+    if not section:
+        section = 'DEFAULT'
+    elif not config.has_section(section):
         config.add_section(section)
 
     # True, False, numbers & lists
@@ -57,7 +62,7 @@ def register_opts(opts, section=None):
             v = ','.join(v)
         config.set(section, k, v)
 
-    parse_args(section=section)
+    parse_args(section=prog)
 
 
 def parse_args(args=None, section=None, version='unknown', cli_parser=None, daemon=True):
@@ -194,3 +199,5 @@ def parse_args(args=None, section=None, version='unknown', cli_parser=None, daem
             copy[k] = v.split(',')
 
     CONF.update(copy)
+
+    #print '[%s] %s' % (section, CONF)

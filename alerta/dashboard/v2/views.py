@@ -4,12 +4,15 @@ from flask import request, render_template, send_from_directory
 from alerta.dashboard.v2 import app
 from alerta.common import config
 from alerta.common import log as logging
+from alerta.common.api import ApiClient
 
-Version = '2.0.1'
+
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
+ApiClient()  # set API variables eg. api_host, api_port
 
 # Only use when running API in stand-alone mode during testing
 @app.route('/alerta/dashboard/v2/assets/<path:filename>')
