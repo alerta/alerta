@@ -102,6 +102,8 @@ def parse_args(args=None, section=None, version='unknown', cli_parser=None, daem
                         defaults[name] = config.getboolean(section, name)
                     else:
                         defaults[name] = config.get(section, name)
+                except TypeError:
+                    defaults[name] = config.get(section, name)
 
     # read in command line options
     parents = [cfg_parser]
@@ -192,4 +194,3 @@ def parse_args(args=None, section=None, version='unknown', cli_parser=None, daem
             copy[k] = v.split(',')
 
     CONF.update(copy)
-

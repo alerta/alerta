@@ -26,7 +26,8 @@ class TestConfig(unittest.TestCase):
             'host': 'host44',
             'port': 55,
             'ack': False,
-            'locations': ['london', 'paris']
+            'locations': ['london', 'paris'],
+            'none': None,
         }
 
         self.INTER_OPTS = {
@@ -53,6 +54,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(CONF.ack, False)
         self.assertEqual(CONF.locations, ['london', 'paris'])
         self.assertEqual(CONF.global_timeout, 86400)
+        self.assertEqual(CONF.none, None)
 
     def test_interpolation(self):
 
