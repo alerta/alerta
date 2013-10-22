@@ -5,6 +5,7 @@ import ConfigParser
 
 from alerta.common.utils import Bunch
 
+
 CONF = Bunch()  # config options can be accessed using CONF.verbose or CONF.use_syslog
 
 
@@ -21,33 +22,52 @@ DEFAULTS = {
     'use_stderr': 'no',
     'foreground': 'no',
     'user_id': 'alerta',
-    'server_threads': '4',
+    'server_threads': 4,
     'disable_flag': '/var/run/alerta/%(prog)s.disable',
-    'loop_every': '30',
-    'global_timeout': '86400',  # seconds
-    'console_limit': '1000',  # max number of alerts sent to console
-    'history_limit': '-10',   # show last x most recent history entries
+    'loop_every': 30,
+    'global_timeout': 86400,  # seconds
+    'console_limit': 1000,  # max number of alerts sent to console
+    'history_limit': -10,   # show last x most recent history entries
     'dashboard_dir': '/',
 }
 
 _TRUE = {'yes': True, 'true': True, 'on': True}
 _FALSE = {'no': False, 'false': False, 'off': False}
 
+_boolean = ['yes', 'no', 'true', 'false', 'on', 'off']
 
-def register_opts(opts):
+prog = os.path.basename(sys.argv[0])
 
-    DEFAULTS.update(dict((k, str(v)) for k, v in opts.iteritems()))
+config = ConfigParser.RawConfigParser(DEFAULTS)
+config.set('DEFAULT', 'prog', prog)
 
-    parse_args()
+
+def register_opts(opts, section=None):
+
+    if not section:
+        section = 'DEFAULT'
+    elif not config.has_section(section):
+        config.add_section(section)
+
+    # True, False, numbers & lists
+    for k, v in opts.iteritems():
+        if type(v) == int:
+            v = str(v)
+        if type(v) == bool:
+            v = 'yes' if v else 'no'
+        if type(v) == list:
+            v = ','.join(v)
+        config.set(section, k, v)
+
+    parse_args(section=section)
 
 
-def parse_args(args=None, prog=None, version='unknown', cli_parser=None, daemon=True):
+def parse_args(args=None, section=None, version='unknown', cli_parser=None, daemon=True):
 
     if args is None:
         args = sys.argv[1:]
 
-    if prog is None:
-        prog = os.path.basename(sys.argv[0])
+    section = section or prog
 
     # get config file from command line, if defined
     cfg_parser = argparse.ArgumentParser(
@@ -69,23 +89,21 @@ def parse_args(args=None, prog=None, version='unknown', cli_parser=None, daemon=
     ]
 
     # read in system-wide defaults
-    config = ConfigParser.SafeConfigParser(DEFAULTS)
-    config.set('DEFAULT', 'prog', prog)
     config_files = config.read(config_file_order)
 
-    defaults = config.defaults()  # read in [DEFAULTS] section
+    defaults = config.defaults().copy()  # read in [DEFAULTS] section
     defaults['config_file'] = ','.join(config_files)
 
     if config_files:
-        if config.has_section(prog):  # read in program-specific sections
-            for name in config.options(prog):
+        if config.has_section(section):  # read in program-specific sections
+            for name in config.options(section):
                 try:
-                    defaults[name] = config.getint(prog, name)
+                    defaults[name] = config.getint(section, name)
                 except ValueError:
-                    if config.get(prog, name).lower() in [_TRUE, _FALSE]:
-                        defaults[name] = config.getboolean(prog, name)
+                    if config.get(section, name).lower() in _boolean:
+                        defaults[name] = config.getboolean(section, name)
                     else:
-                        defaults[name] = config.get(prog, name)
+                        defaults[name] = config.get(section, name)
 
     # read in command line options
     parents = [cfg_parser]
@@ -161,12 +179,19 @@ def parse_args(args=None, prog=None, version='unknown', cli_parser=None, daemon=
             continue
         try:
             copy[k] = int(v)
-        except ValueError:
-            if v.lower() in _TRUE:
-                copy[k] = True
-            elif v.lower() in _FALSE:
-                copy[k] = False
+            continue
         except TypeError:
+            continue  # skip nulls
+        except ValueError:
             pass
+        if v.lower() in _TRUE:
+            copy[k] = True
+            continue
+        elif v.lower() in _FALSE:
+            copy[k] = False
+            continue
+        if ',' in v:
+            copy[k] = v.split(',')
+
     CONF.update(copy)
 

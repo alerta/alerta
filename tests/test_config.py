@@ -26,11 +26,18 @@ class TestConfig(unittest.TestCase):
             'host': 'host44',
             'port': 55,
             'ack': False,
+            'locations': ['london', 'paris']
+        }
+
+        self.INTER_OPTS = {
+            'baz': 'fun',
+            'bar': 'Python',
+            #'foo': '%(bar)s is %(baz)s!'  # interpolation not supported
         }
 
     def test_cli_options(self):
 
-        config.parse_args(self.cli_args)
+        config.parse_args(args=self.cli_args, section='alert-test')
 
         self.assertEqual(CONF.debug, True)
         self.assertEqual(CONF.server_threads, 4)
@@ -39,9 +46,26 @@ class TestConfig(unittest.TestCase):
 
     def test_sys_options(self):
 
-        config.register_opts(self.TEST_OPTS)
+        config.register_opts(self.TEST_OPTS, section='alert-test')
 
         self.assertEqual(CONF.host, 'host44')
         self.assertEqual(CONF.port, 55)
         self.assertEqual(CONF.ack, False)
+        self.assertEqual(CONF.locations, ['london', 'paris'])
         self.assertEqual(CONF.global_timeout, 86400)
+
+    def test_interpolation(self):
+
+        config.register_opts(self.INTER_OPTS, section='alert-test')
+
+        #self.assertEqual(CONF.foo, 'Python is fun!')
+
+    def test_config_file(self):
+
+        config.parse_args(args=['--config-file', 'tests/example.conf'], section='alert-test')
+
+        self.assertEqual(CONF.foo, 'baz')
+        self.assertEqual(CONF.spam, True)
+        self.assertEqual(CONF.ham, 567)
+        self.assertEqual(CONF.xyz, ['qux', 'wibble', 'wobble'])
+
