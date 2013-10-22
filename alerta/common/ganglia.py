@@ -61,6 +61,8 @@ PROTOCOLS = [
     'multicast'
 ]
 
+prog = os.path.basename(sys.argv[0])
+
 
 class Gmetric:
     """
@@ -71,7 +73,7 @@ class Gmetric:
         'gmetric_host': 'localhost',
         'gmetric_port': 8649,
         'gmetric_protocol': 'udp',
-        'gmetric_spoof': '10.1.1.1:%(prog)s',
+        'gmetric_spoof': '10.1.1.1:%s' % prog,
     }
 
     def __init__(self, host=None, port=None, protocol=None):

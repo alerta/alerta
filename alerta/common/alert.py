@@ -51,10 +51,13 @@ ATTRIBUTES = [
 ]
 
 
+prog = os.path.basename(sys.argv[0])
+
+
 class Alert(object):
 
     alert_opts = {
-        'yaml_config': '/etc/alerta/%(prog)s.yaml',
+        'yaml_config': '/etc/alerta/%s.yaml' % prog,
         'parser_dir': '/etc/alerta/parsers',
     }
 
