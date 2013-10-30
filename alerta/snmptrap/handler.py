@@ -2,6 +2,7 @@
 import os
 import sys
 import datetime
+import re
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -12,7 +13,7 @@ from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
 
-Version = '2.0.13'
+Version = '2.0.14'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -158,9 +159,19 @@ class SnmpTrapHandler(object):
 
         LOG.info('%s-Trap-PDU %s from %s at %s %s', version, trapvars['$O'], trapvars['$B'], trapvars['$x'], trapvars['$X'])
 
+        if trapvars['$B'] != '<UNKNOWN>':
+            resource = trapvars['$B']
+        elif trapvars['$A'] != '0.0.0.0':
+            resource = trapvars['$A']
+        else:
+            m = re.match(r'UDP: \[(\d+\.\d+\.\d+\.\d+)\]', trapvars['$b'])
+            if m:
+                resource = m.group(1)
+            else:
+                resource = '<NONE>'
+
         # Defaults
         event = trapvars['$O']
-        resource = trapvars['$B'] if trapvars['$B'] != '<UNKNOWN>' else trapvars['$A']
         severity = severity_code.NORMAL
         group = 'SNMP'
         value = trapvars['$w']
