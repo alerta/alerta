@@ -3,7 +3,7 @@ requests
 PyYAML
 pytz
 prettytable
-stomp.py
+stomp.py>=4.0.2
 pymongo
 Flask
 boto

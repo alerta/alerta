@@ -44,7 +44,7 @@ class Messaging(object):
         self.callback = callback
         self.wait = wait
         try:
-            self.conn = stomp.Connection(
+            self.conn = stomp.connect.StompConnection10(
                 [(CONF.stomp_host, CONF.stomp_port)],
                 reconnect_sleep_initial=_RECONNECT_SLEEP_INITIAL,
                 reconnect_sleep_increase=_RECONNECT_SLEEP_INCREASE,
@@ -64,7 +64,7 @@ class Messaging(object):
     def reconnect(self):
         LOG.warning('Reconnecting to message broker...')
         try:
-            self.conn = stomp.Connection(
+            self.conn = stomp.connect.StompConnection10(
                 [(CONF.stomp_host, CONF.stomp_port)],
                 reconnect_sleep_initial=_RECONNECT_SLEEP_INITIAL,
                 reconnect_sleep_increase=_RECONNECT_SLEEP_INCREASE,
@@ -95,8 +95,8 @@ class Messaging(object):
 
         LOG.info('Send %s %s to %s', msg.get_type(), msg.get_id(), self.destination)
         try:
-            self.conn.send(message=json.dumps(msg.get_body(), cls=DateEncoder), headers=msg.get_header(),
-                           destination=self.destination)
+            self.conn.send(destination=self.destination, body=json.dumps(msg.get_body(), cls=DateEncoder),
+                           headers=msg.get_header())
         except exception.NotConnectedException, e:
             LOG.error('Could not send message to broker %s:%s : %s', CONF.stomp_host, CONF.stomp_port, e)
             return
@@ -136,6 +136,9 @@ class MessageHandler(ConnectionListener):
     def on_error(self, headers, body):
         LOG.error('Error %s %s', headers, body)
 
-    def on_send(self, headers, body):
-        LOG.debug('Sending message %s %s', headers, body)
+    def on_send(self, frame):
+        LOG.debug('Sending message %s', frame)
+
+    def on_heartbeat(self):
+        LOG.debug('Received heartbeat')
 
