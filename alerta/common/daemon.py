@@ -110,7 +110,7 @@ class Daemon:
             except OSError, e:
                 LOG.error('Could not run %s as user %s: %s', self.prog, self.user, e)
                 sys.exit(1)
-            LOG.warning('Running %s as user %s', self.prog, self.user)
+            LOG.info('Running %s as user %s', self.prog, self.user)
 
         # decouple from parent environment
         os.chdir("/")
@@ -157,14 +157,14 @@ class Daemon:
     def wait_on_disable(self):
         try:
             while os.path.isfile(self.disable_flag):
-                LOG.warning('Disable flag %s exists. Sleeping 120 seconds...', self.disable_flag)
+                LOG.info('Disable flag %s exists. Sleeping 120 seconds...', self.disable_flag)
                 time.sleep(120)
         except (KeyboardInterrupt, SystemExit):
             sys.exit(0)
 
     def delpid(self):
         os.remove(self.pidfile)
-        LOG.warning('Deleted pid file %s' % self.pidfile)
+        LOG.info('Deleted pid file %s' % self.pidfile)
 
     def start(self):
         """
@@ -181,7 +181,7 @@ class Daemon:
                 pass
 
         # Start the daemon
-        LOG.warning('Starting %s...' % self.prog)
+        LOG.info('Starting %s...' % self.prog)
         if not CONF.foreground:
             self.daemonize()
         self.wait_on_disable()
