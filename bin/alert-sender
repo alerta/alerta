@@ -161,7 +161,7 @@ def main():
             help='Do not send alert. Output as Curl.'
         )
 
-        config.parse_args(version=Version, cli_parser=parser, daemon=False)
+        config.parse_args(sys.argv[1:], version=Version, cli_parser=parser, daemon=False)
         logging.setup('alerta')
 
         if not CONF.heartbeat:
