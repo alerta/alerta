@@ -2,14 +2,12 @@
 
 """Alerta WatchDog script to monitor Alerta service"""
 __author__ = "Mark Bradley (mbrad@github)"
-__version__ = "0.6"
+__version__ = "0.8"
 
 import urllib, urllib2, sys, os, smtplib, time, socket
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
-global cache, response, isdaemon, tko, retrytime, smtphost, pushurl, pushtoken, pushuser, pushenable
 
 # Monitor options
 alertaURL = 'http://alerta.example.com:8080/alerta/management/healthcheck'
@@ -27,16 +25,37 @@ pushurl = 'https://api.pushover.net/1/messages.json'
 pushtoken = 'obtain-app-token-from-pushover'
 pushuser = 'this-is-your-pushover-token'
 
-def _help():
-	print "\nThis daemon polls Alerta's Management URI remotely and determines if there is a problem.\n\t\
-	Usage: %s (-f = foreground)\n" % ((sys.argv[0]).split('/')[-1])
-	sys.exit(0)
-
+class Event:
+	"Event class to construct an event object"
+	def __init__(self):
+		self.epoch = int(time.time())
+		tt = time.gmtime(self.epoch)
+		self.human = '%02d/%02d/%02d %02d:%02d:%02d' % \
+		(tt[2], tt[1], tt[0], tt[3], tt[4], tt[5])
+		try:	
+			request = urllib2.Request(alertaURL, None, { 'User-Agent' : 'python' })
+			socket.setdefaulttimeout(httptimeout)
+			httpresponse = urllib2.urlopen(request, None, timeout = httptimeout)
+			self.code = httpresponse.getcode()
+			self.body = httpresponse.read()
+			httpresponse.close()
+		except urllib2.HTTPError, e:
+			self.code = e.code
+			self.body = e.read()
+		except urllib2.URLError, e:
+			self.code = 0
+			self.body = str(e.reason)
+		except socket.timeout, e:
+			self.code = 0
+			self.body = str(e.reason)
+		
 def _argvchk():
 	if len(sys.argv) == 1:
 		return True
 	elif ('-h' or '--help') in sys.argv[1]:
-		_help()
+		print "\nThis daemon polls Alerta's Management URI remotely and determines if there is a problem.\n\t\
+		Usage: %s (-f = foreground)\n" % ((sys.argv[0]).split('/')[-1])
+		sys.exit(0)
 	elif '-f' in sys.argv[1]:
 		print "Debug Mode: Staying in foreground...\n"
 		return False
@@ -46,36 +65,6 @@ def _argvchk():
 
 def dprint(msg):
 	if isdaemon == False: print msg
-
-def probe():
-	dprint('Probing Alerta URI: %s' % (alertaURL))
-	response = {'probetime': int(time.time())}
-	try:	
-		request = urllib2.Request(alertaURL, None, { 'User-Agent' : 'python' })
-		socket.setdefaulttimeout(httptimeout)
-		httpresponse = urllib2.urlopen(request, None, timeout = httptimeout)
-		response['code'] = httpresponse.getcode()
-		response['body'] = httpresponse.read()
-		httpresponse.close()
-	except urllib2.HTTPError, e:
-		response['code'] = e.code
-		response['body'] = e.read()
-	except urllib2.URLError, e:
-		response['code'] = 0
-		response['body'] = str(e.reason)
-	except socket.timeout, e:
-		response['code'] = 0
-		response['body'] = str(e.reason)
-		
-	dprint('Probe Response: [ Code: %s | Body: %s | Epoch: %d ]' % \
-		(response['code'], response['body'], response['probetime']))
-	return response
-
-def humantime(epoch):
-	tt = time.gmtime(epoch)
-	ht = '%02d/%02d/%02d %02d:%02d:%02d' % \
-	(tt[2], tt[1], tt[0], tt[3], tt[4], tt[5])
-	return ht
 
 def mailalert(last, cache, typestr):
 	if pushcount > 3:
@@ -110,8 +99,8 @@ def mailalert(last, cache, typestr):
 
 	--
 
-	""" % (typestr, last['body'], last['code'], tko, humantime(cache['probetime']), \
-		humantime(last['probetime']), alertaURL, suppnote)
+	""" % (typestr, last.body, last.code, tko, cache.human, \
+		last.human, alertaURL, suppnote)
 	html = """\
 	<html>
 	<head></head>
@@ -129,8 +118,8 @@ def mailalert(last, cache, typestr):
 	 --
 	</body>
 	</html>
-	""" % (colour, typestr, last['body'], last['code'], tko, humantime(cache['probetime']), \
-		humantime(last['probetime']), alertaURL, suppnote)
+	""" % (colour, typestr, last.body, last.code, tko, cache.human, \
+		last.human, alertaURL, suppnote)
 
 	textpart = MIMEText(text, 'plain')
 	htmlpart = MIMEText(html, 'html')
@@ -149,10 +138,8 @@ def pushover(last, typestr):
 	elif pushenable == False:
 		dprint('Info: PushOver notifications disabled.')
 		return
-
-	pushmessage = 'State: %s Response: %s (%s)' % (typestr, last['body'], last['code'])
+	pushmessage = 'State: %s Response: %s (%s)' % (typestr, last.body, last.code)
 	pushdata = urllib.urlencode({"token": pushtoken, "user": pushuser, "message": pushmessage})
-
 	try:	
 		pushrequest = urllib2.Request(pushurl, pushdata, { "Content-type": "application/x-www-form-urlencoded" })
 		socket.setdefaulttimeout(httptimeout)
@@ -160,25 +147,28 @@ def pushover(last, typestr):
 	except:
 		dprint('Error: Could not send data to Pushover')
 		
-def _main():
+def main():
 	"""Looping main function"""
-	global cache, response, isdaemon, tko, retrytime, pushcount, httptimeout
+	global pushcount
 	pushcount = 1
 	count = 1
 	state = 'OK'
 	sleeptime = checkperiod
 	while 1:
+		dprint('Probing Alerta URI: %s' % (alertaURL))
+		response = Event()
+		dprint('Probe Response: [ Code: %s | Body: %s | Epoch: %d ]' % \
+		(response.code, response.body, response.epoch))
 		dprint('\nCOUNT: %d' % (count))
-		response = probe()
-		if response['code'] != 200:
+		if response.code != 200:
 			dprint('Event Triggered')
 			if count == 1:
 				cache = response
 				dprint('Caching first event: [ Code: %d | Body: %s | Epoch: %d ]' % \
-					(cache['code'], cache['body'], cache['probetime']))
+					(cache.code, cache.body, cache.epoch))
 			if count == tko:
 				#Warnings
-				if response['body'] ==\
+				if response.body ==\
 				 'HEARTBEAT_STALE':
 					state = 'WARNING'
 					dprint('State: \033[93mWARNING\033[0m')
@@ -204,7 +194,7 @@ def _main():
 					continue
 			count += 1
 			sleeptime = retrytime
-		elif response['code'] == 200:
+		elif response.code == 200:
 			dprint('State: \033[92mOK\033[0m')
 			if state != 'OK':
 				state = 'OK'
@@ -217,7 +207,6 @@ def _main():
 		time.sleep(sleeptime)
 
 if __name__ == '__main__':
-	cache = None
 	isdaemon = _argvchk()
 	if isdaemon == True:
 		pid = os.fork()
@@ -228,10 +217,10 @@ if __name__ == '__main__':
 			os.close(2)
 			os.close(0)
 			os.close(1)
-			_main()
+			main()
 			sys.exit(0)
 	else:
 		print 'PID: %d' % (os.getpid())
-		_main()
+		main()
 
 # vim: set ts=4 sw=4 et :
