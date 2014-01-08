@@ -2,7 +2,7 @@ import json
 import time
 
 from functools import wraps
-from flask import request, current_app
+from flask import request, current_app, render_template
 
 from alerta.api.v2 import app, db, mq
 from alerta.api.v2.switch import Switch
@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields, crossdomain
 
 
-Version = '2.0.21'
+Version = '2.0.22'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -56,6 +56,15 @@ def test():
         "app_root": app.root_path,
     })
 
+@app.route('/alerta/api/v2', methods=['GET'])
+def routes():
+
+    rules = []
+    for rule in app.url_map.iter_rules():
+        rule.methods = ','.join([r for r in rule.methods if r not in ['OPTIONS', 'HEAD']])
+        if rule.endpoint not in ['test','static']:
+            rules.append(rule)
+    return render_template('index.html', rules=rules)
 
 # Returns a list of alerts
 @app.route('/alerta/api/v2/alerts', methods=['GET'])

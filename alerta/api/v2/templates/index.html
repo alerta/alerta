@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alerta API</title>
+</head>
+<body>
+
+<h1>Alerta API</h1>
+<p>Welcome to the Alerta API for the monitoring and alerting tool.
+
+<h2>Examples</h2>
+<p>Some basic examples of using the API are:
+<ul>
+    <li> <a href="/alerta/api/v2/alerts">Alerts</a>
+    <li> <a href="/alerta/api/v2/alerts/counts">Alert counts</a>
+    <li> <a href="/alerta/api/v2/resources">Resources</a>
+    <li> <a href="/alerta/api/v2/heartbeats">Heartbeats</a>
+</ul>
+
+<h2>Query parameters</h2>
+<p>Query parameters can be used to filter the results by any valid alert attribute.
+
+<table>
+  <tbody>
+    <tr><td><tt>environment=PROD</tt></td><td>return all alerts for PROD environment</td></tr>
+    <tr><td><tt>environment=PROD|DEV</tt></td><td>return all Web service alerts for PROD and DEV environments</td></tr>
+    <tr><td><tt>environment=PROD&amp;service=Web</tt></td><td>return all Web service alerts for PROD environment</td></tr>
+    <tr><td><tt>environment=PROD&amp;service=-Web</tt></td><td>return all except Web service alerts for PROD environmnet</td></tr>
+  </tbody>
+</table>
+
+<p>Special query parameters include 'limit', 'sort-by', 'from-date' and 'q' (for a free-form mongo query).
+<table>
+  <tbody>
+    <tr><td><tt>limit=5</tt></td><td>return the five most recent alerts for the filter</td></tr>
+    <tr><td><tt>sort-by=resource</tt></td><td>sort the results by alert resource</td></tr>
+    <tr><td><tt>from-date=2014-01-07T11:11:24.135Z</tt></td><td>return alerts from a certain date and time onwards</td></tr>
+    <tr><td><tt>q={"$or":[{"service":"Nova"},{"resource":{"$regex":"nova"}}]}</tt></td><td>return Nova service alerts or resource with nova</td></tr>
+  </tbody>
+</table>
+
+<h2>Routes</h2>
+<table>
+{% for rule in rules %}
+    <tr>
+       <td>{{ rule.methods }}</td><td>{{ rule.rule }}</td><td>{{ rule.endpoint }}</td>
+    </tr>
+{% endfor %}
+</table>
+</body>
+</html>
