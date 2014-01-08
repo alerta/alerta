@@ -51,26 +51,35 @@ def parse_fields(request):
         if len(value) == 1:
             value = value[0]
             if field.endswith('!'):
-                query[field[:-1]] = dict()
-                query[field[:-1]]['$not'] = re.compile(value)
-            elif value.startswith('~'):
-                query[field] = dict()
-                query[field]['$regex'] = re.compile(value[1:], re.IGNORECASE)
-                #query[field]['$options'] = 'i'  # case insensitive search
+                if value.startswith('~'):
+                    query[field[:-1]] = dict()
+                    query[field[:-1]]['$not'] = re.compile(value[1:], re.IGNORECASE)
+                else:
+                    query[field[:-1]] = dict()
+                    query[field[:-1]]['$ne'] = value
             else:
-                query[field] = value
+                if value.startswith('~'):
+                    query[field] = dict()
+                    query[field]['$regex'] = re.compile(value[1:], re.IGNORECASE)
+                else:
+                    query[field] = value
         else:
             if field.endswith('!'):
-                query[field[:-1]] = dict()
-                query[field[:-1]]['$nin'] = value
-            elif value[0].startswith('~'):
-                value[0] = value[0][1:]
-                query[field] = dict()
-                query[field]['$regex'] = re.compile(value, re.IGNORECASE)
-                #query[field]['$options'] = 'i'  # case insensitive search
+                if '~' in [v[0] for v in value]:
+                    value = '|'.join([v.lstrip('~') for v in value])
+                    query[field[:-1]] = dict()
+                    query[field[:-1]]['$not'] = re.compile(value, re.IGNORECASE)
+                else:
+                    query[field[:-1]] = dict()
+                    query[field[:-1]]['$nin'] = value
             else:
-                query[field] = dict()
-                query[field]['$in'] = value
+                if '~' in [v[0] for v in value]:
+                    value = '|'.join([v.lstrip('~') for v in value])
+                    query[field] = dict()
+                    query[field]['$regex'] = re.compile(value, re.IGNORECASE)
+                else:
+                    query[field] = dict()
+                    query[field]['$in'] = value
 
     sort = list()
     if request.args.get('sort-by', None):
