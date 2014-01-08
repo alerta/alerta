@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.20'
+Version = '2.0.21'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -47,76 +47,76 @@ class QueryClient(object):
             query['environment'] = '|'.join(CONF.environment)
 
         if CONF.not_environment:
-            query['-environment'] = '|'.join(CONF.not_environment)
+            query['environment!'] = '|'.join(CONF.not_environment)
 
         if CONF.service:
             query['service'] = '|'.join(CONF.service)
 
         if CONF.not_service:
-            query['-service'] = '|'.join(CONF.not_service)
+            query['service!'] = '|'.join(CONF.not_service)
 
         if CONF.resource:
             query['resource'] = '|'.join(CONF.resource)
 
         if CONF.not_resource:
-            query['-resource'] = '|'.join(CONF.not_resource)
+            query['resource!'] = '|'.join(CONF.not_resource)
 
         if CONF.severity:
             query['severity'] = '|'.join(CONF.severity)
 
         if CONF.not_severity:
-            query['-severity'] = '|'.join(CONF.not_severity)
+            query['severity!'] = '|'.join(CONF.not_severity)
 
         if not CONF.status:
-            query['status'] = '%s|%s|%s' % (status_code.OPEN, status_code.ACK, status_code.CLOSED)
+            query['status'] = '~%s|%s|%s' % (status_code.OPEN, status_code.ACK, status_code.CLOSED)
 
         if CONF.status:
             query['status'] = '|'.join(CONF.status)
 
         if CONF.not_status:
-            query['-status'] = '|'.join(CONF.not_status)
+            query['status!'] = '|'.join(CONF.not_status)
 
         if CONF.event:
             query['event'] = '|'.join(CONF.event)
 
         if CONF.not_event:
-            query['-event'] = '|'.join(CONF.not_event)
+            query['event'] = '|'.join(CONF.not_event)
 
         if CONF.group:
             query['group'] = '|'.join(CONF.group)
 
         if CONF.not_group:
-            query['-group'] = '|'.join(CONF.not_group)
+            query['group!'] = '|'.join(CONF.not_group)
 
         if CONF.value:
             query['value'] = '|'.join(CONF.value)
 
         if CONF.not_value:
-            query['-value'] = '|'.join(CONF.not_value)
+            query['value!'] = '|'.join(CONF.not_value)
 
         if CONF.origin:
             query['origin'] = '|'.join(CONF.origin)
 
         if CONF.not_origin:
-            query['-origin'] = '|'.join(CONF.not_origin)
+            query['origin!'] = '|'.join(CONF.not_origin)
 
         if CONF.tags:
             query['tags'] = '|'.join(CONF.tags)
 
         if CONF.not_tags:
-            query['-tags'] = '|'.join(CONF.not_tags)
+            query['tags!'] = '|'.join(CONF.not_tags)
 
         if CONF.text:
             query['text'] = '|'.join(CONF.text)
 
         if CONF.not_text:
-            query['-text'] = '|'.join(CONF.not_text)
+            query['text!'] = '|'.join(CONF.not_text)
 
         if CONF.event_type:
             query['type'] = '|'.join(CONF.event_type)
 
         if CONF.not_event_type:
-            query['-type'] = '|'.join(CONF.not_event_type)
+            query['type!'] = '|'.join(CONF.not_event_type)
 
         if CONF.repeat:
             query['repeat'] = CONF.repeat

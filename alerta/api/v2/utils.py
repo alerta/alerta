@@ -43,23 +43,31 @@ def parse_fields(request):
     if request.args.get('repeat', None):
         query['repeat'] = True if request.args.get('repeat', 'true') == 'true' else False
 
-    for field in [fields for fields in request.args if fields.lstrip('-') in ATTRIBUTES]:
+    for field in [fields for fields in request.args if fields.rstrip('!') in ATTRIBUTES]:
         if field in ['id', 'repeat']:
             # Don't process queries on "id" or "repeat" twice
             continue
         value = request.args.getlist(field)
         if len(value) == 1:
-            if field.startswith('-'):
-                query[field[1:]] = dict()
-                query[field[1:]]['$not'] = re.compile(value[0])
-            else:
+            value = value[0]
+            if field.endswith('!'):
+                query[field[:-1]] = dict()
+                query[field[:-1]]['$not'] = re.compile(value)
+            elif value.startswith('~'):
                 query[field] = dict()
-                query[field]['$regex'] = value[0]
-                query[field]['$options'] = 'i'  # case insensitive search
+                query[field]['$regex'] = re.compile(value[1:], re.IGNORECASE)
+                #query[field]['$options'] = 'i'  # case insensitive search
+            else:
+                query[field] = value
         else:
-            if field.startswith('-'):
-                query[field[1:]] = dict()
-                query[field[1:]]['$nin'] = value
+            if field.endswith('!'):
+                query[field[:-1]] = dict()
+                query[field[:-1]]['$nin'] = value
+            elif value[0].startswith('~'):
+                value[0] = value[0][1:]
+                query[field] = dict()
+                query[field]['$regex'] = re.compile(value, re.IGNORECASE)
+                #query[field]['$options'] = 'i'  # case insensitive search
             else:
                 query[field] = dict()
                 query[field]['$in'] = value

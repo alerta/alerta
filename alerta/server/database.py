@@ -55,6 +55,7 @@ class Mongo(object):
 
     def create_indexes(self):
 
+        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('environment', pymongo.ASCENDING)])
         self.db.alerts.create_index([('environment', pymongo.ASCENDING), ('resource', pymongo.ASCENDING),
                                      ('event', pymongo.ASCENDING), ('severity', pymongo.ASCENDING)])
         self.db.alerts.create_index([('_id', pymongo.ASCENDING), ('environment', pymongo.ASCENDING),
