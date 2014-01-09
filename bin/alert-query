@@ -185,7 +185,8 @@ def main():
             "-T",
             "--tags",
             action="append",
-            dest="tags"
+            dest="tags",
+            help="List of tags eg. os:Linux, region:eu-west-1"
         )
         parser.add_argument(
             "--not-tags",
