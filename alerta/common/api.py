@@ -98,7 +98,7 @@ class ApiClient(object):
         url = 'http://%s:%s/alerta/api/%s/alerts' % (self.host, self.port, self.version)
 
         if query:
-            url = "%s?%s" % (url, urllib.urlencode(query))
+            url = "%s?%s" % (url, urllib.urlencode(query, doseq=1))
 
         if CONF.dry_run:
             print "curl -v '%s' -H 'Content-Type: application/json'" % url
