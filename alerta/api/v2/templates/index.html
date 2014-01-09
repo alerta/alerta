@@ -22,10 +22,10 @@
 
 <table>
   <tbody>
-    <tr><td><tt>environment=PROD</tt></td><td>return all alerts for PROD environment</td></tr>
-    <tr><td><tt>environment=PROD|DEV</tt></td><td>return all Web service alerts for PROD and DEV environments</td></tr>
-    <tr><td><tt>environment=PROD&amp;service=Web</tt></td><td>return all Web service alerts for PROD environment</td></tr>
-    <tr><td><tt>environment=PROD&amp;service=-Web</tt></td><td>return all except Web service alerts for PROD environmnet</td></tr>
+    <tr><td><tt>environment=PROD</tt></td><td>equality - return alerts whose environment field has the value of PROD</td></tr>
+    <tr><td><tt>environment!=PROD</tt></td><td>invert - return alerts whose environment does not have the value PROD</td></tr>
+    <tr><td><tt>service=~frontend.*</tt></td><td>regex - return alerts whose service field starts with frontend</td></tr>
+    <tr><td><tt>service!=~frontend.*</tt></td><td>invert regex - return alerts whose service field does not start with frontend</td></tr>
   </tbody>
 </table>
 
