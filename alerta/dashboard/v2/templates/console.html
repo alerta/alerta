@@ -104,7 +104,7 @@
             'Web':      '&service=Web',
             'Common':   '&service=Common',
             'Platform': '&service=Platform',
-            'Other':    '&-service=Web|Common|Platform'
+            'Other':    '&service!=~Web|Common|Platform'
         };
         updateStatusCounts(env_filter, true);
         updateAllIndicators(env_filter, asiFilters, true);

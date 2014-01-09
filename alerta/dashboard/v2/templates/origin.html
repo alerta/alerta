@@ -177,14 +177,14 @@
 
         var env_filter = ''; // all environments
         var asiFilters = {
-            'EC2':           '&origin=alert-aws',
-            'Dynect':        '&origin=alert-dynect',
-            'Ping':          '&origin=alert-pinger',
-            'SNMP':          '&origin=alert-snmptrap',
-            'SolarWinds':    '&origin=alert-solarwinds',
-            'Syslog':        '&origin=alert-syslog',
-            'HTTP':          '&origin=alert-urlmon',
-            'Riemann':       '&origin=riemann'
+            'EC2':           '&origin=~alert-aws',
+            'Dynect':        '&origin=~alert-dynect',
+            'Ping':          '&origin=~alert-pinger',
+            'SNMP':          '&origin=~alert-snmptrap',
+            'SolarWinds':    '&origin=~alert-solarwinds',
+            'Syslog':        '&origin=~alert-syslog',
+            'HTTP':          '&origin=~alert-urlmon',
+            'Riemann':       '&origin=~riemann'
         };
         updateStatusCounts(env_filter, true);
         updateAllIndicators(env_filter, asiFilters, true);

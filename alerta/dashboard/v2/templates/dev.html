@@ -177,13 +177,13 @@
 
         var env_filter = '&environment=RELEASE|QA|TEST|CODE|DEV|GUDEV|STAGE|LWP';
         var asiFilters = {
-            'R2R1':             '&service=R2|R1',
-            'FrontendMobile':   '&service=Frontend|Mobile',
+            'R2R1':             '&service=~R2|R1',
+            'FrontendMobile':   '&service=~Frontend|Mobile',
             'ContentAPI':       '&service=ContentAPI',
             'Shared':           '&service=Shared',
             'D2MicroApps':      '&service=Discussion|MicroApp',
             'FlexibleIdentity': '&service=FlexibleContent|Identity',
-            'Other':            '&-service=R2|R1|Frontend|Mobile|ContentAPI|Shared|Discussion|MicroApp|FlexibleContent|Identity|Network',
+            'Other':            '&service!=~R2|R1|Frontend|Mobile|ContentAPI|Shared|Discussion|MicroApp|FlexibleContent|Identity|Network',
             'Network':          '&service=Network'
         };
         updateStatusCounts(env_filter, true);
