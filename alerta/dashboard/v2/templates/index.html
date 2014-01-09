@@ -300,14 +300,14 @@
 
         heartbeatAlerts();
 
-        var env_filter = '&environment=PROD|INFRA';
+        var env_filter = '&environment=PROD&environment=INFRA';
         var asiFilters = {
-            'R2R1':             '&service=~R2|R1',
-            'FrontendMobile':   '&service=~Frontend|Mobile',
+            'R2R1':             '&service=R2&service=R1',
+            'FrontendMobile':   '&service=Frontend&serviceMobile',
             'ContentAPI':       '&service=ContentAPI',
-            'Shared':           '&service=Shared',
-            'D2MicroApps':      '&service=Discussion|MicroApp',
-            'FlexibleIdentity': '&service=FlexibleContent|Identity',
+            'Shared':           '&service=SharedSvcs',
+            'D2MicroApps':      '&service=Discussion&service=MicroApp',
+            'FlexibleIdentity': '&service=FlexibleContent&service=Identity',
             'Other':            '&service!=~R2|R1|Frontend|Mobile|ContentAPI|Shared|Discussion|MicroApp|FlexibleContent|Identity|Network',
             'Network':          '&service=Network'
         };
