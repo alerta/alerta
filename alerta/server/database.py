@@ -55,12 +55,18 @@ class Mongo(object):
 
     def create_indexes(self):
 
-        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('environment', pymongo.ASCENDING)])
         self.db.alerts.create_index([('environment', pymongo.ASCENDING), ('resource', pymongo.ASCENDING),
                                      ('event', pymongo.ASCENDING), ('severity', pymongo.ASCENDING)])
-        self.db.alerts.create_index([('_id', pymongo.ASCENDING), ('environment', pymongo.ASCENDING),
-                                     ('resource', pymongo.ASCENDING), ('event', pymongo.ASCENDING)])
+        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('lastReceiveTime', pymongo.ASCENDING)])
+        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('lastReceiveTime', pymongo.ASCENDING),
+                                     ('environment', pymongo.ASCENDING)])
+        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('service', pymongo.ASCENDING),
+                                     ('environment', pymongo.ASCENDING)])
+        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('environment', pymongo.ASCENDING),
+                                     ('service', pymongo.ASCENDING)])
+        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('environment', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('expireTime', pymongo.ASCENDING)])
+        self.db.alerts.create_index([('status', pymongo.ASCENDING)])
 
     def is_duplicate(self, alert, severity=None):
 
