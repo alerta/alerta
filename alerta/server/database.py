@@ -60,10 +60,7 @@ class Mongo(object):
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('lastReceiveTime', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('lastReceiveTime', pymongo.ASCENDING),
                                      ('environment', pymongo.ASCENDING)])
-        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('service', pymongo.ASCENDING),
-                                     ('environment', pymongo.ASCENDING)])
-        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('environment', pymongo.ASCENDING),
-                                     ('service', pymongo.ASCENDING)])
+        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('service', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('environment', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('expireTime', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING)])
