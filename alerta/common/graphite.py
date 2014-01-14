@@ -14,7 +14,7 @@ CONF = config.CONF
 class Carbon(object):
 
     carbon_opts = {
-        'carbon_host': 'localhost',
+        'carbon_host': 'carbon',
         'carbon_port': 2003,
         'carbon_protocol': 'udp',
         'graphite_prefix': 'alerta.%s' % socket.gethostname(),
@@ -33,7 +33,7 @@ class Carbon(object):
             LOG.error("Protocol must be one of: udp, tcp")
             return
 
-        LOG.debug('Carbon setup to send %s packets to %s:%s', self.protocol, self.host, self.port)
+        LOG.info('Carbon setup to send %s packets to %s:%s', self.protocol, self.host, self.port)
 
         self.addr = (self.host, int(self.port))
 
@@ -68,7 +68,7 @@ class Carbon(object):
             try:
                 count = self.socket.sendto('%s%s %s %s\n' % (prefix, name, value, timestamp), self.addr)
             except socket.error, e:
-                LOG.error('Failed to send metric to UDP Carbon server %s:%s: %s', self.host, self.port, e)
+                LOG.warning('Failed to send metric to UDP Carbon server %s:%s: %s', self.host, self.port, e)
             else:
                 LOG.debug('Sent %s UDP metric packets', count)
         else:
@@ -102,7 +102,7 @@ class Carbon(object):
 class StatsD(object):
 
     statsd_opts = {
-        'statsd_host': 'localhost',
+        'statsd_host': 'statsd',
         'statsd_port': 8125,
         'graphite_prefix': 'alerta.%s' % socket.gethostname(),
     }
@@ -116,7 +116,7 @@ class StatsD(object):
         self.rate = rate
         self.prefix = prefix or CONF.graphite_prefix
 
-        LOG.debug('Statsd setup to send packets to %s:%s with sample rate of %d', self.host, self.port, self.rate)
+        LOG.info('Statsd setup to send packets to %s:%s with sample rate of %d', self.host, self.port, self.rate)
 
         self.addr = (self.host, int(self.port))
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
