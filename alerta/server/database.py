@@ -558,7 +558,25 @@ class Mongo(object):
             metrics.append(stat)
         return metrics
 
-    def update_metrics(self, create_time, receive_time):
+    def update_queue_metric(self, queue_length):
+
+        try:
+            self.db.metrics.update(
+                {
+                    "group": "alerts",
+                    "name": "queueLength",
+                    "type": "gauge",
+                    "title": "Alert internal queue length",
+                    "description": "Number of alerts waiting on the internal queue for processing"
+                },
+                {
+                    '$set': {"value": queue_length}
+                },
+                True)
+        except pymongo.errors.OperationFailure, e:
+            LOG.error('MongoDB error: %s', e)
+
+    def update_timer_metric(self, create_time, receive_time):
 
         # receive latency
         delta = receive_time - create_time

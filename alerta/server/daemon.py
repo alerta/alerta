@@ -13,7 +13,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.server.database import Mongo
 from alerta.common.graphite import Carbon, StatsD
 
-Version = '2.0.15'
+Version = '2.0.16'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -152,7 +152,7 @@ class WorkerThread(threading.Thread):
             # update application stats
             self.statsd.metric_send('alerta.alerts.total', 1)
             self.statsd.metric_send('alerta.alerts.%s' % incomingAlert.severity, 1)
-            self.db.update_metrics(incomingAlert.create_time, incomingAlert.receive_time)
+            self.db.update_timer_metric(incomingAlert.create_time, incomingAlert.receive_time)
 
         self.queue.task_done()
 
@@ -215,6 +215,7 @@ class AlertaDaemon(Daemon):
         self.running = True
 
         self.queue = Queue.Queue()  # Create internal queue
+        self.db = Mongo()       # mongo database
         self.carbon = Carbon()  # carbon metrics
         self.statsd = StatsD()  # graphite metrics
 
@@ -243,6 +244,7 @@ class AlertaDaemon(Daemon):
                 time.sleep(CONF.loop_every)
                 LOG.info('Alert processing queue length is %d', self.queue.qsize())
                 self.carbon.metric_send('alerta.alerts.queueLength', self.queue.qsize())
+                self.db.update_queue_metric(self.queue.qsize())
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
