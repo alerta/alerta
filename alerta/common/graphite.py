@@ -154,4 +154,4 @@ class StatsD(object):
         try:
             self.socket.sendto(data.encode('utf-8'), self.addr)
         except socket.error, e:
-            LOG.warning('Failed to send metric to UDP Statsd server %s:%s: e', self.host, self.port, e)
+            LOG.warning('Failed to send metric to UDP Statsd server %s:%s: %s', self.host, self.port, e)
