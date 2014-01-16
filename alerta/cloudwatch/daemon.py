@@ -6,17 +6,17 @@ import datetime
 import boto.sqs
 from boto.sqs.message import RawMessage
 
-from alerta.common import config, syslog
+from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
-from alerta.common import status_code, severity_code
+from alerta.common import severity_code
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.graphite import StatsD
 
-Version = '2.0.1'
+Version = '2.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -36,7 +36,7 @@ class CloudWatchDaemon(Daemon):
 
     cloudwatch_opts = {
         'cloudwatch_sqs_region': 'eu-west-1',
-        'cloudwatch_sqs_queue': 'alerta',
+        'cloudwatch_sqs_queue': 'cloudwatch-to-alerta',
         'cloudwatch_access_key': '022QF06E7MXBSAMPLE',
         'cloudwatch_secret_key': ''
     }
@@ -69,12 +69,19 @@ class CloudWatchDaemon(Daemon):
             LOG.error('SQS API call failed: %s', e)
             sys.exit(1)
 
-        q = sqs.create_queue(CONF.cloudwatch_sqs_queue)
-        q.set_message_class(RawMessage)
+        try:
+            q = sqs.create_queue(CONF.cloudwatch_sqs_queue)
+            q.set_message_class(RawMessage)
+        except boto.exception.SQSError, e:
+            LOG.error('SQS queue error: %s', e)
+            sys.exit(1)
 
         while not self.shuttingdown:
             try:
-                m = q.read(wait_time_seconds=20)
+                try:
+                    m = q.read(wait_time_seconds=20)
+                except boto.exception.SQSError, e:
+                    LOG.warning('Could not read from queue: %s', e)
 
                 if m:
                     message = m.get_body()
@@ -110,19 +117,13 @@ class CloudWatchDaemon(Daemon):
         alertid = notification['MessageId']
         resource = alarm['Trigger']['Dimensions'][0]['value']
         event = alarm['AlarmName']
-        if alarm['NewStateValue'] == 'ALARM':
-            severity = severity_code.MAJOR
-        elif alarm['NewStateValue'] == 'INSUFFICIENT_DATA':
-            severity = severity_code.WARNING
-        elif alarm['NewStateValue'] == 'OK':
-            severity = severity_code.NORMAL
-        else:
-            severity = severity_code.UNKNOWN
+        severity = self.cw_state_to_severity(alarm['NewStateValue'])
+        previous_severity = self.cw_state_to_severity(alarm['OldStateValue'])
         group = 'CloudWatch'
         value = alarm['NewStateValue']
         text = alarm['AlarmDescription']
         environment = ['INFRA']
-        service = ['AWS']
+        service = [alarm['AWSAccountId']]  # XXX - use transform_alert() to map AWSAccountId to a useful name
         tags = [alarm['Region']]
         correlate = list()
         origin = notification['TopicArn']
@@ -140,6 +141,7 @@ class CloudWatchDaemon(Daemon):
             group=group,
             value=value,
             severity=severity,
+            previous_severity=previous_severity,
             environment=environment,
             service=service,
             text=text,
@@ -152,7 +154,6 @@ class CloudWatchDaemon(Daemon):
             create_time=create_time,
             raw_data=raw_data,
         )
-        print cloudwatchAlert
 
         suppress = cloudwatchAlert.transform_alert()
         if suppress:
@@ -161,4 +162,16 @@ class CloudWatchDaemon(Daemon):
             return
 
         return cloudwatchAlert
+
+    @staticmethod
+    def cw_state_to_severity(state):
+
+        if state == 'ALARM':
+            return severity_code.MAJOR
+        elif state == 'INSUFFICIENT_DATA':
+            return severity_code.WARNING
+        elif state == 'OK':
+            return severity_code.NORMAL
+        else:
+            return severity_code.UNKNOWN
 
