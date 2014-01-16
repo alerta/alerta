@@ -183,7 +183,7 @@ class ServerMessage(MessageHandler):
                 heartbeat.receive_now()
                 LOG.debug('Queueing successfully parsed heartbeat %s', heartbeat.get_body())
                 self.queue.put(heartbeat)
-        elif headers['type'].endswith('Alert'):
+        else:
             try:
                 alert = Alert.parse_alert(body)
             except ValueError:

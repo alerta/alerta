@@ -1,6 +1,6 @@
 /usr/bin/alerta
 /usr/bin/alerta-api
-/usr/bin/alert-aws
+/usr/bin/alert-cloudwatch
 /usr/bin/alert-dynect
 /usr/bin/alert-ircbot
 /usr/bin/alert-logger

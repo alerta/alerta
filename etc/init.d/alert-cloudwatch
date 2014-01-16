@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# alert-aws	Start/stop the Alerter AWS EC2 component
+# alert-cloudwatch	Start/stop the Alerter AWS CloudWatch component
 #
 # chkconfig: 2345 90 60
-# description: Alert AWS is the EC2 instance state and status check daemon
+# description: Alert CloudWatch polls for AWS alerts
 
 # Source function library.
 . /etc/init.d/functions
@@ -11,7 +11,7 @@
 OPTIONS=""
 
 RETVAL=0
-prog="alert-aws"
+prog="alert-cloudwatch"
 binary=/usr/bin/$prog
 pidfile=/var/run/alerta/$prog.pid
 lockfile=/var/lock/subsys/$prog

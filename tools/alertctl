@@ -15,7 +15,7 @@ DISABLE_DIR = '/var/run/alerta'
 SERVICES = {
 
     'alerta': 1,
-    'alert-aws': 1,
+    'alert-cloudwatch': 1,
     'alert-dynect': 1,
     'alert-ircbot': 1,
     'alert-logger': 1,

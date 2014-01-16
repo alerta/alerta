@@ -16,7 +16,7 @@ setuptools.setup(
     include_package_data=True,
     zip_safe=False,
     scripts=[
-        'bin/alert-aws',
+        'bin/alert-cloudwatch',
         'bin/alert-checker',
         'bin/alert-dynect',
         'bin/alert-ircbot',
