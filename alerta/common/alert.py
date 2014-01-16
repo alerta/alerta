@@ -251,6 +251,8 @@ class Alert(object):
 
     def transform_alert(self, trapoid=None, facility=None, level=None, **kwargs):
 
+        LOG.info('Transform alert %s using %s', self.get_id(), CONF.yaml_config)
+
         if not os.path.exists(CONF.yaml_config):
             return
 
