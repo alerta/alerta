@@ -38,9 +38,6 @@ class WorkerThread(threading.Thread):
             try:
                 incomingAlert = self.queue.get(True, CONF.loop_every)
             except Queue.Empty:
-                LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version, timeout=CONF.loop_every)
-                self.mq.send(heartbeat)
                 continue
 
             if not incomingAlert:
@@ -69,7 +66,6 @@ class WorkerThread(threading.Thread):
                 continue
 
             if self.db.is_duplicate(incomingAlert, incomingAlert.severity):
-
                 # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary,
                 #                       value, status, tags and origin
                 #                    2. increment duplicate count
@@ -88,10 +84,10 @@ class WorkerThread(threading.Thread):
                     self.mq.send(duplicateAlert, CONF.outbound_topic)
                     LOG.info('%s : Alert forwarded to %s and %s', duplicateAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
+                self.db.update_timer_metric(duplicateAlert.create_time, duplicateAlert.last_receive_time)
                 self.queue.task_done()
 
             elif self.db.is_correlated(incomingAlert):
-
                 # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime,
                 #                       lastReceiveTime, previousSeverity,
                 #                       severityCode, lastReceiveId, text, summary, value, tags and origin
@@ -118,13 +114,15 @@ class WorkerThread(threading.Thread):
                 self.mq.send(correlatedAlert, CONF.outbound_topic)
                 LOG.info('%s : Alert forwarded to %s and %s', correlatedAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
+                self.db.update_timer_metric(correlatedAlert.create_time, correlatedAlert.receive_time)
                 self.queue.task_done()
 
             else:
-                LOG.info('%s : New alert -> insert', incomingAlert.get_id())
                 # New alert so ... 1. insert entire document
                 #                  2. push history and status
                 #                  3. set duplicate count to zero
+
+                LOG.info('%s : New alert -> insert', incomingAlert.get_id())
 
                 trend_indication = severity_code.trend(severity_code.UNKNOWN, incomingAlert.severity)
 
@@ -147,12 +145,12 @@ class WorkerThread(threading.Thread):
                 self.mq.send(incomingAlert, CONF.outbound_topic)
                 LOG.info('%s : Alert forwarded to %s and %s', incomingAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
+                self.db.update_timer_metric(incomingAlert.create_time, incomingAlert.receive_time)
                 self.queue.task_done()
 
             # update application stats
             self.statsd.metric_send('alerta.alerts.total', 1)
             self.statsd.metric_send('alerta.alerts.%s' % incomingAlert.severity, 1)
-            self.db.update_timer_metric(incomingAlert.create_time, incomingAlert.receive_time)
 
         self.queue.task_done()
 
