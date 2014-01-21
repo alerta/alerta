@@ -1,6 +1,7 @@
 
 import sys
 import json
+import time
 import datetime
 
 import boto.sqs
@@ -16,7 +17,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.graphite import StatsD
 
-Version = '2.0.2'
+Version = '2.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -82,6 +83,7 @@ class CloudWatchDaemon(Daemon):
                     m = q.read(wait_time_seconds=20)
                 except boto.exception.SQSError, e:
                     LOG.warning('Could not read from queue: %s', e)
+                    time.sleep(20)
 
                 if m:
                     message = m.get_body()
