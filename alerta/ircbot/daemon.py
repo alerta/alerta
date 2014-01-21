@@ -4,6 +4,7 @@ import socket
 import select
 import json
 import urllib2
+import time
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -14,7 +15,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.4'
+Version = '2.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -149,9 +150,12 @@ class IrcbotDaemon(Daemon):
         try:
             irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             irc.connect((CONF.irc_host, CONF.irc_port))
+            time.sleep(1)
             irc.send('NICK %s\r\n' % CONF.irc_user)
+            time.sleep(1)
             irc.send('USER %s 8 * : %s\r\n' % (CONF.irc_user, CONF.irc_user))
             LOG.debug('USER -> %s', irc.recv(4096))
+            time.sleep(1)
             irc.send('JOIN %s\r\n' % CONF.irc_channel)
             LOG.debug('JOIN ->  %s', irc.recv(4096))
         except Exception, e:
