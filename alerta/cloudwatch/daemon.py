@@ -17,7 +17,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.graphite import StatsD
 
-Version = '2.0.3'
+Version = '2.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -60,6 +60,7 @@ class CloudWatchDaemon(Daemon):
 
         self.dedup = DeDup(by_value=True)
 
+        LOG.info('Connecting to SQS queue %s', CONF.cloudwatch_sqs_queue)
         try:
             sqs = boto.sqs.connect_to_region(
                 CONF.cloudwatch_sqs_region,
@@ -79,6 +80,7 @@ class CloudWatchDaemon(Daemon):
 
         while not self.shuttingdown:
             try:
+                LOG.info('Waiting for CloudWatch alarms...')
                 try:
                     m = q.read(wait_time_seconds=20)
                 except boto.exception.SQSError, e:
