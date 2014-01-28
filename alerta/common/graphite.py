@@ -1,6 +1,7 @@
 
 import time
 import socket
+import threading
 
 from random import random
 
@@ -16,7 +17,7 @@ class Carbon(object):
     carbon_opts = {
         'carbon_host': 'carbon',
         'carbon_port': 2003,
-        'carbon_protocol': 'udp',
+        'carbon_protocol': 'tcp',
         'graphite_prefix': 'alerta.%s' % socket.gethostname(),
     }
 
@@ -29,6 +30,8 @@ class Carbon(object):
         self.protocol = protocol or CONF.carbon_protocol
         self.prefix = prefix or CONF.graphite_prefix
 
+        self.lock = threading.Lock()
+
         if self.protocol not in ['udp', 'tcp']:
             LOG.error("Protocol must be one of: udp, tcp")
             return
@@ -37,7 +40,7 @@ class Carbon(object):
 
         self.addr = (self.host, int(self.port))
 
-        if protocol == 'udp':
+        if self.protocol == 'udp':
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         else:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -73,25 +76,27 @@ class Carbon(object):
                 LOG.debug('Sent %s UDP metric packets', count)
         else:
             if not self._connected:
-                LOG.info('Attempting reconnect to Carbon server %s:%s', self.host, self.port)
-                try:
-                    self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    self.socket.connect(self.addr)
-                    self._connected = True
-                    LOG.info('Reconnected to Carbon server %s on TCP port %s', self.host, self.port)
-                except socket.error:
-                    LOG.warning('Carbon server %s not responding to TCP port %s', self.host, self.port)
-                    self._connected = False
-                    return
+                with self.lock:
+                    LOG.info('Attempting reconnect to Carbon server %s:%s', self.host, self.port)
+                    try:
+                        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        self.socket.connect(self.addr)
+                        self._connected = True
+                        LOG.info('Reconnected to Carbon server %s on TCP port %s', self.host, self.port)
+                    except socket.error:
+                        LOG.warning('Carbon server %s not responding to TCP port %s', self.host, self.port)
+                        self._connected = False
+                        return
 
             if self._connected:
-                try:
-                    self.socket.sendall('%s %s %s\n' % (name, value, timestamp))
-                except socket.error, e:
-                    LOG.warning('Failed to send metric to TCP Carbon server %s:%s: e', self.host, self.port, e)
-                    self._connected = False
-                else:
-                    LOG.debug('Sent all TCP metric data')
+                with self.lock:
+                    try:
+                        self.socket.sendall('%s %s %s\n' % (name, value, timestamp))
+                    except socket.error, e:
+                        LOG.warning('Failed to send metric to TCP Carbon server %s:%s: e', self.host, self.port, e)
+                        self._connected = False
+                    else:
+                        LOG.debug('Sent all TCP metric data')
 
     def shutdown(self):
 
