@@ -57,19 +57,17 @@ class Carbon(object):
             LOG.error('Invalid carbon parameters. Must supply name and value.')
             return
 
+        if self.prefix:
+            name = '%s.%s' % (self.prefix, name)
+
         if not timestamp:
             timestamp = int(time.time())
 
-        if len(self.prefix) > 0:
-            prefix = self.prefix + '.'
-        else:
-            prefix = ''
-
-        LOG.debug('Carbon name=%s%s, value=%s, timestamp=%s', prefix, name, value, timestamp)
+        LOG.debug('Carbon name=%s, value=%s, timestamp=%s', name, value, timestamp)
 
         if self.protocol == 'udp':
             try:
-                count = self.socket.sendto('%s%s %s %s\n' % (prefix, name, value, timestamp), self.addr)
+                count = self.socket.sendto('%s %s %s\n' % (name, value, timestamp), self.addr)
             except socket.error, e:
                 LOG.warning('Failed to send metric to UDP Carbon server %s:%s: %s', self.host, self.port, e)
             else:
@@ -137,17 +135,15 @@ class StatsD(object):
         >>> statsd.metric_send('uniques', 765, 's')    # sets      => 'uniques:765|s
         """
 
+        if self.prefix:
+            name = '%s.%s' % (self.prefix, name)
+
         mtype = mtype or 'c'  # default is 'counter'
         rate = rate or self.rate
 
-        if len(self.prefix) > 0:
-            prefix = self.prefix + '.'
-        else:
-            prefix = ''
+        LOG.debug('Statsd name=%s, value=%s, type=%s rate=%s', name, value, mtype, rate)
 
-        LOG.debug('Statsd name=%s%s, value=%s, type=%s rate=%s', prefix, name, value, mtype, rate)
-
-        data = '%s%s:%s|%s' % (prefix, name, value, mtype)
+        data = '%s:%s|%s' % (name, value, mtype)
 
         if rate < 1:
             if random() <= rate:
