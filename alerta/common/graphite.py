@@ -45,11 +45,14 @@ class Carbon(object):
         else:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
+                self.socket.settimeout(0.5)
                 self.socket.connect(self.addr)
                 self._connected = True
-            except socket.error:
+            except (socket.error, socket.timeout):
                 self._connected = False
                 LOG.warning('Carbon server %s not responding on TCP port %s', self.host, self.port)
+            finally:
+                self.socket.settimeout(None)
 
     def metric_send(self, name, value, timestamp=None):
 
@@ -77,14 +80,16 @@ class Carbon(object):
                 with self.lock:
                     LOG.info('Attempting reconnect to Carbon server %s:%s', self.host, self.port)
                     try:
+                        self.socket.settimeout(0.5)
                         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         self.socket.connect(self.addr)
                         self._connected = True
                         LOG.info('Reconnected to Carbon server %s on TCP port %s', self.host, self.port)
-                    except socket.error:
+                    except (socket.error, socket.timeout):
                         LOG.warning('Carbon server %s not responding to TCP port %s', self.host, self.port)
                         self._connected = False
-                        return
+                    finally:
+                        self.socket.settimeout(None)
 
             if self._connected:
                 with self.lock:
@@ -156,3 +161,4 @@ class StatsD(object):
             self.socket.sendto(data.encode('utf-8'), self.addr)
         except socket.error, e:
             LOG.warning('Failed to send metric to UDP Statsd server %s:%s: %s', self.host, self.port, e)
+
