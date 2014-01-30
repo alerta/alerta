@@ -460,11 +460,11 @@ class QueryClient(object):
                     print(line_color + '          graphs       | %s' % (','.join(graph_urls)) + end_color)
 
                 if 'tags' in CONF.show and tags:
-                    for t in tags:
-                        print(line_color + '            tag | %s' % (t) + end_color)
+                    for tag in tags.items():
+                        print(line_color + '            tag %6s | %s' % tag + end_color)
 
                 if 'raw' in CONF.show and raw_data:
-                    print(line_color + '   |%s' % (raw_data) + end_color)
+                    print(line_color + '   | %s' % raw_data + end_color)
 
                 if 'history' in CONF.show:
                     for hist in alert['history']:

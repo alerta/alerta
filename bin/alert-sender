@@ -96,7 +96,7 @@ def main():
             action='append',
             dest='tags',
             default=list(),
-            help='Tag the event with anything and everything.'
+            help='Add key=value tag pairs.'
         )
         parser.add_argument(
             '-t',
@@ -182,6 +182,12 @@ def main():
             if CONF.correlate and CONF.event not in CONF.correlate:
                 CONF.correlate.append(CONF.event)
 
+            if CONF.tags:
+                tags = dict()
+                for tag in CONF.tags:
+                    k, v = tag.split('=')
+                    tags[k] = v
+                CONF.tags = tags
             if not CONF.timeout:
                 CONF.timeout = CONF.global_timeout
 
