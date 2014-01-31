@@ -43,7 +43,7 @@ def parse_fields(request):
     if request.args.get('repeat', None):
         query['repeat'] = True if request.args.get('repeat', 'true') == 'true' else False
 
-    for field in [fields for fields in request.args if fields.rstrip('!') in ATTRIBUTES]:
+    for field in [fields for fields in request.args if fields.rstrip('!') in ATTRIBUTES or fields.startswith('tags')]:
         if field in ['id', 'repeat']:
             # Don't process queries on "id" or "repeat" twice
             continue

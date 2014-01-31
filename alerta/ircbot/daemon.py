@@ -15,7 +15,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.5'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

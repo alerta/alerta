@@ -11,7 +11,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.mail import Mailer
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.0.5'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -100,9 +100,8 @@ class MailerDaemon(Daemon):
                         email = Mailer(mailAlert)
                         mail_to = CONF.mail_list.split(',')
 
-                        for tag in mailAlert.tags:
-                            if tag.startswith('email'):
-                                mail_to.append(tag.split(':')[1])
+                        if 'mailto' in mailAlert.tags:
+                            mail_to.append(mailAlert.tags['mailto'])
                         email.send(mail_to=mail_to)
                         try:
                             del self.onhold[alertid]

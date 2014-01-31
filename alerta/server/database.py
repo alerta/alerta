@@ -415,7 +415,13 @@ class Mongo(object):
 
     def tag_alert(self, alertid, tag):
 
-        response = self.db.alerts.update({'_id': {'$regex': '^' + alertid}}, {'$push': {"tags": tag}})
+        try:
+            key, value = tag.split('=')
+        except ValueError:
+            key = tag
+            value = ''
+
+        response = self.db.alerts.update({'_id': {'$regex': '^' + alertid}}, {'$set': {"tags." + key: value}})
 
         return True if 'ok' in response else False
 

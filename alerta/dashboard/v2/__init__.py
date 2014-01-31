@@ -4,7 +4,7 @@ from flask import Flask
 from alerta.common import config
 from alerta.common import log as logging
 
-Version = '2.0.1'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

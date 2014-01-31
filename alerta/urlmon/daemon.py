@@ -21,7 +21,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-Version = '2.0.10'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -260,7 +260,7 @@ class WorkerThread(threading.Thread):
             environment = check['environment']
             service = check['service']
             text = text
-            tags = check.get('tags', list())
+            tags = check.get('tags', dict())
             threshold_info = "%s : RT > %d RT > %d x %s" % (check['url'], warn_thold, crit_thold, check.get('count', 1))
 
             urlmonAlert = Alert(

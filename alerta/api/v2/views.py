@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields, crossdomain
 
 
-Version = '2.0.22'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

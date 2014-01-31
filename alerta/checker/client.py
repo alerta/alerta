@@ -11,7 +11,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.api import ApiClient
 
-Version = '2.0.3'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

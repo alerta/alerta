@@ -5,7 +5,7 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.api import ApiClient
 
-Version = '2.0.7'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -21,15 +21,13 @@ class SenderClient(object):
     def main(self):
 
         if CONF.heartbeat:
-            vtag = ''.join(CONF.tags) if CONF.tags else None
-
             heartbeat = Heartbeat(
                 origin=CONF.origin,
-                version=vtag or Version,
+                version=CONF.tags.get('Version', Version),
                 timeout=CONF.timeout
             )
 
-            LOG.debug(repr(heartbeat))
+            LOG.debug(heartbeat)
 
             api = ApiClient()
             api.send(heartbeat)

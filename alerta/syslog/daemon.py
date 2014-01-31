@@ -13,7 +13,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.graphite import StatsD
 
-Version = '2.0.11'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -202,7 +202,7 @@ class SyslogDaemon(Daemon):
             text = MSG
             environment = ['INFRA']
             service = ['Platform']
-            tags = ['%s.%s' % (facility, level)]
+            tags = {'syslogPriority': '%s.%s' % (facility, level)}
             correlate = list()
             timeout = None
             threshold_info = None

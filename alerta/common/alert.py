@@ -93,7 +93,7 @@ class Alert(object):
         self.service = service or ['Undefined']
         self.text = text or ''
         self.event_type = event_type or 'exceptionAlert'
-        self.tags = tags or list()
+        self.tags = tags or dict()
         self.origin = origin or '%s/%s' % (prog, os.uname()[1])
         self.repeat = repeat
         self.duplicate_count = duplicate_count
@@ -104,6 +104,8 @@ class Alert(object):
         self.alertid = alertid or str(uuid4())
         if last_receive_id:
             self.last_receive_id = last_receive_id
+        else:
+            self.last_receive_id = self.alertid
         self.create_time = create_time or datetime.datetime.utcnow()
         self.expire_time = expire_time or self.create_time + datetime.timedelta(seconds=self.timeout)
         if receive_time:
@@ -230,7 +232,7 @@ class Alert(object):
             service=alert.get('service', None),
             text=alert.get('text', None),
             event_type=alert.get('type', None),
-            tags=alert.get('tags', list()),
+            tags=alert.get('tags', dict()),
             origin=alert.get('origin', None),
             repeat=alert.get('repeat', False),
             duplicate_count=alert.get('duplicateCount', 0),
@@ -305,7 +307,7 @@ class Alert(object):
                 if 'service' in c:
                     self.service = c['service']
                 if 'tags' in c:
-                    self.tags = c['tags']
+                    self.tags.update(c['tags'])  # merge tags
                 if 'correlate' in c:
                     self.correlate = c['correlate']
                 if 'threshold_info' in c:
@@ -342,7 +344,7 @@ class Alert(object):
 
         return suppress
 
-    def translate(self, mappings):
+    def translate_alert(self, mappings):
 
         LOG.debug('Translate alert using mappings: %s', mappings)
 
@@ -358,7 +360,7 @@ class Alert(object):
             self.service[:] = [s.replace(k, v) for s in self.service]
 
             if self.tags is not None:
-                self.tags[:] = [t.replace(k, v) for t in self.tags]
+                self.tags = dict([(tag[0], tag[1].replace(k, v)) for tag in self.tags.iteritems()])
             if self.correlate is not None:
                 self.correlate[:] = [c.replace(k, v) for c in self.correlate]
             if self.threshold_info is not None:

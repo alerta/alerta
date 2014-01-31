@@ -17,7 +17,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.graphite import StatsD
 
-Version = '2.0.4'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -128,7 +128,7 @@ class CloudWatchDaemon(Daemon):
         text = alarm['AlarmDescription']
         environment = ['INFRA']
         service = [alarm['AWSAccountId']]  # XXX - use transform_alert() to map AWSAccountId to a useful name
-        tags = [alarm['Region']]
+        tags = {'Region': alarm['Region']}
         correlate = list()
         origin = notification['TopicArn']
         timeout = None

@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.23'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -101,10 +101,14 @@ class QueryClient(object):
             query['origin!'] = CONF.not_origin
 
         if CONF.tags:
-            query['tags'] = CONF.tags
+            for tag in CONF.tags:
+                key, value = tag.split('=')
+                query['tags.' + key] = value
 
         if CONF.not_tags:
-            query['tags!'] = CONF.not_tags
+            for tag in CONF.not_tags:
+                key, value = tag.split('=')
+                query['tags.' + key + '!'] = value
 
         if CONF.text:
             query['text'] = CONF.text
@@ -460,11 +464,11 @@ class QueryClient(object):
                     print(line_color + '          graphs       | %s' % (','.join(graph_urls)) + end_color)
 
                 if 'tags' in CONF.show and tags:
-                    for t in tags:
-                        print(line_color + '            tag | %s' % (t) + end_color)
+                    for tag in tags.items():
+                        print(line_color + '            tag %6s | %s' % tag + end_color)
 
                 if 'raw' in CONF.show and raw_data:
-                    print(line_color + '   |%s' % (raw_data) + end_color)
+                    print(line_color + '   | %s' % raw_data + end_color)
 
                 if 'history' in CONF.show:
                     for hist in alert['history']:
