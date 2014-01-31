@@ -31,7 +31,7 @@ class PagerDutyClient(object):
                 "value": alert.value,
                 "text": alert.text,
                 "id": alert.get_id(),
-                "tags": " ".join(alert.tags),
+                "tags": ", ".join(k + '=' + v for k, v in alert.tags.items()),
                 "moreInfo": alert.more_info
             }
         }
@@ -59,7 +59,7 @@ class PagerDutyClient(object):
                 "value": alert.value,
                 "text": alert.text,
                 "id": alert.get_id(),
-                "tags": " ".join(alert.tags),
+                "tags": ", ".join(k + '=' + v for k, v in alert.tags.items()),
                 "moreInfo": alert.more_info
             }
         }
@@ -87,7 +87,7 @@ class PagerDutyClient(object):
                 "value": alert.value,
                 "text": alert.text,
                 "id": alert.get_id(),
-                "tags": " ".join(alert.tags),
+                "tags": ", ".join(k + '=' + v for k, v in alert.tags.items()),
                 "moreInfo": alert.more_info
             }
         }
