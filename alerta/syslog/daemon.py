@@ -13,7 +13,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.graphite import StatsD
 
-Version = '2.0.12'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

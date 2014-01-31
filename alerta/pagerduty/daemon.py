@@ -10,7 +10,7 @@ from alerta.common import severity_code, status_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.pagerduty.pdclientapi import PagerDutyClient
 
-Version = '2.0.2'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

@@ -13,7 +13,7 @@ from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
 
-Version = '2.0.16'
+Version = '2.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
