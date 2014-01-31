@@ -128,7 +128,7 @@ class CloudWatchDaemon(Daemon):
         text = alarm['AlarmDescription']
         environment = ['INFRA']
         service = [alarm['AWSAccountId']]  # XXX - use transform_alert() to map AWSAccountId to a useful name
-        tags = [alarm['Region']]
+        tags = {'Region': alarm['Region']}
         correlate = list()
         origin = notification['TopicArn']
         timeout = None
