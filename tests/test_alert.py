@@ -104,7 +104,7 @@ class TestAlert(unittest.TestCase):
                       previous_severity=self.PREVIOUS_SEVERITY, environment=self.ENVIRONMENT, service=self.SERVICE,
                       text=self.TEXT, event_type=self.EVENT_TYPE, tags=self.TAGS, origin=self.ORIGIN,
                       repeat=self.REPEAT, duplicate_count=self.DUPLICATE_COUNT, threshold_info=self.THRESHOLD_INFO,
-                      summary=self.SUMMARY, timeout=self.TIMEOUT, alertid=self.ALERTID, last_receive_id=self.ALERTID,
+                      summary=self.SUMMARY, timeout=self.TIMEOUT, alertid=self.ALERTID,
                       create_time=self.CREATE_TIME, expire_time=self.EXPIRE_TIME, receive_time=self.RECEIVE_TIME,
                       last_receive_time=self.RECEIVE_TIME, trend_indication=self.TREND_INDICATION,
                       raw_data=self.RAW_DATA, more_info=self.MORE_INFO, graph_urls=self.GRAPH_URLS, history=self.HISTORY)
@@ -129,7 +129,7 @@ class TestAlert(unittest.TestCase):
         self.assertEquals(alert.summary, self.SUMMARY)
         self.assertEquals(alert.timeout, self.TIMEOUT)
         self.assertEquals(alert.alertid, self.ALERTID)
-        self.assertEquals(alert.last_receive_id, self.LAST_RECEIVE_ID)
+        self.assertEquals(alert.last_receive_id, self.ALERTID)
         self.assertEquals(alert.create_time, self.CREATE_TIME)
         self.assertEquals(alert.expire_time, self.EXPIRE_TIME)
         self.assertEquals(alert.receive_time, self.RECEIVE_TIME)

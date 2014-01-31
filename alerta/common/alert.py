@@ -104,6 +104,8 @@ class Alert(object):
         self.alertid = alertid or str(uuid4())
         if last_receive_id:
             self.last_receive_id = last_receive_id
+        else:
+            self.last_receive_id = self.alertid
         self.create_time = create_time or datetime.datetime.utcnow()
         self.expire_time = expire_time or self.create_time + datetime.timedelta(seconds=self.timeout)
         if receive_time:
