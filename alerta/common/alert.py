@@ -357,8 +357,8 @@ class Alert(object):
             self.environment[:] = [e.replace(k, v) for e in self.environment]
             self.service[:] = [s.replace(k, v) for s in self.service]
 
-            #if self.tags is not None:
-            #    self.tags[:] = [t.replace(k, v) for t in self.tags.keys()]
+            if self.tags is not None:
+                self.tags = dict([(tag[0], tag[1].replace(k, v)) for tag in self.tags.iteritems()])
             if self.correlate is not None:
                 self.correlate[:] = [c.replace(k, v) for c in self.correlate]
             if self.threshold_info is not None:
