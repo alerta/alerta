@@ -305,7 +305,7 @@ class Alert(object):
                 if 'service' in c:
                     self.service = c['service']
                 if 'tags' in c:
-                    self.tags = c['tags']
+                    self.tags.update(c['tags'])  # merge tags
                 if 'correlate' in c:
                     self.correlate = c['correlate']
                 if 'threshold_info' in c:
