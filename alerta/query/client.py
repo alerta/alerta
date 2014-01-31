@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.22'
+Version = '2.0.23'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -68,7 +68,7 @@ class QueryClient(object):
             query['severity!'] = CONF.not_severity
 
         if not CONF.status:
-            query['status'] = '~%s|%s|%s' % (status_code.OPEN, status_code.ACK, status_code.CLOSED)
+            query['status'] = [status_code.OPEN, status_code.ACK, status_code.CLOSED]
 
         if CONF.status:
             query['status'] = CONF.status
