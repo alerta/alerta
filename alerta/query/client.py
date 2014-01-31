@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.0.23'
+Version = '2.0.24'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -101,10 +101,14 @@ class QueryClient(object):
             query['origin!'] = CONF.not_origin
 
         if CONF.tags:
-            query['tags'] = CONF.tags
+            for tag in CONF.tags:
+                key, value = tag.split('=')
+                query['tags.' + key] = value
 
         if CONF.not_tags:
-            query['tags!'] = CONF.not_tags
+            for tag in CONF.not_tags:
+                key, value = tag.split('=')
+                query['tags.' + key + '!'] = value
 
         if CONF.text:
             query['text'] = CONF.text
