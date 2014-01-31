@@ -492,12 +492,8 @@ function fnFormatDetails(aData) {
     var graphUrls = '';
     var history = aData[27];
 
-    $.each(aData[24], function (y, tag) {
-        tags += '<span class="label">' + tag + '</span> ';
-        var t = tag.split(':');
-        if (t[0] == 'cluster') {
-            cluster = t[1];
-        }
+    $.map(aData[24], function (value, key) {
+        tags += '<span class="label">' + key + '=' + value + '</span> ';
     });
 
     if (moreInfo && moreInfo.substring(0, 4) === 'http') {
