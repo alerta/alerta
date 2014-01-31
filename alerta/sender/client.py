@@ -27,7 +27,7 @@ class SenderClient(object):
                 timeout=CONF.timeout
             )
 
-            LOG.debug(repr(heartbeat))
+            LOG.debug(heartbeat)
 
             api = ApiClient()
             api.send(heartbeat)

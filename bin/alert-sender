@@ -34,7 +34,7 @@ def main():
                         ' a resource (including service and environment), event name, value and text. A ' +
                         'severity of "Normal" is used if none given. Tags and group are optional.',
             epilog='alert-sender.py --resource myCoolApp --event AppStatus --group Application --value Down ' +
-                   '--severity critical --env PROD --svc MicroApp --tag release:134 --tag build:1005 ' +
+                   '--severity critical --env PROD --svc MicroApp --tag Release=134 --tag Build=1005 ' +
                    '--text "Micro App X is down."'
         )
         parser.add_argument(
@@ -96,7 +96,7 @@ def main():
             action='append',
             dest='tags',
             default=list(),
-            help='Add key=value tag pairs.'
+            help='Add Key=Value tag pairs.'
         )
         parser.add_argument(
             '-t',
@@ -182,11 +182,13 @@ def main():
             if CONF.correlate and CONF.event not in CONF.correlate:
                 CONF.correlate.append(CONF.event)
 
-            if CONF.tags:
-                CONF.tags = dict([tag.split('=') for tag in CONF.tags])
-
             if not CONF.timeout:
                 CONF.timeout = CONF.global_timeout
+
+        if CONF.tags:
+            CONF.tags = dict([tag.split('=') for tag in CONF.tags])
+        else:
+            CONF.tags = dict()
 
         sender = SenderClient()
         msg_id = sender.main()
