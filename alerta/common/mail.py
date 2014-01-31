@@ -52,7 +52,7 @@ class Mailer(object):
         self.text += "Threshold Info: %s\n" % alert.threshold_info
         self.text += "Duplicate Count: %s\n" % alert.duplicate_count
         self.text += "Origin: %s\n" % alert.origin
-        self.text += "Tags: %s\n" % ", ".join(alert.tags)
+        self.text += "Tags: %s\n" % ", ".join(k + '=' + v for k, v in alert.tags.items())
         self.text += "More Info: %s\n\n" % alert.more_info
 
         if hasattr(alert, 'graph_urls'):
