@@ -202,7 +202,7 @@ class SyslogDaemon(Daemon):
             text = MSG
             environment = ['INFRA']
             service = ['Platform']
-            tags = {'Priority': '%s.%s' % (facility, level)}
+            tags = {'syslogPriority': '%s.%s' % (facility, level)}
             correlate = list()
             timeout = None
             threshold_info = None
