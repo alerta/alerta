@@ -183,11 +183,8 @@ def main():
                 CONF.correlate.append(CONF.event)
 
             if CONF.tags:
-                tags = dict()
-                for tag in CONF.tags:
-                    k, v = tag.split('=')
-                    tags[k] = v
-                CONF.tags = tags
+                CONF.tags = dict([tag.split('=') for tag in CONF.tags])
+
             if not CONF.timeout:
                 CONF.timeout = CONF.global_timeout
 
