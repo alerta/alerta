@@ -342,7 +342,7 @@ class Alert(object):
 
         return suppress
 
-    def translate(self, mappings):
+    def translate_alert(self, mappings):
 
         LOG.debug('Translate alert using mappings: %s', mappings)
 

@@ -13,7 +13,7 @@ from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
 
-Version = '2.0.15'
+Version = '2.0.16'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -209,7 +209,7 @@ class SnmpTrapHandler(object):
             LOG.debug('%s', snmptrapAlert)
             return
 
-        snmptrapAlert.translate(trapvars)
+        snmptrapAlert.translate_alert(trapvars)
 
         if snmptrapAlert.get_type() == 'Heartbeat':
             snmptrapAlert = Heartbeat(origin=snmptrapAlert.origin, version='n/a', timeout=snmptrapAlert.timeout)
