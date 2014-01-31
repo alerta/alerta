@@ -260,7 +260,7 @@ class WorkerThread(threading.Thread):
             environment = check['environment']
             service = check['service']
             text = text
-            tags = check.get('tags', list())
+            tags = check.get('tags', dict())
             threshold_info = "%s : RT > %d RT > %d x %s" % (check['url'], warn_thold, crit_thold, check.get('count', 1))
 
             urlmonAlert = Alert(
