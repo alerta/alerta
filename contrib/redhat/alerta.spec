@@ -87,7 +87,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %attr(-,alerta,alerta) /var/run/%{name}
 %{_bindir}/alerta
 %{_bindir}/alerta-api
-%{_bindir}/alert-aws
 %{_bindir}/alert-dynect
 %{_bindir}/alert-ganglia
 %{_bindir}/alert-ircbot
@@ -126,7 +125,7 @@ if ! getent passwd alerta >/dev/null 2>&1; then
 fi
 
 %post server
-for name in alerta alert-aws alert-dynect alert-ganglia alert-ircbot \
+for name in alerta alert-dynect alert-ganglia alert-ircbot \
     alert-logger alert-mailer alert-notify alert-pinger alert-syslog alert-urlmon
 do
     /sbin/chkconfig --add $name
@@ -134,7 +133,7 @@ done
 
 %preun server
 if [ "$1" = "0" ]; then
-    for name in alerta alert-aws alert-dynect alert-ganglia alert-ircbot \
+    for name in alerta alert-dynect alert-ganglia alert-ircbot \
         alert-logger alert-mailer alert-notify alert-pinger alert-syslog alert-urlmon
     do
         /sbin/chkconfig $name off
