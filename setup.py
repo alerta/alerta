@@ -3,10 +3,14 @@
 import setuptools
 from alerta import get_version
 
+with open('README.rst') as f:
+    long_description = f.read()
+
 setuptools.setup(
     name="alerta",
     version=get_version(),
     description='Alerta monitoring framework',
+    long_description=long_description,
     url='https://github.com/guardian/alerta',
     license='Apache License 2.0',
     author='Nick Satterly',
