@@ -34,14 +34,11 @@
     </div>
 </div>
 
-<script>
-    var api_host = "{{ config['api_host'] }}";
-    var api_port = {{ config['api_port'] }};
-</script>
+<script src="/alerta/dashboard/v2/assets/js/config.js"></script>
 
 <script>
 
-    var API_HOST = document.domain + ':' + window.api_port;
+    var API_HOST = appConfig.api_host + ':' + appConfig.api_port;
     var REFRESH_INTERVAL = 30; // seconds
 
     var filter = '{{ query|safe }}';
