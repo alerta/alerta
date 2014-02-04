@@ -15,7 +15,7 @@ CONF = config.CONF
 class Carbon(object):
 
     carbon_opts = {
-        'carbon_host': 'carbon',
+        'carbon_host': 'localhost',
         'carbon_port': 2003,
         'carbon_protocol': 'tcp',
         'graphite_prefix': 'alerta.%s' % socket.gethostname(),
@@ -110,7 +110,7 @@ class Carbon(object):
 class StatsD(object):
 
     statsd_opts = {
-        'statsd_host': 'statsd',
+        'statsd_host': 'localhost',
         'statsd_port': 8125,
         'graphite_prefix': 'alerta.%s' % socket.gethostname(),
     }

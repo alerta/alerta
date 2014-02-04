@@ -30,7 +30,7 @@ class SolarWindsMessage(MessageHandler):
 class SolarWindsDaemon(Daemon):
 
     solarwinds_opts = {
-        'solarwinds_host': 'solarwinds',
+        'solarwinds_host': 'localhost',
         'solarwinds_username': 'admin',
         'solarwinds_password': '',
         'solarwinds_group': 'websys',
