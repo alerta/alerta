@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.1.0'
+Version = '2.1.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -27,6 +27,8 @@ class QueryClient(object):
 
         api = ApiClient()
         query = dict()
+
+        self.tag_is_key_value = True
 
         self.now = datetime.datetime.utcnow()
         from_time = self.now
@@ -464,8 +466,13 @@ class QueryClient(object):
                     print(line_color + '          graphs       | %s' % (','.join(graph_urls)) + end_color)
 
                 if 'tags' in CONF.show and tags:
-                    for tag in tags.items():
-                        print(line_color + '            tag %6s | %s' % tag + end_color)
+                    if isinstance(tags, list):
+                        self.tag_is_key_value = False
+                        for tag in enumerate(tags):
+                            print(line_color + '            tag %6s | %s' % tag + end_color)
+                    else:
+                        for tag in tags.items():
+                            print(line_color + '            tag %6s | %s' % tag + end_color)
 
                 if 'raw' in CONF.show and raw_data:
                     print(line_color + '   | %s' % raw_data + end_color)
@@ -545,6 +552,9 @@ class QueryClient(object):
             print "Total: %d%s (produced on %s at %s by %s,v%s on %s in %sms)" % (
                 count, has_more, self.now.astimezone(self.tz).strftime("%d/%m/%y"), self.now.astimezone(self.tz).strftime("%H:%M:%S %Z"),
                 os.path.basename(sys.argv[0]), Version, os.uname()[1], response_time)
+
+        if not self.tag_is_key_value:
+            LOG.warning("Tags as lists of values are deprecated. Tags are now key-value pairs.")
 
         statsd = StatsD()
         statsd.metric_send('alert.query.response_time.client', response_time, 'ms')
