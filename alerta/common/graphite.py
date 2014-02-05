@@ -96,7 +96,7 @@ class Carbon(object):
                     try:
                         self.socket.sendall('%s %s %s\n' % (name, value, timestamp))
                     except socket.error, e:
-                        LOG.warning('Failed to send metric to TCP Carbon server %s:%s: e', self.host, self.port, e)
+                        LOG.warning('Failed to send metric to TCP Carbon server %s:%s: %s', self.host, self.port, e)
                         self._connected = False
                     else:
                         LOG.debug('Sent all TCP metric data')
