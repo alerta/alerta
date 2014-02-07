@@ -30,6 +30,7 @@ DEFAULTS = {
     'console_limit': 1000,  # max number of alerts sent to console
     'history_limit': -10,   # show last x most recent history entries
     'dashboard_dir': '/',
+    'dashboard_url': '',  # used in emails
 }
 
 config = ConfigParser.RawConfigParser(DEFAULTS)
