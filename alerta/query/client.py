@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.1.1'
+Version = '2.1.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -82,7 +82,7 @@ class QueryClient(object):
             query['event'] = CONF.event
 
         if CONF.not_event:
-            query['event'] = CONF.not_event
+            query['event!'] = CONF.not_event
 
         if CONF.group:
             query['group'] = CONF.group
