@@ -30,7 +30,7 @@ class Mailer(object):
 
         config.register_opts(Mailer.mailer_opt)
 
-        self.subject = alert.summary
+        self.subject = '[%s] %s' % (alert.status, alert.summary)
 
         self.text = "-" * 60 + "\n"
         self.text += "[%s] %s\n" % (alert.status, alert.summary)
