@@ -88,4 +88,3 @@ class PagerDutyDaemon(Daemon):
 
         LOG.info('Disconnecting from message broker...')
         self.mq.disconnect()
-

@@ -15,24 +15,43 @@ class PagerDutyClient(object):
 
         self.REST_API = 'https://%s.pagerduty.com/api/v1' % CONF.pagerduty_subdomain
         self.INCIDENT_API = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
-        self.services = None
+        self.services = dict()
 
         self.get_services()
 
     def get_services(self):
 
-        url = self.REST_API + '/services'
-        headers = {'Authorization': 'Token token=%s' % CONF.pagerduty_api_key}
-        response = requests.get(url, headers=headers).json()
-
-        LOG.info('PagerDuty REST API response: %s', response)
-
-        data = response['services']
-        self.services = dict([(s['name'], s['service_key']) for s in data
-                              if s['type'] == 'generic_events_api' and s['status'] == 'active'])
+        response = self._query('/services')
+        services = response['services']
+        self.services = dict([(s['name'], {'id': s['id'], 'key': s['service_key']}) for s in services
+                              if s['type'] == 'generic_events_api'])
 
         for service, key in self.services.iteritems():
-            LOG.info('Discovered active PagerDuty service %s with API key %s', service, key)
+            LOG.info('Discovered PagerDuty service %s [id:%s] with API key %s',
+                     service, self.services[service]['id'], self.services[service]['key'])
+
+    def get_service_status(self, service):
+
+        response = self._query('/services')
+        services = response['services']
+        for s in services:
+            if s['name'] == service:
+                return s['status']
+        return None
+
+    def _query(self, path):
+
+        url = self.REST_API + path
+        headers = {'Authorization': 'Token token=%s' % CONF.pagerduty_api_key}
+        try:
+            response = requests.get(url, headers=headers).json()
+        except requests.ConnectionError, e:
+            LOG.error('PagerDuty service request failed %s - %s', url, e)
+            return None
+
+        LOG.debug('PagerDuty %s query: %s', path, response)
+
+        return response
 
     def trigger_event(self, alert):
 
@@ -43,8 +62,12 @@ class PagerDutyClient(object):
             LOG.error('Failed to send trigger event to PagerDuty - unknown service "%s"', service)
             return
 
+        current_status = self.get_service_status(service)
+        if current_status != 'active':
+            LOG.warn('Status for PagerDuty service %s is %s', service, current_status)
+
         event = {
-            "service_key": self.services[service],
+            "service_key": self.services[service]['key'],
             "event_type": "trigger",
             "description": alert.summary,
             "incident_key": incident_key,
@@ -78,8 +101,12 @@ class PagerDutyClient(object):
             LOG.error('Failed to send acknowledge event to PagerDuty - unknown service "%s"', service)
             return
 
+        current_status = self.get_service_status(service)
+        if current_status != 'active':
+            LOG.warn('Status for PagerDuty service %s is %s', service, current_status)
+
         event = {
-            "service_key": self.services[service],
+            "service_key": self.services[service]['key'],
             "event_type": "acknowledge",
             "description": alert.summary,
             "incident_key": incident_key,
@@ -113,8 +140,12 @@ class PagerDutyClient(object):
             LOG.error('Failed to send resolve event to PagerDuty - unknown service "%s"', service)
             return
 
+        current_status = self.get_service_status(service)
+        if current_status != 'active':
+            LOG.warn('Status for PagerDuty service %s is %s', service, current_status)
+
         event = {
-            "service_key": self.services[service],
+            "service_key": self.services[service]['key'],
             "event_type": "resolve",
             "description": alert.summary,
             "incident_key": incident_key,
@@ -142,9 +173,14 @@ class PagerDutyClient(object):
     def _submit_event(self, event):
 
         url = self.INCIDENT_API
-        response = requests.post(url, data=json.dumps(event)).json()
+        data = json.dumps(event)
+        try:
+            response = requests.post(url, data=data).json()
+        except requests.ConnectionError, e:
+            LOG.error('PagerDuty incident request failed %s - %s', url, e)
+            return
 
-        LOG.info('PagerDuty Integration API response: %s', response)
+        LOG.debug('PagerDuty Integration API response: %s', response)
 
         if 'status' in response and response["status"] == "success":
             LOG.info('PagerDuty event for incident key %s triggered successfully by alert %s.',
