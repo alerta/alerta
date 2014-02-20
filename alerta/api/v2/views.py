@@ -2,7 +2,7 @@ import json
 import time
 
 from functools import wraps
-from flask import request, current_app, render_template
+from flask import request, current_app, render_template, abort
 
 from alerta.api.v2 import app, db, mq
 from alerta.api.v2.switch import Switch
@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields, crossdomain
 
 
-Version = '2.1.1'
+Version = '2.1.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -251,6 +251,43 @@ def get_counts():
         "more": False,
         "autoRefresh": Switch.get('auto-refresh-allow').is_on(),
     })
+
+
+@app.route('/pagerduty', methods=['POST'])
+def pagerduty():
+
+    if not request.json or not 'messages' in request.json:
+        abort(400)
+
+    for message in request.json['messages']:
+
+        alertid = message['data']['incident']['incident_key']
+
+        if message['type'] == 'incident.trigger':
+            status = 'open'
+            user = message['data']['incident']['assigned_to_user']['name']
+            text = 'Assigned to %s' % user
+        elif message['type'] == 'incident.acknowledge':
+            status = 'ack'
+            user = message['data']['incident']['assigned_to_user']['name']
+            text = 'Acknowledged by %s' % user
+        elif message['type'] == 'incident.resolve':
+            status = 'closed'
+            user = message['data']['incident']['resolved_by_user']['name']
+            text = 'Resolved by %s' % user
+        else:
+            status = 'unknown'
+            text = message['type']
+            LOG.warn('Unknown PagerDuty message type: %s', message)
+
+        pdAlert = db.update_status(alertid=alertid, status=status, text=text)
+
+        # Forward alert to notify topic and logger queue
+        mq.send(pdAlert, CONF.outbound_queue)
+        mq.send(pdAlert, CONF.outbound_topic)
+        LOG.info('%s : Alert forwarded to %s and %s', pdAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
+
+    return jsonify(response={"status": "ok"})
 
 
 # Return a list of resources
