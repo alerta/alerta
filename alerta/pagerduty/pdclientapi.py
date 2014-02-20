@@ -39,6 +39,15 @@ class PagerDutyClient(object):
                 return s['status']
         return None
 
+    def get_incident_counts(self, service):
+
+        response = self._query('/services')
+        services = response['services']
+        for s in services:
+            if s['name'] == service:
+                return s['incident_counts']
+        return {}
+
     def _query(self, path):
 
         url = self.REST_API + path
@@ -53,10 +62,9 @@ class PagerDutyClient(object):
 
         return response
 
-    def trigger_event(self, alert):
+    def trigger_event(self, alert, incident_key):
 
         service = alert.tags['pagerduty']
-        incident_key = '-'.join(alert.service)
 
         if service not in self.services:
             LOG.error('Failed to send trigger event to PagerDuty - unknown service "%s"', service)
@@ -88,14 +96,17 @@ class PagerDutyClient(object):
                 "moreInfo": alert.more_info
             }
         }
-        LOG.info('PagerDuty TRIGGER event for %s => %s', service, event)
+        LOG.debug('PagerDuty TRIGGER event for %s => %s', service, event)
 
         self._submit_event(event)
 
-    def acknowledge_event(self, alert):
+        counts = self.get_incident_counts(service)
+        LOG.info('PagerDuty %s incident counts: triggered=%s, acknowledged=%s, resolved=%s, total=%s',
+                 service, counts['triggered'], counts['acknowledged'], counts['resolved'], counts['total'])
+
+    def acknowledge_event(self, alert, incident_key):
 
         service = alert.tags['pagerduty']
-        incident_key = '-'.join(alert.service)
 
         if service not in self.services:
             LOG.error('Failed to send acknowledge event to PagerDuty - unknown service "%s"', service)
@@ -127,14 +138,17 @@ class PagerDutyClient(object):
                 "moreInfo": alert.more_info
             }
         }
-        LOG.info('PagerDuty ACK event for %s => %s', service, event)
+        LOG.debug('PagerDuty ACK event for %s => %s', service, event)
 
         self._submit_event(event)
 
-    def resolve_event(self, alert):
+        counts = self.get_incident_counts(service)
+        LOG.info('PagerDuty %s incident counts: triggered=%s, acknowledged=%s, resolved=%s, total=%s',
+                 service, counts['triggered'], counts['acknowledged'], counts['resolved'], counts['total'])
+
+    def resolve_event(self, alert, incident_key):
 
         service = alert.tags['pagerduty']
-        incident_key = '-'.join(alert.service)
 
         if service not in self.services:
             LOG.error('Failed to send resolve event to PagerDuty - unknown service "%s"', service)
@@ -166,9 +180,13 @@ class PagerDutyClient(object):
                 "moreInfo": alert.more_info
             }
         }
-        LOG.info('PagerDuty RESOLVE event for %s => %s', service, event)
+        LOG.debug('PagerDuty RESOLVE event for %s => %s', service, event)
 
         self._submit_event(event)
+
+        counts = self.get_incident_counts(service)
+        LOG.info('PagerDuty %s incident counts: triggered=%s, acknowledged=%s, resolved=%s, total=%s',
+                 service, counts['triggered'], counts['acknowledged'], counts['resolved'], counts['total'])
 
     def _submit_event(self, event):
 

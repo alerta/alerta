@@ -10,7 +10,7 @@ from alerta.common import severity_code, status_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.pagerduty.pdclientapi import PagerDutyClient
 
-Version = '2.1.1'
+Version = '2.1.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -37,12 +37,17 @@ class PagerDutyMessage(MessageHandler):
         if 'pagerduty' not in pdAlert.tags.keys():
             return
 
+        try:
+            incident_key = getattr(pdAlert, CONF.pagerduty_incident_key)
+        except AttributeError:
+            incident_key = pdAlert.get_id()
+
         if pdAlert.status == status_code.OPEN:
-            self.pd.trigger_event(pdAlert)
+            self.pd.trigger_event(pdAlert, incident_key=incident_key)
         elif pdAlert.status == status_code.ACK:
-            self.pd.acknowledge_event(pdAlert)
+            self.pd.acknowledge_event(pdAlert, incident_key=incident_key)
         elif pdAlert.status == status_code.CLOSED:
-            self.pd.resolve_event(pdAlert)
+            self.pd.resolve_event(pdAlert, incident_key=incident_key)
 
     def on_disconnected(self):
 
@@ -54,6 +59,7 @@ class PagerDutyDaemon(Daemon):
     pagerduty_opts = {
         'pagerduty_subdomain': '',
         'pagerduty_api_key': '',
+        'pagerduty_incident_key': 'alertid'  # service, resource, event
     }
 
     def __init__(self, prog, **kwargs):
