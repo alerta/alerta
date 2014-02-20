@@ -347,7 +347,7 @@ class Mongo(object):
             graph_urls=response['graphUrls'],
         )
 
-    def update_status(self, alertid=None, alert=None, status=None):
+    def update_status(self, alertid=None, alert=None, status=None, text=None):
 
         if alertid:
             query = {'$or': [{'_id': {'$regex': '^' + alertid}},
@@ -368,7 +368,8 @@ class Mongo(object):
                                            '$push': {
                                                "history": {
                                                    "status": status,
-                                                   "updateTime": update_time
+                                                   "updateTime": update_time,
+                                                   "text": text,
                                                }
                                            }
                                    },

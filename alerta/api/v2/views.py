@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields, crossdomain
 
 
-Version = '2.1.0'
+Version = '2.1.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -180,7 +180,7 @@ def modify_alert(alertid):
         if request.json:
             modifiedAlert = db.modify_alert(alertid=alertid, update=request.json)
             if 'status' in request.json:
-                modifiedAlert = db.update_status(alertid=alertid, status=request.json['status'])
+                modifiedAlert = db.update_status(alertid=alertid, status=request.json['status'], text=request.json['text'])
 
                 # Forward alert to notify topic and logger queue
                 mq.send(modifiedAlert, CONF.outbound_queue)
