@@ -1,6 +1,6 @@
 
 import json
-import urllib2
+import requests
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -11,15 +11,45 @@ CONF = config.CONF
 
 class PagerDutyClient(object):
 
+    def __init__(self):
+
+        self.REST_API = 'https://%s.pagerduty.com/api/v1' % CONF.pagerduty_subdomain
+        self.INCIDENT_API = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
+        self.services = None
+
+        self.get_services()
+
+    def get_services(self):
+
+        url = self.REST_API + '/services'
+        headers = {'Authorization': 'Token token=%s' % CONF.pagerduty_api_key}
+        response = requests.get(url, headers=headers).json()
+
+        LOG.info('PagerDuty REST API response: %s', response)
+
+        data = response['services']
+        self.services = dict([(s['name'], s['service_key']) for s in data
+                              if s['type'] == 'generic_events_api' and s['status'] == 'active'])
+
+        for service, key in self.services.iteritems():
+            LOG.info('Discovered active PagerDuty service %s with API key %s', service, key)
+
     def trigger_event(self, alert):
 
+        service = alert.tags['pagerduty']
         incident_key = '-'.join(alert.service)
 
-        pagerduty_event = {
-            "service_key": CONF.pagerduty_api_key,
+        if service not in self.services:
+            LOG.error('Failed to send trigger event to PagerDuty - unknown service "%s"', service)
+            return
+
+        event = {
+            "service_key": self.services[service],
             "event_type": "trigger",
             "description": alert.summary,
             "incident_key": incident_key,
+            "client": "alerta",
+            "client_url": "http://monitoring.guprod.gnm/alerta/widgets/v2/details?id=%s" % alert.get_id(),
             "details": {
                 "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
                 "status": alert.status,
@@ -35,19 +65,26 @@ class PagerDutyClient(object):
                 "moreInfo": alert.more_info
             }
         }
-        LOG.info('PagerDuty trigger event => %s', pagerduty_event)
+        LOG.info('PagerDuty TRIGGER event for %s => %s', service, event)
 
-        self._submit_event(alert.get_id(), pagerduty_event)
+        self._submit_event(event)
 
     def acknowledge_event(self, alert):
 
+        service = alert.tags['pagerduty']
         incident_key = '-'.join(alert.service)
 
-        pagerduty_event = {
-            "service_key": CONF.pagerduty_api_key,
+        if service not in self.services:
+            LOG.error('Failed to send acknowledge event to PagerDuty - unknown service "%s"', service)
+            return
+
+        event = {
+            "service_key": self.services[service],
             "event_type": "acknowledge",
             "description": alert.summary,
             "incident_key": incident_key,
+            "client": "alerta",
+            "client_url": "http://monitoring.guprod.gnm/alerta/widgets/v2/details?id=%s" % alert.get_id(),
             "details": {
                 "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
                 "status": alert.status,
@@ -63,19 +100,26 @@ class PagerDutyClient(object):
                 "moreInfo": alert.more_info
             }
         }
-        LOG.info('PagerDuty acknowledge event => %s', pagerduty_event)
+        LOG.info('PagerDuty ACK event for %s => %s', service, event)
 
-        self._submit_event(alert.get_id(), pagerduty_event)
+        self._submit_event(event)
 
     def resolve_event(self, alert):
 
+        service = alert.tags['pagerduty']
         incident_key = '-'.join(alert.service)
 
-        pagerduty_event = {
-            "service_key": CONF.pagerduty_api_key,
+        if service not in self.services:
+            LOG.error('Failed to send resolve event to PagerDuty - unknown service "%s"', service)
+            return
+
+        event = {
+            "service_key": self.services[service],
             "event_type": "resolve",
             "description": alert.summary,
             "incident_key": incident_key,
+            "client": "alerta",
+            "client_url": "http://monitoring.guprod.gnm/alerta/widgets/v2/details?id=%s" % alert.get_id(),
             "details": {
                 "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
                 "status": alert.status,
@@ -91,37 +135,23 @@ class PagerDutyClient(object):
                 "moreInfo": alert.more_info
             }
         }
-        LOG.info('PagerDuty resolve event => %s', pagerduty_event)
+        LOG.info('PagerDuty RESOLVE event for %s => %s', service, event)
 
-        self._submit_event(alert.get_id(), pagerduty_event)
+        self._submit_event(event)
 
-    def _submit_event(self, alertid, event):
+    def _submit_event(self, event):
 
-        incident_key = None
-        retry = False
+        url = self.INCIDENT_API
+        response = requests.post(url, data=json.dumps(event)).json()
 
-        try:
-            request = urllib2.Request(CONF.pagerduty_endpoint)
-            request.add_header("Content-type", "application/json")
-            request.add_data(json.dumps(event))
-            response = urllib2.urlopen(request)
-            result = json.loads(response.read())
+        LOG.info('PagerDuty Integration API response: %s', response)
 
-            if result["status"] == "success":
-                incident_key = result["incident_key"]
-                LOG.info('PagerDuty event triggered successfully by alert %s.', alertid)
-            else:
-                LOG.warn('PagerDuty server REJECTED alert %s: %s', alertid, result)
+        if 'status' in response and response["status"] == "success":
+            LOG.info('PagerDuty event for incident key %s triggered successfully by alert %s.',
+                     event['incident_key'], event['details']['id'])
+        else:
+            LOG.error('PagerDuty server REJECTED alert %s: %s', event['details']['id'], response)
 
-        except urllib2.URLError as e:
-            # client error
-            if e.code >= 400 and e.code < 500:
-                LOG.warn('PagerDuty server REJECTED alert %s: %s', alertid, e.read())
-            else:
-                LOG.warn('PagerDuty server error for alert %s: %s', alertid, e.code, e.reason)
-                retry = True  # We'll need to retry
-
-        return retry, incident_key
 
 
 

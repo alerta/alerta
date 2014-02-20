@@ -10,7 +10,7 @@ from alerta.common import severity_code, status_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.pagerduty.pdclientapi import PagerDutyClient
 
-Version = '2.1.0'
+Version = '2.1.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -34,7 +34,7 @@ class PagerDutyMessage(MessageHandler):
         except ValueError:
             return
 
-        if 'pagerduty' not in pdAlert.tags:
+        if 'pagerduty' not in pdAlert.tags.keys():
             return
 
         if pdAlert.status == status_code.OPEN:
@@ -52,7 +52,7 @@ class PagerDutyMessage(MessageHandler):
 class PagerDutyDaemon(Daemon):
 
     pagerduty_opts = {
-        'pagerduty_endpoint': 'https://events.pagerduty.com/generic/2010-04-15/create_event.json',
+        'pagerduty_subdomain': '',
         'pagerduty_api_key': '',
     }
 
