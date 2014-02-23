@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.1.2'
+Version = '2.1.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -486,12 +486,11 @@ class QueryClient(object):
                             event = hist['event']
                             receive_time = datetime.datetime.strptime(hist['receiveTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
                             receive_time = receive_time.replace(tzinfo=pytz.utc)
-                            historical_severity = hist['severity']
                             value = hist['value']
                             text = hist['text']
                             print(line_color + '  %s|%s|%s|%-18s|%12s|%16s|%12s' % (alertid[0:8],
                                                                                     self._format_date(receive_time),
-                                                                                    severity_code._ABBREV_SEVERITY_MAP[historical_severity],
+                                                                                    severity_code._ABBREV_SEVERITY_MAP[hist['severity']],
                                                                                     resource,
                                                                                     group,
                                                                                     event,
@@ -500,9 +499,8 @@ class QueryClient(object):
                         if 'status' in hist:
                             update_time = datetime.datetime.strptime(hist['updateTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
                             update_time = update_time.replace(tzinfo=pytz.utc)
-                            historical_status = hist['status']
-                            print(line_color + '    %s|%s' % (
-                                self._format_date(update_time), historical_status) + end_color)
+                            print(line_color + '    %s|%-8s %s' % (
+                                self._format_date(update_time), hist['status'], hist['text']) + end_color)
 
             if CONF.watch:
                 try:

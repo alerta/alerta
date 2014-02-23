@@ -6,7 +6,7 @@ var show_hb_alerts = true;
 var lookup;
 var gEnvFilter;
 var filter = '';
-var status = '&status=open';
+var status = '&status=open&status=assign';
 var limit = '';
 var from = '';
 var timer;
@@ -81,6 +81,7 @@ function sev2label(severity) {
 }
 
 var OPEN = 'open';
+var ASSIGN = 'assign';
 var ACK = 'ack';
 var CLOSED = 'closed';
 var EXPIRED = 'expired';
@@ -95,6 +96,9 @@ function stat2label(status) {
     switch (status) {
         case OPEN:
             label = 'label-open';
+            break;
+        case ASSIGN:
+            label = 'label-assign';
             break;
         case ACK:
             label = 'label-ack';
@@ -362,9 +366,14 @@ function updateAlertsTable(env_filter, asiFilters) {
             } else {
                 ti = '<i class="icon-random"></i>&nbsp;'
             }
-
+            var incident = '';
+            $.map(aData[24], function (value, key) {
+                if (key == 'incident') {
+                    incident = '&nbsp;<i class="icon-bullhorn"></i>'
+                }
+            });
             $('td:eq(0)', nRow).html(ti + sev2label(aData[0]));
-            $('td:eq(1)', nRow).html(stat2label(aData[1]));
+            $('td:eq(1)', nRow).html(stat2label(aData[1]) + incident);
 
             var d = new Date(aData[2]);
             // $('td:eq(2)', nRow).html(d.toLocaleString());
@@ -392,7 +401,6 @@ function updateAlertsTable(env_filter, asiFilters) {
                             ad.duplicateCount,
                             ad.environment,
                             ad.service,
-                            // TODO(nsatterl): cluster
                             ad.resource,
                             ad.event,
                             ad.value,
@@ -527,6 +535,7 @@ function fnFormatDetails(aData) {
                     '<table class="table table-condensed table-striped">' +
                         '<tr><td><b>Status</b></td><td>' + stat2label(hist.status) + '</td></tr>' +
                         '<tr><td><b>Update Time</b></td><td>' + date2str(hist.updateTime) + '</td></tr>' +
+                        '<tr><td><b>Text</b></td><td>' + hist.text + '</td></tr>' +
                         '</table>' +
                         '';
             }
@@ -542,7 +551,7 @@ function fnFormatDetails(aData) {
 
     sOut += '<div class="btn-group alert-summary-actions">';
 
-    if (status == OPEN) {
+    if (status == OPEN || status == ASSIGN) {
         sOut += '<button id="' + alertid + '" class="btn-mini ack-alert" rel="tooltip" title="Acknowledge Alert"><i class="icon-star-empty"></i> Ack</button>';
     }
     if (status == ACK) {
@@ -682,7 +691,7 @@ $('body').on('click', '#status-select .btn', function(e) {
 
     status = '';
     if ($('button#status-select-open.btn').hasClass('active')) {
-        status += '&status=open';
+        status += '&status=open&status=assign';
     }
     if ($('button#status-select-ack.btn').hasClass('active')) {
         status += '&status=ack';
@@ -815,8 +824,8 @@ $(document).ready(function () {
         $.ajax({
             type: 'PUT',
             contentType: 'application/json',
-            url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id,
-            data: JSON.stringify({ status: ACK })
+            url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id + '/status',
+            data: JSON.stringify({ status: ACK, text: 'Acknowledged in web console' })
         });
     });
 
@@ -824,8 +833,8 @@ $(document).ready(function () {
         $.ajax({
             type: 'PUT',
             contentType: 'application/json',
-            url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id,
-            data: JSON.stringify({ status: OPEN })
+            url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id + '/status',
+            data: JSON.stringify({ status: OPEN, text: 'Unacknowledged in web console' })
         });
     });
 

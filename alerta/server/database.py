@@ -297,57 +297,7 @@ class Mongo(object):
             graph_urls=response['graphUrls'],
         )
 
-    def modify_alert(self, alertid=None, alert=None, update=None):
-
-        if alertid:
-            query = {'$or': [{'_id': {'$regex': '^' + alertid}},
-                             {'lastReceiveId': {'$regex': '^' + alertid}}]}
-        else:
-            query = {"environment": alert.environment, "resource": alert.resource,
-                     '$or': [{"event": alert.event}, {"correlatedEvents": alert.event}]}
-
-        # FIXME - no native find_and_modify method in this version of pymongo
-        no_obj_error = "No matching object found"
-        response = self.db.command("findAndModify", 'alerts',
-                                   allowable_errors=[no_obj_error],
-                                   query=query,
-                                   update={'$set': update},
-                                   multi=False,
-                                   fields={"history": 0})['value']
-
-        return Alert(
-            alertid=response['_id'],
-            resource=response['resource'],
-            event=response['event'],
-            correlate=response['correlatedEvents'],
-            group=response['group'],
-            value=response['value'],
-            status=response['status'],
-            severity=response['severity'],
-            previous_severity=response['previousSeverity'],
-            environment=response['environment'],
-            service=response['service'],
-            text=response['text'],
-            event_type=response['type'],
-            tags=response['tags'],
-            origin=response['origin'],
-            repeat=response['repeat'],
-            duplicate_count=response['duplicateCount'],
-            threshold_info=response['thresholdInfo'],
-            summary=response['summary'],
-            timeout=response['timeout'],
-            last_receive_id=response['lastReceiveId'],
-            create_time=response['createTime'],
-            expire_time=response['expireTime'],
-            receive_time=response['receiveTime'],
-            last_receive_time=response['lastReceiveTime'],
-            trend_indication=response['trendIndication'],
-            raw_data=response['rawData'],
-            more_info=response['moreInfo'],
-            graph_urls=response['graphUrls'],
-        )
-
-    def update_status(self, alertid=None, alert=None, status=None, text=None):
+    def update_status(self, alertid=None, alert=None, status=None, text=None, incident=False):
 
         if alertid:
             query = {'$or': [{'_id': {'$regex': '^' + alertid}},
@@ -374,7 +324,12 @@ class Mongo(object):
                                            }
                                    },
                                    multi=False,
+                                   new=True,
                                    fields={"history": 0})['value']
+
+        if not response:
+            LOG.warn('Alert %s not found - could not update status to %s', alertid, status)
+            return
 
         return Alert(
             alertid=response['_id'],

@@ -75,7 +75,7 @@ class WorkerThread(threading.Thread):
                 duplicateAlert = self.db.duplicate_alert(incomingAlert)
 
                 if incomingAlert.status != status_code.UNKNOWN and incomingAlert.status != duplicateAlert.status:
-                    self.db.update_status(alert=duplicateAlert, status=incomingAlert.status)
+                    self.db.update_status(alert=duplicateAlert, status=incomingAlert.status, text='Alerta server')
                     duplicateAlert.status = incomingAlert.status
 
                 if CONF.forward_duplicate:
@@ -106,7 +106,7 @@ class WorkerThread(threading.Thread):
                     incomingAlert.status = severity_code.status_from_severity(previous_severity, incomingAlert.severity,
                                                                               correlatedAlert.status)
                 if incomingAlert.status != correlatedAlert.status:
-                    self.db.update_status(alert=correlatedAlert, status=incomingAlert.status)
+                    self.db.update_status(alert=correlatedAlert, status=incomingAlert.status, text='Alerta server')
                     correlatedAlert.status = incomingAlert.status
 
                 # Forward alert to notify topic and logger queue
@@ -138,7 +138,7 @@ class WorkerThread(threading.Thread):
                 if incomingAlert.alertid != self.db.save_alert(incomingAlert):
                     LOG.critical('Alert was not saved with submitted alert id. Race condition?')
 
-                self.db.update_status(alert=incomingAlert, status=incomingAlert.status)
+                self.db.update_status(alert=incomingAlert, status=incomingAlert.status, text='Alerta server')
 
                 # Forward alert to notify topic and logger queue
                 self.mq.send(incomingAlert, CONF.outbound_queue)

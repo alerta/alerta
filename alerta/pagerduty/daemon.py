@@ -10,7 +10,7 @@ from alerta.common import severity_code, status_code
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.pagerduty.pdclientapi import PagerDutyClient
 
-Version = '2.1.2'
+Version = '2.1.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -34,14 +34,16 @@ class PagerDutyMessage(MessageHandler):
         except ValueError:
             return
 
+        # do not trigger new incidents from updates
+        if pdAlert.origin == 'pagerduty/webhook':
+            return
+
         if 'pagerduty' not in pdAlert.tags.keys():
             return
 
-        try:
-            incident_key = getattr(pdAlert, CONF.pagerduty_incident_key)
-        except AttributeError:
-            incident_key = pdAlert.get_id()
+        LOG.info('PagerDuty Incident %s status %s', pdAlert.get_id(), pdAlert.status)
 
+        incident_key = pdAlert.get_id()
         if pdAlert.status == status_code.OPEN:
             self.pd.trigger_event(pdAlert, incident_key=incident_key)
         elif pdAlert.status == status_code.ACK:
@@ -58,8 +60,7 @@ class PagerDutyDaemon(Daemon):
 
     pagerduty_opts = {
         'pagerduty_subdomain': '',
-        'pagerduty_api_key': '',
-        'pagerduty_incident_key': 'alertid'  # service, resource, event
+        'pagerduty_api_key': ''
     }
 
     def __init__(self, prog, **kwargs):
