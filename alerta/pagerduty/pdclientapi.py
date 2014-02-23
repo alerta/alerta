@@ -201,7 +201,6 @@ class PagerDutyClient(object):
         LOG.debug('PagerDuty Integration API response: %s', response)
 
         if 'status' in response and response["status"] == "success":
-            LOG.info('PagerDuty event triggered successfully by alert %s [incident_key:%s]',
-                     event['details']['id'], event['incident_key'])
+            LOG.info('PagerDuty event triggered successfully by alert with incident_key=%s', event['incident_key'])
         else:
             LOG.error('PagerDuty server REJECTED alert %s: %s', event['details']['id'], response)
