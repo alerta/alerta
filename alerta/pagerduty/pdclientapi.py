@@ -1,6 +1,8 @@
 
+import sys
 import json
 import requests
+import requests.exceptions
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -12,6 +14,10 @@ CONF = config.CONF
 class PagerDutyClient(object):
 
     def __init__(self):
+
+        if not CONF.pagerduty_subdomain:
+            LOG.error('Must specify PagerDuty subdomain')
+            sys.exit(1)
 
         self.REST_API = 'https://%s.pagerduty.com/api/v1' % CONF.pagerduty_subdomain
         self.INCIDENT_API = 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
@@ -52,11 +58,22 @@ class PagerDutyClient(object):
 
         url = self.REST_API + path
         headers = {'Authorization': 'Token token=%s' % CONF.pagerduty_api_key}
+
         try:
-            response = requests.get(url, headers=headers).json()
+            response = requests.get(url, headers=headers)
         except requests.ConnectionError, e:
-            LOG.error('PagerDuty service request failed %s - %s', url, e)
-            return None
+            LOG.error('PagerDuty API request %s failed due to an ambiguous error - %s', url, e)
+            sys.exit(1)
+
+        try:
+            response = response.json()
+        except ValueError:
+            LOG.error('PagerDuty API request %s failed - %s', url, response.text)
+            sys.exit(1)
+
+        if 'error' in response:
+            LOG.error('PagerDuty API request %s failed - %s', url, response['error']['message'])
+            sys.exit(1)
 
         LOG.debug('PagerDuty %s query: %s', path, response)
 
@@ -204,3 +221,4 @@ class PagerDutyClient(object):
             LOG.info('PagerDuty event triggered successfully by alert with incident_key=%s', event['incident_key'])
         else:
             LOG.error('PagerDuty server REJECTED alert %s: %s', event['details']['id'], response)
+
