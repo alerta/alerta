@@ -8,7 +8,7 @@ XS-Python-Version: >= 2.6
 
 Package: alerta
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}
+Depends: ${misc:Depends}, ${python:Depends}, alerta-server, alerta-client
 Provides: ${python:Provides}
 Description: Alerta monitoring framework
 
@@ -25,5 +25,5 @@ Description: Alerta monitoring framework
 
 Package: alerta-common
 Architecture: all
-Depends: python-support, python-argparse, python-tz, python-yaml, alerta
+Depends: python-support, python-argparse, python-tz, python-yaml
 Description: Alerta monitoring framework
