@@ -53,7 +53,7 @@
     function updateStatusIndicator(filter, refresh) {
         $('#widget th').addClass('loader');
 
-        $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&hide-alert-details=true&'
+        $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts/counts?callback=?&'
                 + filter + status + limit + from, function (data) {
 
             var sev_id = '#widget';
