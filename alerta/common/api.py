@@ -145,6 +145,62 @@ class ApiClient(object):
             LOG.error('API request unknown error: %s', response)
             raise
 
+    def ack(self, alertid):
+
+        LOG.debug('alertid = %s', alertid)
+
+        url = 'http://%s:%s/alerta/api/%s/alerts/alert/%s/status' % (self.host, self.port, self.version, alertid)
+
+        data = {"status": "ack", "text": "ack via API"}
+
+        payload = json.dumps({"status": "ack", "text": "ack via API"})
+        headers = {'Content-Type': 'application/json'}
+
+        if CONF.dry_run:
+            print "curl -v -X PUT '%s' -H 'Content-Type: application/json' -d '%s'" % (url, data)
+            sys.exit(0)
+
+        LOG.debug('Acking via API endpoint...')
+        try:
+            r = requests.put(url, data=payload, headers=headers)
+        except requests.Timeout, e:
+            LOG.warning('API request timed out: %s', e)
+            raise
+        except requests.ConnectionError, e:
+            LOG.error('API request connection error: %s', e)
+            raise
+        except requests.TooManyRedirects, e:
+            LOG.error('Too many redirects: %s', e)
+            raise
+        except requests.RequestException, e:
+            LOG.error('API request send failed: %s', e)
+            raise
+
+        LOG.debug('HTTP status: %s', r.status_code)
+        LOG.debug('HTTP response: %s', r.text)
+
+        try:
+            r.raise_for_status()
+        except requests.HTTPError, e:
+            LOG.error('API request HTTP error: %s', e)
+            raise
+
+        try:
+            response = r.json()['response']
+        except Exception, e:
+            LOG.error('API bad response - %s: %s', e, r.text)
+            raise
+
+        if response.get('status', None) == 'ok':
+            LOG.debug('API request successful: %s', response)
+            return response
+        elif response.get('status', None) == 'error' and 'message' in response:
+            LOG.error('API request failed: %s', response['message'])
+            raise
+        else:
+            LOG.error('API request unknown error: %s', response)
+            raise
+
     def delete(self, alertid):
 
         LOG.debug('alertid = %s', alertid)

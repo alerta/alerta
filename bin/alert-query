@@ -319,6 +319,13 @@ def main():
             help="JSON formatted output"
         )
         parser.add_argument(
+            "-K",
+            "--ack",
+            action="store_true",
+            default=False,
+            help="Ack alerts that match the query."
+        )
+        parser.add_argument(
             "-X",
             "--delete",
             action="store_true",

@@ -218,6 +218,8 @@ class QueryClient(object):
                 print "       count: %d" % CONF.limit
             if CONF.query:
                 print "       query: %s" % CONF.query
+            if CONF.ack:
+                print "      action: ACK"
             if CONF.delete:
                 print "      action: DELETE"
             print
@@ -359,6 +361,15 @@ class QueryClient(object):
                 }
 
                 count += 1
+
+                if CONF.ack:
+                    try:
+                        response = api.ack(alertid)
+                    except (KeyboardInterrupt, SystemExit):
+                        sys.exit(0)
+
+                    print(line_color + 'ACK %s %s' % (alertid, response['status']) + end_color)
+                    continue
 
                 if CONF.delete:
                     try:
