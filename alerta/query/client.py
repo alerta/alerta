@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.1.3'
+Version = '2.1.6'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
