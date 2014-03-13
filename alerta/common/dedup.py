@@ -50,6 +50,9 @@ class DeDup(object):
     @classmethod
     def update(cls, dedupAlert):
 
+        if not dedupAlert:
+            return
+
         dedup_by = (tuple(dedupAlert.environment), dedupAlert.resource, dedupAlert.event)
         dedup_value = dedupAlert.severity
         dedup_count = (tuple(dedupAlert.environment), dedupAlert.resource, dedupAlert.event, dedupAlert.severity)
@@ -78,6 +81,9 @@ class DeDup(object):
     @classmethod
     def is_duplicate(cls, dedupAlert):
 
+        if not dedupAlert:
+            return False
+
         dedup_by = (tuple(dedupAlert.environment), dedupAlert.resource, dedupAlert.event)
 
         if cls.by_value:
@@ -93,6 +99,9 @@ class DeDup(object):
 
     @classmethod
     def is_send(cls, dedupAlert):
+
+        if not dedupAlert:
+            return False
 
         if dedupAlert.event_type == 'Heartbeat':
             return True

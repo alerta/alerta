@@ -17,7 +17,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.graphite import StatsD
 
-Version = '2.1.0'
+Version = '2.1.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -113,8 +113,11 @@ class CloudWatchDaemon(Daemon):
 
         notification = json.loads(message)
         if 'Message' in notification:
-            alarm = json.loads(notification['Message'])
+            alarm = notification['Message']
         else:
+            return
+
+        if 'Trigger' not in alarm:
             return
 
         # Defaults
