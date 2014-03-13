@@ -15,7 +15,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.1.0'
+Version = '2.1.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -197,7 +197,7 @@ class IrcbotDaemon(Daemon):
                             elif data.find('!alerta quit') != -1:
                                 irc.send('QUIT\r\n')
                             else:
-                                LOG.warning('IRC: %s', data)
+                                LOG.debug('IRC: %s', data)
                         else:
                             i.recv()
                 else:
