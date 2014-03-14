@@ -2,88 +2,21 @@
 import sys
 import socket
 import select
-import json
-import urllib2
 import time
 
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
-from alerta.common import status_code
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
+from alerta.common.api import ApiClient
 
-Version = '2.1.1'
+Version = '2.2.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-
-def ack_alert(alertid):
-
-    url = 'http://%s:%s/alerta/api/%s/alerts/alert/%s' % (CONF.api_host, CONF.api_port, CONF.api_version, alertid)
-    data = json.dumps({'status': status_code.ACK})
-    headers = {'Content-type': 'application/json'}
-    LOG.info('ACK request %s', url)
-
-    try:
-        request = urllib2.Request(url=url, data=data, headers=headers)
-        request.get_method = lambda: 'PUT'
-        response = urllib2.urlopen(request)
-    except urllib2.URLError, e:
-        LOG.error('Request %s failed: %s', url, e)
-        return
-
-    else:
-        code = response.getcode()
-        body = response.read()
-        LOG.debug('HTTP response code=%s', code)
-
-    try:
-        body = json.loads(body)
-    except Exception, e:
-        LOG.error('Failed to parse JSON response: %s', body, e)
-
-    if code != 200 or body['response']['status'] == 'error':
-        LOG.error('Message not ACKed - %s', body['response']['message'])
-        return
-
-    LOG.info('Successfully ACKed alert %s', alertid)
-    return
-
-
-def delete_alert(alertid):
-
-    url = 'http://%s:%s/alerta/api/%s/alerts/alert/%s' % (CONF.api_host, CONF.api_port, CONF.api_version, alertid)
-    headers = {'Content-type': 'application/json'}
-    LOG.info('DELETE request %s', url)
-
-    try:
-        request = urllib2.Request(url=url, headers=headers)
-        request.get_method = lambda: 'DELETE'
-        response = urllib2.urlopen(request)
-    except urllib2.URLError, e:
-        LOG.error('Request %s failed: %s', url, e)
-        return
-
-    else:
-        code = response.getcode()
-        body = response.read()
-        LOG.debug('HTTP response code=%s', code)
-
-    try:
-        body = json.loads(body)
-    except Exception, e:
-        LOG.error('Failed to parse JSON response: %s', body, e)
-
-    if code != 200 or body['response']['status'] == 'error':
-        LOG.error('Message not DELETED - %s', body['response']['message'])
-        return
-
-    LOG.info('Successfully DELETED alert %s', alertid)
-    return
 
 
 class IrcbotMessage(MessageHandler):
@@ -146,6 +79,8 @@ class IrcbotDaemon(Daemon):
         tokens = LeakyBucket(tokens=20, rate=2)
         tokens.start()
 
+        api = ApiClient()
+
         # Connect to IRC server
         try:
             irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -190,10 +125,10 @@ class IrcbotDaemon(Daemon):
                                 irc.send('PONG ' + data.split()[1] + '\r\n')
                             elif 'ack' in data.lower():
                                 LOG.info('Request to ACK %s by %s', data.split()[4], data.split()[0])
-                                ack_alert(data.split()[4])
+                                api.ack(data.split()[4])
                             elif 'delete' in data.lower():
                                 LOG.info('Request to DELETE %s by %s', data.split()[4], data.split()[0])
-                                delete_alert(data.split()[4])
+                                api.delete(data.split()[4])
                             elif data.find('!alerta quit') != -1:
                                 irc.send('QUIT\r\n')
                             else:
