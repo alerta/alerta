@@ -77,13 +77,13 @@ class Mongo(object):
     def is_correlated(self, alert):
 
         found = self.db.alerts.find_one({"environment": alert.environment, "resource": alert.resource,
-                                         '$or': [{"event": alert.event}, {"correlatedEvents": alert.event}]})
+                                         '$or': [{"event": alert.event}, {"correlate": alert.event}]})
         return found is not None
 
     def get_severity(self, alert):
 
         return self.db.alerts.find_one({"environment": alert.environment, "resource": alert.resource,
-                                        '$or': [{"event": alert.event}, {"correlatedEvents": alert.event}]},
+                                        '$or': [{"event": alert.event}, {"correlate": alert.event}]},
                                        {"severity": 1, "_id": 0})['severity']
 
     def get_count(self, query=None):
@@ -128,7 +128,7 @@ class Mongo(object):
                     alertid=response['_id'],
                     resource=response['resource'],
                     event=response['event'],
-                    correlate=response['correlatedEvents'],
+                    correlate=response['correlate'],
                     group=response['group'],
                     value=response['value'],
                     status=response['status'],
@@ -142,18 +142,13 @@ class Mongo(object):
                     origin=response['origin'],
                     repeat=response['repeat'],
                     duplicate_count=response['duplicateCount'],
-                    threshold_info=response['thresholdInfo'],
-                    summary=response['summary'],
                     timeout=response['timeout'],
                     last_receive_id=response['lastReceiveId'],
                     create_time=response['createTime'],
-                    expire_time=response['expireTime'],
                     receive_time=response['receiveTime'],
                     last_receive_time=response['lastReceiveTime'],
                     trend_indication=response['trendIndication'],
                     raw_data=response['rawData'],
-                    more_info=response['moreInfo'],
-                    graph_urls=response['graphUrls'],
                     history=response['history'],
                 )
             )
@@ -179,7 +174,7 @@ class Mongo(object):
         return Alert(
             resource=response.get('resource', None),
             event=response.get('event', None),
-            correlate=response.get('correlatedEvents', None),
+            correlate=response.get('correlate', None),
             group=response.get('group', None),
             value=response.get('value', None),
             status=response.get('status', None),
@@ -193,19 +188,14 @@ class Mongo(object):
             origin=response.get('origin', None),
             repeat=response.get('repeat', None),
             duplicate_count=response.get('duplicateCount', None),
-            threshold_info=response.get('thresholdInfo', None),
-            summary=response.get('summary', None),
             timeout=response.get('timeout', None),
             alertid=response.get('_id', None),
             last_receive_id=response.get('lastReceiveId', None),
             create_time=response.get('createTime', None),
-            expire_time=response.get('expireTime', None),
             receive_time=response.get('receiveTime', None),
             last_receive_time=response.get('lastReceiveTime', None),
             trend_indication=response.get('trendIndication', None),
             raw_data=response.get('rawData', None),
-            more_info=response.get('moreInfo', None),
-            graph_urls=response.get('graphUrls', None),
             history=response.get('history', None),
         )
 
@@ -216,7 +206,7 @@ class Mongo(object):
 
         update = {
             "event": alert.event,
-            "correlatedEvents": alert.correlate,
+            "correlate": alert.correlate,
             "group": alert.group,
             "value": alert.value,
             "severity": alert.severity,
@@ -227,22 +217,18 @@ class Mongo(object):
             "origin": alert.origin,
             "repeat": False,
             "duplicateCount": 0,
-            "thresholdInfo": alert.threshold_info,
             "summary": alert.summary,
             "timeout": alert.timeout,
             "lastReceiveId": alert.alertid,
             "createTime": alert.create_time,
-            "expireTime": alert.expire_time,
             "receiveTime": alert.receive_time,
             "lastReceiveTime": alert.receive_time,
             "trendIndication": trend_indication,
             "rawData": alert.raw_data,
-            "moreInfo": alert.more_info,
-            "graphUrls": alert.graph_urls,
         }
 
         query = {"environment": alert.environment, "resource": alert.resource,
-                     '$or': [{"event": alert.event}, {"correlatedEvents": alert.event}]}
+                     '$or': [{"event": alert.event}, {"correlate": alert.event}]}
 
         # FIXME - no native find_and_modify method in this version of pymongo
         no_obj_error = "No matching object found"
@@ -269,7 +255,7 @@ class Mongo(object):
             alertid=response['_id'],
             resource=response['resource'],
             event=response['event'],
-            correlate=response['correlatedEvents'],
+            correlate=response['correlate'],
             group=response['group'],
             value=response['value'],
             status=response['status'],
@@ -283,18 +269,13 @@ class Mongo(object):
             origin=response['origin'],
             repeat=response['repeat'],
             duplicate_count=response['duplicateCount'],
-            threshold_info=response['thresholdInfo'],
-            summary=response['summary'],
             timeout=response['timeout'],
             last_receive_id=response['lastReceiveId'],
             create_time=response['createTime'],
-            expire_time=response['expireTime'],
             receive_time=response['receiveTime'],
             last_receive_time=response['lastReceiveTime'],
             trend_indication=response['trendIndication'],
             raw_data=response['rawData'],
-            more_info=response['moreInfo'],
-            graph_urls=response['graphUrls'],
         )
 
     def update_status(self, alertid=None, alert=None, status=None, text=None):
@@ -304,7 +285,7 @@ class Mongo(object):
                     {'lastReceiveId': {'$regex': '^' + alertid}}]}
         else:
             query = {"environment": alert.environment, "resource": alert.resource,
-                     '$or': [{"event": alert.event}, {"correlatedEvents": alert.event}]}
+                     '$or': [{"event": alert.event}, {"correlate": alert.event}]}
 
         update_time = datetime.datetime.utcnow()
         update_time = update_time.replace(tzinfo=pytz.utc)
@@ -335,7 +316,7 @@ class Mongo(object):
             alertid=response['_id'],
             resource=response['resource'],
             event=response['event'],
-            correlate=response['correlatedEvents'],
+            correlate=response['correlate'],
             group=response['group'],
             value=response['value'],
             status=response['status'],
@@ -349,18 +330,13 @@ class Mongo(object):
             origin=response['origin'],
             repeat=response['repeat'],
             duplicate_count=response['duplicateCount'],
-            threshold_info=response['thresholdInfo'],
-            summary=response['summary'],
             timeout=response['timeout'],
             last_receive_id=response['lastReceiveId'],
             create_time=response['createTime'],
-            expire_time=response['expireTime'],
             receive_time=response['receiveTime'],
             last_receive_time=response['lastReceiveTime'],
             trend_indication=response['trendIndication'],
             raw_data=response['rawData'],
-            more_info=response['moreInfo'],
-            graph_urls=response['graphUrls'],
         )
 
     def delete_alert(self, alertid):
@@ -401,7 +377,7 @@ class Mongo(object):
     def duplicate_alert(self, alert):
 
         update = {
-            "correlatedEvents": alert.correlate,
+            "correlate": alert.correlate,
             "group": alert.group,
             "value": alert.value,
             "service": alert.service,
@@ -409,15 +385,10 @@ class Mongo(object):
             "tags": alert.tags,
             "origin": alert.origin,
             "repeat": True,
-            "thresholdInfo": alert.threshold_info,
-            "summary": alert.summary,
             "timeout": alert.timeout,
             "lastReceiveId": alert.alertid,
-            "expireTime": alert.expire_time,
             "lastReceiveTime": alert.receive_time,
             "rawData": alert.raw_data,
-            "moreInfo": alert.more_info,
-            "graphUrls": alert.graph_urls,
         }
 
         # FIXME - no native find_and_modify method in this version of pymongo
@@ -435,7 +406,7 @@ class Mongo(object):
             alertid=response['_id'],
             resource=response['resource'],
             event=response['event'],
-            correlate=response['correlatedEvents'],
+            correlate=response['correlate'],
             group=response['group'],
             value=response['value'],
             status=response['status'],
@@ -449,18 +420,13 @@ class Mongo(object):
             origin=response['origin'],
             repeat=response['repeat'],
             duplicate_count=response['duplicateCount'],
-            threshold_info=response['thresholdInfo'],
-            summary=response['summary'],
             timeout=response['timeout'],
             last_receive_id=response['lastReceiveId'],
             create_time=response['createTime'],
-            expire_time=response['expireTime'],
             receive_time=response['receiveTime'],
             last_receive_time=response['lastReceiveTime'],
             trend_indication=response['trendIndication'],
             raw_data=response['rawData'],
-            more_info=response['moreInfo'],
-            graph_urls=response['graphUrls'],
         )
 
     def get_resources(self, query=None, sort=None, limit=0):
@@ -586,4 +552,3 @@ class Mongo(object):
             self.conn.disconnect()
 
         LOG.info('Mongo disconnected.')
-

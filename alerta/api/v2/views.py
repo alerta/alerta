@@ -15,7 +15,7 @@ from alerta.common.utils import DateEncoder
 from alerta.api.v2.utils import parse_fields, crossdomain
 
 
-Version = '2.1.2'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -47,16 +47,17 @@ def jsonp(func):
 @jsonp
 def test():
 
-    return jsonify(response={
-        "status": "ok",
-        "method": request.method,
-        "json": request.json,
-        "data": request.data,
-        "args": request.args,
-        "app_root": app.root_path,
-    })
+    return jsonify(
+        status="ok",
+        method=request.method,
+        json=request.json,
+        data=request.data,
+        args=request.args,
+        app_root=app.root_path,
+    )
 
-@app.route('/alerta/api/v2', methods=['GET'])
+
+@app.route('/', methods=['GET'])
 def routes():
 
     rules = []
@@ -66,14 +67,15 @@ def routes():
             rules.append(rule)
     return render_template('index.html', rules=rules)
 
-@app.route('/alerta/api/v2/alerts', methods=['GET'])
+
+@app.route('/api/alerts', methods=['GET'])
 @jsonp
 def get_alerts():
 
     try:
         query, sort, limit, query_time = parse_fields(request)
     except Exception, e:
-        return jsonify(response={"status": "error", "message": str(e)})
+        return jsonify(status="error", message=str(e))
 
     fields = dict()
     fields['history'] = {'$slice': CONF.history_limit}
@@ -111,34 +113,31 @@ def get_alerts():
             elif body['lastReceiveTime'] > last_time:
                 last_time = body['lastReceiveTime']
 
-        return jsonify(response={
-            "alerts": {
-                "alertDetails": alert_details,
-                "severityCounts": severity_count,
-                "statusCounts": status_count,
-                "lastTime": last_time,
-            },
-            "status": "ok",
-            "total": found,
-            "more": total > limit,
-            "autoRefresh": Switch.get('auto-refresh-allow').is_on(),
-        })
+        return jsonify(
+            status="ok",
+            total=found,
+            more=total > limit,
+            alerts=alert_details,
+            severityCounts=severity_count,
+            statusCounts=status_count,
+            lastTime=last_time,
+            autoRefresh=Switch.get('auto-refresh-allow').is_on(),
+        )
     else:
-        return jsonify(response={
-            "alerts": {
-                "alertDetails": [],
-                "severityCounts": severity_count,
-                "statusCounts": status_count,
-                "lastTime": query_time,
-            },
-            "status": "ok",
-            "message": "not found",
-            "total": 0,
-            "more": False,
-            "autoRefresh": Switch.get('auto-refresh-allow').is_on(),
-        })
+        return jsonify(
+            status="error",
+            message="not found",
+            total=0,
+            more=False,
+            alerts=[],
+            severityCounts=severity_count,
+            statusCounts=status_count,
+            lastTime=query_time,
+            autoRefresh=Switch.get('auto-refresh-allow').is_on()
+        )
 
-@app.route('/alerta/api/v2/alerts/alert.json', methods=['OPTIONS', 'POST'])
+
+@app.route('/api/alert', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def create_alert():
@@ -147,17 +146,18 @@ def create_alert():
     try:
         newAlert = Alert.parse_alert(request.data)
     except ValueError, e:
-        return jsonify(response={"status": "error", "message": str(e)})
+        return jsonify(status="error", message=str(e))
 
     LOG.debug('New alert %s', newAlert)
     mq.send(newAlert)
 
     if newAlert:
-        return jsonify(response={"status": "ok", "id": newAlert.get_id()})
+        return jsonify(status="ok", id=newAlert.get_id())
     else:
-        return jsonify(response={"status": "error", "message": "something went wrong"})
+        return jsonify(status="error", message="something went wrong")
 
-@app.route('/alerta/api/v2/alerts/alert/<alertid>', methods=['OPTIONS', 'GET'])
+
+@app.route('/api/alert/<alertid>', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def get_alert(alertid):
@@ -165,12 +165,12 @@ def get_alert(alertid):
     alert = db.get_alert(alertid=alertid)
 
     if alert:
-        return jsonify(response={"alert": alert.get_body(), "status": "ok", "total": 1})
+        return jsonify(status="ok", total=1, alert=alert.get_body())
     else:
-        return jsonify(response={"alert": None, "status": "ok", "message": "not found", "total": 0})
+        return jsonify(status="ok", message="not found", total=0, alert=None)
 
 
-@app.route('/alerta/api/v2/alerts/alert/<alertid>/tag', methods=['OPTIONS', 'PUT'])
+@app.route('/api/alert/<alertid>/tag', methods=['OPTIONS', 'PUT'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def tag_alert(alertid):
@@ -180,14 +180,15 @@ def tag_alert(alertid):
     if tag:
         response = db.tag_alert(alertid, tag['tag'])
     else:
-        return jsonify(response={"status": "error", "message": "no data"})
+        return jsonify(status="error", message="no data")
 
     if response:
-        return jsonify(response={"status": "ok"})
+        return jsonify(status="ok")
     else:
-        return jsonify(response={"status": "error", "message": "error tagging alert"})
+        return jsonify(status="error", message="error tagging alert")
 
-@app.route('/alerta/api/v2/alerts/alert/<alertid>/status', methods=['OPTIONS', 'PUT'])
+
+@app.route('/api/alert/<alertid>/status', methods=['OPTIONS', 'PUT'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def modify_status(alertid):
@@ -204,14 +205,15 @@ def modify_status(alertid):
         LOG.info('%s : Alert forwarded to %s and %s', modifiedAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
     else:
-        return jsonify(response={"status": "error", "message": "no data"})
+        return jsonify(status="error", message="no data")
 
     if modifiedAlert:
-        return jsonify(response={"status": "ok"})
+        return jsonify(status="ok")
     else:
-        return jsonify(response={"status": "error", "message": "error changing alert status"})
+        return jsonify(status="error", message="error changing alert status")
 
-@app.route('/alerta/api/v2/alerts/alert/<alertid>', methods=['OPTIONS', 'DELETE', 'POST'])
+
+@app.route('/api/alert/<alertid>', methods=['OPTIONS', 'DELETE', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def delete_alert(alertid):
@@ -222,15 +224,16 @@ def delete_alert(alertid):
         response = db.delete_alert(alertid)
 
         if response:
-            return jsonify(response={"status": "ok"})
+            return jsonify(status="ok")
         else:
-            return jsonify(response={"status": "error", "message": error})
+            return jsonify(status="error", message=error)
 
     else:
-        return jsonify(response={"status": "error", "message": "POST request without '_method' override?"})
+        return jsonify(status="error", message="POST request without '_method' override?")
+
 
 # Return severity and status counts
-@app.route('/alerta/api/v2/alerts/counts', methods=['GET'])
+@app.route('/api/alert/counts', methods=['GET'])
 @jsonp
 def get_counts():
 
@@ -241,18 +244,16 @@ def get_counts():
 
     found, severity_count, status_count = db.get_counts(query=query)
 
-    return jsonify(response={
-        "alerts": {
-            "alertDetails": [],
-            "severityCounts": severity_count,
-            "statusCounts": status_count,
-            "lastTime": query_time,
-        },
-        "status": "ok",
-        "total": found,
-        "more": False,
-        "autoRefresh": Switch.get('auto-refresh-allow').is_on(),
-    })
+    return jsonify(
+        status="ok",
+        total=found,
+        more=False,
+        alerts=[],
+        severityCounts=severity_count,
+        statusCounts=status_count,
+        lastTime=query_time,
+        autoRefresh=Switch.get('auto-refresh-allow').is_on(),
+    )
 
 
 @app.route('/pagerduty', methods=['POST'])
@@ -324,75 +325,11 @@ def pagerduty():
             mq.send(pdAlert, CONF.outbound_topic)
             LOG.info('%s : Alert forwarded to %s and %s', pdAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
-    return jsonify(response={"status": "ok"})
+    return jsonify(status="ok")
 
-
-# Return a list of resources
-@app.route('/alerta/api/v2/resources', methods=['GET'])
-@jsonp
-def get_resources():
-
-    query, sort, limit, query_time = parse_fields(request)
-    resources = db.get_resources(query=query, sort=sort, limit=limit)
-    total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
-
-    found = 0
-    resource_details = list()
-    if len(resources) > 0:
-
-        last_time = None
-
-        for resource in resources:
-            resource_details.append(resource)
-            found += 1
-
-            if not last_time:
-                last_time = resource['lastReceiveTime']
-            elif resource['lastReceiveTime'] > last_time:
-                last_time = resource['lastReceiveTime']
-
-        return jsonify(response={
-            "resources": {
-                "resourceDetails": resource_details,
-                "lastTime": last_time,
-            },
-            "status": "ok",
-            "total": found,
-            "more": total > limit
-        })
-    else:
-        return jsonify(response={
-            "resources": {
-                "resourceDetails": list(),
-                "lastTime": query_time,
-            },
-            "status": "ok",
-            "message": "not found",
-            "total": 0,
-            "more": False,
-        })
-
-@app.route('/alerta/api/v2/resources/resource/<resource>', methods=['OPTIONS', 'POST', 'DELETE'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
-@jsonp
-def delete_resource(resource):
-
-    error = None
-
-    # Delete all alerts for a single resource
-    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
-        response = db.delete_resource(resource)
-
-        if response:
-            return jsonify(response={"status": "ok"})
-        else:
-            return jsonify(response={"status": "error", "message": error})
-
-    else:
-        return jsonify(response={"status": "error", "message": "POST request without '_method' override?"})
 
 # Return a list of heartbeats
-@app.route('/alerta/api/v2/heartbeats', methods=['GET'])
+@app.route('/api/heartbeats', methods=['GET'])
 @jsonp
 def get_heartbeats():
 
@@ -400,7 +337,7 @@ def get_heartbeats():
     return jsonify(application="alerta", time=int(time.time() * 1000), heartbeats=heartbeats)
 
 
-@app.route('/alerta/api/v2/heartbeats/heartbeat.json', methods=['OPTIONS', 'POST'])
+@app.route('/api/heartbeat', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def create_heartbeat():
@@ -409,12 +346,12 @@ def create_heartbeat():
     try:
         heartbeat = Heartbeat.parse_heartbeat(request.data)
     except Exception, e:
-        return jsonify(response={"status": "error", "message": str(e)})
+        return jsonify(status="error", message=str(e))
 
     LOG.debug('New heartbeat %s', heartbeat)
     mq.send(heartbeat)
 
     if heartbeat:
-        return jsonify(response={"status": "ok", "id": heartbeat.get_id()})
+        return jsonify(status="ok", id=heartbeat.get_id())
     else:
-        return jsonify(response={"status": "error", "message": "something went wrong"})
+        return jsonify(status="error", message="something went wrong")

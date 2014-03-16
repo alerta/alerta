@@ -263,7 +263,7 @@ class QueryClient(object):
             for alert in alertDetails:
                 resource = alert.get('resource', None)
                 event = alert.get('event', None)
-                correlate = alert.get('correlatedEvents', None)
+                correlate = alert.get('correlate', None)
                 group = alert.get('group', None)
                 value = alert.get('value', None)
                 current_status = status_code.parse_status(alert.get('status', None))

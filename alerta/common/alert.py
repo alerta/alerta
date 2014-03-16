@@ -20,7 +20,7 @@ CONF = config.CONF
 ATTRIBUTES = [
     'resource',
     'event',
-    'correlatedEvents',
+    'correlate',
     'group',
     'value',
     'status',
@@ -31,22 +31,18 @@ ATTRIBUTES = [
     'text',
     'type',
     'tags',
+    'attributes',
     'origin',
     'repeat',
     'duplicateCount',
-    'thresholdInfo',
-    'summary',
     'timeout',
     'id',
     'lastReceiveId',
     'createTime',
-    'expireTime',
     'receiveTime',
     'lastReceiveTime',
     'trendIndication',
     'rawData',
-    'moreInfo',
-    'graphUrls',
     'history',
 ]
 
@@ -63,10 +59,9 @@ class Alert(object):
 
     def __init__(self, resource, event, correlate=None, group=None, value=None, status=status_code.UNKNOWN,
                  severity=severity_code.NORMAL, previous_severity=severity_code.UNKNOWN, environment=None, service=None,
-                 text=None, event_type=None, tags=None, origin=None, repeat=False, duplicate_count=0,
-                 threshold_info='n/a', summary=None, timeout=86400, alertid=None, last_receive_id=None,
-                 create_time=None, expire_time=None, receive_time=None, last_receive_time=None, trend_indication=None,
-                 raw_data=None, more_info=None, graph_urls=None, history=None):
+                 text=None, event_type=None, tags=None, attributes=None, origin=None, repeat=False, duplicate_count=0,
+                 timeout=86400, alertid=None, last_receive_id=None, create_time=None, receive_time=None,
+                 last_receive_time=None, trend_indication=None, raw_data=None, history=None):
 
         config.register_opts(Alert.alert_opts)
 
@@ -89,17 +84,15 @@ class Alert(object):
         self.status = status
         self.severity = severity
         self.previous_severity = previous_severity
-        self.environment = environment or ['PROD']
+        self.environment = environment or 'Undefined'
         self.service = service or ['Undefined']
         self.text = text or ''
         self.event_type = event_type or 'exceptionAlert'
-        self.tags = tags or dict()
-        self.origin = origin or '%s/%s' % (prog, os.uname()[1])
+        self.tags = tags or list()
+        self.attributes = attributes or dict()
+        self.origin = origin or [prog, os.uname()[1]]
         self.repeat = repeat
         self.duplicate_count = duplicate_count
-        self.threshold_info = threshold_info
-        self.summary = summary or '%s - %s %s is %s on %s %s' % (
-            ','.join(self.environment), self.severity.capitalize(), self.event, self.value, ','.join(self.service), self.resource)
         self.timeout = timeout or CONF.global_timeout
         self.alertid = alertid or str(uuid4())
         if last_receive_id:
@@ -107,7 +100,6 @@ class Alert(object):
         else:
             self.last_receive_id = self.alertid
         self.create_time = create_time or datetime.datetime.utcnow()
-        self.expire_time = expire_time or self.create_time + datetime.timedelta(seconds=self.timeout)
         if receive_time:
             self.receive_time = receive_time
         if last_receive_time:
@@ -115,8 +107,6 @@ class Alert(object):
         if trend_indication:
             self.trend_indication = trend_indication
         self.raw_data = raw_data
-        self.more_info = more_info
-        self.graph_urls = graph_urls or list()
         if history:
             self.history = history
 
@@ -139,7 +129,7 @@ class Alert(object):
         alert = {
             'resource': self.resource,
             'event': self.event,
-            'correlatedEvents': self.correlate,
+            'correlate': self.correlate,
             'group': self.group,
             'value': self.value,
             'severity': self.severity,
@@ -149,18 +139,14 @@ class Alert(object):
             'text': self.text,
             'type': self.event_type,
             'tags': self.tags,
+            'attributes': self.attributes,
             'origin': self.origin,
             'repeat': self.repeat,
             'duplicateCount': self.duplicate_count,
-            'thresholdInfo': self.threshold_info,
-            'summary': self.summary,
             'timeout': self.timeout,
             'id': self.alertid,
             'createTime': self.create_time,
-            'expireTime': self.expire_time,
             'rawData': self.raw_data,
-            'moreInfo': self.more_info,
-            'graphUrls': self.graph_urls,
         }
 
         if hasattr(self, 'status'):
@@ -222,33 +208,29 @@ class Alert(object):
         return Alert(
             resource=alert.get('resource', None),
             event=alert.get('event', None),
-            correlate=alert.get('correlatedEvents', None),
+            correlate=alert.get('correlate', None),
             group=alert.get('group', None),
             value=alert.get('value', None),
             status=status_code.parse_status(alert.get('status', status_code.UNKNOWN)),
             severity=severity_code.parse_severity(alert.get('severity', severity_code.NORMAL)),
             previous_severity=severity_code.parse_severity(alert.get('previousSeverity', status_code.UNKNOWN)),
             environment=alert.get('environment', None),
-            service=alert.get('service', None),
+            service=alert.get('service', list()),
             text=alert.get('text', None),
             event_type=alert.get('type', None),
-            tags=alert.get('tags', dict()),
-            origin=alert.get('origin', None),
+            tags=alert.get('tags', list()),
+            attributes=alert.get('attributes', dict()),
+            origin=alert.get('origin', list()),
             repeat=alert.get('repeat', False),
             duplicate_count=alert.get('duplicateCount', 0),
-            threshold_info=alert.get('thresholdInfo', None),
-            summary=alert.get('summary', None),
             timeout=alert.get('timeout', None),
             alertid=alert.get('id', None),
             last_receive_id=alert.get('lastReceiveId', None),
             create_time=alert.get('createTime', None),
-            expire_time=alert.get('expireTime', None),
             receive_time=alert.get('receiveTime', None),
             last_receive_time=alert.get('lastReceiveTime', None),
             trend_indication=alert.get('trendIndication', None),
             raw_data=alert.get('rawData', None),
-            more_info=alert.get('moreInfo', None),
-            graph_urls=alert.get('graphUrls', None),
         )
 
     def transform_alert(self, trapoid=None, facility=None, level=None, **kwargs):
@@ -312,8 +294,6 @@ class Alert(object):
                     self.correlate = c['correlate']
                 if 'threshold_info' in c:
                     self.threshold_info = c['threshold_info']
-                if 'summary' in c:
-                    self.summary = c['summary']
                 if 'timeout' in c:
                     self.timeout = c['timeout']
 
@@ -356,14 +336,13 @@ class Alert(object):
             self.group = self.group.replace(k, v)
             self.value = self.value.replace(k, v)
             self.text = self.text.replace(k, v)
-            self.environment[:] = [e.replace(k, v) for e in self.environment]
+            self.environment = self.environment.replace(k, v)
             self.service[:] = [s.replace(k, v) for s in self.service]
 
             if self.tags is not None:
-                self.tags = dict([(tag[0], tag[1].replace(k, v)) for tag in self.tags.iteritems()])
+                self.tags[:] = [tag.replace(k, v) for tag in self.tags]
+            if self.attributes is not None:
+                self.attributes = dict([(attrib[0], attrib[1].replace(k, v)) for attrib in self.attributes.iteritems()])
             if self.correlate is not None:
                 self.correlate[:] = [c.replace(k, v) for c in self.correlate]
-            if self.threshold_info is not None:
-                self.threshold_info = self.threshold_info.replace(k, v)
-            if self.summary is not None:
-                self.summary = self.summary.replace(k, v)
+
