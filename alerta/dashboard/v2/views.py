@@ -49,3 +49,9 @@ def details_widget():
     label = request.args.get('label', 'Alert Details')
 
     return render_template('widgets/details.html', config=CONF, label=label, query=request.query_string)
+
+
+@app.route('/alerta/widgets/v2/donut')
+def details_widget():
+
+    return render_template('widgets/donut.html', config=CONF, query=request.query_string)

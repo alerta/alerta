@@ -231,6 +231,7 @@ def delete_alert(alertid):
 
 # Return severity and status counts
 @app.route('/alerta/api/v2/alerts/counts', methods=['GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def get_counts():
 
@@ -240,6 +241,21 @@ def get_counts():
         return jsonify(response={"status": "error", "message": str(e)})
 
     found, severity_count, status_count = db.get_counts(query=query)
+
+    googleviz = {
+        "cols": [
+            {"id": "", "label": "severity", "pattern": "", "type": "string"},
+            {"id": "", "label": "count", "pattern": "", "type": "number"}
+        ],
+        "rows": [
+            {"c": [{"v": "critical", "f": None}, {"v": severity_count['critical'], "f": None}]},
+            {"c": [{"v": "major", "f": None}, {"v": severity_count['major'], "f": None}]},
+            {"c": [{"v": "minor", "f": None}, {"v": severity_count['minor'], "f": None}]},
+            {"c": [{"v": "warning", "f": None}, {"v": severity_count['warning'], "f": None}]},
+            {"c": [{"v": "normal", "f": None}, {"v": severity_count['normal'], "f": None}]},
+            {"c": [{"v": "informational", "f": None}, {"v": severity_count['informational'], "f": None}]}
+        ]
+    }
 
     return jsonify(response={
         "alerts": {
@@ -252,6 +268,7 @@ def get_counts():
         "total": found,
         "more": False,
         "autoRefresh": Switch.get('auto-refresh-allow').is_on(),
+        "googleviz": googleviz
     })
 
 

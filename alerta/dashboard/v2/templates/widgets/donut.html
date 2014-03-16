@@ -1,0 +1,54 @@
+<html>
+  <head>
+    <!--Load the AJAX API-->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script type="text/javascript" src="/alerta/dashboard/v2/assets/js/config.js"></script>
+    <script type="text/javascript">
+    
+    // Load the Visualization API and the piechart package.
+    google.load('visualization', '1', {'packages':['corechart']});
+      
+    // Set a callback to run when the Google Visualization API is loaded.
+    google.setOnLoadCallback(drawChart);
+
+    var API_HOST = appConfig.api_host + ':' + appConfig.api_port;
+
+    function drawChart() {
+
+      $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts/counts', function(data) {
+
+        var data = new google.visualization.DataTable(data.response.googleviz);
+
+      // Instantiate and draw our chart, passing in some options.
+      var chart = new google.visualization.PieChart(document.getElementById('chart_div'));
+      var options = {
+          title: 'Severity',
+          pieHole: 0.4,
+          width: 400,
+          height: 240,
+          pieSliceText: 'value',
+          pieSliceTextStyle: {color: 'black'},
+          pieStartAngle: 180,
+          slices: [
+            { color: 'red'},
+            { color: 'orange'},
+            { color: 'yellow'},
+            { color: '#1E90FF'},
+            { color: '#00CC00'},
+            { color: '#00CC00'}
+        ]
+      };
+      chart.draw(data, options);
+
+      })
+    }
+
+    </script>
+  </head>
+
+  <body>
+    <!--Div that will hold the pie chart-->
+    <div id="chart_div"></div>
+  </body>
+</html>
