@@ -1,5 +1,5 @@
 
-var API_HOST = appConfig.api_host + ':' + appConfig.api_port;
+var API_URL = 'http://' + appConfig.api_host + ':' + appConfig.api_port + appConfig.api_root;
 var REFRESH_INTERVAL = 30; // seconds
 
 var show_hb_alerts = true;
@@ -132,7 +132,7 @@ function date2str(datetime) {
 
 function heartbeatAlerts() {
 
-    $.getJSON('http://' + API_HOST + '/alerta/api/v2/heartbeats?callback=?', function (data) {
+    $.getJSON(API_URL + '/heartbeats?callback=?', function (data) {
 
         var hbalerts = '';
         $.each(data.heartbeats, function (i, hb) {
@@ -161,7 +161,7 @@ function heartbeatAlerts() {
 
 function getHeartbeats(refresh) {
 
-    $.getJSON('http://' + API_HOST + '/alerta/api/v2/heartbeats?callback=?', function (data) {
+    $.getJSON(API_URL + '/heartbeats?callback=?', function (data) {
 
         var rows = '';
         $.each(data.heartbeats, function (i, hb) {
@@ -259,16 +259,55 @@ var Alerta = {
             }
         }
     },
+    ackRows: function (button, config, flash) {
+        $('#alerts .active').each(function(index, elem) {
+            Alerta.ackAlert($(elem).data("alert-id"));
+        });
+    },
+    unackRows: function (button, config, flash) {
+        $('#alerts .active').each(function(index, elem) {
+            Alerta.unackAlert($(elem).data("alert-id"));
+        });
+    },
+    closeRows: function (button, config, flash) {
+        $('#alerts .active').each(function(index, elem) {
+            Alerta.closeAlert($(elem).data("alert-id"));
+        });
+    },
     deleteRows: function (button, config, flash) {
         $('#alerts .active').each(function(index, elem) {
             Alerta.deleteAlert($(elem).data("alert-id"));
+        });
+    },
+    ackAlert: function(alertId) {
+        $.ajax({
+            type: 'PUT',
+            contentType: 'application/json',
+            url: API_URL + '/alert/' + alertId + '/status',
+            data: JSON.stringify({ status: ACK, text: 'Acknowledged in web console' })
+        });
+    },
+    unackAlert: function(alertId) {
+        $.ajax({
+            type: 'PUT',
+            contentType: 'application/json',
+            url: API_URL + '/alert/' + alertId + '/status',
+            data: JSON.stringify({ status: OPEN, text: 'Unacknowledged in web console' })
+        });
+    },
+    closeAlert: function(alertId) {
+        $.ajax({
+            type: 'PUT',
+            contentType: 'application/json',
+            url: API_URL + '/alert/' + alertId + '/status',
+            data: JSON.stringify({ status: CLOSED, text: 'Closed in web console' })
         });
     },
     deleteAlert: function(alertId) {
         $.ajax({
             type: 'POST',
             contentType: 'application/json',
-            url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + alertId,
+            url: API_URL + '/alert/' + alertId,
             data: JSON.stringify({ _method: 'delete' })
         });
     }
@@ -351,8 +390,8 @@ function updateAlertsTable(env_filter, asiFilters) {
         "bDeferRender": true,
         "bAutoWidth" :false,
         "bStateSave" : true,
-        "sDom": "<'row-fluid'<'span4'l><'span4'f><'span4'T>r>t<'row-fluid'<'span6'i><'span6'p>>",
-        "sAjaxSource": 'http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from,
+        "sDom": "<'row-fluid'<'span3'l><'span4'f><'span5'T>r>t<'row-fluid'<'span6'i><'span6'p>>",
+        "sAjaxSource": API_URL + '/alerts?' + gEnvFilter + filter + status + limit + from,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'alert-summary' + ' severity-' + aData[0] + ' status-' + aData[1];
             $(nRow).attr('id', 'row-' + aData[11]).data("alert-id", aData[11]);
@@ -390,9 +429,9 @@ function updateAlertsTable(env_filter, asiFilters) {
                 "url": sSource,
                 "data": aoData,
                 "success": function (json) {
-                    autoRefresh = json.response.autoRefresh;
+                    autoRefresh = json.autoRefresh;
                     var a = [];
-                    $.each(json.response.alerts.alertDetails, function (i, ad) {
+                    $.each(json.alerts, function (i, ad) {
                         var inner = [];
                         inner.push(
                             ad.severity,       // 0
@@ -414,17 +453,14 @@ function updateAlertsTable(env_filter, asiFilters) {
                             ad.receiveTime,
                             ad.group,
                             ad.previousSeverity,
-                            ad.trendIndication,
-                            ad.thresholdInfo,
+                            ad.trendIndication, // 17
                             ad.timeout,
                             ad.type,
                             ad.repeat,
-                            ad.summary,
                             ad.origin,
                             ad.tags,
-                            ad.moreInfo,
-                            ad.graphUrls,
-                            ad.history
+                            ad.attributes,
+                            ad.history // 24
                         );
                         a.push(inner);
                     });
@@ -455,6 +491,16 @@ function updateAlertsTable(env_filter, asiFilters) {
             "aButtons" : [
                 {
                     "sExtends" : "ajax",
+                    "sButtonText" : "Ack",
+                    "fnClick" : Alerta.ackRows
+                },
+                {
+                    "sExtends" : "ajax",
+                    "sButtonText" : "Close",
+                    "fnClick" : Alerta.closeRows
+                },
+                {
+                    "sExtends" : "ajax",
                     "sButtonText" : "Delete",
                     "fnClick" : Alerta.deleteRows
                 },
@@ -476,7 +522,6 @@ function fnFormatDetails(aData) {
     var duplicateCount = aData[3];
     var environment = aData[4];
     var service = aData[5];
-    var cluster = '';
     var resource = aData[6];
     var event = aData[7];
     var value = aData[8];
@@ -489,27 +534,20 @@ function fnFormatDetails(aData) {
     var group = aData[15];
     var previousSeverity = aData[16];
     var trendIndication = aData[17];
-    var thresholdInfo = aData[18];
-    var timeout = aData[19];
-    var type = aData[20];
-    var repeat = aData[21];
-    var summary = aData[22];
-    var origin = aData[23];
+    var timeout = aData[18];
+    var type = aData[19];
+    var repeat = aData[20];
+    var origin = aData[21];
     var tags = '';
-    var moreInfo = aData[25];
-    var graphUrls = '';
-    var history = aData[27];
+    var attributes = '';
+    var history = aData[24];
 
-    $.map(aData[24], function (value, key) {
-        tags += '<span class="label">' + key + '=' + value + '</span> ';
+    $.each(aData[22], function (y, tag) {
+        tags += '<span class="label">' + tag + '</span> ';
     });
 
-    if (moreInfo && moreInfo.substring(0, 4) === 'http') {
-        moreInfo = '<a href="' + moreInfo + '">' + moreInfo + '</a>';
-    }
-
-    $.each(aData[26], function (y, graph) {
-        graphUrls += '<a href="' + graph + '" target="_blank">Graph ' + y + '</a> ';
+    $.map(aData[23], function (value, key) {
+        attributes += '<tr class="even"><td><b>' + key.replace(/([A-Z])/g, ' $1').replace(/^./, function(str){ return str.toUpperCase(); }) + '</b></td><td>' + value + '</td></tr>';
     });
 
     var historydata = '<section class="history-wrapper"><table class="table table-condensed"><thead><td colspan="2"><b>History </b></td></thead><tbody><tr><td>';
@@ -581,15 +619,12 @@ function fnFormatDetails(aData) {
     sOut += '<tr class="even"><td><b>Text</b></td><td>' + text + '</td></tr>';
 
     sOut += '<tr class="odd"><td><b>Trend Indication</b></td><td>' + trendIndication + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Threshold Info</b></td><td>' + thresholdInfo + '</td></tr>';
     sOut += '<tr class="odd"><td><b>Timeout</b></td><td>' + timeout + '</td></tr>';
     sOut += '<tr class="even"><td><b>Type</b></td><td>' + type + '</td></tr>';
     sOut += '<tr class="odd"><td><b>Repeat</b></td><td>' + repeat + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Summary</b></td><td>' + summary + '</td></tr>';
     sOut += '<tr class="odd"><td><b>Origin</b></td><td>' + origin + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Tags</b></td><td>' + tags + '<a id="' + alertid + '" class="tag-alert" rel="tooltip" title="Tag Alert"><i class="icon-tags"></i></a>' + '</td></tr>';
-    sOut += '<tr class="odd"><td><b>More Info</b></td><td>' + moreInfo + '</td></tr>';
-    sOut += '<tr class="even"><td><b>Graphs</b></td><td>' + graphUrls + '</td></tr>';
+    sOut += '<tr class="even"><td><b>Tags</b></td><td>' + tags + '</td></tr>';
+    sOut += attributes;
     sOut += '</table>'; // 2
 
     sOut += '</section>'
@@ -620,7 +655,7 @@ $('#alerts tbody tr').live('dblclick', function (event) {
 });
 
 function refreshAlerts(refresh) {
-    oTable.fnReloadAjax('http://' + API_HOST + '/alerta/api/v2/alerts?' + gEnvFilter + filter + status + limit + from);
+    oTable.fnReloadAjax(API_URL + '/alerts?' + gEnvFilter + filter + status + limit + from);
     if (refresh && autoRefresh) {
         timer = setTimeout(function() {
             refreshAlerts(refresh);
@@ -724,6 +759,7 @@ $('body').on('click', '#from-date-select .btn', function() {
 });
 
 function updateStatus(s) {
+    console.log('updateStatus()');
     status = '&status=' + s;
     updateStatusCounts(gEnvFilter, false);
     updateAllIndicators(gEnvFilter, lookup, false);
@@ -731,15 +767,16 @@ function updateStatus(s) {
 }
 
 function updateStatusCounts(env_filter, refresh) {
-    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts/counts?callback=?&'
+    console.log('updateStatusCounts()');
+    $.getJSON(API_URL + '/alert/counts?callback=?'
         + env_filter + from, function (data) {
-
-        if (data.response.warning) {
-            $('#warning-text').text(data.response.warning);
+        console.log(data);
+        if (data.warning) {
+            $('#warning-text').text(data.warning);
             $('#console-alert').toggle();
         }
 
-        $.each(data.response.alerts.statusCounts, function (status, count) {
+        $.each(data.statusCounts, function (status, count) {
             $("#count-" + status).html('<b>' + count + '</b>');
         });
         if (refresh && autoRefresh) {
@@ -751,6 +788,7 @@ function updateStatusCounts(env_filter, refresh) {
 }
 
 function updateAllIndicators(env_filter, asiFilters, refresh) {
+    console.log('updateAllIndicators()');
     var delayer = 0;
     $.each(asiFilters, function (service) {
         setTimeout(function () {
@@ -762,14 +800,15 @@ function updateAllIndicators(env_filter, asiFilters, refresh) {
 
 function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
     $('#' + service + ' th').addClass('loader');
-    $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts/counts?callback=?&'
+    console.log(API_URL + '/alert/counts?callback=?' + env_filter + asi_filter + status + limit + from);
+    $.getJSON(API_URL + '/alert/counts?callback=?'
         + env_filter + asi_filter + status + limit + from, function (data) {
-
+        console.log(data);
         var sev_id = '#' + service;
 
-        data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.informational;
+        data.severityCounts.normal += data.severityCounts.informational;
 
-        $.each(data.response.alerts.severityCounts, function (sev, count) {
+        $.each(data.severityCounts, function (sev, count) {
             sev = sev.toLowerCase();
             $(sev_id + "-" + sev).html('<b>' + count + '</b>');
 
@@ -782,13 +821,13 @@ function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
             }
         });
         var scolor;
-        if (data.response.alerts.severityCounts.critical > 0) {
+        if (data.severityCounts.critical > 0) {
             scolor = 'red';
-        } else if (data.response.alerts.severityCounts.major > 0) {
+        } else if (data.severityCounts.major > 0) {
             scolor = 'orange';
-        } else if (data.response.alerts.severityCounts.minor > 0) {
+        } else if (data.severityCounts.minor > 0) {
             scolor = 'yellow';
-        } else if (data.response.alerts.severityCounts.warning > 0) {
+        } else if (data.severityCounts.warning > 0) {
             scolor = 'dodgerblue';
         } else {
             scolor = '#00CC00';
@@ -807,6 +846,8 @@ function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
 
 $(document).ready(function () {
 
+    console.log('document.ready');
+
     $('tbody').on('click', '.delete-alert', function () {
         if (confirm('IMPORTANT: Deleting this alert is a permanent operation that will '
             + 'remove the alert from all user consoles.\n\n'
@@ -821,33 +862,15 @@ $(document).ready(function () {
     });
 
     $('tbody').on('click', '.ack-alert', function () {
-        $.ajax({
-            type: 'PUT',
-            contentType: 'application/json',
-            url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id + '/status',
-            data: JSON.stringify({ status: ACK, text: 'Acknowledged in web console' })
-        });
+        Alerta.ackAlert(this.id);
     });
 
     $('tbody').on('click', '.unack-alert', function () {
-        $.ajax({
-            type: 'PUT',
-            contentType: 'application/json',
-            url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id + '/status',
-            data: JSON.stringify({ status: OPEN, text: 'Unacknowledged in web console' })
-        });
+        Alerta.unackAlert(this.id);
     });
 
-    $('tbody').on('click', '.tag-alert', function () {
-        var tag = prompt("Enter tag eg. london, location:london, datacentre:location=london");
-        if (tag != null && tag != "") {
-            $.ajax({
-                type: 'PUT',
-                contentType: 'application/json',
-                url: 'http://' + API_HOST + '/alerta/api/v2/alerts/alert/' + this.id + '/tag',
-                data: JSON.stringify({ tag: tag })
-            });
-        }
+    $('tbody').on('click', '.close-alert', function () {
+        Alerta.closeAlert(this.id);
     });
 
     Alerta.dropDownText(window);

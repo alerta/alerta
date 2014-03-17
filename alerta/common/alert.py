@@ -289,7 +289,9 @@ class Alert(object):
                 if 'service' in c:
                     self.service = c['service']
                 if 'tags' in c:
-                    self.tags.update(c['tags'])  # merge tags
+                    self.tags.append(c['tags'])  # join tags
+                if 'attributes' in c:
+                    self.attributes.update(c['attributes'])  # merge attributes
                 if 'correlate' in c:
                     self.correlate = c['correlate']
                 if 'threshold_info' in c:

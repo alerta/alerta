@@ -80,6 +80,9 @@ def get_alerts():
     fields = dict()
     fields['history'] = {'$slice': CONF.history_limit}
 
+    if 'status' not in query:
+        query['status'] = 'open'
+
     alerts = db.get_alerts(query=query, fields=fields, sort=sort, limit=limit)
     total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
 
@@ -87,23 +90,13 @@ def get_alerts():
     severity_count = dict.fromkeys(severity_code.ALL, 0)
     status_count = dict.fromkeys(status_code.ALL, 0)
 
-    alert_details = list()
+    alert_response = list()
     if len(alerts) > 0:
 
         last_time = None
 
         for alert in alerts:
             body = alert.get_body()
-
-            if body['severity'] in request.args.getlist('hide-alert-repeats') and body['repeat']:
-                continue
-
-            if not request.args.get('hide-alert-details', 'false') == 'true':
-                alert_details.append(body)
-
-            if request.args.get('hide-alert-history', 'false') == 'true':
-                body['history'] = []
-
             found += 1
             severity_count[body['severity']] += 1
             status_count[body['status']] += 1
@@ -113,11 +106,13 @@ def get_alerts():
             elif body['lastReceiveTime'] > last_time:
                 last_time = body['lastReceiveTime']
 
+            alert_response.append(body)
+
         return jsonify(
             status="ok",
             total=found,
             more=total > limit,
-            alerts=alert_details,
+            alerts=alert_response,
             severityCounts=severity_count,
             statusCounts=status_count,
             lastTime=last_time,
@@ -248,7 +243,6 @@ def get_counts():
         status="ok",
         total=found,
         more=False,
-        alerts=[],
         severityCounts=severity_count,
         statusCounts=status_count,
         lastTime=query_time,
