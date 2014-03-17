@@ -78,7 +78,6 @@ def main():
             '-E',
             '--environment',
             metavar='ENV',
-            action='append',
             help='Affected environments eg. production, development, release, etc'
         )
         parser.add_argument(

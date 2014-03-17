@@ -67,7 +67,7 @@ def main():
             metavar='ENV',
             action="append",
             dest="environment",
-            help="Environment eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA"
+            help="Environment eg. production, development"
         )
         parser.add_argument(
             "--not-environment",
@@ -193,6 +193,19 @@ def main():
             metavar='TAGS',
             action="append",
             dest="not_tags"
+        )
+        parser.add_argument(
+            "-A",
+            "--attributes",
+            action="append",
+            dest="attributes",
+            help="List of attributes eg. Key=value"
+        )
+        parser.add_argument(
+            "--not-attributes",
+            metavar='ATTRIBUTES',
+            action="append",
+            dest="not_attributes"
         )
         parser.add_argument(
             "-t",

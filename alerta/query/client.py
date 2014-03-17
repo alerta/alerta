@@ -15,7 +15,7 @@ from alerta.common import config
 from alerta.common.utils import relative_date
 from alerta.common.graphite import StatsD
 
-Version = '2.1.6'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -255,12 +255,12 @@ class QueryClient(object):
                 sys.exit(1)
 
             if CONF.sortby in ['createTime', 'receiveTime', 'lastReceiveTime']:
-                alertDetails = reversed(response['alerts']['alertDetails'])
+                alerts = reversed(response['alerts'])
             else:
-                alertDetails = response['alerts']['alertDetails']
+                alerts = response['alerts']
 
             count = 0
-            for alert in alertDetails:
+            for alert in alerts:
                 resource = alert.get('resource', None)
                 event = alert.get('event', None)
                 correlate = alert.get('correlate', None)
@@ -274,11 +274,10 @@ class QueryClient(object):
                 text = alert.get('text', None)
                 event_type = alert.get('type', None)
                 tags = alert.get('tags', None)
+                attributes = alert.get('attributes', None)
                 origin = alert.get('origin', None)
                 repeat = alert.get('repeat', False)
                 duplicate_count = int(alert.get('duplicateCount', 0))
-                threshold_info = alert.get('thresholdInfo', None)
-                summary = alert.get('summary', None)
                 timeout = alert.get('timeout', 0)
                 alertid = alert.get('id', None)
                 raw_data = alert.get('rawData', None)
@@ -297,13 +296,8 @@ class QueryClient(object):
                 last_receive_time = last_receive_time.replace(tzinfo=pytz.utc)
                 last_receive_time_epoch = time.mktime(last_receive_time.timetuple())
 
-                expire_time = datetime.datetime.strptime(alert.get('expireTime', None), '%Y-%m-%dT%H:%M:%S.%fZ')
-                expire_time = expire_time.replace(tzinfo=pytz.utc)
-                expire_time_epoch = time.mktime(expire_time.timetuple())
-
                 trend_indication = alert.get('trendIndication', None)
                 more_info = alert.get('moreInfo', 'n/a')
-                graph_urls = alert.get('graphUrls', ['n/a'])
 
                 delta = receive_time - create_time
                 latency = int(delta.days * 24 * 60 * 60 * 1000 + delta.seconds * 1000 + delta.microseconds / 1000)
@@ -323,7 +317,7 @@ class QueryClient(object):
                     'sP': previous_severity.capitalize(),
                     'sPa': severity_code._ABBREV_SEVERITY_MAP.get(previous_severity, '****'),
                     'sPc': severity_code.name_to_code(previous_severity),
-                    'E': ','.join(environment),
+                    'E': environment,
                     'S': ','.join(service),
                     't': text.encode('utf-8'),
                     'eT': event_type,
@@ -331,13 +325,13 @@ class QueryClient(object):
                     'O': origin,
                     'R': repeat,
                     'D': duplicate_count,
-                    'th': threshold_info,
-                    'y': summary,
+                    # 'th': threshold_info,
+                    # 'y': summary,
                     'o': timeout,
                     'B': raw_data,
                     'ti': trend_indication,
                     'm': more_info,
-                    'u': ','.join(graph_urls),
+                    # 'u': ','.join(graph_urls),
                     'L': latency,
                     'lrI': last_receive_id,
                     'lri': last_receive_id[0:8],
@@ -353,10 +347,10 @@ class QueryClient(object):
                     'lt': last_receive_time_epoch,
                     'ld': self._format_date(last_receive_time),
                     'lD': utils.formatdate(last_receive_time_epoch),
-                    'ei': expire_time.replace(microsecond=0).isoformat() + ".%03dZ" % (expire_time.microsecond // 1000),
-                    'et': expire_time_epoch,
-                    'ed': self._format_date(expire_time),
-                    'eD': utils.formatdate(expire_time_epoch),
+                    # 'ei': expire_time.replace(microsecond=0).isoformat() + ".%03dZ" % (expire_time.microsecond // 1000),
+                    # 'et': expire_time_epoch,
+                    # 'ed': self._format_date(expire_time),
+                    # 'eD': utils.formatdate(expire_time_epoch),
                     'n': '\n',
                 }
 
@@ -400,7 +394,7 @@ class QueryClient(object):
                         self._format_date(displayTime),
                         severity_code._ABBREV_SEVERITY_MAP.get(current_severity, '****'),
                         duplicate_count,
-                        ','.join(environment),
+                        environment,
                         ','.join(service),
                         resource,
                         group,
@@ -420,14 +414,14 @@ class QueryClient(object):
                     continue
 
                 if 'summary' in CONF.show:
-                    print(line_color + '%s' % summary + end_color)
+                    print(line_color + '[%s] %s %s on %s is %s' % (current_status, environment, resource, ','.join(service), value) + end_color)
                 else:
                     print(line_color + '%s|%s|%s|%5d|%-5s|%-10s|%-18s|%12s|%16s|%12s' % (
                         alertid[0:8],
                         self._format_date(displayTime),
                         severity_code._ABBREV_SEVERITY_MAP.get(current_severity, '****'),
                         duplicate_count,
-                        ','.join(environment),
+                        environment,
                         ','.join(service),
                         resource,
                         group,
@@ -449,6 +443,9 @@ class QueryClient(object):
                     print(line_color + '    event    | %s' % event + end_color)
                     print(line_color + '    value    | %s' % value + end_color)
 
+                    for key, value in attributes.items():
+                        print(line_color + '            %s | %s' % (key, value) + end_color)
+
                 if 'times' in CONF.show:
                     print(line_color + '      time created  | %s' % (
                         self._format_date(create_time)) + end_color)
@@ -458,32 +455,23 @@ class QueryClient(object):
                         self._format_date(last_receive_time)) + end_color)
                     print(line_color + '      latency       | %sms' % latency + end_color)
                     print(line_color + '      timeout       | %ss' % timeout + end_color)
-                    if expire_time:
-                        print(line_color + '      expire time   | %s' % (
-                            self._format_date(expire_time)) + end_color)
 
                 if 'details' in CONF.show:
                     print(line_color + '          alert id     | %s' % alertid + end_color)
                     print(line_color + '          last recv id | %s' % last_receive_id + end_color)
-                    print(line_color + '          environment  | %s' % (','.join(environment)) + end_color)
+                    print(line_color + '          environment  | %s' % environment + end_color)
                     print(line_color + '          service      | %s' % (','.join(service)) + end_color)
                     print(line_color + '          resource     | %s' % resource + end_color)
                     print(line_color + '          type         | %s' % event_type + end_color)
                     print(line_color + '          repeat       | %s' % repeat + end_color)
                     print(line_color + '          origin       | %s' % origin + end_color)
                     print(line_color + '          more info    | %s' % more_info + end_color)
-                    print(line_color + '          threshold    | %s' % threshold_info + end_color)
                     print(line_color + '          correlate    | %s' % (','.join(correlate)) + end_color)
-                    print(line_color + '          graphs       | %s' % (','.join(graph_urls)) + end_color)
 
                 if 'tags' in CONF.show and tags:
-                    if isinstance(tags, list):
-                        self.tag_is_key_value = False
-                        for tag in enumerate(tags):
-                            print(line_color + '            tag %6s | %s' % tag + end_color)
-                    else:
-                        for tag in tags.items():
-                            print(line_color + '            tag %6s | %s' % tag + end_color)
+                    for tag in tags:
+                        print(line_color + '            tag | %s' % tag + end_color)
+
 
                 if 'raw' in CONF.show and raw_data:
                     print(line_color + '   | %s' % raw_data + end_color)

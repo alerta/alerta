@@ -130,7 +130,7 @@ class ApiClient(object):
             raise
 
         try:
-            response = r.json()['response']
+            response = r.json()
         except Exception, e:
             LOG.error('API bad response - %s: %s', e, r.text)
             raise
