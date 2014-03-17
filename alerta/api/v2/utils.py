@@ -42,7 +42,6 @@ def parse_fields(request):
     if request.args.get('repeat', None):
         query['repeat'] = True if request.args.get('repeat', 'true') == 'true' else False
 
-
     sort = list()
     if request.args.get('sort-by', None):
 

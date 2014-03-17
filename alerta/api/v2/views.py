@@ -63,7 +63,7 @@ def routes():
     rules = []
     for rule in app.url_map.iter_rules():
         rule.methods = ','.join([r for r in rule.methods if r not in ['OPTIONS', 'HEAD']])
-        if rule.endpoint not in ['test','static']:
+        if rule.endpoint not in ['test', 'static']:
             rules.append(rule)
     return render_template('index.html', rules=rules)
 
@@ -151,9 +151,9 @@ def create_alert():
 
     if suppress:
         LOG.info('Suppressing alert %s', incomingAlert.get_id())
-        return jsonify(status="ok", message="alert transform suppressed this alert")
+        return jsonify(status="error", message="alert suppressed by transform")
 
-    if db.is_duplicate(incomingAlert, incomingAlert.severity):
+    if db.is_duplicate(incomingAlert):
         # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text,
         #                       value, status, tags and origin
         #                    2. increment duplicate count

@@ -3,6 +3,9 @@ import datetime
 import pytz
 import pymongo
 
+from pymongo import errors
+from collections import defaultdict
+
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.alert import AlertDocument
@@ -72,16 +75,21 @@ class Mongo(object):
     #                                    {"severity": 1, "_id": 0})['severity']
     #
     def get_count(self, query=None):
+        """
+        Return total number of alerts that meet the query filter.
+        """
 
         return self.db.alerts.find(query).count()
 
     def get_counts(self, query=None):
-
+        """
+        Return total and dict() of severity and status counts.
+        """
         query = query or dict()
 
         found = 0
-        severity_count = dict.fromkeys(severity_code.ALL, 0)
-        status_count = dict.fromkeys(status_code.ALL, 0)
+        severity_count = defaultdict(int)
+        status_count = defaultdict(int)
 
         responses = self.db.alerts.find(query, {"severity": 1, "status": 1})
         if not responses:
@@ -97,14 +105,7 @@ class Mongo(object):
 
     def get_alerts(self, query=None, fields=None, sort=None, limit=0):
 
-        query = query or dict()
-        fields = fields or list()
-        sort = sort or dict()
-
         responses = self.db.alerts.find(query, fields=fields, sort=sort).limit(limit)
-        if not responses:
-            LOG.warning('Alert not found with query = %s, sort = %s, limit = %s', query, sort, limit)
-            return None
 
         alerts = list()
         for response in responses:
@@ -140,15 +141,12 @@ class Mongo(object):
             )
         return alerts
 
-    def get_alert(self, id=None, environment=None, resource=None, event=None, severity=None):
+    def get_alert(self, id):
 
-        if id:
-            query = {'$or': [{'_id': {'$regex': '^' + id}},
-                    {'lastReceiveId': {'$regex': '^' + id}}]}
-        elif severity:
-            query = {"environment": environment, "resource": resource, "event": event, "severity": severity}
+        if len(id) == 8:
+            query = {'$or': [{'_id': {'$regex': '^' + id}}, {'lastReceiveId': {'$regex': '^' + id}}]}
         else:
-            query = {"environment": environment, "resource": resource, "event": event}
+            query = {'$or': [{'_id': id}, {'lastReceiveId': id}]}
 
         response = self.db.alerts.find_one(query)
         LOG.debug('db.alerts.findOne(query=%s)', query)
@@ -186,20 +184,43 @@ class Mongo(object):
             history=response['history']
         )
 
-    def is_duplicate(self, alert, severity=None):
+    def is_duplicate(self, alert):
 
-        if severity:
-            found = self.db.alerts.find_one({"environment": alert.environment, "resource": alert.resource, "event": alert.event, "severity": severity})
-        else:
-            found = self.db.alerts.find_one({"environment": alert.environment, "resource": alert.resource, "event": alert.event})
+        query = {
+            "environment": alert.environment,
+            "resource": alert.resource,
+            "event": alert.event,
+            "severity": alert.severity
+        }
 
-        return found is not None
+        found = self.db.alerts.find_one(query=query)
+
+        return bool(found)
 
     def is_correlated(self, alert):
 
-        found = self.db.alerts.find_one({"environment": alert.environment, "resource": alert.resource,
-                                         '$or': [{"event": alert.event}, {"correlate": alert.event}]})
-        return found is not None
+        query = {
+            "environment": alert.environment,
+            "resource": alert.resource,
+            '$or': [
+                {
+                    "event": alert.event,
+                    "severity": {'$ne': alert.severity}
+                },
+                {
+                    "event": {'$ne': alert.event},
+                    "correlate": alert.event,
+                    "severity": alert.severity
+                },
+                {
+                    "event": {'$ne': alert.event},
+                    "correlate": alert.event,
+                    "severity": {'$ne': alert.severity}
+                }]
+        }
+
+        found = self.db.alerts.find_one(query=query)
+        return bool(found)
 
     def save_duplicate(self, alert):
         """
@@ -207,6 +228,13 @@ class Mongo(object):
         but don't append to history. Minimal changes.
         *** MUST RETURN DOCUMENT SO CAN PUT IT ON NOTIFY TOPIC ***
         """
+
+        query = {
+            "environment": alert.environment,
+            "resource": alert.resource,
+            "event": alert.event,
+            "severity": alert.severity
+        }
 
         now = datetime.datetime.utcnow()
         update = {
@@ -224,11 +252,7 @@ class Mongo(object):
         no_obj_error = "No matching object found"
         response = self.db.command("findAndModify", CONF.mongo_collection,
                                    allowable_errors=[no_obj_error],
-                                   query={
-                                       "environment": alert.environment,
-                                       "resource": alert.resource,
-                                       "event": alert.event
-                                   },
+                                   query=query,
                                    update={
                                        '$set': update,
                                        '$inc': {"duplicateCount": 1}
@@ -273,6 +297,26 @@ class Mongo(object):
         *** MUST RETURN DOCUMENT SO CAN PUT IT ON NOTIFY TOPIC ***
         """
 
+        query = {
+            "environment": alert.environment,
+            "resource": alert.resource,
+            '$or': [
+                {
+                    "event": alert.event,
+                    "severity": {'$ne': alert.severity}
+                },
+                {
+                    "event": {'$ne': alert.event},
+                    "correlate": alert.event,
+                    "severity": alert.severity
+                },
+                {
+                    "event": {'$ne': alert.event},
+                    "correlate": alert.event,
+                    "severity": {'$ne': alert.severity}
+                }]
+        }
+
         now = datetime.datetime.utcnow()
         update = [{
             "event": alert.event,
@@ -283,16 +327,18 @@ class Mongo(object):
             "duplicateCount": 0,
             "repeat": False,
             "previousSeverity": "",  # FIXME
+            "trendIndication": "",  # FIXME
             "lastReceiveId": alert.id,
             "lastReceiveTime": now,
 
         }]
 
         history = {
-            "id": alert.id,
             "event": alert.event,
+            "severity": alert.severity,
             "value": alert.value,
             "text": alert.text,
+            "id": alert.id,
             "createTime": alert.create_time,
             "receiveTime": now
         }
@@ -302,14 +348,7 @@ class Mongo(object):
         no_obj_error = "No matching object found"
         response = self.db.command("findAndModify", CONF.mongo_collection,
                                    allowable_errors=[no_obj_error],
-                                   query={
-                                       "environment": alert.environment,
-                                       "resource": alert.resource,
-                                       '$or': [
-                                           {"event": alert.event},
-                                           {"correlate": alert.event}
-                                       ]
-                                   },
+                                   query=query,
                                    update={
                                        '$set': update,
                                        '$push': {"history": history}
@@ -391,7 +430,9 @@ class Mongo(object):
 
         LOG.debug('Save new alert to database: %s', document)
 
-        return self.db.alerts.insert(document)
+        response = self.db.alerts.insert(document)
+        if response == alert.id:
+            return document
 
     def disconnect(self):
 
