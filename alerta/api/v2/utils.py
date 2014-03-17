@@ -9,7 +9,6 @@ from functools import update_wrapper
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.common.alert import ATTRIBUTES
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -43,7 +42,21 @@ def parse_fields(request):
     if request.args.get('repeat', None):
         query['repeat'] = True if request.args.get('repeat', 'true') == 'true' else False
 
-    for field in [fields for fields in request.args if fields.rstrip('!') in ATTRIBUTES or fields.startswith('tags')]:
+
+    sort = list()
+    if request.args.get('sort-by', None):
+
+        for sort_by in request.args.getlist('sort-by'):
+            if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
+                sort.append((sort_by, -1))  # sort by newest first
+            else:
+                sort.append((sort_by, 1))  # sort by newest first
+    else:
+        sort.append(('lastReceiveTime', -1))
+
+    limit = request.args.get('limit', CONF.console_limit, int)
+
+    for field in [fields for fields in request.args if fields.rstrip('!')]:
         if field in ['id', 'repeat']:
             # Don't process queries on "id" or "repeat" twice
             continue
@@ -80,18 +93,6 @@ def parse_fields(request):
                 else:
                     query[field] = dict()
                     query[field]['$in'] = value
-
-    sort = list()
-    if request.args.get('sort-by', None):
-        for sort_by in request.args.getlist('sort-by'):
-            if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
-                sort.append((sort_by, -1))  # sort by newest first
-            else:
-                sort.append((sort_by, 1))  # sort by newest first
-    else:
-        sort.append(('lastReceiveTime', -1))
-
-    limit = request.args.get('limit', CONF.console_limit, int)
 
     return query, sort, limit, query_time
 

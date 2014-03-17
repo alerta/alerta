@@ -35,12 +35,12 @@ class ApiClient(object):
         LOG.debug('header = %s', msg.get_header())
         LOG.debug('message = %s', msg.get_body())
 
-        if msg.get_type().endswith('Alert'):
+        if msg.event_type.endswith('Alert'):
             url = 'http://%s:%s%s/alert' % (self.host, self.port, self.root)
-        elif msg.get_type() == 'Heartbeat':
+        elif msg.event_type == 'Heartbeat':
             url = 'http://%s:%s%s/heartbeat' % (self.host, self.port, self.root)
         else:
-            LOG.error('Message type %s not supported by this API endpoint.', msg.get_type())
+            LOG.error('Message type %s not supported by this API endpoint.', msg.event_type)
             raise
 
         payload = json.dumps(msg.get_body(), ensure_ascii=False, cls=DateEncoder)

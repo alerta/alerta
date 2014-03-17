@@ -95,7 +95,7 @@ class PagerDutyClient(object):
             "service_key": self.services[service]['key'],
             "event_type": "trigger",
             "description": '%s: %s %s on %s %s' % (alert.environment, alert.severity, alert.event,
-                                                   ','.join(alert.service), alert.resource),
+                                                   ','.join(alert.services), alert.resource),
             "incident_key": incident_key,
             "client": "alerta",
             "client_url": "http://monitoring.guprod.gnm/alerta/widgets/v2/details?id=%s" % alert.get_id(),

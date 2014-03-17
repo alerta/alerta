@@ -27,9 +27,7 @@ class Heartbeat(object):
         self.version = version
         self.create_time = create_time or datetime.datetime.utcnow()
         self.timeout = timeout or DEFAULT_TIMEOUT
-
-    def get_id(self):
-        return self.heartbeatid
+        self.receive_time = None
 
     def get_header(self):
 

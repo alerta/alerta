@@ -9,7 +9,7 @@ from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.amqp import Messaging, FanoutConsumer
 from alerta.common.tokens import LeakyBucket
 from alerta.common.api import ApiClient
 
@@ -19,15 +19,14 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-class IrcbotMessage(MessageHandler):
+class IrcbotMessage(FanoutConsumer):
 
     def __init__(self, mq, irc, tokens):
 
-        self.mq = mq
         self.irc = irc
         self.tokens = tokens
 
-        MessageHandler.__init__(self)
+        FanoutConsumer.__init__(self, mq)
 
     def on_message(self, headers, body):
 
@@ -50,10 +49,6 @@ class IrcbotMessage(MessageHandler):
                 self.irc.send(msg + '\r\n')
             except Exception, e:
                 LOG.error('%s : IRC send failed - %s', ircAlert.get_id(), e)
-
-    def on_disconnected(self):
-
-        self.mq.reconnect()
 
 
 class IrcbotDaemon(Daemon):
@@ -101,9 +96,10 @@ class IrcbotDaemon(Daemon):
         LOG.info('Joined IRC channel %s on %s as USER %s', CONF.irc_channel, CONF.irc_host, CONF.irc_user)
 
         # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=IrcbotMessage(self.mq, irc, tokens))
-        self.mq.subscribe(destination=CONF.outbound_topic)
+        mq = Messaging()
+
+        ircbot = IrcbotMessage(mq.connection)
+        ircbot.run()
 
         while not self.shuttingdown:
             try:
@@ -139,7 +135,7 @@ class IrcbotDaemon(Daemon):
                 else:
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(version=Version)
-                    self.mq.send(heartbeat)
+                    mq.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
@@ -149,7 +145,4 @@ class IrcbotDaemon(Daemon):
         tokens.shutdown()
 
         LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()
-
-
-
+        mq.disconnect()

@@ -7,7 +7,8 @@ import datetime
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.api import ApiClient
+from alerta.common.amqp import Messaging, FanoutConsumer
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
@@ -18,15 +19,9 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-class LoggerMessage(MessageHandler):
+class LoggerMessage(FanoutConsumer):
 
-    def __init__(self, mq):
-
-        self.mq = mq
-
-        MessageHandler.__init__(self)
-
-    def on_message(self, headers, body):
+    def on_message(self, body, message):
 
         LOG.debug("Received: %s", body)
         try:
@@ -66,9 +61,7 @@ class LoggerMessage(MessageHandler):
             except Exception, e:
                 LOG.error('%s : Could not parse elasticsearch reponse: %s', e)
 
-    def on_disconnected(self):
-
-        self.mq.reconnect()
+            message.ack()
 
 
 class LoggerDaemon(Daemon):
@@ -92,10 +85,10 @@ class LoggerDaemon(Daemon):
 
         self.running = True
 
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=LoggerMessage(self.mq))
-        self.mq.subscribe(destination=CONF.outbound_queue)
+        api = ApiClient()
+        mq = Messaging()
+        logger = LoggerMessage(mq.connection)
+        logger.run()
 
         while not self.shuttingdown:
             try:
@@ -104,7 +97,7 @@ class LoggerDaemon(Daemon):
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(version=Version)
-                self.mq.send(heartbeat)
+                api.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
@@ -113,4 +106,4 @@ class LoggerDaemon(Daemon):
         self.running = False
 
         LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()
+        mq.disconnect()

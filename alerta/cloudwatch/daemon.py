@@ -107,17 +107,15 @@ class CloudWatchDaemon(Daemon):
             return
 
         # Defaults
-        alertid = notification['MessageId']
         resource = alarm['Trigger']['Dimensions'][0]['value']
         event = alarm['AlarmName']
         severity = self.cw_state_to_severity(alarm['NewStateValue'])
-        previous_severity = self.cw_state_to_severity(alarm['OldStateValue'])
         group = 'CloudWatch'
         value = alarm['NewStateValue']
         text = alarm['AlarmDescription']
         environment = ['INFRA']
         service = [alarm['AWSAccountId']]  # XXX - use transform_alert() to map AWSAccountId to a useful name
-        tags = {'Region': alarm['Region']}
+        tags = [notification['MessageId'], alarm['Region']]
         correlate = list()
         origin = [notification['TopicArn']]
         timeout = None
@@ -127,14 +125,12 @@ class CloudWatchDaemon(Daemon):
         raw_data = notification['Message']
 
         cloudwatchAlert = Alert(
-            alertid=alertid,
             resource=resource,
             event=event,
             correlate=correlate,
             group=group,
             value=value,
             severity=severity,
-            previous_severity=previous_severity,
             environment=environment,
             service=service,
             text=text,

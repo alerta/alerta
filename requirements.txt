@@ -3,7 +3,8 @@ requests
 PyYAML
 pytz
 prettytable
-stomp.py>=4.0.2
+librabbitmq
+kombu
 pymongo
 Flask
 boto

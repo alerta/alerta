@@ -31,7 +31,7 @@ class Mailer(object):
         config.register_opts(Mailer.mailer_opt)
 
         self.subject = '[%s] %s: %s %s on %s %s' % (alert.status, alert.environment, alert.severity, alert.event,
-                                                    ','.join(alert.service), alert.resource)
+                                                    ','.join(alert.services), alert.resource)
 
         self.text = "-" * 60 + "\n"
         self.text += '[%s] %s: %s %s on %s %s' % (alert.status, alert.environment, alert.severity, alert.event,
@@ -43,7 +43,7 @@ class Mailer(object):
         self.text += "Alert ID: %s\n" % alert.get_id()
         self.text += "Create Time: %s\n" % alert.get_create_time()
         self.text += "Environment: %s\n" % ", ".join(alert.environment)
-        self.text += "Service: %s\n" % ", ".join(alert.service)
+        self.text += "Services: %s\n" % ", ".join(alert.services)
         self.text += "Resource: %s\n" % alert.resource
         self.text += "Event: %s\n" % alert.event
         self.text += "Group: %s\n" % alert.group

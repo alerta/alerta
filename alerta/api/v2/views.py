@@ -139,25 +139,54 @@ def create_alert():
 
     # Create a new alert
     try:
-        newAlert = Alert.parse_alert(request.data)
+        incomingAlert = Alert.parse_alert(request.data)
     except ValueError, e:
         return jsonify(status="error", message=str(e))
 
-    LOG.debug('New alert %s', newAlert)
-    mq.send(newAlert)
+    try:
+        suppress = incomingAlert.transform_alert()
+    except RuntimeError, e:
+        # self.statsd.metric_send('alerta.alerts.error', 1)
+        return jsonify(status="error", message=str(e))
 
-    if newAlert:
-        return jsonify(status="ok", id=newAlert.get_id())
+    if suppress:
+        LOG.info('Suppressing alert %s', incomingAlert.get_id())
+        return jsonify(status="ok", message="alert transform suppressed this alert")
+
+    if db.is_duplicate(incomingAlert, incomingAlert.severity):
+        # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text,
+        #                       value, status, tags and origin
+        #                    2. increment duplicate count
+        #                    3. update and push status if changed
+
+        db.save_duplicate(incomingAlert)
+
+    elif db.is_correlated(incomingAlert):
+        # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime,
+        #                       lastReceiveTime, previousSeverity,
+        #                       severityCode, lastReceiveId, text, value, tags and origin
+        #                    2. set duplicate count to zero
+        #                    3. push history and status if changed
+
+        db.save_correlated(incomingAlert)
+
     else:
-        return jsonify(status="error", message="something went wrong")
+        # New alert so ... 1. insert entire document
+        #                  2. push history and status
+        #                  3. set duplicate count to zero
+
+        LOG.info('%s : New alert -> insert', incomingAlert.get_id())
+        db.save_new(incomingAlert)
+
+    return jsonify(status="ok", id=incomingAlert.get_id())
 
 
-@app.route('/api/alert/<alertid>', methods=['OPTIONS', 'GET'])
+@app.route('/api/alert/<id>', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
-def get_alert(alertid):
+def get_alert(id):
 
-    alert = db.get_alert(alertid=alertid)
+    alert = db.get_alert(id=id)
 
     if alert:
         return jsonify(status="ok", total=1, alert=alert.get_body())
@@ -165,15 +194,15 @@ def get_alert(alertid):
         return jsonify(status="ok", message="not found", total=0, alert=None)
 
 
-@app.route('/api/alert/<alertid>/tag', methods=['OPTIONS', 'PUT'])
+@app.route('/api/alert/<id>/tag', methods=['OPTIONS', 'PUT'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
-def tag_alert(alertid):
+def tag_alert(id):
 
     tag = request.json
 
     if tag:
-        response = db.tag_alert(alertid, tag['tag'])
+        response = db.tag_alert(id, tag['tag'])
     else:
         return jsonify(status="error", message="no data")
 
@@ -183,19 +212,18 @@ def tag_alert(alertid):
         return jsonify(status="error", message="error tagging alert")
 
 
-@app.route('/api/alert/<alertid>/status', methods=['OPTIONS', 'PUT'])
+@app.route('/api/alert/<id>/status', methods=['OPTIONS', 'PUT'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
-def modify_status(alertid):
+def modify_status(id):
 
     status = request.json['status']
     text = request.json['text']
 
     if status:
-        modifiedAlert = db.update_status(alertid=alertid, status=status, text=text)
+        modifiedAlert = db.update_status(id=id, status=status, text=text)
 
         # Forward alert to notify topic and logger queue
-        mq.send(modifiedAlert, CONF.outbound_queue)
         mq.send(modifiedAlert, CONF.outbound_topic)
         LOG.info('%s : Alert forwarded to %s and %s', modifiedAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
 
@@ -208,15 +236,15 @@ def modify_status(alertid):
         return jsonify(status="error", message="error changing alert status")
 
 
-@app.route('/api/alert/<alertid>', methods=['OPTIONS', 'DELETE', 'POST'])
+@app.route('/api/alert/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
-def delete_alert(alertid):
+def delete_alert(id):
 
     error = None
 
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
-        response = db.delete_alert(alertid)
+        response = db.delete_alert(id)
 
         if response:
             return jsonify(status="ok")
@@ -260,14 +288,14 @@ def pagerduty():
 
         LOG.debug('%s', json.dumps(message))
 
-        alertid = message['data']['incident']['incident_key']
+        id = message['data']['incident']['incident_key']
         html_url = message['data']['incident']['html_url']
         incident_number = message['data']['incident']['incident_number']
         incident_url = '<a href="%s">#%s</a>' % (html_url, incident_number)
 
-        LOG.info('PagerDuty incident #%s webhook for alert %s', incident_number, alertid)
+        LOG.info('PagerDuty incident #%s webhook for alert %s', incident_number, id)
 
-        LOG.error('previous status %s', db.get_alert(alertid=alertid).status)
+        LOG.error('previous status %s', db.get_alert(id=id).status)
 
         if message['type'] == 'incident.trigger':
             status = status_code.OPEN
@@ -306,11 +334,11 @@ def pagerduty():
 
         LOG.info('PagerDuty webhook %s change status to %s', message['type'], status)
 
-        pdAlert = db.update_status(alertid=alertid, status=status, text=text)
-        db.tag_alert(alertid=alertid, tag='incident=#%s' % incident_number)
+        pdAlert = db.update_status(id=id, status=status, text=text)
+        db.tag_alert(id=id, tag='incident=#%s' % incident_number)
 
         LOG.error('returned status %s', pdAlert.status)
-        LOG.error('current status %s', db.get_alert(alertid=alertid).status)
+        LOG.error('current status %s', db.get_alert(id=id).status)
 
         # Forward alert to notify topic and logger queue
         if pdAlert:
@@ -343,7 +371,8 @@ def create_heartbeat():
         return jsonify(status="error", message=str(e))
 
     LOG.debug('New heartbeat %s', heartbeat)
-    mq.send(heartbeat)
+    heartbeat.receive_now()
+    db.update_hb(heartbeat)
 
     if heartbeat:
         return jsonify(status="ok", id=heartbeat.get_id())
