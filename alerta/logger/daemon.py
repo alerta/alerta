@@ -12,7 +12,7 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
 
-Version = '2.1.0'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -35,11 +35,11 @@ class LoggerMessage(MessageHandler):
             return
 
         if logAlert:
-            LOG.info('%s : [%s] %s', logAlert.last_receive_id, logAlert.status, logAlert.summary)
+            LOG.info('%s : [%s] %s', logAlert.last_receive_id, logAlert.status, logAlert.text)
 
             source_host, _, source_path = logAlert.resource.partition(':')
             document = {
-                '@message': logAlert.summary,
+                '@message': logAlert.text,
                 '@source': logAlert.resource,
                 '@source_host': source_host,
                 '@source_path': source_path,

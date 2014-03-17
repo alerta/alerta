@@ -13,7 +13,7 @@ from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
 
-Version = '2.1.0'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -176,12 +176,10 @@ class SnmpTrapHandler(object):
         group = 'SNMP'
         value = trapvars['$w']
         text = trapvars['$W']
-        environment = ['INFRA']
+        environment = 'PROD'
         service = ['Network']
-        tags = {'Version': version}
+        tags = [version]
         timeout = None
-        threshold_info = None
-        summary = None
         create_time = datetime.datetime.strptime('%sT%s.000Z' % (trapvars['$x'], trapvars['$X']), '%Y-%m-%dT%H:%M:%S.%fZ')
 
         snmptrapAlert = Alert(
@@ -197,8 +195,6 @@ class SnmpTrapHandler(object):
             event_type='snmptrapAlert',
             tags=tags,
             timeout=timeout,
-            threshold_info=threshold_info,
-            summary=summary,
             create_time=create_time,
             raw_data=data,
         )
@@ -215,4 +211,3 @@ class SnmpTrapHandler(object):
             snmptrapAlert = Heartbeat(origin=snmptrapAlert.origin, version='n/a', timeout=snmptrapAlert.timeout)
 
         return snmptrapAlert
-

@@ -10,23 +10,13 @@ from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
-Version = '2.1.0'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-
-class SyslogMessage(MessageHandler):
-
-    def __init__(self, mq):
-        self.mq = mq
-        MessageHandler.__init__(self)
-
-    def on_disconnected(self):
-        self.mq.reconnect()
 
 
 class SyslogDaemon(Daemon):
@@ -70,9 +60,7 @@ class SyslogDaemon(Daemon):
 
         self.statsd = StatsD()  # graphite metrics
 
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=SyslogMessage(self.mq))
+        self.api = ApiClient()
 
         self.dedup = DeDup(by_value=True)
 
@@ -200,13 +188,11 @@ class SyslogDaemon(Daemon):
             group = 'Syslog'
             value = level
             text = MSG
-            environment = ['INFRA']
+            environment = 'PROD'
             service = ['Platform']
-            tags = {'syslogPriority': '%s.%s' % (facility, level)}
+            tags = ['%s.%s' % (facility, level)]
             correlate = list()
             timeout = None
-            threshold_info = None
-            summary = None
             raw_data = msg
 
             syslogAlert = Alert(
@@ -222,8 +208,6 @@ class SyslogDaemon(Daemon):
                 event_type='syslogAlert',
                 tags=tags,
                 timeout=timeout,
-                threshold_info=threshold_info,
-                summary=summary,
                 raw_data=raw_data,
             )
 

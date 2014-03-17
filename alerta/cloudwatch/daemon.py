@@ -14,23 +14,13 @@ from alerta.common.alert import Alert
 from alerta.common import severity_code
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
-Version = '2.1.1'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-
-class CloudWatchMessage(MessageHandler):
-
-    def __init__(self, mq):
-        self.mq = mq
-        MessageHandler.__init__(self)
-
-    def on_disconnected(self):
-        self.mq.reconnect()
 
 
 class CloudWatchDaemon(Daemon):
@@ -55,14 +45,13 @@ class CloudWatchDaemon(Daemon):
         self.statsd = StatsD()  # graphite metrics
 
         # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=CloudWatchMessage(self.mq))
+        self.api = ApiClient()
 
         self.dedup = DeDup(by_value=True)
 
         LOG.info('Connecting to SQS queue %s', CONF.cloudwatch_sqs_queue)
         try:
-            sqs = boto.sqs.connect_to_region(
+            connection = boto.sqs.connect_to_region(
                 CONF.cloudwatch_sqs_region,
                 aws_access_key_id=CONF.cloudwatch_access_key,
                 aws_secret_access_key=CONF.cloudwatch_secret_key
@@ -72,8 +61,8 @@ class CloudWatchDaemon(Daemon):
             sys.exit(1)
 
         try:
-            q = sqs.create_queue(CONF.cloudwatch_sqs_queue)
-            q.set_message_class(RawMessage)
+            sqs = connection.create_queue(CONF.cloudwatch_sqs_queue)
+            sqs.set_message_class(RawMessage)
         except boto.exception.SQSError, e:
             LOG.error('SQS queue error: %s', e)
             sys.exit(1)
@@ -82,30 +71,27 @@ class CloudWatchDaemon(Daemon):
             try:
                 LOG.info('Waiting for CloudWatch alarms...')
                 try:
-                    m = q.read(wait_time_seconds=20)
+                    message = sqs.read(wait_time_seconds=20)
                 except boto.exception.SQSError, e:
                     LOG.warning('Could not read from queue: %s', e)
                     time.sleep(20)
 
-                if m:
-                    message = m.get_body()
-                    cloudwatchAlert = self.parse_notification(message)
+                if message:
+                    body = message.get_body()
+                    cloudwatchAlert = self.parse_notification(body)
                     if self.dedup.is_send(cloudwatchAlert):
-                        self.mq.send(cloudwatchAlert)
-                    q.delete_message(m)
+                        self.api.send(cloudwatchAlert)
+                    sqs.delete_message(message)
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(version=Version)
-                self.mq.send(heartbeat)
+                self.api.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
 
         LOG.info('Shutdown request received...')
         self.running = False
-
-        LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()
 
     def parse_notification(self, message):
 
@@ -133,10 +119,10 @@ class CloudWatchDaemon(Daemon):
         service = [alarm['AWSAccountId']]  # XXX - use transform_alert() to map AWSAccountId to a useful name
         tags = {'Region': alarm['Region']}
         correlate = list()
-        origin = notification['TopicArn']
+        origin = [notification['TopicArn']]
         timeout = None
         threshold_info = alarm['NewStateReason']
-        summary = notification['Subject']
+        more_info = notification['Subject']
         create_time = datetime.datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
         raw_data = notification['Message']
 
@@ -154,10 +140,12 @@ class CloudWatchDaemon(Daemon):
             text=text,
             event_type='cloudwatchAlarm',
             tags=tags,
+            attributes={
+                'thresholdInfo': threshold_info,
+                'moreInfo': more_info
+            },
             origin=origin,
             timeout=timeout,
-            threshold_info=threshold_info,
-            summary=summary,
             create_time=create_time,
             raw_data=raw_data,
         )

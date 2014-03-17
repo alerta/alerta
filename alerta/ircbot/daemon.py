@@ -13,7 +13,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.tokens import LeakyBucket
 from alerta.common.api import ApiClient
 
-Version = '2.2.0'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -44,8 +44,9 @@ class IrcbotMessage(MessageHandler):
         if ircAlert:
             LOG.info('%s : Send IRC message to %s', ircAlert.get_id(), CONF.irc_channel)
             try:
-                msg = 'PRIVMSG %s :%s [%s] %s' % (CONF.irc_channel, ircAlert.get_id(short=True),
-                                                  ircAlert.status, ircAlert.summary)
+                msg = 'PRIVMSG %s :%s [%s] %s - %s %s is %s on %s %s' % (CONF.irc_channel, ircAlert.get_id(short=True),
+                      ircAlert.status, ircAlert.environment, ircAlert.severity, ircAlert.event, ircAlert.value,
+                      ','.join(ircAlert.service), ircAlert.resource)
                 self.irc.send(msg + '\r\n')
             except Exception, e:
                 LOG.error('%s : IRC send failed - %s', ircAlert.get_id(), e)

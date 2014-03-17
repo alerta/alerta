@@ -100,8 +100,9 @@ class MailerDaemon(Daemon):
                         email = Mailer(mailAlert)
                         mail_to = CONF.mail_list.split(',')
 
-                        if 'mailto' in mailAlert.tags:
-                            mail_to.append(mailAlert.tags['mailto'])
+                        for tag in mailAlert.tags:
+                            if tag.startswith('email'):
+                                mail_to.append(tag.split(':')[1])
                         email.send(mail_to=mail_to)
                         try:
                             del self.onhold[alertid]

@@ -82,6 +82,3 @@ elif any(tag.startswith('cluster:zabbix') for tag in tags):
     service = ['SharedSvcs']
 else:
     service = ['Unknown']
-
-# Redo summary because service has changed
-summary = '%s - %s %s is %s on %s %s' % (','.join(environment), severity, event, value, ','.join(service), resource)

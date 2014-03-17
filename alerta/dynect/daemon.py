@@ -11,23 +11,13 @@ from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.api import ApiClient
 from alerta.common.dedup import DeDup
 
-Version = '2.1.0'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-
-class DynectMessage(MessageHandler):
-
-    def __init__(self, mq):
-        self.mq = mq
-        MessageHandler.__init__(self)
-
-    def on_disconnected(self):
-        self.mq.reconnect()
 
 
 class DynectDaemon(Daemon):
@@ -53,9 +43,7 @@ class DynectDaemon(Daemon):
 
         self.running = True
 
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=DynectMessage(self.mq))
+        self.api = ApiClient()
 
         while not self.shuttingdown:
             try:
@@ -67,7 +55,7 @@ class DynectDaemon(Daemon):
 
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(version=Version)
-                    self.mq.send(heartbeat)
+                    self.api.send(heartbeat)
 
                 LOG.debug('Waiting for next check run...')
                 time.sleep(CONF.loop_every)
@@ -128,12 +116,10 @@ class DynectDaemon(Daemon):
             # Defaults
             group = 'GSLB'
             value = self.info[resource]['status']
-            environment = ['PROD']
+            environment = 'PROD'
             service = ['Network']
-            tags = dict()
+            tags = list()
             timeout = None
-            threshold_info = None
-            summary = None
             raw_data = self.info[resource]['rawData']
 
             dynectAlert = Alert(
@@ -149,8 +135,6 @@ class DynectDaemon(Daemon):
                 event_type='serviceAlert',
                 tags=tags,
                 timeout=timeout,
-                threshold_info=threshold_info,
-                summary=summary,
                 raw_data=raw_data,
             )
 

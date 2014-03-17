@@ -17,11 +17,11 @@ from alerta.common.alert import Alert
 from alerta.common.dedup import DeDup
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.api import ApiClient
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-Version = '2.1.0'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -63,7 +63,7 @@ def init_urls():
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, mq, queue, dedup, carbon):
+    def __init__(self, api, queue, dedup, carbon):
 
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
@@ -73,7 +73,7 @@ class WorkerThread(threading.Thread):
         self.previousEvent = {}
 
         self.queue = queue   # internal queue
-        self.mq = mq               # message broker
+        self.api = api               # message broker
         self.dedup = dedup
         self.carbon = carbon
         
@@ -93,6 +93,7 @@ class WorkerThread(threading.Thread):
                 LOG.info('%s is shutting down.', self.getName())
                 break
 
+            code_regex = check.get('code', None)
             search_string = check.get('search', None)
             rule = check.get('rule', None)
             warn_thold = check.get('warning', CONF.urlmon_slow_warning)
@@ -171,6 +172,11 @@ class WorkerThread(threading.Thread):
                 severity = severity_code.MAJOR
                 value = reason
                 text = 'Error during connection or data transfer (timeout=%d).' % CONF.urlmon_max_timeout
+            elif re.match(code_regex, code):
+                event = 'HttpResponseOK'
+                severity = severity_code.NORMAL
+                value = '%s (%d)' % (status, code)
+                text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
             elif code >= 500:
                 event = 'HttpServerError'
                 severity = severity_code.MAJOR
@@ -260,7 +266,7 @@ class WorkerThread(threading.Thread):
             environment = check['environment']
             service = check['service']
             text = text
-            tags = check.get('tags', dict())
+            tags = check.get('tags', list())
             threshold_info = "%s : RT > %d RT > %d x %s" % (check['url'], warn_thold, crit_thold, check.get('count', 1))
 
             urlmonAlert = Alert(
@@ -275,7 +281,9 @@ class WorkerThread(threading.Thread):
                 text=text,
                 event_type='serviceAlert',
                 tags=tags,
-                threshold_info=threshold_info,
+                attributes={
+                    'thresholdInfo': threshold_info
+                }
             )
 
             suppress = urlmonAlert.transform_alert()
@@ -284,22 +292,12 @@ class WorkerThread(threading.Thread):
                 LOG.debug('%s', urlmonAlert)
 
             elif self.dedup.is_send(urlmonAlert):
-                self.mq.send(urlmonAlert)
+                self.api.send(urlmonAlert)
 
             self.queue.task_done()
             LOG.info('%s check complete.', self.getName())
 
         self.queue.task_done()
-
-
-class UrlmonMessage(MessageHandler):
-
-    def __init__(self, mq):
-        self.mq = mq
-        MessageHandler.__init__(self)
-
-    def on_disconnected(self):
-        self.mq.reconnect()
 
 
 class UrlmonDaemon(Daemon):
@@ -324,9 +322,7 @@ class UrlmonDaemon(Daemon):
         # Create internal queue
         self.queue = Queue.Queue()
 
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=UrlmonMessage(self.mq))
+        self.api = ApiClient()
 
         self.dedup = DeDup()
 
@@ -338,7 +334,7 @@ class UrlmonDaemon(Daemon):
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.mq, self.queue, self.dedup, self.carbon)
+            w = WorkerThread(self.api, self.queue, self.dedup, self.carbon)
             try:
                 w.start()
             except Exception, e:
@@ -353,7 +349,7 @@ class UrlmonDaemon(Daemon):
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(version=Version)
-                self.mq.send(heartbeat)
+                self.api.send(heartbeat)
 
                 time.sleep(CONF.loop_every)
                 LOG.info('URL check queue length is %d', self.queue.qsize())
@@ -368,11 +364,3 @@ class UrlmonDaemon(Daemon):
         for i in range(CONF.server_threads):
             self.queue.put(None)
         w.join()
-
-        LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()
-
-
-
-
-

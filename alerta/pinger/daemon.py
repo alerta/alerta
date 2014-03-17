@@ -12,12 +12,12 @@ from alerta.common import config
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.api import ApiClient
 from alerta.common.daemon import Daemon
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
-Version = '2.1.0'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -51,14 +51,14 @@ def init_targets():
 
 class WorkerThread(threading.Thread):
 
-    def __init__(self, mq, queue, dedup, carbon):
+    def __init__(self, api, queue, dedup, carbon):
 
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
 
         self.last_event = {}
         self.queue = queue   # internal queue
-        self.mq = mq               # message broker
+        self.api = api               # message broker
         self.dedup = dedup
         self.carbon = carbon  # graphite metrics
 
@@ -130,8 +130,6 @@ class WorkerThread(threading.Thread):
             group = 'Ping'
             correlate = _PING_ALERTS
             timeout = None
-            threshold_info = None
-            summary = None
             raw_data = stdout
 
             pingAlert = Alert(
@@ -147,8 +145,6 @@ class WorkerThread(threading.Thread):
                 event_type='serviceAlert',
                 tags=None,
                 timeout=timeout,
-                threshold_info=threshold_info,
-                summary=summary,
                 raw_data=raw_data,
             )
 
@@ -199,16 +195,6 @@ class WorkerThread(threading.Thread):
         return rc, rtt, loss, stdout
 
 
-class PingerMessage(MessageHandler):
-
-    def __init__(self, mq):
-        self.mq = mq
-        MessageHandler.__init__(self)
-
-    def on_disconnected(self):
-        self.mq.reconnect()
-
-
 class PingerDaemon(Daemon):
 
     pinger_opts = {
@@ -233,9 +219,7 @@ class PingerDaemon(Daemon):
         # Create internal queue
         self.queue = Queue.Queue()
 
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=PingerMessage(self.mq))
+        self.api = ApiClient()
 
         self.dedup = DeDup()
 
@@ -247,7 +231,7 @@ class PingerDaemon(Daemon):
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
         for i in range(CONF.server_threads):
-            w = WorkerThread(self.mq, self.queue, self.dedup, self.carbon)
+            w = WorkerThread(self.api, self.queue, self.dedup, self.carbon)
             try:
                 w.start()
             except Exception, e:
@@ -267,7 +251,7 @@ class PingerDaemon(Daemon):
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(version=Version)
-                self.mq.send(heartbeat)
+                self.api.send(heartbeat)
 
                 time.sleep(CONF.loop_every)
                 LOG.info('Ping queue length is %d', self.queue.qsize())
@@ -282,6 +266,3 @@ class PingerDaemon(Daemon):
         for i in range(CONF.server_threads):
             self.queue.put(None)
         w.join()
-
-        LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()
