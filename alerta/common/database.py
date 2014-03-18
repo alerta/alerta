@@ -197,9 +197,8 @@ class Mongo(object):
 
     def save_duplicate(self, alert):
         """
-        Update alert value, text and rawData, increment duplicate count and set repeat=True
-        but don't append to history. Minimal changes.
-        *** MUST RETURN DOCUMENT SO CAN PUT IT ON NOTIFY TOPIC ***
+        Update alert value, text and rawData, increment duplicate count and set repeat=True, and
+        keep track of last receive id and time but don't append to history unless status changes.
         """
 
         previous_status = self.get_status(alert)
@@ -280,9 +279,8 @@ class Mongo(object):
 
     def save_correlated(self, alert):
         """
-        Update alert value, text and rawData, increment duplicate count and set repeat=True
-        but don't append to history. Minimal changes.
-        *** MUST RETURN DOCUMENT SO CAN PUT IT ON NOTIFY TOPIC ***
+        Update alert key attributes, reset duplicate count and set repeat=False, keep track of last
+        receive id and time, appending all to history. Append to history again if status changes.
         """
 
         previous_severity = self.get_severity(alert)
@@ -645,11 +643,13 @@ class Mongo(object):
                                        new=True,
                                        upsert=True
                                        )["value"]
+            return heartbeat_id
         else:
+            update = update['$set']
             update["_id"] = heartbeat.id
             response = self.db.heartbeats.insert(update)
 
-        return response['_id']
+            return heartbeat.id
 
     def delete_heartbeat(self, id):
 
