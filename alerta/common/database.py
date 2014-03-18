@@ -74,19 +74,12 @@ class Mongo(object):
     #                                     '$or': [{"event": alert.event}, {"correlate": alert.event}]},
     #                                    {"severity": 1, "_id": 0})['severity']
     #
+
     def get_count(self, query=None):
         """
         Return total number of alerts that meet the query filter.
         """
-
         return self.db.alerts.find(query).count()
-
-    def get_counts(self, query=None):
-        """
-        Return total and dict() of severity and status counts.
-        """
-
-        return self.db.alerts.find(query, {"severity": 1, "status": 1})
 
     def get_alerts(self, query=None, fields=None, sort=None, limit=0):
 
@@ -125,46 +118,6 @@ class Mongo(object):
                 )
             )
         return alerts
-
-    def get_alert(self, id):
-
-        if len(id) == 8:
-            query = {'$or': [{'_id': {'$regex': '^' + id}}, {'lastReceiveId': {'$regex': '^' + id}}]}
-        else:
-            query = {'$or': [{'_id': id}, {'lastReceiveId': id}]}
-
-        response = self.db.alerts.find_one(query)
-        if not response:
-            return
-
-        return AlertDocument(
-            id=response['_id'],
-            resource=response['resource'],
-            event=response['event'],
-            environment=response['environment'],
-            severity=response['severity'],
-            correlate=response['correlate'],
-            status=response['status'],
-            service=response['service'],
-            group=response['group'],
-            value=response['value'],
-            text=response['text'],
-            tags=response['tags'],
-            attributes=response['attributes'],
-            origin=response['origin'],
-            event_type=response['type'],
-            create_time=response['createTime'],
-            timeout=response['timeout'],
-            raw_data=response['rawData'],
-            duplicate_count=response['duplicateCount'],
-            repeat=response['repeat'],
-            previous_severity=response['previousSeverity'],
-            trend_indication=response['trendIndication'],
-            receive_time=response['receiveTime'],
-            last_receive_id=response['lastReceiveId'],
-            last_receive_time=response['lastReceiveTime'],
-            history=response['history']
-        )
 
     def is_duplicate(self, alert):
 
@@ -414,6 +367,62 @@ class Mongo(object):
         response = self.db.alerts.insert(document)
         if response == alert.id:
             return document
+
+
+    def get_alert(self, id):
+
+        if len(id) == 8:
+            query = {'$or': [{'_id': {'$regex': '^' + id}}, {'lastReceiveId': {'$regex': '^' + id}}]}
+        else:
+            query = {'$or': [{'_id': id}, {'lastReceiveId': id}]}
+
+        response = self.db.alerts.find_one(query)
+        if not response:
+            return
+
+        return AlertDocument(
+            id=response['_id'],
+            resource=response['resource'],
+            event=response['event'],
+            environment=response['environment'],
+            severity=response['severity'],
+            correlate=response['correlate'],
+            status=response['status'],
+            service=response['service'],
+            group=response['group'],
+            value=response['value'],
+            text=response['text'],
+            tags=response['tags'],
+            attributes=response['attributes'],
+            origin=response['origin'],
+            event_type=response['type'],
+            create_time=response['createTime'],
+            timeout=response['timeout'],
+            raw_data=response['rawData'],
+            duplicate_count=response['duplicateCount'],
+            repeat=response['repeat'],
+            previous_severity=response['previousSeverity'],
+            trend_indication=response['trendIndication'],
+            receive_time=response['receiveTime'],
+            last_receive_id=response['lastReceiveId'],
+            last_receive_time=response['lastReceiveTime'],
+            history=response['history']
+        )
+
+    def tag_alert(self, id, tags):
+        """
+        Append tags to tag list. Don't add same tag more than once.
+        """
+        response = self.db.alerts.update({'_id': {'$regex': '^' + id}}, {'$addToSet': {"tags": {'$each': tags}}})
+
+        return True if 'ok' in response else False
+
+    def get_counts(self, query=None):
+        """
+        Return total and dict() of severity and status counts.
+        """
+
+        return self.db.alerts.find(query, {"severity": 1, "status": 1})
 
     def disconnect(self):
 

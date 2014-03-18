@@ -195,22 +195,21 @@ def get_alert(id):
         return jsonify(status="ok", message="not found", total=0, alert=None)
 
 
-@app.route('/api/alert/<id>/tag', methods=['OPTIONS', 'PUT'])
+@app.route('/api/alert/<id>/tag', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def tag_alert(id):
 
-    tag = request.json
-
-    if tag:
-        response = db.tag_alert(id, tag['tag'])
+    data = request.json
+    if data:
+        response = db.tag_alert(id, data['tags'])
     else:
         return jsonify(status="error", message="no data")
 
     if response:
         return jsonify(status="ok")
     else:
-        return jsonify(status="error", message="error tagging alert")
+        return jsonify(status="error", message="failed to tag alert")
 
 
 @app.route('/api/alert/<id>/status', methods=['OPTIONS', 'PUT'])
