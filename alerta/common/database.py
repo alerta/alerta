@@ -368,7 +368,6 @@ class Mongo(object):
         if response == alert.id:
             return document
 
-
     def get_alert(self, id):
 
         if len(id) == 8:
@@ -414,6 +413,12 @@ class Mongo(object):
         Append tags to tag list. Don't add same tag more than once.
         """
         response = self.db.alerts.update({'_id': {'$regex': '^' + id}}, {'$addToSet': {"tags": {'$each': tags}}})
+
+        return True if 'ok' in response else False
+
+    def delete_alert(self, id):
+
+        response = self.db.alerts.remove({'_id': {'$regex': '^' + id}})
 
         return True if 'ok' in response else False
 

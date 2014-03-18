@@ -241,18 +241,13 @@ def modify_status(id):
 @jsonp
 def delete_alert(id):
 
-    error = None
-
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
         response = db.delete_alert(id)
 
         if response:
             return jsonify(status="ok")
         else:
-            return jsonify(status="error", message=error)
-
-    else:
-        return jsonify(status="error", message="POST request without '_method' override?")
+            return jsonify(status="error", message="failed to delete alert")
 
 
 # Return severity and status counts
