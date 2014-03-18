@@ -93,6 +93,24 @@ class Mongo(object):
 
         return self.db.alerts.find_one(query, fields={"severity": 1, "_id": 0})['severity']
 
+    def get_status(self, alert):
+
+        query = {
+            "environment": alert.environment,
+            "resource": alert.resource,
+            '$or': [
+                {
+                    "event": alert.event,
+                },
+                {
+                    "correlate": alert.event,
+                }],
+            "severity": alert.severity
+        }
+
+        print self.db.alerts.find_one(query, fields={"status": 1, "_id": 0})
+        return self.db.alerts.find_one(query, fields={"status": 1, "_id": 0})['status']
+
     def get_count(self, query=None):
         """
         Return total number of alerts that meet the query filter.
@@ -179,6 +197,12 @@ class Mongo(object):
         *** MUST RETURN DOCUMENT SO CAN PUT IT ON NOTIFY TOPIC ***
         """
 
+        previous_status = self.get_status(alert)
+        if alert.status != status_code.UNKNOWN and alert.status != previous_status:
+            status = alert.status
+        else:
+            status = previous_status
+
         query = {
             "environment": alert.environment,
             "resource": alert.resource,
@@ -188,24 +212,34 @@ class Mongo(object):
 
         now = datetime.datetime.utcnow()
         update = {
-            "value": alert.value,
-            "text": alert.text,
-            "rawData": alert.raw_data,
-            "repeat": True,
-            "lastReceiveId": alert.id,
-            "lastReceiveTime": now
+            '$set': {
+                "status": status,
+                "value": alert.value,
+                "text": alert.text,
+                "rawData": alert.raw_data,
+                "repeat": True,
+                "lastReceiveId": alert.id,
+                "lastReceiveTime": now
+            },
+            '$inc': {"duplicateCount": 1}
         }
-
+        if status != previous_status:
+            update['$push'] = {
+                "history": {
+                    "status": status,
+                    "text": "duplicate alert status change",
+                    "id": alert.id,
+                    "updateTime": now
+                }
+            }
+        print update
         LOG.debug('Update duplicate alert in database: %s', update)
 
         no_obj_error = "No matching object found"
         response = self.db.command("findAndModify", CONF.mongo_collection,
                                    allowable_errors=[no_obj_error],
                                    query=query,
-                                   update={
-                                       '$set': update,
-                                       '$inc': {"duplicateCount": 1}
-                                   },
+                                   update=update,
                                    new=True,
                                    fields={"history": 0}
                                    )["value"]
@@ -397,7 +431,7 @@ class Mongo(object):
             "duplicateCount": 0,
             "repeat": False,
             "previousSeverity": severity_code.UNKNOWN,
-            "trendIndication": severity_code.trend(severity_code.UNKNOWN, alert.severity),
+            "trendIndication": trend_indication,
             "receiveTime": now,
             "lastReceiveId": alert.id,
             "lastReceiveTime": now,
