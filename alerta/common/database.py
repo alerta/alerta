@@ -1,10 +1,7 @@
+
 import sys
 import datetime
-import pytz
 import pymongo
-
-from pymongo import errors
-from collections import defaultdict
 
 from alerta.common import log as logging
 from alerta.common import config
@@ -31,6 +28,12 @@ class Mongo(object):
 
         config.register_opts(Mongo.mongo_opts)
 
+        self.db = None
+        self.conn = None
+        self.connect()
+
+    def connect(self):
+
         # Connect to MongoDB
         try:
             self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port)  # version >= 2.4
@@ -46,6 +49,8 @@ class Mongo(object):
             LOG.error('MongoDB database error : %s', e)
             sys.exit(1)
 
+        LOG.info('Connected to mongodb://%s:%s/%s', CONF.mongo_host, CONF.mongo_port, CONF.mongo_database)
+
         if CONF.mongo_password:
             try:
                 self.db.authenticate(CONF.mongo_username, password=CONF.mongo_password)
@@ -53,7 +58,7 @@ class Mongo(object):
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
-        LOG.info('Connected to mongodb://%s:%s/%s', CONF.mongo_host, CONF.mongo_port, CONF.mongo_database)
+        LOG.info('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
 
         self.create_indexes()
 
