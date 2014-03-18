@@ -333,7 +333,7 @@ class AlertDocument(object):
     def get_body(self):
 
         return {
-            '_id': self.id,
+            'id': self.id,
             'resource': self.resource,
             'event': self.event,
             'environment': self.environment,

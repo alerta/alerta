@@ -53,7 +53,7 @@ class Mongo(object):
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
-        LOG.info('Connected to MongoDB server %s:%s', CONF.mongo_host, CONF.mongo_port)
+        LOG.info('Connected to mongodb://%s:%s/%s', CONF.mongo_host, CONF.mongo_port, CONF.mongo_database)
 
         self.create_indexes()
 
@@ -129,9 +129,7 @@ class Mongo(object):
             "severity": alert.severity
         }
 
-        found = self.db.alerts.find_one(query=query)
-
-        return bool(found)
+        return bool(self.db.alerts.find_one(query))
 
     def is_correlated(self, alert):
 
@@ -155,8 +153,7 @@ class Mongo(object):
                 }]
         }
 
-        found = self.db.alerts.find_one(query=query)
-        return bool(found)
+        return bool(self.db.alerts.find_one(query))
 
     def save_duplicate(self, alert):
         """
@@ -333,41 +330,70 @@ class Mongo(object):
             "createTime": alert.create_time,
             "receiveTime": now
         }]
+        alert = {
+            "_id": alert.id,
+            "resource": alert.resource,
+            "event": alert.event,
+            "environment": alert.environment,
+            "severity": alert.severity,
+            "correlate": alert.correlate,
+            "status": alert.status,
+            "service": alert.service,
+            "group": alert.group,
+            "value": alert.value,
+            "text": alert.text,
+            "tags": alert.tags,
+            "attributes": alert.attributes,
+            "origin": alert.origin,
+            "type": alert.event_type,
+            "createTime": alert.create_time,
+            "timeout": alert.timeout,
+            "rawData": alert.raw_data,
+            "duplicateCount": 0,
+            "repeat": False,
+            "previousSeverity": severity_code.UNKNOWN,
+            "trendIndication": severity_code.trend(severity_code.UNKNOWN, alert.severity),
+            "receiveTime": now,
+            "lastReceiveId": alert.id,
+            "lastReceiveTime": now,
+            "history": history
+        }
 
-        document = AlertDocument(
-            id=alert.id,
-            resource=alert.resource,
-            event=alert.event,
-            environment=alert.environment,
-            severity=alert.severity,
-            correlate=alert.correlate,
-            status=alert.status,
-            service=alert.service,
-            group=alert.group,
-            value=alert.value,
-            text=alert.text,
-            tags=alert.tags,
-            attributes=alert.attributes,
-            origin=alert.origin,
-            event_type=alert.event_type,
-            create_time=alert.create_time,
-            timeout=alert.timeout,
-            raw_data=alert.raw_data,
-            duplicate_count=0,
-            repeat=False,
-            previous_severity=severity_code.UNKNOWN,
-            trend_indication=severity_code.trend(severity_code.UNKNOWN, alert.severity),
-            receive_time=now,
-            last_receive_id=alert.id,
-            last_receive_time=now,
-            history=history
-        ).get_body()
+        LOG.debug('Insert new alert in database: %s', alert)
 
-        LOG.debug('Save new alert to database: %s', document)
+        response = self.db.alerts.insert(alert)
 
-        response = self.db.alerts.insert(document)
-        if response == alert.id:
-            return document
+        if not response:
+            return
+
+        return AlertDocument(
+            id=alert['_id'],
+            resource=alert['resource'],
+            event=alert['event'],
+            environment=alert['environment'],
+            severity=alert['severity'],
+            correlate=alert['correlate'],
+            status=alert['status'],
+            service=alert['service'],
+            group=alert['group'],
+            value=alert['value'],
+            text=alert['text'],
+            tags=alert['tags'],
+            attributes=alert['attributes'],
+            origin=alert['origin'],
+            event_type=alert['type'],
+            create_time=alert['createTime'],
+            timeout=alert['timeout'],
+            raw_data=alert['rawData'],
+            duplicate_count=alert['duplicateCount'],
+            repeat=alert['repeat'],
+            previous_severity=alert['previousSeverity'],
+            trend_indication=alert['trendIndication'],
+            receive_time=alert['receiveTime'],
+            last_receive_id=alert['lastReceiveId'],
+            last_receive_time=alert['lastReceiveTime'],
+            history=list()
+        )
 
     def get_alert(self, id):
 
@@ -463,31 +489,23 @@ class Mongo(object):
 
         LOG.debug('Save heartbeat to database: %s', update)
 
-        # FIXME -- when Mongo 2.6 is release delete the following block of code
-        # FIXME    and uncomment the "$setOnInsert _id" line below
+        heartbeat_id = self.db.heartbeats.find_one({"origin": heartbeat.origin}, {})
 
-        heartbeat_id = self.db.heartbeats.find_one({"origin": heartbeat.origin}, {"_id": 1})
-        if not heartbeat_id:
+        if heartbeat_id:
+            no_obj_error = "No matching object found"
+            response = self.db.command("findAndModify", 'heartbeats',
+                                       allowable_errors=[no_obj_error],
+                                       query={"origin": heartbeat.origin},
+                                       update={
+                                           #  '$setOnInsert': {"_id": heartbeat.id},
+                                           '$set': update
+                                       },
+                                       new=True,
+                                       upsert=True
+                                       )["value"]
+        else:
             update["_id"] = heartbeat.id
             response = self.db.heartbeats.insert(update)
-            if response == heartbeat.id:
-                return heartbeat.id
-            else:
-                return None
-
-        # FIXME -- ^^^ end of code block to be deleted when Mongo 2.6 is released ^^^
-
-        no_obj_error = "No matching object found"
-        response = self.db.command("findAndModify", 'heartbeats',
-                                   allowable_errors=[no_obj_error],
-                                   query={"origin": heartbeat.origin},
-                                   update={
-                                       #  '$setOnInsert': {"_id": heartbeat.id},  # FIXME - uncomment for Mongo 2.6
-                                       '$set': update
-                                   },
-                                   new=True,
-                                   upsert=True
-                                   )["value"]
 
         return response['_id']
 

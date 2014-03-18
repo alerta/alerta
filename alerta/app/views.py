@@ -160,7 +160,7 @@ def create_alert():
         #                    2. increment duplicate count
         #                    3. update and push status if changed
 
-        alert_id = db.save_duplicate(incomingAlert)
+        alert = db.save_duplicate(incomingAlert)
 
     elif db.is_correlated(incomingAlert):
         # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime,
@@ -169,7 +169,7 @@ def create_alert():
         #                    2. set duplicate count to zero
         #                    3. push history and status if changed
 
-        alert_id = db.save_correlated(incomingAlert)
+        alert = db.save_correlated(incomingAlert)
 
     else:
         # New alert so ... 1. insert entire document
@@ -177,9 +177,13 @@ def create_alert():
         #                  3. set duplicate count to zero
 
         LOG.info('%s : New alert -> insert', incomingAlert.get_id())
-        alert_id = db.save_alert(incomingAlert)
+        alert = db.save_alert(incomingAlert)
 
-    return jsonify(status="ok", id=alert_id)
+    print alert
+    if alert:
+        return jsonify(status="ok", id=alert.id)
+    else:
+        return jsonify(status="error", message="alert insert or update failed")
 
 
 @app.route('/api/alert/<id>', methods=['OPTIONS', 'GET'])
