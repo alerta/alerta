@@ -106,7 +106,8 @@ class Alert(object):
         self.receive_time = datetime.datetime.utcnow()
 
     def __repr__(self):
-        return 'Alert(header=%r, alert=%r)' % (self.get_header(), self.get_body())
+        return 'Alert(id=%r, environment=%r, resource=%r, event=%r, severity=%r, status=%r)' % (
+            self.id, self.environment, self.resource, self.event, self.severity, self.status)
 
     def __str__(self):
         return json.dumps(self.get_body(), cls=DateEncoder, indent=4)
@@ -355,7 +356,8 @@ class AlertDocument(object):
         }
 
     def __repr__(self):
-        return 'AlertDocument(header=%r, alert=%r)' % (self.get_header(), self.get_body())
+        return 'Alert(id=%r, environment=%r, resource=%r, event=%r, severity=%r, status=%r)' % (
+            self.id, self.environment, self.resource, self.event, self.severity, self.status)
 
     def __str__(self):
         return json.dumps(self.get_body(), cls=DateEncoder, indent=4)
