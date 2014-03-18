@@ -1,6 +1,7 @@
 import json
 import time
 
+from collections import defaultdict
 from functools import wraps
 from flask import request, current_app, render_template, abort
 
@@ -84,11 +85,11 @@ def get_alerts():
         query['status'] = 'open'
 
     alerts = db.get_alerts(query=query, fields=fields, sort=sort, limit=limit)
-    total = db.get_count(query=query)  # TODO(nsatterl): possible race condition?
+    total = db.get_count(query=query)  # because total may be greater than limit
 
     found = 0
-    severity_count = dict.fromkeys(severity_code.ALL, 0)
-    status_count = dict.fromkeys(status_code.ALL, 0)
+    severity_count = defaultdict(int)
+    status_count = defaultdict(int)
 
     alert_response = list()
     if len(alerts) > 0:
@@ -265,7 +266,16 @@ def get_counts():
     except Exception, e:
         return jsonify(response={"status": "error", "message": str(e)})
 
-    found, severity_count, status_count = db.get_counts(query=query)
+    counts = db.get_counts(query=query)
+
+    found = 0
+    severity_count = defaultdict(int)
+    status_count = defaultdict(int)
+
+    for count in counts:
+        found += 1
+        severity_count[count['severity']] += 1
+        status_count[count['status']] += 1
 
     return jsonify(
         status="ok",
@@ -274,7 +284,7 @@ def get_counts():
         severityCounts=severity_count,
         statusCounts=status_count,
         lastTime=query_time,
-        autoRefresh=Switch.get('auto-refresh-allow').is_on(),
+        autoRefresh=Switch.get('auto-refresh-allow').is_on()
     )
 
 

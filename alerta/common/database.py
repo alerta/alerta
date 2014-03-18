@@ -85,23 +85,8 @@ class Mongo(object):
         """
         Return total and dict() of severity and status counts.
         """
-        query = query or dict()
 
-        found = 0
-        severity_count = defaultdict(int)
-        status_count = defaultdict(int)
-
-        responses = self.db.alerts.find(query, {"severity": 1, "status": 1})
-        if not responses:
-            LOG.warning('No alerts found with query = %s', query)
-            return None
-
-        for response in responses:
-            severity_count[response['severity']] += 1
-            status_count[response['status']] += 1
-            found += 1
-
-        return found, severity_count, status_count
+        return self.db.alerts.find(query, {"severity": 1, "status": 1})
 
     def get_alerts(self, query=None, fields=None, sort=None, limit=0):
 
@@ -149,11 +134,8 @@ class Mongo(object):
             query = {'$or': [{'_id': id}, {'lastReceiveId': id}]}
 
         response = self.db.alerts.find_one(query)
-        LOG.debug('db.alerts.findOne(query=%s)', query)
-
         if not response:
-            LOG.warning('Alert not found with environment, resource, event, severity = %s %s %s %s', environment, resource, event, severity)
-            return None
+            return
 
         return AlertDocument(
             id=response['_id'],
@@ -243,8 +225,7 @@ class Mongo(object):
             "rawData": alert.raw_data,
             "repeat": True,
             "lastReceiveId": alert.id,
-            "lastReceiveTime": now,
-
+            "lastReceiveTime": now
         }
 
         LOG.debug('Update duplicate alert in database: %s', update)
