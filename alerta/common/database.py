@@ -69,12 +69,29 @@ class Mongo(object):
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('expireTime', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING)])
 
-    # def get_severity(self, alert):
-    #
-    #     return self.db.alerts.find_one({"environment": alert.environment, "resource": alert.resource,
-    #                                     '$or': [{"event": alert.event}, {"correlate": alert.event}]},
-    #                                    {"severity": 1, "_id": 0})['severity']
-    #
+    def get_severity(self, alert):
+
+        query = {
+            "environment": alert.environment,
+            "resource": alert.resource,
+            '$or': [
+                {
+                    "event": alert.event,
+                    "severity": {'$ne': alert.severity}
+                },
+                {
+                    "event": {'$ne': alert.event},
+                    "correlate": alert.event,
+                    "severity": alert.severity
+                },
+                {
+                    "event": {'$ne': alert.event},
+                    "correlate": alert.event,
+                    "severity": {'$ne': alert.severity}
+                }]
+        }
+
+        return self.db.alerts.find_one(query, fields={"severity": 1, "_id": 0})['severity']
 
     def get_count(self, query=None):
         """
@@ -229,6 +246,13 @@ class Mongo(object):
         *** MUST RETURN DOCUMENT SO CAN PUT IT ON NOTIFY TOPIC ***
         """
 
+        previous_severity = self.get_severity(alert)
+        trend_indication = severity_code.trend(previous_severity, alert.severity)
+        if alert.status == status_code.UNKNOWN:
+            status = severity_code.status_from_severity(previous_severity, alert.severity, alert.status)
+        else:
+            status = alert.status
+
         query = {
             "environment": alert.environment,
             "resource": alert.resource,
@@ -250,22 +274,22 @@ class Mongo(object):
         }
 
         now = datetime.datetime.utcnow()
-        update = [{
+        update = {
             "event": alert.event,
             "severity": alert.severity,
+            "status": status,
             "value": alert.value,
             "text": alert.text,
             "rawData": alert.raw_data,
             "duplicateCount": 0,
             "repeat": False,
-            "previousSeverity": "",  # FIXME
-            "trendIndication": "",  # FIXME
+            "previousSeverity": previous_severity,
+            "trendIndication": trend_indication,
             "lastReceiveId": alert.id,
-            "lastReceiveTime": now,
+            "lastReceiveTime": now
+        }
 
-        }]
-
-        history = {
+        history = [{
             "event": alert.event,
             "severity": alert.severity,
             "value": alert.value,
@@ -273,7 +297,14 @@ class Mongo(object):
             "id": alert.id,
             "createTime": alert.create_time,
             "receiveTime": now
-        }
+        }]
+        if status != alert.status:
+            history.append({
+                "status": status,
+                "text": "correlated alert status change",
+                "id": alert.id,
+                "updateTime": now
+            })
 
         LOG.debug('Update correlated alert in database: %s', update)
 
