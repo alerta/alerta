@@ -232,7 +232,7 @@ class Mongo(object):
                     "updateTime": now
                 }
             }
-        print update
+
         LOG.debug('Update duplicate alert in database: %s', update)
 
         no_obj_error = "No matching object found"
@@ -309,31 +309,35 @@ class Mongo(object):
 
         now = datetime.datetime.utcnow()
         update = {
-            "event": alert.event,
-            "severity": alert.severity,
-            "status": status,
-            "value": alert.value,
-            "text": alert.text,
-            "rawData": alert.raw_data,
-            "duplicateCount": 0,
-            "repeat": False,
-            "previousSeverity": previous_severity,
-            "trendIndication": trend_indication,
-            "lastReceiveId": alert.id,
-            "lastReceiveTime": now
+            '$set': {
+                "event": alert.event,
+                "severity": alert.severity,
+                "status": status,
+                "value": alert.value,
+                "text": alert.text,
+                "rawData": alert.raw_data,
+                "duplicateCount": 0,
+                "repeat": False,
+                "previousSeverity": previous_severity,
+                "trendIndication": trend_indication,
+                "lastReceiveId": alert.id,
+                "lastReceiveTime": now
+            },
+            '$pushAll': {
+                "history": [{
+                    "event": alert.event,
+                    "severity": alert.severity,
+                    "value": alert.value,
+                    "text": alert.text,
+                    "id": alert.id,
+                    "createTime": alert.create_time,
+                    "receiveTime": now
+                }]
+            }
         }
 
-        history = [{
-            "event": alert.event,
-            "severity": alert.severity,
-            "value": alert.value,
-            "text": alert.text,
-            "id": alert.id,
-            "createTime": alert.create_time,
-            "receiveTime": now
-        }]
         if status != alert.status:
-            history.append({
+            update['$pushAll']['history'].append({
                 "status": status,
                 "text": "correlated alert status change",
                 "id": alert.id,
@@ -346,10 +350,7 @@ class Mongo(object):
         response = self.db.command("findAndModify", CONF.mongo_collection,
                                    allowable_errors=[no_obj_error],
                                    query=query,
-                                   update={
-                                       '$set': update,
-                                       '$push': {"history": history}
-                                   },
+                                   update=update,
                                    new=True,
                                    fields={"history": 0}
                                    )["value"]
@@ -520,24 +521,24 @@ class Mongo(object):
         """
         query = {'_id': {'$regex': '^' + id}}
 
-        update = {"status": status}
-
         now = datetime.datetime.utcnow()
-        history = {
-            "status": status,
-            "text": text,
-            "id": id,
-            "updateTime": now
+        update = {
+            '$set': {"status": status},
+            '$push': {
+                "history": {
+                    "status": status,
+                    "text": text,
+                    "id": id,
+                    "updateTime": now
+                }
+            }
         }
 
         no_obj_error = "No matching object found"
         response = self.db.command("findAndModify", CONF.mongo_collection,
                                    allowable_errors=[no_obj_error],
                                    query=query,
-                                   update={
-                                       '$set': update,
-                                       '$push': {"history": history}
-                                   },
+                                   update=update,
                                    new=True,
                                    fields={"history": 0}
                                    )["value"]
@@ -615,12 +616,15 @@ class Mongo(object):
 
         now = datetime.datetime.utcnow()
         update = {
-            "origin": heartbeat.origin,
-            "tags": heartbeat.tags,
-            "type": heartbeat.event_type,
-            "createTime": heartbeat.create_time,
-            "timeout": heartbeat.timeout,
-            "receiveTime": now
+            #  '$setOnInsert': {"_id": heartbeat.id},
+            '$set': {
+                "origin": heartbeat.origin,
+                "tags": heartbeat.tags,
+                "type": heartbeat.event_type,
+                "createTime": heartbeat.create_time,
+                "timeout": heartbeat.timeout,
+                "receiveTime": now
+            }
         }
 
         LOG.debug('Save heartbeat to database: %s', update)
@@ -632,10 +636,7 @@ class Mongo(object):
             response = self.db.command("findAndModify", 'heartbeats',
                                        allowable_errors=[no_obj_error],
                                        query={"origin": heartbeat.origin},
-                                       update={
-                                           #  '$setOnInsert': {"_id": heartbeat.id},
-                                           '$set': update
-                                       },
+                                       update=update,
                                        new=True,
                                        upsert=True
                                        )["value"]
