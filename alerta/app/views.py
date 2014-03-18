@@ -199,13 +199,37 @@ def get_alert(id):
         return jsonify(status="ok", message="not found", total=0, alert=None)
 
 
+@app.route('/api/alert/<id>/status', methods=['OPTIONS', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@jsonp
+def set_status(id):
+
+    data = request.json
+
+    if data and 'status' in data:
+        modifiedAlert = db.set_status(id=id, status=data['status'], text=data.get('text', ''))
+
+        # Forward alert to notify topic and logger queue
+        # mq.send(modifiedAlert, CONF.outbound_topic)
+        # LOG.info('%s : Alert forwarded to %s and %s', modifiedAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
+
+    else:
+        return jsonify(status="error", message="no data")
+
+    if modifiedAlert:
+        return jsonify(status="ok")
+    else:
+        return jsonify(status="error", message="failed to set alert status")
+
+
 @app.route('/api/alert/<id>/tag', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def tag_alert(id):
 
     data = request.json
-    if data:
+
+    if data and 'tags' in data:
         response = db.tag_alert(id, data['tags'])
     else:
         return jsonify(status="error", message="no data")
@@ -214,30 +238,6 @@ def tag_alert(id):
         return jsonify(status="ok")
     else:
         return jsonify(status="error", message="failed to tag alert")
-
-
-@app.route('/api/alert/<id>/status', methods=['OPTIONS', 'PUT'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
-@jsonp
-def modify_status(id):
-
-    status = request.json['status']
-    text = request.json['text']
-
-    if status:
-        modifiedAlert = db.update_status(id=id, status=status, text=text)
-
-        # Forward alert to notify topic and logger queue
-        mq.send(modifiedAlert, CONF.outbound_topic)
-        LOG.info('%s : Alert forwarded to %s and %s', modifiedAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
-
-    else:
-        return jsonify(status="error", message="no data")
-
-    if modifiedAlert:
-        return jsonify(status="ok")
-    else:
-        return jsonify(status="error", message="error changing alert status")
 
 
 @app.route('/api/alert/<id>', methods=['OPTIONS', 'DELETE', 'POST'])

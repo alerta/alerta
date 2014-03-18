@@ -435,6 +435,63 @@ class Mongo(object):
             history=response['history']
         )
 
+    def set_status(self, id, status, text=None):
+        """
+        Set status and update history.
+        """
+        query = {'_id': {'$regex': '^' + id}}
+
+        update = {"status": status}
+
+        now = datetime.datetime.utcnow()
+        history = {
+            "status": status,
+            "text": text,
+            "id": id,
+            "updateTime": now
+        }
+
+        no_obj_error = "No matching object found"
+        response = self.db.command("findAndModify", CONF.mongo_collection,
+                                   allowable_errors=[no_obj_error],
+                                   query=query,
+                                   update={
+                                       '$set': update,
+                                       '$push': {"history": history}
+                                   },
+                                   new=True,
+                                   fields={"history": 0}
+                                   )["value"]
+
+        return AlertDocument(
+            id=response['_id'],
+            resource=response['resource'],
+            event=response['event'],
+            environment=response['environment'],
+            severity=response['severity'],
+            correlate=response['correlate'],
+            status=response['status'],
+            service=response['service'],
+            group=response['group'],
+            value=response['value'],
+            text=response['text'],
+            tags=response['tags'],
+            attributes=response['attributes'],
+            origin=response['origin'],
+            event_type=response['type'],
+            create_time=response['createTime'],
+            timeout=response['timeout'],
+            raw_data=response['rawData'],
+            duplicate_count=response['duplicateCount'],
+            repeat=response['repeat'],
+            previous_severity=response['previousSeverity'],
+            trend_indication=response['trendIndication'],
+            receive_time=response['receiveTime'],
+            last_receive_id=response['lastReceiveId'],
+            last_receive_time=response['lastReceiveTime'],
+            history=list()
+        )
+
     def tag_alert(self, id, tags):
         """
         Append tags to tag list. Don't add same tag more than once.
