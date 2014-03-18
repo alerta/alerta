@@ -28,8 +28,8 @@ class Alert(object):
         'parser_dir': '/etc/alerta/parsers',
     }
 
-    def __init__(self, resource, event, environment=None, severity=severity_code.NORMAL, correlate=None,
-                 status=status_code.UNKNOWN, service=None, group=None, value=None, text=None, tags=None,
+    def __init__(self, resource, event, environment=None, severity=severity_code.NORMAL, correlate=[],
+                 status=status_code.UNKNOWN, service=[], group=None, value=None, text=None, tags=[],
                  attributes=None, origin=None, event_type=None, create_time=None, timeout=86400, raw_data=None):
 
         config.register_opts(Alert.alert_opts)
@@ -46,9 +46,17 @@ class Alert(object):
         self.event = event
         self.environment = environment or ""
         self.severity = severity
-        self.correlate = correlate or list()
+        if not isinstance(correlate, list):
+            self.correlate = [correlate]
+        else:
+            self.correlate = correlate
+        if correlate and event not in correlate:
+            self.correlate.append(event)
         self.status = status
-        self.service = service or list()
+        if not isinstance(service, list):
+            self.service = [service]
+        else:
+            self.service = service
         self.group = group or 'Misc'
         self.value = value or 'n/a'
         self.text = text or ""
