@@ -5,15 +5,15 @@ from collections import defaultdict
 from functools import wraps
 from flask import request, current_app, render_template, abort
 
-from alerta.api.v2 import app, db, mq
-from alerta.api.v2.switch import Switch
+from alerta.app import app, db, mq
+from alerta.app.switch import Switch
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
 from alerta.common.utils import DateEncoder
-from alerta.api.v2.utils import parse_fields, crossdomain
+from alerta.app.utils import parse_fields, crossdomain
 
 
 Version = '3.0.0'

@@ -3,8 +3,8 @@ import time
 import datetime
 
 from flask import request, Response, url_for, jsonify, render_template
-from alerta.api.v2 import app, db, mq
-from alerta.api.v2.switch import Switch, SwitchState
+from alerta.app import app, db, mq
+from alerta.app.switch import Switch, SwitchState
 
 from alerta import get_version
 from alerta.common import log as logging
