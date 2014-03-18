@@ -356,7 +356,7 @@ class AlertDocument(object):
         }
 
     def __repr__(self):
-        return 'Alert(id=%r, environment=%r, resource=%r, event=%r, severity=%r, status=%r)' % (
+        return 'AlertDocument(id=%r, environment=%r, resource=%r, event=%r, severity=%r, status=%r)' % (
             self.id, self.environment, self.resource, self.event, self.severity, self.status)
 
     def __str__(self):
