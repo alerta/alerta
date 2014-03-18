@@ -1,5 +1,5 @@
 import json
-import time
+import datetime
 
 from collections import defaultdict
 from functools import wraps
@@ -372,7 +372,7 @@ def get_heartbeats():
         status="ok",
         total=len(heartbeats),
         heartbeats=hb_list,
-        time=int(time.time() * 1000)
+        time=datetime.datetime.utcnow()
     )
 
 @app.route('/api/heartbeat', methods=['OPTIONS', 'POST'])
