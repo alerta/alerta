@@ -351,6 +351,12 @@ class Mongo(object):
 
     def save_alert(self, alert):
 
+        trend_indication = severity_code.trend(severity_code.UNKNOWN, alert.severity)
+        if alert.status == status_code.UNKNOWN:
+                    status = severity_code.status_from_severity(severity_code.UNKNOWN, alert.severity)
+        else:
+            status = alert.status
+
         now = datetime.datetime.utcnow()
         history = [{
             "id": alert.id,
@@ -361,6 +367,14 @@ class Mongo(object):
             "createTime": alert.create_time,
             "receiveTime": now
         }]
+        if status != alert.status:
+            history.append({
+                "status": status,
+                "text": "new alert status change",
+                "id": alert.id,
+                "updateTime": now
+            })
+
         alert = {
             "_id": alert.id,
             "resource": alert.resource,
@@ -368,7 +382,7 @@ class Mongo(object):
             "environment": alert.environment,
             "severity": alert.severity,
             "correlate": alert.correlate,
-            "status": alert.status,
+            "status": status,
             "service": alert.service,
             "group": alert.group,
             "value": alert.value,
