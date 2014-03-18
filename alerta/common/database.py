@@ -9,6 +9,7 @@ from collections import defaultdict
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.alert import AlertDocument
+from alerta.common.heartbeat import HeartbeatDocument
 from alerta.common import severity_code, status_code
 
 LOG = logging.getLogger(__name__)
@@ -320,7 +321,7 @@ class Mongo(object):
             history=list()
         )
 
-    def save_new(self, alert):
+    def save_alert(self, alert):
 
         now = datetime.datetime.utcnow()
         history = [{
@@ -428,6 +429,73 @@ class Mongo(object):
         """
 
         return self.db.alerts.find(query, {"severity": 1, "status": 1})
+
+    def get_heartbeats(self):
+
+        responses = self.db.heartbeats.find()
+
+        heartbeats = list()
+        for response in responses:
+            heartbeats.append(
+                HeartbeatDocument(
+                    id=response['_id'],
+                    origin=response['origin'],
+                    tags=response['tags'],
+                    event_type=response['type'],
+                    create_time=response['createTime'],
+                    timeout=response['timeout'],
+                    receive_time=response['receiveTime']
+                )
+            )
+        return heartbeats
+
+    def save_heartbeat(self, heartbeat):
+
+        now = datetime.datetime.utcnow()
+        update = {
+            "origin": heartbeat.origin,
+            "tags": heartbeat.tags,
+            "type": heartbeat.event_type,
+            "createTime": heartbeat.create_time,
+            "timeout": heartbeat.timeout,
+            "receiveTime": now
+        }
+
+        LOG.debug('Save heartbeat to database: %s', update)
+
+        # FIXME -- when Mongo 2.6 is release delete the following block of code
+        # FIXME    and uncomment the "$setOnInsert _id" line below
+
+        heartbeat_id = self.db.heartbeats.find_one({"origin": heartbeat.origin}, {"_id": 1})
+        if not heartbeat_id:
+            update["_id"] = heartbeat.id
+            response = self.db.heartbeats.insert(update)
+            if response == heartbeat.id:
+                return heartbeat.id
+            else:
+                return None
+
+        # FIXME -- ^^^ end of code block to be deleted when Mongo 2.6 is released ^^^
+
+        no_obj_error = "No matching object found"
+        response = self.db.command("findAndModify", 'heartbeats',
+                                   allowable_errors=[no_obj_error],
+                                   query={"origin": heartbeat.origin},
+                                   update={
+                                       #  '$setOnInsert': {"_id": heartbeat.id},  # FIXME - uncomment for Mongo 2.6
+                                       '$set': update
+                                   },
+                                   new=True,
+                                   upsert=True
+                                   )["value"]
+
+        return response['_id']
+
+    def delete_heartbeat(self, id):
+
+        response = self.db.heartbeats.remove({'_id': {'$regex': '^' + id}})
+
+        return True if 'ok' in response else False
 
     def disconnect(self):
 

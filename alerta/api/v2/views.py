@@ -160,7 +160,7 @@ def create_alert():
         #                    2. increment duplicate count
         #                    3. update and push status if changed
 
-        db.save_duplicate(incomingAlert)
+        alert_id = db.save_duplicate(incomingAlert)
 
     elif db.is_correlated(incomingAlert):
         # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime,
@@ -169,7 +169,7 @@ def create_alert():
         #                    2. set duplicate count to zero
         #                    3. push history and status if changed
 
-        db.save_correlated(incomingAlert)
+        alert_id = db.save_correlated(incomingAlert)
 
     else:
         # New alert so ... 1. insert entire document
@@ -177,9 +177,9 @@ def create_alert():
         #                  3. set duplicate count to zero
 
         LOG.info('%s : New alert -> insert', incomingAlert.get_id())
-        db.save_new(incomingAlert)
+        alert_id = db.save_alert(incomingAlert)
 
-    return jsonify(status="ok", id=incomingAlert.get_id())
+    return jsonify(status="ok", id=alert_id)
 
 
 @app.route('/api/alert/<id>', methods=['OPTIONS', 'GET'])
@@ -360,25 +360,40 @@ def pagerduty():
 def get_heartbeats():
 
     heartbeats = db.get_heartbeats()
-    return jsonify(application="alerta", time=int(time.time() * 1000), heartbeats=heartbeats)
+    hb_list = list()
+    for hb in heartbeats:
+        hb_list.append(hb.get_body())
 
+    return jsonify(
+        status="ok",
+        total=len(heartbeats),
+        heartbeats=hb_list,
+        time=int(time.time() * 1000)
+    )
 
 @app.route('/api/heartbeat', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def create_heartbeat():
 
-    # Create a new heartbeat
     try:
         heartbeat = Heartbeat.parse_heartbeat(request.data)
-    except Exception, e:
+    except ValueError, e:
         return jsonify(status="error", message=str(e))
 
-    LOG.debug('New heartbeat %s', heartbeat)
-    heartbeat.receive_now()
-    db.update_hb(heartbeat)
+    heartbeat_id = db.save_heartbeat(heartbeat)
 
-    if heartbeat:
-        return jsonify(status="ok", id=heartbeat.get_id())
-    else:
-        return jsonify(status="error", message="something went wrong")
+    return jsonify(status="ok", id=heartbeat_id)
+
+@app.route('/api/heartbeat/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@jsonp
+def delete_heartbeat(id):
+
+    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+        response = db.delete_heartbeat(id)
+
+        if response:
+            return jsonify(status="ok")
+        else:
+            return jsonify(status="error", message="failed to delete heartbeat")

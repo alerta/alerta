@@ -13,10 +13,8 @@ from alerta.common import config
 from alerta.common import status_code, severity_code
 from alerta.common.utils import DateEncoder
 
-
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
 
 prog = os.path.basename(sys.argv[0])
 
