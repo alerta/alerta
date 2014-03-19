@@ -134,7 +134,7 @@ class IrcbotDaemon(Daemon):
                             i.recv()
                 else:
                     LOG.debug('Send heartbeat...')
-                    heartbeat = Heartbeat(version=Version)
+                    heartbeat = Heartbeat(tags=[Version])
                     mq.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):

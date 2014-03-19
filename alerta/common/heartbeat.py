@@ -22,7 +22,9 @@ class Heartbeat(object):
         prog = os.path.basename(sys.argv[0])
 
         if not origin:
-            raise ValueError('Missing mandatory value for origin')
+            self.origin = '%s/%s' % (prog, os.uname()[0])
+        else:
+            self.origin = origin
 
         self.id = str(uuid4())
         self.origin = origin

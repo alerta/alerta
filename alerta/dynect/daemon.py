@@ -54,7 +54,7 @@ class DynectDaemon(Daemon):
                     self.last_info = self.info
 
                     LOG.debug('Send heartbeat...')
-                    heartbeat = Heartbeat(version=Version)
+                    heartbeat = Heartbeat(tags=[Version])
                     self.api.send(heartbeat)
 
                 LOG.debug('Waiting for next check run...')
@@ -145,7 +145,7 @@ class DynectDaemon(Daemon):
                 continue
 
             if self.dedup.is_send(dynectAlert):
-                self.mq.send(dynectAlert)
+                self.api.send(dynectAlert)
 
     def check_weight(self, parent, resource):
         

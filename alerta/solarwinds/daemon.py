@@ -82,7 +82,7 @@ class SolarWindsDaemon(Daemon):
 
                 if send_heartbeat:
                     LOG.debug('Send heartbeat...')
-                    heartbeat = Heartbeat(version=Version)
+                    heartbeat = Heartbeat(tags=[Version])
                     self.api.send(heartbeat)
                 else:
                     LOG.error('SolarWinds failure. Skipping heartbeat.')

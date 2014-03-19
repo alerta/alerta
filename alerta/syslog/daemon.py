@@ -85,13 +85,13 @@ class SyslogDaemon(Daemon):
                         syslogAlerts = self.parse_syslog(addr[0], data)
                         for syslogAlert in syslogAlerts:
                             if self.dedup.is_send(syslogAlert):
-                                self.mq.send(syslogAlert)
+                                self.api.send(syslogAlert)
                                 self.statsd.metric_send('alert.syslog.alerts.total', 1)
 
                     count += 1
                 if not ip or count % 5 == 0:
                     LOG.debug('Send heartbeat...')
-                    heartbeat = Heartbeat(version=Version)
+                    heartbeat = Heartbeat(tags=[Version])
                     self.mq.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):
@@ -218,7 +218,7 @@ class SyslogDaemon(Daemon):
                 continue
 
             if syslogAlert.get_type() == 'Heartbeat':
-                syslogAlert = Heartbeat(origin=syslogAlert.origin, version='n/a', timeout=syslogAlert.timeout)
+                syslogAlert = Heartbeat(origin=syslogAlert.origin, timeout=syslogAlert.timeout)
 
             syslogAlerts.append(syslogAlert)
 

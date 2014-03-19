@@ -250,7 +250,7 @@ class PingerDaemon(Daemon):
                             self.queue.put((environment, service, target, retries, time.time()))
 
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version)
+                heartbeat = Heartbeat(tags=[Version])
                 self.api.send(heartbeat)
 
                 time.sleep(CONF.loop_every)

@@ -96,7 +96,7 @@ class LoggerDaemon(Daemon):
                 time.sleep(CONF.loop_every)
 
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version)
+                heartbeat = Heartbeat(tags=[Version])
                 api.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):

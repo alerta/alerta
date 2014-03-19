@@ -56,7 +56,7 @@ class SnmpTrapHandler(object):
             self.statsd.metric_send('alert.snmptrap.alerts.total', 1)
 
         LOG.debug('Send heartbeat...')
-        heartbeat = Heartbeat(version=Version)
+        heartbeat = Heartbeat(tags=[Version])
         self.api.send(heartbeat)
 
     @staticmethod

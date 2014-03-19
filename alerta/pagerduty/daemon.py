@@ -84,7 +84,7 @@ class PagerDutyDaemon(Daemon):
                 time.sleep(CONF.loop_every)
 
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version)
+                heartbeat = Heartbeat(tags=[Version])
                 self.mq.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):

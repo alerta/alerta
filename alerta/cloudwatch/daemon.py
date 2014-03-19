@@ -6,6 +6,7 @@ import datetime
 
 import boto.sqs
 from boto.sqs.message import RawMessage
+from boto import exception
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -75,6 +76,7 @@ class CloudWatchDaemon(Daemon):
                 except boto.exception.SQSError, e:
                     LOG.warning('Could not read from queue: %s', e)
                     time.sleep(20)
+                    continue
 
                 if message:
                     body = message.get_body()
@@ -84,7 +86,7 @@ class CloudWatchDaemon(Daemon):
                     sqs.delete_message(message)
 
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version)
+                heartbeat = Heartbeat(tags=[Version])
                 self.api.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):
