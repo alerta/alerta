@@ -17,7 +17,7 @@ DEFAULT_TIMEOUT = 300  # seconds
 
 class Heartbeat(object):
 
-    def __init__(self, origin, tags=[], create_time=None, timeout=None):
+    def __init__(self, origin=None, tags=[], create_time=None, timeout=None):
 
         prog = os.path.basename(sys.argv[0])
 
