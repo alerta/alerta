@@ -7,7 +7,8 @@ from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code, status_code
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.amqp import Messaging, FanoutConsumer
+from alerta.common.api import ApiClient
 from alerta.pagerduty.pdclientapi import PagerDutyClient
 
 Version = '3.0.0'
@@ -16,15 +17,13 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-class PagerDutyMessage(MessageHandler):
+class PagerDutyMessage(FanoutConsumer):
 
-    def __init__(self, mq):
-
-        self.mq = mq
+    def __init__(self):
 
         self.pd = PagerDutyClient()
 
-        MessageHandler.__init__(self)
+        FanoutConsumer.__init__(self)
 
     def on_message(self, headers, body):
 
@@ -51,10 +50,6 @@ class PagerDutyMessage(MessageHandler):
         elif pdAlert.status == status_code.CLOSED:
             self.pd.resolve_event(pdAlert, incident_key=incident_key)
 
-    def on_disconnected(self):
-
-        self.mq.reconnect()
-
 
 class PagerDutyDaemon(Daemon):
 
@@ -73,10 +68,7 @@ class PagerDutyDaemon(Daemon):
 
         self.running = True
 
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=PagerDutyMessage(self.mq))
-        self.mq.subscribe(destination=CONF.outbound_topic)   # TODO(nsatterl): use dedicated queue?
+        api = ApiClient()
 
         while not self.shuttingdown:
             try:
@@ -85,13 +77,10 @@ class PagerDutyDaemon(Daemon):
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(tags=[Version])
-                self.mq.send(heartbeat)
+                api.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
 
         LOG.info('Shutdown request received...')
         self.running = False
-
-        LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()

@@ -113,7 +113,7 @@ class MailerDaemon(Daemon):
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(tags=[Version])
-                self.mq.send(heartbeat)
+                self.api.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True

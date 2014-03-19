@@ -340,7 +340,7 @@ def pagerduty():
         LOG.info('PagerDuty webhook %s change status to %s', message['type'], status)
 
         pdAlert = db.update_status(id=id, status=status, text=text)
-        db.tag_alert(id=id, tag='incident=#%s' % incident_number)
+        db.tag_alert(id=id, tags='incident=#%s' % incident_number)
 
         LOG.error('returned status %s', pdAlert.status)
         LOG.error('current status %s', db.get_alert(id=id).status)
@@ -348,9 +348,7 @@ def pagerduty():
         # Forward alert to notify topic and logger queue
         if pdAlert:
             pdAlert.origin = 'pagerduty/webhook'
-            mq.send(pdAlert, CONF.outbound_queue)
-            mq.send(pdAlert, CONF.outbound_topic)
-            LOG.info('%s : Alert forwarded to %s and %s', pdAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
+            notify.send(pdAlert)
 
     return jsonify(status="ok")
 

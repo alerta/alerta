@@ -60,7 +60,7 @@ class SyslogDaemon(Daemon):
 
         self.statsd = StatsD()  # graphite metrics
 
-        self.api = ApiClient()
+        api = ApiClient()
 
         self.dedup = DeDup(by_value=True)
 
@@ -85,14 +85,14 @@ class SyslogDaemon(Daemon):
                         syslogAlerts = self.parse_syslog(addr[0], data)
                         for syslogAlert in syslogAlerts:
                             if self.dedup.is_send(syslogAlert):
-                                self.api.send(syslogAlert)
+                                api.send(syslogAlert)
                                 self.statsd.metric_send('alert.syslog.alerts.total', 1)
 
                     count += 1
                 if not ip or count % 5 == 0:
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(tags=[Version])
-                    self.mq.send(heartbeat)
+                    api.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True

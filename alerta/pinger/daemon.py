@@ -154,7 +154,7 @@ class WorkerThread(threading.Thread):
                 LOG.debug('%s', pingAlert)
 
             elif self.dedup.is_send(pingAlert):
-                self.mq.send(pingAlert)
+                self.api.send(pingAlert)
 
             self.queue.task_done()
             LOG.info('%s ping %s complete.', self.getName(), resource)
