@@ -1,3 +1,4 @@
+
 from alerta.common import severity_code
 
 SYSLOG_FACILITY_NAMES = [
@@ -55,7 +56,6 @@ DEFAULT_TCP_PORT = 514
 
 def priority_to_code(name):
     return _SYSLOG_SEVERITY_MAP.get(name, severity_code.UNKNOWN_SEV_CODE)
-
 
 
 def decode_priority(priority):

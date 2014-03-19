@@ -4,9 +4,10 @@ import socket
 import select
 import re
 
-from alerta.common import config, syslog
+from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
+from alerta.syslog.priority import priority_to_code, decode_priority
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
@@ -179,12 +180,12 @@ class SyslogDaemon(Daemon):
                     LOG.error("Could not parse Cisco syslog message: %s", msg)
                     continue
 
-            facility, level = syslog.decode_priority(PRI)
+            facility, level = decode_priority(PRI)
 
             # Defaults
             event = event or '%s%s' % (facility.capitalize(), level.capitalize())
             resource = resource or '%s%s' % (HOSTNAME, ':' + TAG if TAG else '')
-            severity = syslog.priority_to_code(level)
+            severity = priority_to_code(level)
             group = 'Syslog'
             value = level
             text = MSG
