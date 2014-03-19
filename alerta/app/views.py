@@ -5,7 +5,7 @@ from collections import defaultdict
 from functools import wraps
 from flask import request, current_app, render_template, abort
 
-from alerta.app import app, db, mq
+from alerta.app import app, db, notify
 from alerta.app.switch import Switch
 from alerta.common import config
 from alerta.common import log as logging
@@ -179,6 +179,7 @@ def create_alert():
         create_new_timer.stop_timer()
 
     if alert:
+        notify.send(alert)
         return jsonify(status="ok", id=alert.id)
     else:
         return jsonify(status="error", message="alert insert or update failed")
@@ -205,16 +206,12 @@ def set_status(id):
     data = request.json
 
     if data and 'status' in data:
-        modifiedAlert = db.set_status(id=id, status=data['status'], text=data.get('text', ''))
-
-        # Forward alert to notify topic and logger queue
-        # mq.send(modifiedAlert, CONF.outbound_topic)
-        # LOG.info('%s : Alert forwarded to %s and %s', modifiedAlert.get_id(), CONF.outbound_queue, CONF.outbound_topic)
-
+        alert = db.set_status(id=id, status=data['status'], text=data.get('text', ''))
     else:
         return jsonify(status="error", message="no data")
 
-    if modifiedAlert:
+    if alert:
+        notify.send(alert)
         return jsonify(status="ok")
     else:
         return jsonify(status="error", message="failed to set alert status")

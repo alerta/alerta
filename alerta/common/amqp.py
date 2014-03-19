@@ -67,7 +67,7 @@ class DirectPublisher(object):
         self.producer.publish(json.dumps(msg.get_body(), cls=DateEncoder), exchange=self.exchange,
                               serializer='json', declare=[self.exchange], routing_key=self.exchange_name)
 
-        LOG.info('Message sent to exchange "%s"', self.exchange)
+        LOG.info('Message sent to exchange "%s"', self.exchange_name)
 
 
 class FanoutPublisher(object):
@@ -89,7 +89,7 @@ class FanoutPublisher(object):
         self.producer.publish(json.dumps(msg.get_body(), cls=DateEncoder), exchange=self.exchange,
                               serializer='json', declare=[self.exchange])
 
-        LOG.info('Message sent to exchange "%s"', self.exchange)
+        LOG.info('Message sent to exchange "%s"', self.exchange_name)
 
 
 class DirectConsumer(ConsumerMixin):
