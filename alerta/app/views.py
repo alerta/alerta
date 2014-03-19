@@ -14,6 +14,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
 from alerta.common.utils import DateEncoder
 from alerta.app.utils import parse_fields, crossdomain
+from alerta.common.metrics import Gauge, Counter, Timer
 
 
 Version = '3.0.0'
@@ -21,6 +22,13 @@ Version = '3.0.0'
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
+# Set-up metrics
+duplicate_timer = Timer('alerts', 'duplicate', 'Duplicate alerts', 'Total time to process number of duplicate alerts')
+correlate_timer = Timer('alerts', 'correlate', 'Correlated alerts', 'Total time to process number of correlated alerts')
+create_new_timer = Timer('alerts', 'create_new', 'Newly created alerts', 'Total time to process number of new alerts')
+delete_timer = Timer('alerts', 'deleted', 'Deleted alerts', 'Total time to process number of deleted alerts')
+total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of alerts in the database')
+total_alert_gauge.set(db.get_count())
 
 # Over-ride jsonify to support Date Encoding
 def jsonify(*args, **kwargs):
@@ -155,31 +163,24 @@ def create_alert():
         return jsonify(status="error", message="alert suppressed by transform")
 
     if db.is_duplicate(incomingAlert):
-        # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text,
-        #                       value, status, tags and origin
-        #                    2. increment duplicate count
-        #                    3. update and push status if changed
 
+        duplicate_timer.start_timer()
         alert = db.save_duplicate(incomingAlert)
+        duplicate_timer.stop_timer()
 
     elif db.is_correlated(incomingAlert):
-        # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime,
-        #                       lastReceiveTime, previousSeverity,
-        #                       severityCode, lastReceiveId, text, value, tags and origin
-        #                    2. set duplicate count to zero
-        #                    3. push history and status if changed
 
+        correlate_timer.start_timer()
         alert = db.save_correlated(incomingAlert)
+        correlate_timer.stop_timer()
 
     else:
-        # New alert so ... 1. insert entire document
-        #                  2. push history and status
-        #                  3. set duplicate count to zero
-
-        LOG.info('%s : New alert -> insert', incomingAlert.get_id())
+        create_new_timer.start_timer()
         alert = db.save_alert(incomingAlert)
+        create_new_timer.stop_timer()
 
-    print alert
+    total_alert_gauge.set(db.get_count())
+
     if alert:
         return jsonify(status="ok", id=alert.id)
     else:
@@ -246,7 +247,11 @@ def tag_alert(id):
 def delete_alert(id):
 
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+        delete_timer.start_timer()
         response = db.delete_alert(id)
+        delete_timer.stop_timer()
+
+        total_alert_gauge.set(db.get_count())
 
         if response:
             return jsonify(status="ok")

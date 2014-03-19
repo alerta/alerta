@@ -1,4 +1,6 @@
 
+import time
+
 from threading import Lock
 
 
@@ -24,7 +26,7 @@ class Gauge(object):
             self.value = value
 
     @classmethod
-    def get_metrics(cls):
+    def get_gauges(cls):
 
         metrics = list()
 
@@ -62,7 +64,7 @@ class Counter(object):
             self.count += 1
 
     @classmethod
-    def get_metrics(cls):
+    def get_counters(cls):
 
         metrics = list()
 
@@ -94,15 +96,29 @@ class Timer(object):
         self.total_time = 0
 
         self.lock = Lock()
+        self.start = None
 
-    def time(self, duration):
+    @staticmethod
+    def _time_in_millis():
+
+        return int(round(time.time() * 1000))
+
+    def start_timer(self):
+
+        self.start = self._time_in_millis()
+
+    def stop_timer(self):
+
+        if not self.start:
+            raise UserWarning
 
         with self.lock:
             self.count += 1
-            self.total_time += duration
+            self.total_time += self._time_in_millis() - self.start
+            self.start = None
 
     @classmethod
-    def get_metrics(cls):
+    def get_timers(cls):
 
         metrics = list()
 

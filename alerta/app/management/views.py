@@ -5,6 +5,7 @@ import datetime
 from flask import request, Response, url_for, jsonify, render_template
 from alerta.app import app, db, mq
 from alerta.app.switch import Switch, SwitchState
+from alerta.common.metrics import Gauge, Counter, Timer
 
 from alerta import get_version
 from alerta.common import log as logging
@@ -19,7 +20,7 @@ switches = [
 ]
 
 
-@app.route('/alerta/management')
+@app.route('/management')
 def management():
 
     endpoints = [
@@ -32,7 +33,7 @@ def management():
     return render_template('management/index.html', endpoints=endpoints)
 
 
-@app.route('/alerta/management/manifest')
+@app.route('/management/manifest')
 def manifest():
 
     manifest = {
@@ -49,7 +50,7 @@ def manifest():
     return  jsonify(alerta=manifest)
 
 
-@app.route('/alerta/management/properties')
+@app.route('/management/properties')
 def properties():
 
     properties = ''
@@ -63,7 +64,7 @@ def properties():
     return Response(properties, content_type='text/plain')
 
 
-@app.route('/alerta/management/switchboard', methods=['GET', 'POST'])
+@app.route('/management/switchboard', methods=['GET', 'POST'])
 def switchboard():
 
     if request.method == 'POST':
@@ -85,7 +86,7 @@ def switchboard():
             return render_template('management/switchboard.html', switches=switches)
 
 
-@app.route('/alerta/management/healthcheck')
+@app.route('/management/healthcheck')
 def health_check():
 
     try:
@@ -108,10 +109,12 @@ def health_check():
     return 'OK'
 
 
-@app.route('/alerta/management/status')
+@app.route('/management/status')
 def status():
 
-    metrics = db.get_metrics()
+    metrics = Gauge.get_gauges()
+    metrics.extend(Counter.get_counters())
+    metrics.extend(Timer.get_timers())
 
     auto_refresh_allow = {
         "group": "switch",

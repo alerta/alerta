@@ -74,7 +74,9 @@ class Mongo(object):
         self.db.alerts.create_index([('status', pymongo.ASCENDING)])
 
     def get_severity(self, alert):
-
+        """
+        Get severity of correlated alert. Used to determine previous severity.
+        """
         query = {
             "environment": alert.environment,
             "resource": alert.resource,
@@ -98,25 +100,20 @@ class Mongo(object):
         return self.db.alerts.find_one(query, fields={"severity": 1, "_id": 0})['severity']
 
     def get_status(self, alert):
-
+        """
+        Get status of correlated or duplicate alert. Used to determine previous status.
+        """
         query = {
             "environment": alert.environment,
             "resource": alert.resource,
             '$or': [
                 {
-                    "event": alert.event,
-                    "severity": {'$ne': alert.severity}
+                    "event": alert.event
                 },
                 {
-                    "event": {'$ne': alert.event},
                     "correlate": alert.event,
-                    "severity": alert.severity
-                },
-                {
-                    "event": {'$ne': alert.event},
-                    "correlate": alert.event,
-                    "severity": {'$ne': alert.severity}
-                }]
+                }
+            ]
         }
 
         return self.db.alerts.find_one(query, fields={"status": 1, "_id": 0})['status']

@@ -22,4 +22,3 @@ mq = Messaging()
 
 import views
 import management.views
-
