@@ -19,7 +19,6 @@ class Mongo(object):
         'mongo_host': 'localhost',
         'mongo_port': 27017,
         'mongo_database': 'monitoring',
-        'mongo_collection': 'alerts',
         'mongo_username': 'admin',
         'mongo_password': '',
     }
@@ -246,7 +245,7 @@ class Mongo(object):
         LOG.debug('Update duplicate alert in database: %s', update)
 
         no_obj_error = "No matching object found"
-        response = self.db.command("findAndModify", CONF.mongo_collection,
+        response = self.db.command("findAndModify", 'alerts',
                                    allowable_errors=[no_obj_error],
                                    query=query,
                                    update=update,
@@ -357,7 +356,7 @@ class Mongo(object):
         LOG.debug('Update correlated alert in database: %s', update)
 
         no_obj_error = "No matching object found"
-        response = self.db.command("findAndModify", CONF.mongo_collection,
+        response = self.db.command("findAndModify", 'alerts',
                                    allowable_errors=[no_obj_error],
                                    query=query,
                                    update=update,
@@ -545,7 +544,7 @@ class Mongo(object):
         }
 
         no_obj_error = "No matching object found"
-        response = self.db.command("findAndModify", CONF.mongo_collection,
+        response = self.db.command("findAndModify", 'alerts',
                                    allowable_errors=[no_obj_error],
                                    query=query,
                                    update=update,
@@ -663,6 +662,14 @@ class Mongo(object):
         response = self.db.heartbeats.remove({'_id': {'$regex': '^' + id}})
 
         return True if 'ok' in response else False
+
+    def get_metrics(self):
+
+        metrics = list()
+
+        for stat in self.db.metrics.find({}, {"_id": 0}):
+            metrics.append(stat)
+        return metrics
 
     def disconnect(self):
 
