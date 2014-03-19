@@ -4,7 +4,7 @@ from flask import Flask
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.amqp import Messaging
-from alerta.common.database import Mongo
+from alerta.app.database import Mongo
 
 Version = '3.0.0'
 

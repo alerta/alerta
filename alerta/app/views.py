@@ -65,7 +65,7 @@ def test():
     )
 
 
-@app.route('/', methods=['GET'])
+@app.route('/api', methods=['GET'])
 def routes():
 
     rules = []
