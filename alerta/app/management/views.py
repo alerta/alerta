@@ -18,6 +18,7 @@ switches = [
 #    Switch('console-api-allow', 'Allow consoles to use the alert API', SwitchState.ON),    # TODO(nsatterl)
 #    Switch('sender-api-allow', 'Allow alerts to be submitted via the API', SwitchState.ON),  # TODO(nsatterl)
 ]
+total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of alerts in the database')
 
 
 @app.route('/management')
@@ -111,6 +112,8 @@ def health_check():
 
 @app.route('/management/status')
 def status():
+
+    total_alert_gauge.set(db.get_count())
 
     metrics = Gauge.get_gauges()
     metrics.extend(Counter.get_counters())

@@ -27,8 +27,7 @@ duplicate_timer = Timer('alerts', 'duplicate', 'Duplicate alerts', 'Total time t
 correlate_timer = Timer('alerts', 'correlate', 'Correlated alerts', 'Total time to process number of correlated alerts')
 create_new_timer = Timer('alerts', 'create_new', 'Newly created alerts', 'Total time to process number of new alerts')
 delete_timer = Timer('alerts', 'deleted', 'Deleted alerts', 'Total time to process number of deleted alerts')
-total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of alerts in the database')
-total_alert_gauge.set(db.get_count())
+
 
 # Over-ride jsonify to support Date Encoding
 def jsonify(*args, **kwargs):
@@ -179,8 +178,6 @@ def create_alert():
         alert = db.save_alert(incomingAlert)
         create_new_timer.stop_timer()
 
-    total_alert_gauge.set(db.get_count())
-
     if alert:
         return jsonify(status="ok", id=alert.id)
     else:
@@ -250,8 +247,6 @@ def delete_alert(id):
         delete_timer.start_timer()
         response = db.delete_alert(id)
         delete_timer.stop_timer()
-
-        total_alert_gauge.set(db.get_count())
 
         if response:
             return jsonify(status="ok")
