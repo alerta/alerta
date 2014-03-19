@@ -106,14 +106,20 @@ class Mongo(object):
             '$or': [
                 {
                     "event": alert.event,
+                    "severity": {'$ne': alert.severity}
                 },
                 {
+                    "event": {'$ne': alert.event},
                     "correlate": alert.event,
-                }],
-            "severity": alert.severity
+                    "severity": alert.severity
+                },
+                {
+                    "event": {'$ne': alert.event},
+                    "correlate": alert.event,
+                    "severity": {'$ne': alert.severity}
+                }]
         }
 
-        print self.db.alerts.find_one(query, fields={"status": 1, "_id": 0})
         return self.db.alerts.find_one(query, fields={"status": 1, "_id": 0})['status']
 
     def get_count(self, query=None):
@@ -284,9 +290,10 @@ class Mongo(object):
         """
 
         previous_severity = self.get_severity(alert)
+        previous_status = self.get_status(alert)
         trend_indication = severity_code.trend(previous_severity, alert.severity)
         if alert.status == status_code.UNKNOWN:
-            status = severity_code.status_from_severity(previous_severity, alert.severity, alert.status)
+            status = severity_code.status_from_severity(previous_severity, alert.severity, previous_status)
         else:
             status = alert.status
 
@@ -339,7 +346,7 @@ class Mongo(object):
             }
         }
 
-        if status != alert.status:
+        if status != previous_status:
             update['$pushAll']['history'].append({
                 "status": status,
                 "text": "correlated alert status change",
