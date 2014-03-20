@@ -21,7 +21,7 @@ from alerta.common.mq import Messaging, MessageHandler
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-Version = '2.2.0'
+Version = '2.2.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -176,8 +176,6 @@ class WorkerThread(threading.Thread):
                 text = 'Error during connection or data transfer (timeout=%d).' % CONF.urlmon_max_timeout
 
             elif status_regex:
-                print status_regex
-                print status
                 if re.search(status_regex, str(status)):
                     event = 'HttpResponseRegexOK'
                     severity = severity_code.NORMAL
