@@ -1,5 +1,6 @@
 
 import time
+import threading
 import json
 import urllib2
 import datetime
@@ -9,23 +10,31 @@ from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.common.api import ApiClient
 from alerta.common.amqp import Messaging, FanoutConsumer
-from alerta.common.alert import Alert
+from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
 
-Version = '3.0.0'
+
+__version__ = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-class LoggerMessage(FanoutConsumer):
+class LoggerThread(FanoutConsumer, threading.Thread):
+
+    def __init__(self):
+
+        mq = Messaging()
+
+        FanoutConsumer.__init__(self, mq.connection)
+        threading.Thread.__init__(self)
 
     def on_message(self, body, message):
 
         LOG.debug("Received: %s", body)
         try:
-            logAlert = Alert.parse_alert(body)
+            logAlert = AlertDocument.parse_alert(body)
         except ValueError:
             return
 
@@ -61,13 +70,10 @@ class LoggerMessage(FanoutConsumer):
             except Exception, e:
                 LOG.error('%s : Could not parse elasticsearch reponse: %s', e)
 
-            message.ack()
+        message.ack()
 
 
 class LoggerDaemon(Daemon):
-    """
-    Index alerts in ElasticSearch using Logstash format so that logstash GUI and/or Kibana can be used as front-ends
-    """
 
     logger_opts = {
         'es_host': 'localhost',
@@ -83,27 +89,16 @@ class LoggerDaemon(Daemon):
 
     def run(self):
 
-        self.running = True
+        logger = LoggerThread()
+        logger.start()
 
         api = ApiClient()
-        mq = Messaging()
-        logger = LoggerMessage(mq.connection)
-        logger.run()
 
-        while not self.shuttingdown:
-            try:
-                LOG.debug('Waiting for log messages...')
-                time.sleep(CONF.loop_every)
-
+        try:
+            while True:
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(tags=[Version])
+                heartbeat = Heartbeat(origin=__name__, tags=[__version__])
                 api.send(heartbeat)
-
-            except (KeyboardInterrupt, SystemExit):
-                self.shuttingdown = True
-
-        LOG.info('Shutdown request received...')
-        self.running = False
-
-        LOG.info('Disconnecting from message broker...')
-        mq.disconnect()
+                time.sleep(CONF.loop_every)
+        except (KeyboardInterrupt, SystemExit):
+            pass
