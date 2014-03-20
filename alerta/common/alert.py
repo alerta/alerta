@@ -367,3 +367,49 @@ class AlertDocument(object):
 
     def __str__(self):
         return json.dumps(self.get_body(), cls=DateEncoder, indent=4)
+
+    @staticmethod
+    def parse_alert(alert):
+
+        try:
+            alert = json.loads(alert)
+        except ValueError, e:
+            LOG.error('Could not parse alert - %s: %s', e, alert)
+            raise
+
+        for k, v in alert.iteritems():
+            if k in ['createTime', 'receiveTime', 'lastReceiveTime', 'expireTime']:
+                try:
+                    alert[k] = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S.%fZ')
+                except ValueError, e:
+                    LOG.error('Could not parse date time string: %s', e)
+                    raise
+
+        return AlertDocument(
+            id=alert.get('id', None),
+            resource=alert.get('resource', None),
+            event=alert.get('event', None),
+            environment=alert.get('environment', None),
+            severity=severity_code.parse_severity(alert.get('severity', severity_code.NORMAL)),
+            correlate=alert.get('correlate', None),
+            status=status_code.parse_status(alert.get('status', status_code.UNKNOWN)),
+            service=alert.get('service', list()),
+            group=alert.get('group', None),
+            value=alert.get('value', None),
+            text=alert.get('text', None),
+            tags=alert.get('tags', list()),
+            attributes=alert.get('attributes', dict()),
+            origin=alert.get('origin', None),
+            event_type=alert.get('type', None),
+            create_time=alert.get('createTime', None),
+            timeout=alert.get('timeout', None),
+            raw_data=alert.get('rawData', None),
+            duplicate_count=alert.get('duplicateCount', None),
+            repeat=alert.get('repeat', None),
+            previous_severity=alert.get('previousSeverity', None),
+            trend_indication=alert.get('trendIndication', None),
+            receive_time=alert.get('receiveTime', None),
+            last_receive_id=alert.get('lastReceiveId', None),
+            last_receive_time=alert.get('lastReceiveTime', None),
+            history=alert.get('history', None)
+        )
