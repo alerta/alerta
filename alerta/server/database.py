@@ -396,7 +396,16 @@ class Mongo(object):
         body['_id'] = body['id']
         del body['id']
 
-        return self.db.alerts.insert(body)
+        try:
+            response = self.db.alerts.insert(body)
+        except pymongo.errors.InvalidDocument, e:
+            LOG.critical('Attempt to insert invalid document - %s: %s', e, body)
+            return
+        except Exception, e:
+            LOG.critical('Unhandled exception - %s: %s', e, body)
+            return
+
+        return response
 
     def duplicate_alert(self, alert):
 
