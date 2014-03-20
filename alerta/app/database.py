@@ -646,13 +646,12 @@ class Mongo(object):
                                        new=True,
                                        upsert=True
                                        )["value"]
-            return heartbeat_id
+            return response['_id']
         else:
             update = update['$set']
             update["_id"] = heartbeat.id
             response = self.db.heartbeats.insert(update)
-
-            return heartbeat.id
+            return response
 
     def delete_heartbeat(self, id):
 
