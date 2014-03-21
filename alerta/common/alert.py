@@ -26,9 +26,9 @@ class Alert(object):
         'parser_dir': '/etc/alerta/parsers',
     }
 
-    def __init__(self, resource, event, environment=None, severity=severity_code.NORMAL, correlate=[],
-                 status=status_code.UNKNOWN, service=[], group=None, value=None, text=None, tags=[],
-                 attributes=None, origin=None, event_type=None, create_time=None, timeout=86400, raw_data=None):
+    def __init__(self, resource, event, environment=None, severity=severity_code.NORMAL, correlate=None,
+                 status=status_code.UNKNOWN, service=None, group=None, value=None, text=None, tags=None,
+                 attributes={}, origin=None, event_type=None, create_time=None, timeout=86400, raw_data=None):
 
         config.register_opts(Alert.alert_opts)
 
@@ -38,23 +38,19 @@ class Alert(object):
             raise ValueError('Missing mandatory value for resource')
         if not event:
             raise ValueError('Missing mandatory value for event')
+        if any(['.' in key for key in attributes.keys()]) or any(['$' in key for key in attributes.keys()]):
+            raise ValueError('Attribute keys must not contain "." or "$"')
 
         self.id = str(uuid4())
         self.resource = resource
         self.event = event
         self.environment = environment or ""
         self.severity = severity
-        if not isinstance(correlate, list):
-            self.correlate = [correlate]
-        else:
-            self.correlate = correlate
+        self.correlate = correlate or list()
         if correlate and event not in correlate:
             self.correlate.append(event)
         self.status = status
-        if not isinstance(service, list):
-            self.service = [service]
-        else:
-            self.service = service
+        self.service = service or list()
         self.group = group or 'Misc'
         self.value = value or 'n/a'
         self.text = text or ""
