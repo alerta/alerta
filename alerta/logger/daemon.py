@@ -14,14 +14,13 @@ from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
 
-
 __version__ = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-class LoggerThread(FanoutConsumer, threading.Thread):
+class LoggerMessage(FanoutConsumer, threading.Thread):
 
     def __init__(self):
 
@@ -89,8 +88,8 @@ class LoggerDaemon(Daemon):
 
     def run(self):
 
-        logger = LoggerThread()
-        logger.start()
+        mq = LoggerMessage()
+        mq.start()
 
         api = ApiClient()
 
