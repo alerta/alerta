@@ -65,6 +65,9 @@ class ApiClient(object):
         except requests.RequestException, e:
             LOG.error('API request send failed: %s', e)
             raise
+        except requests.ConnectionError, e:
+            LOG.error('API request send failed: %s', e)
+            raise
 
         LOG.debug('HTTP status: %s', r.status_code)
         LOG.debug('HTTP response: %s', r.text)
@@ -162,7 +165,7 @@ class ApiClient(object):
 
         LOG.debug('Acking via API endpoint...')
         try:
-            r = requests.put(url, data=payload, headers=headers)
+            r = requests.post(url, data=payload, headers=headers)
         except requests.Timeout, e:
             LOG.warning('API request timed out: %s', e)
             raise
@@ -186,7 +189,7 @@ class ApiClient(object):
             raise
 
         try:
-            response = r.json()['response']
+            response = r.json()
         except Exception, e:
             LOG.error('API bad response - %s: %s', e, r.text)
             raise
@@ -237,7 +240,7 @@ class ApiClient(object):
             raise
 
         try:
-            response = r.json()['response']
+            response = r.json()
         except Exception, e:
             LOG.error('API bad response - %s: %s', e, r.text)
             raise
