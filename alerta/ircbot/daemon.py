@@ -1,54 +1,93 @@
 
-import sys
-import socket
-import select
 import time
+import threading
+
+import irc.bot
 
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.common.alert import Alert
+from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.amqp import Messaging, FanoutConsumer
-from alerta.common.tokens import LeakyBucket
 from alerta.common.api import ApiClient
 
-Version = '3.0.0'
+__version__ = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-class IrcbotMessage(FanoutConsumer):
+class IrcbotServer(threading.Thread, irc.bot.SingleServerIRCBot):
 
-    def __init__(self, mq, irc, tokens):
+    def __init__(self):
+
+        LOG.info('Connecting to IRC server...')
+
+        irc.bot.SingleServerIRCBot.__init__(self, [(CONF.irc_host, CONF.irc_port)], CONF.irc_user, CONF.irc_user)
+        threading.Thread.__init__(self)
+
+        self.channel = CONF.irc_channel
+        self.api = ApiClient()
+
+    def run(self):
+
+        self._connect()
+        super(irc.bot.SingleServerIRCBot, self).start()
+
+    def on_welcome(self, connection, event):
+
+        connection.join(self.channel)
+        LOG.info('Joined %s', self.channel)
+
+    def on_pubmsg(self, connection, event):
+
+        try:
+            cmd, args = event.arguments[0].split(' ', 1)
+        except ValueError:
+            cmd = event.arguments[0]
+            args = None
+        self.do_command(event, cmd, args)
+
+    def do_command(self, event, cmd, args):
+
+        if cmd == "disconnect":
+            self.disconnect()
+        elif cmd == "die":
+            self.die()
+        elif cmd == "ack" and args:
+            self.api.ack(args)
+        elif cmd == "delete" and args:
+            self.api.delete(args)
+        else:
+            self.connection.privmsg(self.channel, "huh?")
+
+
+class IrcbotMessage(FanoutConsumer, threading.Thread):
+
+    def __init__(self, irc):
 
         self.irc = irc
-        self.tokens = tokens
 
-        FanoutConsumer.__init__(self, mq)
+        mq = Messaging()
 
-    def on_message(self, headers, body):
+        FanoutConsumer.__init__(self, mq.connection)
+        threading.Thread.__init__(self)
 
-        if not self.tokens.get_token():
-            LOG.warning('%s : No tokens left, rate limiting this alert', headers['correlation-id'])
-            return
+    def on_message(self, body, message):
 
         LOG.debug("Received: %s", body)
         try:
-            ircAlert = Alert.parse_alert(body)
+            ircAlert = AlertDocument.parse_alert(body)
         except ValueError:
             return
 
         if ircAlert:
-            LOG.info('%s : Send IRC message to %s', ircAlert.get_id(), CONF.irc_channel)
-            try:
-                msg = 'PRIVMSG %s :%s [%s] %s - %s %s is %s on %s %s' % (CONF.irc_channel, ircAlert.get_id(short=True),
-                      ircAlert.status, ircAlert.environment, ircAlert.severity, ircAlert.event, ircAlert.value,
-                      ','.join(ircAlert.service), ircAlert.resource)
-                self.irc.send(msg + '\r\n')
-            except Exception, e:
-                LOG.error('%s : IRC send failed - %s', ircAlert.get_id(), e)
+            LOG.debug('%s : Send IRC message to %s', ircAlert.get_id(), CONF.irc_channel)
+            msg = '%s [%s] %s - %s %s is %s on %s %s' % (
+                ircAlert.get_id(short=True), ircAlert.status, ircAlert.environment, ircAlert.severity.capitalize(),
+                ircAlert.event, ircAlert.value, ','.join(ircAlert.service), ircAlert.resource)
+            self.irc.connection.privmsg(CONF.irc_channel, msg)
 
 
 class IrcbotDaemon(Daemon):
@@ -68,81 +107,20 @@ class IrcbotDaemon(Daemon):
 
     def run(self):
 
-        self.running = True
+        ircbot = IrcbotServer()
 
-        # An IRC client may send 1 message every 2 seconds
-        # See section 5.8 in http://datatracker.ietf.org/doc/rfc2813/
-        tokens = LeakyBucket(tokens=20, rate=2)
-        tokens.start()
+        mq = IrcbotMessage(ircbot)
+        mq.start()
+
+        ircbot.start()
 
         api = ApiClient()
 
-        # Connect to IRC server
         try:
-            irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            irc.connect((CONF.irc_host, CONF.irc_port))
-            time.sleep(1)
-            irc.send('NICK %s\r\n' % CONF.irc_user)
-            time.sleep(1)
-            irc.send('USER %s 8 * : %s\r\n' % (CONF.irc_user, CONF.irc_user))
-            LOG.debug('USER -> %s', irc.recv(4096))
-            time.sleep(1)
-            irc.send('JOIN %s\r\n' % CONF.irc_channel)
-            LOG.debug('JOIN ->  %s', irc.recv(4096))
-        except Exception, e:
-            LOG.error('IRC connection error: %s', e)
-            sys.exit(1)
-
-        LOG.info('Joined IRC channel %s on %s as USER %s', CONF.irc_channel, CONF.irc_host, CONF.irc_user)
-
-        # Connect to message queue
-        mq = Messaging()
-
-        ircbot = IrcbotMessage(mq.connection)
-        ircbot.run()
-
-        while not self.shuttingdown:
-            try:
-                LOG.debug('Waiting for IRC messages...')
-                ip, op, rdy = select.select([irc], [], [], CONF.loop_every)
-                if ip:
-                    for i in ip:
-                        if i == irc:
-                            data = irc.recv(4096).rstrip('\r\n')
-                            if len(data) > 0:
-                                if 'ERROR' in data:
-                                    LOG.error('%s. Exiting...', data)
-                                    sys.exit(1)
-                                else:
-                                    LOG.debug('%s', data)
-                            else:
-                                LOG.warning('IRC server sent no data')
-                            if 'PING' in data:
-                                LOG.info('IRC PING received -> PONG ' + data.split()[1])
-                                irc.send('PONG ' + data.split()[1] + '\r\n')
-                            elif 'ack' in data.lower():
-                                LOG.info('Request to ACK %s by %s', data.split()[4], data.split()[0])
-                                api.ack(data.split()[4])
-                            elif 'delete' in data.lower():
-                                LOG.info('Request to DELETE %s by %s', data.split()[4], data.split()[0])
-                                api.delete(data.split()[4])
-                            elif data.find('!alerta quit') != -1:
-                                irc.send('QUIT\r\n')
-                            else:
-                                LOG.debug('IRC: %s', data)
-                        else:
-                            i.recv()
-                else:
-                    LOG.debug('Send heartbeat...')
-                    heartbeat = Heartbeat(tags=[Version])
-                    api.send(heartbeat)
-
-            except (KeyboardInterrupt, SystemExit):
-                self.shuttingdown = True
-
-        LOG.info('Shutdown request received...')
-        self.running = False
-        tokens.shutdown()
-
-        LOG.info('Disconnecting from message broker...')
-        mq.disconnect()
+            while True:
+                LOG.debug('Send heartbeat...')
+                heartbeat = Heartbeat(origin=__name__, tags=[__version__])
+                api.send(heartbeat)
+                time.sleep(CONF.loop_every)
+        except (KeyboardInterrupt, SystemExit):
+            pass
