@@ -79,9 +79,7 @@ class PagerDutyClient(object):
 
         return response
 
-    def trigger_event(self, alert, incident_key):
-
-        service = alert.tags['pagerduty']
+    def trigger_event(self, alert, service, incident_key):
 
         if service not in self.services:
             LOG.error('Failed to send trigger event to PagerDuty - unknown service "%s"', service)
@@ -95,23 +93,23 @@ class PagerDutyClient(object):
             "service_key": self.services[service]['key'],
             "event_type": "trigger",
             "description": '%s: %s %s on %s %s' % (alert.environment, alert.severity, alert.event,
-                                                   ','.join(alert.services), alert.resource),
+                                                   ','.join(alert.service), alert.resource),
             "incident_key": incident_key,
             "client": "alerta",
             "client_url": "http://monitoring.guprod.gnm/alerta/widgets/v2/details?id=%s" % alert.get_id(),
             "details": {
                 "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
                 "status": alert.status,
-                "lastReceiveTime": alert.get_last_receive_time(),
-                "environment": ",".join(alert.environment),
+                "lastReceiveTime": alert.last_receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (alert.last_receive_time.microsecond // 1000),
+                "environment": alert.environment,
                 "service": ",".join(alert.service),
                 "resource": alert.resource,
                 "event": alert.event,
                 "value": alert.value,
                 "text": alert.text,
                 "id": alert.get_id(),
-                "tags": ", ".join(k + '=' + v for k, v in alert.tags.items()),
-                "moreInfo": alert.more_info
+                "tags": ", ".join(alert.tags)
+
             }
         }
         LOG.debug('PagerDuty TRIGGER event for %s => %s', service, event)
@@ -122,9 +120,7 @@ class PagerDutyClient(object):
         LOG.info('PagerDuty %s incident counts: triggered=%s, acknowledged=%s, resolved=%s, total=%s',
                  service, counts['triggered'], counts['acknowledged'], counts['resolved'], counts['total'])
 
-    def acknowledge_event(self, alert, incident_key):
-
-        service = alert.tags['pagerduty']
+    def acknowledge_event(self, alert, service, incident_key):
 
         if service not in self.services:
             LOG.error('Failed to send acknowledge event to PagerDuty - unknown service "%s"', service)
@@ -145,7 +141,7 @@ class PagerDutyClient(object):
             "details": {
                 "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
                 "status": alert.status,
-                "lastReceiveTime": alert.get_last_receive_time(),
+                "lastReceiveTime": alert.last_receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (alert.last_receive_time.microsecond // 1000),
                 "environment": alert.environment,
                 "service": ",".join(alert.service),
                 "resource": alert.resource,
@@ -164,9 +160,7 @@ class PagerDutyClient(object):
         LOG.info('PagerDuty %s incident counts: triggered=%s, acknowledged=%s, resolved=%s, total=%s',
                  service, counts['triggered'], counts['acknowledged'], counts['resolved'], counts['total'])
 
-    def resolve_event(self, alert, incident_key):
-
-        service = alert.tags['pagerduty']
+    def resolve_event(self, alert, service, incident_key):
 
         if service not in self.services:
             LOG.error('Failed to send resolve event to PagerDuty - unknown service "%s"', service)
@@ -187,16 +181,15 @@ class PagerDutyClient(object):
             "details": {
                 "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
                 "status": alert.status,
-                "lastReceiveTime": alert.get_last_receive_time(),
-                "environment": ",".join(alert.environment),
+                "lastReceiveTime": alert.last_receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (alert.last_receive_time.microsecond // 1000),
+                "environment": alert.environment,
                 "service": ",".join(alert.service),
                 "resource": alert.resource,
                 "event": alert.event,
                 "value": alert.value,
                 "text": alert.text,
                 "id": alert.get_id(),
-                "tags": ", ".join(k + '=' + v for k, v in alert.tags.items()),
-                "moreInfo": alert.more_info
+                "tags": ", ".join(alert.tags)
             }
         }
         LOG.debug('PagerDuty RESOLVE event for %s => %s', service, event)

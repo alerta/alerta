@@ -31,7 +31,7 @@ class Mailer(object):
         config.register_opts(Mailer.mailer_opt)
 
         self.subject = '[%s] %s: %s %s on %s %s' % (alert.status, alert.environment, alert.severity, alert.event,
-                                                    ','.join(alert.services), alert.resource)
+                                                    ','.join(alert.service), alert.resource)
 
         self.text = "-" * 60 + "\n"
         self.text += '[%s] %s: %s %s on %s %s' % (alert.status, alert.environment, alert.severity, alert.event,
@@ -42,8 +42,8 @@ class Mailer(object):
 
         self.text += "Alert ID: %s\n" % alert.get_id()
         self.text += "Create Time: %s\n" % alert.get_create_time()
-        self.text += "Environment: %s\n" % ", ".join(alert.environment)
-        self.text += "Services: %s\n" % ", ".join(alert.services)
+        self.text += "Environment: %s\n" % alert.environment
+        self.text += "Services: %s\n" % ", ".join(alert.service)
         self.text += "Resource: %s\n" % alert.resource
         self.text += "Event: %s\n" % alert.event
         self.text += "Group: %s\n" % alert.group
@@ -54,10 +54,10 @@ class Mailer(object):
         self.text += "Threshold Info: %s\n" % alert.threshold_info
         self.text += "Duplicate Count: %s\n" % alert.duplicate_count
         self.text += "Origin: %s\n" % alert.origin
-        self.text += "Tags: %s\n" % ", ".join(k + '=' + v for k, v in alert.tags.items())
-        self.text += "More Info: %s\n\n" % alert.more_info
+        self.text += "Tags: %s\n" % ", ".join(alert.tags)
 
-        if hasattr(alert, 'graph_urls'):
+
+        if hasattr(alert.attributes, 'graph_urls'):
             self.text += "Graphs\n\n"
             for graph in alert.graph_urls:
                 self.text += '%s\n' % graph
