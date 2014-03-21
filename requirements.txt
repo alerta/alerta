@@ -3,10 +3,11 @@ requests
 PyYAML
 pytz
 prettytable
-librabbitmq
 kombu
+librabbitmq
 pymongo
 Flask
+irc
 boto
 suds
 dynect

@@ -16,7 +16,22 @@ setuptools.setup(
     author='Nick Satterly',
     author_email='nick.satterly@theguardian.com',
     packages=setuptools.find_packages(exclude=['bin', 'tests']),
-    install_requires=['requests', 'PyYAML', 'pytz', 'prettytable', 'kombu', 'librabbitmq', 'pymongo', 'Flask'],
+    install_requires=[
+        'argparse',
+        'requests',
+        'PyYAML',
+        'pytz',
+        'prettytable',
+        'kombu',
+        'librabbitmq',
+        'pymongo',
+        'Flask',
+        'irc',
+        'boto',
+        'suds',
+        'dynect',
+        'nose'
+    ],
     include_package_data=True,
     zip_safe=False,
     scripts=[
