@@ -254,31 +254,6 @@ class Alert(object):
 
         return suppress
 
-    def translate_alert(self, mappings):
-        """
-        Take list of mappings and apply them to alert. Used by SNMP trap handler to
-        translate trap variable binding like $B to actual values if they are referred
-        to in any alert attribute.
-        """
-        LOG.debug('Translate alert using mappings: %s', mappings)
-
-        for k, v in mappings.iteritems():
-            LOG.debug('translate %s -> %s', k, v)
-            self.resource = self.resource.replace(k, v)
-            self.event = self.event.replace(k, v)
-            self.environment = self.environment.replace(k, v)
-            self.severity = self.severity.replace(k, v)
-            if self.correlate is not None:
-                self.correlate[:] = [c.replace(k, v) for c in self.correlate]
-            self.service[:] = [s.replace(k, v) for s in self.service]
-            self.group = self.group.replace(k, v)
-            self.value = self.value.replace(k, v)
-            self.text = self.text.replace(k, v)
-            if self.tags is not None:
-                self.tags[:] = [tag.replace(k, v) for tag in self.tags]
-            if self.attributes is not None:
-                self.attributes = dict([(attrib[0], attrib[1].replace(k, v)) for attrib in self.attributes.iteritems()])
-
 
 class AlertDocument(object):
 
