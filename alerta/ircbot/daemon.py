@@ -123,4 +123,4 @@ class IrcbotDaemon(Daemon):
                 api.send(heartbeat)
                 time.sleep(CONF.loop_every)
         except (KeyboardInterrupt, SystemExit):
-            pass
+            ircbot.should_stop = True

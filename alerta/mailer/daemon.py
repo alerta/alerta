@@ -116,8 +116,8 @@ class MailerDaemon(Daemon):
         tokens = LeakyBucket(tokens=20, rate=30)
         tokens.start()
 
-        mq = MailerMessage(onhold, tokens)
-        mq.start()
+        mailer = MailerMessage(onhold, tokens)
+        mailer.start()
 
         sender = MailSender(onhold, tokens)
         sender.start()
@@ -131,4 +131,4 @@ class MailerDaemon(Daemon):
                 api.send(heartbeat)
                 time.sleep(CONF.loop_every)
         except (KeyboardInterrupt, SystemExit):
-            pass
+            mailer.should_stop = True

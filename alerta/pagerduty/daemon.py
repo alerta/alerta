@@ -75,8 +75,8 @@ class PagerDutyDaemon(Daemon):
 
     def run(self):
 
-        mq = PagerDutyMessage()
-        mq.start()
+        pd = PagerDutyMessage()
+        pd.start()
 
         api = ApiClient()
 
@@ -87,5 +87,5 @@ class PagerDutyDaemon(Daemon):
                 api.send(heartbeat)
                 time.sleep(CONF.loop_every)
         except (KeyboardInterrupt, SystemExit):
-            pass
+            pd.should_stop = True
 

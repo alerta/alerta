@@ -88,8 +88,8 @@ class LoggerDaemon(Daemon):
 
     def run(self):
 
-        mq = LoggerMessage()
-        mq.start()
+        logger = LoggerMessage()
+        logger.start()
 
         api = ApiClient()
 
@@ -100,4 +100,4 @@ class LoggerDaemon(Daemon):
                 api.send(heartbeat)
                 time.sleep(CONF.loop_every)
         except (KeyboardInterrupt, SystemExit):
-            pass
+            logger.should_stop = True
