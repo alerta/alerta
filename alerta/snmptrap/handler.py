@@ -13,7 +13,7 @@ from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
 
-Version = '3.0.0'
+__version__ = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -56,7 +56,7 @@ class SnmpTrapHandler(object):
             self.statsd.metric_send('alert.snmptrap.alerts.total', 1)
 
         LOG.debug('Send heartbeat...')
-        heartbeat = Heartbeat(tags=[Version])
+        heartbeat = Heartbeat(tags=[__version__])
         self.api.send(heartbeat)
 
     @staticmethod
@@ -205,10 +205,35 @@ class SnmpTrapHandler(object):
             LOG.debug('%s', snmptrapAlert)
             return
 
-        snmptrapAlert.translate_alert(trapvars)
+        SnmpTrapHandler.translate_alert(snmptrapAlert, trapvars)
 
         if snmptrapAlert.get_type() == 'Heartbeat':
-            snmptrapAlert = Heartbeat(origin=snmptrapAlert.origin, version='n/a', timeout=snmptrapAlert.timeout)
+            snmptrapAlert = Heartbeat(origin=snmptrapAlert.origin, tags=[__version__], timeout=snmptrapAlert.timeout)
 
         return snmptrapAlert
 
+    @staticmethod
+    def translate_alert(alert, mappings):
+        """
+        Take list of mappings and apply them to alert. Used by SNMP trap handler to
+        translate trap variable binding like $B to actual values if they are referred
+        to in any alert attribute.
+        """
+        LOG.debug('Translate alert using mappings: %s', mappings)
+
+        for k, v in mappings.iteritems():
+            LOG.debug('translate %s -> %s', k, v)
+            alert.resource = alert.resource.replace(k, v)
+            alert.event = alert.event.replace(k, v)
+            alert.environment = alert.environment.replace(k, v)
+            alert.severity = alert.severity.replace(k, v)
+            if alert.correlate is not None:
+                alert.correlate[:] = [c.replace(k, v) for c in alert.correlate]
+            alert.service[:] = [s.replace(k, v) for s in alert.service]
+            alert.group = alert.group.replace(k, v)
+            alert.value = alert.value.replace(k, v)
+            alert.text = alert.text.replace(k, v)
+            if alert.tags is not None:
+                alert.tags[:] = [tag.replace(k, v) for tag in alert.tags]
+            if alert.attributes is not None:
+                alert.attributes = dict([(attrib[0], attrib[1].replace(k, v)) for attrib in alert.attributes.iteritems()])
