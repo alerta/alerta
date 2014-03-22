@@ -54,7 +54,7 @@ class LoggerMessage(FanoutConsumer, threading.Thread):
             LOG.debug('Index payload %s', document)
 
             index_url = "http://%s:%s/%s/%s" % (CONF.es_host, CONF.es_port,
-                                                datetime.datetime.utcnow().strftime(CONF.es_index), logAlert.event_type)
+                                                logAlert.last_receive_time.strftime(CONF.es_index), logAlert.event_type)
             LOG.debug('Index URL: %s', index_url)
 
             try:

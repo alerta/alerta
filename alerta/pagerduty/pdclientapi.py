@@ -100,7 +100,7 @@ class PagerDutyClient(object):
             "details": {
                 "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
                 "status": alert.status,
-                "lastReceiveTime": alert.last_receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (alert.last_receive_time.microsecond // 1000),
+                "lastReceiveTime": alert.get_date('last_receive_time', 'iso'),
                 "environment": alert.environment,
                 "service": ",".join(alert.service),
                 "resource": alert.resource,
@@ -141,7 +141,7 @@ class PagerDutyClient(object):
             "details": {
                 "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
                 "status": alert.status,
-                "lastReceiveTime": alert.last_receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (alert.last_receive_time.microsecond // 1000),
+                "lastReceiveTime": alert.get_date('last_receive_time', 'iso'),
                 "environment": alert.environment,
                 "service": ",".join(alert.service),
                 "resource": alert.resource,
@@ -181,7 +181,7 @@ class PagerDutyClient(object):
             "details": {
                 "severity": '%s -> %s' % (alert.previous_severity, alert.severity),
                 "status": alert.status,
-                "lastReceiveTime": alert.last_receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (alert.last_receive_time.microsecond // 1000),
+                "lastReceiveTime": alert.get_date('last_receive_time', 'iso'),
                 "environment": alert.environment,
                 "service": ",".join(alert.service),
                 "resource": alert.resource,
