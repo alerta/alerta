@@ -1,12 +1,15 @@
+
 import os
 import sys
+import time
 import datetime
 import json
 from uuid import uuid4
 import re
 import fnmatch
-
 import yaml
+
+from email import utils
 
 from alerta.common import log as logging
 from alerta.common import config
@@ -325,6 +328,26 @@ class AlertDocument(object):
             "type": self.event_type,
             "correlation-id": self.id
         }
+
+    def get_date(self, attr, fmt):
+
+        if hasattr(self, attr):
+            if fmt == 'local':
+                return getattr(self, attr).astimezone(self.tz).strftime('%Y/%m/%d %H:%M:%S')
+            elif fmt == 'iso' or fmt == 'iso8601':
+                return getattr(self, attr).replace(microsecond=0).isoformat() + ".%03dZ" % (getattr(self, attr).microsecond // 1000)
+            elif fmt == 'rfc' or fmt == 'rfc2822':
+                return utils.formatdate(time.mktime(getattr(self, attr).timetuple()))
+            elif fmt == 'short':
+                return getattr(self, attr).astimezone(self.tz).strftime('%a %d %H:%M:%S')
+            elif fmt == 'epoch':
+                return time.mktime(getattr(self, attr).timetuple())
+            elif fmt == 'raw':
+                return getattr(self, attr)
+            else:
+                raise ValueError("Unknown date format %s" % fmt)
+        else:
+            return ValueError("Attribute %s not a date" % attr)
 
     def get_body(self):
 
