@@ -128,7 +128,7 @@ def get_alerts():
         )
     else:
         return jsonify(
-            status="error",
+            status="ok",
             message="not found",
             total=0,
             more=False,
