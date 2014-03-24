@@ -22,6 +22,7 @@ def parse_fields(request):
 
     if 'q' in params:
         query = json.loads(params.get('q'))
+        del params['q']
     else:
         query = dict()
 
