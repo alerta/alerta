@@ -1,0 +1,14 @@
+{
+    "defaultStacks": "monitoring",
+    "packages": {
+        "alerta": {
+            "type": "django-webapp",
+            "data": {
+                "port": "8080",
+                "heatlthcheck_paths": [
+                    "/"
+                ]
+            }
+        }
+    }
+}

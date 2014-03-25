@@ -48,4 +48,4 @@ echo "Rezipped to artifacts.zip"
 
 popd
 
-echo "##teamcity[publishArtifacts '$SCRIPT_PATH/artifacts.zip => .']"
+echo "##teamcity[publishArtifacts '$SCRIPT_PATH/dist/artifacts.zip => .']"
