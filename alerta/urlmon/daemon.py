@@ -21,7 +21,7 @@ from alerta.common.api import ApiClient
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-Version = '3.0.0'
+__version__ = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -34,6 +34,8 @@ _HTTP_ALERTS = [
     'HttpContentError',
     'HttpResponseSlow',
     'HttpResponseOK',
+    'HttpResponseRegexError',
+    'HttpResponseRegexOK'
 ]
 
 # Add missing responses
@@ -93,7 +95,7 @@ class WorkerThread(threading.Thread):
                 LOG.info('%s is shutting down.', self.getName())
                 break
 
-            code_regex = check.get('code', None)
+            status_regex = check.get('status_regex', None)
             search_string = check.get('search', None)
             rule = check.get('rule', None)
             warn_thold = check.get('warning', CONF.urlmon_slow_warning)
@@ -135,7 +137,7 @@ class WorkerThread(threading.Thread):
             urllib2.install_opener(opener)
 
             if 'User-agent' not in headers:
-                headers['User-agent'] = 'alert-urlmon/%s Python-urllib/%s' % (Version, urllib2.__version__)
+                headers['User-agent'] = 'alert-urlmon/%s Python-urllib/%s' % (__version__, urllib2.__version__)
 
             try:
                 if post:
@@ -149,54 +151,79 @@ class WorkerThread(threading.Thread):
             except urllib2.URLError, e:
                 if hasattr(e, 'reason'):
                     reason = str(e.reason)
-                    code = None
+                    status = None
                 elif hasattr(e, 'code'):
                     reason = None
-                    code = e.code
-            except Exception:
-                LOG.warning('Connection terminated unexpectedly?')
+                    status = e.code
+            except Exception, e:
+                LOG.warning('Unexpected error: %s', e)
                 continue
             else:
-                code = response.getcode()
+                status = response.getcode()
                 body = response.read()
 
             rtt = int((time.time() - start) * 1000)  # round-trip time
 
             try:
-                status = HTTP_RESPONSES[code]
+                description = HTTP_RESPONSES[status]
             except KeyError:
-                status = 'undefined'
+                description = 'undefined'
 
-            if not code:
+            if not status:
                 event = 'HttpConnectionError'
                 severity = severity_code.MAJOR
                 value = reason
                 text = 'Error during connection or data transfer (timeout=%d).' % CONF.urlmon_max_timeout
-            elif re.match(code_regex, code):
+
+            elif status_regex:
+                if re.search(status_regex, str(status)):
+                    event = 'HttpResponseRegexOK'
+                    severity = severity_code.NORMAL
+                    value = '%s (%d)' % (description, status)
+                    text = 'HTTP server responded with status code %d that matched "%s" in %dms' % (status, status_regex, rtt)
+                else:
+                    event = 'HttpResponseRegexError'
+                    severity = severity_code.MAJOR
+                    value = '%s (%d)' % (description, status)
+                    text = 'HTTP server responded with status code %d that failed to match "%s"' % (status, status_regex)
+
+            elif 100 <= status <= 199:
+                event = 'HttpInformational'
+                severity = severity_code.NORMAL
+                value = '%s (%d)' % (description, status)
+                text = 'HTTP server responded with status code %d in %dms' % (status, rtt)
+
+            elif 200 <= status <= 299:
                 event = 'HttpResponseOK'
                 severity = severity_code.NORMAL
-                value = '%s (%d)' % (status, code)
-                text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
-            elif code >= 500:
-                event = 'HttpServerError'
-                severity = severity_code.MAJOR
-                value = '%s (%d)' % (status, code)
-                text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
-            elif code >= 400:
-                event = 'HttpClientError'
-                severity = severity_code.MINOR
-                value = '%s (%d)' % (status, code)
-                text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
-            elif code >= 300:
+                value = '%s (%d)' % (description, status)
+                text = 'HTTP server responded with status code %d in %dms' % (status, rtt)
+
+            elif 300 <= status <= 399:
                 event = 'HttpRedirection'
                 severity = severity_code.MINOR
-                value = '%s (%d)' % (status, code)
-                text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
-            elif code >= 200:
-                event = 'HttpResponseOK'
-                severity = severity_code.NORMAL
-                value = '%s (%d)' % (status, code)
-                text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
+                value = '%s (%d)' % (description, status)
+                text = 'HTTP server responded with status code %d in %dms' % (status, rtt)
+
+            elif 400 <= status <= 499:
+                event = 'HttpClientError'
+                severity = severity_code.MINOR
+                value = '%s (%d)' % (description, status)
+                text = 'HTTP server responded with status code %d in %dms' % (status, rtt)
+
+            elif 500 <= status <= 599:
+                event = 'HttpServerError'
+                severity = severity_code.MAJOR
+                value = '%s (%d)' % (description, status)
+                text = 'HTTP server responded with status code %d in %dms' % (status, rtt)
+
+            else:
+                event = 'HttpUnknownError'
+                severity = severity_code.WARNING
+                value = 'UNKNOWN'
+                text = 'HTTP request resulted in an unhandled error.'
+
+            if event in ['HttpResponseOK', 'HttpResponseRegexOK']:
                 if rtt > crit_thold:
                     event = 'HttpResponseSlow'
                     severity = severity_code.CRITICAL
@@ -237,22 +264,12 @@ class WorkerThread(threading.Thread):
                             severity = severity_code.MINOR
                             value = 'Rule failed'
                             text = 'Website available but rule evaluation failed (%s)' % rule
-            elif code >= 100:
-                event = 'HttpInformational'
-                severity = severity_code.NORMAL
-                value = '%s (%d)' % (status, code)
-                text = 'HTTP server responded with status code %d in %dms' % (code, rtt)
-            else:
-                event = 'HttpUnknownError'
-                severity = severity_code.WARNING
-                value = 'UNKNOWN'
-                text = 'HTTP request resulted in an unhandled error.'
 
-            LOG.debug("URL: %s, Status: %s (%s), Round-Trip Time: %dms -> %s", check['url'], status, code, rtt,
-                      event)
+            LOG.debug("URL: %s, Status: %s (%s), Round-Trip Time: %dms -> %s",
+                      check['url'], description, status, rtt, event)
 
             # Forward metric data to Graphite
-            if code and code < 300:
+            if status and status <= 299:
                 avail = 100.0   # 1xx, 2xx -> 100% available
             else:
                 avail = 0.0
@@ -348,7 +365,7 @@ class UrlmonDaemon(Daemon):
                     self.queue.put((url, time.time()))
 
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(tags=[Version])
+                heartbeat = Heartbeat(tags=[__version__])
                 self.api.send(heartbeat)
 
                 time.sleep(CONF.loop_every)
