@@ -1,37 +1,51 @@
 #!/bin/bash
-# Build script for teamcity to build the alerta RPMs
 
-# check for some required environmentals
-if [ -z "$BUILD_NUMBER" ]
-then
-	echo "No BUILD_NUMBER environment varible set - this is usually set by TeamCity"
-	exit 1
+set -e
+set -x
+
+# prep
+pushd `dirname $0` >/dev/null
+SCRIPT_PATH=`pwd`
+popd >/dev/null
+
+rm -Rf $SCRIPT_PATH/ve
+rm -Rf $SCRIPT_PATH/dist
+rm -Rf $SCRIPT_PATH/alerta.egg-info
+
+if [ -z "${BUILD_NUMBER}" ]; then
+    BUILD_NUMBER=DEV
 fi
 
-VERSION="2.0.${BUILD_NUMBER}"
+pushd $SCRIPT_PATH
 
-# work out the directory we are in
-SCRIPT=$(readlink -f $0)
-ALERTA_VCS_ROOT=`dirname $SCRIPT`
+echo "creating virtualenv"
+virtualenv ve
+echo "cleaning"
+ve/bin/python setup.py clean
 
-# create a build root for the rpms
-BUILDROOT=${ALERTA_VCS_ROOT}/rpmtarget
-rm -rf ${BUILDROOT}
-mkdir ${BUILDROOT} \
-	${BUILDROOT}/SOURCES \
-	${BUILDROOT}/SRPMS \
-	${BUILDROOT}/SPECS \
-	${BUILDROOT}/BUILD \
-	${BUILDROOT}/WORKING \
-	${BUILDROOT}/RPMS
+echo "installing dependencies"
+ve/bin/pip install -r requirements.txt --upgrade
+virtualenv --relocatable ve
 
-# copy files for the RPM build into the build root sources
-rsync -av --exclude='.git/' --exclude-from=$ALERTA_VCS_ROOT/.gitignore ${ALERTA_VCS_ROOT}/ ${BUILDROOT}/BUILD/ || exit 1
+#echo "overwriting build.py"
+#cat << EOF > alerta/build.py
+#BUILD_NUMBER = '${BUILD_NUMBER}'
+#EOF
 
-# now run the rpm build with a spec file
-rpmbuild --define "version ${VERSION}" --define "buildnumber ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
+echo "Build distribution zip"
+ve/bin/python setup.py sdist --formats=zip
 
-# now we have a bunch of RPM files which we should flag as artifacts
-echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/noarch/alerta-common-${VERSION}-1.noarch.rpm => .']"
-echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/noarch/alerta-client-${VERSION}-1.noarch.rpm => .']"
-echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/noarch/alerta-server-${VERSION}-1.noarch.rpm => .']"
+mkdir -p dist/packages/alerta
+unzip $SCRIPT_PATH/dist/alerta*.zip -d $SCRIPT_PATH/dist/packages/alerta
+
+BUILD_DIR=`ls -1 dist/packages/alerta`
+cp -r ve dist/packages/alerta/${BUILD_DIR}
+cp contrib/riffraff/deploy.json dist/
+pushd dist
+zip -r artifacts.zip deploy.json packages
+popd
+echo "Rezipped to artifacts.zip"
+
+popd
+
+echo "##teamcity[publishArtifacts '$SCRIPT_PATH/artifacts.zip => .']"
