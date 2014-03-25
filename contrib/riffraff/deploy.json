@@ -6,6 +6,7 @@
         "alerta": {
             "type": "django-webapp",
             "data": {
+                "applicationRoot": "/opt",
                 "port": "8080",
                 "heatlthcheck_paths": [
                     "/"
