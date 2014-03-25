@@ -5,7 +5,7 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.api import ApiClient
 
-Version = '2.1.0'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -23,43 +23,38 @@ class SenderClient(object):
         if CONF.heartbeat:
             heartbeat = Heartbeat(
                 origin=CONF.origin,
-                version=CONF.tags.get('Version', Version),
+                tags=CONF.tags,
                 timeout=CONF.timeout
             )
 
             LOG.debug(heartbeat)
 
             api = ApiClient()
-            api.send(heartbeat)
 
-            return heartbeat.get_id()
+            return api.send(heartbeat)
 
         else:
             exceptionAlert = Alert(
                 resource=CONF.resource,
                 event=CONF.event,
+                environment=CONF.environment,
+                severity=CONF.severity,
                 correlate=CONF.correlate,
+                status=CONF.status,
+                service=CONF.service,
                 group=CONF.group,
                 value=CONF.value,
-                status=CONF.status,
-                severity=CONF.severity,
-                environment=CONF.environment,
-                service=CONF.service,
                 text=CONF.text,
-                event_type=CONF.event_type,
                 tags=CONF.tags,
+                attributes=CONF.attributes,
                 origin=CONF.origin,
-                threshold_info='n/a',   # TODO(nsatterl): make this configurable?
-                summary=CONF.summary,
+                event_type=CONF.event_type,
                 timeout=CONF.timeout,
-                raw_data='n/a',  # TODO(nsatterl): make this configurable?
-                more_info=CONF.more_info,
-                graph_urls=CONF.graph_urls,
+                raw_data=CONF.raw_data
             )
 
             LOG.debug(repr(exceptionAlert))
 
             api = ApiClient()
-            api.send(exceptionAlert)
 
-            return exceptionAlert.get_id()
+            return api.send(exceptionAlert)

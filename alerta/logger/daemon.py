@@ -1,5 +1,6 @@
 
 import time
+import threading
 import json
 import urllib2
 import datetime
@@ -7,39 +8,41 @@ import datetime
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.common.mq import Messaging, MessageHandler
-from alerta.common.alert import Alert
+from alerta.common.api import ApiClient
+from alerta.common.amqp import Messaging, FanoutConsumer
+from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
 
-Version = '2.1.0'
+__version__ = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-class LoggerMessage(MessageHandler):
+class LoggerMessage(FanoutConsumer, threading.Thread):
 
-    def __init__(self, mq):
+    def __init__(self):
 
-        self.mq = mq
+        mq = Messaging()
 
-        MessageHandler.__init__(self)
+        FanoutConsumer.__init__(self, mq.connection)
+        threading.Thread.__init__(self)
 
-    def on_message(self, headers, body):
+    def on_message(self, body, message):
 
         LOG.debug("Received: %s", body)
         try:
-            logAlert = Alert.parse_alert(body)
+            logAlert = AlertDocument.parse_alert(body)
         except ValueError:
             return
 
         if logAlert:
-            LOG.info('%s : [%s] %s', logAlert.last_receive_id, logAlert.status, logAlert.summary)
+            LOG.info('%s : [%s] %s', logAlert.last_receive_id, logAlert.status, logAlert.text)
 
             source_host, _, source_path = logAlert.resource.partition(':')
             document = {
-                '@message': logAlert.summary,
+                '@message': logAlert.text,
                 '@source': logAlert.resource,
                 '@source_host': source_host,
                 '@source_path': source_path,
@@ -51,7 +54,7 @@ class LoggerMessage(MessageHandler):
             LOG.debug('Index payload %s', document)
 
             index_url = "http://%s:%s/%s/%s" % (CONF.es_host, CONF.es_port,
-                                                datetime.datetime.utcnow().strftime(CONF.es_index), logAlert.event_type)
+                                                logAlert.last_receive_time.strftime(CONF.es_index), logAlert.event_type)
             LOG.debug('Index URL: %s', index_url)
 
             try:
@@ -66,15 +69,10 @@ class LoggerMessage(MessageHandler):
             except Exception, e:
                 LOG.error('%s : Could not parse elasticsearch reponse: %s', e)
 
-    def on_disconnected(self):
-
-        self.mq.reconnect()
+        message.ack()
 
 
 class LoggerDaemon(Daemon):
-    """
-    Index alerts in ElasticSearch using Logstash format so that logstash GUI and/or Kibana can be used as front-ends
-    """
 
     logger_opts = {
         'es_host': 'localhost',
@@ -90,27 +88,16 @@ class LoggerDaemon(Daemon):
 
     def run(self):
 
-        self.running = True
+        logger = LoggerMessage()
+        logger.start()
 
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=LoggerMessage(self.mq))
-        self.mq.subscribe(destination=CONF.outbound_queue)
+        api = ApiClient()
 
-        while not self.shuttingdown:
-            try:
-                LOG.debug('Waiting for log messages...')
-                time.sleep(CONF.loop_every)
-
+        try:
+            while True:
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version)
-                self.mq.send(heartbeat)
-
-            except (KeyboardInterrupt, SystemExit):
-                self.shuttingdown = True
-
-        LOG.info('Shutdown request received...')
-        self.running = False
-
-        LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()
+                heartbeat = Heartbeat(origin=__name__, tags=[__version__])
+                api.send(heartbeat)
+                time.sleep(CONF.loop_every)
+        except (KeyboardInterrupt, SystemExit):
+            logger.should_stop = True

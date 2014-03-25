@@ -29,12 +29,10 @@
 # group: (str) SNMP
 # value: (str) $w
 # text: (str) $W
-# environment: (list) INFRA
+# environment: (str) PROD
 # service: (list) Network
 # correlate: (list) null
 # tags: (list) $s
-# threshold_info: (str) null
-# summary: (str) system default
 # timeout: (int) system default
 
 # Suppression flag

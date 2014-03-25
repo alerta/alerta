@@ -4,29 +4,20 @@ import socket
 import select
 import re
 
-from alerta.common import config, syslog
+from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
+from alerta.syslog.priority import priority_to_code, decode_priority
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
-Version = '2.1.0'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-
-class SyslogMessage(MessageHandler):
-
-    def __init__(self, mq):
-        self.mq = mq
-        MessageHandler.__init__(self)
-
-    def on_disconnected(self):
-        self.mq.reconnect()
 
 
 class SyslogDaemon(Daemon):
@@ -70,9 +61,7 @@ class SyslogDaemon(Daemon):
 
         self.statsd = StatsD()  # graphite metrics
 
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=SyslogMessage(self.mq))
+        api = ApiClient()
 
         self.dedup = DeDup(by_value=True)
 
@@ -97,14 +86,14 @@ class SyslogDaemon(Daemon):
                         syslogAlerts = self.parse_syslog(addr[0], data)
                         for syslogAlert in syslogAlerts:
                             if self.dedup.is_send(syslogAlert):
-                                self.mq.send(syslogAlert)
+                                api.send(syslogAlert)
                                 self.statsd.metric_send('alert.syslog.alerts.total', 1)
 
                     count += 1
                 if not ip or count % 5 == 0:
                     LOG.debug('Send heartbeat...')
-                    heartbeat = Heartbeat(version=Version)
-                    self.mq.send(heartbeat)
+                    heartbeat = Heartbeat(tags=[Version])
+                    api.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True
@@ -191,22 +180,20 @@ class SyslogDaemon(Daemon):
                     LOG.error("Could not parse Cisco syslog message: %s", msg)
                     continue
 
-            facility, level = syslog.decode_priority(PRI)
+            facility, level = decode_priority(PRI)
 
             # Defaults
             event = event or '%s%s' % (facility.capitalize(), level.capitalize())
             resource = resource or '%s%s' % (HOSTNAME, ':' + TAG if TAG else '')
-            severity = syslog.priority_to_code(level)
+            severity = priority_to_code(level)
             group = 'Syslog'
             value = level
             text = MSG
-            environment = ['INFRA']
+            environment = 'PROD'
             service = ['Platform']
-            tags = {'syslogPriority': '%s.%s' % (facility, level)}
+            tags = ['%s.%s' % (facility, level)]
             correlate = list()
             timeout = None
-            threshold_info = None
-            summary = None
             raw_data = msg
 
             syslogAlert = Alert(
@@ -222,8 +209,6 @@ class SyslogDaemon(Daemon):
                 event_type='syslogAlert',
                 tags=tags,
                 timeout=timeout,
-                threshold_info=threshold_info,
-                summary=summary,
                 raw_data=raw_data,
             )
 
@@ -234,7 +219,7 @@ class SyslogDaemon(Daemon):
                 continue
 
             if syslogAlert.get_type() == 'Heartbeat':
-                syslogAlert = Heartbeat(origin=syslogAlert.origin, version='n/a', timeout=syslogAlert.timeout)
+                syslogAlert = Heartbeat(origin=syslogAlert.origin, timeout=syslogAlert.timeout)
 
             syslogAlerts.append(syslogAlert)
 

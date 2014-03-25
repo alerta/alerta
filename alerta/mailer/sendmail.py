@@ -30,18 +30,20 @@ class Mailer(object):
 
         config.register_opts(Mailer.mailer_opt)
 
-        self.subject = '[%s] %s' % (alert.status, alert.summary)
+        self.subject = '[%s] %s: %s %s on %s %s' % (alert.status, alert.environment, alert.severity, alert.event,
+                                                    ','.join(alert.service), alert.resource)
 
         self.text = "-" * 60 + "\n"
-        self.text += "[%s] %s\n" % (alert.status, alert.summary)
+        self.text += '[%s] %s: %s %s on %s %s' % (alert.status, alert.environment, alert.severity, alert.event,
+                                                  ','.join(alert.service), alert.resource)
         self.text += "-" * 60 + "\n\n"
 
         self.text += "Alert Details\n\n"
 
         self.text += "Alert ID: %s\n" % alert.get_id()
-        self.text += "Create Time: %s\n" % alert.get_create_time()
-        self.text += "Environment: %s\n" % ", ".join(alert.environment)
-        self.text += "Service: %s\n" % ", ".join(alert.service)
+        self.text += "Create Time: %s\n" % alert.get_date('create_time', 'rfc')
+        self.text += "Environment: %s\n" % alert.environment
+        self.text += "Services: %s\n" % ", ".join(alert.service)
         self.text += "Resource: %s\n" % alert.resource
         self.text += "Event: %s\n" % alert.event
         self.text += "Group: %s\n" % alert.group
@@ -49,21 +51,18 @@ class Mailer(object):
         self.text += "Severity: %s -> %s\n" % (alert.previous_severity, alert.severity)
         self.text += "Status: %s\n" % alert.status
         self.text += "Text: %s\n" % alert.text
-        self.text += "Threshold Info: %s\n" % alert.threshold_info
         self.text += "Duplicate Count: %s\n" % alert.duplicate_count
         self.text += "Origin: %s\n" % alert.origin
-        self.text += "Tags: %s\n" % ", ".join(k + '=' + v for k, v in alert.tags.items())
-        self.text += "More Info: %s\n\n" % alert.more_info
+        self.text += "Tags: %s\n" % ", ".join(alert.tags)
 
-        if hasattr(alert, 'graph_urls'):
+        if hasattr(alert.attributes, 'graph_urls'):
             self.text += "Graphs\n\n"
             for graph in alert.graph_urls:
                 self.text += '%s\n' % graph
             self.text += "\n"
 
-        if CONF.debug:
-            self.text += "Raw Alert\n\n"
-            self.text += "%s\n\n" % alert.get_body()
+        self.text += "Raw Alert\n\n"
+        self.text += "%s\n\n" % alert.get_body()
 
         self.text += "To acknowledge this alert visit this URL:\n"
         self.text += "%s?id=%s\n\n" % (CONF.dashboard_url, alert.get_id())
@@ -88,13 +87,14 @@ class Mailer(object):
         msg_text = MIMEText(self.text, 'plain', 'utf-8')
         msg.attach(msg_text)
 
-        for graph in self.graph_urls:
-            try:
-                img = MIMEImage(urllib2.urlopen(graph).read())
-                msg.attach(img)
-            except Exception, e:
-                LOG.warning('Unknown exception raised while attaching graphs to email: %s', e)
-                pass
+        if self.graph_urls:
+            for graph in self.graph_urls:
+                try:
+                    img = MIMEImage(urllib2.urlopen(graph).read())
+                    msg.attach(img)
+                except Exception, e:
+                    LOG.warning('Unknown exception raised while attaching graphs to email: %s', e)
+                    pass
 
         try:
             mx = smtplib.SMTP(CONF.smtp_host)

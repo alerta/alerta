@@ -1,17 +1,20 @@
 
 import time
+import datetime
+import threading
 
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.common.alert import Alert
+from alerta.common.api import ApiClient
+from alerta.common.amqp import Messaging, FanoutConsumer
+from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
-from alerta.common.mq import Messaging, MessageHandler
-from alerta.common.mail import Mailer
+from alerta.mailer.sendmail import Mailer
 from alerta.common.tokens import LeakyBucket
 
-Version = '2.1.0'
+__version__ = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -19,26 +22,28 @@ CONF = config.CONF
 _EMAIL_HOLD_TIME = 30  # hold emails before sending
 
 
-class MailerMessage(MessageHandler):
+class MailerMessage(FanoutConsumer, threading.Thread):
 
-    def __init__(self, mq, onhold, tokens):
+    def __init__(self, onhold, tokens):
 
-        self.mq = mq
+        mq = Messaging()
+
+        FanoutConsumer.__init__(self, mq.connection)
+        threading.Thread.__init__(self)
+
         self.onhold = onhold
         self.tokens = tokens
 
-        MessageHandler.__init__(self)
-
-    def on_message(self, headers, body):
+    def on_message(self, body, message):
 
         LOG.debug("Received: %s", body)
         try:
-            mailAlert = Alert.parse_alert(body)
+            mailAlert = AlertDocument.parse_alert(body)
         except ValueError:
             return
 
         alertid = mailAlert.get_id()
-        severity = mailAlert.get_severity()
+        severity = mailAlert.severity
         previous_severity = mailAlert.previous_severity
 
         if severity in [severity_code.CRITICAL, severity_code.MAJOR]:
@@ -55,71 +60,75 @@ class MailerMessage(MessageHandler):
                 LOG.info('%s : De-queue alert because it has been cleared', alertid)
                 del self.onhold[alertid]
             else:
-                LOG.info('%s : Extend queue on-hold time to %s', alertid, hold_time)
+                LOG.info('%s : Extend queue on-hold time to %s', alertid, datetime.datetime.fromtimestamp(hold_time).strftime("%c"))
                 self.onhold[alertid] = (mailAlert, hold_time)
         else:
-            LOG.info('%s : Queued alert on hold until %s', alertid, hold_time)
+            LOG.info('%s : Queued alert on hold until %s', alertid, datetime.datetime.fromtimestamp(hold_time).strftime("%c"))
             self.onhold[alertid] = (mailAlert, hold_time)
 
-    def on_disconnected(self):
 
-        self.mq.reconnect()
+class MailSender(threading.Thread):
+
+    def __init__(self, onhold, tokens):
+
+        threading.Thread.__init__(self)
+
+        self.onhold = onhold
+        self.tokens = tokens
+
+    def run(self):
+
+        while True:
+            LOG.debug('Send email messages...')
+            for alertid in self.onhold.keys():
+                try:
+                    (mailAlert, hold_time) = self.onhold[alertid]
+                except KeyError:
+                    continue
+
+                if time.time() > hold_time:
+                    if not self.tokens.get_token():
+                        LOG.warning('%s : No tokens left, rate limiting this alert', alertid)
+                        continue
+
+                    email = Mailer(mailAlert)
+                    mail_to = CONF.mail_list.split(',')
+
+                    for tag in mailAlert.tags:
+                        if tag.startswith('email'):
+                            mail_to.append(tag.split(':')[1])
+                    email.send(mail_to=mail_to)
+                    try:
+                        del self.onhold[alertid]
+                    except KeyError:
+                        continue
+
+            time.sleep(2)
 
 
 class MailerDaemon(Daemon):
 
     def run(self):
 
-        self.running = True
+        onhold = dict()
 
         # Start token bucket thread
-        self.tokens = LeakyBucket(tokens=20, rate=30)
-        self.tokens.start()
+        tokens = LeakyBucket(tokens=20, rate=30)
+        tokens.start()
 
-        self.onhold = dict()
+        mailer = MailerMessage(onhold, tokens)
+        mailer.start()
 
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=MailerMessage(self.mq, self.onhold, self.tokens))
-        self.mq.subscribe(destination=CONF.outbound_topic)
+        sender = MailSender(onhold, tokens)
+        sender.start()
 
-        while not self.shuttingdown:
-            try:
-                LOG.debug('Send email messages...')
-                for alertid in self.onhold.keys():
-                    try:
-                        (mailAlert, hold_time) = self.onhold[alertid]
-                    except KeyError:
-                        continue
+        api = ApiClient()
 
-                    if time.time() > hold_time:
-                        if not self.tokens.get_token():
-                            LOG.warning('%s : No tokens left, rate limiting this alert', alertid)
-                            continue
-
-                        email = Mailer(mailAlert)
-                        mail_to = CONF.mail_list.split(',')
-
-                        if 'mailto' in mailAlert.tags:
-                            mail_to.append(mailAlert.tags['mailto'])
-                        email.send(mail_to=mail_to)
-                        try:
-                            del self.onhold[alertid]
-                        except KeyError:
-                            continue
-
-                time.sleep(CONF.loop_every)
-
+        try:
+            while True:
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version)
-                self.mq.send(heartbeat)
-
-            except (KeyboardInterrupt, SystemExit):
-                self.shuttingdown = True
-
-        LOG.info('Shutdown request received...')
-        self.running = False
-        self.tokens.shutdown()
-
-        LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()
+                heartbeat = Heartbeat(origin=__name__, tags=[__version__])
+                api.send(heartbeat)
+                time.sleep(CONF.loop_every)
+        except (KeyboardInterrupt, SystemExit):
+            mailer.should_stop = True

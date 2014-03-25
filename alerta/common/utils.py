@@ -4,14 +4,6 @@ import json
 import datetime
 
 
-def isfloat(v):
-    try:
-        float(v)
-        return True
-    except (ValueError, TypeError):
-        return False
-
-
 def relative_date(from_date, now=None):
 
     now = now or datetime.datetime.utcnow()

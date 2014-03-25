@@ -4,20 +4,20 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.js"></script>
-    <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" language="javascript" src="/alerta/assets/DataTables/media/js/jquery.js"></script>
+    <script type="text/javascript" language="javascript" src="/alerta/assets/DataTables/media/js/jquery.dataTables.min.js"></script>
 
-    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="/alerta/assets/bootstrap/css/bootstrap.css" rel="stylesheet">
     <style type="text/css">
         body {
             padding-top: 60px;
             padding-bottom: 40px;
         }
     </style>
-    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
-    <link href="/alerta/dashboard/v2/assets/DataTables/bootstrap/dataTables.bootstrap.css" rel="stylesheet">
-    <link href="/alerta/dashboard/v2/assets/css/custom.css" rel="stylesheet">
-    <link href="/alerta/dashboard/v2/assets/DataTables/extras/TableTools/media/css/TableTools.css" rel="stylesheet">
+    <link href="/alerta/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="/alerta/assets/DataTables/bootstrap/dataTables.bootstrap.css" rel="stylesheet">
+    <link href="/alerta/assets/css/custom.css" rel="stylesheet">
+    <link href="/alerta/assets/DataTables/extras/TableTools/media/css/TableTools.css" rel="stylesheet">
 </head>
 
 <body>
@@ -86,73 +86,73 @@
 
             <div class="row show-grid">
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="R2R1" data-label="R2R1">
-                        <thead id="R2R1-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="Web" data-label="Web">
+                        <thead id="Web-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="R2R1-status">R2 &amp; R1</th>
+                            <th colspan="6" id="Web-status">Web</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="R2R1-status-indicator">
-                            <td id="R2R1-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="R2R1-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="Web-status-indicator">
+                            <td id="Web-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Web-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="FrontendMobile" data-label="FrontendMobile">
-                        <thead id="FrontendMobile-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="Application" data-label="Application">
+                        <thead id="Application-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="FrontendMobile-status">Frontend &amp; Mobile</th>
+                            <th colspan="6" id="Application-status">Applications</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="FrontendMobile-status-indicator">
-                            <td id="FrontendMobile-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="FrontendMobile-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="FrontendMobile-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="FrontendMobile-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="FrontendMobile-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="Application-status-indicator">
+                            <td id="Application-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Application-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Application-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Application-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Application-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="ContentAPI" data-label="ContentAPI">
-                        <thead id="ContentAPI-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="Database" data-label="Database">
+                        <thead id="Database-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="ContentAPI-status">Content API</th>
+                            <th colspan="6" id="Database-status">Databases</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="ContentAPI-status-indicator">
-                            <td id="ContentAPI-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="ContentAPI-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="ContentAPI-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="ContentAPI-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="ContentAPI-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="Database-status-indicator">
+                            <td id="Database-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Database-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Database-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Database-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Database-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="Shared" data-label="Shared">
-                        <thead id="Shared-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="Storage" data-label="Storage">
+                        <thead id="Storage-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="Shared-status">Shared Services</th>
+                            <th colspan="6" id="Storage-status">Storage</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="Shared-status-indicator">
-                            <td id="Shared-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="Shared-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="Shared-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="Shared-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="Shared-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="Storage-status-indicator">
+                            <td id="Storage-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Storage-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Storage-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Storage-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Storage-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
@@ -162,37 +162,37 @@
 
             <div class="row show-grid">
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="D2MicroApps" data-label="D2MicroApps">
-                        <thead id="D2MicroApps-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="OS" data-label="OS">
+                        <thead id="OS-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="D2MicroApps-status">D2 &amp; Micro Apps</th>
+                            <th colspan="6" id="OS-status">OS</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="D2MicroApps-status-indicator">
-                            <td id="D2MicroApps-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="D2MicroApps-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="D2MicroApps-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="D2MicroApps-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="D2MicroApps-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="OS-status-indicator">
+                            <td id="OS-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="OS-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="OS-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="OS-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="OS-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="span3">
-                    <table class="table table-bordered table-condensed status-indicator" id="FlexibleIdentity" data-label="FlexibleIdentity">
-                        <thead id="FlexibleIdentity-overall" class="status-indicator-overall">
+                    <table class="table table-bordered table-condensed status-indicator" id="Hardware" data-label="Hardware">
+                        <thead id="Hardware-overall" class="status-indicator-overall">
                         <tr>
-                            <th colspan="6" id="FlexibleIdentity-status">Flexible Content &amp; Identity</th>
+                            <th colspan="6" id="Hardware-status">Hardware</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr id="FlexibleIdentity-status-indicator">
-                            <td id="FlexibleIdentity-critical" class="status-indicator-count"><b>0</b></td>
-                            <td id="FlexibleIdentity-major" class="status-indicator-count"><b>0</b></td>
-                            <td id="FlexibleIdentity-minor" class="status-indicator-count"><b>0</b></td>
-                            <td id="FlexibleIdentity-warning" class="status-indicator-count"><b>0</b></td>
-                            <td id="FlexibleIdentity-normal" class="status-indicator-count"><b>0</b></td>
+                        <tr id="Hardware-status-indicator">
+                            <td id="Hardware-critical" class="status-indicator-count"><b>0</b></td>
+                            <td id="Hardware-major" class="status-indicator-count"><b>0</b></td>
+                            <td id="Hardware-minor" class="status-indicator-count"><b>0</b></td>
+                            <td id="Hardware-warning" class="status-indicator-count"><b>0</b></td>
+                            <td id="Hardware-normal" class="status-indicator-count"><b>0</b></td>
                         </tr>
                         </tbody>
                     </table>
@@ -285,9 +285,8 @@
 </div>
 <!-- end container -->
 
-<script src="/alerta/dashboard/v2/assets/js/config.js"></script>
-<script src="/alerta/dashboard/v2/assets/js/console.js"></script>
-<script src="/alerta/dashboard/v2/assets/js/purl.js"></script>
+<script src="/alerta/assets/js/config.js"></script>
+<script src="/alerta/assets/js/console.js"></script>
 
 {% block initialiser %}
 
@@ -296,17 +295,18 @@
 
         heartbeatAlerts();
 
-        var env_filter = '&environment=PROD&environment=INFRA';
+        var env_filter = '&environment=production';
         var asiFilters = {
-            'R2R1':             '&service=R2&service=R1',
-            'FrontendMobile':   '&service=Frontend&service=Mobile',
-            'ContentAPI':       '&service=ContentAPI',
-            'Shared':           '&service=SharedSvcs',
-            'D2MicroApps':      '&service=Discussion&service=MicroApp',
-            'FlexibleIdentity': '&service=FlexibleContent&service=Identity',
-            'Other':            '&service!=~R2|R1|Frontend|Mobile|ContentAPI|Shared|Discussion|MicroApp|FlexibleContent|Identity|Network',
-            'Network':          '&service=Network'
+            'Web':         '&group=Web',
+            'Application': '&group=Application',
+            'Database':    '&group=Database',
+            'Storage':     '&group=Storage',
+            'OS':          '&group=OS',
+            'Hardware':    '&group=Hardware',
+            'Other':       '&group!=~Web|Application|Database|Storage|OS|Hardware|Network',
+            'Network':     '&group=Network'
         };
+        console.log('env_filter=' + env_filter);
         updateStatusCounts(env_filter, true);
         updateAllIndicators(env_filter, asiFilters, true);
         updateAlertsTable(env_filter, asiFilters);
@@ -315,10 +315,10 @@
 </script>
 {% endblock %}
 
-<script src="/alerta/dashboard/v2/assets/DataTables/extras/TableTools/media/js/TableTools.min.js"></script>
-<script src="/alerta/dashboard/v2/assets/DataTables/bootstrap/dataTables.bootstrap.js"></script>
-<script src="/alerta/dashboard/v2/assets/bootstrap/js/bootstrap-collapse.js"></script>
-<script src="/alerta/dashboard/v2/assets/bootstrap/js/bootstrap-alert.js"></script>
+<script src="/alerta/assets/DataTables/extras/TableTools/media/js/TableTools.min.js"></script>
+<script src="/alerta/assets/DataTables/bootstrap/dataTables.bootstrap.js"></script>
+<script src="/alerta/assets/bootstrap/js/bootstrap-collapse.js"></script>
+<script src="/alerta/assets/bootstrap/js/bootstrap-alert.js"></script>
 
 </body>
 </html>

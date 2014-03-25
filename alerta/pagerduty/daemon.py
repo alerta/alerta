@@ -1,59 +1,63 @@
 
 import time
+import threading
 
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
-from alerta.common.alert import Alert
+from alerta.common.api import ApiClient
+from alerta.common.amqp import Messaging, FanoutConsumer
+from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code, status_code
-from alerta.common.mq import Messaging, MessageHandler
 from alerta.pagerduty.pdclientapi import PagerDutyClient
 
-Version = '2.1.3'
+__version__ = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-class PagerDutyMessage(MessageHandler):
+class PagerDutyMessage(FanoutConsumer, threading.Thread):
 
-    def __init__(self, mq):
+    def __init__(self):
 
-        self.mq = mq
+        mq = Messaging()
+
+        FanoutConsumer.__init__(self, mq.connection)
+        threading.Thread.__init__(self)
 
         self.pd = PagerDutyClient()
 
-        MessageHandler.__init__(self)
-
-    def on_message(self, headers, body):
+    def on_message(self, body, message):
 
         LOG.debug("Received: %s", body)
         try:
-            pdAlert = Alert.parse_alert(body)
+            pdAlert = AlertDocument.parse_alert(body)
         except ValueError:
             return
 
-        # do not trigger new incidents from updates
-        if pdAlert.origin == 'pagerduty/webhook':
-            return
+        if pdAlert:
+            if not any(tag.startswith('pagerduty') for tag in pdAlert.tags):
+                return
 
-        if 'pagerduty' not in pdAlert.tags.keys():
-            return
+            # do not trigger new incidents from updates
+            if pdAlert.origin == 'pagerduty/webhook':  # set by alerta /pagerduty API endpoint
+                return
 
-        LOG.info('PagerDuty Incident %s status %s', pdAlert.get_id(), pdAlert.status)
+            for tag in pdAlert.tags:
+                if tag.startswith('pagerduty'):
+                    _, service = tag.split('=', 1)
 
-        incident_key = pdAlert.get_id()
-        if pdAlert.status == status_code.OPEN:
-            self.pd.trigger_event(pdAlert, incident_key=incident_key)
-        elif pdAlert.status == status_code.ACK:
-            self.pd.acknowledge_event(pdAlert, incident_key=incident_key)
-        elif pdAlert.status == status_code.CLOSED:
-            self.pd.resolve_event(pdAlert, incident_key=incident_key)
+            LOG.info('PagerDuty Incident on %s %s -> %s', service, pdAlert.get_id(), pdAlert.status)
 
-    def on_disconnected(self):
-
-        self.mq.reconnect()
+            incident_key = pdAlert.get_id()
+            if pdAlert.status == status_code.OPEN:
+                self.pd.trigger_event(pdAlert, service, incident_key=incident_key)
+            elif pdAlert.status == status_code.ACK:
+                self.pd.acknowledge_event(pdAlert, service, incident_key=incident_key)
+            elif pdAlert.status == status_code.CLOSED:
+                self.pd.resolve_event(pdAlert, service, incident_key=incident_key)
 
 
 class PagerDutyDaemon(Daemon):
@@ -71,27 +75,17 @@ class PagerDutyDaemon(Daemon):
 
     def run(self):
 
-        self.running = True
+        pd = PagerDutyMessage()
+        pd.start()
 
-        # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=PagerDutyMessage(self.mq))
-        self.mq.subscribe(destination=CONF.outbound_topic)   # TODO(nsatterl): use dedicated queue?
+        api = ApiClient()
 
-        while not self.shuttingdown:
-            try:
-                LOG.debug('Waiting for PagerDuty messages...')
-                time.sleep(CONF.loop_every)
-
+        try:
+            while True:
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(version=Version)
-                self.mq.send(heartbeat)
+                heartbeat = Heartbeat(origin=__name__, tags=[__version__])
+                api.send(heartbeat)
+                time.sleep(CONF.loop_every)
+        except (KeyboardInterrupt, SystemExit):
+            pd.should_stop = True
 
-            except (KeyboardInterrupt, SystemExit):
-                self.shuttingdown = True
-
-        LOG.info('Shutdown request received...')
-        self.running = False
-
-        LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()

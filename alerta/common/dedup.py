@@ -18,7 +18,7 @@ class DeDup(object):
 
     >>> dedup_by_value = DeDup(by_value=True)
     >>> if dedup_by_value.is_send(gangliaAlert):
-    >>>     mq.send(gangliaAlert)
+    >>>     api.send(gangliaAlert)
 
     >>> send_every_5 = DeDup(threshold=5)
     >>> resend_every_2hrs = DeDup(duration=7200)

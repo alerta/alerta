@@ -9,7 +9,6 @@ from functools import update_wrapper
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.common.alert import ATTRIBUTES
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -19,12 +18,15 @@ def parse_fields(request):
 
     query_time = datetime.datetime.utcnow()
 
-    if 'q' in request.args:
-        query = json.loads(request.args.get('q'))
+    params = request.args.copy()
+
+    if 'q' in params:
+        query = json.loads(params.get('q'))
+        del params['q']
     else:
         query = dict()
 
-    from_date = request.args.get('from-date', None)
+    from_date = params.get('from-date', None)
     if from_date:
         try:
             from_date = datetime.datetime.strptime(from_date, '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -35,19 +37,37 @@ def parse_fields(request):
         to_date = query_time
         to_date = to_date.replace(tzinfo=pytz.utc)
         query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date}
+        del params['from-date']
 
-    if request.args.get('id', None):
-        query['$or'] = [{'_id': {'$regex': '^' + request.args['id']}},
-                        {'lastReceiveId': {'$regex': '^' + request.args['id']}}]
+    if params.get('id', None):
+        query['$or'] = [{'_id': {'$regex': '^' + params['id']}},
+                        {'lastReceiveId': {'$regex': '^' + params['id']}}]
+        del params['id']
 
-    if request.args.get('repeat', None):
-        query['repeat'] = True if request.args.get('repeat', 'true') == 'true' else False
+    if params.get('repeat', None):
+        query['repeat'] = True if params.get('repeat', 'true') == 'true' else False
+        del params['repeat']
 
-    for field in [fields for fields in request.args if fields.rstrip('!') in ATTRIBUTES or fields.startswith('tags')]:
-        if field in ['id', 'repeat']:
-            # Don't process queries on "id" or "repeat" twice
-            continue
-        value = request.args.getlist(field)
+    sort = list()
+    if params.get('sort-by', None):
+        for sort_by in params.getlist('sort-by'):
+            if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
+                sort.append((sort_by, -1))  # sort by newest first
+            else:
+                sort.append((sort_by, 1))  # sort by newest first
+        del params['sort-by']
+    else:
+        sort.append(('lastReceiveTime', -1))
+
+    if 'limit' in params:
+        limit = params.get('limit')
+        del params['limit']
+    else:
+        limit = CONF.console_limit
+    limit = int(limit)
+
+    for field in params:
+        value = params.getlist(field)
         if len(value) == 1:
             value = value[0]
             if field.endswith('!'):
@@ -80,18 +100,6 @@ def parse_fields(request):
                 else:
                     query[field] = dict()
                     query[field]['$in'] = value
-
-    sort = list()
-    if request.args.get('sort-by', None):
-        for sort_by in request.args.getlist('sort-by'):
-            if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
-                sort.append((sort_by, -1))  # sort by newest first
-            else:
-                sort.append((sort_by, 1))  # sort by newest first
-    else:
-        sort.append(('lastReceiveTime', -1))
-
-    limit = request.args.get('limit', CONF.console_limit, int)
 
     return query, sort, limit, query_time
 

@@ -78,8 +78,7 @@ def main():
             '-E',
             '--environment',
             metavar='ENV',
-            action='append',
-            help='List of effected environments eg. PROD, REL, QA, TEST, CODE, STAGE, DEV, LWP, INFRA'
+            help='Affected environments eg. production, development, release, etc'
         )
         parser.add_argument(
             '-S',
@@ -87,7 +86,7 @@ def main():
             '--service',
             dest='service',
             action='append',
-            help='List of effected services eg. R1, R2, Frontend, Discussion, ContentAPI, MicroApp, ' +
+            help='List of affected services eg. R1, R2, Frontend, Discussion, ContentAPI, MicroApp, ' +
                  'FlexibleContent, Identity, Mobile, Soulmates, Network, SharedSvcs'
         )
         parser.add_argument(
@@ -96,17 +95,20 @@ def main():
             action='append',
             dest='tags',
             default=list(),
-            help='Add Key=Value tag pairs.'
+            help='Add tags.'
+        )
+        parser.add_argument(
+            '-A',
+            '--attribute',
+            action='append',
+            dest='attributes',
+            default=list(),
+            help='Add Key=Value attribute pairs.'
         )
         parser.add_argument(
             '-t',
             '--text',
             help='Freeform alert text eg. Host not responding to ping.'
-        )
-        parser.add_argument(
-            '--summary',
-            metavar='TEXT',
-            help='Summary text suitable for SMS, pager or email subject.'
         )
         parser.add_argument(
             '--more',
@@ -115,12 +117,11 @@ def main():
             help='More information eg. a link to a Wiki, ticket number or call reference.'
         )
         parser.add_argument(
-            '--graphs',
-            action='append',
-            dest='graph_urls',
-            default=list(),
-            metavar='URLS',
-            help='List of graph URLs.'
+            '-R',
+            '--raw',
+            dest='raw_data',
+            metavar='TEXT',
+            help='Raw data eg. un-parsed command output.'
         )
         parser.add_argument(
             '-o',
@@ -185,10 +186,13 @@ def main():
             if not CONF.timeout:
                 CONF.timeout = CONF.global_timeout
 
-        if CONF.tags:
-            CONF.tags = dict([tag.split('=') for tag in CONF.tags])
+        if CONF.attributes:
+            CONF.attributes = dict([attrib.split('=') for attrib in CONF.attributes])
         else:
-            CONF.tags = dict()
+            CONF.attributes = dict()
+
+        if CONF.more_info:
+            CONF.attributes['moreInfo'] = CONF.more_info
 
         sender = SenderClient()
         msg_id = sender.main()

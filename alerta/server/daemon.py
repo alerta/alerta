@@ -66,7 +66,7 @@ class WorkerThread(threading.Thread):
                 continue
 
             if self.db.is_duplicate(incomingAlert, incomingAlert.severity):
-                # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text, summary,
+                # Duplicate alert .. 1. update existing document with lastReceiveTime, lastReceiveId, text,
                 #                       value, status, tags and origin
                 #                    2. increment duplicate count
                 #                    3. update and push status if changed
@@ -90,7 +90,7 @@ class WorkerThread(threading.Thread):
             elif self.db.is_correlated(incomingAlert):
                 # Diff sev alert ... 1. update existing document with severity, createTime, receiveTime,
                 #                       lastReceiveTime, previousSeverity,
-                #                       severityCode, lastReceiveId, text, summary, value, tags and origin
+                #                       severityCode, lastReceiveId, text, value, tags and origin
                 #                    2. set duplicate count to zero
                 #                    3. push history and status if changed
 

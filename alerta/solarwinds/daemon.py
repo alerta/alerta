@@ -9,22 +9,12 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.dedup import DeDup
 from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS, SOLAR_WINDS_CORRELATED_EVENTS
-from alerta.common.mq import Messaging, MessageHandler
+from alerta.common.api import ApiClient
 
-Version = '2.1.0'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
-
-
-class SolarWindsMessage(MessageHandler):
-
-    def __init__(self, mq):
-        self.mq = mq
-        MessageHandler.__init__(self)
-
-    def on_disconnected(self):
-        self.mq.reconnect()
 
 
 class SolarWindsDaemon(Daemon):
@@ -57,8 +47,7 @@ class SolarWindsDaemon(Daemon):
         LOG.info('Polling for SolarWinds events on %s' % CONF.solarwinds_host)
 
         # Connect to message queue
-        self.mq = Messaging()
-        self.mq.connect(callback=SolarWindsMessage(self.mq))
+        self.api = ApiClient()
 
         self.dedup = DeDup(by_value=True)
 
@@ -77,7 +66,7 @@ class SolarWindsDaemon(Daemon):
                 solarwindsAlerts = self.parse_events(events)
                 for solarwindsAlert in solarwindsAlerts:
                     if self.dedup.is_send(solarwindsAlert):
-                        self.mq.send(solarwindsAlert)
+                        self.api.send(solarwindsAlert)
 
                 # Cisco UCS events
                 try:
@@ -89,12 +78,12 @@ class SolarWindsDaemon(Daemon):
                 solarwindsAlerts = self.parse_events(events)
                 for solarwindsAlert in solarwindsAlerts:
                     if self.dedup.is_send(solarwindsAlert):
-                        self.mq.send(solarwindsAlert)
+                        self.api.send(solarwindsAlert)
 
                 if send_heartbeat:
                     LOG.debug('Send heartbeat...')
-                    heartbeat = Heartbeat(version=Version)
-                    self.mq.send(heartbeat)
+                    heartbeat = Heartbeat(tags=[Version])
+                    self.api.send(heartbeat)
                 else:
                     LOG.error('SolarWinds failure. Skipping heartbeat.')
 
@@ -105,9 +94,6 @@ class SolarWindsDaemon(Daemon):
 
         LOG.info('Shutdown request received...')
         self.running = False
-
-        LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()
 
     def parse_events(self, data):
 
@@ -136,12 +122,10 @@ class SolarWindsDaemon(Daemon):
             group = 'Orion'
             value = '%s' % row.c6
             text = '%s' % row.c5
-            environment = ['INFRA']
+            environment = 'PROD'
             service = ['Network']
             tags = None
             timeout = None
-            threshold_info = None
-            summary = None
             raw_data = repr(row)
             create_time = datetime.datetime.strptime(row.c1[:-5]+'Z', '%Y-%m-%dT%H:%M:%S.%fZ')
 
@@ -157,8 +141,6 @@ class SolarWindsDaemon(Daemon):
                 text=text,
                 event_type='solarwindsAlert',
                 tags=tags,
-                threshold_info=threshold_info,
-                summary=summary,
                 timeout=timeout,
                 create_time=create_time,
                 raw_data=raw_data,

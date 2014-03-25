@@ -8,7 +8,7 @@ from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
 
-Version = '2.1.6'
+Version = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -19,28 +19,28 @@ class ApiClient(object):
     api_opts = {
         'api_host': 'localhost',
         'api_port': 8080,
-        'api_version': 'v2',
+        'api_root': '/api',
     }
 
-    def __init__(self, host=None, port=None, version='v2'):
+    def __init__(self, host=None, port=None, root=None):
 
         config.register_opts(ApiClient.api_opts)
 
         self.host = host or CONF.api_host
         self.port = port or CONF.api_port
-        self.version = version or CONF.api_version
+        self.root = root or CONF.api_root
 
     def send(self, msg):
 
         LOG.debug('header = %s', msg.get_header())
         LOG.debug('message = %s', msg.get_body())
 
-        if msg.get_type().endswith('Alert'):
-            url = 'http://%s:%s/alerta/api/%s/alerts/alert.json' % (self.host, self.port, self.version)
-        elif msg.get_type() == 'Heartbeat':
-            url = 'http://%s:%s/alerta/api/%s/heartbeats/heartbeat.json' % (self.host, self.port, self.version)
+        if msg.event_type.endswith('Alert'):
+            url = 'http://%s:%s%s/alert' % (self.host, self.port, self.root)
+        elif msg.event_type == 'Heartbeat':
+            url = 'http://%s:%s%s/heartbeat' % (self.host, self.port, self.root)
         else:
-            LOG.error('Message type %s not supported by this API endpoint.', msg.get_type())
+            LOG.error('Message type %s not supported by this API endpoint.', msg.event_type)
             raise
 
         payload = json.dumps(msg.get_body(), ensure_ascii=False, cls=DateEncoder)
@@ -65,6 +65,9 @@ class ApiClient(object):
         except requests.RequestException, e:
             LOG.error('API request send failed: %s', e)
             raise
+        except requests.ConnectionError, e:
+            LOG.error('API request send failed: %s', e)
+            raise
 
         LOG.debug('HTTP status: %s', r.status_code)
         LOG.debug('HTTP response: %s', r.text)
@@ -76,7 +79,7 @@ class ApiClient(object):
             raise
 
         try:
-            response = r.json()['response']
+            response = r.json()
         except Exception, e:
             LOG.error('API bad response - %s: %s', e, r.text)
             raise
@@ -95,7 +98,7 @@ class ApiClient(object):
 
         LOG.debug('query = %s', query)
 
-        url = 'http://%s:%s/alerta/api/%s/alerts' % (self.host, self.port, self.version)
+        url = 'http://%s:%s%s/alerts' % (self.host, self.port, self.root)
 
         if query:
             url = "%s?%s" % (url, urllib.urlencode(query, doseq=1))
@@ -130,7 +133,7 @@ class ApiClient(object):
             raise
 
         try:
-            response = r.json()['response']
+            response = r.json()
         except Exception, e:
             LOG.error('API bad response - %s: %s', e, r.text)
             raise
@@ -149,7 +152,7 @@ class ApiClient(object):
 
         LOG.debug('alertid = %s', alertid)
 
-        url = 'http://%s:%s/alerta/api/%s/alerts/alert/%s/status' % (self.host, self.port, self.version, alertid)
+        url = 'http://%s:%s%s/alert/%s/status' % (self.host, self.port, self.root, alertid)
 
         data = {"status": "ack", "text": "ack via API"}
 
@@ -162,7 +165,7 @@ class ApiClient(object):
 
         LOG.debug('Acking via API endpoint...')
         try:
-            r = requests.put(url, data=payload, headers=headers)
+            r = requests.post(url, data=payload, headers=headers)
         except requests.Timeout, e:
             LOG.warning('API request timed out: %s', e)
             raise
@@ -186,7 +189,7 @@ class ApiClient(object):
             raise
 
         try:
-            response = r.json()['response']
+            response = r.json()
         except Exception, e:
             LOG.error('API bad response - %s: %s', e, r.text)
             raise
@@ -205,7 +208,7 @@ class ApiClient(object):
 
         LOG.debug('alertid = %s', alertid)
 
-        url = 'http://%s:%s/alerta/api/%s/alerts/alert/%s' % (self.host, self.port, self.version, alertid)
+        url = 'http://%s:%s%s/alert/%s' % (self.host, self.port, self.root, alertid)
 
         if CONF.dry_run:
             print "curl -v -X DELETE '%s' -H 'Content-Type: application/json'" % url
@@ -237,7 +240,7 @@ class ApiClient(object):
             raise
 
         try:
-            response = r.json()['response']
+            response = r.json()
         except Exception, e:
             LOG.error('API bad response - %s: %s', e, r.text)
             raise

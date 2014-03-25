@@ -17,39 +17,48 @@ DEFAULT_TIMEOUT = 300  # seconds
 
 class Heartbeat(object):
 
-    def __init__(self, origin=None, version='unknown', heartbeatid=None, create_time=None, timeout=None):
+    def __init__(self, origin=None, tags=[], create_time=None, timeout=None):
 
         prog = os.path.basename(sys.argv[0])
 
-        self.heartbeatid = heartbeatid or str(uuid4())
+        if not origin:
+            self.origin = '%s/%s' % (prog, os.uname()[0])
+        else:
+            self.origin = origin
+
+        self.id = str(uuid4())
+        self.origin = origin
+        self.tags = tags or list()
         self.event_type = 'Heartbeat'
-        self.origin = origin or '%s/%s' % (prog, os.uname()[1])
-        self.version = version
         self.create_time = create_time or datetime.datetime.utcnow()
         self.timeout = timeout or DEFAULT_TIMEOUT
+        self.receive_time = None
 
-    def get_id(self):
-        return self.heartbeatid
+    def get_id(self, short=False):
+
+        if short:
+            return self.id[:8]
+        else:
+            return self.id
 
     def get_header(self):
 
-        header = {
-            'type': self.event_type,
-            'correlation-id': self.heartbeatid,
+        return {
+            "origin": self.origin,
+            "type": self.event_type,
+            "correlation-id": self.id
         }
-        return header
 
     def get_body(self):
 
-        heartbeat = {
-            'id': self.heartbeatid,
+        return {
+            'id': self.id,
+            'origin': self.origin,
+            'tags': self.tags,
             'type': self.event_type,
             'createTime': self.create_time,
             'timeout': self.timeout,
-            'origin': self.origin,
-            'version': self.version,
         }
-        return heartbeat
 
     def get_type(self):
         return self.event_type
@@ -58,7 +67,7 @@ class Heartbeat(object):
         self.receive_time = datetime.datetime.utcnow()
 
     def __repr__(self):
-        return 'Heartbeat(header=%r, heartbeat=%r)' % (self.get_header(), self.get_body())
+        return 'Heartbeat(id=%r, origin=%r, create_time=%r, timeout=%r)' % (self.id, self.origin, self.create_time, self.timeout)
 
     def __str__(self):
         return json.dumps(self.get_body(), cls=DateEncoder, indent=4)
@@ -69,7 +78,7 @@ class Heartbeat(object):
         try:
             heartbeat = json.loads(heartbeat)
         except ValueError, e:
-            LOG.error('Could not parse heartbeat: %s', e)
+            LOG.error('Could not parse heartbeat: %s - %s', e, heartbeat)
             return
 
         if heartbeat.get('createTime', None):
@@ -81,8 +90,53 @@ class Heartbeat(object):
 
         return Heartbeat(
             origin=heartbeat.get('origin', None),
-            version=heartbeat.get('version', None),
-            heartbeatid=heartbeat.get('id', None),
+            tags=heartbeat.get('tags', None),
             create_time=heartbeat.get('createTime', None),
             timeout=heartbeat.get('timeout', None),
         )
+
+
+class HeartbeatDocument(object):
+
+    def __init__(self, id, origin, tags, event_type, create_time, timeout, receive_time):
+
+        self.id = id
+        self.origin = origin
+        self.tags = tags
+        self.event_type = event_type or 'Heartbeat'
+        self.create_time = create_time or datetime.datetime.utcnow()
+        self.timeout = timeout or DEFAULT_TIMEOUT
+        self.receive_time = receive_time
+
+    def get_id(self, short=False):
+
+        if short:
+            return self.id[:8]
+        else:
+            return self.id
+
+    def get_header(self):
+
+        return {
+            "origin": self.origin,
+            "type": self.event_type,
+            "correlation-id": self.id
+        }
+
+    def get_body(self):
+
+        return {
+            'id': self.id,
+            'origin': self.origin,
+            'tags': self.tags,
+            'type': self.event_type,
+            'createTime': self.create_time,
+            'timeout': self.timeout,
+            'receiveTime': self.receive_time
+        }
+
+    def __repr__(self):
+        return 'HeartbeatDocument(id=%r, origin=%r, create_time=%r, timeout=%r)' % (self.id, self.origin, self.create_time, self.timeout)
+
+    def __str__(self):
+        return json.dumps(self.get_body(), cls=DateEncoder, indent=4)
