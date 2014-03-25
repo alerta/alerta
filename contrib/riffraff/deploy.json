@@ -1,5 +1,7 @@
 {
-    "defaultStacks": "monitoring",
+    "defaultStacks": [
+        "monitoring"
+    ],
     "packages": {
         "alerta": {
             "type": "django-webapp",
