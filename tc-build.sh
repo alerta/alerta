@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-set -x
+#set -x
 
 # prep
 pushd `dirname $0` >/dev/null
