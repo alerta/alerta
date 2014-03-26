@@ -5,7 +5,7 @@
     "packages": {
         "api": {
             "type": "rpm",
-            "app" : ["alerta"]
+            "app" : ["alerta"],
             "data": {
                 "port": "8080",
                 "healthcheck_paths": [
@@ -17,7 +17,7 @@
         },
         "dashboard": {
             "type": "rpm",
-            "app" : ["alerta"]
+            "app" : ["alerta"],
             "data": {
                 "port": "80",
                 "healthcheck_paths": [
@@ -29,7 +29,7 @@
         },
         "daemons": {
             "type": "rpm",
-            "app" : ["alerta"]
+            "app" : ["alerta"],
             "data": {
                 "services": [
                     "alerta-cloudwatch",
