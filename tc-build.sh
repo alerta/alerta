@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-#set -x
+set -x
 
 # prep
 pushd `dirname $0` >/dev/null
@@ -55,7 +55,7 @@ echo "Build distribution zip"
 dashboard/bin/python setup.py sdist --formats=zip
 
 mkdir -p dist/packages/dashboard
-unzip $SCRIPT_PATH/dist/alerta*.zip -d $SCRIPT_PATH/dist/packages/app
+unzip $SCRIPT_PATH/dist/alerta*.zip -d $SCRIPT_PATH/dist/packages/dashboard
 
 BUILD_DIR=`ls -1 dist/packages/dashboard`
 cp -r dashboard dist/packages/dashboard/${BUILD_DIR}
@@ -72,6 +72,9 @@ virtualenv --relocatable daemon
 echo "Build distribution zip"
 daemon/bin/python setup.py sdist --formats=zip
 
+echo "#Create daemon scripts"
+daemon/bin/python setup.py install
+
 mkdir -p dist/packages/daemon
 unzip $SCRIPT_PATH/dist/alerta*.zip -d $SCRIPT_PATH/dist/packages/daemon
 
@@ -86,8 +89,5 @@ zip -r artifacts.zip deploy.json packages
 popd
 echo "#Rezipped to artifacts.zip"
 popd
-
-echo "#Create console scripts"
-app/bin/python setup.py install
 
 echo "##teamcity[publishArtifacts '$SCRIPT_PATH/dist/artifacts.zip => .']"
