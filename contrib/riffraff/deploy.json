@@ -42,8 +42,7 @@
                     "alert-solarwinds",
                     "alert-syslog",
                     "alert-urlmon"
-                ],
-                "serviceCommand": "reload"
+                ]
             }
         }
     }
