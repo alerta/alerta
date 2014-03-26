@@ -62,24 +62,24 @@ cp -r dashboard dist/packages/dashboard/${BUILD_DIR}
 
 
 echo "#Creating Daemon virtualenv..."
-virtualenv daemon
-daemon/bin/python setup.py clean
+virtualenv daemons
+daemons/bin/python setup.py clean
 
 echo "#Installing dependencies..."
-daemon/bin/pip install -r requirements.txt --upgrade
-virtualenv --relocatable daemon
+daemons/bin/pip install -r requirements.txt --upgrade
+virtualenv --relocatable daemons
 
 echo "Build distribution zip"
-daemon/bin/python setup.py sdist --formats=zip
+daemons/bin/python setup.py sdist --formats=zip
 
-echo "#Create daemon scripts"
-daemon/bin/python setup.py install
+echo "#Create daemons scripts"
+daemons/bin/python setup.py install
 
-mkdir -p dist/packages/daemon
-unzip $SCRIPT_PATH/dist/alerta*.zip -d $SCRIPT_PATH/dist/packages/daemon
+mkdir -p dist/packages/daemons
+unzip $SCRIPT_PATH/dist/alerta*.zip -d $SCRIPT_PATH/dist/packages/daemons
 
-BUILD_DIR=`ls -1 dist/packages/daemon`
-cp -r daemon dist/packages/daemon/${BUILD_DIR}
+BUILD_DIR=`ls -1 dist/packages/daemons`
+cp -r daemons dist/packages/daemons/${BUILD_DIR}
 
 
 echo "#Create artifact.zip..."
