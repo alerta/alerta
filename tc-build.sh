@@ -27,10 +27,10 @@ echo "installing dependencies"
 ve/bin/pip install -r requirements.txt --upgrade
 virtualenv --relocatable ve
 
-#echo "overwriting build.py"
-#cat << EOF > alerta/build.py
-#BUILD_NUMBER = '${BUILD_NUMBER}'
-#EOF
+echo "overwriting manifest.py"
+cat << EOF > alerta/build.py
+BUILD_NUMBER = '${BUILD_NUMBER}'
+EOF
 
 echo "Build distribution zip"
 ve/bin/python setup.py sdist --formats=zip
@@ -45,7 +45,9 @@ pushd dist
 zip -r artifacts.zip deploy.json packages
 popd
 echo "Rezipped to artifacts.zip"
-
 popd
+
+echo "Create console scripts"
+ve/bin/python setup.py install
 
 echo "##teamcity[publishArtifacts '$SCRIPT_PATH/dist/artifacts.zip => .']"
