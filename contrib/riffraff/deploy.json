@@ -3,14 +3,47 @@
         "monitoring"
     ],
     "packages": {
-        "alerta": {
-            "type": "django-webapp",
+        "api": {
+            "type": "rpm",
+            "app" : ["alerta"]
             "data": {
-                "applicationRoot": "/opt",
                 "port": "8080",
-                "heatlthcheck_paths": [
+                "healthcheck_paths": [
                     "/"
-                ]
+                ],
+                "services": ["httpd"],
+                "serviceCommand": "reload"
+            }
+        },
+        "dashboard": {
+            "type": "rpm",
+            "app" : ["alerta"]
+            "data": {
+                "port": "80",
+                "healthcheck_paths": [
+                    "/"
+                ],
+                "services": ["httpd"],
+                "serviceCommand": "reload"
+            }
+        },
+        "daemons": {
+            "type": "rpm",
+            "app" : ["alerta"]
+            "data": {
+                "services": [
+                    "alerta-cloudwatch",
+                    "alert-dynect",
+                    "alert-ircbot",
+                    "alert-logger",
+                    "alert-mailer",
+                    "alert-pagerduty",
+                    "alert-pinger",
+                    "alert-solarwinds",
+                    "alert-syslog",
+                    "alert-urlmon"
+                ],
+                "serviceCommand": "reload"
             }
         }
     }
