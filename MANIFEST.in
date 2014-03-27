@@ -1,7 +1,7 @@
 exclude .gitignore
 global-exclude *.pyc
 include alerta/app/app.wsgi
-include alerta/dashboard/v2/dashboard.wsgi
+include alerta/dashboard/dashboard.wsgi
 recursive-include alerta/app/templates *
 recursive-include alerta/dashboard/v2/templates *
 recursive-include alerta/dashboard/v2/assets *
