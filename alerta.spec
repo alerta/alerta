@@ -67,6 +67,7 @@ rm -rf %{buildroot}
 %dir %attr(0775,alerta,root) /var/lib/alerta
 
 %files extras
+%{_initrddir}/alert-*
 %defattr(-,alerta,alerta)
 /opt/alerta/bin/alert-*
 %{_sysconfdir}/snmp/snmptrapd.conf.%{name}
