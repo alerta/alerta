@@ -40,7 +40,7 @@ alerta/bin/python setup.py install --single-version-externally-managed --root=/
 
 %install
 %__mkdir_p %{buildroot}%{_initrddir}/
-%__install -m 0755 etc/init.d/* %{buildroot}%{_initrddir}/
+%__install -m 0755 etc/init.d/alert-* %{buildroot}%{_initrddir}/
 %__mkdir_p %{buildroot}/opt/alerta/bin
 cp %{_builddir}/%{name}-%{version}/alerta/bin/alert* %{buildroot}/opt/alerta/bin/
 cp %{_builddir}/%{name}-%{version}/alerta/bin/python* %{buildroot}/opt/alerta/bin/
@@ -49,6 +49,7 @@ cp -r %{_builddir}/%{name}-%{version}/alerta/lib %{buildroot}/opt/alerta/lib
 %__mkdir_p %{buildroot}/var/lib/alerta
 %__mkdir_p %{buildroot}%{_sysconfdir}/snmp/
 %__install -m 0444 etc/snmptrapd.conf %{buildroot}%{_sysconfdir}/snmp/snmptrapd.conf.%{name}
+%__mkdir_p %{buildroot}%{_sysconfdir}/httpd/conf.d/
 %__install -m 0755 etc/httpd-alerta.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta.conf
 %__install -m 0755 etc/httpd-alerta-dashboard.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
 
