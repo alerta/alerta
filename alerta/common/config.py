@@ -24,7 +24,7 @@ DEFAULTS = {
     'foreground': 'no',
     'user_id': 'alerta',
     'server_threads': 4,
-    'disable_flag': '/var/lib/%s.disable' % prog,
+    'disable_flag': '/var/lib/alerta/%s.disable' % prog,
     'loop_every': 30,
     'global_timeout': 86400,  # seconds
     'console_limit': 1000,  # max number of alerts sent to console
