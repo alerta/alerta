@@ -14,7 +14,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
-Version = '3.0.0'
+Version = '3.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -100,9 +100,6 @@ class SyslogDaemon(Daemon):
 
         LOG.info('Shutdown request received...')
         self.running = False
-
-        LOG.info('Disconnecting from message broker...')
-        self.mq.disconnect()
 
     def parse_syslog(self, addr, data):
 
