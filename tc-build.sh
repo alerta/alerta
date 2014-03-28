@@ -21,7 +21,7 @@ mkdir ${BUILDROOT} \
 	${BUILDROOT}/WORKING \
 	${BUILDROOT}/RPMS
 
-tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-"${VERSION}"/,S' * >/dev/null
+tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-'"${VERSION}"'/,S' * >/dev/null
 
 rpmbuild -v --define "version ${VERSION}" --define "release ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
 
