@@ -25,5 +25,5 @@ tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-'"${V
 sleep 1
 rpmbuild -v --define "version ${VERSION}" --define "release ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
 
-echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/x86_64/alerta-${VERSION}-${BUILD_NUMBER}.noarch.rpm => .']"
-echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/x86_64/alerta-extras-${VERSION}-${BUILD_NUMBER}.noarch.rpm => .']"
+echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/x86_64/alerta-${VERSION}-${BUILD_NUMBER}.x86_64.rpm => .']"
+echo "##teamcity[publishArtifacts '${BUILDROOT}/RPMS/x86_64/alerta-extras-${VERSION}-${BUILD_NUMBER}.x86_64.rpm => .']"
