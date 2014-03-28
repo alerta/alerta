@@ -15,7 +15,7 @@ BuildArch: x86_64
 Vendor: Nick Satterly <nick.satterly@theguardian.com>
 Url: https://github.com/guardian/alerta
 BuildRequires: python-devel, python-setuptools, python-pip, python-virtualenv
-Requires: httpd
+Requires: httpd, mod_wsgi
 
 %description
 Alerta is a monitoring framework that consolidates alerts
