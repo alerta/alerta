@@ -6,7 +6,7 @@ then
 	exit 1
 fi
 
-VERSION=$(cat VERSION)
+VERSION=$(<VERSION)
 
 SCRIPT=$(readlink -f $0)
 ALERTA_VCS_ROOT=`dirname $SCRIPT`
