@@ -40,7 +40,7 @@ alerta/bin/python setup.py install --single-version-externally-managed --root=/
 
 %install
 %__mkdir_p %{buildroot}%{_sysconfdir}/init/
-%__install -m 0755 etc/upstart/alert-* %{buildroot}%{_sysconfdir}/init/
+%__install -m 0755 etc/init/alert-* %{buildroot}%{_sysconfdir}/init/
 %__mkdir_p %{buildroot}/opt/alerta/bin
 cp %{_builddir}/%{name}-%{version}/alerta/bin/alert* %{buildroot}/opt/alerta/bin/
 cp %{_builddir}/%{name}-%{version}/alerta/bin/python* %{buildroot}/opt/alerta/bin/
