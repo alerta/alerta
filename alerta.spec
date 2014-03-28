@@ -1,6 +1,6 @@
 %define name alerta
 %define version 3.0.0
-%define release 7
+%define release 8
 
 Name: %{name}
 Summary: Alerta monitoring framework
@@ -39,8 +39,8 @@ alerta/bin/python setup.py install --single-version-externally-managed --root=/
 /usr/bin/virtualenv --relocatable alerta
 
 %install
-%__mkdir_p %{buildroot}%{_initrddir}/
-%__install -m 0755 etc/init.d/alert-* %{buildroot}%{_initrddir}/
+%__mkdir_p %{buildroot}%{_sysconfdir}/init/
+%__install -m 0755 etc/upstart/alert-* %{buildroot}%{_sysconfdir}/init/
 %__mkdir_p %{buildroot}/opt/alerta/bin
 cp %{_builddir}/%{name}-%{version}/alerta/bin/alert* %{buildroot}/opt/alerta/bin/
 cp %{_builddir}/%{name}-%{version}/alerta/bin/python* %{buildroot}/opt/alerta/bin/
@@ -68,7 +68,8 @@ rm -rf %{buildroot}
 %dir %attr(0775,alerta,root) /var/lib/alerta
 
 %files extras
-%{_initrddir}/alert-*
+%defattr(0644,root,root)
+%{_sysconfdir}/init/alert-*
 %defattr(-,alerta,alerta)
 /opt/alerta/bin/alert-*
 %{_sysconfdir}/snmp/snmptrapd.conf.%{name}
@@ -80,7 +81,10 @@ getent passwd alerta >/dev/null || \
     -c "Alerta monitoring tool" alerta
 exit 0
 
+%post
+/sbin/initctl reload-configuration
+
 %changelog
-* Thu Mar 27 2013 Nick Satterly <nick.satterly@theguardian.com> - 3.0.0-7
+* Thu Mar 27 2013 Nick Satterly <nick.satterly@theguardian.com> - 3.0.0-8
 - Package alerta relase 3.0 command-line tools
 
