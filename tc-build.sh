@@ -1,5 +1,6 @@
 #!/bin/bash
-# Build script for teamcity to build the alerta RPMs
+
+set -x
 
 if [ -z "$BUILD_NUMBER" ]
 then
@@ -22,7 +23,7 @@ mkdir ${BUILDROOT} \
 	${BUILDROOT}/WORKING \
 	${BUILDROOT}/RPMS
 
-git archive --format=tar --prefix="alerta-${version}/" HEAD | gzip > ${BUILDROOT}/SOURCES/alerta-${version}.tar.gz
+tar zcvf ${BUILDROOT}/SOURCES/alerta-${BUILD_NUMBER}.tar.gz --xform 's,^,alerta-3.0.0/,S' *
 
 rpmbuild --define "version ${VERSION}" --define "release ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
 
