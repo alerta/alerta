@@ -6,7 +6,7 @@ then
 	exit 1
 fi
 
-VERSION="3.0.0"
+VERSION=$(cat VERSION)
 
 SCRIPT=$(readlink -f $0)
 ALERTA_VCS_ROOT=`dirname $SCRIPT`
@@ -21,7 +21,7 @@ mkdir ${BUILDROOT} \
 	${BUILDROOT}/WORKING \
 	${BUILDROOT}/RPMS
 
-tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-3.0.0/,S' * >/dev/null
+tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-${VERSION}/,S' * >/dev/null
 
 rpmbuild --define "version ${VERSION}" --define "release ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
 
