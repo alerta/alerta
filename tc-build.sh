@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 if [ -z "$BUILD_NUMBER" ]
 then
 	echo "ERROR: BUILD_NUMBER environment variable not set by TeamCity"
