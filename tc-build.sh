@@ -13,7 +13,7 @@ VERSION="3.0.0"
 SCRIPT=$(readlink -f $0)
 ALERTA_VCS_ROOT=`dirname $SCRIPT`
 
-BUILDROOT=${ALERTA_VCS_ROOT}/rpmtarget
+BUILDROOT=${ALERTA_VCS_ROOT}/rpmbuild
 rm -rf ${BUILDROOT}
 mkdir ${BUILDROOT} \
 	${BUILDROOT}/SOURCES \
@@ -23,7 +23,7 @@ mkdir ${BUILDROOT} \
 	${BUILDROOT}/WORKING \
 	${BUILDROOT}/RPMS
 
-tar zcvf ${BUILDROOT}/SOURCES/alerta-${BUILD_NUMBER}.tar.gz --xform 's,^,alerta-3.0.0/,S' *
+tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-3.0.0/,S' * >/dev/null
 
 rpmbuild --define "version ${VERSION}" --define "release ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
 
