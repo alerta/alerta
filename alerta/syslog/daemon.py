@@ -23,6 +23,8 @@ CONF = config.CONF
 class SyslogDaemon(Daemon):
 
     syslog_opts = {
+        'user_id': 'root',
+        'use_syslog': False,
         'syslog_udp_port': 514,
         'syslog_tcp_port': 514,
     }
