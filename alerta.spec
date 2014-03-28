@@ -1,6 +1,6 @@
 %define name alerta
 %define version 3.0.0
-%define release 6
+%define release 7
 
 Name: %{name}
 Summary: Alerta monitoring framework
@@ -14,7 +14,7 @@ Prefix: /opt
 BuildArch: x86_64
 Vendor: Nick Satterly <nick.satterly@theguardian.com>
 Url: https://github.com/guardian/alerta
-BuildRequires: python-devel, python-setuptools, python-pip, python-virtualenv
+BuildRequires: python-devel, python-setuptools, python-virtualenv
 Requires: httpd, mod_wsgi
 
 %description
@@ -81,6 +81,6 @@ getent passwd alerta >/dev/null || \
 exit 0
 
 %changelog
-* Thu Mar 27 2013 Nick Satterly <nick.satterly@theguardian.com> - 3.0.0-6
+* Thu Mar 27 2013 Nick Satterly <nick.satterly@theguardian.com> - 3.0.0-7
 - Package alerta relase 3.0 command-line tools
 
