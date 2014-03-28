@@ -59,9 +59,9 @@ rm -rf %{buildroot}
 %files
 %defattr(-,alerta,alerta)
 /opt/alerta/bin/alerta
-%{_sysconfdir}/httpd/conf.d/alerta.conf
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta.conf
 /opt/alerta/bin/alerta-dashboard
-%{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
 /opt/alerta/bin/python*
 /opt/alerta/bin/activate*
 /opt/alerta/lib/*
