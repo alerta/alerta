@@ -1,6 +1,4 @@
 %define name alerta
-%define version 3.0.0
-%define release 8
 
 Name: %{name}
 Summary: Alerta monitoring framework
