@@ -17,6 +17,7 @@ echo
 sleep 1
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+{
     "resource": "fw010",
     "event": "NodeDown",
     "group": "Firewall",
@@ -36,6 +37,7 @@ echo
 sleep 2
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+{
     "resource": "router0011",
     "event": "node_up",
     "group": "Network",
@@ -55,6 +57,7 @@ echo
 sleep 3
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+{
     "resource": "mydb",
     "event": "OraError",
     "group": "Oracle",
@@ -74,6 +77,7 @@ echo
 sleep 1
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+{
     "resource": "myapp",
     "event": "SlowResponse",
     "group": "Application",
@@ -93,6 +97,7 @@ echo
 sleep 1
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+{
     "resource": "host44",
     "event": "SwapUtil",
     "group": "OS",
