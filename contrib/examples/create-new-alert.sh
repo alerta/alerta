@@ -1,17 +1,14 @@
-#!/bin/bash
+#!/bin/sh
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
   "resource": "host678:eth0",
   "event": "HW:NIC:FAILED",
   "group": "Hardware",
   "severity": "major",
-  "environment": [
-      "PROD",
-      "INFRA"
-  ],
+  "environment": "production",
   "service": [
-      "Common"
+      "Network"
   ],
   "text": "Network interface eth0 is down.",
   "value": "error"
@@ -19,16 +16,13 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/ap
 echo
 sleep 1
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '{
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
     "resource": "fw010",
     "event": "NodeDown",
     "group": "Firewall",
     "value": "Down",
     "severity": "major",
-    "environment": [
-        "DEV",
-        "INFRA"
-    ],
+    "environment": "devlopment",
     "service": [
         "Network"
     ],
@@ -41,17 +35,15 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/ap
 echo
 sleep 2
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '{
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
     "resource": "router0011",
     "event": "node_up",
     "group": "Network",
     "value": "UP",
     "severity": "normal",
-    "environment": [
-        "INFRA"
-    ],
+    "environment": "infrastructure",
     "service": [
-        "Common"
+        "Shared"
     ],
     "tags": [
         "location=London",
@@ -62,18 +54,15 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/ap
 echo
 sleep 3
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '{
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
     "resource": "mydb",
     "event": "OraError",
-    "group": "Database",
+    "group": "Oracle",
     "value": "ERROR 011",
     "severity": "warning",
-    "environment": [
-        "DEV",
-        "PROD"
-    ],
+    "environment": "development",
     "service": [
-        "Common"
+        "Database"
     ],
     "tags": [
         "location=London",
@@ -84,15 +73,13 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/ap
 echo
 sleep 1
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '{
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
     "resource": "myapp",
     "event": "SlowResponse",
     "group": "Application",
     "value": "5005ms",
     "severity": "critical",
-    "environment": [
-        "PROD"
-    ],
+    "environment": "development",
     "service": [
         "Web"
     ],
@@ -105,15 +92,13 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/ap
 echo
 sleep 1
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/alerta/api/v2/alerts/alert.json' -d '{
+curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
     "resource": "host44",
     "event": "SwapUtil",
     "group": "OS",
     "value": "94%",
     "severity": "minor",
-    "environment": [
-        "PROD"
-    ],
+    "environment": "production",
     "service": [
         "Platform"
     ],
