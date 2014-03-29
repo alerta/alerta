@@ -1,4 +1,6 @@
 %define name alerta
+%{!?_with_teamcity: %define %define version 3.0.0}
+%{!?_with_teamcity: %define %define release 8}
 
 Name: %{name}
 Summary: Alerta monitoring framework
