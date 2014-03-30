@@ -12,7 +12,7 @@ def get_version():
     if VERSION[3] != 'final':
         version = '%s %s %s' % (version, VERSION[3], VERSION[4])
     if BUILD_NUMBER != 'DEV':
-        version = '%s-build.%s' % BUILD_NUMBER
+        version = '%s-build.%s' % (version, BUILD_NUMBER)
     return version
 
 __version__ = get_version()
