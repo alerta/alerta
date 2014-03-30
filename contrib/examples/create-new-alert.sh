@@ -1,6 +1,6 @@
 #!/bin/sh
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
   "resource": "host678:eth0",
   "event": "HW:NIC:FAILED",
@@ -15,7 +15,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert
 }'
 echo
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
     "resource": "fw010",
     "event": "NodeDown",
@@ -34,7 +34,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert
 }'
 echo
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
     "resource": "router0011",
     "event": "node_up",
@@ -53,7 +53,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert
 }'
 echo
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
     "resource": "mydb",
     "event": "OraError",
@@ -72,7 +72,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert
 }'
 echo
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
     "resource": "myapp",
     "event": "SlowResponse",
@@ -91,7 +91,7 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert
 }'
 echo
 
-curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
     "resource": "host44",
     "event": "SwapUtil",
