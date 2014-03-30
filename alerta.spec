@@ -1,6 +1,6 @@
 %define name alerta
 %{!?_with_teamcity: %define version 3.0.0}
-%{!?_with_teamcity: %define release 8}
+%{!?_with_teamcity: %define release 9}
 
 Name: %{name}
 Summary: Alerta monitoring framework
@@ -52,6 +52,9 @@ cp -r %{_builddir}/%{name}-%{version}/alerta/lib %{buildroot}/opt/alerta/
 %__mkdir_p %{buildroot}%{_sysconfdir}/httpd/conf.d/
 %__install -m 0755 etc/httpd-alerta.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta.conf
 %__install -m 0755 etc/httpd-alerta-dashboard.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
+%__mkdir_p %{buildroot}/opt/alerta/apache
+%__install -m 0644 %{_builddir}/%{name}-%{version}/alerta/app/app.wsgi %{buildroot}/opt/alerta/apache
+%__install -m 0644 %{_builddir}/%{name}-%{version}/alerta/dashboard/dashboard.wsgi %{buildroot}/opt/alerta/apache
 
 %clean
 rm -rf %{buildroot}
@@ -59,8 +62,10 @@ rm -rf %{buildroot}
 %files
 %defattr(-,alerta,alerta)
 /opt/alerta/bin/alerta
+%config(noreplace) /opt/alerta/apache/app.wsgi
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta.conf
 /opt/alerta/bin/alerta-dashboard
+%config(noreplace) /opt/alerta/apache/dashboard.wsgi
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
 /opt/alerta/bin/python*
 /opt/alerta/bin/activate*
@@ -85,6 +90,6 @@ exit 0
 /sbin/initctl reload-configuration
 
 %changelog
-* Thu Mar 27 2013 Nick Satterly <nick.satterly@theguardian.com> - 3.0.0-8
+* Thu Mar 27 2013 Nick Satterly <nick.satterly@theguardian.com> - 3.0.0-9
 - Package alerta relase 3.0 command-line tools
 
