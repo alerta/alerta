@@ -14,7 +14,6 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert
   "value": "error"
 }'
 echo
-sleep 1
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
@@ -34,7 +33,6 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert
     "text": "Firewall is not responding to ping."
 }'
 echo
-sleep 2
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
@@ -54,7 +52,6 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert
     "text": "Router is up."
 }'
 echo
-sleep 3
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
@@ -74,7 +71,6 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert
     "text": "Oracle 011 error."
 }'
 echo
-sleep 1
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
@@ -94,7 +90,6 @@ curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert
     "text": "Service unavailable."
 }'
 echo
-sleep 1
 
 curl -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
 {
