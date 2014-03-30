@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
-import os
 import setuptools
 
-from alerta import __version__
+from alerta import get_version
 
 with open('README.rst') as f:
     long_description = f.read()
 
 setuptools.setup(
     name="alerta",
-    version='%s-build.%s' % (__version__, os.environ.get('BUILD_NUMBER','DEV')),
+    version=get_version(),
     description='Alerta monitoring framework',
     long_description=long_description,
     url='https://github.com/guardian/alerta',
