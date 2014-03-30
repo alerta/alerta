@@ -17,7 +17,7 @@ from alerta.app.utils import parse_fields, crossdomain
 from alerta.common.metrics import Gauge, Counter, Timer
 
 
-Version = '3.0.0'
+__version__ = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

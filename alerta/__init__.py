@@ -1,8 +1,8 @@
 
 import os
+import build
 
 VERSION = (3, 0, 1, 'final', 1)
-BUILD_NUMBER = os.environ.get('BUILD_NUMBER', 'DEV')
 
 
 def get_version():
@@ -11,8 +11,8 @@ def get_version():
         version = '%s.%s' % (version, VERSION[2])
     if VERSION[3] != 'final':
         version = '%s %s %s' % (version, VERSION[3], VERSION[4])
-    if BUILD_NUMBER != 'DEV':
-        version = '%s-build.%s' % (version, BUILD_NUMBER)
+    if build.BUILD_NUMBER != 'DEV':
+        version = '%s-build.%s' % (version, build.BUILD_NUMBER)
     return version
 
 __version__ = get_version()
