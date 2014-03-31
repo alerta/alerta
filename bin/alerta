@@ -2,7 +2,7 @@
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.app import app, Version
+from alerta.app import app, __version__
 from alerta.common.api import ApiClient
 
 LOG = logging.getLogger('alerta.app')
@@ -11,6 +11,6 @@ CONF = config.CONF
 ApiClient()  # set API variable ie. api_port
 
 if __name__ == '__main__':
-    config.parse_args(version=Version)
+    config.parse_args(version=__version__)
     logging.setup('alerta')
     app.run(host='0.0.0.0', port=CONF.api_port, debug=True)
