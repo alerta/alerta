@@ -9,6 +9,9 @@ fi
 VERSION=$(<VERSION)
 ALERTA_VCS_ROOT=`pwd`
 
+# Clean up previous runs
+rm -f ${ALERTA_VCS_ROOT}/artifacts.zip
+
 # Create RPMs build directory tree
 BUILDROOT=${ALERTA_VCS_ROOT}/rpmbuild
 rm -rf ${BUILDROOT}
@@ -36,6 +39,6 @@ mv ${BUILDROOT}/RPMS/x86_64/alerta-extras-${VERSION}-${BUILD_NUMBER}.x86_64.rpm 
 zip ../artifacts.zip deploy.json packages
 popd
 
-# Pushlish artifact
+# Publish artifact
 echo "##teamcity[publishArtifacts '${ALERTA_VCS_ROOT}/artifacts.zip => .']"
 
