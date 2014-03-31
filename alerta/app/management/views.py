@@ -41,11 +41,11 @@ def manifest():
         "label": "Alerta",
         "release": get_version(),
         "build": build.BUILD_NUMBER,
-        "date": "",
-        "revision": "",
+        "date": build.BUILD_DATE,
+        "revision": build.BUILD_VCS_NUMBER,
         "description": "The Guardian's Alerta monitoring system",
-        "built-by": "rpmbuild",
-        "built-on": "el6gen01.gudev.gnl",
+        "built-by": build.BUILT_BY,
+        "built-on": build.HOSTNAME,
     }
 
     return  jsonify(alerta=manifest)
