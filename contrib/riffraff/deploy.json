@@ -3,36 +3,23 @@
         "monitoring"
     ],
     "packages": {
-        "api": {
+        "alerta": {
             "type": "rpm",
-            "apps" : ["alerta"],
             "data": {
                 "port": "8080",
                 "healthcheck_paths": [
-                    "/"
+                    "/management/healthcheck"
                 ],
                 "services": ["httpd"],
                 "serviceCommand": "reload"
             }
         },
-        "dashboard": {
-            "type": "rpm",
-            "apps" : ["alerta"],
-            "data": {
-                "port": "80",
-                "healthcheck_paths": [
-                    "/"
-                ],
-                "services": ["httpd"],
-                "serviceCommand": "reload"
-            }
-        },
-        "daemons": {
+        "alerta-extras": {
             "type": "rpm",
             "apps" : ["alerta"],
             "data": {
                 "services": [
-                    "alerta-cloudwatch",
+                    "alert-cloudwatch",
                     "alert-dynect",
                     "alert-ircbot",
                     "alert-logger",
