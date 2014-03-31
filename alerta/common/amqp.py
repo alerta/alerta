@@ -1,4 +1,5 @@
 
+import sys
 import json
 
 from kombu import BrokerConnection, Exchange, Queue, Producer, Consumer
@@ -33,8 +34,15 @@ class Messaging(object):
 
     def connect(self):
 
+        if not CONF.amqp_url:
+            return
+
         self.connection = BrokerConnection(CONF.amqp_url)
-        self.connection.connect()
+        try:
+            self.connection.connect()
+        except Exception as e:
+            LOG.error('Failed to connect to AMQP transport %s: %s', CONF.amqp_url, e)
+            sys.exit(1)
         self.channel = self.connection.channel()
 
         LOG.info('Connected to broker %s', CONF.amqp_url)
@@ -64,6 +72,9 @@ class DirectPublisher(object):
 
     def send(self, msg):
 
+        if not self.channel:
+            return
+
         self.producer.publish(json.dumps(msg.get_body(), cls=DateEncoder), exchange=self.exchange,
                               serializer='json', declare=[self.exchange], routing_key=self.exchange_name)
 
@@ -85,6 +96,9 @@ class FanoutPublisher(object):
         LOG.info('Configured fanout publisher on topic "%s"', CONF.amqp_topic)
 
     def send(self, msg):
+
+        if not self.channel:
+            return
 
         self.producer.publish(json.dumps(msg.get_body(), cls=DateEncoder), exchange=self.exchange,
                               serializer='json', declare=[self.exchange])
