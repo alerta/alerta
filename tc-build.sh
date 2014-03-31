@@ -29,12 +29,12 @@ tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-'"${V
 rpmbuild -v --with teamcity --define "version ${VERSION}" --define "release ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
 
 # Create archive
-pushd contrib/riffraff/
-zip ${ALERTA_VCS_ROOT}/artifacts.zip deploy.json
-popd
-pushd ${BUILDROOT}/RPMS/x86_64/
-zip -r ${ALERTA_VCS_ROOT}/artifacts.zip alerta-${VERSION}-${BUILD_NUMBER}.x86_64.rpm alerta-extras-${VERSION}-${BUILD_NUMBER}.x86_64.rpm zip
-popd
+cp ${ALERTA_VCS_ROOT}/deploy.json ${BUILDROOT}
+mkdir ${BUILDROOT}/packages
+pushd ${BUILDROOT}/packages
+mv ${BUILDROOT}/RPMS/x86_64/alerta-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages
+mv ${BUILDROOT}/RPMS/x86_64/alerta-extras-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages
+zip -r ../artifacts.zip deploy.json packages
 
 # Pushlish artifact
 echo "##teamcity[publishArtifacts '${ALERTA_VCS_ROOT}/artifacts.zip => .']"
