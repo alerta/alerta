@@ -36,7 +36,7 @@ mkdir -p packages/alerta
 mv ${BUILDROOT}/RPMS/x86_64/alerta-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages/alerta
 mkdir -p packages/alerta-extras
 mv ${BUILDROOT}/RPMS/x86_64/alerta-extras-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages/alerta-extras
-zip ../artifacts.zip deploy.json packages
+zip -r ../artifacts.zip deploy.json packages
 popd
 
 # Publish artifact
