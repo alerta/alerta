@@ -759,7 +759,6 @@ $('body').on('click', '#from-date-select .btn', function() {
 });
 
 function updateStatus(s) {
-    console.log('updateStatus()');
     status = '&status=' + s;
     updateStatusCounts(gEnvFilter, false);
     updateAllIndicators(gEnvFilter, lookup, false);
@@ -767,10 +766,8 @@ function updateStatus(s) {
 }
 
 function updateStatusCounts(env_filter, refresh) {
-    console.log('updateStatusCounts()');
     $.getJSON(API_URL + '/alert/counts?callback=?'
         + env_filter + from, function (data) {
-        console.log(data);
         if (data.warning) {
             $('#warning-text').text(data.warning);
             $('#console-alert').toggle();
@@ -788,7 +785,6 @@ function updateStatusCounts(env_filter, refresh) {
 }
 
 function updateAllIndicators(env_filter, asiFilters, refresh) {
-    console.log('updateAllIndicators()');
     var delayer = 0;
     $.each(asiFilters, function (service) {
         setTimeout(function () {
@@ -800,24 +796,22 @@ function updateAllIndicators(env_filter, asiFilters, refresh) {
 
 function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
     $('#' + service + ' th').addClass('loader');
-    console.log(API_URL + '/alert/counts?callback=?' + env_filter + asi_filter + status + limit + from);
     $.getJSON(API_URL + '/alert/counts?callback=?'
         + env_filter + asi_filter + status + limit + from, function (data) {
-        console.log(data);
         var sev_id = '#' + service;
 
-        data.severityCounts.normal += data.severityCounts.informational;
+        if ("informational" in data.severityCounts) {
+            data.severityCounts.normal += data.severityCounts.informational;
+        }
 
         $.each(data.severityCounts, function (sev, count) {
             sev = sev.toLowerCase();
             $(sev_id + "-" + sev).html('<b>' + count + '</b>');
 
-            switch (count) {
-                case 0:
-                    $(sev_id + "-" + sev).removeClass("severity-" + sev).addClass('zero');
-                    break;
-                default:
+            if (count > 0) {
                     $(sev_id + "-" + sev).addClass("severity-" + sev).removeClass('zero');
+            } else {
+                    $(sev_id + "-" + sev).removeClass("severity-" + sev).addClass('zero');
             }
         });
         var scolor;
@@ -845,8 +839,6 @@ function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
 }
 
 $(document).ready(function () {
-
-    console.log('document.ready');
 
     $('tbody').on('click', '.delete-alert', function () {
         if (confirm('IMPORTANT: Deleting this alert is a permanent operation that will '
