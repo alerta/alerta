@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 if [ -z "$BUILD_NUMBER" ]
 then
 	echo "ERROR: BUILD_NUMBER environment variable not set by TeamCity"
@@ -29,14 +27,13 @@ tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-'"${V
 rpmbuild -v --with teamcity --define "version ${VERSION}" --define "release ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
 
 # Create archive
-mkdir ${BUILDROOT}/packages
 pushd ${BUILDROOT}
 cp ${ALERTA_VCS_ROOT}/contrib/riffraff/deploy.json .
-mkdir packages/alerta
+mkdir -p packages/alerta
 mv ${BUILDROOT}/RPMS/x86_64/alerta-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages/alerta
-mkdir packages/alerta-extras
+mkdir -p packages/alerta-extras
 mv ${BUILDROOT}/RPMS/x86_64/alerta-extras-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages/alerta-extras
-zip -r ../artifacts.zip deploy.json packages
+zip -r ${ALERTA_VCS_ROOT}/artifacts.zip deploy.json packages
 popd
 
 # Pushlish artifact

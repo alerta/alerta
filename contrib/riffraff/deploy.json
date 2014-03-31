@@ -7,7 +7,7 @@
             "type": "rpm",
             "data": {
                 "port": "8080",
-                "healthcheck_paths": [
+                "healthcheckPaths": [
                     "/management/healthcheck"
                 ],
                 "services": ["httpd"],
