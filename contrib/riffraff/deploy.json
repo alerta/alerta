@@ -32,5 +32,16 @@
                 ]
             }
         }
+    },
+    "recipes": {
+        "default": {
+            "depends": ["alerta", "extras"]
+        },
+        "alerta": {
+            "actionsPerHost": ["alerta.deploy"]
+        },
+        "extras": {
+            "actionsPerHost": ["alerta-extras.deploy"]
+        }
     }
 }
