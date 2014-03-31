@@ -32,8 +32,10 @@ rpmbuild -v --with teamcity --define "version ${VERSION}" --define "release ${BU
 mkdir ${BUILDROOT}/packages
 pushd ${BUILDROOT}
 cp ${ALERTA_VCS_ROOT}/contrib/riffraff/deploy.json .
-mv ${BUILDROOT}/RPMS/x86_64/alerta-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages
-mv ${BUILDROOT}/RPMS/x86_64/alerta-extras-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages
+mkdir packages/alerta
+mv ${BUILDROOT}/RPMS/x86_64/alerta-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages/alerta
+mkdir packages/alerta-extras
+mv ${BUILDROOT}/RPMS/x86_64/alerta-extras-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages/alerta-extras
 zip -r ../artifacts.zip deploy.json packages
 popd
 
