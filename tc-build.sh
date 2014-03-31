@@ -6,8 +6,6 @@ then
 	exit 1
 fi
 
-env
-
 VERSION=$(<VERSION)
 
 SCRIPT=$(readlink -f $0)
