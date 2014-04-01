@@ -24,7 +24,7 @@ mkdir ${BUILDROOT} \
 	${BUILDROOT}/RPMS
 
 # Create source tarball
-tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-'"${VERSION}"'/,S' * >/dev/null
+tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-'"${VERSION}"'/,S' --exclude ${ALERTA_VCS_ROOT}/rpmbuild * >/dev/null
 
 # Build RPMs
 rpmbuild -v --with teamcity --define "version ${VERSION}" --define "release ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
