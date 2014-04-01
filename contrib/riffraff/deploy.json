@@ -6,6 +6,7 @@
         "alerta": {
             "type": "rpm",
             "data": {
+                "user": "alerta",
                 "port": "8080",
                 "healthcheckPaths": [
                     "/management/healthcheck"
@@ -18,6 +19,7 @@
             "type": "rpm",
             "apps" : ["alerta"],
             "data": {
+                "user": "alerta",
                 "services": [
                     "alert-cloudwatch",
                     "alert-dynect",
