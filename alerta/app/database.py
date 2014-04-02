@@ -162,6 +162,71 @@ class Mongo(object):
             )
         return alerts
 
+    def get_history(self, query=None, fields=None, limit=0):
+
+        if not fields:
+            fields = {
+                "resource": 1,
+                "environment": 1,
+                "service": 1,
+                "group": 1,
+                "tags": 1,
+                "attributes": 1,
+                "origin": 1,
+                "type": 1,
+                "history": 1
+            }
+
+        pipeline = [
+            {'$match': query},
+            {'$unwind': '$history'},
+            {'$project': fields},
+            {'$limit': limit},
+            {'$sort': {'history.updateTime': 1}}
+        ]
+
+        responses = self.db.alerts.aggregate(pipeline)
+
+        history = list()
+        for response in responses['result']:
+            if 'severity' in response['history']:
+                history.append(
+                    {
+                        "id": response['_id'],  # or response['history']['id']
+                        "resource": response['resource'],
+                        "event": response['history']['event'],
+                        "environment": response['environment'],
+                        "severity": response['history']['severity'],
+                        "service": response['service'],
+                        "group": response['group'],
+                        "value": response['history']['value'],
+                        "text": response['history']['text'],
+                        "tags": response['tags'],
+                        "attributes": response['attributes'],
+                        "origin": response['origin'],
+                        "type": response['type'],
+                        "updateTime": response['history']['updateTime']
+                    }
+                )
+            elif 'status' in response['history']:
+                history.append(
+                    {
+                        "id": response['_id'],  # or response['history']['id']
+                        "resource": response['resource'],
+                        "environment": response['environment'],
+                        "status": response['history']['status'],
+                        "service": response['service'],
+                        "group": response['group'],
+                        "text": response['history']['text'],
+                        "tags": response['tags'],
+                        "attributes": response['attributes'],
+                        "origin": response['origin'],
+                        "type": response['type'],
+                        "updateTime": response['history']['updateTime']
+                    }
+                )
+        return history
+
     def is_duplicate(self, alert):
 
         query = {
@@ -336,8 +401,7 @@ class Mongo(object):
                     "value": alert.value,
                     "text": alert.text,
                     "id": alert.id,
-                    "createTime": alert.create_time,
-                    "receiveTime": now
+                    "updateTime": alert.create_time
                 }]
             }
         }
@@ -405,8 +469,7 @@ class Mongo(object):
             "severity": alert.severity,
             "value": alert.value,
             "text": alert.text,
-            "createTime": alert.create_time,
-            "receiveTime": now
+            "updateTime": alert.create_time
         }]
         if status != alert.status:
             history.append({
