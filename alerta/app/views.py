@@ -139,6 +139,29 @@ def get_alerts():
             autoRefresh=Switch.get('auto-refresh-allow').is_on()
         )
 
+@app.route('/api/history', methods=['GET'])
+@jsonp
+def get_history():
+
+    try:
+        query, sort, limit, query_time = parse_fields(request)
+    except Exception, e:
+        return jsonify(status="error", message=str(e))
+
+    #history = db.get_history(query=query, fields=fields, sort=sort, limit=limit)
+    history = db.get_history()
+
+    if len(history) > 0:
+        return jsonify(
+            status="ok",
+            history=history
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            history=[]
+        )
 
 @app.route('/api/alert', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
