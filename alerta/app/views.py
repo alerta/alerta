@@ -144,23 +144,24 @@ def get_alerts():
 def get_history():
 
     try:
-        query, sort, limit, query_time = parse_fields(request)
+        query, _, limit, query_time = parse_fields(request)
     except Exception, e:
         return jsonify(status="error", message=str(e))
 
-    #history = db.get_history(query=query, fields=fields, sort=sort, limit=limit)
-    history = db.get_history()
+    history = db.get_history(query=query, limit=limit)
 
     if len(history) > 0:
         return jsonify(
             status="ok",
-            history=history
+            history=history,
+            lastTime=history[-1]['updateTime']
         )
     else:
         return jsonify(
             status="ok",
             message="not found",
-            history=[]
+            history=[],
+            lastTIme=query_time
         )
 
 @app.route('/api/alert', methods=['OPTIONS', 'POST'])

@@ -162,11 +162,10 @@ class Mongo(object):
             )
         return alerts
 
-    def get_history(self):
+    def get_history(self, query=None, fields=None, limit=0):
 
-        responses = self.db.alerts.aggregate([
-            {'$unwind': '$history'},
-            {'$project': {
+        if not fields:
+            fields = {
                 "resource": 1,
                 "environment": 1,
                 "service": 1,
@@ -176,8 +175,17 @@ class Mongo(object):
                 "origin": 1,
                 "type": 1,
                 "history": 1
-            }}
-        ])
+            }
+
+        pipeline = [
+            {'$match': query},
+            {'$unwind': '$history'},
+            {'$project': fields},
+            {'$limit': limit},
+            {'$sort': {'history.updateTime': 1}}
+        ]
+
+        responses = self.db.alerts.aggregate(pipeline)
 
         history = list()
         for response in responses['result']:
