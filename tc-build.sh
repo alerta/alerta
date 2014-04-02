@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 if [ -z "$BUILD_NUMBER" ]
 then
 	echo "ERROR: BUILD_NUMBER environment variable not set by TeamCity"
@@ -24,10 +26,14 @@ mkdir ${BUILDROOT} \
 	${BUILDROOT}/RPMS
 
 # Create source tarball
-tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-'"${VERSION}"'/,S' * >/dev/null
+tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-'"${VERSION}"'/,S' --exclude rpmbuild * >/dev/null
 
 # Build RPMs
 rpmbuild -v --with teamcity --define "version ${VERSION}" --define "release ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" -bb ${ALERTA_VCS_ROOT}/alerta.spec || exit 1
+
+# Check RPMs
+rpm -Kv ${BUILDROOT}/RPMS/x86_64/alerta-${VERSION}-${BUILD_NUMBER}.x86_64.rpm
+rpm -Kv ${BUILDROOT}/RPMS/x86_64/alerta-extras-${VERSION}-${BUILD_NUMBER}.x86_64.rpm
 
 # Create archive
 pushd ${BUILDROOT}

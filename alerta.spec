@@ -56,6 +56,8 @@ cp -r %{_builddir}/%{name}-%{version}/alerta/lib %{buildroot}/opt/alerta/
 %__install -m 0644 %{_builddir}/%{name}-%{version}/alerta/app/app.wsgi %{buildroot}/opt/alerta/apache
 %__install -m 0644 %{_builddir}/%{name}-%{version}/alerta/dashboard/dashboard.wsgi %{buildroot}/opt/alerta/apache
 
+prelink -u %{buildroot}/opt/alerta/bin/python
+
 %clean
 rm -rf %{buildroot}
 
