@@ -99,13 +99,13 @@ def health_check():
 
         heartbeats = db.get_heartbeats()
         for heartbeat in heartbeats:
-            delta = datetime.datetime.utcnow() - heartbeat['receiveTime']
-            threshold = float(heartbeat['timeout']) * 4
+            delta = datetime.datetime.utcnow() - heartbeat.receive_time
+            threshold = float(heartbeat.timeout) * 4
             if delta.seconds > threshold:
                 return 'HEARTBEAT_STALE', 503
 
-    except Exception:
-        return 'HEALTH_CHECK_FAILED', 503
+    except Exception as e:
+        return 'HEALTH_CHECK_FAILED: %s' % e, 503
 
     return 'OK'
 
