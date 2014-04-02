@@ -24,7 +24,6 @@ setuptools.setup(
         'pytz',
         'prettytable',
         'kombu',
-        'librabbitmq',
         'pymongo',
         'Flask',
         'irc',
