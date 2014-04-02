@@ -3,31 +3,30 @@ import os
 import sys
 import datetime
 import json
+
 from uuid import uuid4
 
-from alerta.common import log as logging
-from alerta.common import config
-from alerta.common.utils import DateEncoder
-
-LOG = logging.getLogger(__name__)
-CONF = config.CONF
-
 DEFAULT_TIMEOUT = 300  # seconds
+
+prog = os.path.basename(sys.argv[0])
+
+
+# Extend JSON Encoder to support ISO 8601 format dates
+class DateEncoder(json.JSONEncoder):
+    def default(self, obj):
+
+        if isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (obj.microsecond // 1000)
+        else:
+            return json.JSONEncoder.default(self, obj)
 
 
 class Heartbeat(object):
 
     def __init__(self, origin=None, tags=[], create_time=None, timeout=None):
 
-        prog = os.path.basename(sys.argv[0])
-
-        if not origin:
-            self.origin = '%s/%s' % (prog, os.uname()[0])
-        else:
-            self.origin = origin
-
         self.id = str(uuid4())
-        self.origin = origin
+        self.origin = origin or '%s/%s' % (prog, os.uname()[1])
         self.tags = tags or list()
         self.event_type = 'Heartbeat'
         self.create_time = create_time or datetime.datetime.utcnow()
@@ -78,15 +77,15 @@ class Heartbeat(object):
         try:
             heartbeat = json.loads(heartbeat)
         except ValueError, e:
-            LOG.error('Could not parse heartbeat: %s - %s', e, heartbeat)
-            return
+            LOG.error('Could not parse heartbeat - %s: %s', e, heartbeat)
+            raise
 
         if heartbeat.get('createTime', None):
             try:
                 heartbeat['createTime'] = datetime.datetime.strptime(heartbeat['createTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
             except ValueError, e:
                 LOG.error('Could not parse date time string: %s', e)
-                return
+                raise
 
         return Heartbeat(
             origin=heartbeat.get('origin', None),

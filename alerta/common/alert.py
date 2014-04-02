@@ -4,43 +4,39 @@ import sys
 import time
 import datetime
 import json
-from uuid import uuid4
 import re
 import fnmatch
 import yaml
 
+from uuid import uuid4
 from email import utils
 
-from alerta.common import log as logging
-from alerta.common import config
-from alerta.common import status_code, severity_code
-from alerta.common.utils import DateEncoder
-
-LOG = logging.getLogger(__name__)
-CONF = config.CONF
+DEFAULT_SEVERITY = "normal"  # "normal", "ok" or "clear"
+DEFAULT_TIMEOUT = 86400
 
 prog = os.path.basename(sys.argv[0])
 
 
+# Extend JSON Encoder to support ISO 8601 format dates
+class DateEncoder(json.JSONEncoder):
+    def default(self, obj):
+
+        if isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (obj.microsecond // 1000)
+        else:
+            return json.JSONEncoder.default(self, obj)
+
+
 class Alert(object):
 
-    alert_opts = {
-        'yaml_config': '/etc/alerta/%s.yaml' % prog,
-        'parser_dir': '/etc/alerta/parsers',
-    }
-
-    def __init__(self, resource, event, environment=None, severity=severity_code.NORMAL, correlate=None,
-                 status=status_code.UNKNOWN, service=None, group=None, value=None, text=None, tags=None,
+    def __init__(self, resource, event, environment=None, severity=None, correlate=None,
+                 status=None, service=None, group=None, value=None, text=None, tags=None,
                  attributes={}, origin=None, event_type=None, create_time=None, timeout=86400, raw_data=None):
 
-        config.register_opts(Alert.alert_opts)
-
-        prog = os.path.basename(sys.argv[0])
-
         if not resource:
-            raise ValueError('Missing mandatory value for resource')
+            raise ValueError('Missing mandatory value for "resource"')
         if not event:
-            raise ValueError('Missing mandatory value for event')
+            raise ValueError('Missing mandatory value for "event"')
         if any(['.' in key for key in attributes.keys()]) or any(['$' in key for key in attributes.keys()]):
             raise ValueError('Attribute keys must not contain "." or "$"')
 
@@ -48,11 +44,11 @@ class Alert(object):
         self.resource = resource
         self.event = event
         self.environment = environment or ""
-        self.severity = severity
+        self.severity = severity or DEFAULT_SEVERITY
         self.correlate = correlate or list()
         if correlate and event not in correlate:
             self.correlate.append(event)
-        self.status = status
+        self.status = status or 'unknown'
         self.service = service or list()
         self.group = group or 'Misc'
         self.value = value or 'n/a'
@@ -63,7 +59,7 @@ class Alert(object):
         self.event_type = event_type or 'exceptionAlert'
         self.create_time = create_time or datetime.datetime.utcnow()
         self.receive_time = None
-        self.timeout = timeout or CONF.global_timeout
+        self.timeout = timeout or DEFAULT_TIMEOUT
         self.raw_data = raw_data
 
     def get_id(self, short=False):
@@ -138,9 +134,9 @@ class Alert(object):
             resource=alert.get('resource', None),
             event=alert.get('event', None),
             environment=alert.get('environment', None),
-            severity=severity_code.parse_severity(alert.get('severity', severity_code.NORMAL)),
+            severity=alert.get('severity', DEFAULT_SEVERITY),
             correlate=alert.get('correlate', None),
-            status=status_code.parse_status(alert.get('status', status_code.UNKNOWN)),
+            status=alert.get('status', "unknown"),
             service=alert.get('service', list()),
             group=alert.get('group', None),
             value=alert.get('value', None),
@@ -277,7 +273,7 @@ class AlertDocument(object):
         self.origin = origin or '%s/%s' % (prog, os.uname()[1])
         self.event_type = event_type or 'exceptionAlert'
         self.create_time = create_time or datetime.datetime.utcnow()
-        self.timeout = timeout or CONF.global_timeout
+        self.timeout = timeout or DEFAULT_TIMEOUT
         self.raw_data = raw_data
 
         self.duplicate_count = duplicate_count
@@ -384,9 +380,9 @@ class AlertDocument(object):
             resource=alert.get('resource', None),
             event=alert.get('event', None),
             environment=alert.get('environment', None),
-            severity=severity_code.parse_severity(alert.get('severity', severity_code.NORMAL)),
+            severity=alert.get('severity', DEFAULT_SEVERITY),
             correlate=alert.get('correlate', None),
-            status=status_code.parse_status(alert.get('status', status_code.UNKNOWN)),
+            status=alert.get('status', "unknown"),
             service=alert.get('service', list()),
             group=alert.get('group', None),
             value=alert.get('value', None),
