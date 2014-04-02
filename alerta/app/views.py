@@ -89,7 +89,7 @@ def get_alerts():
     fields['history'] = {'$slice': CONF.history_limit}
 
     if 'status' not in query:
-        query['status'] = 'open'
+        query['status'] = {'$ne': "expired"}  # hide expired if status not in query
 
     alerts = db.get_alerts(query=query, fields=fields, sort=sort, limit=limit)
     total = db.get_count(query=query)  # because total may be greater than limit

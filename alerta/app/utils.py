@@ -14,11 +14,21 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
+SPECIALS = [
+    '_',
+    'callback'
+]
+
+
 def parse_fields(request):
 
     query_time = datetime.datetime.utcnow()
 
     params = request.args.copy()
+
+    for s in SPECIALS:
+        if s in params:
+            del params[s]
 
     if 'q' in params:
         query = json.loads(params.get('q'))
@@ -65,9 +75,6 @@ def parse_fields(request):
     else:
         limit = CONF.console_limit
     limit = int(limit)
-
-    del params['_']
-    del params['callback']
 
     for field in params:
         value = params.getlist(field)
