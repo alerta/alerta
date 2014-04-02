@@ -66,10 +66,8 @@ def parse_fields(request):
         limit = CONF.console_limit
     limit = int(limit)
 
-    if '_' in params:
-        del params['_']
-    if 'callback' in params:
-        del params['callback']
+    del params['_']
+    del params['callback']
 
     for field in params:
         value = params.getlist(field)
