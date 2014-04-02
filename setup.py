@@ -44,8 +44,6 @@ setuptools.setup(
         'bin/alert-mailer',
         'bin/alert-pagerduty',
         'bin/alert-pinger',
-        'bin/alert-query',
-        'bin/alert-sender',
         'bin/alert-snmptrap',
         'bin/alert-solarwinds',
         'bin/alert-syslog',
