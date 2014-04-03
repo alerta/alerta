@@ -1,6 +1,6 @@
 %define name alerta
-%{!?_with_teamcity: %define version 3.0.0}
-%{!?_with_teamcity: %define release 9}
+%{!?_with_teamcity: %define version 3.0.2}
+%{!?_with_teamcity: %define release 2}
 
 Name: %{name}
 Summary: Alerta monitoring framework
@@ -44,7 +44,6 @@ cp %{_builddir}/%{name}-%{version}/alerta/bin/alert* %{buildroot}/opt/alerta/bin
 cp %{_builddir}/%{name}-%{version}/alerta/bin/python* %{buildroot}/opt/alerta/bin/
 cp %{_builddir}/%{name}-%{version}/alerta/bin/activate* %{buildroot}/opt/alerta/bin/
 cp -r %{_builddir}/%{name}-%{version}/alerta/lib %{buildroot}/opt/alerta/
-%__mkdir_p %{buildroot}/var/lib/alerta
 %__mkdir_p %{buildroot}%{_sysconfdir}/httpd/conf.d/
 %__install -m 0444 etc/httpd-alerta.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta.conf
 %__install -m 0444 etc/httpd-alerta-dashboard.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
@@ -56,6 +55,9 @@ cp -r %{_builddir}/%{name}-%{version}/alerta/lib %{buildroot}/opt/alerta/
 %__install -m 0755 contrib/redhat/alert-* %{buildroot}%{_sysconfdir}/init.d/
 %__mkdir_p %{buildroot}%{_sysconfdir}/snmp/
 %__install -m 0444 etc/snmptrapd.conf %{buildroot}%{_sysconfdir}/snmp/snmptrapd.conf.%{name}
+%__mkdir_p %{buildroot}/var/lib/alerta
+%__mkdir_p %{buildroot}/var/log/alerta
+%__mkdir_p %{buildroot}/var/run/alerta
 
 prelink -u %{buildroot}/opt/alerta/bin/python
 
@@ -74,7 +76,6 @@ rm -rf %{buildroot}
 /opt/alerta/bin/python*
 /opt/alerta/bin/activate*
 /opt/alerta/lib/*
-%dir %attr(0775,alerta,root) /var/lib/alerta
 
 %files extras
 %defattr(-,root,root)
@@ -82,6 +83,9 @@ rm -rf %{buildroot}
 %defattr(-,alerta,alerta)
 /opt/alerta/bin/alert-*
 %{_sysconfdir}/snmp/snmptrapd.conf.%{name}
+%dir %attr(0775,alerta,root) /var/lib/alerta
+%dir %attr(0775,alerta,root) /var/log/alerta
+%dir %attr(0775,alerta,alerta) /var/run/alerta
 
 %pre
 getent group alerta >/dev/null || groupadd -r alerta
@@ -108,7 +112,7 @@ if [ "$1" = "0" ]; then
 fi
 
 %changelog
-* Thu Apr 3 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.2-1
+* Thu Apr 3 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.2-2
 - Switch back to init scripts because upstart very old on Centos6
 * Thu Mar 27 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.0-9
 - Package alerta release 3.0 application server and components
