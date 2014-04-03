@@ -11,8 +11,9 @@ from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
-from alerta.common.api import ApiClient
+from alerta.common.transform import Transformers
 from alerta.common.dedup import DeDup
+from alerta.common.api import ApiClient
 
 Version = '3.0.0'
 
@@ -138,7 +139,7 @@ class DynectDaemon(Daemon):
                 raw_data=raw_data,
             )
 
-            suppress = dynectAlert.transform_alert()
+            suppress = Transformers.normalise_alert(dynectAlert)
             if suppress:
                 LOG.info('Suppressing %s alert', dynectAlert.event)
                 LOG.debug('%s', dynectAlert)

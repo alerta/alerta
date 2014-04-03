@@ -17,6 +17,7 @@ from alerta.common.alert import Alert
 from alerta.common.dedup import DeDup
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
+from alerta.common.transform import Transformers
 from alerta.common.api import ApiClient
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
@@ -303,7 +304,7 @@ class WorkerThread(threading.Thread):
                 }
             )
 
-            suppress = urlmonAlert.transform_alert()
+            suppress = Transformers.normalise_alert(urlmonAlert)
             if suppress:
                 LOG.info('Suppressing %s alert', urlmonAlert.event)
                 LOG.debug('%s', urlmonAlert)

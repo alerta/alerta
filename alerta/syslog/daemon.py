@@ -10,6 +10,7 @@ from alerta.common.daemon import Daemon
 from alerta.syslog.priority import priority_to_code, decode_priority
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
+from alerta.common.transform import Transformers
 from alerta.common.dedup import DeDup
 from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
@@ -211,7 +212,7 @@ class SyslogDaemon(Daemon):
                 raw_data=raw_data,
             )
 
-            suppress = syslogAlert.transform_alert(facility=facility, level=level)
+            suppress = Transformers.normalise_alert(syslogAlert, facility=facility, level=level)
             if suppress:
                 LOG.info('Suppressing %s.%s alert', facility, level)
                 LOG.debug('%s', syslogAlert)

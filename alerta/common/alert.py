@@ -4,9 +4,6 @@ import sys
 import time
 import datetime
 import json
-import re
-import fnmatch
-import yaml
 
 from uuid import uuid4
 from email import utils
@@ -119,16 +116,14 @@ class Alert(object):
         try:
             alert = json.loads(alert)
         except ValueError, e:
-            LOG.error('Could not parse alert - %s: %s', e, alert)
-            raise
+            raise ValueError('Could not parse alert - %s: %s' % (e, alert))
 
         for k, v in alert.iteritems():
             if k in ['createTime', 'receiveTime', 'lastReceiveTime', 'expireTime']:
                 try:
                     alert[k] = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S.%fZ')
                 except ValueError, e:
-                    LOG.error('Could not parse date time string: %s', e)
-                    raise
+                    raise ValueError('Could not parse date time string: %s' % e)
 
         return Alert(
             resource=alert.get('resource', None),
@@ -149,106 +144,6 @@ class Alert(object):
             timeout=alert.get('timeout', None),
             raw_data=alert.get('rawData', None),
         )
-
-    def transform_alert(self, trapoid=None, facility=None, level=None, **kwargs):
-        """
-        Transforms alert based on configuration contained in YAML file.
-        """
-
-        LOG.info('Transform alert %s using %s', self.id, CONF.yaml_config)
-
-        if not os.path.exists(CONF.yaml_config):
-            return
-
-        suppress = False
-
-        try:
-            conf = yaml.load(open(CONF.yaml_config))
-            LOG.info('Loaded %d transformer configurations OK', len(conf))
-        except Exception, e:
-            LOG.error('Failed to load transformer configuration %s: %s', CONF.yaml_config, e)
-            raise RuntimeError
-
-        for c in conf:
-            LOG.debug('YAML config: %s', c)
-
-            match = None
-            pattern = None
-
-            if self.event_type == 'snmptrapAlert' and trapoid and c.get('trapoid'):
-                match = re.match(c['trapoid'], trapoid)
-                pattern = trapoid
-            elif self.event_type == 'syslogAlert' and facility and level and c.get('priority'):
-                match = fnmatch.fnmatch('%s.%s' % (facility, level), c['priority'])
-                pattern = c['priority']
-            elif c.get('match'):
-                try:
-                    match = all(item in self.__dict__.items() for item in c['match'].items())
-                    pattern = c['match'].items()
-                except AttributeError:
-                    pass
-
-            if match:
-                LOG.debug('Matched %s for %s', pattern, self.event_type)
-
-                # 1. Simple substitutions
-                if 'resource' in c:
-                    self.resource = c['resource']
-                if 'event' in c:
-                    self.event = c['event']
-                if 'environment' in c:
-                    self.environment = c['environment']
-                if 'severity' in c:
-                    self.severity = c['severity']
-                if 'correlate' in c:
-                    self.correlate = c['correlate']
-                if 'status' in c:
-                    self.correlate = c['status']
-                if 'service' in c:
-                    self.service = c['service']
-                if 'group' in c:
-                    self.group = c['group']
-                if 'value' in c:
-                    self.value = c['value']
-                if 'text' in c:
-                    self.text = c['text']
-                if 'tags' in c:
-                    self.tags.append(c['tags'])  # join tags
-                if 'attributes' in c:
-                    self.attributes.update(c['attributes'])  # merge attributes
-                if 'origin' in c:
-                    self.timeout = c['origin']
-                if 'event_type' in c:
-                    self.timeout = c['event_type']
-                if 'timeout' in c:
-                    self.timeout = c['timeout']
-
-                # 2. Complex transformations
-                if 'parser' in c:
-                    LOG.debug('Loading parser %s', c['parser'])
-
-                    context = kwargs
-                    context.update(self.__dict__)
-
-                    try:
-                        exec(open('%s/%s.py' % (CONF.parser_dir, c['parser']))) in globals(), context
-                        LOG.info('Parser %s/%s exec OK', CONF.parser_dir, c['parser'])
-                    except Exception, e:
-                        LOG.warning('Parser %s failed: %s', c['parser'], e)
-                        raise RuntimeError
-
-                    for k, v in context.iteritems():
-                        if hasattr(self, k):
-                            setattr(self, k, v)
-
-                    if 'suppress' in context:
-                        suppress = context['suppress']
-
-                # 3. Suppress based on results of 1 or 2
-                if 'suppress' in c:
-                    suppress = suppress or c['suppress']
-
-        return suppress
 
 
 class AlertDocument(object):
@@ -364,16 +259,14 @@ class AlertDocument(object):
         try:
             alert = json.loads(alert)
         except ValueError, e:
-            LOG.error('Could not parse alert - %s: %s', e, alert)
-            raise
+            raise ValueError('Could not parse alert - %s: %s' % (e, alert))
 
         for k, v in alert.iteritems():
             if k in ['createTime', 'receiveTime', 'lastReceiveTime', 'expireTime']:
                 try:
                     alert[k] = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S.%fZ')
                 except ValueError, e:
-                    LOG.error('Could not parse date time string: %s', e)
-                    raise
+                    raise ValueError('Could not parse date time string: %s' % e)
 
         return AlertDocument(
             id=alert.get('id', None),

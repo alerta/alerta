@@ -12,6 +12,7 @@ from alerta.common import log as logging
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
+from alerta.common.transform import Transformers
 from alerta.common.utils import DateEncoder
 from alerta.app.utils import parse_fields, crossdomain
 from alerta.common.metrics import Gauge, Counter, Timer
@@ -50,7 +51,7 @@ def jsonp(func):
     return decorated_function
 
 
-@app.route('/test', methods=['OPTIONS', 'PUT', 'POST', 'DELETE', 'GET'])
+@app.route('/_', methods=['OPTIONS', 'PUT', 'POST', 'DELETE', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def test():
@@ -139,7 +140,7 @@ def get_alerts():
             autoRefresh=Switch.get('auto-refresh-allow').is_on()
         )
 
-@app.route('/api/history', methods=['GET'])
+@app.route('/api/alerts/history', methods=['GET'])
 @jsonp
 def get_history():
 
@@ -176,7 +177,7 @@ def create_alert():
         return jsonify(status="error", message=str(e))
 
     try:
-        suppress = incomingAlert.transform_alert()
+        suppress = Transformers.normalise_alert(incomingAlert)
     except RuntimeError, e:
         # self.statsd.metric_send('alerta.alerts.error', 1)
         return jsonify(status="error", message=str(e))

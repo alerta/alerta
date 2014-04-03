@@ -12,8 +12,9 @@ from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
-from alerta.common import severity_code
 from alerta.common.heartbeat import Heartbeat
+from alerta.common import severity_code
+from alerta.common.transform import Transformers
 from alerta.common.dedup import DeDup
 from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
@@ -116,7 +117,7 @@ class CloudWatchDaemon(Daemon):
         value = alarm['NewStateValue']
         text = alarm['AlarmDescription']
         environment = ['INFRA']
-        service = [alarm['AWSAccountId']]  # XXX - use transform_alert() to map AWSAccountId to a useful name
+        service = [alarm['AWSAccountId']]
         tags = [notification['MessageId'], alarm['Region']]
         correlate = list()
         origin = [notification['TopicArn']]
@@ -148,7 +149,7 @@ class CloudWatchDaemon(Daemon):
             raw_data=raw_data,
         )
 
-        suppress = cloudwatchAlert.transform_alert()
+        suppress = Transformers.normalise_alert(cloudwatchAlert)
         if suppress:
             LOG.info('Suppressing %s alert', event)
             LOG.debug('%s', cloudwatchAlert)

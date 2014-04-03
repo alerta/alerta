@@ -7,6 +7,7 @@ from alerta.common import log as logging
 from alerta.common.daemon import Daemon
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
+from alerta.common.transform import Transformers
 from alerta.common.dedup import DeDup
 from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS, SOLAR_WINDS_CORRELATED_EVENTS
 from alerta.common.api import ApiClient
@@ -146,7 +147,7 @@ class SolarWindsDaemon(Daemon):
                 raw_data=raw_data,
             )
 
-            suppress = solarwindsAlert.transform_alert()
+            suppress = Transformers.normalise_alert(solarwindsAlert)
             if suppress:
                 LOG.info('Suppressing %s alert', solarwindsAlert.event)
                 LOG.debug('%s', solarwindsAlert)

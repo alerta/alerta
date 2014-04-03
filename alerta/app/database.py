@@ -167,6 +167,7 @@ class Mongo(object):
         if not fields:
             fields = {
                 "resource": 1,
+                "event": 1,
                 "environment": 1,
                 "service": 1,
                 "group": 1,
@@ -213,6 +214,7 @@ class Mongo(object):
                     {
                         "id": response['_id'],  # or response['history']['id']
                         "resource": response['resource'],
+                        "event": response['event'],
                         "environment": response['environment'],
                         "status": response['history']['status'],
                         "service": response['service'],
@@ -297,6 +299,7 @@ class Mongo(object):
         if status != previous_status:
             update['$push'] = {
                 "history": {
+                    "event": alert.event,
                     "status": status,
                     "text": "duplicate alert status change",
                     "id": alert.id,
@@ -408,6 +411,7 @@ class Mongo(object):
 
         if status != previous_status:
             update['$pushAll']['history'].append({
+                "event": alert.event,
                 "status": status,
                 "text": "correlated alert status change",
                 "id": alert.id,
@@ -473,6 +477,7 @@ class Mongo(object):
         }]
         if status != alert.status:
             history.append({
+                "event": alert.event,
                 "status": status,
                 "text": "new alert status change",
                 "id": alert.id,
@@ -590,11 +595,16 @@ class Mongo(object):
         """
         query = {'_id': {'$regex': '^' + id}}
 
+        event = self.db.alerts.find(query=query, fields={"event": 1})  # ['result']
+
+        print event
+
         now = datetime.datetime.utcnow()
         update = {
             '$set': {"status": status},
             '$push': {
                 "history": {
+                    "status": event,
                     "status": status,
                     "text": text,
                     "id": id,

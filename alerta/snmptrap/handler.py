@@ -9,6 +9,7 @@ from alerta.common import log as logging
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
+from alerta.common.transform import Transformers
 from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
@@ -199,7 +200,7 @@ class SnmpTrapHandler(object):
             raw_data=data,
         )
 
-        suppress = snmptrapAlert.transform_alert(trapoid=trapvars['$O'], trapvars=trapvars, varbinds=varbinds)
+        suppress = Transformers.normalise_alert(snmptrapAlert, trapoid=trapvars['$O'], trapvars=trapvars, varbinds=varbinds)
         if suppress:
             LOG.info('Suppressing %s SNMP trap', snmptrapAlert.event)
             LOG.debug('%s', snmptrapAlert)

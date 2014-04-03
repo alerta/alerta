@@ -14,6 +14,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code
 from alerta.common.api import ApiClient
 from alerta.common.daemon import Daemon
+from alerta.common.transform import Transformers
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
@@ -148,7 +149,7 @@ class WorkerThread(threading.Thread):
                 raw_data=raw_data,
             )
 
-            suppress = pingAlert.transform_alert()
+            suppress = Transformers.normalise_alert(pingAlert)
             if suppress:
                 LOG.info('Suppressing %s alert', pingAlert.event)
                 LOG.debug('%s', pingAlert)
