@@ -9,5 +9,5 @@ Flask
 irc
 boto
 suds
-dynect
+dynectDNS
 nose>=1.3.0
