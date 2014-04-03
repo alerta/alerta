@@ -2,7 +2,7 @@
 import os
 import build
 
-VERSION = (3, 0, 1, 'final', 1)
+VERSION = (3, 0, 2, 'final', 1)
 
 
 def get_version():

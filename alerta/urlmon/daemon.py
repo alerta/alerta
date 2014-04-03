@@ -22,7 +22,7 @@ from alerta.common.api import ApiClient
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-__version__ = '3.0.0'
+__version__ = '3.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

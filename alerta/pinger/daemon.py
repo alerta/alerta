@@ -18,7 +18,7 @@ from alerta.common.transform import Transformers
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
-Version = '3.0.0'
+Version = '3.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

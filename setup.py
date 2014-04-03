@@ -36,7 +36,6 @@ setuptools.setup(
     zip_safe=False,
     scripts=[
         'bin/alert-cloudwatch',
-        'bin/alert-checker',
         'bin/alert-dynect',
         'bin/alert-ircbot',
         'bin/alert-logger',

@@ -15,7 +15,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
-Version = '3.0.1'
+Version = '3.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
