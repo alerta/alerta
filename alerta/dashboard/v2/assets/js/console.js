@@ -560,14 +560,13 @@ function fnFormatDetails(aData) {
     if (history) {
         var reverseHistory = history.reverse();
         $.each(reverseHistory, function (y, hist) {
-            if (hist.event) {
+            if (hist.severity) {
                 historydata += // '<hr/>' +
                     '<table class="table table-condensed table-striped alert-detail-history">' +
                         '<tr><td><b>Event</b></td><td>' + hist.event + '</td></tr>' +
                         '<tr><td><b>Severity</b></td><td>' + sev2label(hist.severity) + '</td></tr>' +
                         '<tr><td><b>Alert ID</b></td><td>' + hist.id + '</td></tr>' +
-                        '<tr><td><b>Create Time</b></td><td>' + date2str(hist.createTime) + '</td></tr>' +
-                        '<tr><td><b>Receive Time</b></td><td>' + date2str(hist.receiveTime) + '</td></tr>' +
+                        '<tr><td><b>Update Time</b></td><td>' + date2str(hist.updateTime) + '</td></tr>' +
                         '<tr><td><b>Text</b></td><td>' + hist.text + '</td></tr>' +
                         '<tr><td><b>Value</b></td><td>' + hist.value + '</td></tr>' +
                         '</table>' +
@@ -576,7 +575,9 @@ function fnFormatDetails(aData) {
             if (hist.status) {
                 historydata += // '<hr/>' +
                     '<table class="table table-condensed table-striped">' +
+                        '<tr><td><b>Event</b></td><td>' + hist.event + '</td></tr>' +
                         '<tr><td><b>Status</b></td><td>' + stat2label(hist.status) + '</td></tr>' +
+                        '<tr><td><b>Alert ID</b></td><td>' + hist.id + '</td></tr>' +
                         '<tr><td><b>Update Time</b></td><td>' + date2str(hist.updateTime) + '</td></tr>' +
                         '<tr><td><b>Text</b></td><td>' + hist.text + '</td></tr>' +
                         '</table>' +
