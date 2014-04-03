@@ -18,7 +18,7 @@ from alerta.app.utils import parse_fields, crossdomain
 from alerta.common.metrics import Gauge, Counter, Timer
 
 
-__version__ = '3.0.0'
+__version__ = '3.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -277,7 +277,7 @@ def delete_alert(id):
 
 
 # Return severity and status counts
-@app.route('/api/alert/counts', methods=['GET'])
+@app.route('/api/alerts/count', methods=['GET'])
 @jsonp
 def get_counts():
 
