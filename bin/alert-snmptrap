@@ -24,13 +24,13 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.snmptrap.handler import SnmpTrapHandler, Version
+from alerta.snmptrap.handler import SnmpTrapHandler, __version__
 
 LOG = logging.getLogger('alerta.snmptrap')
 CONF = config.CONF
 
 if __name__ == '__main__':
-    config.parse_args(version=Version)
+    config.parse_args(version=__version__)
     logging.setup('alerta')
     handler = SnmpTrapHandler('alert-snmptrap')
     handler.start()

@@ -15,7 +15,7 @@ from alerta.common.transform import Transformers
 from alerta.common.dedup import DeDup
 from alerta.common.api import ApiClient
 
-Version = '3.0.2'
+__version__ = '3.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -55,7 +55,7 @@ class DynectDaemon(Daemon):
                     self.last_info = self.info
 
                     LOG.debug('Send heartbeat...')
-                    heartbeat = Heartbeat(tags=[Version])
+                    heartbeat = Heartbeat(tags=[__version__])
                     self.api.send(heartbeat)
 
                 LOG.debug('Waiting for next check run...')

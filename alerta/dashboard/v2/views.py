@@ -7,7 +7,7 @@ from alerta.common import log as logging
 from alerta.common.api import ApiClient
 
 
-Version = '3.0.0'
+__version__ = '3.0.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

@@ -4,12 +4,12 @@ import sys
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.dashboard.v2 import app, Version
+from alerta.dashboard.v2 import app, __version__
 
 LOG = logging.getLogger('alerta.dashboard')
 CONF = config.CONF
 
 if __name__ == '__main__':
-    config.parse_args(version=Version)
+    config.parse_args(version=__version__)
     logging.setup('alerta')
     app.run(host='0.0.0.0', debug=CONF.debug)

@@ -19,7 +19,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
-Version = '3.0.2'
+__version__ = '3.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -87,7 +87,7 @@ class CloudWatchDaemon(Daemon):
                     sqs.delete_message(message)
 
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(tags=[Version])
+                heartbeat = Heartbeat(tags=[__version__])
                 self.api.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):

@@ -18,7 +18,7 @@ from alerta.common.transform import Transformers
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
-Version = '3.0.2'
+__version__ = '3.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -251,7 +251,7 @@ class PingerDaemon(Daemon):
                             self.queue.put((environment, service, target, retries, time.time()))
 
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(tags=[Version])
+                heartbeat = Heartbeat(tags=[__version__])
                 self.api.send(heartbeat)
 
                 time.sleep(CONF.loop_every)

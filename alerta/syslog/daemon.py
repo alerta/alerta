@@ -15,7 +15,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
-Version = '3.0.2'
+__version__ = '3.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -95,7 +95,7 @@ class SyslogDaemon(Daemon):
                     count += 1
                 if not ip or count % 5 == 0:
                     LOG.debug('Send heartbeat...')
-                    heartbeat = Heartbeat(tags=[Version])
+                    heartbeat = Heartbeat(tags=[__version__])
                     api.send(heartbeat)
 
             except (KeyboardInterrupt, SystemExit):

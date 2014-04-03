@@ -16,13 +16,13 @@ if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.solarwinds.daemon import SolarWindsDaemon, Version
+from alerta.solarwinds.daemon import SolarWindsDaemon, __version__
 
 LOG = logging.getLogger('alerta.solarwinds')
 CONF = config.CONF
 
 if __name__ == '__main__':
-    config.parse_args(version=Version)
+    config.parse_args(version=__version__)
     logging.setup('alerta')
     solarwinds = SolarWindsDaemon('alert-solarwinds')
     solarwinds.start()

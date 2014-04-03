@@ -8,7 +8,7 @@ from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.utils import DateEncoder
 
-Version = '3.0.0'
+__version__ = '3.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
