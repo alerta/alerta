@@ -53,7 +53,7 @@ cp -r %{_builddir}/%{name}-%{version}/alerta/lib %{buildroot}/opt/alerta/
 %__install -m 0644 %{_builddir}/%{name}-%{version}/alerta/dashboard/dashboard.wsgi %{buildroot}/opt/alerta/apache
 
 %__mkdir_p %{buildroot}%{_sysconfdir}/init.d/
-%__install -m 0755 contrib/redhat/alert-*.init %{buildroot}%{_sysconfdir}/init.d/
+%__install -m 0755 contrib/redhat/alert-* %{buildroot}%{_sysconfdir}/init.d/
 %__mkdir_p %{buildroot}%{_sysconfdir}/snmp/
 %__install -m 0444 etc/snmptrapd.conf %{buildroot}%{_sysconfdir}/snmp/snmptrapd.conf.%{name}
 
