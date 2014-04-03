@@ -76,7 +76,7 @@ rm -rf %{buildroot}
 %dir %attr(0775,alerta,root) /var/lib/alerta
 
 %files extras
-%defattr(0644,root,root)
+%defattr(-,root,root)
 %{_sysconfdir}/init.d/alert-*
 %defattr(-,alerta,alerta)
 /opt/alerta/bin/alert-*
