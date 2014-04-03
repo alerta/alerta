@@ -46,8 +46,8 @@ cp %{_builddir}/%{name}-%{version}/alerta/bin/activate* %{buildroot}/opt/alerta/
 cp -r %{_builddir}/%{name}-%{version}/alerta/lib %{buildroot}/opt/alerta/
 %__mkdir_p %{buildroot}/var/lib/alerta
 %__mkdir_p %{buildroot}%{_sysconfdir}/httpd/conf.d/
-%__install -m 0755 etc/httpd-alerta.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta.conf
-%__install -m 0755 etc/httpd-alerta-dashboard.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
+%__install -m 0444 etc/httpd-alerta.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta.conf
+%__install -m 0444 etc/httpd-alerta-dashboard.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
 %__mkdir_p %{buildroot}/opt/alerta/apache
 %__install -m 0644 %{_builddir}/%{name}-%{version}/alerta/app/app.wsgi %{buildroot}/opt/alerta/apache
 %__install -m 0644 %{_builddir}/%{name}-%{version}/alerta/dashboard/dashboard.wsgi %{buildroot}/opt/alerta/apache
@@ -63,13 +63,14 @@ prelink -u %{buildroot}/opt/alerta/bin/python
 rm -rf %{buildroot}
 
 %files
+%defattr(-,root,root)
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta.conf
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
 %defattr(-,alerta,alerta)
 /opt/alerta/bin/alerta
 %config(noreplace) /opt/alerta/apache/app.wsgi
-%config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta.conf
 /opt/alerta/bin/alerta-dashboard
 %config(noreplace) /opt/alerta/apache/dashboard.wsgi
-%config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
 /opt/alerta/bin/python*
 /opt/alerta/bin/activate*
 /opt/alerta/lib/*
