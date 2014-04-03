@@ -9,10 +9,11 @@
                 "user": "alerta",
                 "port": "8080",
                 "healthcheckPaths": [
-                    "/management/healthcheck"
+                    "/_"
                 ],
                 "services": ["httpd"],
-                "serviceCommand": "reload"
+                "serviceCommand": "reload",
+                "noFileDigest": true
             }
         },
         "alerta-extras": {
