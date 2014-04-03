@@ -179,9 +179,14 @@ function getHeartbeats(refresh) {
                 since = secs + ' seconds';
             }
 
+            var tags = '';
+            $.each(hb.tags, function (y, tag) {
+                tags += '<span class="label">' + tag + '</span> ';
+            });
+
             rows += '<tr class="">' +
                     '<td>' + hb.origin + '</td>' +
-                    '<td>' + hb.version + '</td>' +
+                    '<td>' + tags + '</td>' +
                     '<td>' + date2str(hb.createTime) + '</td>' +
                     '<td>' + since + '</td>' +
                     '<td>' + latency + ' ms' + '</td>' +
