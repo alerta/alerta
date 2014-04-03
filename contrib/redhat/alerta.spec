@@ -1,140 +1,105 @@
 %define name alerta
-%define version 2.0.0
-%define unmangled_version 2.0.0
-%define release 1
+%{!?_with_teamcity: %define version 3.0.0}
+%{!?_with_teamcity: %define release 9}
 
 Name: %{name}
 Summary: Alerta monitoring framework
 Version: %{version}
 Release: %{release}
-Source0: %{name}-%{unmangled_version}.tar.gz
+Source0: %{name}-%{version}.tar.gz
 License: Apache License 2.0
 Group: Utilities/System
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Prefix: %{_prefix}
-BuildArch: noarch
-Vendor: Nick Satterly <nick.satterly@guardian.co.uk>
+Prefix: /opt
+BuildArch: x86_64
+Vendor: Nick Satterly <nick.satterly@theguardian.com>
 Url: https://github.com/guardian/alerta
+BuildRequires: python-devel, python-setuptools, python-virtualenv
+Requires: httpd, mod_wsgi
 
 %description
-Alerta is an monitoring framework that uses a message broker
-for alert transport, mongoDB as the alert status database,
-elasticsearch for long-term alert archiving and has a
-JavaScript web interface for an alert console.
+Alerta is a monitoring framework that consolidates alerts
+from multiple sources like syslog, SNMP, Nagios, Riemann,
+Zabbix, and displays them on an alert console.
 
-%package server
-Summary: Alerta monitoring framework
+%package extras
+Summary: Alerta monitoring framework - extras
 Group: Utilities/System
-Requires: python-argparse, stomppy, pymongo, python-flask, PyYAML, pytz, python-boto, python-dynect-api
-Requires: alerta-common, httpd, mongo-10gen-server, rabbitmq-server, net-snmp, logrotate
-%description server
-UNKNOWN
-
-%package client
-Summary: Alerta monitoring framework
-Group: Utilities/System
-Requires: python-argparse, alerta-common
-%description client
-UNKNOWN
-
-%package common
-Summary: Alerta monitoring framework
-Group: Utilities/System
-%description common
+Requires: alerta, net-snmp
+%description extras
 UNKNOWN
 
 %prep
-%setup -n %{name}-%{unmangled_version} -n %{name}-%{unmangled_version}
+%setup
 
 %build
-python setup.py build
+/usr/bin/virtualenv --no-site-packages alerta
+alerta/bin/pip install -r requirements.txt --upgrade
+alerta/bin/python setup.py install --single-version-externally-managed --root=/
+/usr/bin/virtualenv --relocatable alerta
 
 %install
-python setup.py install --single-version-externally-managed --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
-
-%__mkdir_p %{buildroot}%{_initrddir}/
-%__install -m 0755 etc/init.d/* %{buildroot}%{_initrddir}/
-%__mkdir_p %{buildroot}%{_sysconfdir}/%{name}/
-%__mkdir_p %{buildroot}%{_sysconfdir}/%{name}/parsers/
-%__install -m 0755  etc/%{name}/%{name}.conf %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
+%__mkdir_p %{buildroot}/opt/alerta/bin
+cp %{_builddir}/%{name}-%{version}/alerta/bin/alert* %{buildroot}/opt/alerta/bin/
+cp %{_builddir}/%{name}-%{version}/alerta/bin/python* %{buildroot}/opt/alerta/bin/
+cp %{_builddir}/%{name}-%{version}/alerta/bin/activate* %{buildroot}/opt/alerta/bin/
+cp -r %{_builddir}/%{name}-%{version}/alerta/lib %{buildroot}/opt/alerta/
+%__mkdir_p %{buildroot}/var/lib/alerta
 %__mkdir_p %{buildroot}%{_sysconfdir}/httpd/conf.d/
-%__install -m 0755 contrib/apache/%{name}.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/%{name}.conf
-%__mkdir_p %{buildroot}%{_var}/www/html/%{name}/
-%__install -m 0755 contrib/apache/%{name}.wsgi %{buildroot}%{_var}/www/html/%{name}/%{name}.wsgi
-%__mkdir_p %{buildroot}%{_var}/www/html/%{name}/dashboard/
-%__cp -r dashboard/* %{buildroot}%{_var}/www/html/%{name}/dashboard/
+%__install -m 0755 etc/httpd-alerta.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta.conf
+%__install -m 0755 etc/httpd-alerta-dashboard.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
+%__mkdir_p %{buildroot}/opt/alerta/apache
+%__install -m 0644 %{_builddir}/%{name}-%{version}/alerta/app/app.wsgi %{buildroot}/opt/alerta/apache
+%__install -m 0644 %{_builddir}/%{name}-%{version}/alerta/dashboard/dashboard.wsgi %{buildroot}/opt/alerta/apache
+
+%__mkdir_p %{buildroot}%{_sysconfdir}/init.d/
+%__install -m 0755 contrib/redhat/alert-*.init %{buildroot}%{_sysconfdir}/init.d/
 %__mkdir_p %{buildroot}%{_sysconfdir}/snmp/
-%__install -m 0755 etc/snmptrapd.conf %{buildroot}%{_sysconfdir}/snmp/snmptrapd.conf
-%__install -m 0775 -d %{buildroot}%{_var}/log/%{name}
-%__mkdir_p %{buildroot}%{_sysconfdir}/logrotate.d/
-%__install -m 0755 etc/%{name}.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
-%__mkdir_p %{buildroot}%{_var}/run/%{name}
+%__install -m 0444 etc/snmptrapd.conf %{buildroot}%{_sysconfdir}/snmp/snmptrapd.conf.%{name}
+
+prelink -u %{buildroot}/opt/alerta/bin/python
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
-%files server
-%defattr(-,root,root)
-%{_initrddir}/
-%config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
-%{_sysconfdir}/%{name}/parsers/
-%config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
-%config(noreplace) /var/www/html/%{name}/%{name}.wsgi
-%{_var}/www/html/%{name}/dashboard/
-%config(noreplace) %{_sysconfdir}/snmp/snmptrapd.conf
-%{_sysconfdir}/logrotate.d/%{name}
-%dir %attr(775,alerta,apache) /var/log/%{name}
-%dir %attr(-,alerta,alerta) /var/run/%{name}
-%{_bindir}/alerta
-%{_bindir}/alerta-api
-%{_bindir}/alert-dynect
-%{_bindir}/alert-ganglia
-%{_bindir}/alert-ircbot
-%{_bindir}/alert-logger
-%{_bindir}/alert-mailer
-%{_bindir}/alert-notify
-%{_bindir}/alert-pinger
-%{_bindir}/alert-snmptrap
-%{_bindir}/alert-syslog
-%{_bindir}/alert-urlmon
+%files
+%defattr(-,alerta,alerta)
+/opt/alerta/bin/alerta
+%config(noreplace) /opt/alerta/apache/app.wsgi
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta.conf
+/opt/alerta/bin/alerta-dashboard
+%config(noreplace) /opt/alerta/apache/dashboard.wsgi
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta-dashboard.conf
+/opt/alerta/bin/python*
+/opt/alerta/bin/activate*
+/opt/alerta/lib/*
+%dir %attr(0775,alerta,root) /var/lib/alerta
 
-%files client
-%defattr(-,root,root)
-%config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
-%{_sysconfdir}/logrotate.d/%{name}
-%dir %attr(775,alerta,apache) /var/log/%{name}
-%dir %attr(-,alerta,alerta) /var/run/%{name}
-%{_bindir}/alert-query
-%{_bindir}/alert-sender
-%{_bindir}/alert-checker
+%files extras
+%defattr(0644,root,root)
+%{_sysconfdir}/init.d/alert-*
+%defattr(-,alerta,alerta)
+/opt/alerta/bin/alert-*
+%{_sysconfdir}/snmp/snmptrapd.conf.%{name}
 
-%files common
-%{python_sitelib}/*
-%defattr(-,root,root)
+%pre
+getent group alerta >/dev/null || groupadd -r alerta
+getent passwd alerta >/dev/null || \
+    useradd -r -g alerta -d /var/lib/alerta -s /sbin/nologin \
+    -c "Alerta monitoring tool" alerta
+exit 0
 
-%dir %attr(775,alerta,apache) /var/log/%{name}
-%dir %attr(-,alerta,alerta) /var/run/%{name}
-
-%pre server
-if ! getent group alerta >/dev/null 2>&1; then
-  /usr/sbin/groupadd -g 799 alerta
-fi
-
-if ! getent passwd alerta >/dev/null 2>&1; then
-  /usr/sbin/useradd -g alerta -u 799 -d %{prefix} -r -s /sbin/nologin alerta >/dev/null 2>&1 || exit 1
-fi
-
-%post server
-for name in alerta alert-dynect alert-ganglia alert-ircbot \
-    alert-logger alert-mailer alert-notify alert-pinger alert-syslog alert-urlmon
+%post
+for name in alert-cloudwatch alert-dynect alert-ircbot alert-mailer alert-logger \
+    alert-pagerduty alert-pinger alert-solarwinds alert-syslog alert-urlmon
 do
     /sbin/chkconfig --add $name
 done
 
-%preun server
+%preun
 if [ "$1" = "0" ]; then
-    for name in alerta alert-dynect alert-ganglia alert-ircbot \
-        alert-logger alert-mailer alert-notify alert-pinger alert-syslog alert-urlmon
+    for name in alert-cloudwatch alert-dynect alert-ircbot alert-mailer alert-logger \
+        alert-pagerduty alert-pinger alert-solarwinds alert-syslog alert-urlmon
     do
         /sbin/chkconfig $name off
         /sbin/chkconfig --del $name
@@ -142,5 +107,8 @@ if [ "$1" = "0" ]; then
 fi
 
 %changelog
-* Thu Mar 21 2013 Nick Satterly <nick.satterly@guardian.co.uk> - 2.0.0-1
-- Initial package for alerta v2
+* Thu Apr 3 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.2-1
+- Switch back to init scripts because upstart very old on Centos6
+* Thu Mar 27 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.0-9
+- Package alerta release 3.0 application server and components
+

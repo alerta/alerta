@@ -1,0 +1,80 @@
+#!/bin/bash
+#
+# alert-logger	Start/stop the Alert Logger daemon.
+#
+# chkconfig: 2345 90 60
+# description: Alert Logger is the ElasticSearch log server daemon for the alerting system.
+
+# Source function library.
+. /etc/init.d/functions
+
+OPTIONS=""
+
+RETVAL=0
+prog="alert-logger"
+binary=/opt/alerta/bin/$prog
+pidfile=/var/run/alerta/$prog.pid
+lockfile=/var/lock/subsys/$prog
+
+# Source config
+if [ -f /etc/sysconfig/$prog ] ; then
+    . /etc/sysconfig/$prog
+fi
+
+start() {
+	[ -x $binary ] || exit 5
+	# Check if it is already running
+	if prog_status > /dev/null; then
+		echo "$prog already running"
+		return 0
+	fi
+
+	echo -n "Starting $prog: "
+	daemon --pidfile=$pidfile $binary $OPTIONS
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && touch $lockfile
+	echo
+	return $RETVAL
+}
+
+stop() {
+	echo -n $"Shutting down $prog: "
+	killproc -p $pidfile $binary
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f $lockfile
+	return $RETVAL
+}
+
+prog_status() {
+	status -p $pidfile $prog
+}
+# See how we were called.
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		stop
+		start
+		;;
+	status)
+		prog_status
+		;;
+	try-restart|condrestart)
+		if prog_status > /dev/null; then
+			stop
+			start
+		fi
+		;;
+	*)
+		echo "Usage: $0 {start|stop|restart|condrestart|try-restart|status}"
+		exit 2
+		;;
+esac
+
+exit $?
+
