@@ -22,7 +22,6 @@ setuptools.setup(
         'requests',
         'PyYAML',
         'pytz',
-        'prettytable',
         'kombu',
         'pymongo',
         'Flask',

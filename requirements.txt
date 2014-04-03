@@ -2,7 +2,6 @@ argparse
 requests
 PyYAML
 pytz
-prettytable
 kombu
 librabbitmq
 pymongo
