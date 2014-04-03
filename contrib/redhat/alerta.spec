@@ -1,6 +1,6 @@
 %define name alerta
 %{!?_with_teamcity: %define version 3.0.2}
-%{!?_with_teamcity: %define release 2}
+%{!?_with_teamcity: %define release 3}
 
 Name: %{name}
 Summary: Alerta monitoring framework
@@ -76,6 +76,9 @@ rm -rf %{buildroot}
 /opt/alerta/bin/python*
 /opt/alerta/bin/activate*
 /opt/alerta/lib/*
+%dir %attr(0775,alerta,root) /var/lib/alerta
+%dir %attr(0775,alerta,root) /var/log/alerta
+%dir %attr(0775,alerta,alerta) /var/run/alerta
 
 %files extras
 %defattr(-,root,root)
@@ -83,9 +86,6 @@ rm -rf %{buildroot}
 %defattr(-,alerta,alerta)
 /opt/alerta/bin/alert-*
 %{_sysconfdir}/snmp/snmptrapd.conf.%{name}
-%dir %attr(0775,alerta,root) /var/lib/alerta
-%dir %attr(0775,alerta,root) /var/log/alerta
-%dir %attr(0775,alerta,alerta) /var/run/alerta
 
 %pre
 getent group alerta >/dev/null || groupadd -r alerta
@@ -112,7 +112,7 @@ if [ "$1" = "0" ]; then
 fi
 
 %changelog
-* Thu Apr 3 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.2-2
+* Thu Apr 3 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.2-3
 - Switch back to init scripts because upstart very old on Centos6
 * Thu Mar 27 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.0-9
 - Package alerta release 3.0 application server and components
