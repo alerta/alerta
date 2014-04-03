@@ -766,7 +766,7 @@ function updateStatus(s) {
 }
 
 function updateStatusCounts(env_filter, refresh) {
-    $.getJSON(API_URL + '/alert/counts?callback=?'
+    $.getJSON(API_URL + '/alerts/count?callback=?'
         + env_filter + from, function (data) {
         if (data.warning) {
             $('#warning-text').text(data.warning);
@@ -796,7 +796,7 @@ function updateAllIndicators(env_filter, asiFilters, refresh) {
 
 function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
     $('#' + service + ' th').addClass('loader');
-    $.getJSON(API_URL + '/alert/counts?callback=?'
+    $.getJSON(API_URL + '/alerts/count?callback=?'
         + env_filter + asi_filter + status + limit + from, function (data) {
         var sev_id = '#' + service;
 
