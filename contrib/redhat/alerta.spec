@@ -1,6 +1,6 @@
 %define name alerta
-%{!?_with_teamcity: %define version 3.0.2}
-%{!?_with_teamcity: %define release 3}
+%{!?_with_teamcity: %define version 3.0.3}
+%{!?_with_teamcity: %define release 1}
 
 Name: %{name}
 Summary: Alerta monitoring framework
@@ -94,14 +94,14 @@ getent passwd alerta >/dev/null || \
     -c "Alerta monitoring tool" alerta
 exit 0
 
-%post
+%post extras
 for name in alert-cloudwatch alert-dynect alert-ircbot alert-mailer alert-logger \
     alert-pagerduty alert-pinger alert-solarwinds alert-syslog alert-urlmon
 do
     /sbin/chkconfig --add $name
 done
 
-%preun
+%preun extras
 if [ "$1" = "0" ]; then
     for name in alert-cloudwatch alert-dynect alert-ircbot alert-mailer alert-logger \
         alert-pagerduty alert-pinger alert-solarwinds alert-syslog alert-urlmon
@@ -112,6 +112,8 @@ if [ "$1" = "0" ]; then
 fi
 
 %changelog
+* Thu Apr 3 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.3-1
+- Bug fixes
 * Thu Apr 3 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.2-3
 - Switch back to init scripts because upstart very old on Centos6
 * Thu Mar 27 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.0-9
