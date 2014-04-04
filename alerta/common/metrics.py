@@ -105,17 +105,13 @@ class Timer(object):
 
     def start_timer(self):
 
-        self.start = self._time_in_millis()
+        return self._time_in_millis()
 
-    def stop_timer(self):
-
-        if not self.start:
-            raise UserWarning
+    def stop_timer(self, start):
 
         with self.lock:
             self.count += 1
-            self.total_time += self._time_in_millis() - self.start
-            self.start = None
+            self.total_time += self._time_in_millis() - start
 
     @classmethod
     def get_timers(cls):

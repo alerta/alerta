@@ -188,26 +188,26 @@ def create_alert():
 
     if db.is_duplicate(incomingAlert):
 
-        duplicate_timer.start_timer()
+        started = duplicate_timer.start_timer()
         alert = db.save_duplicate(incomingAlert)
-        duplicate_timer.stop_timer()
+        duplicate_timer.stop_timer(started)
 
         if alert and CONF.forward_duplicate:
             notify.send(alert)
 
     elif db.is_correlated(incomingAlert):
 
-        correlate_timer.start_timer()
+        started = correlate_timer.start_timer()
         alert = db.save_correlated(incomingAlert)
-        correlate_timer.stop_timer()
+        correlate_timer.stop_timer(started)
 
         if alert:
             notify.send(alert)
 
     else:
-        create_new_timer.start_timer()
+        started = create_new_timer.start_timer()
         alert = db.save_alert(incomingAlert)
-        create_new_timer.stop_timer()
+        create_new_timer.stop_timer(started)
 
         if alert:
             notify.send(alert)
