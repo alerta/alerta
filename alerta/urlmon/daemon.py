@@ -22,7 +22,7 @@ from alerta.common.api import ApiClient
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-__version__ = '3.0.2'
+__version__ = '3.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -84,17 +84,17 @@ class WorkerThread(threading.Thread):
 
         while True:
             LOG.debug('Waiting on input queue...')
-            check, queue_time = self.queue.get()
+            try:
+                check, queue_time = self.queue.get()
+            except TypeError:
+                LOG.info('%s is shutting down.', self.getName())
+                break
 
             if time.time() - queue_time > CONF.loop_every:
                 LOG.warning('URL request for %s to %s expired after %d seconds.', check['resource'], check['url'],
                             int(time.time() - queue_time))
                 self.queue.task_done()
                 continue
-
-            if not check:
-                LOG.info('%s is shutting down.', self.getName())
-                break
 
             status_regex = check.get('status_regex', None)
             search_string = check.get('search', None)
