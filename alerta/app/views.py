@@ -308,7 +308,7 @@ def get_counts():
     )
 
 
-@app.route('/pagerduty', methods=['POST'])
+@app.route('/api/pagerduty', methods=['POST'])
 def pagerduty():
 
     if not request.json or not 'messages' in request.json:
