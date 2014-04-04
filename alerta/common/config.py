@@ -27,8 +27,8 @@ DEFAULTS = {
     'disable_flag': '/var/lib/alerta/%s.disable' % prog,
     'loop_every': 30,
     'global_timeout': 86400,  # seconds
-    'console_limit': 1000,  # max number of alerts sent to console
-    'history_limit': -10,   # show last x most recent history entries
+    'console_limit': 10000,   # max number of alerts sent to console
+    'history_limit': -20,     # show last x most recent history entries
     'dashboard_dir': '/',
     'dashboard_url': '',  # used in emails
 }
