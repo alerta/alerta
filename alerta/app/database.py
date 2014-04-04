@@ -595,9 +595,7 @@ class Mongo(object):
         """
         query = {'_id': {'$regex': '^' + id}}
 
-        event = self.db.alerts.find(query=query, fields={"event": 1})  # ['result']
-
-        print event
+        event = self.db.alerts.find_one(query, fields={"event": 1, "_id": 0})['event']
 
         now = datetime.datetime.utcnow()
         update = {
