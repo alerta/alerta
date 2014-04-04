@@ -18,7 +18,7 @@ from alerta.app.utils import parse_fields, crossdomain
 from alerta.common.metrics import Gauge, Counter, Timer
 
 
-__version__ = '3.0.2'
+__version__ = '3.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -192,19 +192,27 @@ def create_alert():
         alert = db.save_duplicate(incomingAlert)
         duplicate_timer.stop_timer()
 
+        if alert and CONF.forward_duplicate:
+            notify.send(alert)
+
     elif db.is_correlated(incomingAlert):
 
         correlate_timer.start_timer()
         alert = db.save_correlated(incomingAlert)
         correlate_timer.stop_timer()
 
+        if alert:
+            notify.send(alert)
+
     else:
         create_new_timer.start_timer()
         alert = db.save_alert(incomingAlert)
         create_new_timer.stop_timer()
 
+        if alert:
+            notify.send(alert)
+
     if alert:
-        notify.send(alert)
         return jsonify(status="ok", id=alert.id)
     else:
         return jsonify(status="error", message="alert insert or update failed")
