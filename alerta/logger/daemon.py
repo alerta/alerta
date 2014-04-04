@@ -3,7 +3,6 @@ import time
 import threading
 import json
 import urllib2
-import datetime
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -14,7 +13,7 @@ from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
 
-__version__ = '3.0.0'
+__version__ = '3.0.2'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -96,7 +95,7 @@ class LoggerDaemon(Daemon):
         try:
             while True:
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(origin=__name__, tags=[__version__])
+                heartbeat = Heartbeat(tags=[__version__])
                 api.send(heartbeat)
                 time.sleep(CONF.loop_every)
         except (KeyboardInterrupt, SystemExit):

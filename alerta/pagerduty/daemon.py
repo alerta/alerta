@@ -83,7 +83,7 @@ class PagerDutyDaemon(Daemon):
         try:
             while True:
                 LOG.debug('Send heartbeat...')
-                heartbeat = Heartbeat(origin=__name__, tags=[__version__])
+                heartbeat = Heartbeat(tags=[__version__])
                 api.send(heartbeat)
                 time.sleep(CONF.loop_every)
         except (KeyboardInterrupt, SystemExit):
