@@ -5,11 +5,11 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.js"></script>
+    <script type="text/javascript" language="javascript" src="/alerta/assets/DataTables/media/js/jquery.js"></script>
 
-    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
-    <link href="/alerta/dashboard/v2/assets/css/custom.css" rel="stylesheet">
+    <link href="/alerta/assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="/alerta/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="/alerta/assets/css/custom.css" rel="stylesheet">
 
 </head>
 <body class="widget">
@@ -34,7 +34,7 @@
     </div>
 </div>
 
-<script src="/alerta/dashboard/v2/assets/js/config.js"></script>
+<script src="/alerta/assets/js/config.js"></script>
 
 <script>
 
@@ -49,15 +49,15 @@
 
     function updateStatusIndicator(filter, refresh) {
 
-        $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts?callback=?&'
+        $.getJSON('http://' + API_HOST + '/api/alerts?callback=?&'
                 + filter + status + limit + from, function (data) {
 
             var more = '';
-            if (data.response.more) {
+            if (data.more) {
                 more = ' *';
             }
 
-            $.each(data.response.alerts.alertDetails, function (i, alert) {
+            $.each(data.alerts, function (i, alert) {
 
                 {% if not label %}
                 $('#widget-status-label').html('<b>' + alert.event + '</b>');

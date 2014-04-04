@@ -5,11 +5,11 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <script type="text/javascript" language="javascript" src="/alerta/dashboard/v2/assets/DataTables/media/js/jquery.js"></script>
+    <script type="text/javascript" language="javascript" src="/alerta/assets/DataTables/media/js/jquery.js"></script>
 
-    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="/alerta/dashboard/v2/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
-    <link href="/alerta/dashboard/v2/assets/css/custom.css" rel="stylesheet">
+    <link href="/alerta/assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="/alerta/assets/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="/alerta/assets/css/custom.css" rel="stylesheet">
 
 </head>
 <body class="widget">
@@ -25,11 +25,11 @@
             </thead>
             <tbody>
             <tr id="widget-status-indicator">
-                <td id="widget-critical" class="status-indicator-count"><b>0</b></td>
-                <td id="widget-major" class="status-indicator-count"><b>0</b></td>
-                <td id="widget-minor" class="status-indicator-count"><b>0</b></td>
-                <td id="widget-warning" class="status-indicator-count"><b>0</b></td>
-                <td id="widget-normal" class="status-indicator-count"><b>0</b></td>
+                <td id="widget-critical" class="status-indicator-count zero"><b>0</b></td>
+                <td id="widget-major" class="status-indicator-count zero"><b>0</b></td>
+                <td id="widget-minor" class="status-indicator-count zero"><b>0</b></td>
+                <td id="widget-warning" class="status-indicator-count zero"><b>0</b></td>
+                <td id="widget-normal" class="status-indicator-count zero"><b>0</b></td>
             </tr>
             </tbody>
         </table>
@@ -37,7 +37,7 @@
     </div>
 </div>
 
-<script src="/alerta/dashboard/v2/assets/js/config.js"></script>
+<script src="/alerta/assets/js/config.js"></script>
 
 <script>
 
@@ -53,14 +53,16 @@
     function updateStatusIndicator(filter, refresh) {
         $('#widget th').addClass('loader');
 
-        $.getJSON('http://' + API_HOST + '/alerta/api/v2/alerts/counts?callback=?&'
+        $.getJSON('http://' + API_HOST + '/api/alerts/count?callback=?&'
                 + filter + status + limit + from, function (data) {
 
             var sev_id = '#widget';
 
-            data.response.alerts.severityCounts.normal += data.response.alerts.severityCounts.informational;
+            if ("informational" in data.severityCounts) {
+                data.severityCounts.normal += data.severityCounts.informational;
+            }
 
-            $.each(data.response.alerts.severityCounts, function (sev, count) {
+            $.each(data.severityCounts, function (sev, count) {
                 sev = sev.toLowerCase();
                 $(sev_id + "-" + sev).html('<b>' + count + '</b>');
 
@@ -73,13 +75,13 @@
                 }
             });
             var scolor;
-            if (data.response.alerts.severityCounts.critical > 0) {
+            if (data.severityCounts.critical > 0) {
                 scolor = 'red';
-            } else if (data.response.alerts.severityCounts.major > 0) {
+            } else if (data.severityCounts.major > 0) {
                 scolor = 'orange';
-            } else if (data.response.alerts.severityCounts.minor > 0) {
+            } else if (data.severityCounts.minor > 0) {
                 scolor = 'yellow';
-            } else if (data.response.alerts.severityCounts.warning > 0) {
+            } else if (data.severityCounts.warning > 0) {
                 scolor = 'dodgerblue';
             } else {
                 scolor = '#00CC00';
