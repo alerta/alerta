@@ -5,6 +5,7 @@ import smtplib
 import socket
 import urllib2
 import datetime
+import re
 
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
@@ -34,8 +35,8 @@ class Mailer(object):
                                                     ','.join(alert.service), alert.resource)
 
         self.text = "-" * 60 + "\n"
-        self.text += '[%s] %s: %s %s on %s %s' % (alert.status, alert.environment, alert.severity, alert.event,
-                                                  ','.join(alert.service), alert.resource)
+        self.text += "[%s] %s: %s %s on %s %s\n" % (alert.status, alert.environment, alert.severity, alert.event,
+                                                    ','.join(alert.service), alert.resource)
         self.text += "-" * 60 + "\n\n"
 
         self.text += "Alert Details\n\n"
@@ -54,14 +55,20 @@ class Mailer(object):
         self.text += "Duplicate Count: %s\n" % alert.duplicate_count
         self.text += "Origin: %s\n" % alert.origin
         self.text += "Tags: %s\n" % ", ".join(alert.tags)
+        for k, v in alert.attributes.items():
+            self.text += "%s: %s\n" % (re.sub('([a-z0-9])([A-Z])', r'\1 \2', k).title(), v)
+        self.text += "\n"
 
-        if hasattr(alert.attributes, 'graph_urls'):
-            self.text += "Graphs\n\n"
-            for graph in alert.graph_urls:
-                self.text += '%s\n' % graph
-            self.text += "\n"
+        if 'graphUrl' in alert.attributes:
+            self.text += "Graph\n\n"
+            self.text += '%s\n\n' % alert.attributes['graphUrl']
+            self.graph_url = alert.attributes['graphUrl']
 
-        self.text += "Raw Alert\n\n"
+        if alert.raw_data:
+            self.text += "Raw Data\n\n"
+            self.text += "%s\n\n" % alert.raw_data
+
+        self.text += "JSON Format\n\n"
         self.text += "%s\n\n" % alert.get_body()
 
         self.text += "To acknowledge this alert visit this URL:\n"
@@ -71,8 +78,6 @@ class Mailer(object):
             os.path.basename(sys.argv[0]), os.uname()[1], datetime.datetime.now().strftime("%a %d %b %H:%M:%S"))
 
         LOG.debug('Email Text: %s', self.text)
-
-        self.graph_urls = alert.graph_urls if hasattr(alert, 'graph_urls') else None
 
     def send(self, mail_to=None):
 
@@ -87,14 +92,12 @@ class Mailer(object):
         msg_text = MIMEText(self.text, 'plain', 'utf-8')
         msg.attach(msg_text)
 
-        if self.graph_urls:
-            for graph in self.graph_urls:
-                try:
-                    img = MIMEImage(urllib2.urlopen(graph).read())
-                    msg.attach(img)
-                except Exception, e:
-                    LOG.warning('Unknown exception raised while attaching graphs to email: %s', e)
-                    pass
+        if self.graph_url:
+            try:
+                img = MIMEImage(urllib2.urlopen(self.graph_url).read())
+                msg.attach(img)
+            except Exception, e:
+                LOG.warning('Could not attach graph to email: %s', e)
 
         try:
             mx = smtplib.SMTP(CONF.smtp_host)
@@ -112,6 +115,3 @@ class Mailer(object):
 
         except smtplib.SMTPException, e:
             LOG.error('Failed to send mail to %s on %s:%s : %s', ", ".join(mail_to), CONF.mail_host, CONF.mail_port, e)
-
-
-
