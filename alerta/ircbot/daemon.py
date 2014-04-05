@@ -3,6 +3,7 @@ import time
 import threading
 
 import irc.bot
+import irc.client
 
 from alerta.common import config
 from alerta.common import log as logging
@@ -12,7 +13,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.amqp import Messaging, FanoutConsumer
 from alerta.common.api import ApiClient
 
-__version__ = '3.0.0'
+__version__ = '3.0.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -22,7 +23,7 @@ class IrcbotServer(threading.Thread, irc.bot.SingleServerIRCBot):
 
     def __init__(self):
 
-        LOG.info('Connecting to IRC server...')
+        LOG.info('Connecting to IRC server %s:%s', CONF.irc_host, CONF.irc_port)
 
         irc.bot.SingleServerIRCBot.__init__(self, [(CONF.irc_host, CONF.irc_port)], CONF.irc_user, CONF.irc_user)
         threading.Thread.__init__(self)
@@ -34,6 +35,8 @@ class IrcbotServer(threading.Thread, irc.bot.SingleServerIRCBot):
 
         self._connect()
         super(irc.bot.SingleServerIRCBot, self).start()
+
+        LOG.info('Connected to %s:%s', CONF.irc_host, CONF.irc_port)
 
     def on_welcome(self, connection, event):
 
@@ -87,7 +90,10 @@ class IrcbotMessage(FanoutConsumer, threading.Thread):
             msg = '%s [%s] %s - %s %s is %s on %s %s' % (
                 ircAlert.get_id(short=True), ircAlert.status, ircAlert.environment, ircAlert.severity.capitalize(),
                 ircAlert.event, ircAlert.value, ','.join(ircAlert.service), ircAlert.resource)
-            self.irc.connection.privmsg(CONF.irc_channel, msg)
+            try:
+                self.irc.connection.privmsg(CONF.irc_channel, msg)
+            except irc.client.ServerNotConnectedError, e:
+                LOG.error('Could not send message to IRC server %s:%s: %s', CONF.irc_host, CONF.irc_port, e)
 
 
 class IrcbotDaemon(Daemon):
