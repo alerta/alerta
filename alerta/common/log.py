@@ -41,11 +41,16 @@ def setup(name):
     log_root = getLogger(name)
 
     if CONF.use_syslog:
+        if sys.platform == "darwin":
+            socket = '/var/run/syslog'
+        else:
+            socket = '/dev/log'
         facility = CONF.syslog_facility
+
         try:
-            syslog = logging.handlers.SysLogHandler(address='/dev/log', facility=facility)
-        except IOError:
-            pass
+            syslog = logging.handlers.SysLogHandler(address=socket, facility=facility)
+        except IOError, e:
+            print >>sys.stderr, 'ERROR - Failed to log to syslog socket %s: %s' % (socket, e)
         else:
             log_root.addHandler(syslog)
 
@@ -53,9 +58,10 @@ def setup(name):
     if logpath:
         try:
             filelog = logging.handlers.WatchedFileHandler(logpath, encoding='utf-8')
-        except IOError:
-            raise
-        log_root.addHandler(filelog)
+        except IOError, e:
+            print >>sys.stderr, 'ERROR - Failed to log to logfile %s: %s' % (logpath, e)
+        else:
+            log_root.addHandler(filelog)
 
         # TODO(nsatterl): test mode like openstack??
 
