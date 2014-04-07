@@ -274,9 +274,9 @@ def tag_alert(id):
 def delete_alert(id):
 
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
-        delete_timer.start_timer()
+        started = delete_timer.start_timer()
         response = db.delete_alert(id)
-        delete_timer.stop_timer()
+        delete_timer.stop_timer(started)
 
         if response:
             return jsonify(status="ok")
