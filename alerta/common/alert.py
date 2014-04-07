@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+import _strptime  # FIXME: http://stackoverflow.com/questions/2427240
 import datetime
 import json
 
