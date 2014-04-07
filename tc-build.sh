@@ -11,6 +11,16 @@ fi
 VERSION=$(<VERSION)
 ALERTA_VCS_ROOT=`pwd`
 
+now=`date -u +%Y-%m-%dT%H:%M:%SZ`
+
+cat << EOF > ${ALERTA_VCS_ROOT}/alerta/build.py
+BUILD_NUMBER = '${BUILD_NUMBER}'
+BUILD_DATE = '${now}'
+BUILD_VCS_NUMBER = '${BUILD_VCS_NUMBER}'
+BUILT_BY = '${USER}'
+HOSTNAME = '${HOSTNAME}'
+EOF
+
 # Clean up previous runs
 rm -f ${ALERTA_VCS_ROOT}/artifacts.zip
 
