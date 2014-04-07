@@ -63,6 +63,8 @@ class Mailer(object):
             self.text += "Graph\n\n"
             self.text += '%s\n\n' % alert.attributes['graphUrl']
             self.graph_url = alert.attributes['graphUrl']
+        else:
+            self.graph_url = None
 
         if alert.raw_data:
             self.text += "Raw Data\n\n"
