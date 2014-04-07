@@ -97,6 +97,7 @@ class MailSender(threading.Thread):
                     for tag in mailAlert.tags:
                         if tag.startswith('email'):
                             mail_to.append(tag.split(':')[1])
+                    LOG.info('%s : Hold time expired, send alert', alertid)
                     email.send(mail_to=mail_to)
                     try:
                         del self.onhold[alertid]
