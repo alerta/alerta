@@ -19,7 +19,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
-__version__ = '3.0.2'
+__version__ = '3.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -83,12 +83,18 @@ class CloudWatchDaemon(Daemon):
                     body = message.get_body()
                     cloudwatchAlert = self.parse_notification(body)
                     if self.dedup.is_send(cloudwatchAlert):
-                        self.api.send(cloudwatchAlert)
+                        try:
+                            self.api.send(cloudwatchAlert)
+                        except Exception, e:
+                            LOG.warning('Failed to send alert: %s', e)
                     sqs.delete_message(message)
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(tags=[__version__])
-                self.api.send(heartbeat)
+                try:
+                    self.api.send(heartbeat)
+                except Exception, e:
+                    LOG.warning('Failed to send heartbeat: %s', e)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True

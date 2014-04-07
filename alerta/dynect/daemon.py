@@ -15,7 +15,7 @@ from alerta.common.transform import Transformers
 from alerta.common.dedup import DeDup
 from alerta.common.api import ApiClient
 
-__version__ = '3.0.2'
+__version__ = '3.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -56,7 +56,10 @@ class DynectDaemon(Daemon):
 
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(tags=[__version__])
-                    self.api.send(heartbeat)
+                    try:
+                        self.api.send(heartbeat)
+                    except Exception, e:
+                        LOG.warning('Failed to send heartbeat: %s', e)
 
                 LOG.debug('Waiting for next check run...')
                 time.sleep(CONF.loop_every)
@@ -146,7 +149,10 @@ class DynectDaemon(Daemon):
                 continue
 
             if self.dedup.is_send(dynectAlert):
-                self.api.send(dynectAlert)
+                try:
+                    self.api.send(dynectAlert)
+                except Exception, e:
+                    LOG.warning('Failed to send alert: %s', e)
 
     def check_weight(self, parent, resource):
         

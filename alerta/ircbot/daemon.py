@@ -13,7 +13,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.amqp import Messaging, FanoutConsumer
 from alerta.common.api import ApiClient
 
-__version__ = '3.0.1'
+__version__ = '3.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -59,9 +59,9 @@ class IrcbotServer(threading.Thread, irc.bot.SingleServerIRCBot):
         elif cmd == "die":
             self.die()
         elif cmd == "ack" and args:
-            self.api.ack(args)
+            self.api.ack_alert(args)
         elif cmd == "delete" and args:
-            self.api.delete(args)
+            self.api.delete_alert(args)
         else:
             self.connection.privmsg(self.channel, "huh?")
 
@@ -120,13 +120,16 @@ class IrcbotDaemon(Daemon):
 
         ircbot.start()
 
-        api = ApiClient()
+        self.api = ApiClient()
 
         try:
             while True:
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(tags=[__version__])
-                api.send(heartbeat)
+                try:
+                    self.api.send(heartbeat)
+                except Exception, e:
+                    LOG.warning('Failed to send heartbeat: %s', e)
                 time.sleep(CONF.loop_every)
         except (KeyboardInterrupt, SystemExit):
             ircbot.should_stop = True

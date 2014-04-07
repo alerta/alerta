@@ -15,7 +15,7 @@ from alerta.common.dedup import DeDup
 from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
-__version__ = '3.0.2'
+__version__ = '3.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -64,7 +64,7 @@ class SyslogDaemon(Daemon):
 
         self.statsd = StatsD()  # graphite metrics
 
-        api = ApiClient()
+        self.api = ApiClient()
 
         self.dedup = DeDup(by_value=True)
 
@@ -89,14 +89,20 @@ class SyslogDaemon(Daemon):
                         syslogAlerts = self.parse_syslog(addr[0], data)
                         for syslogAlert in syslogAlerts:
                             if self.dedup.is_send(syslogAlert):
-                                api.send(syslogAlert)
+                                try:
+                                    self.api.send(syslogAlert)
+                                except Exception, e:
+                                    LOG.warning('Failed to send alert: %s', e)
                                 self.statsd.metric_send('alert.syslog.alerts.total', 1)
 
                     count += 1
                 if not ip or count % 5 == 0:
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(tags=[__version__])
-                    api.send(heartbeat)
+                    try:
+                        self.api.send(heartbeat)
+                    except Exception, e:
+                        LOG.warning('Failed to send heartbeat: %s', e)
 
             except (KeyboardInterrupt, SystemExit):
                 self.shuttingdown = True

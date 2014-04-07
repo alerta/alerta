@@ -1,4 +1,5 @@
 
+import sys
 import time
 import subprocess
 import threading
@@ -18,7 +19,7 @@ from alerta.common.transform import Transformers
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
-__version__ = '3.0.2'
+__version__ = '3.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -155,7 +156,10 @@ class WorkerThread(threading.Thread):
                 LOG.debug('%s', pingAlert)
 
             elif self.dedup.is_send(pingAlert):
-                self.api.send(pingAlert)
+                try:
+                    self.api.send(pingAlert)
+                except Exception, e:
+                    LOG.warning('Failed to send alert: %s', e)
 
             self.queue.task_done()
             LOG.info('%s ping %s complete.', self.getName(), resource)
@@ -170,7 +174,10 @@ class WorkerThread(threading.Thread):
         if timeout > CONF.ping_max_timeout:
             timeout = CONF.ping_max_timeout
 
-        cmd = "ping -q -c %s -i %s -w %s %s" % (count, interval, timeout, node)
+        if sys.platform == "darwin":
+            cmd = "ping -q -c %s -i %s -t %s %s" % (count, interval, timeout, node)
+        else:
+            cmd = "ping -q -c %s -i %s -w %s %s" % (count, interval, timeout, node)
         ping = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout = ping.communicate()[0].rstrip('\n')
         rc = ping.returncode
@@ -252,7 +259,10 @@ class PingerDaemon(Daemon):
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(tags=[__version__])
-                self.api.send(heartbeat)
+                try:
+                    self.api.send(heartbeat)
+                except Exception, e:
+                    LOG.warning('Failed to send heartbeat: %s', e)
 
                 time.sleep(CONF.loop_every)
                 LOG.info('Ping queue length is %d', self.queue.qsize())

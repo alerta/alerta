@@ -22,7 +22,7 @@ from alerta.common.api import ApiClient
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-__version__ = '3.0.3'
+__version__ = '3.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -310,7 +310,10 @@ class WorkerThread(threading.Thread):
                 LOG.debug('%s', urlmonAlert)
 
             elif self.dedup.is_send(urlmonAlert):
-                self.api.send(urlmonAlert)
+                try:
+                    self.api.send(urlmonAlert)
+                except Exception, e:
+                    LOG.warning('Failed to send alert: %s', e)
 
             self.queue.task_done()
             LOG.info('%s check complete.', self.getName())
@@ -367,7 +370,10 @@ class UrlmonDaemon(Daemon):
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(tags=[__version__])
-                self.api.send(heartbeat)
+                try:
+                    self.api.send(heartbeat)
+                except Exception, e:
+                    LOG.warning('Failed to send heartbeat: %s', e)
 
                 time.sleep(CONF.loop_every)
                 LOG.info('URL check queue length is %d', self.queue.qsize())

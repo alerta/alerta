@@ -13,7 +13,7 @@ from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
 
-__version__ = '3.0.2'
+__version__ = '3.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -90,13 +90,16 @@ class LoggerDaemon(Daemon):
         logger = LoggerMessage()
         logger.start()
 
-        api = ApiClient()
+        self.api = ApiClient()
 
         try:
             while True:
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(tags=[__version__])
-                api.send(heartbeat)
+                try:
+                    self.api.send(heartbeat)
+                except Exception, e:
+                    LOG.warning('Failed to send heartbeat: %s', e)
                 time.sleep(CONF.loop_every)
         except (KeyboardInterrupt, SystemExit):
             logger.should_stop = True

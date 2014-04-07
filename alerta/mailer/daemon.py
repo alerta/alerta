@@ -14,7 +14,7 @@ from alerta.common import severity_code
 from alerta.mailer.sendmail import Mailer
 from alerta.common.tokens import LeakyBucket
 
-__version__ = '3.0.0'
+__version__ = '3.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -122,13 +122,16 @@ class MailerDaemon(Daemon):
         sender = MailSender(onhold, tokens)
         sender.start()
 
-        api = ApiClient()
+        self.api = ApiClient()
 
         try:
             while True:
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(tags=[__version__])
-                api.send(heartbeat)
+                try:
+                    self.api.send(heartbeat)
+                except Exception, e:
+                    LOG.warning('Failed to send heartbeat: %s', e)
                 time.sleep(CONF.loop_every)
         except (KeyboardInterrupt, SystemExit):
             mailer.should_stop = True

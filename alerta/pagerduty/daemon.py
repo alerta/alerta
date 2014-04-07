@@ -12,7 +12,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code, status_code
 from alerta.pagerduty.pdclientapi import PagerDutyClient
 
-__version__ = '3.0.0'
+__version__ = '3.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -78,13 +78,16 @@ class PagerDutyDaemon(Daemon):
         pd = PagerDutyMessage()
         pd.start()
 
-        api = ApiClient()
+        self.api = ApiClient()
 
         try:
             while True:
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(tags=[__version__])
-                api.send(heartbeat)
+                try:
+                    self.api.send(heartbeat)
+                except Exception, e:
+                    LOG.warning('Failed to send heartbeat: %s', e)
                 time.sleep(CONF.loop_every)
         except (KeyboardInterrupt, SystemExit):
             pd.should_stop = True

@@ -12,7 +12,7 @@ from alerta.common.dedup import DeDup
 from alerta.solarwinds.swis import SwisClient, SOLAR_WINDS_SEVERITY_LEVELS, SOLAR_WINDS_CORRELATED_EVENTS
 from alerta.common.api import ApiClient
 
-__version__ = '3.0.2'
+__version__ = '3.0.3'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -79,12 +79,18 @@ class SolarWindsDaemon(Daemon):
                 solarwindsAlerts = self.parse_events(events)
                 for solarwindsAlert in solarwindsAlerts:
                     if self.dedup.is_send(solarwindsAlert):
-                        self.api.send(solarwindsAlert)
+                        try:
+                            self.api.send(solarwindsAlert)
+                        except Exception, e:
+                            LOG.warning('Failed to send alert: %s', e)
 
                 if send_heartbeat:
                     LOG.debug('Send heartbeat...')
                     heartbeat = Heartbeat(tags=[__version__])
-                    self.api.send(heartbeat)
+                    try:
+                        self.api.send(heartbeat)
+                    except Exception, e:
+                        LOG.warning('Failed to send heartbeat: %s', e)
                 else:
                     LOG.error('SolarWinds failure. Skipping heartbeat.')
 
