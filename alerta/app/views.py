@@ -316,6 +316,32 @@ def get_counts():
     )
 
 
+@app.route('/api/environments', methods=['GET'])
+@jsonp
+def get_environments():
+
+    try:
+        query, _, limit, query_time = parse_fields(request)
+    except Exception, e:
+        return jsonify(status="error", message=str(e))
+
+    environments = db.get_environments(query=query, limit=limit)
+
+    if environments:
+        return jsonify(
+            status="ok",
+            total=len(environments),
+            environments=environments
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            environments=[],
+        )
+
+
 @app.route('/api/pagerduty', methods=['POST'])
 def pagerduty():
 

@@ -689,6 +689,34 @@ class Mongo(object):
             )
         return heartbeats
 
+    def get_environments(self, query=None, fields=None, limit=0):
+
+        if not fields:
+            fields = {
+                "environment": 1,
+                "service": 1
+            }
+
+        pipeline = [
+            {'$match': query},
+            {'$unwind': '$service'},
+            {'$project': fields},
+            {'$limit': limit},
+            {'$group': {"_id": "$environment", "services": { '$push': "$service"}}}
+        ]
+
+        responses = self.db.alerts.aggregate(pipeline)
+
+        environments = list()
+        for response in responses['result']:
+            environments.append(
+                {
+                    "environment": response['_id'],
+                    "services": response['services']
+                }
+            )
+        return environments
+
     def save_heartbeat(self, heartbeat):
 
         now = datetime.datetime.utcnow()
