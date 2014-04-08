@@ -702,7 +702,7 @@ class Mongo(object):
             {'$unwind': '$service'},
             {'$project': fields},
             {'$limit': limit},
-            {'$group': {"_id": "$environment", "services": { '$push': "$service"}}}
+            {'$group': {"_id": "$environment", "services": {'$push': "$service"}}}
         ]
 
         responses = self.db.alerts.aggregate(pipeline)
@@ -716,6 +716,35 @@ class Mongo(object):
                 }
             )
         return environments
+
+    def get_services(self, query=None, fields=None, limit=0):
+
+        if not fields:
+            fields = {
+                "environment": 1,
+                "service": 1
+            }
+
+        pipeline = [
+            {'$unwind': '$service'},
+            {'$match': query},
+            {'$project': fields},
+            {'$limit': limit},
+            {'$group': {"_id": {"environment": "$environment", "service": "$service"}, "count": {'$sum': 1}}}
+        ]
+
+        responses = self.db.alerts.aggregate(pipeline)
+
+        services = list()
+        for response in responses['result']:
+            services.append(
+                {
+                    "environment": response['_id']['environment'],
+                    "service": response['_id']['service'],
+                    "count": response['count']
+                }
+            )
+        return services
 
     def save_heartbeat(self, heartbeat):
 

@@ -342,6 +342,31 @@ def get_environments():
         )
 
 
+@app.route('/api/services', methods=['GET'])
+@jsonp
+def get_services():
+
+    try:
+        query, _, limit, query_time = parse_fields(request)
+    except Exception, e:
+        return jsonify(status="error", message=str(e))
+
+    services = db.get_services(query=query, limit=limit)
+
+    if services:
+        return jsonify(
+            status="ok",
+            total=len(services),
+            services=services
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            services=[],
+        )
+
 @app.route('/api/pagerduty', methods=['POST'])
 def pagerduty():
 
