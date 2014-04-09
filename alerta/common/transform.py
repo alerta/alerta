@@ -1,5 +1,6 @@
 
 import os
+import sys
 import re
 import fnmatch
 import yaml
@@ -10,14 +11,23 @@ from alerta.common import log as logging
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
 
+prog = os.path.basename(sys.argv[0])
+
 
 class Transformers(object):
+
+    transform_opts = {
+        'yaml_config': '/etc/alerta/%s.yaml' % prog,
+        'parser_dir': '/etc/alerta/parsers',
+    }
 
     @staticmethod
     def normalise_alert(alert, trapoid=None, facility=None, level=None, **kwargs):
         """
         Transforms alert based on configuration contained in YAML file.
         """
+
+        config.register_opts(Transformers.transform_opts)
 
         if not CONF.yaml_config:
             return
