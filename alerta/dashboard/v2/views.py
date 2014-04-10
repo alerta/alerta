@@ -12,7 +12,7 @@ __version__ = '3.0.1'
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-ApiClient()  # set API variables eg. api_host, api_port
+ApiClient()  # set API variables eg. endpoint
 
 # Only use when running API in stand-alone mode during testing
 @app.route('/dashboard/<path:filename>')

@@ -41,7 +41,7 @@
 
 <script>
 
-    var API_HOST = appConfig.api_host + ':' + appConfig.api_port;
+    var API_URL = appConfig.endpoint;
     var REFRESH_INTERVAL = 30; // seconds
 
     var filter = '{{ query|safe }}';
@@ -53,7 +53,7 @@
     function updateStatusIndicator(filter, refresh) {
         $('#widget th').addClass('loader');
 
-        $.getJSON('http://' + API_HOST + '/api/alerts/count?callback=?&'
+        $.getJSON(API_URL + '/api/alerts/count?callback=?&'
                 + filter + status + limit + from, function (data) {
 
             var sev_id = '#widget';

@@ -1,5 +1,5 @@
 
-var API_URL = 'http://' + appConfig.api_host + ':' + appConfig.api_port + appConfig.api_root;
+var API_URL = appConfig.endpoint;
 var REFRESH_INTERVAL = 30; // seconds
 
 var show_hb_alerts = true;
@@ -132,7 +132,7 @@ function date2str(datetime) {
 
 function heartbeatAlerts() {
 
-    $.getJSON(API_URL + '/heartbeats?callback=?', function (data) {
+    $.getJSON(API_URL + '/api/heartbeats?callback=?', function (data) {
 
         var hbalerts = '';
         $.each(data.heartbeats, function (i, hb) {
@@ -161,7 +161,7 @@ function heartbeatAlerts() {
 
 function getHeartbeats(refresh) {
 
-    $.getJSON(API_URL + '/heartbeats?callback=?', function (data) {
+    $.getJSON(API_URL + '/api/heartbeats?callback=?', function (data) {
 
         var rows = '';
         $.each(data.heartbeats, function (i, hb) {
@@ -288,7 +288,7 @@ var Alerta = {
         $.ajax({
             type: 'PUT',
             contentType: 'application/json',
-            url: API_URL + '/alert/' + alertId + '/status',
+            url: API_URL + '/api/alert/' + alertId + '/status',
             data: JSON.stringify({ status: ACK, text: 'Acknowledged in web console' })
         });
     },
@@ -296,7 +296,7 @@ var Alerta = {
         $.ajax({
             type: 'PUT',
             contentType: 'application/json',
-            url: API_URL + '/alert/' + alertId + '/status',
+            url: API_URL + '/api/alert/' + alertId + '/status',
             data: JSON.stringify({ status: OPEN, text: 'Unacknowledged in web console' })
         });
     },
@@ -304,7 +304,7 @@ var Alerta = {
         $.ajax({
             type: 'PUT',
             contentType: 'application/json',
-            url: API_URL + '/alert/' + alertId + '/status',
+            url: API_URL + '/api/alert/' + alertId + '/status',
             data: JSON.stringify({ status: CLOSED, text: 'Closed in web console' })
         });
     },
@@ -312,7 +312,7 @@ var Alerta = {
         $.ajax({
             type: 'POST',
             contentType: 'application/json',
-            url: API_URL + '/alert/' + alertId,
+            url: API_URL + '/api/alert/' + alertId,
             data: JSON.stringify({ _method: 'delete' })
         });
     }
@@ -396,7 +396,7 @@ function updateAlertsTable(env_filter, asiFilters) {
         "bAutoWidth" :false,
         "bStateSave" : true,
         "sDom": "<'row-fluid'<'span3'l><'span4'f><'span5'T>r>t<'row-fluid'<'span6'i><'span6'p>>",
-        "sAjaxSource": API_URL + '/alerts?' + gEnvFilter + filter + status + limit + from,
+        "sAjaxSource": API_URL + '/api/alerts?' + gEnvFilter + filter + status + limit + from,
         "fnRowCallback": function (nRow, aData, iDisplayIndex, iDisplayIndexFull) {
             nRow.className = 'alert-summary' + ' severity-' + aData[0] + ' status-' + aData[1];
             $(nRow).attr('id', 'row-' + aData[11]).data("alert-id", aData[11]);
@@ -661,7 +661,7 @@ $('#alerts tbody tr').live('dblclick', function (event) {
 });
 
 function refreshAlerts(refresh) {
-    oTable.fnReloadAjax(API_URL + '/alerts?' + gEnvFilter + filter + status + limit + from);
+    oTable.fnReloadAjax(API_URL + '/api/alerts?' + gEnvFilter + filter + status + limit + from);
     if (refresh && autoRefresh) {
         timer = setTimeout(function() {
             refreshAlerts(refresh);
@@ -772,7 +772,7 @@ function updateStatus(s) {
 }
 
 function updateStatusCounts(env_filter, refresh) {
-    $.getJSON(API_URL + '/alerts/count?callback=?'
+    $.getJSON(API_URL + '/api/alerts/count?callback=?'
         + env_filter + from, function (data) {
         if (data.warning) {
             $('#warning-text').text(data.warning);
@@ -802,7 +802,7 @@ function updateAllIndicators(env_filter, asiFilters, refresh) {
 
 function updateStatusIndicator(env_filter, asi_filter, service, refresh) {
     $('#' + service + ' th').addClass('loader');
-    $.getJSON(API_URL + '/alerts/count?callback=?'
+    $.getJSON(API_URL + '/api/alerts/count?callback=?'
         + env_filter + asi_filter + status + limit + from, function (data) {
         var sev_id = '#' + service;
 

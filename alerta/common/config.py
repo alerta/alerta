@@ -45,7 +45,7 @@ def register_opts(opts, section=None):
     '''
         Options are registered to the 'DEFAULT' section
         unless specified because it is assumed they are
-        system defaults eg. api_host, api_port.
+        system defaults eg. debug, verbose
     '''
 
     if not section:

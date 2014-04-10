@@ -73,7 +73,7 @@ To use the alert console modify `$HOME/.alerta.conf` so that the API uses a free
 
 ```
 [DEFAULT]
-api_host = x.x.x.x             <---- replace with actual IP address
+endpoint = http://localhost:8080
 
 [alerta-dashboard]
 dashboard_dir = /path/to/alerta/dashboard/v2/assets/
