@@ -78,6 +78,7 @@ def routes():
 
 
 @app.route('/api/alerts', methods=['GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def get_alerts():
 
@@ -141,6 +142,7 @@ def get_alerts():
         )
 
 @app.route('/api/alerts/history', methods=['GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def get_history():
 
@@ -286,6 +288,7 @@ def delete_alert(id):
 
 # Return severity and status counts
 @app.route('/api/alerts/count', methods=['GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def get_counts():
 
@@ -317,6 +320,7 @@ def get_counts():
 
 
 @app.route('/api/environments', methods=['GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def get_environments():
 
@@ -343,6 +347,7 @@ def get_environments():
 
 
 @app.route('/api/services', methods=['GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def get_services():
 
@@ -368,6 +373,7 @@ def get_services():
         )
 
 @app.route('/api/pagerduty', methods=['POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 def pagerduty():
 
     if not request.json or not 'messages' in request.json:
@@ -439,6 +445,7 @@ def pagerduty():
 
 # Return a list of heartbeats
 @app.route('/api/heartbeats', methods=['GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def get_heartbeats():
 
