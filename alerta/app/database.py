@@ -602,7 +602,7 @@ class Mongo(object):
             '$set': {"status": status},
             '$push': {
                 "history": {
-                    "status": event,
+                    "event": event,
                     "status": status,
                     "text": text,
                     "id": id,
