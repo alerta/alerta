@@ -702,7 +702,7 @@ class Mongo(object):
             {'$unwind': '$service'},
             {'$project': fields},
             {'$limit': limit},
-            {'$group': {"_id": "$environment", "services": {'$push': "$service"}}}
+            {'$group': {"_id": "$environment", "services": {'$addToSet': "$service"}}}
         ]
 
         responses = self.db.alerts.aggregate(pipeline)
