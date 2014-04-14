@@ -5,6 +5,7 @@ import datetime
 from flask import request, Response, url_for, jsonify, render_template
 from alerta.app import app, db, mq
 from alerta.app.switch import Switch, SwitchState
+from alerta.app.utils import crossdomain
 from alerta.common.metrics import Gauge, Counter, Timer
 from alerta import get_version
 from alerta import build
@@ -35,6 +36,7 @@ def management():
 
 
 @app.route('/management/manifest')
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 def manifest():
 
     manifest = {
@@ -111,6 +113,7 @@ def health_check():
 
 
 @app.route('/management/status')
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 def status():
 
     total_alert_gauge.set(db.get_count())
