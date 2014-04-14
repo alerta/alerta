@@ -18,7 +18,7 @@ from alerta.app.utils import parse_fields, crossdomain
 from alerta.common.metrics import Gauge, Counter, Timer
 
 
-__version__ = '3.0.3'
+__version__ = '3.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -275,7 +275,8 @@ def tag_alert(id):
 @jsonp
 def delete_alert(id):
 
-    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+    if (request.method == 'DELETE' or
+            (request.method == 'POST' and '_method' in request.json and request.json['_method'] == 'delete')):
         started = delete_timer.start_timer()
         response = db.delete_alert(id)
         delete_timer.stop_timer(started)
