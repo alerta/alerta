@@ -6,7 +6,7 @@ import requests
 from alerta.common import log as logging
 from alerta.common import config
 
-__version__ = '3.0.3'
+__version__ = '3.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -104,7 +104,7 @@ class ApiClient(object):
 
     def _get(self, path, query=None):
 
-        url = self.endpoint + path + '?' + urllib.urlencode(query)
+        url = self.endpoint + path + '?' + urllib.urlencode(query, doseq=True)
         response = requests.get(url)
 
         LOG.debug('Content type from response: %s', response.headers['content-type'])
