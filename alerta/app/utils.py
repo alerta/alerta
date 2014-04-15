@@ -14,7 +14,7 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 
-SPECIALS = [
+PARAMS_EXCLUDE = [
     '_',
     'callback'
 ]
@@ -26,7 +26,7 @@ def parse_fields(request):
 
     params = request.args.copy()
 
-    for s in SPECIALS:
+    for s in PARAMS_EXCLUDE:
         if s in params:
             del params[s]
 
@@ -59,15 +59,19 @@ def parse_fields(request):
         del params['repeat']
 
     sort = list()
+    direction = 1
+    if params.get('reverse', None):
+        direction = -1
+        del params['reverse']
     if params.get('sort-by', None):
         for sort_by in params.getlist('sort-by'):
             if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
-                sort.append((sort_by, -1))  # sort by newest first
+                sort.append((sort_by, -direction))  # reverse chronological
             else:
-                sort.append((sort_by, 1))  # sort by newest first
+                sort.append((sort_by, direction))
         del params['sort-by']
     else:
-        sort.append(('lastReceiveTime', -1))
+        sort.append(('lastReceiveTime', -direction))
 
     if 'limit' in params:
         limit = params.get('limit')
