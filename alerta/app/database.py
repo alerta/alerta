@@ -696,12 +696,15 @@ class Mongo(object):
 
         pipeline = [
             {'$match': query},
+            {'$unwind': '$service'},
             {
                 '$group': {
                     "_id": "$%s" % group,
                     "count": {'$sum': 1},
                     "duplicateCount": {'$sum': "$duplicateCount"},
-                    "resources": {'$push': "$resource"}
+                    "environments": {'$addToSet': "$environment"},
+                    "services": {'$addToSet': "$service"},
+                    "resources": {'$addToSet': "$resource"}
                 }
             },
             {'$sort': {"count": -1, "duplicateCount": -1}},
@@ -715,6 +718,8 @@ class Mongo(object):
             top.append(
                 {
                     "%s" % group: response['_id'],
+                    "environments": response['environments'],
+                    "services": response['services'],
                     "resources": response['resources'],
                     "count": response['count'],
                     "duplicateCount": response['duplicateCount']
