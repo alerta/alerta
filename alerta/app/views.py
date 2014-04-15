@@ -26,7 +26,7 @@ CONF = config.CONF
 # Set-up metrics
 duplicate_timer = Timer('alerts', 'duplicate', 'Duplicate alerts', 'Total time to process number of duplicate alerts')
 correlate_timer = Timer('alerts', 'correlate', 'Correlated alerts', 'Total time to process number of correlated alerts')
-create_new_timer = Timer('alerts', 'create_new', 'Newly created alerts', 'Total time to process number of new alerts')
+create_timer = Timer('alerts', 'create', 'Newly created alerts', 'Total time to process number of new alerts')
 delete_timer = Timer('alerts', 'deleted', 'Deleted alerts', 'Total time to process number of deleted alerts')
 
 
@@ -170,9 +170,11 @@ def get_history():
 @app.route('/api/alert', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
-def create_alert():
+def receive_alert():
+    #
+    # A received alert can result in a duplicate, correlated or new alert
+    #
 
-    # Create a new alert
     try:
         incomingAlert = Alert.parse_alert(request.data)
     except ValueError, e:
@@ -181,7 +183,6 @@ def create_alert():
     try:
         suppress = Transformers.normalise_alert(incomingAlert)
     except RuntimeError, e:
-        # self.statsd.metric_send('alerta.alerts.error', 1)
         return jsonify(status="error", message=str(e))
 
     if suppress:
@@ -207,9 +208,9 @@ def create_alert():
             notify.send(alert)
 
     else:
-        started = create_new_timer.start_timer()
-        alert = db.save_alert(incomingAlert)
-        create_new_timer.stop_timer(started)
+        started = create_timer.start_timer()
+        alert = db.create_alert(incomingAlert)
+        create_timer.stop_timer(started)
 
         if alert:
             notify.send(alert)

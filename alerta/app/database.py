@@ -458,7 +458,7 @@ class Mongo(object):
             history=list()
         )
 
-    def save_alert(self, alert):
+    def create_alert(self, alert):
 
         trend_indication = severity_code.trend(severity_code.UNKNOWN, alert.severity)
         if alert.status == status_code.UNKNOWN:
