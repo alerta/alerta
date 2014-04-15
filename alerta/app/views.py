@@ -147,7 +147,7 @@ def get_alerts():
 def get_history():
 
     try:
-        query, _, limit, query_time = parse_fields(request)
+        query, _, _, limit, query_time = parse_fields(request)
     except Exception, e:
         return jsonify(status="error", message=str(e))
 
@@ -295,9 +295,9 @@ def delete_alert(id):
 def get_counts():
 
     try:
-        query, _, _, query_time = parse_fields(request)
+        query, _, _, _, query_time = parse_fields(request)
     except Exception, e:
-        return jsonify(response={"status": "error", "message": str(e)})
+        return jsonify(status="error", message=str(e))
 
     counts = db.get_counts(query=query)
 
@@ -321,13 +321,39 @@ def get_counts():
     )
 
 
+@app.route('/api/alerts/top10', methods=['GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@jsonp
+def get_top10():
+
+    try:
+        query, _, group, _, query_time = parse_fields(request)
+    except Exception, e:
+        return jsonify(status="error", message=str(e))
+
+    top10 = db.get_topn(query=query, group=group, limit=10)
+
+    if top10:
+        return jsonify(
+            status="ok",
+            total=len(top10),
+            top10=top10
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            top10=[],
+        )
+
 @app.route('/api/environments', methods=['GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def get_environments():
 
     try:
-        query, _, limit, query_time = parse_fields(request)
+        query, _, _, limit, query_time = parse_fields(request)
     except Exception, e:
         return jsonify(status="error", message=str(e))
 
@@ -354,7 +380,7 @@ def get_environments():
 def get_services():
 
     try:
-        query, _, limit, query_time = parse_fields(request)
+        query, _, _, limit, query_time = parse_fields(request)
     except Exception, e:
         return jsonify(status="error", message=str(e))
 

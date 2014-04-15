@@ -689,6 +689,39 @@ class Mongo(object):
             )
         return heartbeats
 
+    def get_topn(self, query=None, group=None, limit=10):
+
+        if not group:
+            group = "event"  # group by event is nothing specified
+
+        pipeline = [
+            {'$match': query},
+            {
+                '$group': {
+                    "_id": "$%s" % group,
+                    "count": {'$sum': 1},
+                    "duplicateCount": {'$sum': "$duplicateCount"},
+                    "resources": {'$push': "$resource"}
+                }
+            },
+            {'$sort': {"count": -1, "duplicateCount": -1}},
+            {'$limit': limit}
+        ]
+
+        responses = self.db.alerts.aggregate(pipeline)
+
+        top = list()
+        for response in responses['result']:
+            top.append(
+                {
+                    "%s" % group: response['_id'],
+                    "resources": response['resources'],
+                    "count": response['count'],
+                    "duplicateCount": response['duplicateCount']
+                }
+            )
+        return top
+
     def get_environments(self, query=None, fields=None, limit=0):
 
         if not fields:

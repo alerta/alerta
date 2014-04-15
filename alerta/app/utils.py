@@ -73,6 +73,11 @@ def parse_fields(request):
     else:
         sort.append(('lastReceiveTime', -direction))
 
+    group = list()
+    if 'group-by' in params:
+        group = params.get('group-by')
+        del params['group-by']
+
     if 'limit' in params:
         limit = params.get('limit')
         del params['limit']
@@ -115,7 +120,7 @@ def parse_fields(request):
                     query[field] = dict()
                     query[field]['$in'] = value
 
-    return query, sort, limit, query_time
+    return query, sort, group, limit, query_time
 
 
 def crossdomain(origin=None, methods=None, headers=None,
