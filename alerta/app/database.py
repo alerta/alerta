@@ -704,7 +704,7 @@ class Mongo(object):
                     "duplicateCount": {'$sum': "$duplicateCount"},
                     "environments": {'$addToSet': "$environment"},
                     "services": {'$addToSet': "$service"},
-                    "resources": {'$addToSet': "$resource"}
+                    "resources": {'$addToSet': {"id": "$_id", "resource": "$resource"}}
                 }
             },
             {'$sort': {"count": -1, "duplicateCount": -1}},
