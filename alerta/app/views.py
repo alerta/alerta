@@ -83,7 +83,7 @@ def routes():
 def get_alerts():
 
     try:
-        query, sort, limit, query_time = parse_fields(request)
+        query, sort, _, limit, query_time = parse_fields(request)
     except Exception, e:
         return jsonify(status="error", message=str(e))
 
