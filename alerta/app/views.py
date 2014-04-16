@@ -24,10 +24,14 @@ LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
 # Set-up metrics
+gets_timer = Timer('alerts', 'queries', 'Alert queries', 'Total time to process number of alert queries')
+receive_timer = Timer('alerts', 'received', 'Received alerts', 'Total time to process number of received alerts')
 duplicate_timer = Timer('alerts', 'duplicate', 'Duplicate alerts', 'Total time to process number of duplicate alerts')
 correlate_timer = Timer('alerts', 'correlate', 'Correlated alerts', 'Total time to process number of correlated alerts')
 create_timer = Timer('alerts', 'create', 'Newly created alerts', 'Total time to process number of new alerts')
 delete_timer = Timer('alerts', 'deleted', 'Deleted alerts', 'Total time to process number of deleted alerts')
+status_timer = Timer('alerts', 'status', 'Alert status change', 'Total time and number of alerts with status changed')
+tag_timer = Timer('alerts', 'tagged', 'Tagged alerts', 'Total time to process number of tagged alerts')
 
 
 # Over-ride jsonify to support Date Encoding
@@ -82,9 +86,11 @@ def routes():
 @jsonp
 def get_alerts():
 
+    gets_started = gets_timer.start_timer()
     try:
         query, sort, _, limit, query_time = parse_fields(request)
     except Exception, e:
+        gets_timer.stop_timer(gets_started)
         return jsonify(status="error", message=str(e))
 
     fields = dict()
@@ -118,6 +124,7 @@ def get_alerts():
 
             alert_response.append(body)
 
+        gets_timer.stop_timer(gets_started)
         return jsonify(
             status="ok",
             total=found,
@@ -129,6 +136,7 @@ def get_alerts():
             autoRefresh=Switch.get('auto-refresh-allow').is_on(),
         )
     else:
+        gets_timer.stop_timer(gets_started)
         return jsonify(
             status="ok",
             message="not found",
@@ -175,18 +183,22 @@ def receive_alert():
     # A received alert can result in a duplicate, correlated or new alert
     #
 
+    recv_started = receive_timer.start_timer()
     try:
         incomingAlert = Alert.parse_alert(request.data)
     except ValueError, e:
+        receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e))
 
     try:
         suppress = Transformers.normalise_alert(incomingAlert)
     except RuntimeError, e:
+        receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e))
 
     if suppress:
         LOG.info('Suppressing alert %s', incomingAlert.get_id())
+        receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message="alert suppressed by transform")
 
     if db.is_duplicate(incomingAlert):
@@ -215,6 +227,7 @@ def receive_alert():
         if alert:
             notify.send(alert)
 
+    receive_timer.stop_timer(recv_started)
     if alert:
         return jsonify(status="ok", id=alert.id)
     else:
@@ -239,17 +252,21 @@ def get_alert(id):
 @jsonp
 def set_status(id):
 
+    status_started = status_timer.start_timer()
     data = request.json
 
     if data and 'status' in data:
         alert = db.set_status(id=id, status=data['status'], text=data.get('text', ''))
     else:
+        status_timer.stop_timer(status_started)
         return jsonify(status="error", message="no data")
 
     if alert:
         notify.send(alert)
+        status_timer.stop_timer(status_started)
         return jsonify(status="ok")
     else:
+        status_timer.stop_timer(status_started)
         return jsonify(status="error", message="failed to set alert status")
 
 
@@ -258,13 +275,16 @@ def set_status(id):
 @jsonp
 def tag_alert(id):
 
+    tag_started = tag_timer.start_timer()
     data = request.json
 
     if data and 'tags' in data:
         response = db.tag_alert(id, data['tags'])
     else:
+        tag_timer.stop_timer(tag_started)
         return jsonify(status="error", message="no data")
 
+    tag_timer.stop_timer(tag_started)
     if response:
         return jsonify(status="ok")
     else:
