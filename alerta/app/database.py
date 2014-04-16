@@ -657,6 +657,14 @@ class Mongo(object):
 
         return True if 'ok' in response else False
 
+    def untag_alert(self, id, tags):
+        """
+        Remove tags from tag list.
+        """
+        response = self.db.alerts.update({'_id': {'$regex': '^' + id}}, {'$pullAll': {"tags": tags}})
+
+        return True if 'ok' in response else False
+
     def delete_alert(self, id):
 
         response = self.db.alerts.remove({'_id': {'$regex': '^' + id}})
