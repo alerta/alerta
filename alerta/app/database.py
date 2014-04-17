@@ -737,18 +737,16 @@ class Mongo(object):
 
     def get_environments(self, query=None, fields=None, limit=0):
 
-        if not fields:
-            fields = {
-                "environment": 1,
-                "service": 1
-            }
+        if fields:
+            fields['environment'] = 1
+        else:
+            fields = {"environment": 1}
 
         pipeline = [
             {'$match': query},
-            {'$unwind': '$service'},
             {'$project': fields},
             {'$limit': limit},
-            {'$group': {"_id": "$environment", "services": {'$addToSet': "$service"}}}
+            {'$group': {"_id": "$environment", "count": {'$sum': 1}}}
         ]
 
         responses = self.db.alerts.aggregate(pipeline)
@@ -758,7 +756,7 @@ class Mongo(object):
             environments.append(
                 {
                     "environment": response['_id'],
-                    "services": response['services']
+                    "count": response['count']
                 }
             )
         return environments
