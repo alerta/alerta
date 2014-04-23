@@ -3,20 +3,21 @@ import time
 
 from threading import Lock
 
+_registry = []
+
 
 class Gauge(object):
 
-    _registry = []
-
     def __init__(self, group, name, title=None, description=None):
 
-        self._registry.append(self)
+        _registry.append(self)
 
         self.group = group
         self.name = name
         self.title = title
         self.description = description
         self.value = 0
+        self.type = 'gauge'
 
         self.lock = Lock()
 
@@ -28,33 +29,30 @@ class Gauge(object):
     @classmethod
     def get_gauges(cls):
 
-        metrics = list()
-
-        for gauge in cls._registry:
-            metrics.append({
+        return [
+            {
                 "group": gauge.group,
                 "name": gauge.name,
                 "title": gauge.title,
                 "description": gauge.description,
-                "type": "gauge",
-                "value": gauge.value
-            })
-        return metrics
+                "type": gauge.type,
+                "value": gauge.value,
+            } for gauge in _registry if gauge.type == 'gauge'
+        ]
 
 
 class Counter(object):
 
-    _registry = []
-
     def __init__(self, group, name, title=None, description=None):
 
-        self._registry.append(self)
+        _registry.append(self)
 
         self.group = group
         self.name = name
         self.title = title
         self.description = description
         self.count = 0
+        self.type = 'counter'
 
         self.lock = Lock()
 
@@ -66,27 +64,23 @@ class Counter(object):
     @classmethod
     def get_counters(cls):
 
-        metrics = list()
-
-        for counter in cls._registry:
-            metrics.append({
+        return [
+            {
                 "group": counter.group,
                 "name": counter.name,
                 "title": counter.title,
                 "description": counter.description,
-                "type": "counter",
-                "count": counter.count
-            })
-        return metrics
+                "type": counter.type,
+                "count": counter.count,
+            } for counter in _registry if counter.type == 'counter'
+        ]
 
 
 class Timer(object):
 
-    _registry = []
-
     def __init__(self, group, name, title=None, description=None):
 
-        self._registry.append(self)
+        _registry.append(self)
 
         self.group = group
         self.name = name
@@ -94,6 +88,7 @@ class Timer(object):
         self.description = description
         self.count = 0
         self.total_time = 0
+        self.type = 'timer'
 
         self.lock = Lock()
         self.start = None
@@ -116,16 +111,14 @@ class Timer(object):
     @classmethod
     def get_timers(cls):
 
-        metrics = list()
-
-        for timer in cls._registry:
-            metrics.append({
+        return [
+            {
                 "group": timer.group,
                 "name": timer.name,
                 "title": timer.title,
                 "description": timer.description,
-                "type": "timer",
+                "type": timer.type,
                 "count": timer.count,
-                "totalTime": timer.total_time
-            })
-        return metrics
+                "totalTime": timer.total_time,
+            } for timer in _registry if timer.type == 'timer'
+        ]
