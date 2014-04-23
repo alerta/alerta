@@ -1,8 +1,8 @@
 
 import time
+import threading
 
-from threading import Lock
-
+lock = threading.Lock()
 _registry = []
 
 
@@ -19,11 +19,9 @@ class Gauge(object):
         self.value = 0
         self.type = 'gauge'
 
-        self.lock = Lock()
-
     def set(self, value):
 
-        with self.lock:
+        with lock:
             self.value = value
 
     @classmethod
@@ -54,11 +52,9 @@ class Counter(object):
         self.count = 0
         self.type = 'counter'
 
-        self.lock = Lock()
-
     def inc(self):
 
-        with self.lock:
+        with lock:
             self.count += 1
 
     @classmethod
@@ -90,7 +86,6 @@ class Timer(object):
         self.total_time = 0
         self.type = 'timer'
 
-        self.lock = Lock()
         self.start = None
 
     @staticmethod
@@ -104,7 +99,7 @@ class Timer(object):
 
     def stop_timer(self, start):
 
-        with self.lock:
+        with lock:
             self.count += 1
             self.total_time += self._time_in_millis() - start
 
