@@ -18,7 +18,7 @@ from alerta.app.utils import parse_fields, crossdomain
 from alerta.common.metrics import Gauge, Counter, Timer
 
 
-__version__ = '3.0.5'
+__version__ = '3.0.6'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -202,33 +202,38 @@ def receive_alert():
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message="alert suppressed by transform")
 
-    if db.is_duplicate(incomingAlert):
+    try:
+        if db.is_duplicate(incomingAlert):
 
-        started = duplicate_timer.start_timer()
-        alert = db.save_duplicate(incomingAlert)
-        duplicate_timer.stop_timer(started)
+            started = duplicate_timer.start_timer()
+            alert = db.save_duplicate(incomingAlert)
+            duplicate_timer.stop_timer(started)
 
-        if alert and CONF.forward_duplicate:
-            notify.send(alert)
+            if alert and CONF.forward_duplicate:
+                notify.send(alert)
 
-    elif db.is_correlated(incomingAlert):
+        elif db.is_correlated(incomingAlert):
 
-        started = correlate_timer.start_timer()
-        alert = db.save_correlated(incomingAlert)
-        correlate_timer.stop_timer(started)
+            started = correlate_timer.start_timer()
+            alert = db.save_correlated(incomingAlert)
+            correlate_timer.stop_timer(started)
 
-        if alert:
-            notify.send(alert)
+            if alert:
+                notify.send(alert)
 
-    else:
-        started = create_timer.start_timer()
-        alert = db.create_alert(incomingAlert)
-        create_timer.stop_timer(started)
+        else:
+            started = create_timer.start_timer()
+            alert = db.create_alert(incomingAlert)
+            create_timer.stop_timer(started)
 
-        if alert:
-            notify.send(alert)
+            if alert:
+                notify.send(alert)
 
-    receive_timer.stop_timer(recv_started)
+        receive_timer.stop_timer(recv_started)
+
+    except Exception, e:
+        return jsonify(status="error", message=str(e))
+
     if alert:
         return jsonify(status="ok", id=alert.id)
     else:
