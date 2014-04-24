@@ -286,7 +286,7 @@ var Alerta = {
     },
     ackAlert: function(alertId) {
         $.ajax({
-            type: 'PUT',
+            type: 'POST',
             contentType: 'application/json',
             url: API_URL + '/api/alert/' + alertId + '/status',
             data: JSON.stringify({ status: ACK, text: 'Acknowledged in web console' })
@@ -294,7 +294,7 @@ var Alerta = {
     },
     unackAlert: function(alertId) {
         $.ajax({
-            type: 'PUT',
+            type: 'POST',
             contentType: 'application/json',
             url: API_URL + '/api/alert/' + alertId + '/status',
             data: JSON.stringify({ status: OPEN, text: 'Unacknowledged in web console' })
@@ -302,7 +302,7 @@ var Alerta = {
     },
     closeAlert: function(alertId) {
         $.ajax({
-            type: 'PUT',
+            type: 'POST',
             contentType: 'application/json',
             url: API_URL + '/api/alert/' + alertId + '/status',
             data: JSON.stringify({ status: CLOSED, text: 'Closed in web console' })
