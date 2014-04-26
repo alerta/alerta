@@ -1,90 +1,100 @@
 
 import time
-import threading
+import pymongo
 
-lock = threading.Lock()
-_registry = []
+from alerta.common import settings
+
+conn = pymongo.Connection(
+    host=getattr(settings, 'mongo_host', 'localhost'),
+    port=getattr(settings, 'mongo_port', 27017),
+    network_timeout=1
+)
+
+db = conn[getattr(settings, 'mongo_database', 'monitoring')]
+
+username = getattr(settings, 'mongo_username', 'alerta')
+password = getattr(settings, 'mongo_password', None)
+
+if username and password:
+    db.authenticate(username, password)
 
 
 class Gauge(object):
 
     def __init__(self, group, name, title=None, description=None):
 
-        _registry.append(self)
-
         self.group = group
         self.name = name
         self.title = title
         self.description = description
-        self.value = 0
-        self.type = 'gauge'
 
     def set(self, value):
 
-        with lock:
-            self.value = value
+        db.metrics.update(
+            {
+                "group": self.group,
+                "name": self.name
+            },
+            {
+                "group": self.group,
+                "name": self.name,
+                "title": self.title,
+                "description": self.description,
+                "value": value,
+                "type": "gauge"
+            },
+            True
+        )
 
     @classmethod
     def get_gauges(cls):
 
-        return [
-            {
-                "group": gauge.group,
-                "name": gauge.name,
-                "title": gauge.title,
-                "description": gauge.description,
-                "type": gauge.type,
-                "value": gauge.value,
-            } for gauge in _registry if gauge.type == 'gauge'
-        ]
+        return list(db.metrics.find({"type": "gauge"}, {"_id": 0}))
 
 
 class Counter(object):
 
     def __init__(self, group, name, title=None, description=None):
 
-        _registry.append(self)
-
         self.group = group
         self.name = name
         self.title = title
         self.description = description
-        self.count = 0
-        self.type = 'counter'
 
     def inc(self):
 
-        with lock:
-            self.count += 1
+        db.metrics.update(
+            {
+                "group": self.group,
+                "name": self.name
+            },
+            {
+                '$set': {
+                    "group": self.group,
+                    "name": self.name,
+                    "title": self.title,
+                    "description": self.description,
+                    "type": "counter"
+                },
+                '$inc': {"count": 1}
+            },
+            True
+        )
 
     @classmethod
     def get_counters(cls):
 
-        return [
-            {
-                "group": counter.group,
-                "name": counter.name,
-                "title": counter.title,
-                "description": counter.description,
-                "type": counter.type,
-                "count": counter.count,
-            } for counter in _registry if counter.type == 'counter'
-        ]
+        return list(db.metrics.find({"type": "counter"}, {"_id": 0}))
 
 
 class Timer(object):
 
     def __init__(self, group, name, title=None, description=None):
 
-        _registry.append(self)
-
         self.group = group
         self.name = name
         self.title = title
         self.description = description
-        self.count = 0
-        self.total_time = 0
-        self.type = 'timer'
 
         self.start = None
 
@@ -99,21 +109,25 @@ class Timer(object):
 
     def stop_timer(self, start):
 
-        with lock:
-            self.count += 1
-            self.total_time += self._time_in_millis() - start
+        db.metrics.update(
+            {
+                "group": self.group,
+                "name": self.name
+            },
+            {
+                '$set': {
+                    "group": self.group,
+                    "name": self.name,
+                    "title": self.title,
+                    "description": self.description,
+                    "type": "timer"
+                },
+                '$inc': {"count": 1, "totalTime": self._time_in_millis() - start}
+            },
+            True
+        )
 
     @classmethod
     def get_timers(cls):
 
-        return [
-            {
-                "group": timer.group,
-                "name": timer.name,
-                "title": timer.title,
-                "description": timer.description,
-                "type": timer.type,
-                "count": timer.count,
-                "totalTime": timer.total_time,
-            } for timer in _registry if timer.type == 'timer'
-        ]
+        return list(db.metrics.find({"type": "timer"}, {"_id": 0}))
