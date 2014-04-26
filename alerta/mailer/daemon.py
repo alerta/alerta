@@ -10,11 +10,11 @@ from alerta.common.api import ApiClient
 from alerta.common.amqp import Messaging, FanoutConsumer
 from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import Heartbeat
-from alerta.common import severity_code
+from alerta.common import severity_code, status_code
 from alerta.mailer.sendmail import Mailer
 from alerta.common.tokens import LeakyBucket
 
-__version__ = '3.0.3'
+__version__ = '3.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -45,6 +45,11 @@ class MailerMessage(FanoutConsumer, threading.Thread):
         alertid = mailAlert.get_id()
         severity = mailAlert.severity
         previous_severity = mailAlert.previous_severity
+        status = mailAlert.status
+
+        if status not in [status_code.OPEN, status_code.CLOSED]:
+            LOG.info('%s : Do not email alerts with "%s" status', alertid, status)
+            return
 
         if severity in [severity_code.CRITICAL, severity_code.MAJOR]:
             LOG.info('%s : Queue email because alert severity is important', alertid)
