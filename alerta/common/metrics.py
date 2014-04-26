@@ -1,22 +1,15 @@
 
 import time
-import pymongo
 
-from alerta.common import settings
+from alerta.common import log as logging
+from alerta.common import config
+from alerta.app.database import Mongo
 
-conn = pymongo.Connection(
-    host=getattr(settings, 'mongo_host', 'localhost'),
-    port=getattr(settings, 'mongo_port', 27017),
-    network_timeout=1
-)
+LOG = logging.getLogger(__name__)
+CONF = config.CONF
 
-db = conn[getattr(settings, 'mongo_database', 'monitoring')]
-
-username = getattr(settings, 'mongo_username', 'alerta')
-password = getattr(settings, 'mongo_password', None)
-
-if username and password:
-    db.authenticate(username, password)
+mongo = Mongo()
+db = mongo.db
 
 
 class Gauge(object):
