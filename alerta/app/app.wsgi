@@ -3,4 +3,6 @@
 activate_this = '/opt/alerta/bin/activate_this.py'
 execfile(activate_this, dict(__file__=activate_this))
 
+import _strptime
+
 from alerta.app import app as application
