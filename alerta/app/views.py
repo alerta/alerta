@@ -215,10 +215,11 @@ def receive_alert():
             alert = db.save_duplicate(incomingAlert)
             duplicate_timer.stop_timer(started)
 
-            if alert and CONF.amqp_queue and CONF.forward_duplicate:
-                direct.send(alert)
-            if alert and CONF.amqp_topic:
-                notify.send(alert)
+            if CONF.forward_duplicate:
+                if alert and CONF.amqp_queue:
+                    direct.send(alert)
+                if alert and CONF.amqp_topic:
+                    notify.send(alert)
 
         elif db.is_correlated(incomingAlert):
 

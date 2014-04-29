@@ -15,12 +15,12 @@ CONF = config.CONF
 class Messaging(object):
 
     amqp_opts = {
-        'amqp_queue': 'alerts',
+        'amqp_queue': '',                                   # do not send to queue by default
         'amqp_topic': 'notify',
-        # 'amqp_url': 'amqp://guest:guest@localhost:5672//',  # RabbitMQ
+        'amqp_url': 'amqp://guest:guest@localhost:5672//',  # RabbitMQ
         # 'amqp_url': 'mongodb://localhost:27017/kombu',    # MongoDB
         # 'amqp_url': 'redis://localhost:6379/',            # Redis
-        # 'amqp_url': 'sqs://ACCESS_KEY:SECRET_KEY@'        # AWS SQS
+        # 'amqp_url': 'sqs://ACCESS_KEY:SECRET_KEY@'        # AWS SQS (must define amqp_queue)
     }
 
     def __init__(self):
@@ -73,6 +73,8 @@ class DirectPublisher(object):
 
         self.queue.put(msg.get_body())
 
+        LOG.info('Message sent to queue "%s"', CONF.amqp_queue)
+
 
 class FanoutPublisher(object):
 
@@ -92,7 +94,7 @@ class FanoutPublisher(object):
 
         self.producer.publish(msg.get_body(), declare=[self.exchange], retry=True)
 
-        LOG.info('Message sent to exchange "%s"', self.exchange_name)
+        LOG.info('Message sent to topic "%s"', CONF.amqp_topic)
 
 
 class DirectConsumer(ConsumerMixin):
