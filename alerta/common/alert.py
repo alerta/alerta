@@ -27,27 +27,27 @@ class Alert(object):
                 or any(['$' in key for key in kwargs.get('attributes', dict()).keys()]):
             raise ValueError('Attribute keys must not contain "." or "$"')
 
-        self.id = str(uuid4())
+        self.id = kwargs.get('id', str(uuid4()))
         self.resource = resource
         self.event = event
-        self.environment = kwargs.get('environment', "")
-        self.severity = kwargs.get('severity', DEFAULT_SEVERITY)
+        self.environment = kwargs.get('environment', None) or ""
+        self.severity = kwargs.get('severity', None) or DEFAULT_SEVERITY
         self.correlate = kwargs.get('correlate', list())
         if self.correlate and event not in self.correlate:
             self.correlate.append(event)
-        self.status = kwargs.get('status', 'unknown')
+        self.status = kwargs.get('status', None) or "unknown"
         self.service = kwargs.get('service', list())
-        self.group = kwargs.get('group', 'Misc')
-        self.value = kwargs.get('value', 'n/a')
-        self.text = kwargs.get('text', "")
+        self.group = kwargs.get('group', None) or "Misc"
+        self.value = kwargs.get('value', None) or "n/a"
+        self.text = kwargs.get('text', None) or ""
         self.tags = kwargs.get('tags', list())
         self.attributes = kwargs.get('attributes', dict())
-        self.origin = kwargs.get('origin', '%s/%s' % (prog, os.uname()[1]))
-        self.event_type = kwargs.get('event_type', kwargs.get('type', 'exceptionAlert'))
-        self.create_time = kwargs.get('create_time', datetime.datetime.utcnow())
+        self.origin = kwargs.get('origin', None) or '%s/%s' % (prog, os.uname()[1])
+        self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or "exceptionAlert"
+        self.create_time = kwargs.get('create_time', None) or datetime.datetime.utcnow()
         self.receive_time = None
-        self.timeout = kwargs.get('timeout', DEFAULT_TIMEOUT)
-        self.raw_data = kwargs.get('raw_data', kwargs.get('rawData', ""))
+        self.timeout = kwargs.get('timeout', None) or DEFAULT_TIMEOUT
+        self.raw_data = kwargs.get('raw_data', kwargs.get('rawData', None)) or ""
 
     def get_id(self, short=False):
 
@@ -119,9 +119,9 @@ class Alert(object):
             resource=alert.get('resource', None),
             event=alert.get('event', None),
             environment=alert.get('environment', None),
-            severity=alert.get('severity', DEFAULT_SEVERITY),
-            correlate=alert.get('correlate', None),
-            status=alert.get('status', "unknown"),
+            severity=alert.get('severity', None),
+            correlate=alert.get('correlate', list()),
+            status=alert.get('status', None),
             service=alert.get('service', list()),
             group=alert.get('group', None),
             value=alert.get('value', None),
@@ -263,9 +263,9 @@ class AlertDocument(object):
             resource=alert.get('resource', None),
             event=alert.get('event', None),
             environment=alert.get('environment', None),
-            severity=alert.get('severity', DEFAULT_SEVERITY),
-            correlate=alert.get('correlate', None),
-            status=alert.get('status', "unknown"),
+            severity=alert.get('severity', None),
+            correlate=alert.get('correlate', list()),
+            status=alert.get('status', None),
             service=alert.get('service', list()),
             group=alert.get('group', None),
             value=alert.get('value', None),
