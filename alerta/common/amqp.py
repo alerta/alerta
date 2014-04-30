@@ -21,6 +21,7 @@ class Messaging(object):
         # 'amqp_url': 'mongodb://localhost:27017/kombu',    # MongoDB
         # 'amqp_url': 'redis://localhost:6379/',            # Redis
         # 'amqp_url': 'sqs://ACCESS_KEY:SECRET_KEY@'        # AWS SQS (must define amqp_queue)
+        # 'amqp_sqs_region': 'eu-west-1'                    # required if SQS is used
     }
 
     def __init__(self):
@@ -38,9 +39,14 @@ class Messaging(object):
         if not CONF.amqp_url:
             return
 
+        if CONF.amqp_sqs_region:
+            transport_options = {'region': CONF.amqp_sqs_region}
+        else:
+            transport_options = {}
+
         self.connection = BrokerConnection(
             CONF.amqp_url,
-            transport_options={'region': 'eu-west-1'}
+            transport_options=transport_options
         )
         try:
             self.connection.connect()
