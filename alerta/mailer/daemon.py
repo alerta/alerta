@@ -14,7 +14,7 @@ from alerta.common import severity_code, status_code
 from alerta.mailer.sendmail import Mailer
 from alerta.common.tokens import LeakyBucket
 
-__version__ = '3.0.4'
+__version__ = '3.0.5'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -27,8 +27,9 @@ class MailerMessage(FanoutConsumer, threading.Thread):
     def __init__(self, onhold, tokens):
 
         mq = Messaging()
+        self.connection = mq.connection
 
-        FanoutConsumer.__init__(self, mq.connection)
+        FanoutConsumer.__init__(self, self.connection)
         threading.Thread.__init__(self)
 
         self.onhold = onhold

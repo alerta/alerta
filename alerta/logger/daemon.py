@@ -13,7 +13,7 @@ from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import Heartbeat
 from alerta.common.utils import DateEncoder
 
-__version__ = '3.0.3'
+__version__ = '3.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -24,8 +24,9 @@ class LoggerMessage(FanoutConsumer, threading.Thread):
     def __init__(self):
 
         mq = Messaging()
+        self.connection = mq.connection
 
-        FanoutConsumer.__init__(self, mq.connection)
+        FanoutConsumer.__init__(self, self.connection)
         threading.Thread.__init__(self)
 
     def on_message(self, body, message):

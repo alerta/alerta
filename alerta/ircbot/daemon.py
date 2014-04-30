@@ -13,7 +13,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common.amqp import Messaging, FanoutConsumer
 from alerta.common.api import ApiClient
 
-__version__ = '3.0.3'
+__version__ = '3.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -73,8 +73,9 @@ class IrcbotMessage(FanoutConsumer, threading.Thread):
         self.irc = irc
 
         mq = Messaging()
+        self.connection = mq.connection
 
-        FanoutConsumer.__init__(self, mq.connection)
+        FanoutConsumer.__init__(self, self.connection)
         threading.Thread.__init__(self)
 
     def on_message(self, body, message):
