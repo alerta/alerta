@@ -82,7 +82,7 @@ class Alert(object):
             'attributes': self.attributes,
             'origin': self.origin,
             'type': self.event_type,
-            'createTime': self.create_time.isoformat()+'Z',
+            'createTime': self.create_time.replace(microsecond=0).isoformat() + ".%03dZ" % (self.create_time.microsecond // 1000),
             'timeout': self.timeout,
             'rawData': self.raw_data
         }
@@ -185,17 +185,19 @@ class AlertDocument(object):
             "correlation-id": self.id
         }
 
-    def get_date(self, attr, fmt):
+    def get_date(self, attr, fmt='iso'):
 
         if hasattr(self, attr):
             if fmt == 'local':
-                return getattr(self, attr).astimezone(self.tz).strftime('%Y/%m/%d %H:%M:%S')
+                return getattr(self, attr).strftime('%Y/%m/%d %H:%M:%S')
+                #return getattr(self, attr).astimezone(self.tz).strftime('%Y/%m/%d %H:%M:%S')
             elif fmt == 'iso' or fmt == 'iso8601':
                 return getattr(self, attr).replace(microsecond=0).isoformat() + ".%03dZ" % (getattr(self, attr).microsecond // 1000)
             elif fmt == 'rfc' or fmt == 'rfc2822':
                 return utils.formatdate(time.mktime(getattr(self, attr).timetuple()))
             elif fmt == 'short':
-                return getattr(self, attr).astimezone(self.tz).strftime('%a %d %H:%M:%S')
+                return getattr(self, attr).strftime('%a %d %H:%M:%S')
+                #return getattr(self, attr).astimezone(self.tz).strftime('%a %d %H:%M:%S')
             elif fmt == 'epoch':
                 return time.mktime(getattr(self, attr).timetuple())
             elif fmt == 'raw':
@@ -223,16 +225,16 @@ class AlertDocument(object):
             'attributes': self.attributes,
             'origin': self.origin,
             'type': self.event_type,
-            'createTime': self.create_time.isoformat()+'Z',
+            'createTime': self.create_time.replace(microsecond=0).isoformat() + ".%03dZ" % (self.create_time.microsecond // 1000),
             'timeout': self.timeout,
             'rawData': self.raw_data,
             'duplicateCount': self.duplicate_count,
             'repeat': self.repeat,
             'previousSeverity': self.previous_severity,
             'trendIndication': self.trend_indication,
-            'receiveTime': self.receive_time.isoformat()+'Z',
+            'receiveTime': self.receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (self.receive_time.microsecond // 1000),
             'lastReceiveId': self.last_receive_id,
-            'lastReceiveTime': self.last_receive_time.isoformat()+'Z',
+            'lastReceiveTime': self.last_receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (self.last_receive_time.microsecond // 1000),
             'history': self.history
         }
 
@@ -246,17 +248,18 @@ class AlertDocument(object):
     @staticmethod
     def parse_alert(alert):
 
-        try:
-            alert = json.loads(alert)
-        except ValueError, e:
-            raise ValueError('Could not parse alert - %s: %s' % (e, alert))
-
         for k, v in alert.iteritems():
             if k in ['createTime', 'receiveTime', 'lastReceiveTime', 'expireTime']:
-                try:
-                    alert[k] = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S.%fZ')
-                except ValueError, e:
-                    raise ValueError('Could not parse date time string: %s' % e)
+                if '.' in v:
+                    try:
+                        alert[k] = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%S.%fZ')
+                    except ValueError, e:
+                        raise ValueError('Could not parse date time string: %s' % e)
+                else:
+                    try:
+                        alert[k] = datetime.datetime.strptime(v, '%Y-%m-%dT%H:%M:%SZ')  # if us = 000000
+                    except ValueError, e:
+                        raise ValueError('Could not parse date time string: %s' % e)
 
         return AlertDocument(
             id=alert.get('id', None),
