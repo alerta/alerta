@@ -12,7 +12,6 @@ from alerta.common import log as logging
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
-from alerta.common.transform import Transformers
 from alerta.common.utils import DateEncoder
 from alerta.app.utils import parse_fields, crossdomain
 from alerta.common.amqp import DirectPublisher, FanoutPublisher
@@ -196,17 +195,6 @@ def receive_alert():
     except ValueError, e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e))
-
-    try:
-        suppress = Transformers.normalise_alert(incomingAlert)
-    except RuntimeError, e:
-        receive_timer.stop_timer(recv_started)
-        return jsonify(status="error", message=str(e))
-
-    if suppress:
-        LOG.info('Suppressing alert %s', incomingAlert.get_id())
-        receive_timer.stop_timer(recv_started)
-        return jsonify(status="error", message="alert suppressed by transform")
 
     try:
         if db.is_duplicate(incomingAlert):
