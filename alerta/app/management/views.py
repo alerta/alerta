@@ -20,7 +20,7 @@ switches = [
 #    Switch('sender-api-allow', 'Allow alerts to be submitted via the API', SwitchState.ON),  # TODO(nsatterl)
 ]
 total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of alerts in the database')
-
+started = time.time() * 1000
 
 @app.route('/management')
 def management():
@@ -132,4 +132,6 @@ def status():
     }
     metrics.append(auto_refresh_allow)
 
-    return jsonify(application="alerta", time=int(time.time() * 1000), metrics=metrics)
+    now = int(time.time() * 1000)
+
+    return jsonify(application="alerta", version=get_version(), time=now, uptime=int(now - started), metrics=metrics)
