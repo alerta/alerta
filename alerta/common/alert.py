@@ -32,16 +32,16 @@ class Alert(object):
         self.event = event
         self.environment = kwargs.get('environment', None) or ""
         self.severity = kwargs.get('severity', None) or DEFAULT_SEVERITY
-        self.correlate = kwargs.get('correlate', list())
+        self.correlate = kwargs.get('correlate', None) or list()
         if self.correlate and event not in self.correlate:
             self.correlate.append(event)
         self.status = kwargs.get('status', None) or "unknown"
-        self.service = kwargs.get('service', list())
+        self.service = kwargs.get('service', None) or list()
         self.group = kwargs.get('group', None) or "Misc"
         self.value = kwargs.get('value', None) or "n/a"
         self.text = kwargs.get('text', None) or ""
-        self.tags = kwargs.get('tags', list())
-        self.attributes = kwargs.get('attributes', dict())
+        self.tags = kwargs.get('tags', None) or list()
+        self.attributes = kwargs.get('attributes', None) or dict()
         self.origin = kwargs.get('origin', None) or '%s/%s' % (prog, os.uname()[1])
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or "exceptionAlert"
         self.create_time = kwargs.get('create_time', None) or datetime.datetime.utcnow()
