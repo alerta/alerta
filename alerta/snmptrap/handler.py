@@ -89,6 +89,8 @@ class SnmpTrapHandler(object):
             else:
                 version = 'SNMPv3'
             trapvars['$s'] = version
+        else:
+            version = 'SNMP'
 
         # Get varbinds
         varbinds = dict()

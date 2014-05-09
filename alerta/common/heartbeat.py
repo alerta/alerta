@@ -1,24 +1,17 @@
 
 import os
 import sys
-import datetime
 import json
+import datetime
+import logging
 
 from uuid import uuid4
 
-DEFAULT_TIMEOUT = 300  # seconds
-
 prog = os.path.basename(sys.argv[0])
 
+LOG = logging.getLogger(__name__)
 
-# Extend JSON Encoder to support ISO 8601 format dates
-class DateEncoder(json.JSONEncoder):
-    def default(self, obj):
-
-        if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (obj.microsecond // 1000)
-        else:
-            return json.JSONEncoder.default(self, obj)
+DEFAULT_TIMEOUT = 300  # seconds
 
 
 class Heartbeat(object):
@@ -55,7 +48,7 @@ class Heartbeat(object):
             'origin': self.origin,
             'tags': self.tags,
             'type': self.event_type,
-            'createTime': self.create_time,
+            'createTime': self.create_time.replace(microsecond=0).isoformat() + ".%03dZ" % (self.create_time.microsecond // 1000),
             'timeout': self.timeout,
         }
 
@@ -69,7 +62,7 @@ class Heartbeat(object):
         return 'Heartbeat(id=%r, origin=%r, create_time=%r, timeout=%r)' % (self.id, self.origin, self.create_time, self.timeout)
 
     def __str__(self):
-        return json.dumps(self.get_body(), cls=DateEncoder, indent=4)
+        return json.dumps(self.get_body(), indent=4)
 
     @staticmethod
     def parse_heartbeat(heartbeat):
@@ -127,13 +120,14 @@ class HeartbeatDocument(object):
             'origin': self.origin,
             'tags': self.tags,
             'type': self.event_type,
-            'createTime': self.create_time,
+            'createTime': self.create_time.replace(microsecond=0).isoformat() + ".%03dZ" % (self.create_time.microsecond // 1000),
             'timeout': self.timeout,
-            'receiveTime': self.receive_time
+            'receiveTime': self.receive_time.replace(microsecond=0).isoformat() + ".%03dZ" % (self.receive_time.microsecond // 1000)
         }
 
     def __repr__(self):
         return 'HeartbeatDocument(id=%r, origin=%r, create_time=%r, timeout=%r)' % (self.id, self.origin, self.create_time, self.timeout)
 
     def __str__(self):
-        return json.dumps(self.get_body(), cls=DateEncoder, indent=4)
+        return json.dumps(self.get_body(), indent=4)
+

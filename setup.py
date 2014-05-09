@@ -8,9 +8,9 @@ with open('README.rst') as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="alerta",
+    name="alerta-app",
     version=get_version(),
-    description='Alerta monitoring framework',
+    description='Alerta server WSGI application',
     long_description=long_description,
     url='https://github.com/guardian/alerta',
     license='Apache License 2.0',
@@ -45,10 +45,10 @@ setuptools.setup(
         'bin/alert-solarwinds',
         'bin/alert-syslog',
         'bin/alert-urlmon',
-        'bin/alerta',
+        'bin/alerta-app',
         'bin/alerta-dashboard',
     ],
-    keywords='alert monitoring system',
+    keywords='alert monitoring system wsgi application api',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',

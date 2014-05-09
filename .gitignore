@@ -3,7 +3,7 @@
 *.swp
 *.egg
 *.BAK
-alerta.egg-info/
+*.egg-info/
 ve
 dist
 build
