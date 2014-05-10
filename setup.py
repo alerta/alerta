@@ -46,7 +46,6 @@ setuptools.setup(
         'bin/alert-syslog',
         'bin/alert-urlmon',
         'bin/alerta-app',
-        'bin/alerta-dashboard',
     ],
     keywords='alert monitoring system wsgi application api',
     classifiers=[

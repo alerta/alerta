@@ -25,6 +25,7 @@ class Mailer(object):
         'smtp_port': 25,
         'mail_user': 'alerta@guardian.co.uk',
         'mail_list': 'websys@guardian.co.uk',
+        'dashboard_url': ''
     }
 
     def __init__(self, alert):
