@@ -2,14 +2,14 @@
 
 import setuptools
 
-from alerta import get_version
+import alerta
 
 with open('README.rst') as f:
     long_description = f.read()
 
 setuptools.setup(
     name="alerta-app",
-    version=get_version(),
+    version=alerta.__version__,
     description='Alerta server WSGI application',
     long_description=long_description,
     url='https://github.com/guardian/alerta',
