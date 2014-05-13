@@ -14,7 +14,7 @@ from alerta.common.api import ApiClient
 from alerta.common.graphite import StatsD
 
 
-__version__ = '3.0.3'
+__version__ = '3.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -187,6 +187,7 @@ class SnmpTrapHandler(object):
         text = trapvars['$W']
         environment = 'PROD'
         service = ['Network']
+        attributes = {'source': trapvars['$B']}
         tags = [version]
         timeout = None
         create_time = datetime.datetime.strptime('%sT%s.000Z' % (trapvars['$x'], trapvars['$X']), '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -202,6 +203,7 @@ class SnmpTrapHandler(object):
             service=service,
             text=text,
             event_type='snmptrapAlert',
+            attributes=attributes,
             tags=tags,
             timeout=timeout,
             create_time=create_time,
