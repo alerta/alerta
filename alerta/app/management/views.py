@@ -133,4 +133,4 @@ def status():
 
     now = int(time.time() * 1000)
 
-    return jsonify(application="alerta", version=get_version(), time=now, uptime=int(now - started), metrics=metrics)
+    return jsonify(application="alerta", version=__version__, time=now, uptime=int(now - started), metrics=metrics)
