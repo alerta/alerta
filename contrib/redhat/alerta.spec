@@ -66,7 +66,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta.conf
 %defattr(-,alerta,alerta)
-/opt/alerta/bin/alerta
+/opt/alerta/bin/alerta-app
 %config(noreplace) /opt/alerta/apache/app.wsgi
 /opt/alerta/bin/python*
 /opt/alerta/bin/activate*
@@ -107,6 +107,8 @@ if [ "$1" = "0" ]; then
 fi
 
 %changelog
+* Fri May 6 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.1.0-1
+- Remove references to alerta dashboard
 * Thu Apr 3 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.3-1
 - Bug fixes
 * Thu Apr 3 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.2-3
