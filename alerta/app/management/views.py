@@ -7,8 +7,7 @@ from alerta.app import app, db, mq
 from alerta.app.switch import Switch, SwitchState
 from alerta.app.utils import crossdomain
 from alerta.common.metrics import Gauge, Counter, Timer
-from alerta import get_version
-from alerta import build
+from alerta import __version__, build
 from alerta.common import log as logging
 
 LOG = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ def manifest():
 
     manifest = {
         "label": "Alerta",
-        "release": get_version(),
+        "release": __version__,
         "build": build.BUILD_NUMBER,
         "date": build.BUILD_DATE,
         "revision": build.BUILD_VCS_NUMBER,
