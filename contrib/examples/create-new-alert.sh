@@ -22,7 +22,7 @@ curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/al
     "group": "Firewall",
     "value": "Down",
     "severity": "major",
-    "environment": "devlopment",
+    "environment": "development",
     "service": [
         "Network"
     ],
