@@ -389,11 +389,13 @@ class Mongo(object):
                 "status": status,
                 "value": alert.value,
                 "text": alert.text,
+                "createTime": alert.create_time,
                 "rawData": alert.raw_data,
                 "duplicateCount": 0,
                 "repeat": False,
                 "previousSeverity": previous_severity,
                 "trendIndication": trend_indication,
+                "receiveTime": now,
                 "lastReceiveId": alert.id,
                 "lastReceiveTime": now
             },
