@@ -64,37 +64,44 @@ class TestAlert(unittest.TestCase):
                         "createTime": self.CREATE_TIME
                         }]
 
-    def test_alert_defaults(self):
+    def test_alertdoc(self):
         """
-        Ensures a valid alert is created with default values
+        Ensure a valid alert document is created with all assigned values
         """
-        alert = Alert(self.RESOURCE, self.EVENT)
+
+        alert = AlertDocument(id=self.ALERTID, resource=self.RESOURCE, event=self.EVENT, environment=self.ENVIRONMENT,
+                      severity=self.SEVERITY, correlate=self.CORRELATE, status=self.STATUS, service=self.SERVICE, group=self.GROUP,
+                      value=self.VALUE, text=self.TEXT, tags=self.TAGS,
+                      attributes={'thresholdInfo': self.THRESHOLD_INFO, 'moreInfo': self.MORE_INFO, 'graphUrls': self.GRAPH_URLS},
+                      origin=self.ORIGIN, event_type=self.EVENT_TYPE, create_time=self.CREATE_TIME, timeout=self.TIMEOUT,
+                      raw_data=self.RAW_DATA, duplicate_count=self.DUPLICATE_COUNT, repeat=self.REPEAT,
+                      previous_severity=self.PREVIOUS_SEVERITY, trend_indication=self.TREND_INDICATION, receive_time=self.RECEIVE_TIME,
+                      last_receive_id=self.ALERTID, last_receive_time=self.RECEIVE_TIME, history=self.HISTORY)
 
         self.assertEquals(alert.resource, self.RESOURCE)
         self.assertEquals(alert.event, self.EVENT)
-        self.assertEquals(alert.group, 'Misc')
-        self.assertEquals(alert.timeout, self.TIMEOUT)
-
-    def test_alert_with_some_values(self):
-        """
-        Ensure a valid alert is created with some assigned values
-        """
-        alert = Alert(self.RESOURCE, self.EVENT, severity=self.SEVERITY, environment=self.ENVIRONMENT)
-
-        self.assertEquals(alert.resource, self.RESOURCE)
-        self.assertEquals(alert.event, self.EVENT)
+        self.assertEquals(alert.correlate, self.CORRELATE)
+        self.assertEquals(alert.group, self.GROUP)
+        self.assertEquals(alert.value, self.VALUE)
+        self.assertEquals(alert.status, self.STATUS)
         self.assertEquals(alert.severity, self.SEVERITY)
+        self.assertEquals(alert.previous_severity, self.PREVIOUS_SEVERITY)
         self.assertEquals(alert.environment, self.ENVIRONMENT)
-
-    def test_alert_receive_now(self):
-        """
-        Ensure receive time is stamped.
-        """
-        alert = Alert(self.RESOURCE, self.EVENT, severity=self.SEVERITY, environment=self.ENVIRONMENT)
-
-        alert.receive_now()
-        self.assertIsInstance(alert.receive_time, datetime.datetime)
-
+        self.assertEquals(alert.service, self.SERVICE)
+        self.assertEquals(alert.text, self.TEXT)
+        self.assertEquals(alert.event_type, self.EVENT_TYPE)
+        self.assertEquals(alert.tags, self.TAGS)
+        self.assertEquals(alert.origin, self.ORIGIN)
+        self.assertEquals(alert.repeat, self.REPEAT)
+        self.assertEquals(alert.duplicate_count, self.DUPLICATE_COUNT)
+        self.assertEquals(alert.timeout, self.TIMEOUT)
+        self.assertEquals(alert.id, self.ALERTID)
+        self.assertEquals(alert.last_receive_id, self.ALERTID)
+        self.assertEquals(alert.create_time, self.CREATE_TIME)
+        self.assertEquals(alert.receive_time, self.RECEIVE_TIME)
+        self.assertEquals(alert.trend_indication, self.TREND_INDICATION)
+        self.assertEquals(alert.raw_data, self.RAW_DATA)
+        self.assertEquals(alert.history, self.HISTORY)
 
 if __name__ == '__main__':
     unittest.main()
