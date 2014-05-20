@@ -2,8 +2,8 @@
 import os
 import sys
 import time
-import _strptime  # FIXME: http://stackoverflow.com/questions/2427240
 import datetime
+import pytz
 import json
 
 from uuid import uuid4
@@ -185,21 +185,21 @@ class AlertDocument(object):
             "correlation-id": self.id
         }
 
-    def get_date(self, attr, fmt='iso'):
+    def get_date(self, attr, fmt='iso', timezone='Europe/London'):
+
+        tz = pytz.timezone(timezone)
 
         if hasattr(self, attr):
             if fmt == 'local':
-                return getattr(self, attr).strftime('%Y/%m/%d %H:%M:%S')
-                #return getattr(self, attr).astimezone(self.tz).strftime('%Y/%m/%d %H:%M:%S')
+                return getattr(self, attr).replace(tzinfo=pytz.UTC).astimezone(tz).strftime('%Y/%m/%d %H:%M:%S')
             elif fmt == 'iso' or fmt == 'iso8601':
                 return getattr(self, attr).replace(microsecond=0).isoformat() + ".%03dZ" % (getattr(self, attr).microsecond // 1000)
             elif fmt == 'rfc' or fmt == 'rfc2822':
-                return utils.formatdate(time.mktime(getattr(self, attr).timetuple()))
+                return utils.formatdate(time.mktime(getattr(self, attr).replace(tzinfo=pytz.UTC).timetuple()), True)
             elif fmt == 'short':
-                return getattr(self, attr).strftime('%a %d %H:%M:%S')
-                #return getattr(self, attr).astimezone(self.tz).strftime('%a %d %H:%M:%S')
+                return getattr(self, attr).replace(tzinfo=pytz.UTC).astimezone(tz).strftime('%a %d %H:%M:%S')
             elif fmt == 'epoch':
-                return time.mktime(getattr(self, attr).timetuple())
+                return time.mktime(getattr(self, attr).replace(tzinfo=pytz.UTC).timetuple())
             elif fmt == 'raw':
                 return getattr(self, attr)
             else:

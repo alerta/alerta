@@ -3,6 +3,7 @@ import os
 import sys
 import unittest
 
+import time
 import datetime
 
 # If ../alerta/__init__.py exists, add ../ to Python search path, so that
@@ -102,6 +103,28 @@ class TestAlert(unittest.TestCase):
         self.assertEquals(alert.trend_indication, self.TREND_INDICATION)
         self.assertEquals(alert.raw_data, self.RAW_DATA)
         self.assertEquals(alert.history, self.HISTORY)
+
+    def test_date_formats(self):
+
+        alert = AlertDocument(id=self.ALERTID, resource=self.RESOURCE, event=self.EVENT, environment=self.ENVIRONMENT,
+                      severity=self.SEVERITY, correlate=self.CORRELATE, status=self.STATUS, service=self.SERVICE, group=self.GROUP,
+                      value=self.VALUE, text=self.TEXT, tags=self.TAGS,
+                      attributes={'thresholdInfo': self.THRESHOLD_INFO, 'moreInfo': self.MORE_INFO, 'graphUrls': self.GRAPH_URLS},
+                      origin=self.ORIGIN, event_type=self.EVENT_TYPE, create_time=self.CREATE_TIME, timeout=self.TIMEOUT,
+                      raw_data=self.RAW_DATA, duplicate_count=self.DUPLICATE_COUNT, repeat=self.REPEAT,
+                      previous_severity=self.PREVIOUS_SEVERITY, trend_indication=self.TREND_INDICATION, receive_time=self.RECEIVE_TIME,
+                      last_receive_id=self.ALERTID, last_receive_time=self.RECEIVE_TIME, history=self.HISTORY)
+
+        print alert.get_date('create_time', 'local')
+        print alert.get_date('create_time', 'iso')
+        print alert.get_date('create_time', 'iso8601')
+        print alert.get_date('create_time', 'rfc')
+        print alert.get_date('create_time', 'rfc2822')
+        print alert.get_date('create_time', 'short')
+        print alert.get_date('create_time', 'epoch')
+        print alert.get_date('create_time', 'raw')
+        print alert.get_date('create_time')
+        print alert.get_date('create_time', 'invalid')
 
 if __name__ == '__main__':
     unittest.main()
