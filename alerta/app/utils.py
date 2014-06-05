@@ -30,16 +30,15 @@ def parse_fields(request):
         if s in params:
             del params[s]
 
-    if 'q' in params:
-        query = json.loads(params.get('q'))
+    if params.get('q', None):
+        query = json.loads(params['q'])
         del params['q']
     else:
         query = dict()
 
-    from_date = params.get('from-date', None)
-    if from_date:
+    if params.get('from-date', None):
         try:
-            from_date = datetime.datetime.strptime(from_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+            from_date = datetime.datetime.strptime(params['from-date'], '%Y-%m-%dT%H:%M:%S.%fZ')
         except ValueError, e:
             LOG.warning('Could not parse from_date query parameter: %s', e)
             raise
