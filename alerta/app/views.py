@@ -3,7 +3,7 @@ import datetime
 
 from collections import defaultdict
 from functools import wraps
-from flask import request, current_app, render_template, abort
+from flask import request, current_app, render_template, abort, Response
 
 from alerta.app import app, db, mq
 from alerta.app.switch import Switch
@@ -46,22 +46,64 @@ def jsonify(*args, **kwargs):
                                                  indent=None if request.is_xhr else 2), mimetype='application/json')
 
 
+def authenticate():
+
+    response = jsonify(status="error", message="authentication required")
+    response.status_code = 401
+
+    return response
+
+
+def verify_token(token):
+
+    LOG.debug('we got a token %s, verify token externally and save session id', token)
+
+    return False
+
+
+def verify_api_key(key):
+
+    LOG.debug('we got a api key %s, verify key internally', key)
+
+    return False
+
+
 def auth_required(func):
     @wraps(func)
     def decorated(*args, **kwargs):
+        # check is session variable?
+
         if 'Authorization' in request.headers:
             auth = request.headers['Authorization']
             LOG.debug(auth)
             if auth.startswith('Token'):
-                LOG.debug('we got a token auth, verify token externally and respond with API key')
+                token = auth.replace('Token ', '')
+                if not verify_token(token):
+                    return authenticate()
             elif auth.startswith('Key'):
-                LOG.debug('we got a api key, verify key internally and respond with requested data')
+                key = auth.replace('Key ', '')
+                if not verify_api_key(key):
+                    return authenticate()
             else:
-                authenticate = jsonify(status="error", message="authentication required")
-                authenticate.status_code = 401
-                return authenticate
+                return authenticate()
+        else:
+            return authenticate()
         return func(*args, **kwargs)
     return decorated
+
+
+import base64
+import hmac
+import random
+import hashlib
+
+SECRET_KEY = '<insert secret key here>'
+
+
+def generate_api_key():
+
+    api_key = hmac.new(SECRET_KEY, msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
+    return base64.encodestring(api_key).rstrip()
 
 
 def jsonp(func):
