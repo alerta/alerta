@@ -49,11 +49,17 @@ def jsonify(*args, **kwargs):
 def auth_required(func):
     @wraps(func)
     def decorated(*args, **kwargs):
-        auth = request.authorization
-        if not auth:
-            authenticate = jsonify(status="error", message="authentication required")
-            authenticate.status_code = 401
-            return authenticate
+        if 'Authorization' in request.headers:
+            auth = request.headers['Authorization']
+            LOG.debug(auth)
+            if auth.startswith('Token'):
+                LOG.debug('we got a token auth, verify token externally and respond with API key')
+            elif auth.startswith('Key'):
+                LOG.debug('we got a api key, verify key internally and respond with requested data')
+            else:
+                authenticate = jsonify(status="error", message="authentication required")
+                authenticate.status_code = 401
+                return authenticate
         return func(*args, **kwargs)
     return decorated
 
