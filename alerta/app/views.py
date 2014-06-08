@@ -18,7 +18,7 @@ from alerta.common.amqp import DirectPublisher, FanoutPublisher
 from alerta.common.metrics import Gauge, Counter, Timer
 
 
-__version__ = '3.0.6'
+__version__ = '3.0.7'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -46,10 +46,22 @@ def jsonify(*args, **kwargs):
                                                  indent=None if request.is_xhr else 2), mimetype='application/json')
 
 
+def auth_required(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth:
+            authenticate = jsonify(status="error", message="authentication required")
+            authenticate.status_code = 401
+            return authenticate
+        return func(*args, **kwargs)
+    return decorated
+
+
 def jsonp(func):
     """Wraps JSONified output for JSONP requests."""
     @wraps(func)
-    def decorated_function(*args, **kwargs):
+    def decorated(*args, **kwargs):
         callback = request.args.get('callback', False)
         if callback:
             data = str(func(*args, **kwargs).data)
@@ -58,7 +70,7 @@ def jsonp(func):
             return current_app.response_class(content, mimetype=mimetype)
         else:
             return func(*args, **kwargs)
-    return decorated_function
+    return decorated
 
 
 @app.route('/_', methods=['OPTIONS', 'PUT', 'POST', 'DELETE', 'GET'])
@@ -89,6 +101,7 @@ def routes():
 
 @app.route('/api/alerts', methods=['GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@auth_required
 @jsonp
 def get_alerts():
 
