@@ -1,5 +1,6 @@
 import json
 import datetime
+import requests
 
 from collections import defaultdict
 from functools import wraps
@@ -58,14 +59,24 @@ def verify_token(token):
 
     LOG.debug('we got a token %s, verify token externally and save session id', token)
 
-    return False
+    url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + token
+    response = requests.get(url)
+    token_info = response.json()
+    LOG.debug('Token info %s', json.dumps(token_info))
+
+    if 'error' in token_info:
+        LOG.warning('Token authentication failed: %s', token_info['error'])
+        return False
+    return True
 
 
 def verify_api_key(key):
 
     LOG.debug('we got a api key %s, verify key internally', key)
 
-    return False
+    if not db.is_key_valid(key):
+        return False
+    return True
 
 
 def auth_required(func):

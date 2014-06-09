@@ -841,6 +841,10 @@ class Mongo(object):
             metrics.append(stat)
         return metrics
 
+    def is_key_valid(self, key):
+
+        return bool(self.db.keys.find_one({"key": key}))
+
     def disconnect(self):
 
         if self.conn.alive():
