@@ -103,20 +103,6 @@ def auth_required(func):
     return decorated
 
 
-import base64
-import hmac
-import random
-import hashlib
-
-SECRET_KEY = '<insert secret key here>'
-
-
-def generate_api_key():
-
-    api_key = hmac.new(SECRET_KEY, msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
-    return base64.encodestring(api_key).rstrip()
-
-
 def jsonp(func):
     """Wraps JSONified output for JSONP requests."""
     @wraps(func)
@@ -641,3 +627,50 @@ def delete_heartbeat(id):
             return jsonify(status="ok")
         else:
             return jsonify(status="error", message="failed to delete heartbeat")
+
+@app.route('/api/keys/<user>', methods=['GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@jsonp
+def get_keys(user):
+
+    keys = db.get_keys({"user": user})
+
+    return jsonify(
+        status="ok",
+        total=len(keys),
+        keys=keys,
+        time=datetime.datetime.utcnow()
+    )
+
+@app.route('/api/key', methods=['POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@jsonp
+def create_key():
+
+    if request.json and 'user' in request.json:
+        data = {
+            "user": request.json["user"],
+            "text": request.json.get("text", "none")
+        }
+
+        key = db.create_key(data)
+    else:
+        key = None
+
+    if key:
+        return jsonify(status="ok", key=key)
+    else:
+        return jsonify(status="error", message="failed to generate api key")
+
+@app.route('/api/key/<key>', methods=['OPTIONS', 'DELETE', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@jsonp
+def delete_key(key):
+
+    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+        response = db.delete_key(key)
+
+        if response:
+            return jsonify(status="ok")
+        else:
+            return jsonify(status="error", message="failed to delete api key")

@@ -3,6 +3,11 @@ import sys
 import datetime
 import pymongo
 
+import base64
+import hmac
+import random
+import hashlib
+
 from alerta.common import log as logging
 from alerta.common import config
 from alerta.common.alert import AlertDocument
@@ -11,6 +16,8 @@ from alerta.common import severity_code, status_code
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
+
+SECRET_KEY = '<insert secret key here>'
 
 
 class Mongo(object):
@@ -841,9 +848,42 @@ class Mongo(object):
             metrics.append(stat)
         return metrics
 
+    def get_keys(self, query=None):
+
+        responses = self.db.keys.find(query)
+        keys = list()
+        for response in responses:
+            keys.append(
+                {
+                    "key": response["key"],
+                    "text": response["text"],
+                    "expireTime": response["expireTime"]
+                }
+            )
+
+        return keys
+
     def is_key_valid(self, key):
 
         return bool(self.db.keys.find_one({"key": key}))
+
+    def create_key(self, data):
+
+        digest = hmac.new(SECRET_KEY, msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
+        key = base64.encodestring(digest).rstrip()
+        data["key"] = key
+        data["expireTime"] = datetime.datetime.utcnow() + datetime.timedelta(days=365)
+
+        response = self.db.keys.insert(data)
+        if not response:
+            return None
+
+        return key
+
+    def delete_key(self, key):
+
+        response = self.db.keys.remove({"key": key})
+        return True if 'ok' in response else False
 
     def disconnect(self):
 
