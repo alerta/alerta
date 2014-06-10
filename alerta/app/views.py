@@ -221,8 +221,9 @@ def get_alerts():
             autoRefresh=Switch.get('auto-refresh-allow').is_on()
         )
 
-@app.route('/api/alerts/history', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/alerts/history', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_history():
 
@@ -248,7 +249,8 @@ def get_history():
         )
 
 @app.route('/api/alert', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def receive_alert():
     #
@@ -308,7 +310,8 @@ def receive_alert():
 
 
 @app.route('/api/alert/<id>', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_alert(id):
 
@@ -321,7 +324,8 @@ def get_alert(id):
 
 
 @app.route('/api/alert/<id>/status', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def set_status(id):
 
@@ -347,7 +351,8 @@ def set_status(id):
 
 
 @app.route('/api/alert/<id>/tag', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def tag_alert(id):
 
@@ -368,7 +373,8 @@ def tag_alert(id):
 
 
 @app.route('/api/alert/<id>/untag', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def untag_alert(id):
 
@@ -389,7 +395,8 @@ def untag_alert(id):
 
 
 @app.route('/api/alert/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def delete_alert(id):
 
@@ -406,8 +413,9 @@ def delete_alert(id):
 
 
 # Return severity and status counts
-@app.route('/api/alerts/count', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/alerts/count', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_counts():
 
@@ -438,8 +446,9 @@ def get_counts():
     )
 
 
-@app.route('/api/alerts/top10', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/alerts/top10', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_top10():
 
@@ -464,8 +473,9 @@ def get_top10():
             top10=[],
         )
 
-@app.route('/api/environments', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/environments', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_environments():
 
@@ -491,8 +501,9 @@ def get_environments():
         )
 
 
-@app.route('/api/services', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/services', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_services():
 
@@ -517,7 +528,7 @@ def get_services():
             services=[],
         )
 
-@app.route('/api/pagerduty', methods=['POST'])
+@app.route('/api/pagerduty', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 def pagerduty():
 
@@ -592,8 +603,9 @@ def pagerduty():
 
 
 # Return a list of heartbeats
-@app.route('/api/heartbeats', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/heartbeats', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_heartbeats():
 
@@ -610,7 +622,8 @@ def get_heartbeats():
     )
 
 @app.route('/api/heartbeat', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def create_heartbeat():
 
@@ -624,7 +637,8 @@ def create_heartbeat():
     return jsonify(status="ok", id=heartbeat_id)
 
 @app.route('/api/heartbeat/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def delete_heartbeat(id):
 
@@ -636,8 +650,9 @@ def delete_heartbeat(id):
         else:
             return jsonify(status="error", message="failed to delete heartbeat")
 
-@app.route('/api/keys/<user>', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/keys/<user>', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_keys(user):
 
@@ -650,8 +665,9 @@ def get_keys(user):
         time=datetime.datetime.utcnow()
     )
 
-@app.route('/api/key', methods=['POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/key', methods=['OPTIONS', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def create_key():
 
@@ -671,7 +687,8 @@ def create_key():
         return jsonify(status="error", message="failed to generate api key")
 
 @app.route('/api/key/<key>', methods=['OPTIONS', 'DELETE', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def delete_key(key):
 
