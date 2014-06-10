@@ -97,6 +97,14 @@ def auth_required(func):
                     return authenticate()
             else:
                 return authenticate()
+        elif 'token' in request.args:
+            token = request.args['token']
+            if not verify_token(token):
+                return authenticate()
+        elif 'api-key' in request.args:
+            key = request.args['key']
+            if not verify_api_key(key):
+                return authenticate()
         else:
             return authenticate()
         return func(*args, **kwargs)
@@ -144,8 +152,8 @@ def routes():
     return render_template('index.html', rules=rules)
 
 
-@app.route('/api/alerts', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/alerts', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 @auth_required
 @jsonp
 def get_alerts():

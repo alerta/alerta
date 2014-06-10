@@ -16,7 +16,9 @@ CONF = config.CONF
 
 PARAMS_EXCLUDE = [
     '_',
-    'callback'
+    'callback',
+    'token',
+    'api-key'
 ]
 
 
