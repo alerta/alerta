@@ -77,6 +77,7 @@ def verify_api_key(key):
     if not db.is_key_valid(key):
         return False
 
+    db.update_key(key)
     return True
 
 
