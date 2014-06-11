@@ -8,15 +8,15 @@ from flask import request, current_app, render_template, abort, Response
 
 from alerta.app import app, db, mq
 from alerta.app.switch import Switch
+from alerta.app.utils import parse_fields, crossdomain
+from alerta.app.metrics import Gauge, Counter, Timer
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
 from alerta.common.utils import DateEncoder
-from alerta.app.utils import parse_fields, crossdomain
 from alerta.common.amqp import DirectPublisher, FanoutPublisher
-from alerta.common.metrics import Gauge, Counter, Timer
 
 
 __version__ = '3.0.7'
@@ -76,7 +76,22 @@ def verify_api_key(key):
 
     if not db.is_key_valid(key):
         return False
+
     return True
+
+
+def get_user_info(token):
+
+    url = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' + token
+    response = requests.get(url)
+    user_info = response.json()
+    LOG.debug('User info %s', json.dumps(user_info))
+
+    if 'error' in user_info:
+        LOG.warning('Token authentication failed: %s', user_info['error'])
+        return None
+
+    return user_info
 
 
 def auth_required(func):
@@ -672,9 +687,10 @@ def get_keys(user):
 def create_key():
 
     if request.json and 'user' in request.json:
+        user = request.json["user"]
         data = {
-            "user": request.json["user"],
-            "text": request.json.get("text", "none")
+            "user": user,
+            "text": request.json.get("text", "API Key for %s" % user)
         }
 
         key = db.create_key(data)

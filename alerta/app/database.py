@@ -855,9 +855,12 @@ class Mongo(object):
         for response in responses:
             keys.append(
                 {
+                    "user": response["user"],
                     "key": response["key"],
                     "text": response["text"],
-                    "expireTime": response["expireTime"]
+                    "expireTime": response["expireTime"],
+                    "count": response["count"],
+                    "lastUsedTime": response["lastUsedTime"]
                 }
             )
 
@@ -867,18 +870,38 @@ class Mongo(object):
 
         return bool(self.db.keys.find_one({"key": key}))
 
-    def create_key(self, data):
+    def create_key(self, args):
 
         digest = hmac.new(SECRET_KEY, msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
         key = base64.encodestring(digest).rstrip()
-        data["key"] = key
-        data["expireTime"] = datetime.datetime.utcnow() + datetime.timedelta(days=365)
+
+        data = {
+            "user": args["user"],
+            "key": key,
+            "text": args["text"],
+            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(days=365),
+            "count": 0,
+            "lastUsedTime": None
+        }
 
         response = self.db.keys.insert(data)
         if not response:
             return None
 
         return key
+
+    def update_key(self, key):
+
+        self.db.keys.update(
+            {
+                "key": key
+            },
+            {
+                '$set': {"lastUsedTime": datetime.datetime.utcnow()},
+                '$inc': {"count": 1}
+            },
+            True
+        )
 
     def delete_key(self, key):
 
