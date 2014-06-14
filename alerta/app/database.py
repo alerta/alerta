@@ -796,7 +796,7 @@ class Mongo(object):
 
         now = datetime.datetime.utcnow()
         update = {
-            #  '$setOnInsert': {"_id": heartbeat.id},
+            '$setOnInsert': {"_id": heartbeat.id},
             '$set': {
                 "origin": heartbeat.origin,
                 "tags": heartbeat.tags,
@@ -809,23 +809,10 @@ class Mongo(object):
 
         LOG.debug('Save heartbeat to database: %s', update)
 
-        heartbeat_id = self.db.heartbeats.find_one({"origin": heartbeat.origin}, {})
+        response = self.db.heartbeats.update({'origin': heartbeat.origin}, update, True)
 
-        if heartbeat_id:
-            no_obj_error = "No matching object found"
-            response = self.db.command("findAndModify", 'heartbeats',
-                                       allowable_errors=[no_obj_error],
-                                       query={"origin": heartbeat.origin},
-                                       update=update,
-                                       new=True,
-                                       upsert=True
-                                       )["value"]
-            return response['_id']
-        else:
-            update = update['$set']
-            update["_id"] = heartbeat.id
-            response = self.db.heartbeats.insert(update)
-            return response
+        return response['upserted'] if 'upserted' in response \
+            else self.db.heartbeats.find_one({"origin": heartbeat.origin}, fields={"_id": 1})["_id"]
 
     def delete_heartbeat(self, id):
 
