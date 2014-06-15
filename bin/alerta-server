@@ -2,8 +2,9 @@
 
 from alerta.common import config
 from alerta.common import log as logging
-from alerta.app import app, __version__
 from alerta.common.api import ApiClient
+
+from alerta.app import app, __version__
 
 LOG = logging.getLogger('alerta.app')
 CONF = config.CONF
@@ -14,3 +15,4 @@ if __name__ == '__main__':
     config.parse_args(version=__version__)
     logging.setup('alerta')
     app.run(host='0.0.0.0', port=8080, debug=True)
+

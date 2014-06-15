@@ -6,8 +6,4 @@ kombu
 librabbitmq
 pymongo
 Flask
-irc
-boto
-suds
-dynectDNS
-nose>=1.3.0
+nose

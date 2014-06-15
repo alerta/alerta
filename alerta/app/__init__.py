@@ -6,7 +6,7 @@ from alerta.common import log as logging
 from alerta.common.amqp import Messaging
 from alerta.app.database import Mongo
 
-__version__ = '3.0.3'
+from alerta import __version__
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF

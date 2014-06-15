@@ -7,18 +7,16 @@ from flask import request, current_app, render_template, abort
 
 from alerta.app import app, db, mq
 from alerta.app.switch import Switch
+from alerta.app.utils import parse_fields, crossdomain
+from alerta.app.metrics import Gauge, Counter, Timer
 from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
 from alerta.common.utils import DateEncoder
-from alerta.app.utils import parse_fields, crossdomain
 from alerta.common.amqp import DirectPublisher, FanoutPublisher
-from alerta.common.metrics import Gauge, Counter, Timer
 
-
-__version__ = '3.0.6'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
