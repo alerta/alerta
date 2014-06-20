@@ -3,7 +3,7 @@ import datetime
 
 from collections import defaultdict
 from functools import wraps
-from flask import request, current_app, render_template, abort
+from flask import request, current_app, render_template, redirect, abort
 
 from alerta.app import app, db
 from alerta.app.switch import Switch
@@ -76,9 +76,12 @@ def test():
         app_root=app.root_path,
     )
 
+@app.route('/')
+def root():
+    return redirect('/api', code=302)
 
 @app.route('/api', methods=['GET'])
-def routes():
+def index():
 
     rules = []
     for rule in app.url_map.iter_rules():
