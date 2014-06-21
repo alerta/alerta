@@ -39,6 +39,9 @@ class Messaging(object):
         if not CONF.amqp_url:
             return
 
+        if CONF.amqp_url.startswith('sqs://'):
+            CONF.amqp_url = 'sqs://' + CONF.amqp_url[6:].replace('/', '%2F')
+
         if CONF.amqp_sqs_region:
             transport_options = {'region': CONF.amqp_sqs_region}
         else:
