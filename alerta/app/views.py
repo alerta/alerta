@@ -15,15 +15,13 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
 from alerta.common.utils import DateEncoder
-from alerta.common.amqp import DirectPublisher, FanoutPublisher
+from alerta.common.amqp import FanoutPublisher
 
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-if CONF.amqp_queue:
-    direct = DirectPublisher(mq.connection)
-if CONF.amqp_topic:
+if CONF.output_topic:
     notify = FanoutPublisher(mq.connection)
 
 # Set-up metrics
@@ -202,9 +200,7 @@ def receive_alert():
             duplicate_timer.stop_timer(started)
 
             if CONF.forward_duplicate:
-                if alert and CONF.amqp_queue:
-                    direct.send(alert)
-                if alert and CONF.amqp_topic:
+                if alert and CONF.output_topic:
                     notify.send(alert)
 
         elif db.is_correlated(incomingAlert):
@@ -213,9 +209,7 @@ def receive_alert():
             alert = db.save_correlated(incomingAlert)
             correlate_timer.stop_timer(started)
 
-            if alert and CONF.amqp_queue:
-                direct.send(alert)
-            if alert and CONF.amqp_topic:
+            if alert and CONF.output_topic:
                 notify.send(alert)
 
         else:
@@ -223,9 +217,7 @@ def receive_alert():
             alert = db.create_alert(incomingAlert)
             create_timer.stop_timer(started)
 
-            if alert and CONF.amqp_queue:
-                direct.send(alert)
-            if alert and CONF.amqp_topic:
+            if alert and CONF.output_topic:
                 notify.send(alert)
 
         receive_timer.stop_timer(recv_started)
@@ -267,9 +259,7 @@ def set_status(id):
         return jsonify(status="error", message="no data")
 
     if alert:
-        if CONF.amqp_queue:
-            direct.send(alert)
-        if CONF.amqp_topic:
+        if CONF.output_topic:
             notify.send(alert)
         status_timer.stop_timer(status_started)
         return jsonify(status="ok")
@@ -515,9 +505,7 @@ def pagerduty():
         # Forward alert to notify topic and logger queue
         if pdAlert:
             pdAlert.origin = 'pagerduty/webhook'
-            if CONF.amqp_queue:
-                direct.send(pdAlert)
-            if CONF.amqp_topic:
+            if CONF.output_topic:
                 notify.send(pdAlert)
 
     return jsonify(status="ok")
