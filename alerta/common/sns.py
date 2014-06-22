@@ -71,8 +71,8 @@ class TopicPublisher(object):
 
     def send(self, msg):
 
-        self.connection.publish(topic=self.topic_arn, message=msg.get_body())
-
-        LOG.info('Message sent to SNS topic "%s"', self.topic_arn)
+        LOG.info('Sending message %s to SNS topic "%s"', msg.get_id(), self.topic_arn)
         LOG.debug('Message: %s', msg.get_body())
 
+        response = self.connection.publish(topic=self.topic_arn, message=msg.get_body())
+        LOG.debug('Response: %s', response)

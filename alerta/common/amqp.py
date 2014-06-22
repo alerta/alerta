@@ -15,8 +15,8 @@ CONF = config.CONF
 class Messaging(object):
 
     amqp_opts = {
-        'input_queue': '',
-        'output_topic': 'notify',
+        'queue': '',                                        # reserved for future use
+        'topic': 'notify',                                  # alarm topic
         'amqp_url': 'amqp://guest:guest@localhost:5672//',  # RabbitMQ
         # 'amqp_url': 'mongodb://localhost:27017/kombu',    # MongoDB
         # 'amqp_url': 'redis://localhost:6379/',            # Redis
@@ -62,19 +62,20 @@ class FanoutPublisher(object):
         config.register_opts(Messaging.amqp_opts)
 
         self.channel = connection.channel()
-        self.exchange_name = CONF.output_topic
+        self.exchange_name = CONF.topic
 
         self.exchange = Exchange(name=self.exchange_name, type='fanout', channel=self.channel)
         self.producer = Producer(exchange=self.exchange, channel=self.channel)
 
-        LOG.info('Configured fanout publisher on topic "%s"', CONF.output_topic)
+        LOG.info('Configured fanout publisher on topic "%s"', CONF.topic)
 
     def send(self, msg):
 
+        LOG.info('Sending message %s to AMQP topic "%s"', msg.get_id(), CONF.topic)
+        LOG.debug('Message: %s', msg.get_body())
+
         self.producer.publish(msg.get_body(), declare=[self.exchange], retry=True)
 
-        LOG.info('Message sent to topic "%s"', CONF.output_topic)
-        LOG.debug('Message: %s', msg.get_body())
 
 class DirectConsumer(ConsumerMixin):
 
