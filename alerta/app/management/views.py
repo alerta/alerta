@@ -4,7 +4,7 @@ import datetime
 
 from flask import request, Response, url_for, jsonify, render_template
 
-from alerta.app import app, db, mq
+from alerta.app import app, db
 from alerta.app.switch import Switch, SwitchState
 from alerta.app.utils import crossdomain
 from alerta.app.metrics import Gauge, Counter, Timer
@@ -93,9 +93,6 @@ def switchboard():
 def health_check():
 
     try:
-        if not mq.is_connected():
-            return 'NO_MESSAGE_QUEUE', 503
-
         if not db.conn.alive():
             return 'NO_DATABASE', 503
 

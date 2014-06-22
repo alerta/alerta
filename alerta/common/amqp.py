@@ -74,7 +74,7 @@ class FanoutPublisher(object):
         self.producer.publish(msg.get_body(), declare=[self.exchange], retry=True)
 
         LOG.info('Message sent to topic "%s"', CONF.output_topic)
-
+        LOG.debug('Message: %s', msg.get_body())
 
 class DirectConsumer(ConsumerMixin):
 

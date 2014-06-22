@@ -5,7 +5,7 @@ from collections import defaultdict
 from functools import wraps
 from flask import request, current_app, render_template, abort
 
-from alerta.app import app, db, mq
+from alerta.app import app, db
 from alerta.app.switch import Switch
 from alerta.app.utils import parse_fields, crossdomain
 from alerta.app.metrics import Gauge, Counter, Timer
@@ -15,13 +15,18 @@ from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
 from alerta.common.utils import DateEncoder
-from alerta.common.amqp import FanoutPublisher
-
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
 
-if CONF.output_topic:
+if CONF.transport == 'sns':
+    from alerta.common.sns import NotificationService, TopicPublisher
+    sns = NotificationService()
+    notify = TopicPublisher(sns)
+
+else:
+    from alerta.common.amqp import Messaging, FanoutPublisher
+    mq = Messaging()
     notify = FanoutPublisher(mq.connection)
 
 # Set-up metrics
