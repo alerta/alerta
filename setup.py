@@ -18,14 +18,14 @@ setuptools.setup(
     author_email='nick.satterly@theguardian.com',
     packages=setuptools.find_packages(exclude=['bin', 'tests']),
     install_requires=[
+        'Flask',
+        'pymongo',
+        'kombu',
+        'boto',
         'argparse',
         'requests',
         'PyYAML',
-        'pytz',
-        'kombu',
-        'pymongo',
-        'Flask',
-        'nose'
+        'pytz'
     ],
     include_package_data=True,
     zip_safe=False,
