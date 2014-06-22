@@ -16,15 +16,15 @@ DEFAULTS = {
     'version': 'unknown',
     'debug': 'no',
     'verbose': 'no',
-    'log_dir': '/var/log/alerta',
+    'log_dir': '/var/log',
     'log_file': '%s.log' % prog,
-    'pid_dir': '/var/run/alerta',
+    'pid_dir': '/var/run',
     'use_syslog': 'yes',
     'use_stderr': 'no',
     'foreground': 'no',
     'user_id': 'alerta',
     'server_threads': 4,
-    'disable_flag': '/var/lib/alerta/%s.disable' % prog,
+    'disable_flag': '/var/lib/%s.disable' % prog,
     'loop_every': 30,
     'global_timeout': 86400,  # seconds
     'console_limit': 10000,   # max number of alerts sent to console
