@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import setuptools
-
 import alerta
 
 with open('README.rst') as f:
@@ -30,7 +29,7 @@ setuptools.setup(
     include_package_data=True,
     zip_safe=False,
     scripts=[
-        'bin/alerta-server',
+        'bin/alertad',
     ],
     keywords='alert monitoring system wsgi application api',
     classifiers=[
