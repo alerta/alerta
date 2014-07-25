@@ -18,6 +18,7 @@ class Mongo(object):
     mongo_opts = {
         'mongo_host': 'localhost',
         'mongo_port': 27017,
+        'mongo_replset': '',  # alerta
         'mongo_database': 'monitoring',
         'mongo_username': 'admin',
         'mongo_password': '',
@@ -34,21 +35,24 @@ class Mongo(object):
     def connect(self):
 
         # Connect to MongoDB
-        try:
-            self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port)  # version >= 2.4
-        except AttributeError:
-            self.conn = pymongo.Connection(CONF.mongo_host, CONF.mongo_port)  # version < 2.4
-        except Exception, e:
-            LOG.error('MongoDB Client connection error : %s', e)
-            sys.exit(1)
+        if CONF.mongo_replset == '':
+            try:
+                self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port)
+            except Exception, e:
+                LOG.error('MongoDB Client connection error - %s:%s : %s', CONF.mongo_host, CONF.mongo_port, e)
+                sys.exit(1)
+            LOG.info('Connected to mongodb://%s:%s/%s', CONF.mongo_host, CONF.mongo_port, CONF.mongo_database)
+        else:
+            try:
+                self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port, replicaSet=CONF.mongo_replset)
+            except Exception, e:
+                LOG.error('MongoDB Client ReplicaSet connection error - %s:%s (replicaSet=%s) : %s',
+                          CONF.mongo_host, CONF.mongo_port, CONF.mongo_replset, e)
+                sys.exit(1)
+            LOG.info('Connected to mongodb://%s:%s/%s?replicaSet=%s',
+                     CONF.mongo_host, CONF.mongo_port, CONF.mongo_database, CONF.mongo_replset)
 
-        try:
-            self.db = self.conn[CONF.mongo_database]
-        except Exception, e:
-            LOG.error('MongoDB database error : %s', e)
-            sys.exit(1)
-
-        LOG.info('Connected to mongodb://%s:%s/%s', CONF.mongo_host, CONF.mongo_port, CONF.mongo_database)
+        self.db = self.conn[CONF.mongo_database]
 
         if CONF.mongo_password:
             try:
