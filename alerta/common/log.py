@@ -6,16 +6,10 @@ import logging.handlers
 import cStringIO
 import traceback
 
-from alerta.common import config
-
-CONF = config.CONF
+from alerta import settings
 
 _DEFAULT_LOG_FORMAT = "%(asctime)s.%(msecs).03d %(name)s[%(process)d] %(threadName)s %(levelname)s - %(message)s"
 _DEFAULT_LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-
-log_opts = {
-    'syslog_facility': 'local7',
-}
 
 
 def _create_logging_excepthook(name):
@@ -34,18 +28,16 @@ def _create_logging_excepthook(name):
 def setup(name):
     """Setup logging."""
 
-    config.register_opts(log_opts)
-
     sys.excepthook = _create_logging_excepthook(name)
 
     log_root = getLogger(name)
 
-    if CONF.use_syslog:
+    if settings.USE_SYSLOG:
         if sys.platform == "darwin":
             socket = '/var/run/syslog'
         else:
             socket = '/dev/log'
-        facility = CONF.syslog_facility
+        facility = settings.SYSLOG_FACILITY
 
         try:
             syslog = logging.handlers.SysLogHandler(address=socket, facility=facility)
@@ -70,15 +62,15 @@ def setup(name):
         date_format = _DEFAULT_LOG_DATE_FORMAT
         handler.setFormatter(logging.Formatter(fmt=log_format, datefmt=date_format))
 
-    if CONF.use_stderr:
+    if settings.USE_STDERR:
         streamlog = ColorHandler()
         color_fmt = logging.Formatter("%(color)s" + _DEFAULT_LOG_FORMAT + "\033[0m")
         streamlog.setFormatter(color_fmt)
         log_root.addHandler(streamlog)
 
-    if CONF.debug:
+    if settings.DEBUG:
         log_root.setLevel(logging.DEBUG)
-    elif CONF.verbose:
+    elif settings.VERBOSE:
         log_root.setLevel(logging.INFO)
     else:
         log_root.setLevel(logging.WARNING)
@@ -101,8 +93,8 @@ def _get_prog_name():
 
 
 def _get_log_file_path():
-    logfile = CONF.log_file
-    logdir = CONF.log_dir
+    logfile = settings.LOG_FILE
+    logdir = settings.LOG_DIR
 
     if logfile and not logdir:
         return logfile

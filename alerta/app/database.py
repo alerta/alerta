@@ -4,29 +4,17 @@ import datetime
 import pymongo
 
 from alerta.common import log as logging
-from alerta.common import config
 from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import HeartbeatDocument
 from alerta.common import severity_code, status_code
+from alerta import settings
 
 LOG = logging.getLogger(__name__)
-CONF = config.CONF
 
 
 class Mongo(object):
 
-    mongo_opts = {
-        'mongo_host': 'localhost',
-        'mongo_port': 27017,
-        'mongo_replset': '',  # alerta
-        'mongo_database': 'monitoring',
-        'mongo_username': 'admin',
-        'mongo_password': '',
-    }
-
     def __init__(self):
-
-        config.register_opts(Mongo.mongo_opts)
 
         self.db = None
         self.conn = None
@@ -34,29 +22,28 @@ class Mongo(object):
 
     def connect(self):
 
-        # Connect to MongoDB
-        if CONF.mongo_replset == '':
+        if not settings.MONGO_REPLSET:
             try:
-                self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port)
+                self.conn = pymongo.MongoClient(settings.MONGO_HOST, settings.MONGO_PORT)
             except Exception, e:
-                LOG.error('MongoDB Client connection error - %s:%s : %s', CONF.mongo_host, CONF.mongo_port, e)
+                LOG.error('MongoDB Client connection error - %s:%s : %s', settings.MONGO_HOST, settings.MONGO_PORT, e)
                 sys.exit(1)
-            LOG.info('Connected to mongodb://%s:%s/%s', CONF.mongo_host, CONF.mongo_port, CONF.mongo_database)
+            LOG.info('Connected to mongodb://%s:%s/%s', settings.MONGO_HOST, settings.MONGO_PORT, settings.MONGO_DATABASE)
         else:
             try:
-                self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port, replicaSet=CONF.mongo_replset)
+                self.conn = pymongo.MongoClient(settings.MONGO_HOST, settings.MONGO_PORT, replicaSet=settings.MONGO_REPLSET)
             except Exception, e:
                 LOG.error('MongoDB Client ReplicaSet connection error - %s:%s (replicaSet=%s) : %s',
-                          CONF.mongo_host, CONF.mongo_port, CONF.mongo_replset, e)
+                          settings.MONGO_HOST, settings.MONGO_PORT, settings.MONGO_REPLSET, e)
                 sys.exit(1)
             LOG.info('Connected to mongodb://%s:%s/%s?replicaSet=%s',
-                     CONF.mongo_host, CONF.mongo_port, CONF.mongo_database, CONF.mongo_replset)
+                     settings.MONGO_HOST, settings.MONGO_PORT, settings.MONGO_DATABASE, settings.MONGO_REPLSET)
 
-        self.db = self.conn[CONF.mongo_database]
+        self.db = self.conn[settings.MONGO_DATABASE]
 
-        if CONF.mongo_password:
+        if settings.MONGO_PASSWORD:
             try:
-                self.db.authenticate(CONF.mongo_username, password=CONF.mongo_password)
+                self.db.authenticate(settings.MONGO_USERNAME, password=settings.MONGO_PASSWORD)
             except Exception, e:
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)

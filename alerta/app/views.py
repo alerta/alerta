@@ -5,21 +5,19 @@ from collections import defaultdict
 from functools import wraps
 from flask import request, current_app, render_template, redirect, abort
 
+from alerta import settings
 from alerta.app import app, db
 from alerta.app.switch import Switch
 from alerta.app.utils import parse_fields, crossdomain
 from alerta.app.metrics import Gauge, Counter, Timer
-from alerta.common import config
 from alerta.common import log as logging
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
-from alerta.common.utils import DateEncoder
 
 LOG = logging.getLogger(__name__)
-CONF = config.CONF
 
-if CONF.transport == 'sns':
+if settings.TRANSPORT == 'sns':
     from alerta.common.sns import SimpleNotificationService, TopicPublisher
     sns = SimpleNotificationService()
     notify = TopicPublisher(sns)
@@ -39,6 +37,15 @@ delete_timer = Timer('alerts', 'deleted', 'Deleted alerts', 'Total time to proce
 status_timer = Timer('alerts', 'status', 'Alert status change', 'Total time and number of alerts with status changed')
 tag_timer = Timer('alerts', 'tagged', 'Tagging alerts', 'Total time to tag number of alerts')
 untag_timer = Timer('alerts', 'untagged', 'Removing tags from alerts', 'Total time to un-tag number of alerts')
+
+
+class DateEncoder(json.JSONEncoder):
+    def default(self, obj):
+
+        if isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (obj.microsecond // 1000)
+        else:
+            return json.JSONEncoder.default(self, obj)
 
 
 # Over-ride jsonify to support Date Encoding
@@ -104,7 +111,7 @@ def get_alerts():
         return jsonify(status="error", message=str(e))
 
     fields = dict()
-    fields['history'] = {'$slice': CONF.history_limit}
+    fields['history'] = {'$slice': settings.HISTORY_LIMIT}
 
     if 'status' not in query:
         query['status'] = {'$ne': "expired"}  # hide expired if status not in query
@@ -207,9 +214,8 @@ def receive_alert():
             alert = db.save_duplicate(incomingAlert)
             duplicate_timer.stop_timer(started)
 
-            if CONF.forward_duplicate:
-                if alert and CONF.topic:
-                    notify.send(alert)
+            if alert and settings.TOPIC:
+                notify.send(alert)
 
         elif db.is_correlated(incomingAlert):
 
@@ -217,7 +223,7 @@ def receive_alert():
             alert = db.save_correlated(incomingAlert)
             correlate_timer.stop_timer(started)
 
-            if alert and CONF.topic:
+            if alert and settings.TOPIC:
                 notify.send(alert)
 
         else:
@@ -225,7 +231,7 @@ def receive_alert():
             alert = db.create_alert(incomingAlert)
             create_timer.stop_timer(started)
 
-            if alert and CONF.topic:
+            if alert and settings.TOPIC:
                 notify.send(alert)
 
         receive_timer.stop_timer(recv_started)
@@ -267,7 +273,7 @@ def set_status(id):
         return jsonify(status="error", message="no data")
 
     if alert:
-        if CONF.topic:
+        if settings.TOPIC:
             notify.send(alert)
         status_timer.stop_timer(status_started)
         return jsonify(status="ok")
@@ -513,7 +519,7 @@ def pagerduty():
         # Forward alert to notify topic and logger queue
         if pdAlert:
             pdAlert.origin = 'pagerduty/webhook'
-            if CONF.topic:
+            if settings.TOPIC:
                 notify.send(pdAlert)
 
     return jsonify(status="ok")

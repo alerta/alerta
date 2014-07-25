@@ -4,38 +4,28 @@ import sys
 import boto.sns
 import boto.exception
 
+from alerta import settings
 from alerta.common import log as logging
-from alerta.common import config
 
 LOG = logging.getLogger(__name__)
-CONF = config.CONF
 
 
 class SimpleNotificationService(object):
 
-    sns_opts = {
-        'topic': 'notify',                                  # alarm topic
-        'aws_access_key_id': 'AWS_ACCESS_KEY_ID',
-        'aws_secret_access_key': 'AWS_SECRET_ACCESS_KEY',
-        'region': 'eu-west-1',
-    }
-
     def __init__(self):
-
-        config.register_opts(SimpleNotificationService.sns_opts)
 
         try:
             self.connection = boto.sns.connect_to_region(
-                region_name=CONF.region,
-                aws_access_key_id=CONF.aws_access_key_id,
-                aws_secret_access_key=CONF.aws_secret_access_key
+                region_name=settings.REGION,
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
             )
         except Exception, e:
-            LOG.error('Error connecting to SNS topic %s: %s', CONF.topic, e)
+            LOG.error('Error connecting to SNS topic %s: %s', settings.TOPIC, e)
             sys.exit(1)
 
         if not self.connection:
-            LOG.error('Failed to connect to SNS topic %s - check AWS authentication settings and region', CONF.topic)
+            LOG.error('Failed to connect to SNS topic %s - check AWS authentication settings and region', settings.TOPIC)
             sys.exit(1)
 
         LOG.info('Notification service connected to %s', self.connection)
@@ -56,15 +46,15 @@ class TopicPublisher(object):
         self.connection = sns.connection
 
         try:
-            response = self.connection.create_topic(CONF.topic)
+            response = self.connection.create_topic(settings.TOPIC)
         except boto.exception.BotoServerError as e:
-            LOG.error('Error creating SNS topic %s: %s', CONF.topic, e)
+            LOG.error('Error creating SNS topic %s: %s', settings.TOPIC, e)
             sys.exit(1)
 
         try:
             self.topic_arn = response['CreateTopicResponse']['CreateTopicResult']['TopicArn']
         except KeyError:
-            LOG.error('Failed to get SNS TopicArn for %s', CONF.topic)
+            LOG.error('Failed to get SNS TopicArn for %s', settings.TOPIC)
             sys.exit(1)
 
         LOG.info('Configured SNS publisher on topic "%s"', self.topic_arn)
