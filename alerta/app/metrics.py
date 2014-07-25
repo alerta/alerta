@@ -4,10 +4,8 @@ import time
 from alerta.app.database import Mongo
 
 from alerta.common import log as logging
-from alerta.common import config
 
 LOG = logging.getLogger(__name__)
-CONF = config.CONF
 
 mongo = Mongo()
 db = mongo.db
