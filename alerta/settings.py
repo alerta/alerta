@@ -1,11 +1,11 @@
 
 DEBUG = False
 VERBOSE = False
-USE_SYSLOG = True
+USE_SYSLOG = False
 USE_STDERR = False
 
-LOG_FILE = 'alerta.log'
 LOG_DIR = '/var/log'
+LOG_FILE = 'alerta.log'
 
 SYSLOG_FACILITY = 'local7'
 
@@ -27,7 +27,7 @@ MONGO_PASSWORD = None
 # Plugins
 QUEUE = ''
 TOPIC = 'notify'
-TRANSPORTS = ['amqp', 'sns', 'logstash']
+TRANSPORT = 'amqp'  # 'amqp', 'sns', 'logstash'
 
 AMQP_URL = 'amqp://guest:guest@localhost:5672//'  # RabbitMQ
 # AMQP_URL = 'mongodb://localhost:27017/kombu'    # MongoDB

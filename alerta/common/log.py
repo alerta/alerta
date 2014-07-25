@@ -62,7 +62,7 @@ def setup(name):
         date_format = _DEFAULT_LOG_DATE_FORMAT
         handler.setFormatter(logging.Formatter(fmt=log_format, datefmt=date_format))
 
-    if settings.USER_STDERR:
+    if settings.USE_STDERR:
         streamlog = ColorHandler()
         color_fmt = logging.Formatter("%(color)s" + _DEFAULT_LOG_FORMAT + "\033[0m")
         streamlog.setFormatter(color_fmt)
