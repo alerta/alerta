@@ -25,7 +25,7 @@ MONGO_PASSWORD = None
 
 
 # Plugins
-PLUGINS = ['amqp']
+PLUGINS = ['amqp', 'logstash', 'sns']
 AMQP_TOPIC = 'notify'  # used by AMQP and SNS plugins
 
 AMQP_URL = 'amqp://guest:guest@localhost:5672//'  # RabbitMQ
@@ -37,4 +37,8 @@ SNS_TOPIC = 'notify'
 AWS_ACCESS_KEY_ID = ''
 AWS_SECRET_ACCESS_KEY = ''
 REGION = 'eu-west-1'
+
+# Logstash
+LOGSTASH_HOST = 'localhost'
+LOGSTASH_PORT = 6379
 
