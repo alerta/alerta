@@ -7,11 +7,10 @@ from datetime import timedelta
 from flask import make_response, request, current_app
 from functools import update_wrapper
 
-from alerta.common import config
+from alerta import settings
 from alerta.common import log as logging
 
 LOG = logging.getLogger(__name__)
-CONF = config.CONF
 
 
 PARAMS_EXCLUDE = [
@@ -83,7 +82,7 @@ def parse_fields(request):
         limit = params.get('limit')
         del params['limit']
     else:
-        limit = CONF.console_limit
+        limit = settings.QUERY_LIMIT
     limit = int(limit)
 
     for field in params:

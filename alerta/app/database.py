@@ -9,30 +9,19 @@ import random
 import hashlib
 
 from alerta.common import log as logging
-from alerta.common import config
 from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import HeartbeatDocument
 from alerta.common import severity_code, status_code
+from alerta import settings
 
 LOG = logging.getLogger(__name__)
-CONF = config.CONF
 
 SECRET_KEY = '<insert secret key here>'
 
 
 class Mongo(object):
 
-    mongo_opts = {
-        'mongo_host': 'localhost',
-        'mongo_port': 27017,
-        'mongo_database': 'monitoring',
-        'mongo_username': 'admin',
-        'mongo_password': '',
-    }
-
     def __init__(self):
-
-        config.register_opts(Mongo.mongo_opts)
 
         self.db = None
         self.conn = None
@@ -40,26 +29,28 @@ class Mongo(object):
 
     def connect(self):
 
-        # Connect to MongoDB
-        try:
-            self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port)  # version >= 2.4
-        except AttributeError:
-            self.conn = pymongo.Connection(CONF.mongo_host, CONF.mongo_port)  # version < 2.4
-        except Exception, e:
-            LOG.error('MongoDB Client connection error : %s', e)
-            sys.exit(1)
-
-        try:
-            self.db = self.conn[CONF.mongo_database]
-        except Exception, e:
-            LOG.error('MongoDB database error : %s', e)
-            sys.exit(1)
-
-        LOG.info('Connected to mongodb://%s:%s/%s', CONF.mongo_host, CONF.mongo_port, CONF.mongo_database)
-
-        if CONF.mongo_password:
+        if not settings.MONGO_REPLSET:
             try:
-                self.db.authenticate(CONF.mongo_username, password=CONF.mongo_password)
+                self.conn = pymongo.MongoClient(settings.MONGO_HOST, settings.MONGO_PORT)
+            except Exception, e:
+                LOG.error('MongoDB Client connection error - %s:%s : %s', settings.MONGO_HOST, settings.MONGO_PORT, e)
+                sys.exit(1)
+            LOG.info('Connected to mongodb://%s:%s/%s', settings.MONGO_HOST, settings.MONGO_PORT, settings.MONGO_DATABASE)
+        else:
+            try:
+                self.conn = pymongo.MongoClient(settings.MONGO_HOST, settings.MONGO_PORT, replicaSet=settings.MONGO_REPLSET)
+            except Exception, e:
+                LOG.error('MongoDB Client ReplicaSet connection error - %s:%s (replicaSet=%s) : %s',
+                          settings.MONGO_HOST, settings.MONGO_PORT, settings.MONGO_REPLSET, e)
+                sys.exit(1)
+            LOG.info('Connected to mongodb://%s:%s/%s?replicaSet=%s',
+                     settings.MONGO_HOST, settings.MONGO_PORT, settings.MONGO_DATABASE, settings.MONGO_REPLSET)
+
+        self.db = self.conn[settings.MONGO_DATABASE]
+
+        if settings.MONGO_PASSWORD:
+            try:
+                self.db.authenticate(settings.MONGO_USERNAME, password=settings.MONGO_PASSWORD)
             except Exception, e:
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
