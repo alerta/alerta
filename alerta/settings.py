@@ -1,5 +1,5 @@
 
-DEBUG = False
+DEBUG = True
 VERBOSE = False
 USE_SYSLOG = False
 USE_STDERR = False
@@ -25,16 +25,15 @@ MONGO_PASSWORD = None
 
 
 # Plugins
-PLUGINS = ['amqp', 'sns', 'logstash']
-
-QUEUE = ''
-TOPIC = 'notify'
-TRANSPORT = 'amqp'  # 'amqp', 'sns', 'logstash'
+PLUGINS = ['amqp']
+AMQP_TOPIC = 'notify'  # used by AMQP and SNS plugins
 
 AMQP_URL = 'amqp://guest:guest@localhost:5672//'  # RabbitMQ
 # AMQP_URL = 'mongodb://localhost:27017/kombu'    # MongoDB
 # AMQP_URL = 'redis://localhost:6379/'            # Redis
 
+# Required by SNS plug-in
+SNS_TOPIC = 'notify'
 AWS_ACCESS_KEY_ID = ''
 AWS_SECRET_ACCESS_KEY = ''
 REGION = 'eu-west-1'

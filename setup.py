@@ -33,8 +33,8 @@ setuptools.setup(
     ],
     entry_points={
         'alerta.plugins': [
-            'amqp = alerta.plugins.amqp:Messaging',
-            'sns = alerta.plugins.sns:SimpleNotificationService',
+            'amqp = alerta.plugins.amqp:FanoutPublisher',
+            'sns = alerta.plugins.sns:SnsTopicPublisher',
             'logstash = alerta.plugins.logstash:LogStashOutput',
         ],
     },
