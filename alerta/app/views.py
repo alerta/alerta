@@ -14,18 +14,17 @@ from alerta.common import log as logging
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
+from alerta.plugins import load_plugins
 
 LOG = logging.getLogger(__name__)
 
-if settings.TRANSPORT == 'sns':
-    from alerta.common.sns import SimpleNotificationService, TopicPublisher
-    sns = SimpleNotificationService()
-    notify = TopicPublisher(sns)
 
-else:
-    from alerta.common.amqp import Messaging, FanoutPublisher
-    mq = Messaging()
-    notify = FanoutPublisher(mq.connection)
+@app.before_first_request
+def setup():
+    global plugins
+    plugins = load_plugins()
+    LOG.debug('Loaded plug-ins: %s', plugins)
+
 
 # Set-up metrics
 gets_timer = Timer('alerts', 'queries', 'Alert queries', 'Total time to process number of alert queries')
@@ -214,8 +213,8 @@ def receive_alert():
             alert = db.save_duplicate(incomingAlert)
             duplicate_timer.stop_timer(started)
 
-            if alert and settings.TOPIC:
-                notify.send(alert)
+            for plugin in plugins:
+                plugin.send(alert)
 
         elif db.is_correlated(incomingAlert):
 
@@ -223,16 +222,16 @@ def receive_alert():
             alert = db.save_correlated(incomingAlert)
             correlate_timer.stop_timer(started)
 
-            if alert and settings.TOPIC:
-                notify.send(alert)
+            for plugin in plugins:
+                plugin.send(alert)
 
         else:
             started = create_timer.start_timer()
             alert = db.create_alert(incomingAlert)
             create_timer.stop_timer(started)
 
-            if alert and settings.TOPIC:
-                notify.send(alert)
+            for plugin in plugins:
+                plugin.send(alert)
 
         receive_timer.stop_timer(recv_started)
 
@@ -273,8 +272,8 @@ def set_status(id):
         return jsonify(status="error", message="no data")
 
     if alert:
-        if settings.TOPIC:
-            notify.send(alert)
+        for plugin in plugins:
+            plugin.send(alert)
         status_timer.stop_timer(status_started)
         return jsonify(status="ok")
     else:
@@ -510,17 +509,17 @@ def pagerduty():
 
         LOG.info('PagerDuty webhook %s change status to %s', message['type'], status)
 
-        pdAlert = db.update_status(id=id, status=status, text=text)
+        alert = db.update_status(id=id, status=status, text=text)
         db.tag_alert(id=id, tags='incident=#%s' % incident_number)
 
-        LOG.error('returned status %s', pdAlert.status)
+        LOG.error('returned status %s', alert.status)
         LOG.error('current status %s', db.get_alert(id=id).status)
 
         # Forward alert to notify topic and logger queue
-        if pdAlert:
-            pdAlert.origin = 'pagerduty/webhook'
-            if settings.TOPIC:
-                notify.send(pdAlert)
+        if alert:
+            alert.origin = 'pagerduty/webhook'
+            for plugin in plugins:
+                plugin.send(alert)
 
     return jsonify(status="ok")
 

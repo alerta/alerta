@@ -25,6 +25,8 @@ MONGO_PASSWORD = None
 
 
 # Plugins
+PLUGINS = ['amqp', 'sns', 'logstash']
+
 QUEUE = ''
 TOPIC = 'notify'
 TRANSPORT = 'amqp'  # 'amqp', 'sns', 'logstash'

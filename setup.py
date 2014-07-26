@@ -31,6 +31,13 @@ setuptools.setup(
     scripts=[
         'bin/alertad',
     ],
+    entry_points={
+        'alerta.plugins': [
+            'amqp = alerta.plugins.amqp:Messaging',
+            'sns = alerta.plugins.sns:SimpleNotificationService',
+            'logstash = alerta.plugins.logstash:LogStashOutput',
+        ],
+    },
     keywords='alert monitoring system wsgi application api',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
