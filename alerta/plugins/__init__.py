@@ -21,14 +21,14 @@ def load_plugins(namespace='alerta.plugins'):
 
     plugins = []
     for ep in list(pkg_resources.iter_entry_points(namespace)):
-        LOG.debug('Found plugin %r', ep)
+        LOG.debug('Found plug-in %r', ep)
         try:
-            plugin = ep.load()
-            if plugin:
-                if ep.name in settings.PLUGINS:
+            if ep.name in settings.PLUGINS:
+                plugin = ep.load()
+                if plugin:
                     plugins.append(plugin())
-                else:
-                    LOG.info("%s plugin not enabled", ep.name)
+            else:
+                LOG.info("%s plug-in not enabled", ep.name)
         except Exception as e:
-            LOG.error('Could not load %r: %s', ep.name, e)
+            LOG.error('Could not load plug-in %s: %s', ep.name, e)
     return plugins
