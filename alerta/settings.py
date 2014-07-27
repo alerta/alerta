@@ -23,6 +23,7 @@ MONGO_REPLSET = None  # 'alerta'
 MONGO_USERNAME = 'alerta'
 MONGO_PASSWORD = None
 
+EMAIL_ALLOW = ['guardian.co.uk', 'gmail.com']
 
 # Plugins
 PLUGINS = ['amqp', 'logstash', 'sns']

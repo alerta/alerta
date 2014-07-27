@@ -73,6 +73,22 @@ def verify_token(token):
     if 'error' in token_info:
         LOG.warning('Token authentication failed: %s', token_info['error'])
         return False
+
+    if 'email' in token_info:
+        if token_info['email'].split('@')[1] not in settings.EMAIL_ALLOW:
+            LOG.info('User %s not authorized to access API', token_info['email'])
+            return False
+    else:
+        user_info = get_user_info(token)
+        LOG.debug('User info %s', json.dumps(user_info))
+        if 'email' in user_info:
+            if user_info['email'].split('@')[1] not in settings.EMAIL_ALLOW:
+                LOG.warning('User %s not authorized to access API', user_info['email'])
+                return False
+        else:
+            LOG.warning('No email address present in token or user info')
+            return False
+
     return True
 
 
