@@ -1,12 +1,11 @@
 
-import logging
 import boto.sns
 import boto.exception
 
 from alerta.app import app
 from alerta.plugins import PluginBase
 
-LOG = logging.getLogger(__name__)
+LOG = app.logger
 
 
 class SnsTopicPublisher(PluginBase):

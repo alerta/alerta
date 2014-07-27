@@ -2,7 +2,6 @@
 import sys
 import datetime
 import pymongo
-import logging
 
 import base64
 import hmac
@@ -14,7 +13,7 @@ from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import HeartbeatDocument
 from alerta.common import severity_code, status_code
 
-LOG = logging.getLogger(__name__)
+LOG = app.logger
 
 
 class Mongo(object):

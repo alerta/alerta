@@ -1,7 +1,6 @@
 import json
 import datetime
 import requests
-import logging
 
 from collections import defaultdict
 from functools import wraps
@@ -16,7 +15,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
 from alerta.plugins import load_plugins
 
-LOG = logging.getLogger(__name__)
+LOG = app.logger
 
 @app.before_first_request
 def setup():

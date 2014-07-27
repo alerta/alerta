@@ -4,6 +4,13 @@
 
 DEBUG = True
 
+LOG_FILE = '/var/log/alerta.log'
+LOG_FORMAT = '%(asctime)s %(name)s[%(process)d] %(threadName)s %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
+
+USE_SYSLOG = True
+SYSLOG_SOCKET = '/dev/log'  # Linux = /dev/log, Mac OSX = /var/run/syslog
+SYSLOG_FACILITY = 'local7'
+
 QUERY_LIMIT = 10000  # maximum number of alerts returned by a single query
 HISTORY_LIMIT = 100  #
 

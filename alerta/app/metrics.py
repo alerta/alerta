@@ -1,11 +1,11 @@
 
 import time
-import logging
 
+from alerta.app import app
 from alerta.app.database import Mongo
 
 
-LOG = logging.getLogger(__name__)
+LOG = app.logger
 
 mongo = Mongo()
 db = mongo.db

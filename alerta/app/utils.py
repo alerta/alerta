@@ -2,7 +2,6 @@ import json
 import datetime
 import pytz
 import re
-import logging
 
 from datetime import timedelta
 from flask import make_response, request, current_app
@@ -10,7 +9,7 @@ from functools import update_wrapper
 
 from alerta.app import app
 
-LOG = logging.getLogger(__name__)
+LOG = app.logger
 
 
 PARAMS_EXCLUDE = [
