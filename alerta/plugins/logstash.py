@@ -2,7 +2,7 @@
 import socket
 import logging
 
-from alerta import settings
+from alerta.app import app
 from alerta.plugins import PluginBase
 
 LOG = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ class LogStashOutput(PluginBase):
 
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.connect((settings.LOGSTASH_HOST, settings.LOGSTASH_PORT))
+            self.sock.connect((app.config['LOGSTASH_HOST'], app.config['LOGSTASH_PORT']))
         except Exception:
             raise RuntimeError("Logstash connection error")
 

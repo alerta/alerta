@@ -1,23 +1,22 @@
 import json
 import datetime
+import requests
+import logging
 
 from collections import defaultdict
 from functools import wraps
 from flask import request, current_app, render_template, redirect, abort
 
-from alerta import settings
 from alerta.app import app, db
 from alerta.app.switch import Switch
 from alerta.app.utils import parse_fields, crossdomain
 from alerta.app.metrics import Gauge, Counter, Timer
-from alerta.common import log as logging
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
 from alerta.plugins import load_plugins
 
 LOG = logging.getLogger(__name__)
-
 
 @app.before_first_request
 def setup():
@@ -53,10 +52,106 @@ def jsonify(*args, **kwargs):
                                                  indent=None if request.is_xhr else 2), mimetype='application/json')
 
 
+def authenticate():
+
+    response = jsonify(status="error", message="authentication required")
+    response.status_code = 401
+
+    return response
+
+
+def verify_token(token):
+
+    LOG.debug('we got a token %s, verify token externally and save session id', token)
+
+    url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + token
+    response = requests.get(url)
+    token_info = response.json()
+    LOG.debug('Token info %s', json.dumps(token_info))
+
+    if 'error' in token_info:
+        LOG.warning('Token authentication failed: %s', token_info['error'])
+        return False
+
+    if 'email' in token_info:
+        if token_info['email'].split('@')[1] not in app.config['ALLOWED_EMAIL_DOMAINS']:
+            LOG.info('User %s not authorized to access API', token_info['email'])
+            return False
+    else:
+        user_info = get_user_info(token)
+        LOG.debug('User info %s', json.dumps(user_info))
+        if 'email' in user_info:
+            if user_info['email'].split('@')[1] not in app.config['ALLOWED_EMAIL_DOMAINS']:
+                LOG.warning('User %s not authorized to access API', user_info['email'])
+                return False
+        else:
+            LOG.warning('No email address present in token or user info')
+            return False
+
+    return True
+
+
+def verify_api_key(key):
+
+    LOG.debug('we got a api key %s, verify key internally', key)
+
+    if not db.is_key_valid(key):
+        return False
+
+    db.update_key(key)
+    return True
+
+
+def get_user_info(token):
+
+    url = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' + token
+    response = requests.get(url)
+    user_info = response.json()
+    LOG.debug('User info %s', json.dumps(user_info))
+
+    if 'error' in user_info:
+        LOG.warning('Token authentication failed: %s', user_info['error'])
+        return None
+
+    return user_info
+
+
+def auth_required(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        # check is session variable?
+
+        if 'Authorization' in request.headers:
+            auth = request.headers['Authorization']
+            LOG.debug(auth)
+            if auth.startswith('Token'):
+                token = auth.replace('Token ', '')
+                if not verify_token(token):
+                    return authenticate()
+            elif auth.startswith('Key'):
+                key = auth.replace('Key ', '')
+                if not verify_api_key(key):
+                    return authenticate()
+            else:
+                return authenticate()
+        elif 'token' in request.args:
+            token = request.args['token']
+            if not verify_token(token):
+                return authenticate()
+        elif 'api-key' in request.args:
+            key = request.args['key']
+            if not verify_api_key(key):
+                return authenticate()
+        else:
+            return authenticate()
+        return func(*args, **kwargs)
+    return decorated
+
+
 def jsonp(func):
     """Wraps JSONified output for JSONP requests."""
     @wraps(func)
-    def decorated_function(*args, **kwargs):
+    def decorated(*args, **kwargs):
         callback = request.args.get('callback', False)
         if callback:
             data = str(func(*args, **kwargs).data)
@@ -65,7 +160,7 @@ def jsonp(func):
             return current_app.response_class(content, mimetype=mimetype)
         else:
             return func(*args, **kwargs)
-    return decorated_function
+    return decorated
 
 
 @app.route('/_', methods=['OPTIONS', 'PUT', 'POST', 'DELETE', 'GET'])
@@ -97,8 +192,9 @@ def index():
     return render_template('index.html', rules=rules)
 
 
-@app.route('/api/alerts', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/alerts', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_alerts():
 
@@ -110,7 +206,7 @@ def get_alerts():
         return jsonify(status="error", message=str(e))
 
     fields = dict()
-    fields['history'] = {'$slice': settings.HISTORY_LIMIT}
+    fields['history'] = {'$slice': app.config['HISTORY_LIMIT']}
 
     if 'status' not in query:
         query['status'] = {'$ne': "expired"}  # hide expired if status not in query
@@ -165,8 +261,9 @@ def get_alerts():
             autoRefresh=Switch.get('auto-refresh-allow').is_on()
         )
 
-@app.route('/api/alerts/history', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/alerts/history', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_history():
 
@@ -192,7 +289,8 @@ def get_history():
         )
 
 @app.route('/api/alert', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def receive_alert():
     #
@@ -245,7 +343,8 @@ def receive_alert():
 
 
 @app.route('/api/alert/<id>', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_alert(id):
 
@@ -258,7 +357,8 @@ def get_alert(id):
 
 
 @app.route('/api/alert/<id>/status', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def set_status(id):
 
@@ -282,7 +382,8 @@ def set_status(id):
 
 
 @app.route('/api/alert/<id>/tag', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def tag_alert(id):
 
@@ -303,7 +404,8 @@ def tag_alert(id):
 
 
 @app.route('/api/alert/<id>/untag', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def untag_alert(id):
 
@@ -324,7 +426,8 @@ def untag_alert(id):
 
 
 @app.route('/api/alert/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def delete_alert(id):
 
@@ -341,8 +444,9 @@ def delete_alert(id):
 
 
 # Return severity and status counts
-@app.route('/api/alerts/count', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/alerts/count', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_counts():
 
@@ -373,8 +477,9 @@ def get_counts():
     )
 
 
-@app.route('/api/alerts/top10', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/alerts/top10', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_top10():
 
@@ -399,8 +504,9 @@ def get_top10():
             top10=[],
         )
 
-@app.route('/api/environments', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/environments', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_environments():
 
@@ -426,8 +532,9 @@ def get_environments():
         )
 
 
-@app.route('/api/services', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/services', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_services():
 
@@ -452,7 +559,7 @@ def get_services():
             services=[],
         )
 
-@app.route('/api/pagerduty', methods=['POST'])
+@app.route('/api/pagerduty', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 def pagerduty():
 
@@ -525,8 +632,9 @@ def pagerduty():
 
 
 # Return a list of heartbeats
-@app.route('/api/heartbeats', methods=['GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/api/heartbeats', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def get_heartbeats():
 
@@ -543,7 +651,8 @@ def get_heartbeats():
     )
 
 @app.route('/api/heartbeat', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def create_heartbeat():
 
@@ -557,7 +666,8 @@ def create_heartbeat():
     return jsonify(status="ok", id=heartbeat_id)
 
 @app.route('/api/heartbeat/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
 @jsonp
 def delete_heartbeat(id):
 
@@ -568,3 +678,54 @@ def delete_heartbeat(id):
             return jsonify(status="ok")
         else:
             return jsonify(status="error", message="failed to delete heartbeat")
+
+@app.route('/api/keys/<user>', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
+@jsonp
+def get_keys(user):
+
+    keys = db.get_keys({"user": user})
+
+    return jsonify(
+        status="ok",
+        total=len(keys),
+        keys=keys,
+        time=datetime.datetime.utcnow()
+    )
+
+@app.route('/api/key', methods=['OPTIONS', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
+@jsonp
+def create_key():
+
+    if request.json and 'user' in request.json:
+        user = request.json["user"]
+        data = {
+            "user": user,
+            "text": request.json.get("text", "API Key for %s" % user)
+        }
+
+        key = db.create_key(data)
+    else:
+        key = None
+
+    if key:
+        return jsonify(status="ok", key=key)
+    else:
+        return jsonify(status="error", message="failed to generate api key")
+
+@app.route('/api/key/<key>', methods=['OPTIONS', 'DELETE', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
+@jsonp
+def delete_key(key):
+
+    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+        response = db.delete_key(key)
+
+        if response:
+            return jsonify(status="ok")
+        else:
+            return jsonify(status="error", message="failed to delete api key")

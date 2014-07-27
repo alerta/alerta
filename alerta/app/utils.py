@@ -2,20 +2,22 @@ import json
 import datetime
 import pytz
 import re
+import logging
 
 from datetime import timedelta
 from flask import make_response, request, current_app
 from functools import update_wrapper
 
-from alerta import settings
-from alerta.common import log as logging
+from alerta.app import app
 
 LOG = logging.getLogger(__name__)
 
 
 PARAMS_EXCLUDE = [
     '_',
-    'callback'
+    'callback',
+    'token',
+    'api-key'
 ]
 
 
@@ -80,7 +82,7 @@ def parse_fields(request):
         limit = params.get('limit')
         del params['limit']
     else:
-        limit = settings.QUERY_LIMIT
+        limit = app.config['QUERY_LIMIT']
     limit = int(limit)
 
     for field in params:

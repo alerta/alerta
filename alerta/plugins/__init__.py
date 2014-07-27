@@ -3,7 +3,7 @@ import abc
 import logging
 import pkg_resources
 
-from alerta import settings
+from alerta.app import app
 
 LOG = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ def load_plugins(namespace='alerta.plugins'):
     for ep in list(pkg_resources.iter_entry_points(namespace)):
         LOG.debug('Found plug-in %r', ep)
         try:
-            if ep.name in settings.PLUGINS:
+            if ep.name in app.config['PLUGINS']:
                 plugin = ep.load()
                 if plugin:
                     plugins.append(plugin())

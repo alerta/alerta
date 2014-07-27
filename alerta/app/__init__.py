@@ -1,15 +1,20 @@
 
-from flask import Flask
+import logging
 
-from alerta.common import log as logging
-from alerta.app.database import Mongo
+from flask import Flask
 
 LOG = logging.getLogger(__name__)
 
-logging.setup('alerta')
-
 app = Flask(__name__)
 app.config.from_object(__name__)
+app.config.from_object('alerta.default_settings')
+app.config.from_object('alerta.settings')
+
+from logging.handlers import SysLogHandler
+syslog_handler = SysLogHandler(address='/var/run/syslog', facility='local7')
+app.logger.addHandler(syslog_handler)
+
+from alerta.app.database import Mongo
 db = Mongo()
 
 import views
