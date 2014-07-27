@@ -2,21 +2,19 @@
 import sys
 import datetime
 import pymongo
+import logging
 
 import base64
 import hmac
 import random
 import hashlib
 
-from alerta.common import log as logging
+from alerta.app import app
 from alerta.common.alert import AlertDocument
 from alerta.common.heartbeat import HeartbeatDocument
 from alerta.common import severity_code, status_code
-from alerta import settings
 
 LOG = logging.getLogger(__name__)
-
-SECRET_KEY = '<insert secret key here>'
 
 
 class Mongo(object):
@@ -29,28 +27,28 @@ class Mongo(object):
 
     def connect(self):
 
-        if not settings.MONGO_REPLSET:
+        if not app.config['MONGO_REPLSET']:
             try:
-                self.conn = pymongo.MongoClient(settings.MONGO_HOST, settings.MONGO_PORT)
+                self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'])
             except Exception, e:
-                LOG.error('MongoDB Client connection error - %s:%s : %s', settings.MONGO_HOST, settings.MONGO_PORT, e)
+                LOG.error('MongoDB Client connection error - %s:%s : %s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], e)
                 sys.exit(1)
-            LOG.info('Connected to mongodb://%s:%s/%s', settings.MONGO_HOST, settings.MONGO_PORT, settings.MONGO_DATABASE)
+            LOG.info('Connected to mongodb://%s:%s/%s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_DATABASE'])
         else:
             try:
-                self.conn = pymongo.MongoClient(settings.MONGO_HOST, settings.MONGO_PORT, replicaSet=settings.MONGO_REPLSET)
+                self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], replicaSet=app.config['MONGO_REPLSET'])
             except Exception, e:
                 LOG.error('MongoDB Client ReplicaSet connection error - %s:%s (replicaSet=%s) : %s',
-                          settings.MONGO_HOST, settings.MONGO_PORT, settings.MONGO_REPLSET, e)
+                          app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_REPLSET'], e)
                 sys.exit(1)
             LOG.info('Connected to mongodb://%s:%s/%s?replicaSet=%s',
-                     settings.MONGO_HOST, settings.MONGO_PORT, settings.MONGO_DATABASE, settings.MONGO_REPLSET)
+                     app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_DATABASE'], app.config['MONGO_REPLSET'])
 
-        self.db = self.conn[settings.MONGO_DATABASE]
+        self.db = self.conn[app.config['MONGO_DATABASE']]
 
-        if settings.MONGO_PASSWORD:
+        if app.config['MONGO_PASSWORD']:
             try:
-                self.db.authenticate(settings.MONGO_USERNAME, password=settings.MONGO_PASSWORD)
+                self.db.authenticate(app.config['MONGO_USERNAME'], password=app.config['MONGO_PASSWORD'])
             except Exception, e:
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
@@ -863,7 +861,7 @@ class Mongo(object):
 
     def create_key(self, args):
 
-        digest = hmac.new(SECRET_KEY, msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
+        digest = hmac.new(app.config['SECRET_KEY'], msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
         key = base64.b64encode(digest)[:40]
 
         data = {

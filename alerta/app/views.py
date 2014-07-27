@@ -1,17 +1,16 @@
 import json
 import datetime
 import requests
+import logging
 
 from collections import defaultdict
 from functools import wraps
 from flask import request, current_app, render_template, redirect, abort
 
-from alerta import settings
 from alerta.app import app, db
 from alerta.app.switch import Switch
 from alerta.app.utils import parse_fields, crossdomain
 from alerta.app.metrics import Gauge, Counter, Timer
-from alerta.common import log as logging
 from alerta.common.alert import Alert
 from alerta.common.heartbeat import Heartbeat
 from alerta.common import status_code, severity_code
@@ -75,14 +74,14 @@ def verify_token(token):
         return False
 
     if 'email' in token_info:
-        if token_info['email'].split('@')[1] not in settings.EMAIL_ALLOW:
+        if token_info['email'].split('@')[1] not in app.config['ALLOWED_EMAIL_DOMAINS']:
             LOG.info('User %s not authorized to access API', token_info['email'])
             return False
     else:
         user_info = get_user_info(token)
         LOG.debug('User info %s', json.dumps(user_info))
         if 'email' in user_info:
-            if user_info['email'].split('@')[1] not in settings.EMAIL_ALLOW:
+            if user_info['email'].split('@')[1] not in app.config['ALLOWED_EMAIL_DOMAINS']:
                 LOG.warning('User %s not authorized to access API', user_info['email'])
                 return False
         else:
@@ -207,7 +206,7 @@ def get_alerts():
         return jsonify(status="error", message=str(e))
 
     fields = dict()
-    fields['history'] = {'$slice': settings.HISTORY_LIMIT}
+    fields['history'] = {'$slice': app.config['HISTORY_LIMIT']}
 
     if 'status' not in query:
         query['status'] = {'$ne': "expired"}  # hide expired if status not in query

@@ -1,6 +1,7 @@
 
 import time
 import datetime
+import logging
 
 from flask import request, Response, url_for, jsonify, render_template
 
@@ -9,7 +10,6 @@ from alerta.app.switch import Switch, SwitchState
 from alerta.app.utils import crossdomain
 from alerta.app.metrics import Gauge, Counter, Timer
 from alerta import __version__, build
-from alerta.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

@@ -1,9 +1,9 @@
 
 import time
+import logging
 
 from alerta.app.database import Mongo
 
-from alerta.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

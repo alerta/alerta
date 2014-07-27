@@ -2,20 +2,18 @@
 import json
 import urllib
 import requests
+import logging
 
-from alerta import settings
-from alerta.common import log as logging
-
-__version__ = '3.0.4'
+__version__ = '3.2.0'
 
 LOG = logging.getLogger(__name__)
 
 
 class ApiClient(object):
 
-    def __init__(self, endpoint=None):
+    def __init__(self, endpoint='http:/localhost:8080'):
 
-        self.endpoint = endpoint or settings.ENDPOINT
+        self.endpoint = endpoint
 
     def __repr__(self):
 
