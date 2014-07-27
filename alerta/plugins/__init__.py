@@ -1,11 +1,10 @@
 
 import abc
-import logging
 import pkg_resources
 
 from alerta.app import app
 
-LOG = logging.getLogger(__name__)
+LOG = app.logger
 
 
 class PluginBase(object):

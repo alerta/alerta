@@ -12,7 +12,7 @@ class FanoutPublisher(PluginBase):
 
     def __init__(self):
 
-        if app.config['DEBUG']:
+        if app.debug:
             setup_logging(loglevel='DEBUG', loggers=[''])
 
         self.connection = BrokerConnection(app.config['AMQP_URL'])

@@ -9,7 +9,7 @@ app.config.from_object('alerta.default_settings')
 app.config.from_object('alerta.settings')
 
 if app.config['LOG_FILE']:
-    file_handler = RotatingFileHandler(filename=app.config['LOG_FILE'])
+    file_handler = RotatingFileHandler(filename=app.config['LOG_FILE'], maxBytes=10000, backupCount=1)
     file_handler.setFormatter(logging.Formatter(fmt=app.config['LOG_FORMAT']))
     app.logger.addHandler(file_handler)
 
