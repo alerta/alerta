@@ -22,7 +22,8 @@ switches = [
 total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of alerts in the database')
 started = time.time() * 1000
 
-@app.route('/management')
+@app.route('/management', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def management():
 
     endpoints = [
@@ -35,8 +36,8 @@ def management():
     return render_template('management/index.html', endpoints=endpoints)
 
 
-@app.route('/management/manifest')
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/management/manifest', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def manifest():
 
     manifest = {
@@ -53,7 +54,8 @@ def manifest():
     return  jsonify(alerta=manifest)
 
 
-@app.route('/management/properties')
+@app.route('/management/properties', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def properties():
 
     properties = ''
@@ -67,7 +69,8 @@ def properties():
     return Response(properties, content_type='text/plain')
 
 
-@app.route('/management/switchboard', methods=['GET', 'POST'])
+@app.route('/management/switchboard', methods=['OPTIONS', 'GET', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def switchboard():
 
     if request.method == 'POST':
@@ -89,7 +92,8 @@ def switchboard():
             return render_template('management/switchboard.html', switches=switches)
 
 
-@app.route('/management/healthcheck')
+@app.route('/management/healthcheck', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def health_check():
 
     try:
@@ -109,8 +113,8 @@ def health_check():
     return 'OK'
 
 
-@app.route('/management/status')
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/management/status', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def status():
 
     total_alert_gauge.set(db.get_count())
