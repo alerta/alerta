@@ -4,7 +4,7 @@ import requests
 
 from collections import defaultdict
 from functools import wraps
-from flask import request, current_app, render_template, redirect, abort
+from flask import request, current_app, render_template, redirect, session, abort
 
 from alerta.app import app, db
 from alerta.app.switch import Switch
@@ -63,6 +63,9 @@ def verify_token(token):
 
     LOG.debug('we got a token %s, verify token externally and save session id', token)
 
+    if token == session.get('token'):
+        return True
+
     url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + token
     response = requests.get(url)
     token_info = response.json()
@@ -87,6 +90,7 @@ def verify_token(token):
             LOG.warning('No email address present in token or user info')
             return False
 
+    session['token'] = token
     return True
 
 
@@ -715,7 +719,7 @@ def create_key():
     else:
         return jsonify(status="error", message="failed to generate api key")
 
-@app.route('/api/key/<key>', methods=['OPTIONS', 'DELETE', 'POST'])
+@app.route('/api/key/<path:key>', methods=['OPTIONS', 'DELETE', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 @auth_required
 @jsonp
