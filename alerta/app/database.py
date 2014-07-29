@@ -856,18 +856,29 @@ class Mongo(object):
 
     def is_key_valid(self, key):
 
-        return bool(self.db.keys.find_one({"key": key}))
+        key_info = self.db.keys.find_one({"key": key})
+
+        if key_info:
+            if key_info['expireTime'] > datetime.datetime.utcnow():
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def create_key(self, args):
 
         digest = hmac.new(app.config['SECRET_KEY'], msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
         key = base64.b64encode(digest)[:40]
 
+        if 'user' not in args:
+            return None
+
         data = {
             "user": args["user"],
             "key": key,
-            "text": args["text"],
-            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(days=365),
+            "text": args.get('text', None),
+            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(days=args.get('days', app.config['API_KEY_EXPIRE_DAYS'])),
             "count": 0,
             "lastUsedTime": None
         }
