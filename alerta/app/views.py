@@ -79,19 +79,13 @@ def verify_token(token):
             return False
 
     if 'email' in token_info:
-        if token_info['email'].split('@')[1] not in app.config['ALLOWED_EMAIL_DOMAINS']:
+        if not (token_info['email'].split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']
+                or db.is_user_valid(token_info['email'])):
             LOG.info('User %s not authorized to access API', token_info['email'])
             return False
     else:
-        user_info = get_user_info(token)
-        LOG.debug('User info %s', json.dumps(user_info))
-        if 'email' in user_info:
-            if user_info['email'].split('@')[1] not in app.config['ALLOWED_EMAIL_DOMAINS']:
-                LOG.warning('User %s not authorized to access API', user_info['email'])
-                return False
-        else:
-            LOG.warning('No email address present in token or user info')
-            return False
+        LOG.warning('No email address present in token info')
+        return False
 
     db.save_token(token)
     return True
@@ -125,7 +119,6 @@ def get_user_info(token):
 def auth_required(func):
     @wraps(func)
     def decorated(*args, **kwargs):
-        # check is session variable?
 
         if 'Authorization' in request.headers:
             auth = request.headers['Authorization']
@@ -145,7 +138,7 @@ def auth_required(func):
             if not verify_token(token):
                 return authenticate()
         elif 'api-key' in request.args:
-            key = request.args['key']
+            key = request.args['api-key']
             if not verify_api_key(key):
                 return authenticate()
         else:
@@ -684,6 +677,59 @@ def delete_heartbeat(id):
             return jsonify(status="ok")
         else:
             return jsonify(status="error", message="failed to delete heartbeat")
+
+@app.route('/api/users', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
+@jsonp
+def get_users():
+
+    users = db.get_users()
+
+    return jsonify(
+        status="ok",
+        total=len(users),
+        users=users,
+        domains=app.config['ALLOWED_EMAIL_DOMAINS'],
+        time=datetime.datetime.utcnow()
+    )
+
+@app.route('/api/user', methods=['OPTIONS', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
+@jsonp
+def create_user():
+
+    if request.json and 'user' in request.json:
+        user = request.json["user"]
+        sponsor = request.json["sponsor"]
+        data = {
+            "user": user,
+            "sponsor": sponsor
+        }
+
+        key = db.save_user(data)
+    else:
+        key = None
+
+    if key:
+        return jsonify(status="ok")
+    else:
+        return jsonify(status="error", message="failed to create user")
+
+@app.route('/api/user/<user>', methods=['OPTIONS', 'DELETE', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
+@jsonp
+def delete_user(user):
+
+    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+        response = db.delete_user(user)
+
+        if response:
+            return jsonify(status="ok")
+        else:
+            return jsonify(status="error", message="failed to delete user")
 
 @app.route('/api/keys/<user>', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])

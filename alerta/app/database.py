@@ -677,25 +677,6 @@ class Mongo(object):
 
         return self.db.alerts.find(query, {"severity": 1, "status": 1})
 
-    def get_heartbeats(self):
-
-        responses = self.db.heartbeats.find()
-
-        heartbeats = list()
-        for response in responses:
-            heartbeats.append(
-                HeartbeatDocument(
-                    id=response['_id'],
-                    origin=response['origin'],
-                    tags=response['tags'],
-                    event_type=response['type'],
-                    create_time=response['createTime'],
-                    timeout=response['timeout'],
-                    receive_time=response['receiveTime']
-                )
-            )
-        return heartbeats
-
     def get_topn(self, query=None, group=None, limit=10):
 
         if not group:
@@ -789,6 +770,25 @@ class Mongo(object):
             )
         return services
 
+    def get_heartbeats(self):
+
+        responses = self.db.heartbeats.find()
+
+        heartbeats = list()
+        for response in responses:
+            heartbeats.append(
+                HeartbeatDocument(
+                    id=response['_id'],
+                    origin=response['origin'],
+                    tags=response['tags'],
+                    event_type=response['type'],
+                    create_time=response['createTime'],
+                    timeout=response['timeout'],
+                    receive_time=response['receiveTime']
+                )
+            )
+        return heartbeats
+
     def save_heartbeat(self, heartbeat):
 
         now = datetime.datetime.utcnow()
@@ -827,7 +827,33 @@ class Mongo(object):
     def delete_heartbeat(self, id):
 
         response = self.db.heartbeats.remove({'_id': {'$regex': '^' + id}})
+        return True if 'ok' in response else False
 
+    def get_users(self):
+
+        users = list()
+
+        for user in self.db.users.find({}, {"_id": 0}):
+            users.append(user)
+        return users
+
+    def is_user_valid(self, user):
+
+        return bool(self.db.users.find_one({"user": user}))
+
+    def save_user(self, args):
+
+        data = {
+            "user": args["user"],
+            "createTime": datetime.datetime.utcnow(),
+            "sponsor": args["sponsor"]
+        }
+
+        return self.db.users.insert(data)
+
+    def delete_user(self, user):
+
+        response = self.db.users.remove({"user": user})
         return True if 'ok' in response else False
 
     def get_metrics(self):
