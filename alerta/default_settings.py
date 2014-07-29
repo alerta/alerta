@@ -16,6 +16,7 @@ SYSLOG_FACILITY = 'local7'
 QUERY_LIMIT = 10000  # maximum number of alerts returned by a single query
 HISTORY_LIMIT = 100  #
 
+ACCESS_TOKEN_CACHE_MINS = 60
 API_KEY_EXPIRE_DAYS = 365
 
 # MongoDB

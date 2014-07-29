@@ -61,9 +61,7 @@ def authenticate():
 
 def verify_token(token):
 
-    LOG.debug('we got a token %s, verify token externally and save session id', token)
-
-    if token == session.get('token'):
+    if db.is_token_valid(token):
         return True
 
     url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + token
@@ -95,7 +93,7 @@ def verify_token(token):
             LOG.warning('No email address present in token or user info')
             return False
 
-    session['token'] = token
+    db.save_token(token)
     return True
 
 

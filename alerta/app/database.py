@@ -68,6 +68,8 @@ class Mongo(object):
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('expireTime', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING)])
 
+        self.db.tokens.ensure_index([('expireTime', pymongo.ASCENDING)], expireAfterSeconds=0)
+
     def get_severity(self, alert):
         """
         Get severity of correlated alert. Used to determine previous severity.
@@ -906,6 +908,19 @@ class Mongo(object):
 
         response = self.db.keys.remove({"key": key})
         return True if 'ok' in response else False
+
+    def is_token_valid(self, token):
+
+        return bool(self.db.tokens.find_one({"token": token}))
+
+    def save_token(self, token):
+
+        data = {
+            "token": token,
+            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(minutes=app.config['ACCESS_TOKEN_CACHE_MINS'])
+        }
+
+        return self.db.tokens.insert(data)
 
     def disconnect(self):
 
