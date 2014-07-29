@@ -75,6 +75,11 @@ def verify_token(token):
         LOG.warning('Token authentication failed: %s', token_info['error'])
         return False
 
+    if 'audience' in token_info:
+        if token_info['audience'] != app.config['GOOGLE_OAUTH_CLIENT_ID']:
+            LOG.warning('Token supplied was for different web application')
+            return False
+
     if 'email' in token_info:
         if token_info['email'].split('@')[1] not in app.config['ALLOWED_EMAIL_DOMAINS']:
             LOG.info('User %s not authorized to access API', token_info['email'])

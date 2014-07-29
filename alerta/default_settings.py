@@ -27,6 +27,7 @@ MONGO_REPLSET = None  # 'alerta'
 MONGO_USERNAME = 'alerta'
 MONGO_PASSWORD = None
 
+GOOGLE_OAUTH_CLIENT_ID = 'INSERT-GOOGLE-OAUTH2-CLIENT-ID-HERE'  # required for access token validation
 ALLOWED_EMAIL_DOMAINS = ['gmail.com']
 
 # Plugins
