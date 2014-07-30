@@ -731,11 +731,26 @@ def delete_user(user):
         else:
             return jsonify(status="error", message="failed to delete user")
 
+@app.route('/api/keys', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
+@jsonp
+def get_keys():
+
+    keys = db.get_keys()
+
+    return jsonify(
+        status="ok",
+        total=len(keys),
+        keys=keys,
+        time=datetime.datetime.utcnow()
+    )
+
 @app.route('/api/keys/<user>', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 @auth_required
 @jsonp
-def get_keys(user):
+def get_user_keys(user):
 
     keys = db.get_keys({"user": user})
 
