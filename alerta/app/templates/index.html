@@ -45,7 +45,7 @@
 <table>
 {% for rule in rules %}
     <tr>
-       <td>{{ rule.methods }}</td><td>{{ rule.rule }}</td><td>{{ rule.endpoint }}</td>
+       <td>{{ rule.methods|join(', ') }}</td><td>{{ rule.rule }}</td><td>{{ rule.endpoint }}</td>
     </tr>
 {% endfor %}
 </table>

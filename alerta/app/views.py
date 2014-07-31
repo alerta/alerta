@@ -185,7 +185,6 @@ def index():
 
     rules = []
     for rule in app.url_map.iter_rules():
-        rule.methods = ','.join([r for r in rule.methods if r not in ['OPTIONS', 'HEAD']])
         if rule.endpoint not in ['test', 'static']:
             rules.append(rule)
     return render_template('index.html', rules=rules)
