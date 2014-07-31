@@ -310,7 +310,10 @@ def receive_alert():
             duplicate_timer.stop_timer(started)
 
             for plugin in plugins:
-                plugin.send(alert)
+                try:
+                    plugin.send(alert)
+                except Exception as e:
+                    LOG.warning('Error while running plug-in: %s', e)
 
         elif db.is_correlated(incomingAlert):
 
@@ -319,7 +322,10 @@ def receive_alert():
             correlate_timer.stop_timer(started)
 
             for plugin in plugins:
-                plugin.send(alert)
+                try:
+                    plugin.send(alert)
+                except Exception as e:
+                    LOG.warning('Error while running plug-in: %s', e)
 
         else:
             started = create_timer.start_timer()
@@ -327,7 +333,10 @@ def receive_alert():
             create_timer.stop_timer(started)
 
             for plugin in plugins:
-                plugin.send(alert)
+                try:
+                    plugin.send(alert)
+                except Exception as e:
+                    LOG.warning('Error while running plug-in: %s', e)
 
         receive_timer.stop_timer(recv_started)
 
@@ -371,7 +380,11 @@ def set_status(id):
 
     if alert:
         for plugin in plugins:
-            plugin.send(alert)
+            try:
+                plugin.send(alert)
+            except Exception as e:
+                LOG.warning('Error while running plug-in: %s', e)
+
         status_timer.stop_timer(status_started)
         return jsonify(status="ok")
     else:
@@ -624,7 +637,10 @@ def pagerduty():
         if alert:
             alert.origin = 'pagerduty/webhook'
             for plugin in plugins:
-                plugin.send(alert)
+                try:
+                    plugin.send(alert)
+                except Exception as e:
+                    LOG.warning('Error while running plug-in: %s', e)
 
     return jsonify(status="ok")
 
