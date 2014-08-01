@@ -3,7 +3,7 @@
         "monitoring"
     ],
     "packages": {
-        "alerta": {
+        "alerta-server": {
             "type": "rpm",
             "data": {
                 "user": "alerta",
@@ -41,7 +41,7 @@
             "depends": ["alerta", "extras"]
         },
         "alerta": {
-            "actionsPerHost": ["alerta.deploy"]
+            "actionsPerHost": ["alerta-server.deploy"]
         },
         "extras": {
             "actionsPerHost": ["alerta-extras.deploy"]
