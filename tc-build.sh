@@ -40,17 +40,17 @@ tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-'"${V
 
 # Build RPMs
 rpmbuild -v --with teamcity --define "version ${VERSION}" --define "release ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" \
-	-bb ${ALERTA_VCS_ROOT}/contrib/redhat/alerta.spec || exit 1
+	-bb ${ALERTA_VCS_ROOT}/alerta-server.spec || exit 1
 
 # Check RPMs
-rpm -Kv ${BUILDROOT}/RPMS/x86_64/alerta-${VERSION}-${BUILD_NUMBER}.x86_64.rpm
+rpm -Kv ${BUILDROOT}/RPMS/x86_64/alerta-server-${VERSION}-${BUILD_NUMBER}.x86_64.rpm
 rpm -Kv ${BUILDROOT}/RPMS/x86_64/alerta-extras-${VERSION}-${BUILD_NUMBER}.x86_64.rpm
 
 # Create archive
 pushd ${BUILDROOT}
 cp ${ALERTA_VCS_ROOT}/contrib/riffraff/deploy.json .
-mkdir -p packages/alerta
-mv ${BUILDROOT}/RPMS/x86_64/alerta-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages/alerta
+mkdir -p packages/alerta-server
+mv ${BUILDROOT}/RPMS/x86_64/alerta-server-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages/alerta-server
 mkdir -p packages/alerta-extras
 mv ${BUILDROOT}/RPMS/x86_64/alerta-extras-${VERSION}-${BUILD_NUMBER}.x86_64.rpm packages/alerta-extras
 zip -r ../artifacts.zip deploy.json packages

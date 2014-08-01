@@ -1,6 +1,6 @@
 %define name alerta
 %{!?_with_teamcity: %define version 3.0.3}
-%{!?_with_teamcity: %define release 1}
+%{!?_with_teamcity: %define release 2}
 
 Name: %{name}
 Summary: Alerta monitoring framework
@@ -22,10 +22,14 @@ Alerta is a monitoring framework that consolidates alerts
 from multiple sources like syslog, SNMP, Nagios, Riemann,
 Zabbix, and displays them on an alert console.
 
+%package server
+Summary: Alerta monitoring framework
+%description server
+UNKNOWN
+
 %package extras
 Summary: Alerta monitoring framework - extras
-Group: Utilities/System
-Requires: alerta, net-snmp
+Requires: alerta-server, net-snmp
 %description extras
 UNKNOWN
 
@@ -62,7 +66,7 @@ prelink -u %{buildroot}/opt/alerta/bin/python
 %clean
 rm -rf %{buildroot}
 
-%files
+%files server
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta.conf
 %defattr(-,alerta,alerta)
@@ -82,7 +86,7 @@ rm -rf %{buildroot}
 /opt/alerta/bin/alert-*
 %{_sysconfdir}/snmp/snmptrapd.conf.%{name}
 
-%pre
+%pre server
 getent group alerta >/dev/null || groupadd -r alerta
 getent passwd alerta >/dev/null || \
     useradd -r -g alerta -d /var/lib/alerta -s /sbin/nologin \
@@ -107,11 +111,13 @@ if [ "$1" = "0" ]; then
 fi
 
 %changelog
-* Fri May 6 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.1.0-1
+* Fri Aug 01 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.1.0-2
 - Remove references to alerta dashboard
-* Thu Apr 3 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.3-1
+* Fri May 06 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.1.0-1
+- Remove references to alerta dashboard
+* Thu Apr 03 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.3-1
 - Bug fixes
-* Thu Apr 3 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.2-3
+* Thu Apr 03 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.2-3
 - Switch back to init scripts because upstart very old on Centos6
 * Thu Mar 27 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.0.0-9
 - Package alerta release 3.0 application server and components
