@@ -5,6 +5,7 @@
     "packages": {
         "alerta-server": {
             "type": "rpm",
+            "apps" : ["alerta"],
             "data": {
                 "user": "alerta",
                 "port": "8080",
