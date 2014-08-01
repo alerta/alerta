@@ -40,7 +40,7 @@ tar zcvf ${BUILDROOT}/SOURCES/alerta-${VERSION}.tar.gz --xform 's,^,alerta-'"${V
 
 # Build RPMs
 rpmbuild -v --with teamcity --define "version ${VERSION}" --define "release ${BUILD_NUMBER}" --define "_topdir ${BUILDROOT}" \
-	-bb ${ALERTA_VCS_ROOT}/alerta-server.spec || exit 1
+	-bb ${ALERTA_VCS_ROOT}/contrib/redhat/alerta-server.spec || exit 1
 
 # Check RPMs
 rpm -Kv ${BUILDROOT}/RPMS/x86_64/alerta-server-${VERSION}-${BUILD_NUMBER}.x86_64.rpm
