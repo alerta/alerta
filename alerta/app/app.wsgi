@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-activate_this = '/opt/alerta/bin/activate_this.py'
-execfile(activate_this, dict(__file__=activate_this))
-
-import _strptime
+import sys ; sys.path.insert(0, '/api')
 
 from alerta.app import app as application
