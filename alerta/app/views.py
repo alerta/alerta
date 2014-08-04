@@ -61,9 +61,6 @@ def authenticate():
 
 def verify_token(token):
 
-    if not app.config['OAUTH2_PROVIDER']:
-        return True
-
     if db.is_token_valid(token):
         return True
 
@@ -123,6 +120,9 @@ def get_user_info(token):
 def auth_required(func):
     @wraps(func)
     def decorated(*args, **kwargs):
+
+        if not app.config['AUTH_REQUIRED']:
+            return func(*args, **kwargs)
 
         if 'Authorization' in request.headers:
             auth = request.headers['Authorization']
