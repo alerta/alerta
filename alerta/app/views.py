@@ -4,7 +4,7 @@ import requests
 
 from collections import defaultdict
 from functools import wraps
-from flask import request, current_app, render_template, redirect, session, abort
+from flask import request, current_app, render_template, redirect, abort
 
 from alerta.app import app, db
 from alerta.app.switch import Switch
@@ -79,7 +79,8 @@ def verify_token(token):
             return False
 
     if 'email' in token_info:
-        if not (token_info['email'].split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']
+        if not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
+                or token_info['email'].split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']
                 or db.is_user_valid(token_info['email'])):
             LOG.info('User %s not authorized to access API', token_info['email'])
             return False
