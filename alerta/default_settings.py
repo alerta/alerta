@@ -9,15 +9,12 @@ SECRET_KEY = '0Afk\(,8$cr(Y8:MA""knd>[@$U[G.eQL6DjAmVs'
 LOG_FILE = '/var/log/alerta.log'
 LOG_FORMAT = '%(asctime)s %(name)s[%(process)d] %(threadName)s %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
 
-USE_SYSLOG = True
+USE_SYSLOG = False
 SYSLOG_SOCKET = '/dev/log'  # Linux = /dev/log, Mac OSX = /var/run/syslog
 SYSLOG_FACILITY = 'local7'
 
 QUERY_LIMIT = 10000  # maximum number of alerts returned by a single query
 HISTORY_LIMIT = 100  #
-
-ACCESS_TOKEN_CACHE_MINS = 60
-API_KEY_EXPIRE_DAYS = 365
 
 # MongoDB
 MONGO_HOST = 'localhost'
@@ -28,8 +25,12 @@ MONGO_REPLSET = None  # 'alerta'
 MONGO_USERNAME = 'alerta'
 MONGO_PASSWORD = None
 
-GOOGLE_OAUTH_CLIENT_ID = 'INSERT-GOOGLE-OAUTH2-CLIENT-ID-HERE'  # required for access token validation
+OAUTH2_PROVIDER = None  # eg. 'Google'
+OAUTH2_CLIENT_ID = 'INSERT-OAUTH2-CLIENT-ID-HERE'  # required for access token validation
 ALLOWED_EMAIL_DOMAINS = ['gmail.com']
+ACCESS_TOKEN_CACHE_MINS = 60
+
+API_KEY_EXPIRE_DAYS = 365
 
 # Plugins
 PLUGINS = ['amqp', 'logstash', 'sns']

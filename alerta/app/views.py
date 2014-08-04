@@ -61,6 +61,9 @@ def authenticate():
 
 def verify_token(token):
 
+    if not app.config['OAUTH2_PROVIDER']:
+        return True
+
     if db.is_token_valid(token):
         return True
 
@@ -74,7 +77,7 @@ def verify_token(token):
         return False
 
     if 'audience' in token_info:
-        if token_info['audience'] != app.config['GOOGLE_OAUTH_CLIENT_ID']:
+        if token_info['audience'] != app.config['OAUTH2_CLIENT_ID']:
             LOG.warning('Token supplied was for different web application')
             return False
 
