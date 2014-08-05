@@ -1,4 +1,5 @@
 
+import os
 import sys
 import datetime
 import pymongo
@@ -25,6 +26,11 @@ class Mongo(object):
         self.connect()
 
     def connect(self):
+
+        if 'MONGO_PORT' in os.environ and 'tcp://' in os.environ['MONGO_PORT']:  # used by linked Docker containers
+            host, port = os.environ['MONGO_PORT'][6:].split(':')
+            app.config['MONGO_HOST'] = host
+            app.config['MONGO_PORT'] = port
 
         if not app.config['MONGO_REPLSET']:
             try:
