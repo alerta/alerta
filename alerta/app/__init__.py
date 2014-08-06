@@ -1,4 +1,5 @@
 
+import sys
 import logging
 
 from logging.handlers import RotatingFileHandler, SysLogHandler
@@ -7,6 +8,11 @@ from flask import Flask
 app = Flask(__name__)
 app.config.from_object('alerta.default_settings')
 app.config.from_object('alerta.settings')
+
+if app.config['USE_STDERR']:
+    stderr_hanlder = logging.StreamHandler(stream=sys.stderr)
+    stderr_hanlder.setFormatter(logging.Formatter(fmt=app.config['LOG_FORMAT']))
+    app.logger.addHandler(stderr_hanlder)
 
 if app.config['LOG_FILE']:
     file_handler = RotatingFileHandler(filename=app.config['LOG_FILE'], encoding='utf-8', maxBytes=10000, backupCount=1)

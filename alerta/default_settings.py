@@ -6,6 +6,8 @@ DEBUG = True
 
 SECRET_KEY = '0Afk\(,8$cr(Y8:MA""knd>[@$U[G.eQL6DjAmVs'
 
+USE_STDERR = False
+
 LOG_FILE = '/var/log/alerta.log'
 LOG_FORMAT = '%(asctime)s %(name)s[%(process)d] %(threadName)s %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
 
