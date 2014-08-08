@@ -11,8 +11,13 @@ class PluginBase(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def send(self, alert):
-        """Send alert to downstream system."""
+    def pre_receive(self, alert):
+        """Reject an alert based on alert properties."""
+        return
+
+    @abc.abstractmethod
+    def post_receive(self, alert):
+        """Send an alert to another service or notify users."""
         return
 
 

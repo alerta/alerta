@@ -30,9 +30,13 @@ class FanoutPublisher(PluginBase):
 
         LOG.info('Configured fanout publisher on topic "%s"', app.config['AMQP_TOPIC'])
 
-    def send(self, msg):
+    def pre_receive(self, alert):
 
-        LOG.info('Sending message %s to AMQP topic "%s"', msg.get_id(), app.config['AMQP_TOPIC'])
-        LOG.debug('Message: %s', msg.get_body())
+        pass
 
-        self.producer.publish(msg.get_body(), declare=[self.exchange], retry=True)
+    def post_receive(self, alert):
+
+        LOG.info('Sending message %s to AMQP topic "%s"', alert.get_id(), app.config['AMQP_TOPIC'])
+        LOG.debug('Message: %s', alert.get_body())
+
+        self.producer.publish(alert.get_body(), declare=[self.exchange], retry=True)

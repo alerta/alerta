@@ -33,6 +33,7 @@ setuptools.setup(
     ],
     entry_points={
         'alerta.plugins': [
+            'reject = alerta.plugins.reject:RejectPolicy',
             'amqp = alerta.plugins.amqp:FanoutPublisher',
             'sns = alerta.plugins.sns:SnsTopicPublisher',
             'logstash = alerta.plugins.logstash:LogStashOutput',

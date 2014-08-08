@@ -40,10 +40,14 @@ class SnsTopicPublisher(PluginBase):
 
         LOG.info('Configured SNS publisher on topic "%s"', self.topic_arn)
 
-    def send(self, msg):
+    def pre_receive(self, alert):
 
-        LOG.info('Sending message %s to SNS topic "%s"', msg.get_id(), self.topic_arn)
-        LOG.debug('Message: %s', msg.get_body())
+        pass
 
-        response = self.connection.publish(topic=self.topic_arn, message=msg.get_body())
+    def post_receive(self, alert):
+
+        LOG.info('Sending message %s to SNS topic "%s"', alert.get_id(), self.topic_arn)
+        LOG.debug('Message: %s', alert.get_body())
+
+        response = self.connection.publish(topic=self.topic_arn, message=alert.get_body())
         LOG.debug('Response: %s', response)

@@ -306,6 +306,15 @@ def receive_alert():
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e))
 
+    if incomingAlert:
+        for plugin in plugins:
+            try:
+                error = plugin.pre_receive(incomingAlert)
+                if error:
+                    return jsonify(status="error", message=error)
+            except Exception as e:
+                LOG.warning('Error while running pre-receive plug-in: %s', e)
+
     try:
         if db.is_duplicate(incomingAlert):
 
@@ -315,9 +324,9 @@ def receive_alert():
 
             for plugin in plugins:
                 try:
-                    plugin.send(alert)
+                    plugin.post_receive(alert)
                 except Exception as e:
-                    LOG.warning('Error while running plug-in: %s', e)
+                    LOG.warning('Error while running post-receive plug-in: %s', e)
 
         elif db.is_correlated(incomingAlert):
 
@@ -327,9 +336,9 @@ def receive_alert():
 
             for plugin in plugins:
                 try:
-                    plugin.send(alert)
+                    plugin.post_receive(alert)
                 except Exception as e:
-                    LOG.warning('Error while running plug-in: %s', e)
+                    LOG.warning('Error while running post-receive plug-in: %s', e)
 
         else:
             started = create_timer.start_timer()
@@ -338,9 +347,9 @@ def receive_alert():
 
             for plugin in plugins:
                 try:
-                    plugin.send(alert)
+                    plugin.post_receive(alert)
                 except Exception as e:
-                    LOG.warning('Error while running plug-in: %s', e)
+                    LOG.warning('Error while running post-receive plug-in: %s', e)
 
         receive_timer.stop_timer(recv_started)
 
@@ -385,9 +394,9 @@ def set_status(id):
     if alert:
         for plugin in plugins:
             try:
-                plugin.send(alert)
+                plugin.post_receive(alert)
             except Exception as e:
-                LOG.warning('Error while running plug-in: %s', e)
+                LOG.warning('Error while running post-receive plug-in: %s', e)
 
         status_timer.stop_timer(status_started)
         return jsonify(status="ok")
@@ -642,9 +651,9 @@ def pagerduty():
             alert.origin = 'pagerduty/webhook'
             for plugin in plugins:
                 try:
-                    plugin.send(alert)
+                    plugin.post_receive(alert)
                 except Exception as e:
-                    LOG.warning('Error while running plug-in: %s', e)
+                    LOG.warning('Error while running post-receive plug-in: %s', e)
 
     return jsonify(status="ok")
 

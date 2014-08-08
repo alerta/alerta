@@ -9,7 +9,11 @@ LOG = app.logger
 
 class LogStashOutput(PluginBase):
 
-    def send(self, alert):
+    def pre_receive(self, alert):
+
+        pass
+
+    def post_receive(self, alert):
 
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
