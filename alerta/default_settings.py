@@ -31,22 +31,28 @@ AUTH_REQUIRED = False
 OAUTH2_CLIENT_ID = 'INSERT-OAUTH2-CLIENT-ID-HERE'  # required for access token validation
 ALLOWED_EMAIL_DOMAINS = ['gmail.com']
 ACCESS_TOKEN_CACHE_MINS = 60
-
 API_KEY_EXPIRE_DAYS = 365
 
-# Plugins
-PLUGINS = ['amqp', 'logstash', 'sns']
+# AWS Credentials
+AWS_ACCESS_KEY_ID = ''
+AWS_SECRET_ACCESS_KEY = ''
+AWS_REGION = 'eu-west-1'
 
-AMQP_TOPIC = 'notify'  # used by AMQP and SNS plugins
+# AMQP Credentials
 AMQP_URL = 'amqp://guest:guest@localhost:5672//'  # RabbitMQ
 # AMQP_URL = 'mongodb://localhost:27017/kombu'    # MongoDB
 # AMQP_URL = 'redis://localhost:6379/'            # Redis
 
-# Required by SNS plug-in
+# Inbound
+AWS_SQS_QUEUE = 'alerts'
+AMQP_QUEUE = 'alerts'
+
+# Plugins
+PLUGINS = ['amqp', 'sns', 'logstash']
+
+# Outbound
+AMQP_TOPIC = 'notify'
 AWS_SNS_TOPIC = 'notify'
-AWS_ACCESS_KEY_ID = ''
-AWS_SECRET_ACCESS_KEY = ''
-AWS_REGION = 'eu-west-1'
 
 # Logstash
 LOGSTASH_HOST = 'localhost'
