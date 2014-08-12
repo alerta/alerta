@@ -1,10 +1,8 @@
-argparse
-requests
-PyYAML
-pytz
+Flask
+pymongo
 kombu
 librabbitmq
-pymongo
 boto
-Flask
-nose
+argparse
+requests
+pytz

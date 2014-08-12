@@ -23,7 +23,6 @@ setuptools.setup(
         'boto',
         'argparse',
         'requests',
-        'PyYAML',
         'pytz'
     ],
     include_package_data=True,

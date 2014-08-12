@@ -6,7 +6,7 @@ from logging.handlers import RotatingFileHandler, SysLogHandler
 from flask import Flask
 
 app = Flask(__name__)
-app.config.from_object('alerta.default_settings')
+app.config.from_object('alerta.settings')
 app.config.from_envvar('ALERTA_CONF_FILE')
 
 if app.config['USE_STDERR']:
