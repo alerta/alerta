@@ -6,13 +6,12 @@ from collections import defaultdict
 from functools import wraps
 from flask import request, current_app, render_template, redirect, abort
 
-from alerta.app import app, db
+from alerta.app import app, db, status_code
 from alerta.app.switch import Switch
 from alerta.app.utils import parse_fields, crossdomain
-from alerta.app.metrics import Gauge, Counter, Timer
-from alerta.common.alert import Alert
-from alerta.common.heartbeat import Heartbeat
-from alerta.common import status_code, severity_code
+from alerta.app.metrics import Timer
+from alerta.alert import Alert
+from alerta.heartbeat import Heartbeat
 from alerta.plugins import load_plugins
 
 LOG = app.logger

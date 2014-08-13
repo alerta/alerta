@@ -1,18 +1,18 @@
-
 import os
 import sys
 import datetime
-import pymongo
-
 import base64
 import hmac
 import random
 import hashlib
 
-from alerta.app import app
-from alerta.common.alert import AlertDocument
-from alerta.common.heartbeat import HeartbeatDocument
-from alerta.common import severity_code, status_code
+import pymongo
+
+from alerta.app import app, severity_code, status_code
+
+from alerta.alert import AlertDocument
+from alerta.heartbeat import HeartbeatDocument
+
 
 LOG = app.logger
 

@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 
 import setuptools
-import alerta
+
+with open('VERSION') as f:
+    version = f.read().strip()
 
 with open('README.rst') as f:
     readme = f.read()
 
 setuptools.setup(
-    name="alerta-server",
-    version=alerta.__version__,
+    name='alerta-server',
+    namespace_packages=['alerta'],
+    version=version,
     description='Alerta server WSGI application',
     long_description=readme,
     url='https://github.com/guardian/alerta',
@@ -23,14 +26,15 @@ setuptools.setup(
         'boto',
         'argparse',
         'requests',
-        'pytz'
+        'pytz',
+        'alerta'
     ],
     include_package_data=True,
     zip_safe=False,
-    scripts=[
-        'bin/alertad',
-    ],
     entry_points={
+        'console_scripts': [
+            'alertad = alerta.app:main'
+        ],
         'alerta.plugins': [
             'reject = alerta.plugins.reject:RejectPolicy',
             'amqp = alerta.plugins.amqp:FanoutPublisher',
