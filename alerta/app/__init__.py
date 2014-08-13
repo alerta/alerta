@@ -7,7 +7,7 @@ from flask import Flask
 
 app = Flask(__name__)
 app.config.from_object('alerta.settings')
-app.config.from_envvar('ALERTA_CONF_FILE')
+app.config.from_envvar('ALERTA_CONF_FILE', silent=True)
 
 if app.config['USE_STDERR']:
     stderr_hanlder = logging.StreamHandler(stream=sys.stderr)
