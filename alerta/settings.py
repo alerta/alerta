@@ -2,13 +2,13 @@
 # DO NOT MODIFY THIS FILE
 #
 
-DEBUG = True
+DEBUG = False
 
 SECRET_KEY = '0Afk\(,8$cr(Y8:MA""knd>[@$U[G.eQL6DjAmVs'
 
-USE_STDERR = False
+USE_STDERR = True
 
-LOG_FILE = '/var/log/alerta.log'
+LOG_FILE = None  # /var/log/alerta.log
 LOG_FORMAT = '%(asctime)s %(name)s[%(process)d] %(threadName)s %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
 
 USE_SYSLOG = False
