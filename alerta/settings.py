@@ -1,6 +1,8 @@
 #
-# DO NOT MODIFY THIS FILE
+# DEFAULT SETTINGS - DO NOT MODIFY THIS FILE
 #
+# To override these settings use /etc/alertad.conf or the contents of the
+# configuration file set by the environment variable ALERTA_SVR_CONFIG_FILE.
 
 DEBUG = False
 

@@ -8,7 +8,7 @@ from flask import Flask
 app = Flask(__name__)
 app.config.from_object('alerta.settings')
 app.config.from_pyfile('/etc/alertad.conf', silent=True)
-app.config.from_envvar('ALERTA_CONF_FILE', silent=True)
+app.config.from_envvar('ALERTA_SVR_CONFIG_FILE', silent=True)
 
 if app.config['USE_STDERR']:
     stderr_hanlder = logging.StreamHandler(stream=sys.stderr)
