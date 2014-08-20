@@ -53,6 +53,10 @@ def parse_fields(request):
                         {'lastReceiveId': {'$regex': '^' + params['id']}}]
         del params['id']
 
+    if params.get('duplicateCount', None):
+        query['duplicateCount'] = int(params.get('duplicateCount'))
+        del params['duplicateCount']
+
     if params.get('repeat', None):
         query['repeat'] = True if params.get('repeat', 'true') == 'true' else False
         del params['repeat']
