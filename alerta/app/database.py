@@ -823,12 +823,29 @@ class Mongo(object):
                                        new=True,
                                        upsert=True
                                        )["value"]
-            return response['_id']
+            return HeartbeatDocument(
+                id=response['_id'],
+                origin=response['origin'],
+                tags=response['tags'],
+                event_type=response['type'],
+                create_time=response['createTime'],
+                timeout=response['timeout'],
+                receive_time=response['receiveTime']
+            )
         else:
             update = update['$set']
             update["_id"] = heartbeat.id
             response = self.db.heartbeats.insert(update)
-            return response
+
+            return HeartbeatDocument(
+                id=response,
+                origin=update['origin'],
+                tags=update['tags'],
+                event_type=update['type'],
+                create_time=update['createTime'],
+                timeout=update['timeout'],
+                receive_time=update['receiveTime']
+            )
 
     def delete_heartbeat(self, id):
 
