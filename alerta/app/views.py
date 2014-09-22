@@ -223,6 +223,7 @@ def get_alerts():
 
         for alert in alerts:
             body = alert.get_body()
+            body['href'] = "%s/%s" % (request.base_url.replace('alerts', 'alert'), alert.id)
             found += 1
             severity_count[body['severity']] += 1
             status_count[body['status']] += 1
@@ -274,6 +275,9 @@ def get_history():
         history = db.get_history(query=query, limit=limit)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
+
+    for alert in history:
+        alert['href'] = "%s/%s" % (request.base_url.replace('alerts/history', 'alert'), alert['id'])
 
     if len(history) > 0:
         return jsonify(
@@ -356,7 +360,9 @@ def receive_alert():
         return jsonify(status="error", message=str(e)), 500
 
     if alert:
-        return jsonify(status="ok", id=alert.id, alert=alert.get_body()), 201, {'Location': '%s/%s' % (request.base_url, alert.id)}
+        body = alert.get_body()
+        body['href'] = "%s/%s" % (request.base_url, alert.id)
+        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': '%s/%s' % (request.base_url, alert.id)}
     else:
         return jsonify(status="error", message="alert insert or update failed"), 500
 
@@ -373,7 +379,9 @@ def get_alert(id):
         return jsonify(status="error", message=str(e)), 500
 
     if alert:
-        return jsonify(status="ok", total=1, alert=alert.get_body())
+        body = alert.get_body()
+        body['href'] = request.base_url
+        return jsonify(status="ok", total=1, alert=body)
     else:
         return jsonify(status="ok", message="not found", total=0, alert=None), 404
 
@@ -539,6 +547,10 @@ def get_top10():
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
+    for item in top10:
+        for resource in item['resources']:
+            resource['href'] = "%s/%s" % (request.base_url.replace('alerts/top10', 'alert'), resource['id'])
+
     if top10:
         return jsonify(
             status="ok",
@@ -703,7 +715,9 @@ def get_heartbeats():
 
     hb_list = list()
     for hb in heartbeats:
-        hb_list.append(hb.get_body())
+        body = hb.get_body()
+        body['href'] = "%s/%s" % (request.base_url.replace('heartbeats', 'heartbeat'), hb.id)
+        hb_list.append(body)
 
     if hb_list:
         return jsonify(
@@ -737,7 +751,27 @@ def create_heartbeat():
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
-    return jsonify(status="ok", id=heartbeat.id, heartbeat=heartbeat.get_body()), 201, {'Location': '%s/%s' % (request.base_url, heartbeat.id)}
+    body = heartbeat.get_body()
+    body['href'] = "%s/%s" % (request.base_url, heartbeat.id)
+    return jsonify(status="ok", id=heartbeat.id, heartbeat=body), 201, {'Location': '%s/%s' % (request.base_url, heartbeat.id)}
+
+@app.route('/heartbeat/<id>', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@auth_required
+@jsonp
+def get_heartbeat(id):
+
+    try:
+        heartbeat = db.get_heartbeat(id=id)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
+    if heartbeat:
+        body = heartbeat.get_body()
+        body['href'] = request.base_url
+        return jsonify(status="ok", total=1, heartbeat=body)
+    else:
+        return jsonify(status="ok", message="not found", total=0, heartbeat=None), 404
 
 @app.route('/heartbeat/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])

@@ -849,6 +849,27 @@ class Mongo(object):
                 receive_time=update['receiveTime']
             )
 
+    def get_heartbeat(self, id):
+
+        if len(id) == 8:
+            query = {'$or': [{'_id': {'$regex': '^' + id}}, {'lastReceiveId': {'$regex': '^' + id}}]}
+        else:
+            query = {'$or': [{'_id': id}, {'lastReceiveId': id}]}
+
+        response = self.db.heartbeats.find_one(query)
+        if not response:
+            return
+
+        return HeartbeatDocument(
+            id=response['_id'],
+            tags=response['tags'],
+            origin=response['origin'],
+            event_type=response['type'],
+            create_time=response['createTime'],
+            timeout=response['timeout'],
+            receive_time=response['receiveTime']
+        )
+
     def delete_heartbeat(self, id):
 
         response = self.db.heartbeats.remove({'_id': {'$regex': '^' + id}})
