@@ -52,10 +52,7 @@ def jsonify(*args, **kwargs):
 
 def authenticate():
 
-    response = jsonify(status="error", message="authentication required")
-    response.status_code = 401
-
-    return response
+    return jsonify(status="error", message="authentication required"), 401
 
 
 def verify_token(token):
@@ -200,7 +197,7 @@ def get_alerts():
         query, sort, _, limit, query_time = parse_fields(request)
     except Exception, e:
         gets_timer.stop_timer(gets_started)
-        return jsonify(status="error", message=str(e))
+        return jsonify(status="error", message=str(e)), 400
 
     fields = dict()
     fields['history'] = {'$slice': app.config['HISTORY_LIMIT']}
@@ -208,7 +205,11 @@ def get_alerts():
     if 'status' not in query:
         query['status'] = {'$ne': "expired"}  # hide expired if status not in query
 
-    alerts = db.get_alerts(query=query, fields=fields, sort=sort, limit=limit)
+    try:
+        alerts = db.get_alerts(query=query, fields=fields, sort=sort, limit=limit)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
     total = db.get_count(query=query)  # because total may be greater than limit
 
     found = 0
@@ -256,7 +257,7 @@ def get_alerts():
             statusCounts=status_count,
             lastTime=query_time,
             autoRefresh=Switch.get('auto-refresh-allow').is_on()
-        )
+        ), 404
 
 @app.route('/alerts/history', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -267,9 +268,12 @@ def get_history():
     try:
         query, _, _, limit, query_time = parse_fields(request)
     except Exception, e:
-        return jsonify(status="error", message=str(e))
+        return jsonify(status="error", message=str(e)), 400
 
-    history = db.get_history(query=query, limit=limit)
+    try:
+        history = db.get_history(query=query, limit=limit)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
     if len(history) > 0:
         return jsonify(
@@ -283,7 +287,7 @@ def get_history():
             message="not found",
             history=[],
             lastTIme=query_time
-        )
+        ), 404
 
 @app.route('/alert', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -299,14 +303,14 @@ def receive_alert():
         incomingAlert = Alert.parse_alert(request.data)
     except ValueError, e:
         receive_timer.stop_timer(recv_started)
-        return jsonify(status="error", message=str(e))
+        return jsonify(status="error", message=str(e)), 400
 
     if incomingAlert:
         for plugin in plugins:
             try:
-                error = plugin.pre_receive(incomingAlert)
-                if error:
-                    return jsonify(status="error", message=error)
+                reject = plugin.pre_receive(incomingAlert)
+                if reject:
+                    return jsonify(status="error", message=reject), 403
             except Exception as e:
                 LOG.warning('Error while running pre-receive plug-in: %s', e)
 
@@ -349,12 +353,12 @@ def receive_alert():
         receive_timer.stop_timer(recv_started)
 
     except Exception, e:
-        return jsonify(status="error", message=str(e))
+        return jsonify(status="error", message=str(e)), 500
 
     if alert:
-        return jsonify(status="ok", id=alert.id, alert=alert.get_body()), 201, {'Location': '/alert/%s' % alert.id}
+        return jsonify(status="ok", id=alert.id, alert=alert.get_body()), 201, {'Location': '%s/%s' % (request.base_url, alert.id)}
     else:
-        return jsonify(status="error", message="alert insert or update failed")
+        return jsonify(status="error", message="alert insert or update failed"), 500
 
 
 @app.route('/alert/<id>', methods=['OPTIONS', 'GET'])
@@ -363,12 +367,15 @@ def receive_alert():
 @jsonp
 def get_alert(id):
 
-    alert = db.get_alert(id=id)
+    try:
+        alert = db.get_alert(id=id)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
     if alert:
         return jsonify(status="ok", total=1, alert=alert.get_body())
     else:
-        return jsonify(status="ok", message="not found", total=0, alert=None)
+        return jsonify(status="ok", message="not found", total=0, alert=None), 404
 
 
 @app.route('/alert/<id>/status', methods=['OPTIONS', 'POST'])
@@ -381,10 +388,13 @@ def set_status(id):
     data = request.json
 
     if data and 'status' in data:
-        alert = db.set_status(id=id, status=data['status'], text=data.get('text', ''))
+        try:
+            alert = db.set_status(id=id, status=data['status'], text=data.get('text', ''))
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
     else:
         status_timer.stop_timer(status_started)
-        return jsonify(status="error", message="no data")
+        return jsonify(status="error", message="must supply 'status' as parameter"), 400
 
     if alert:
         for plugin in plugins:
@@ -397,7 +407,7 @@ def set_status(id):
         return jsonify(status="ok")
     else:
         status_timer.stop_timer(status_started)
-        return jsonify(status="error", message="failed to set alert status")
+        return jsonify(status="error", message="not found"), 404
 
 
 @app.route('/alert/<id>/tag', methods=['OPTIONS', 'POST'])
@@ -410,16 +420,19 @@ def tag_alert(id):
     data = request.json
 
     if data and 'tags' in data:
-        response = db.tag_alert(id, data['tags'])
+        try:
+            response = db.tag_alert(id, data['tags'])
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
     else:
         tag_timer.stop_timer(tag_started)
-        return jsonify(status="error", message="no data")
+        return jsonify(status="error", message="must supply 'tags' as list parameter"), 400
 
     tag_timer.stop_timer(tag_started)
     if response:
         return jsonify(status="ok")
     else:
-        return jsonify(status="error", message="failed to tag alert")
+        return jsonify(status="error", message="not found"), 404
 
 
 @app.route('/alert/<id>/untag', methods=['OPTIONS', 'POST'])
@@ -432,16 +445,19 @@ def untag_alert(id):
     data = request.json
 
     if data and 'tags' in data:
-        response = db.untag_alert(id, data['tags'])
+        try:
+            response = db.untag_alert(id, data['tags'])
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
     else:
         untag_timer.stop_timer(untag_started)
-        return jsonify(status="error", message="no data")
+        return jsonify(status="error", message="must supply 'tags' as list parameter"), 400
 
     untag_timer.stop_timer(untag_started)
     if response:
         return jsonify(status="ok")
     else:
-        return jsonify(status="error", message="failed to un-tag alert")
+        return jsonify(status="error", message="not found"), 404
 
 
 @app.route('/alert/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
@@ -453,13 +469,16 @@ def delete_alert(id):
     if (request.method == 'DELETE' or
             (request.method == 'POST' and '_method' in request.json and request.json['_method'] == 'delete')):
         started = delete_timer.start_timer()
-        response = db.delete_alert(id)
+        try:
+            response = db.delete_alert(id)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
         delete_timer.stop_timer(started)
 
         if response:
             return jsonify(status="ok")
         else:
-            return jsonify(status="error", message="failed to delete alert")
+            return jsonify(status="error", message="not found"), 404
 
 
 # Return severity and status counts
@@ -471,10 +490,13 @@ def get_counts():
 
     try:
         query, _, _, _, query_time = parse_fields(request)
-    except Exception, e:
-        return jsonify(status="error", message=str(e))
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 400
 
-    counts = db.get_counts(query=query)
+    try:
+        counts = db.get_counts(query=query)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
     found = 0
     severity_count = defaultdict(int)
@@ -485,16 +507,21 @@ def get_counts():
         severity_count[count['severity']] += 1
         status_count[count['status']] += 1
 
-    return jsonify(
-        status="ok",
-        total=found,
-        more=False,
-        severityCounts=severity_count,
-        statusCounts=status_count,
-        lastTime=query_time,
-        autoRefresh=Switch.get('auto-refresh-allow').is_on()
-    )
-
+    if found:
+        return jsonify(
+            status="ok",
+            total=found,
+            severityCounts=severity_count,
+            statusCounts=status_count
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            severityCounts=severity_count,
+            statusCounts=status_count
+        ), 404
 
 @app.route('/alerts/top10', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -504,10 +531,13 @@ def get_top10():
 
     try:
         query, _, group, _, query_time = parse_fields(request)
-    except Exception, e:
-        return jsonify(status="error", message=str(e))
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 400
 
-    top10 = db.get_topn(query=query, group=group, limit=10)
+    try:
+        top10 = db.get_topn(query=query, group=group, limit=10)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
     if top10:
         return jsonify(
@@ -521,7 +551,7 @@ def get_top10():
             message="not found",
             total=0,
             top10=[],
-        )
+        ), 404
 
 @app.route('/environments', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -531,10 +561,13 @@ def get_environments():
 
     try:
         query, _, _, limit, query_time = parse_fields(request)
-    except Exception, e:
-        return jsonify(status="error", message=str(e))
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 400
 
-    environments = db.get_environments(query=query, limit=limit)
+    try:
+        environments = db.get_environments(query=query, limit=limit)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
     if environments:
         return jsonify(
@@ -548,7 +581,7 @@ def get_environments():
             message="not found",
             total=0,
             environments=[],
-        )
+        ), 404
 
 
 @app.route('/services', methods=['OPTIONS', 'GET'])
@@ -559,10 +592,13 @@ def get_services():
 
     try:
         query, _, _, limit, query_time = parse_fields(request)
-    except Exception, e:
-        return jsonify(status="error", message=str(e))
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 400
 
-    services = db.get_services(query=query, limit=limit)
+    try:
+        services = db.get_services(query=query, limit=limit)
+    except Exception, e:
+        return jsonify(status="error", message=str(e)), 500
 
     if services:
         return jsonify(
@@ -576,7 +612,7 @@ def get_services():
             message="not found",
             total=0,
             services=[],
-        )
+        ), 404
 
 @app.route('/pagerduty', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
@@ -660,17 +696,30 @@ def pagerduty():
 @jsonp
 def get_heartbeats():
 
-    heartbeats = db.get_heartbeats()
+    try:
+        heartbeats = db.get_heartbeats()
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
     hb_list = list()
     for hb in heartbeats:
         hb_list.append(hb.get_body())
 
-    return jsonify(
-        status="ok",
-        total=len(heartbeats),
-        heartbeats=hb_list,
-        time=datetime.datetime.utcnow()
-    )
+    if hb_list:
+        return jsonify(
+            status="ok",
+            total=len(heartbeats),
+            heartbeats=hb_list,
+            time=datetime.datetime.utcnow()
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            heartbeats=hb_list,
+            time=datetime.datetime.utcnow()
+        ), 404
 
 @app.route('/heartbeat', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -680,12 +729,15 @@ def create_heartbeat():
 
     try:
         heartbeat = Heartbeat.parse_heartbeat(request.data)
-    except ValueError, e:
-        return jsonify(status="error", message=str(e))
+    except ValueError as e:
+        return jsonify(status="error", message=str(e)), 400
 
-    heartbeat = db.save_heartbeat(heartbeat)
+    try:
+        heartbeat = db.save_heartbeat(heartbeat)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
-    return jsonify(status="ok", id=heartbeat.id, heartbeat=heartbeat.get_body()), 201, {'Location': '/heartbeat/%s' % heartbeat.id}
+    return jsonify(status="ok", id=heartbeat.id, heartbeat=heartbeat.get_body()), 201, {'Location': '%s/%s' % (request.base_url, heartbeat.id)}
 
 @app.route('/heartbeat/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -694,12 +746,15 @@ def create_heartbeat():
 def delete_heartbeat(id):
 
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
-        response = db.delete_heartbeat(id)
+        try:
+            response = db.delete_heartbeat(id)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
 
         if response:
             return jsonify(status="ok")
         else:
-            return jsonify(status="error", message="failed to delete heartbeat")
+            return jsonify(status="error", message="not found"), 404
 
 @app.route('/users', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -707,15 +762,28 @@ def delete_heartbeat(id):
 @jsonp
 def get_users():
 
-    users = db.get_users()
+    try:
+        users = db.get_users()
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
-    return jsonify(
-        status="ok",
-        total=len(users),
-        users=users,
-        domains=app.config['ALLOWED_EMAIL_DOMAINS'],
-        time=datetime.datetime.utcnow()
-    )
+    if len(users):
+        return jsonify(
+            status="ok",
+            total=len(users),
+            users=users,
+            domains=app.config['ALLOWED_EMAIL_DOMAINS'],
+            time=datetime.datetime.utcnow()
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            users=[],
+            domains=app.config['ALLOWED_EMAIL_DOMAINS'],
+            time=datetime.datetime.utcnow()
+        ), 404
 
 @app.route('/user', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -730,11 +798,14 @@ def create_user():
             "user": user,
             "sponsor": sponsor
         }
+        try:
+            db.save_user(data)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
+    else:
+        return jsonify(status="error", message="must supply 'user' and 'sponsor' as parameters"), 400
 
-        if db.save_user(data):
-            return jsonify(status="ok"), 201, {'Location': '/user/%s' % user}
-
-    return jsonify(status="error", message="failed to create user")
+    return jsonify(status="ok"), 201, {'Location': '%s/%s' % (request.base_url, user)}
 
 @app.route('/user/<user>', methods=['OPTIONS', 'DELETE', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -743,12 +814,15 @@ def create_user():
 def delete_user(user):
 
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
-        response = db.delete_user(user)
+        try:
+            response = db.delete_user(user)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
 
         if response:
             return jsonify(status="ok")
         else:
-            return jsonify(status="error", message="failed to delete user")
+            return jsonify(status="error", message="not found"), 404
 
 @app.route('/keys', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -756,14 +830,26 @@ def delete_user(user):
 @jsonp
 def get_keys():
 
-    keys = db.get_keys()
+    try:
+        keys = db.get_keys()
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
-    return jsonify(
-        status="ok",
-        total=len(keys),
-        keys=keys,
-        time=datetime.datetime.utcnow()
-    )
+    if len(keys):
+        return jsonify(
+            status="ok",
+            total=len(keys),
+            keys=keys,
+            time=datetime.datetime.utcnow()
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            keys=[],
+            time=datetime.datetime.utcnow()
+        ), 404
 
 @app.route('/keys/<user>', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -771,14 +857,26 @@ def get_keys():
 @jsonp
 def get_user_keys(user):
 
-    keys = db.get_keys({"user": user})
+    try:
+        keys = db.get_keys({"user": user})
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
-    return jsonify(
-        status="ok",
-        total=len(keys),
-        keys=keys,
-        time=datetime.datetime.utcnow()
-    )
+    if len(keys):
+        return jsonify(
+            status="ok",
+            total=len(keys),
+            keys=keys,
+            time=datetime.datetime.utcnow()
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            keys=[],
+            time=datetime.datetime.utcnow()
+        ), 404
 
 @app.route('/key', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -792,15 +890,14 @@ def create_key():
             "user": user,
             "text": request.json.get("text", "API Key for %s" % user)
         }
-
-        key = db.create_key(data)
+        try:
+            key = db.create_key(data)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
     else:
-        key = None
+        return jsonify(status="error", message="must supply 'user' as parameter"), 400
 
-    if key:
-        return jsonify(status="ok", key=key), 201, {'Location': '/key/%s' % key}
-    else:
-        return jsonify(status="error", message="failed to generate api key")
+    return jsonify(status="ok", key=key), 201, {'Location': '%s/%s' % (request.base_url, key)}
 
 @app.route('/key/<path:key>', methods=['OPTIONS', 'DELETE', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -809,9 +906,12 @@ def create_key():
 def delete_key(key):
 
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
-        response = db.delete_key(key)
+        try:
+            response = db.delete_key(key)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
 
         if response:
             return jsonify(status="ok")
         else:
-            return jsonify(status="error", message="failed to delete api key")
+            return jsonify(status="error", message="not found"), 404

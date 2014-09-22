@@ -600,7 +600,9 @@ class Mongo(object):
         """
         query = {'_id': {'$regex': '^' + id}}
 
-        event = self.db.alerts.find_one(query, fields={"event": 1, "_id": 0})['event']
+        event = self.db.alerts.find_one(query, fields={"event": 1, "_id": 0})
+        if not event:
+            return False
 
         now = datetime.datetime.utcnow()
         update = {
@@ -660,7 +662,7 @@ class Mongo(object):
         """
         response = self.db.alerts.update({'_id': {'$regex': '^' + id}}, {'$addToSet': {"tags": {'$each': tags}}})
 
-        return True if 'ok' in response else False
+        return response.get('updatedExisting', False)
 
     def untag_alert(self, id, tags):
         """
@@ -668,13 +670,13 @@ class Mongo(object):
         """
         response = self.db.alerts.update({'_id': {'$regex': '^' + id}}, {'$pullAll': {"tags": tags}})
 
-        return True if 'ok' in response else False
+        return response.get('updatedExisting', False)
 
     def delete_alert(self, id):
 
         response = self.db.alerts.remove({'_id': {'$regex': '^' + id}})
 
-        return True if 'ok' in response else False
+        return response.get('ok', False) and response.get('n', 0) == 1
 
     def get_counts(self, query=None):
         """
@@ -877,7 +879,8 @@ class Mongo(object):
     def delete_user(self, user):
 
         response = self.db.users.remove({"user": user})
-        return True if 'ok' in response else False
+
+        return response.get('ok', False) and response.get('n', 0) == 1
 
     def get_metrics(self):
 
@@ -956,7 +959,8 @@ class Mongo(object):
     def delete_key(self, key):
 
         response = self.db.keys.remove({"key": key})
-        return True if 'ok' in response else False
+
+        return response.get('ok', False) and response.get('n', 0) == 1
 
     def is_token_valid(self, token):
 
