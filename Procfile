@@ -1,1 +1,1 @@
-web: gunicorn --chdir /var/lib alerta.app:app --bind unix:/app.sock --access-logfile - --error-logfile -
+web: gunicorn alerta/app/app.wsgi --log-file -
