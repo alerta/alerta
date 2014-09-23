@@ -106,6 +106,8 @@ To see some test alerts in the console run:
 $ contrib/examples/create-new-alert.sh
 ```
 
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+
 More Information
 ----------------
 
