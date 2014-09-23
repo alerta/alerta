@@ -6,4 +6,6 @@ boto
 argparse
 requests
 pytz
+alerta
 gunicorn
+
