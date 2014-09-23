@@ -1,4 +1,5 @@
 
+import os
 import sys
 import logging
 
@@ -9,6 +10,9 @@ app = Flask(__name__)
 app.config.from_object('alerta.settings')
 app.config.from_pyfile('/etc/alertad.conf', silent=True)
 app.config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
+
+if 'SECRET_KEY' in os.environ:
+    app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
 if app.config['USE_STDERR']:
     stderr_hanlder = logging.StreamHandler(stream=sys.stderr)

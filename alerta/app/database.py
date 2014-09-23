@@ -27,18 +27,36 @@ class Mongo(object):
 
     def connect(self):
 
-        if 'MONGO_PORT' in os.environ and 'tcp://' in os.environ['MONGO_PORT']:  # used by linked Docker containers
+        if 'MONGO_PORT' in os.environ and 'tcp://' in os.environ['MONGO_PORT']:  # Docker
             host, port = os.environ['MONGO_PORT'][6:].split(':')
-            app.config['MONGO_HOST'] = host
-            app.config['MONGO_PORT'] = int(port)
+            try:
+                self.conn = pymongo.MongoClient(host, port)
+            except Exception, e:
+                LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGO_PORT'], e)
+                sys.exit(1)
 
-        if not app.config['MONGO_REPLSET']:
+        elif 'MONGOHQ_URL' in os.environ:
+            try:
+                self.conn = pymongo.MongoClient(os.environ['MONGOHQ_URL'])
+            except Exception, e:
+                LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOHQ_URL'], e)
+                sys.exit(1)
+
+        elif 'MONGOLAB_URI' in os.environ:
+            try:
+                self.conn = pymongo.MongoClient(os.environ['MONGOLAB_URI'])
+            except Exception, e:
+                LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOLAB_URI'], e)
+                sys.exit(1)
+
+        elif not app.config['MONGO_REPLSET']:
             try:
                 self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'])
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s:%s : %s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], e)
                 sys.exit(1)
             LOG.info('Connected to mongodb://%s:%s/%s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_DATABASE'])
+
         else:
             try:
                 self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], replicaSet=app.config['MONGO_REPLSET'])
