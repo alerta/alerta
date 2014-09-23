@@ -76,7 +76,7 @@ class Mongo(object):
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
-        LOG.info('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
+        # LOG.info('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
 
         self.create_indexes()
 
