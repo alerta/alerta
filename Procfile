@@ -1,1 +1,1 @@
-web: gunicorn alerta/app/app.wsgi --log-file -
+web: gunicorn alerta.app:app --log-file -
