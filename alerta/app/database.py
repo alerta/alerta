@@ -78,7 +78,8 @@ class Mongo(object):
 
         # LOG.info('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
 
-        self.create_indexes()
+        if app.config['MONGO_REPLSET']:
+            self.create_indexes()
 
     def create_indexes(self):
 
