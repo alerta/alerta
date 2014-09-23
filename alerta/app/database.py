@@ -41,6 +41,7 @@ class Mongo(object):
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOHQ_URL'], e)
                 sys.exit(1)
+            app.config['MONGO_DATABASE'] = os.environ['MONGOHQ_URL'].split('/')[-1]
 
         elif 'MONGOLAB_URI' in os.environ:
             try:
@@ -48,6 +49,7 @@ class Mongo(object):
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOLAB_URI'], e)
                 sys.exit(1)
+            app.config['MONGO_DATABASE'] = os.environ['MONGOLAB_URI'].split('/')[-1]
 
         elif not app.config['MONGO_REPLSET']:
             try:
@@ -76,7 +78,7 @@ class Mongo(object):
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
-        # LOG.info('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
+        LOG.info('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
 
         if app.config['MONGO_REPLSET']:
             self.create_indexes()
