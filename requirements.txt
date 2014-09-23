@@ -6,3 +6,4 @@ boto
 argparse
 requests
 pytz
+gunicorn
