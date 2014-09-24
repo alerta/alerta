@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# set -x
+set -x
 
 if [ -z "$BUILD_NUMBER" ]
 then
@@ -8,7 +8,7 @@ then
 	exit 1
 fi
 
-VERSION=$(python -c 'import alerta; print alerta.__version__')
+VERSION=$(<VERSION)
 ALERTA_VCS_ROOT=`pwd`
 
 now=`date -u +%Y-%m-%dT%H:%M:%SZ`
