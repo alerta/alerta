@@ -50,6 +50,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta.conf
 %defattr(-,alerta,alerta)
+/opt/alerta/bin/alerta
 /opt/alerta/bin/alertad
 %config(noreplace) /opt/alerta/apache/app.wsgi
 /opt/alerta/bin/python*
