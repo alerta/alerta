@@ -1,6 +1,6 @@
 %define name alerta
-%{!?_with_teamcity: %define version 3.0.3}
-%{!?_with_teamcity: %define release 2}
+%{!?_with_teamcity: %define version 3.2.6}
+%{!?_with_teamcity: %define release 1}
 
 Name: %{name}
 Summary: Alerta monitoring framework
@@ -70,7 +70,7 @@ rm -rf %{buildroot}
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta.conf
 %defattr(-,alerta,alerta)
-/opt/alerta/bin/alerta-app
+/opt/alerta/bin/alertad
 %config(noreplace) /opt/alerta/apache/app.wsgi
 /opt/alerta/bin/python*
 /opt/alerta/bin/activate*
