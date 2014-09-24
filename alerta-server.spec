@@ -22,7 +22,7 @@ from multiple sources like syslog, SNMP, Nagios, Riemann,
 Zabbix, and displays them on an alert console.
 
 %prep
-%setup
+%setup -n alerta-%{version}
 
 %build
 /usr/bin/virtualenv --no-site-packages alerta
