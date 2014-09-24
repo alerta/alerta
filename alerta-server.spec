@@ -111,6 +111,8 @@ if [ "$1" = "0" ]; then
 fi
 
 %changelog
+* Wed Sep 24 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.2.6-1
+- Release 3.2
 * Fri Aug 01 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.1.0-2
 - Remove references to alerta dashboard
 * Fri May 06 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.1.0-1
