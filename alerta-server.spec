@@ -22,11 +22,6 @@ Alerta is a monitoring framework that consolidates alerts
 from multiple sources like syslog, SNMP, Nagios, Riemann,
 Zabbix, and displays them on an alert console.
 
-%package
-Summary: Alerta monitoring framework
-%description server
-UNKNOWN
-
 %prep
 %setup
 
