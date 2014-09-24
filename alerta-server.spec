@@ -41,14 +41,6 @@ cp -r %{_builddir}/alerta-%{version}/alerta/lib %{buildroot}/opt/alerta/
 %__mkdir_p %{buildroot}/opt/alerta/apache
 %__install -m 0644 %{_builddir}/alerta-%{version}/alerta/app/app.wsgi %{buildroot}/opt/alerta/apache
 
-%__mkdir_p %{buildroot}%{_sysconfdir}/init.d/
-%__install -m 0755 contrib/redhat/alert-* %{buildroot}%{_sysconfdir}/init.d/
-%__mkdir_p %{buildroot}%{_sysconfdir}/snmp/
-%__install -m 0444 etc/snmptrapd.conf %{buildroot}%{_sysconfdir}/snmp/snmptrapd.conf.alerta
-%__mkdir_p %{buildroot}/var/lib/alerta
-%__mkdir_p %{buildroot}/var/log/alerta
-%__mkdir_p %{buildroot}/var/run/alerta
-
 prelink -u %{buildroot}/opt/alerta/bin/python
 
 %clean
@@ -63,9 +55,6 @@ rm -rf %{buildroot}
 /opt/alerta/bin/python*
 /opt/alerta/bin/activate*
 /opt/alerta/lib/*
-%dir %attr(0775,alerta,root) /var/lib/alerta
-%dir %attr(0775,alerta,root) /var/log/alerta
-%dir %attr(0775,alerta,alerta) /var/run/alerta
 
 %pre
 getent group alerta >/dev/null || groupadd -r alerta
