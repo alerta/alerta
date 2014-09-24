@@ -2,7 +2,7 @@
 %{!?_with_teamcity: %define version 3.2.6}
 %{!?_with_teamcity: %define release 1}
 
-Name: %{name}
+Name: %{name}-server
 Summary: Alerta monitoring framework
 Version: %{version}
 Release: %{release}
@@ -22,15 +22,9 @@ Alerta is a monitoring framework that consolidates alerts
 from multiple sources like syslog, SNMP, Nagios, Riemann,
 Zabbix, and displays them on an alert console.
 
-%package server
+%package
 Summary: Alerta monitoring framework
 %description server
-UNKNOWN
-
-%package extras
-Summary: Alerta monitoring framework - extras
-Requires: alerta-server, net-snmp
-%description extras
 UNKNOWN
 
 %prep
@@ -66,7 +60,7 @@ prelink -u %{buildroot}/opt/alerta/bin/python
 %clean
 rm -rf %{buildroot}
 
-%files server
+%files
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta.conf
 %defattr(-,alerta,alerta)
@@ -79,36 +73,12 @@ rm -rf %{buildroot}
 %dir %attr(0775,alerta,root) /var/log/alerta
 %dir %attr(0775,alerta,alerta) /var/run/alerta
 
-%files extras
-%defattr(-,root,root)
-%{_sysconfdir}/init.d/alert-*
-%defattr(-,alerta,alerta)
-/opt/alerta/bin/alert-*
-%{_sysconfdir}/snmp/snmptrapd.conf.%{name}
-
-%pre server
+%pre
 getent group alerta >/dev/null || groupadd -r alerta
 getent passwd alerta >/dev/null || \
     useradd -r -g alerta -d /var/lib/alerta -s /sbin/nologin \
     -c "Alerta monitoring tool" alerta
 exit 0
-
-%post extras
-for name in alert-cloudwatch alert-dynect alert-ircbot alert-mailer alert-logger \
-    alert-pagerduty alert-pinger alert-solarwinds alert-syslog alert-urlmon
-do
-    /sbin/chkconfig --add $name
-done
-
-%preun extras
-if [ "$1" = "0" ]; then
-    for name in alert-cloudwatch alert-dynect alert-ircbot alert-mailer alert-logger \
-        alert-pagerduty alert-pinger alert-solarwinds alert-syslog alert-urlmon
-    do
-        /sbin/chkconfig $name off
-        /sbin/chkconfig --del $name
-    done
-fi
 
 %changelog
 * Wed Sep 24 2014 Nick Satterly <nick.satterly@theguardian.com> - 3.2.6-1
