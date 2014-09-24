@@ -1,15 +1,14 @@
-%define name alerta
 %{!?_with_teamcity: %define version 3.2.6}
 %{!?_with_teamcity: %define release 1}
 
-Name: %{name}-server
+Name: alerta-server
 Summary: Alerta monitoring framework
 Version: %{version}
 Release: %{release}
-Source0: %{name}-%{version}.tar.gz
+Source0: alerta-%{version}.tar.gz
 License: Apache License 2.0
 Group: Utilities/System
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+BuildRoot: %{_tmppath}/alerta-%{version}-%{release}-buildroot
 Prefix: /opt
 BuildArch: x86_64
 Vendor: Nick Satterly <nick.satterly@theguardian.com>
@@ -33,19 +32,19 @@ alerta/bin/python setup.py install --single-version-externally-managed --root=/
 
 %install
 %__mkdir_p %{buildroot}/opt/alerta/bin
-cp %{_builddir}/%{name}-%{version}/alerta/bin/alert* %{buildroot}/opt/alerta/bin/
-cp %{_builddir}/%{name}-%{version}/alerta/bin/python* %{buildroot}/opt/alerta/bin/
-cp %{_builddir}/%{name}-%{version}/alerta/bin/activate* %{buildroot}/opt/alerta/bin/
-cp -r %{_builddir}/%{name}-%{version}/alerta/lib %{buildroot}/opt/alerta/
+cp %{_builddir}/alerta-%{version}/alerta/bin/alert* %{buildroot}/opt/alerta/bin/
+cp %{_builddir}/alerta-%{version}/alerta/bin/python* %{buildroot}/opt/alerta/bin/
+cp %{_builddir}/alerta-%{version}/alerta/bin/activate* %{buildroot}/opt/alerta/bin/
+cp -r %{_builddir}/alerta-%{version}/alerta/lib %{buildroot}/opt/alerta/
 %__mkdir_p %{buildroot}%{_sysconfdir}/httpd/conf.d/
 %__install -m 0444 etc/httpd-alerta.conf %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta.conf
 %__mkdir_p %{buildroot}/opt/alerta/apache
-%__install -m 0644 %{_builddir}/%{name}-%{version}/alerta/app/app.wsgi %{buildroot}/opt/alerta/apache
+%__install -m 0644 %{_builddir}/alerta-%{version}/alerta/app/app.wsgi %{buildroot}/opt/alerta/apache
 
 %__mkdir_p %{buildroot}%{_sysconfdir}/init.d/
 %__install -m 0755 contrib/redhat/alert-* %{buildroot}%{_sysconfdir}/init.d/
 %__mkdir_p %{buildroot}%{_sysconfdir}/snmp/
-%__install -m 0444 etc/snmptrapd.conf %{buildroot}%{_sysconfdir}/snmp/snmptrapd.conf.%{name}
+%__install -m 0444 etc/snmptrapd.conf %{buildroot}%{_sysconfdir}/snmp/snmptrapd.conf.alerta
 %__mkdir_p %{buildroot}/var/lib/alerta
 %__mkdir_p %{buildroot}/var/log/alerta
 %__mkdir_p %{buildroot}/var/run/alerta
