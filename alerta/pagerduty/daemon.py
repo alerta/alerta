@@ -12,7 +12,7 @@ from alerta.common.heartbeat import Heartbeat
 from alerta.common import severity_code, status_code
 from alerta.pagerduty.pdclientapi import PagerDutyClient
 
-__version__ = '3.0.3'
+__version__ = '3.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -23,8 +23,9 @@ class PagerDutyMessage(FanoutConsumer, threading.Thread):
     def __init__(self):
 
         mq = Messaging()
+        self.connection = mq.connection
 
-        FanoutConsumer.__init__(self, mq.connection)
+        FanoutConsumer.__init__(self, self.connection)
         threading.Thread.__init__(self)
 
         self.pd = PagerDutyClient()
