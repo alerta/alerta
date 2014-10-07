@@ -1,5 +1,6 @@
 Flask
 pymongo
+elasticsearch
 kombu
 librabbitmq
 boto

@@ -34,9 +34,11 @@ if app.debug:
 else:
     app.logger.setLevel(logging.WARNING)
 
-from alerta.app.database import Mongo
+# from alerta.app.database import Mongo
+# db = Mongo()
 
-db = Mongo()
+from alerta.app.backends.elasticsearch_backend import ElasticsearchBackend
+db = ElasticsearchBackend()
 
 import views
 import management.views
