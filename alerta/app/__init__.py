@@ -37,9 +37,6 @@ else:
 from alerta.app.mongo_backend import MongoBackend
 db = MongoBackend()
 
-from alerta.app.es_backend import ElasticsearchBackend
-db = ElasticsearchBackend()
-
 import views
 import management.views
 
