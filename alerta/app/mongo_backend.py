@@ -703,7 +703,7 @@ class MongoBackend(object):
 
     def get_counts(self, query=None, fields=None, group=None):
         """
-        Return total and dict() of severity and status counts.
+        Return counts grouped by severity or status.
         """
         fields = fields or {}
 
@@ -715,11 +715,11 @@ class MongoBackend(object):
 
         responses = self.db.alerts.aggregate(pipeline)
 
-        count = dict()
+        counts = dict()
         for response in responses['result']:
-            count[response['_id']] = response['count']
+            counts[response['_id']] = response['count']
 
-        return count
+        return counts
 
     def get_topn(self, query=None, group=None, limit=10):
 
