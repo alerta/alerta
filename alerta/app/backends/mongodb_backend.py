@@ -8,6 +8,8 @@ import hashlib
 
 import pymongo
 
+from collections import defaultdict
+
 from alerta.app import app, severity_code, status_code
 from alerta.app.backends import Backend
 from alerta.alert import AlertDocument
@@ -149,6 +151,9 @@ class MongoBackend(Backend):
         return self.db.alerts.find(query).count()
 
     def get_alerts(self, query=None, fields=None, sort=None, limit=0):
+
+        if 'status' not in query:
+            query = {"status": {'$ne': "expired"}}
 
         responses = self.db.alerts.find(query, fields=fields, sort=sort).limit(limit)
 
@@ -699,12 +704,25 @@ class MongoBackend(Backend):
 
         return response.get('ok', False) and response.get('n', 0) == 1
 
-    def get_counts(self, query=None):
+    def get_counts(self, query=None, fields=None, group=None):
         """
         Return total and dict() of severity and status counts.
         """
+        fields = fields or {}
 
-        return self.db.alerts.find(query, {"severity": 1, "status": 1})
+        pipeline = [
+            {'$match': query},
+            {'$project': fields},
+            {'$group': {"_id": "$" + group, "count": {'$sum': 1}}}
+        ]
+
+        responses = self.db.alerts.aggregate(pipeline)
+
+        count = dict()
+        for response in responses['result']:
+            count[response['_id']] = response['count']
+
+        return count
 
     def get_topn(self, query=None, group=None, limit=10):
 
