@@ -34,9 +34,8 @@ if app.debug:
 else:
     app.logger.setLevel(logging.WARNING)
 
-from alerta.app.database import Mongo
-
-db = Mongo()
+from alerta.app.mongo_backend import MongoBackend
+db = MongoBackend()
 
 import views
 import management.views

@@ -202,9 +202,6 @@ def get_alerts():
     fields = dict()
     fields['history'] = {'$slice': app.config['HISTORY_LIMIT']}
 
-    if 'status' not in query:
-        query['status'] = {'$ne': "expired"}  # hide expired if status not in query
-
     try:
         alerts = db.get_alerts(query=query, fields=fields, sort=sort, limit=limit)
     except Exception as e:
@@ -502,23 +499,19 @@ def get_counts():
         return jsonify(status="error", message=str(e)), 400
 
     try:
-        counts = db.get_counts(query=query)
+        severity_count = db.get_counts(query=query, fields={"severity": 1}, group="severity")
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
-    found = 0
-    severity_count = defaultdict(int)
-    status_count = defaultdict(int)
+    try:
+        status_count = db.get_counts(query=query, fields={"status": 1}, group="status")
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
-    for count in counts:
-        found += 1
-        severity_count[count['severity']] += 1
-        status_count[count['status']] += 1
-
-    if found:
+    if sum(severity_count.values()):
         return jsonify(
             status="ok",
-            total=found,
+            total=sum(severity_count.values()),
             severityCounts=severity_count,
             statusCounts=status_count
         )
