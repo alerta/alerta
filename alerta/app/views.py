@@ -299,11 +299,11 @@ def receive_alert():
     # A received alert can result in a duplicate, correlated or new alert
     #
 
-    # recv_started = receive_timer.start_timer()
+    recv_started = receive_timer.start_timer()
     try:
         incomingAlert = Alert.parse_alert(request.data)
     except ValueError, e:
-        # receive_timer.stop_timer(recv_started)
+        receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 400
 
     if incomingAlert:
@@ -316,35 +316,11 @@ def receive_alert():
                 LOG.warning('Error while running pre-receive plug-in: %s', e)
 
     try:
-        # if db.is_duplicate(incomingAlert):
-        #
-        #     started = duplicate_timer.start_timer()
-        #     alert = db.save_duplicate(incomingAlert)
-        #     duplicate_timer.stop_timer(started)
-        #
-        #     for plugin in plugins:
-        #         try:
-        #             plugin.post_receive(alert)
-        #         except Exception as e:
-        #             LOG.warning('Error while running post-receive plug-in: %s', e)
-        #
-        # elif db.is_correlated(incomingAlert):
-        #
-        #     started = correlate_timer.start_timer()
-        #     alert = db.save_correlated(incomingAlert)
-        #     correlate_timer.stop_timer(started)
-        #
-        #     for plugin in plugins:
-        #         try:
-        #             plugin.post_receive(alert)
-        #         except Exception as e:
-        #             LOG.warning('Error while running post-receive plug-in: %s', e)
-        #
-        # else:
-        if True:
-            # started = create_timer.start_timer()
-            alert = db.create_alert(incomingAlert)
-            # create_timer.stop_timer(started)
+        if db.is_duplicate(incomingAlert):
+
+            started = duplicate_timer.start_timer()
+            alert = db.save_duplicate(incomingAlert)
+            duplicate_timer.stop_timer(started)
 
             for plugin in plugins:
                 try:
@@ -352,7 +328,30 @@ def receive_alert():
                 except Exception as e:
                     LOG.warning('Error while running post-receive plug-in: %s', e)
 
-        # receive_timer.stop_timer(recv_started)
+        elif db.is_correlated(incomingAlert):
+
+            started = correlate_timer.start_timer()
+            alert = db.save_correlated(incomingAlert)
+            correlate_timer.stop_timer(started)
+
+            for plugin in plugins:
+                try:
+                    plugin.post_receive(alert)
+                except Exception as e:
+                    LOG.warning('Error while running post-receive plug-in: %s', e)
+
+        else:
+            started = create_timer.start_timer()
+            alert = db.create_alert(incomingAlert)
+            create_timer.stop_timer(started)
+
+            for plugin in plugins:
+                try:
+                    plugin.post_receive(alert)
+                except Exception as e:
+                    LOG.warning('Error while running post-receive plug-in: %s', e)
+
+        receive_timer.stop_timer(recv_started)
 
     except Exception, e:
         return jsonify(status="error", message=str(e)), 500

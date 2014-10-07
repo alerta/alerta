@@ -19,7 +19,7 @@ class ElasticsearchBackend(object):
 
     def __init__(self):
 
-        self.es = es.Elasticsearch()
+        self.es = Elasticsearch()
 
     def get_count(self, query=None):
         """

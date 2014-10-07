@@ -9,7 +9,6 @@ import hashlib
 import pymongo
 
 from alerta.app import app, severity_code, status_code
-from alerta.app.backends import Backend
 from alerta.alert import AlertDocument
 from alerta.heartbeat import HeartbeatDocument
 
