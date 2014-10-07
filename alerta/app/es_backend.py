@@ -15,30 +15,29 @@ logging.basicConfig(level=logging.DEBUG)
 # LOG = app.logger
 
 
-class ElasticsearchBackend(Backend):
+class ElasticsearchBackend(object):
 
     def __init__(self):
 
-        self.es = Elasticsearch()
+        self.es = es.Elasticsearch()
 
     def get_count(self, query=None):
         """
         Return total number of alerts that meet the query filter.
         """
-        query = {"query": {"match_all": {}}}
+        query = query or {"query": {"match_all": {}}}
 
-        return self.es.search(index="alerta", body=query)['hits']['total']
+        return self.es.count(index="alerta", body=query)['count']
 
     def get_alerts(self, query=None, fields=None, sort=None, limit=0):
 
-        query = {"query": {"match_all": {}}}
+        query = query or {"query": {"match_all": {}}}
 
         responses = self.es.search(index="alerta", body=query)
 
         alerts = list()
         for hit in responses['hits']['hits']:
             response = hit['_source']
-            print type(response['lastReceiveTime'])
             alerts.append(
                 AlertDocument(
                     id=response.get('id', 'no-id'),
@@ -165,3 +164,11 @@ class ElasticsearchBackend(Backend):
             last_receive_time=alert['lastReceiveTime'],
             history=list()
         )
+
+    def get_counts(self, query=None, fields=None, group=None):
+
+        query = query or {"query": {"match_all": {}}}
+        fields = ["severity", "status"]
+
+        print '********** %s **************' % self.es.search(index="alerta", body=query, fields=fields)
+        return self.es.count(index="alerta", body=query, fields=fields)

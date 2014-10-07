@@ -8,8 +8,6 @@ import hashlib
 
 import pymongo
 
-from collections import defaultdict
-
 from alerta.app import app, severity_code, status_code
 from alerta.app.backends import Backend
 from alerta.alert import AlertDocument
@@ -19,7 +17,7 @@ from alerta.heartbeat import HeartbeatDocument
 LOG = app.logger
 
 
-class MongoBackend(Backend):
+class MongoBackend(object):
 
     def __init__(self):
 
