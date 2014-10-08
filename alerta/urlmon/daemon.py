@@ -22,7 +22,7 @@ from alerta.common.api import ApiClient
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-__version__ = '3.0.4'
+__version__ = '3.1.0'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -71,10 +71,6 @@ class WorkerThread(threading.Thread):
         threading.Thread.__init__(self)
         LOG.debug('Initialising %s...', self.getName())
 
-        self.currentCount = {}
-        self.currentState = {}
-        self.previousEvent = {}
-
         self.queue = queue   # internal queue
         self.api = api               # message broker
         self.dedup = dedup
@@ -96,74 +92,15 @@ class WorkerThread(threading.Thread):
                 self.queue.task_done()
                 continue
 
+            resource = check['resource']
+            LOG.info('%s polling %s...', self.getName(), resource)
+            status, reason, body, rtt = self.urlmon(check)
+
             status_regex = check.get('status_regex', None)
             search_string = check.get('search', None)
             rule = check.get('rule', None)
             warn_thold = check.get('warning', CONF.urlmon_slow_warning)
             crit_thold = check.get('critical', CONF.urlmon_slow_critical)
-            post = check.get('post', None)
-
-            LOG.info('%s checking %s', self.getName(), check['url'])
-            start = time.time()
-
-            if 'headers' in check:
-                headers = dict(check['headers'])
-            else:
-                headers = dict()
-
-            username = check.get('username', None)
-            password = check.get('password', None)
-            realm = check.get('realm', None)
-            uri = check.get('uri', None)
-
-            proxy = check.get('proxy', False)
-            if proxy:
-                proxy_handler = urllib2.ProxyHandler(proxy)
-
-            if username and password:
-                auth_handler = urllib2.HTTPBasicAuthHandler()
-                auth_handler.add_password(realm=realm,
-                                          uri=uri,
-                                          user=username,
-                                          passwd=password)
-                if proxy:
-                    opener = urllib2.build_opener(auth_handler, proxy_handler)
-                else:
-                    opener = urllib2.build_opener(auth_handler)
-            else:
-                if proxy:
-                    opener = urllib2.build_opener(proxy_handler)
-                else:
-                    opener = urllib2.build_opener()
-            urllib2.install_opener(opener)
-
-            if 'User-agent' not in headers:
-                headers['User-agent'] = 'alert-urlmon/%s Python-urllib/%s' % (__version__, urllib2.__version__)
-
-            try:
-                if post:
-                    req = urllib2.Request(check['url'], json.dumps(post), headers=headers)
-                else:
-                    req = urllib2.Request(check['url'], headers=headers)
-                response = urllib2.urlopen(req, None, CONF.urlmon_max_timeout)
-            except ValueError, e:
-                LOG.error('Request failed: %s', e)
-                continue
-            except urllib2.URLError, e:
-                if hasattr(e, 'reason'):
-                    reason = str(e.reason)
-                    status = None
-                elif hasattr(e, 'code'):
-                    reason = None
-                    status = e.code
-            except Exception, e:
-                LOG.warning('Unexpected error: %s', e)
-                continue
-            else:
-                status = response.getcode()
-                body = response.read()
-
-            rtt = int((time.time() - start) * 1000)  # round-trip time
 
             try:
                 description = HTTP_RESPONSES[status]
@@ -251,6 +188,7 @@ class WorkerThread(threading.Thread):
                         text = 'Website available but pattern "%s" not found' % search_string
                 elif rule and body:
                     LOG.debug('Evaluating rule %s', rule)
+                    headers = check.get('headers', {})
                     if 'Content-type' in headers and headers['Content-type'] == 'application/json':
                         body = json.loads(body)
                     try:
@@ -320,6 +258,79 @@ class WorkerThread(threading.Thread):
 
         self.queue.task_done()
 
+    @staticmethod
+    def urlmon(check):
+
+        url = check['url']
+        post = check.get('post', None)
+        count = check.get('count', 1)
+        headers = check.get('headers', {})
+        username = check.get('username', None)
+        password = check.get('password', None)
+        realm = check.get('realm', None)
+        uri = check.get('uri', None)
+        proxy = check.get('proxy', False)
+
+        status = 0
+        reason = None
+        body = None
+        rtt = 0
+
+        for _ in range(count, 0, -1):
+
+            start = time.time()
+
+            if username and password:
+                auth_handler = urllib2.HTTPBasicAuthHandler()
+                auth_handler.add_password(realm=realm,
+                                          uri=uri,
+                                          user=username,
+                                          passwd=password)
+                if proxy:
+                    opener = urllib2.build_opener(auth_handler, urllib2.ProxyHandler(proxy))
+                else:
+                    opener = urllib2.build_opener(auth_handler)
+            else:
+                if proxy:
+                    opener = urllib2.build_opener(urllib2.ProxyHandler(proxy))
+                else:
+                    opener = urllib2.build_opener()
+            urllib2.install_opener(opener)
+
+            if 'User-agent' not in headers:
+                headers['User-agent'] = 'alert-urlmon/%s Python-urllib/%s' % (__version__, urllib2.__version__)
+
+            try:
+                if post:
+                    req = urllib2.Request(url, json.dumps(post), headers=headers)
+                else:
+                    req = urllib2.Request(url, headers=headers)
+                response = urllib2.urlopen(req, None, CONF.urlmon_max_timeout)
+            except ValueError, e:
+                LOG.error('Request failed: %s', e)
+            except urllib2.URLError, e:
+                if hasattr(e, 'reason'):
+                    reason = str(e.reason)
+                    status = None
+                elif hasattr(e, 'code'):
+                    reason = None
+                    status = e.code
+            except Exception, e:
+                LOG.warning('Unexpected error: %s', e)
+            else:
+                status = response.getcode()
+                body = response.read()
+
+            rtt = int((time.time() - start) * 1000)  # round-trip time
+
+            if status:  # return result if any HTTP/S response is received
+                break
+
+            if count:
+                time.sleep(10)
+
+        return status, reason, body, rtt
+
 
 class UrlmonDaemon(Daemon):
 
@@ -350,7 +361,7 @@ class UrlmonDaemon(Daemon):
         self.carbon = Carbon()  # graphite metrics
 
         # Initialiase alert rules
-        urls = init_urls()
+        checks = init_urls()
 
         # Start worker threads
         LOG.debug('Starting %s worker threads...', CONF.server_threads)
@@ -365,8 +376,8 @@ class UrlmonDaemon(Daemon):
 
         while not self.shuttingdown:
             try:
-                for url in urls:
-                    self.queue.put((url, time.time()))
+                for check in checks:
+                    self.queue.put((check, time.time()))
 
                 LOG.debug('Send heartbeat...')
                 heartbeat = Heartbeat(tags=[__version__])
