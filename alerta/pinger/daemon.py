@@ -19,7 +19,7 @@ from alerta.common.transform import Transformers
 from alerta.common.dedup import DeDup
 from alerta.common.graphite import Carbon
 
-__version__ = '3.0.3'
+__version__ = '3.0.4'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -68,13 +68,11 @@ class WorkerThread(threading.Thread):
 
         while True:
             LOG.debug('Waiting on input queue...')
-            item = self.queue.get()
-
-            if not item:
+            try:
+                environment, service, resource, retries, queue_time = self.queue.get()
+            except TypeError:
                 LOG.info('%s is shutting down.', self.getName())
                 break
-
-            environment, service, resource, retries, queue_time = item
 
             if time.time() - queue_time > CONF.loop_every:
                 LOG.warning('Ping request to %s expired after %d seconds.', resource, int(time.time() - queue_time))
