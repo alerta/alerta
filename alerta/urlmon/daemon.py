@@ -22,7 +22,7 @@ from alerta.common.api import ApiClient
 from alerta.common.daemon import Daemon
 from alerta.common.graphite import Carbon
 
-__version__ = '3.1.0'
+__version__ = '3.1.1'
 
 LOG = logging.getLogger(__name__)
 CONF = config.CONF
@@ -276,8 +276,9 @@ class WorkerThread(threading.Thread):
         body = None
         rtt = 0
 
-        for _ in range(count, 0, -1):
+        while True:
 
+            count -= 1
             start = time.time()
 
             if username and password:
@@ -326,8 +327,9 @@ class WorkerThread(threading.Thread):
             if status:  # return result if any HTTP/S response is received
                 break
 
-            if count:
-                time.sleep(10)
+            if not count:
+                break
+            time.sleep(10)
 
         return status, reason, body, rtt
 
