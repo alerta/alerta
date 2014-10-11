@@ -37,6 +37,7 @@ setuptools.setup(
         ],
         'alerta.plugins': [
             'reject = alerta.plugins.reject:RejectPolicy',
+            'normalise = alerta.plugins.normalise:Normalise',
             'amqp = alerta.plugins.amqp:FanoutPublisher',
             'sns = alerta.plugins.sns:SnsTopicPublisher',
             'logstash = alerta.plugins.logstash:LogStashOutput',

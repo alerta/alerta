@@ -7,18 +7,22 @@ from alerta.app import app
 LOG = app.logger
 
 
+class RejectException(Exception):
+    """The alert was rejected because the format did not meet the required policy."""
+
+
 class PluginBase(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def pre_receive(self, alert):
-        """Reject an alert based on alert properties."""
-        return
+        """Pre-process an alert based on alert properties or reject it by raising RejectException."""
+        return alert
 
     @abc.abstractmethod
     def post_receive(self, alert):
         """Send an alert to another service or notify users."""
-        return
+        return None
 
 
 def load_plugins(namespace='alerta.plugins'):

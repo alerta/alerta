@@ -12,7 +12,7 @@ from alerta.app.utils import parse_fields, crossdomain
 from alerta.app.metrics import Timer
 from alerta.alert import Alert
 from alerta.heartbeat import Heartbeat
-from alerta.plugins import load_plugins
+from alerta.plugins import load_plugins, RejectException
 
 LOG = app.logger
 
@@ -309,9 +309,9 @@ def receive_alert():
     if incomingAlert:
         for plugin in plugins:
             try:
-                reject = plugin.pre_receive(incomingAlert)
-                if reject:
-                    return jsonify(status="error", message=reject), 403
+                incomingAlert = plugin.pre_receive(incomingAlert)
+            except RejectException as e:
+                return jsonify(status="error", message=str(e)), 403
             except Exception as e:
                 LOG.warning('Error while running pre-receive plug-in: %s', e)
 

@@ -1,6 +1,6 @@
 import re
 
-from alerta.plugins import PluginBase
+from alerta.plugins import PluginBase, RejectException
 
 ORIGIN_BLACKLIST = [
     re.compile('foo/bar'),
@@ -13,13 +13,15 @@ class RejectPolicy(PluginBase):
     def pre_receive(self, alert):
 
         if any(regex.match(alert.origin) for regex in ORIGIN_BLACKLIST):
-            return "[POLICY] Alert origin '%s' has been blacklisted" % alert.origin
+            raise RejectException("[POLICY] Alert origin '%s' has been blacklisted" % alert.origin)
 
         if alert.environment not in ['Production', 'Development']:
-            return "[POLICY] Alert with unsupported environment '%s' rejected" % alert.environment
+            raise RejectException("[POLICY] Alert with unsupported environment '%s' rejected" % alert.environment)
 
         if not alert.service:
-            return "[POLICY] Alert must define a service"
+            raise RejectException("[POLICY] Alert must define a service")
+
+        return alert
 
     def post_receive(self, alert):
 

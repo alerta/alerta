@@ -16,7 +16,7 @@ from alerta.heartbeat import HeartbeatDocument
 LOG = app.logger
 
 
-class MongoBackend(object):
+class Mongo(object):
 
     def __init__(self):
 
