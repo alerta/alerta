@@ -3,19 +3,17 @@ import os
 import sys
 import unittest
 
-import time
 import datetime
 
 # If ../alerta/__init__.py exists, add ../ to Python search path, so that
 # it will override what happens to be installed in /usr/(local/)lib/python...
+from alerta.app import severity_code, status_code
+
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
                                                 os.pardir,
                                                 os.pardir))
 if os.path.exists(os.path.join(possible_topdir, 'alerta', '__init__.py')):
     sys.path.insert(0, possible_topdir)
-
-from alerta.common import status_code, severity_code
-from alerta.common.alert import Alert, AlertDocument
 
 
 class TestAlert(unittest.TestCase):

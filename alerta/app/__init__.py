@@ -1,23 +1,45 @@
 
+import os
+import sys
+import logging
+
+from logging.handlers import RotatingFileHandler, SysLogHandler
 from flask import Flask
 
-from alerta.common import config
-from alerta.common import log as logging
-from alerta.common.amqp import Messaging
-from alerta.app.database import Mongo
-
-__version__ = '3.0.3'
-
-LOG = logging.getLogger(__name__)
-CONF = config.CONF
-
-config.parse_args(version=__version__)
-logging.setup('alerta')
-
 app = Flask(__name__)
-app.config.from_object(__name__)
-db = Mongo()
-mq = Messaging()
+app.config.from_object('alerta.settings')
+app.config.from_pyfile('/etc/alertad.conf', silent=True)
+app.config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
+
+if 'SECRET_KEY' in os.environ:
+    app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
+
+if app.config['USE_STDERR']:
+    stderr_hanlder = logging.StreamHandler(stream=sys.stderr)
+    stderr_hanlder.setFormatter(logging.Formatter(fmt=app.config['LOG_FORMAT']))
+    app.logger.addHandler(stderr_hanlder)
+
+if app.config['LOG_FILE']:
+    file_handler = RotatingFileHandler(filename=app.config['LOG_FILE'], encoding='utf-8', maxBytes=10000, backupCount=1)
+    file_handler.setFormatter(logging.Formatter(fmt=app.config['LOG_FORMAT']))
+    app.logger.addHandler(file_handler)
+
+if app.config['USE_SYSLOG']:
+    syslog_handler = SysLogHandler(address=app.config['SYSLOG_SOCKET'], facility=app.config['SYSLOG_FACILITY'])
+    syslog_handler.setFormatter(logging.Formatter(fmt=app.config['LOG_FORMAT']))
+    app.logger.addHandler(syslog_handler)
+
+if app.debug:
+    app.logger.setLevel(logging.DEBUG)
+else:
+    app.logger.setLevel(logging.WARNING)
+
+from alerta.app.mongo_backend import MongoBackend
+db = MongoBackend()
 
 import views
 import management.views
+
+
+def main():
+    app.run(host='0.0.0.0', port=8080, debug=True)

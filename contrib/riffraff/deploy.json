@@ -3,9 +3,8 @@
         "monitoring"
     ],
     "packages": {
-        "alerta-server": {
+        "alerta": {
             "type": "rpm",
-            "apps" : ["alerta"],
             "data": {
                 "user": "alerta",
                 "port": "8080",
@@ -42,7 +41,7 @@
             "depends": ["alerta", "extras"]
         },
         "alerta": {
-            "actionsPerHost": ["alerta-server.deploy"]
+            "actionsPerHost": ["alerta.deploy"]
         },
         "extras": {
             "actionsPerHost": ["alerta-extras.deploy"]

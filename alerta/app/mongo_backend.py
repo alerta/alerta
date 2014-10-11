@@ -1,31 +1,24 @@
-
+import os
 import sys
 import datetime
+import base64
+import hmac
+import random
+import hashlib
+
 import pymongo
 
-from alerta.common import log as logging
-from alerta.common import config
-from alerta.common.alert import AlertDocument
-from alerta.common.heartbeat import HeartbeatDocument
-from alerta.common import severity_code, status_code
-
-LOG = logging.getLogger(__name__)
-CONF = config.CONF
+from alerta.app import app, severity_code, status_code
+from alerta.alert import AlertDocument
+from alerta.heartbeat import HeartbeatDocument
 
 
-class Mongo(object):
+LOG = app.logger
 
-    mongo_opts = {
-        'mongo_host': 'localhost',
-        'mongo_port': 27017,
-        'mongo_database': 'monitoring',
-        'mongo_username': 'admin',
-        'mongo_password': '',
-    }
+
+class MongoBackend(object):
 
     def __init__(self):
-
-        config.register_opts(Mongo.mongo_opts)
 
         self.db = None
         self.conn = None
@@ -33,33 +26,61 @@ class Mongo(object):
 
     def connect(self):
 
-        # Connect to MongoDB
-        try:
-            self.conn = pymongo.MongoClient(CONF.mongo_host, CONF.mongo_port)  # version >= 2.4
-        except AttributeError:
-            self.conn = pymongo.Connection(CONF.mongo_host, CONF.mongo_port)  # version < 2.4
-        except Exception, e:
-            LOG.error('MongoDB Client connection error : %s', e)
-            sys.exit(1)
-
-        try:
-            self.db = self.conn[CONF.mongo_database]
-        except Exception, e:
-            LOG.error('MongoDB database error : %s', e)
-            sys.exit(1)
-
-        LOG.info('Connected to mongodb://%s:%s/%s', CONF.mongo_host, CONF.mongo_port, CONF.mongo_database)
-
-        if CONF.mongo_password:
+        if 'MONGO_PORT' in os.environ and 'tcp://' in os.environ['MONGO_PORT']:  # Docker
+            host, port = os.environ['MONGO_PORT'][6:].split(':')
             try:
-                self.db.authenticate(CONF.mongo_username, password=CONF.mongo_password)
+                self.conn = pymongo.MongoClient(host, port)
+            except Exception, e:
+                LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGO_PORT'], e)
+                sys.exit(1)
+
+        elif 'MONGOHQ_URL' in os.environ:
+            try:
+                self.conn = pymongo.MongoClient(os.environ['MONGOHQ_URL'])
+            except Exception, e:
+                LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOHQ_URL'], e)
+                sys.exit(1)
+            app.config['MONGO_DATABASE'] = os.environ['MONGOHQ_URL'].split('/')[-1]
+
+        elif 'MONGOLAB_URI' in os.environ:
+            try:
+                self.conn = pymongo.MongoClient(os.environ['MONGOLAB_URI'])
+            except Exception, e:
+                LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOLAB_URI'], e)
+                sys.exit(1)
+            app.config['MONGO_DATABASE'] = os.environ['MONGOLAB_URI'].split('/')[-1]
+
+        elif not app.config['MONGO_REPLSET']:
+            try:
+                self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'])
+            except Exception, e:
+                LOG.error('MongoDB Client connection error - %s:%s : %s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], e)
+                sys.exit(1)
+            LOG.info('Connected to mongodb://%s:%s/%s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_DATABASE'])
+
+        else:
+            try:
+                self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], replicaSet=app.config['MONGO_REPLSET'])
+            except Exception, e:
+                LOG.error('MongoDB Client ReplicaSet connection error - %s:%s (replicaSet=%s) : %s',
+                          app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_REPLSET'], e)
+                sys.exit(1)
+            LOG.info('Connected to mongodb://%s:%s/%s?replicaSet=%s',
+                     app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_DATABASE'], app.config['MONGO_REPLSET'])
+
+        self.db = self.conn[app.config['MONGO_DATABASE']]
+
+        if app.config['MONGO_PASSWORD']:
+            try:
+                self.db.authenticate(app.config['MONGO_USERNAME'], password=app.config['MONGO_PASSWORD'])
             except Exception, e:
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
         LOG.info('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
 
-        self.create_indexes()
+        if app.config['MONGO_REPLSET']:
+            self.create_indexes()
 
     def create_indexes(self):
 
@@ -72,6 +93,8 @@ class Mongo(object):
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('environment', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('expireTime', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING)])
+
+        self.db.tokens.ensure_index([('expireTime', pymongo.ASCENDING)], expireAfterSeconds=0)
 
     def get_severity(self, alert):
         """
@@ -125,6 +148,9 @@ class Mongo(object):
         return self.db.alerts.find(query).count()
 
     def get_alerts(self, query=None, fields=None, sort=None, limit=0):
+
+        if 'status' not in query:
+            query = {"status": {'$ne': "expired"}}
 
         responses = self.db.alerts.find(query, fields=fields, sort=sort).limit(limit)
 
@@ -597,7 +623,9 @@ class Mongo(object):
         """
         query = {'_id': {'$regex': '^' + id}}
 
-        event = self.db.alerts.find_one(query, fields={"event": 1, "_id": 0})['event']
+        event = self.db.alerts.find_one(query, fields={"event": 1, "_id": 0})
+        if not event:
+            return False
 
         now = datetime.datetime.utcnow()
         update = {
@@ -657,7 +685,7 @@ class Mongo(object):
         """
         response = self.db.alerts.update({'_id': {'$regex': '^' + id}}, {'$addToSet': {"tags": {'$each': tags}}})
 
-        return True if 'ok' in response else False
+        return response.get('updatedExisting', False)
 
     def untag_alert(self, id, tags):
         """
@@ -665,39 +693,33 @@ class Mongo(object):
         """
         response = self.db.alerts.update({'_id': {'$regex': '^' + id}}, {'$pullAll': {"tags": tags}})
 
-        return True if 'ok' in response else False
+        return response.get('updatedExisting', False)
 
     def delete_alert(self, id):
 
         response = self.db.alerts.remove({'_id': {'$regex': '^' + id}})
 
-        return True if 'ok' in response else False
+        return response.get('ok', False) and response.get('n', 0) == 1
 
-    def get_counts(self, query=None):
+    def get_counts(self, query=None, fields=None, group=None):
         """
-        Return total and dict() of severity and status counts.
+        Return counts grouped by severity or status.
         """
+        fields = fields or {}
 
-        return self.db.alerts.find(query, {"severity": 1, "status": 1})
+        pipeline = [
+            {'$match': query},
+            {'$project': fields},
+            {'$group': {"_id": "$" + group, "count": {'$sum': 1}}}
+        ]
 
-    def get_heartbeats(self):
+        responses = self.db.alerts.aggregate(pipeline)
 
-        responses = self.db.heartbeats.find()
+        counts = dict()
+        for response in responses['result']:
+            counts[response['_id']] = response['count']
 
-        heartbeats = list()
-        for response in responses:
-            heartbeats.append(
-                HeartbeatDocument(
-                    id=response['_id'],
-                    origin=response['origin'],
-                    tags=response['tags'],
-                    event_type=response['type'],
-                    create_time=response['createTime'],
-                    timeout=response['timeout'],
-                    receive_time=response['receiveTime']
-                )
-            )
-        return heartbeats
+        return counts
 
     def get_topn(self, query=None, group=None, limit=10):
 
@@ -792,6 +814,25 @@ class Mongo(object):
             )
         return services
 
+    def get_heartbeats(self):
+
+        responses = self.db.heartbeats.find()
+
+        heartbeats = list()
+        for response in responses:
+            heartbeats.append(
+                HeartbeatDocument(
+                    id=response['_id'],
+                    origin=response['origin'],
+                    tags=response['tags'],
+                    event_type=response['type'],
+                    create_time=response['createTime'],
+                    timeout=response['timeout'],
+                    receive_time=response['receiveTime']
+                )
+            )
+        return heartbeats
+
     def save_heartbeat(self, heartbeat):
 
         now = datetime.datetime.utcnow()
@@ -820,18 +861,83 @@ class Mongo(object):
                                        new=True,
                                        upsert=True
                                        )["value"]
-            return response['_id']
+            return HeartbeatDocument(
+                id=response['_id'],
+                origin=response['origin'],
+                tags=response['tags'],
+                event_type=response['type'],
+                create_time=response['createTime'],
+                timeout=response['timeout'],
+                receive_time=response['receiveTime']
+            )
         else:
             update = update['$set']
             update["_id"] = heartbeat.id
             response = self.db.heartbeats.insert(update)
-            return response
+
+            return HeartbeatDocument(
+                id=response,
+                origin=update['origin'],
+                tags=update['tags'],
+                event_type=update['type'],
+                create_time=update['createTime'],
+                timeout=update['timeout'],
+                receive_time=update['receiveTime']
+            )
+
+    def get_heartbeat(self, id):
+
+        if len(id) == 8:
+            query = {'$or': [{'_id': {'$regex': '^' + id}}, {'lastReceiveId': {'$regex': '^' + id}}]}
+        else:
+            query = {'$or': [{'_id': id}, {'lastReceiveId': id}]}
+
+        response = self.db.heartbeats.find_one(query)
+        if not response:
+            return
+
+        return HeartbeatDocument(
+            id=response['_id'],
+            tags=response['tags'],
+            origin=response['origin'],
+            event_type=response['type'],
+            create_time=response['createTime'],
+            timeout=response['timeout'],
+            receive_time=response['receiveTime']
+        )
 
     def delete_heartbeat(self, id):
 
         response = self.db.heartbeats.remove({'_id': {'$regex': '^' + id}})
-
         return True if 'ok' in response else False
+
+    def get_users(self):
+
+        users = list()
+
+        for user in self.db.users.find({}, {"_id": 0}):
+            users.append(user)
+        return users
+
+    def is_user_valid(self, user):
+
+        return bool(self.db.users.find_one({"user": user}))
+
+    def save_user(self, args):
+
+        data = {
+            "user": args["user"],
+            "createTime": datetime.datetime.utcnow(),
+            "sponsor": args["sponsor"]
+        }
+
+        return self.db.users.insert(data)
+
+    def delete_user(self, user):
+
+        response = self.db.users.remove({"user": user})
+
+        return response.get('ok', False) and response.get('n', 0) == 1
 
     def get_metrics(self):
 
@@ -840,6 +946,91 @@ class Mongo(object):
         for stat in self.db.metrics.find({}, {"_id": 0}):
             metrics.append(stat)
         return metrics
+
+    def get_keys(self, query=None):
+
+        responses = self.db.keys.find(query)
+        keys = list()
+        for response in responses:
+            keys.append(
+                {
+                    "user": response["user"],
+                    "key": response["key"],
+                    "text": response["text"],
+                    "expireTime": response["expireTime"],
+                    "count": response["count"],
+                    "lastUsedTime": response["lastUsedTime"]
+                }
+            )
+
+        return keys
+
+    def is_key_valid(self, key):
+
+        key_info = self.db.keys.find_one({"key": key})
+
+        if key_info:
+            if key_info['expireTime'] > datetime.datetime.utcnow():
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    def create_key(self, args):
+
+        digest = hmac.new(app.config['SECRET_KEY'], msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
+        key = base64.b64encode(digest)[:40]
+
+        if 'user' not in args:
+            return None
+
+        data = {
+            "user": args["user"],
+            "key": key,
+            "text": args.get('text', None),
+            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(days=args.get('days', app.config['API_KEY_EXPIRE_DAYS'])),
+            "count": 0,
+            "lastUsedTime": None
+        }
+
+        response = self.db.keys.insert(data)
+        if not response:
+            return None
+
+        return key
+
+    def update_key(self, key):
+
+        self.db.keys.update(
+            {
+                "key": key
+            },
+            {
+                '$set': {"lastUsedTime": datetime.datetime.utcnow()},
+                '$inc': {"count": 1}
+            },
+            True
+        )
+
+    def delete_key(self, key):
+
+        response = self.db.keys.remove({"key": key})
+
+        return response.get('ok', False) and response.get('n', 0) == 1
+
+    def is_token_valid(self, token):
+
+        return bool(self.db.tokens.find_one({"token": token}))
+
+    def save_token(self, token):
+
+        data = {
+            "token": token,
+            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(minutes=app.config['ACCESS_TOKEN_CACHE_MINS'])
+        }
+
+        return self.db.tokens.insert(data)
 
     def disconnect(self):
 

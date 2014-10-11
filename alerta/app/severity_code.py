@@ -14,7 +14,7 @@ http://www.itu.int/rec/T-REC-X.736-199201-I
            Indeterminate               5 (Notice)
            Cleared                     5 (Notice)
 """
-from alerta.common import status_code
+from alerta.app import status_code
 
 CRITICAL_SEV_CODE = 1
 MAJOR_SEV_CODE = 2
@@ -23,6 +23,7 @@ WARNING_SEV_CODE = 4
 INDETER_SEV_CODE = 5
 CLEARED_SEV_CODE = 5
 NORMAL_SEV_CODE = 5
+OK_SEV_CODE = 5
 INFORM_SEV_CODE = 6
 DEBUG_SEV_CODE = 7
 AUTH_SEV_CODE = 8
@@ -38,13 +39,14 @@ WARNING = 'warning'
 INDETERMINATE = 'indeterminate'
 CLEARED = 'cleared'
 NORMAL = 'normal'
+OK = 'ok'
 INFORM = 'informational'
 DEBUG = 'debug'
 AUTH = 'security'
 UNKNOWN = 'unknown'
 NOT_VALID = 'notValid'
 
-ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, INFORM, DEBUG, AUTH, UNKNOWN, NOT_VALID]
+ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, OK, INFORM, DEBUG, AUTH, UNKNOWN, NOT_VALID]
 
 MORE_SEVERE = 'moreSevere'
 LESS_SEVERE = 'lessSevere'
@@ -58,6 +60,7 @@ _SEVERITY_MAP = {
     INDETERMINATE: INDETER_SEV_CODE,
     CLEARED: CLEARED_SEV_CODE,
     NORMAL: NORMAL_SEV_CODE,
+    OK: OK_SEV_CODE,
     INFORM: INFORM_SEV_CODE,
     DEBUG: DEBUG_SEV_CODE,
     AUTH: AUTH_SEV_CODE,
@@ -72,6 +75,7 @@ _ABBREV_SEVERITY_MAP = {
     INDETERMINATE: 'Ind ',
     CLEARED: 'Clrd',
     NORMAL: 'Norm',
+    OK: 'Ok',
     INFORM: 'Info',
     DEBUG: 'Dbug',
     AUTH: 'Sec ',
@@ -86,6 +90,7 @@ _COLOR_MAP = {
     INDETERMINATE: '\033[92m',
     CLEARED: '\033[92m',
     NORMAL: '\033[92m',
+    OK: '\033[92m',
     INFORM: '\033[92m',
     DEBUG: '\033[90m',
     AUTH: '\033[90m',
@@ -121,7 +126,7 @@ def trend(previous, current):
 
 
 def status_from_severity(previous_severity, current_severity, current_status=None):
-    if current_severity in [NORMAL, CLEARED]:
+    if current_severity in [NORMAL, CLEARED, OK]:
         return status_code.CLOSED
     if trend(previous_severity, current_severity) == MORE_SEVERE:
         return status_code.OPEN

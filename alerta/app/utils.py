@@ -7,16 +7,16 @@ from datetime import timedelta
 from flask import make_response, request, current_app
 from functools import update_wrapper
 
-from alerta.common import config
-from alerta.common import log as logging
+from alerta.app import app
 
-LOG = logging.getLogger(__name__)
-CONF = config.CONF
+LOG = app.logger
 
 
 PARAMS_EXCLUDE = [
     '_',
-    'callback'
+    'callback',
+    'token',
+    'api-key'
 ]
 
 
@@ -53,6 +53,10 @@ def parse_fields(request):
                         {'lastReceiveId': {'$regex': '^' + params['id']}}]
         del params['id']
 
+    if params.get('duplicateCount', None):
+        query['duplicateCount'] = int(params.get('duplicateCount'))
+        del params['duplicateCount']
+
     if params.get('repeat', None):
         query['repeat'] = True if params.get('repeat', 'true') == 'true' else False
         del params['repeat']
@@ -81,7 +85,7 @@ def parse_fields(request):
         limit = params.get('limit')
         del params['limit']
     else:
-        limit = CONF.console_limit
+        limit = app.config['QUERY_LIMIT']
     limit = int(limit)
 
     for field in params:

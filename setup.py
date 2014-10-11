@@ -2,51 +2,46 @@
 
 import setuptools
 
-import alerta
+with open('VERSION') as f:
+    version = f.read().strip()
 
 with open('README.rst') as f:
-    long_description = f.read()
+    readme = f.read()
 
 setuptools.setup(
-    name="alerta-app",
-    version=alerta.__version__,
+    name='alerta-server',
+    namespace_packages=['alerta'],
+    version=version,
     description='Alerta server WSGI application',
-    long_description=long_description,
+    long_description=readme,
     url='https://github.com/guardian/alerta',
     license='Apache License 2.0',
     author='Nick Satterly',
     author_email='nick.satterly@theguardian.com',
     packages=setuptools.find_packages(exclude=['bin', 'tests']),
     install_requires=[
+        'Flask',
+        'pymongo',
+        'kombu',
+        'boto',
         'argparse',
         'requests',
-        'PyYAML',
         'pytz',
-        'kombu',
-        'pymongo',
-        'Flask',
-        'irc',
-        'boto',
-        'suds',
-        'dynect',
-        'nose'
+        'alerta'
     ],
     include_package_data=True,
     zip_safe=False,
-    scripts=[
-        'bin/alert-cloudwatch',
-        'bin/alert-dynect',
-        'bin/alert-ircbot',
-        'bin/alert-logger',
-        'bin/alert-mailer',
-        'bin/alert-pagerduty',
-        'bin/alert-pinger',
-        'bin/alert-snmptrap',
-        'bin/alert-solarwinds',
-        'bin/alert-syslog',
-        'bin/alert-urlmon',
-        'bin/alerta-app',
-    ],
+    entry_points={
+        'console_scripts': [
+            'alertad = alerta.app:main'
+        ],
+        'alerta.plugins': [
+            'reject = alerta.plugins.reject:RejectPolicy',
+            'amqp = alerta.plugins.amqp:FanoutPublisher',
+            'sns = alerta.plugins.sns:SnsTopicPublisher',
+            'logstash = alerta.plugins.logstash:LogStashOutput',
+        ],
+    },
     keywords='alert monitoring system wsgi application api',
     classifiers=[
         'Development Status :: 5 - Production/Stable',

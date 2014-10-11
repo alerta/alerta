@@ -1,17 +1,20 @@
 
 import time
 import datetime
+import logging
 
 from flask import request, Response, url_for, jsonify, render_template
-from alerta.app import app, db, mq
+
+from alerta.app import app, db
 from alerta.app.switch import Switch, SwitchState
 from alerta.app.utils import crossdomain
-from alerta.common.metrics import Gauge, Counter, Timer
-from alerta import __version__, build
-from alerta.common import log as logging
+from alerta.app.metrics import Gauge, Counter, Timer
+from alerta import build
 
 LOG = logging.getLogger(__name__)
 
+import pkg_resources  # part of setuptools
+__version__ = pkg_resources.require("alerta")[0].version
 
 switches = [
     Switch('auto-refresh-allow', 'Allow consoles to auto-refresh alerts', SwitchState.ON),
@@ -21,7 +24,8 @@ switches = [
 total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of alerts in the database')
 started = time.time() * 1000
 
-@app.route('/management')
+@app.route('/management', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def management():
 
     endpoints = [
@@ -34,8 +38,8 @@ def management():
     return render_template('management/index.html', endpoints=endpoints)
 
 
-@app.route('/management/manifest')
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/management/manifest', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def manifest():
 
     manifest = {
@@ -52,7 +56,8 @@ def manifest():
     return  jsonify(alerta=manifest)
 
 
-@app.route('/management/properties')
+@app.route('/management/properties', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def properties():
 
     properties = ''
@@ -66,7 +71,8 @@ def properties():
     return Response(properties, content_type='text/plain')
 
 
-@app.route('/management/switchboard', methods=['GET', 'POST'])
+@app.route('/management/switchboard', methods=['OPTIONS', 'GET', 'POST'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def switchboard():
 
     if request.method == 'POST':
@@ -88,13 +94,11 @@ def switchboard():
             return render_template('management/switchboard.html', switches=switches)
 
 
-@app.route('/management/healthcheck')
+@app.route('/management/healthcheck', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def health_check():
 
     try:
-        if not mq.is_connected():
-            return 'NO_MESSAGE_QUEUE', 503
-
         if not db.conn.alive():
             return 'NO_DATABASE', 503
 
@@ -111,8 +115,8 @@ def health_check():
     return 'OK'
 
 
-@app.route('/management/status')
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@app.route('/management/status', methods=['OPTIONS', 'GET'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def status():
 
     total_alert_gauge.set(db.get_count())

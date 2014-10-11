@@ -1,0 +1,20 @@
+{
+  "name": "alerta",
+  "description": "Deploy alerta to Heroku",
+  "keywords": [
+    "monitoring",
+    "python",
+    "flask"
+  ],
+  "website": "http://docs.alerta.io",
+  "repository": "https://github.com/guardian/alerta/tree/release/3.2",
+  "success_url": "/",
+  "env": {
+    "SECRET_KEY": {
+      "generator": "secret"
+    }
+  },
+  "addons": [
+    "mongolab"
+  ]
+}
