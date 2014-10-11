@@ -50,7 +50,8 @@ AWS_SQS_QUEUE = 'alerts'
 AMQP_QUEUE = 'alerts'
 
 # Plugins
-PLUGINS = ['amqp', 'sns', 'logstash']
+PLUGINS = ['reject']
+# PLUGINS = ['amqp', 'sns', 'logstash']
 
 # Outbound
 AMQP_TOPIC = 'notify'
