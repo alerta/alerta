@@ -15,7 +15,7 @@ if 'SECRET_KEY' in os.environ:
     app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
 if app.config['USE_STDERR']:
-    stderr_hanlder = logging.StreamHandler(stream=sys.stderr)
+    stderr_hanlder = logging.StreamHandler()
     stderr_hanlder.setFormatter(logging.Formatter(fmt=app.config['LOG_FORMAT']))
     app.logger.addHandler(stderr_hanlder)
 
