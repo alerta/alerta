@@ -1,4 +1,4 @@
-Alerta Release 3.0
+Alerta Release 3.2
 ==================
 
 [![Build Status](https://travis-ci.org/satterly/alerta.png)](https://travis-ci.org/satterly/alerta)
