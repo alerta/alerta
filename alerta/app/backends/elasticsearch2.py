@@ -8,6 +8,7 @@ from alerta.app import app, severity_code, status_code
 from alerta.app.backends import Backend
 from alerta.alert import AlertDocument
 from alerta.heartbeat import HeartbeatDocument
+from alerta.app.backends import BaseBackend
 
 logging.getLogger()
 logging.basicConfig(level=logging.DEBUG)
@@ -15,7 +16,7 @@ logging.basicConfig(level=logging.DEBUG)
 # LOG = app.logger
 
 
-class ElasticsearchBackend(object):
+class ElasticsearchBackend(BaseBackend):
 
     def __init__(self):
 

@@ -6,6 +6,8 @@ import logging
 from logging.handlers import RotatingFileHandler, SysLogHandler
 from flask import Flask
 
+from alerta.app.backends import load_backend
+
 app = Flask(__name__)
 app.config.from_object('alerta.settings')
 app.config.from_pyfile('/etc/alertad.conf', silent=True)
@@ -29,13 +31,19 @@ if app.config['USE_SYSLOG']:
     syslog_handler.setFormatter(logging.Formatter(fmt=app.config['LOG_FORMAT']))
     app.logger.addHandler(syslog_handler)
 
-if app.debug:
-    app.logger.setLevel(logging.DEBUG)
-else:
-    app.logger.setLevel(logging.WARNING)
+LOG = app.logger
 
-from alerta.app.mongo_backend import MongoBackend
-db = MongoBackend()
+if app.debug:
+    LOG.setLevel(logging.DEBUG)
+else:
+    LOG.setLevel(logging.WARNING)
+
+try:
+    backend = load_backend(name=app.config['DATABASE_BACKEND'])
+    db = backend()
+except ImportError as e:
+    LOG.error('Failed to load %s backend: %s', app.config['DATABASE_BACKEND'], e)
+    sys.exit(1)
 
 import views
 import management.views

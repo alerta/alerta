@@ -20,6 +20,9 @@ SYSLOG_FACILITY = 'local7'
 QUERY_LIMIT = 10000  # maximum number of alerts returned by a single query
 HISTORY_LIMIT = 100  #
 
+DATABASE_BACKEND = 'mongodb'
+# DATABASE_BACKEND = 'elasticsearch'
+
 # MongoDB
 MONGO_HOST = 'localhost'
 MONGO_PORT = 27017

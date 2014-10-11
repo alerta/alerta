@@ -41,6 +41,10 @@ setuptools.setup(
             'sns = alerta.plugins.sns:SnsTopicPublisher',
             'logstash = alerta.plugins.logstash:LogStashOutput',
         ],
+        'alerta.backends': [
+            'mongodb = alerta.app.backends.mongodb:MongoBackend',
+            'elasticsearch = alerta.app.backends.elasticsearch:ElasticsearchBackend'
+        ]
     },
     keywords='alert monitoring system wsgi application api',
     classifiers=[

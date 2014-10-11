@@ -11,12 +11,12 @@ import pymongo
 from alerta.app import app, severity_code, status_code
 from alerta.alert import AlertDocument
 from alerta.heartbeat import HeartbeatDocument
-
+from alerta.app.backends import BaseBackend
 
 LOG = app.logger
 
 
-class MongoBackend(object):
+class MongoBackend(BaseBackend):
 
     def __init__(self):
 
