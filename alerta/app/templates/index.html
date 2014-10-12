@@ -31,7 +31,7 @@
   </tbody>
 </table>
 
-<p>Special query parameters include 'limit', 'sort-by', 'from-date' and 'q' (for a free-form mongo query).
+<p>Special query parameters include 'limit', 'sort-by', 'from-date' and 'q' (for a free-form query).
 <table>
   <tbody>
     <tr><td><tt>limit=5</tt></td><td>return the five most recent alerts for the filter</td></tr>
@@ -43,7 +43,7 @@
 
 <h2>Routes</h2>
 <table>
-{% for rule in rules %}
+{% for rule in rules|sort(attribute='rule') %}
     <tr>
        <td>{{ rule.methods|join(', ') }}</td><td>{{ rule.rule }}</td><td>{{ rule.endpoint }}</td>
     </tr>
