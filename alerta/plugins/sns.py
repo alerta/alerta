@@ -42,7 +42,7 @@ class SnsTopicPublisher(PluginBase):
 
     def pre_receive(self, alert):
 
-        pass
+        return alert
 
     def post_receive(self, alert):
 

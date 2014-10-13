@@ -314,6 +314,8 @@ def receive_alert():
                 return jsonify(status="error", message=str(e)), 403
             except Exception as e:
                 LOG.warning('Error while running pre-receive plug-in: %s', e)
+            if not incomingAlert:
+                LOG.error('Plug-in pre-receive hook did not return modified alert')
 
     try:
         if db.is_duplicate(incomingAlert):

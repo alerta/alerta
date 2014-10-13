@@ -20,14 +20,14 @@ setuptools.setup(
     author_email='nick.satterly@theguardian.com',
     packages=setuptools.find_packages(exclude=['bin', 'tests']),
     install_requires=[
+        'alerta',
         'Flask',
         'pymongo',
         'kombu',
         'boto',
         'argparse',
         'requests',
-        'pytz',
-        'alerta'
+        'pytz'
     ],
     include_package_data=True,
     zip_safe=False,
@@ -37,7 +37,8 @@ setuptools.setup(
         ],
         'alerta.plugins': [
             'reject = alerta.plugins.reject:RejectPolicy',
-            'normalise = alerta.plugins.normalise:Normalise',
+            'normalise = alerta.plugins.normalise:NormaliseAlert',
+            'enhance = alerta.plugins.enhance:EnhanceAlert',
             'amqp = alerta.plugins.amqp:FanoutPublisher',
             'sns = alerta.plugins.sns:SnsTopicPublisher',
             'logstash = alerta.plugins.logstash:LogStashOutput',
