@@ -8,15 +8,6 @@ DEBUG = False
 
 SECRET_KEY = '0Afk\(,8$cr(Y8:MA""knd>[@$U[G.eQL6DjAmVs'
 
-USE_STDERR = True
-
-LOG_FILE = None  # /var/log/alerta.log
-LOG_FORMAT = '%(asctime)s %(name)s[%(process)d] %(threadName)s %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
-
-USE_SYSLOG = False
-SYSLOG_SOCKET = '/dev/log'  # Linux = /dev/log, Mac OSX = /var/run/syslog
-SYSLOG_FACILITY = 'local7'
-
 QUERY_LIMIT = 10000  # maximum number of alerts returned by a single query
 HISTORY_LIMIT = 100  #
 
