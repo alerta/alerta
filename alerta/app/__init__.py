@@ -5,6 +5,7 @@ import logging
 from flask import Flask
 
 app = Flask(__name__)
+
 app.config.from_object('alerta.settings')
 app.config.from_pyfile('/etc/alertad.conf', silent=True)
 app.config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
@@ -24,4 +25,5 @@ import management.views
 
 
 def main():
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080)
+
