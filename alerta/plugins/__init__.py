@@ -29,14 +29,15 @@ def load_plugins(namespace='alerta.plugins'):
 
     plugins = []
     for ep in list(pkg_resources.iter_entry_points(namespace)):
-        LOG.debug('Found plug-in %r', ep)
+        LOG.debug("Server plug-in '%s' found.", ep.name)
         try:
             if ep.name in app.config['PLUGINS']:
                 plugin = ep.load()
                 if plugin:
                     plugins.append(plugin())
+                    LOG.info("Server plug-in '%s' enabled.", ep.name)
             else:
-                LOG.info("%s plug-in not enabled", ep.name)
+                LOG.debug("Server plug-in '%s' not enabled in 'PLUGINS'.", ep.name)
         except Exception as e:
-            LOG.error('Could not load plug-in %s: %s', ep.name, e)
+            LOG.error("Server plug-in '%s' could not loaded: %s", ep.name, e)
     return plugins

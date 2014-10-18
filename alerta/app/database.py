@@ -56,7 +56,7 @@ class Mongo(object):
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s:%s : %s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], e)
                 sys.exit(1)
-            LOG.info('Connected to mongodb://%s:%s/%s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_DATABASE'])
+            LOG.debug('Connected to mongodb://%s:%s/%s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_DATABASE'])
 
         else:
             try:
@@ -65,7 +65,7 @@ class Mongo(object):
                 LOG.error('MongoDB Client ReplicaSet connection error - %s:%s (replicaSet=%s) : %s',
                           app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_REPLSET'], e)
                 sys.exit(1)
-            LOG.info('Connected to mongodb://%s:%s/%s?replicaSet=%s',
+            LOG.debug('Connected to mongodb://%s:%s/%s?replicaSet=%s',
                      app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_DATABASE'], app.config['MONGO_REPLSET'])
 
         self.db = self.conn[app.config['MONGO_DATABASE']]
@@ -77,7 +77,7 @@ class Mongo(object):
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
-        LOG.info('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
+        LOG.debug('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
 
         if app.config['MONGO_REPLSET']:
             self.create_indexes()
@@ -1037,4 +1037,4 @@ class Mongo(object):
         if self.conn.alive():
             self.conn.disconnect()
 
-        LOG.info('Mongo disconnected.')
+        LOG.debug('Mongo disconnected.')

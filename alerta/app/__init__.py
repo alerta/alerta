@@ -4,6 +4,8 @@ import logging
 
 from flask import Flask
 
+LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s'
+
 app = Flask(__name__)
 
 app.config.from_object('alerta.settings')
@@ -13,9 +15,11 @@ app.config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
 if 'SECRET_KEY' in os.environ:
     app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
-if not app.debug:
+if app.debug:
+    app.debug_log_format = LOG_FORMAT
+else:
     stderr_handler = logging.StreamHandler()
-    stderr_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s'))
+    stderr_handler.setFormatter(logging.Formatter(LOG_FORMAT))
     app.logger.addHandler(stderr_handler)
     app.logger.setLevel(logging.INFO)
 

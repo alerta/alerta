@@ -20,7 +20,6 @@ LOG = app.logger
 def setup():
     global plugins
     plugins = load_plugins()
-    LOG.debug('Loaded plug-ins: %s', plugins)
 
 
 # Set-up metrics
@@ -51,19 +50,16 @@ def jsonify(*args, **kwargs):
 
 
 def authenticate():
-
     return jsonify(status="error", message="authentication required"), 401
 
 
 def verify_token(token):
-
     if db.is_token_valid(token):
         return True
 
     url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + token
     response = requests.get(url)
     token_info = response.json()
-    LOG.debug('Token info %s', json.dumps(token_info))
 
     if 'error' in token_info:
         LOG.warning('Token authentication failed: %s', token_info['error'])
@@ -89,22 +85,16 @@ def verify_token(token):
 
 
 def verify_api_key(key):
-
-    LOG.debug('we got a api key %s, verify key internally', key)
-
     if not db.is_key_valid(key):
         return False
-
     db.update_key(key)
     return True
 
 
 def get_user_info(token):
-
     url = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' + token
     response = requests.get(url)
     user_info = response.json()
-    LOG.debug('User info %s', json.dumps(user_info))
 
     if 'error' in user_info:
         LOG.warning('Token authentication failed: %s', user_info['error'])
@@ -122,7 +112,6 @@ def auth_required(func):
 
         if 'Authorization' in request.headers:
             auth = request.headers['Authorization']
-            LOG.debug(auth)
             if auth.startswith('Token'):
                 token = auth.replace('Token ', '')
                 if not verify_token(token):
@@ -629,9 +618,6 @@ def pagerduty():
         abort(400)
 
     for message in request.json['messages']:
-
-        LOG.debug('%s', json.dumps(message))
-
         id = message['data']['incident']['incident_key']
         html_url = message['data']['incident']['html_url']
         incident_number = message['data']['incident']['incident_number']
