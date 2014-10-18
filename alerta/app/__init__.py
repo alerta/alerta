@@ -14,7 +14,9 @@ if 'SECRET_KEY' in os.environ:
     app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
 if not app.debug:
-    app.logger.addHandler(logging.StreamHandler())
+    stderr_handler = logging.StreamHandler()
+    stderr_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s'))
+    app.logger.addHandler(stderr_handler)
     app.logger.setLevel(logging.INFO)
 
 from alerta.app.database import Mongo
