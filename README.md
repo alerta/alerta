@@ -20,16 +20,16 @@ Requirements
 
 The only requirement is MongoDB. Everything else is optional.
 
-- [MongoDB][4]
+- MongoDB
 
 Optional
 --------
 
-A messaging transport that supports AMQP is required for notification to alert subscribers. It is recommended to use RabbitMQ, but Redis and even MongoDB have been tested and shown to work. YMMV.
+A messaging transport that supports [AMQP][2] is required for notification to alert subscribers. It is recommended to use RabbitMQ, but Redis and even MongoDB have been tested and shown to work.
 
-- [RabbitMQ][2]
-- [Redis][3]
-- [MongoDB][4]
+- RabbitMQ
+- Redis
+- MongoDB
 
 Note: The default setting uses MongoDB so that no additional configuration is required.
 
@@ -43,7 +43,7 @@ $ sudo apt-get update
 $ sudo apt-get install mongodb-server
 ```
 
-To use RabbitMQ as the message transport instead of the default MongoDB:
+To use RabbitMQ as the message transport instead of the default MongoDB install the additional packages:
 
 ```
 $ sudo apt-get install rabbitmq-server
@@ -57,6 +57,24 @@ $ cd alerta
 $ sudo pip install -r requirements.txt
 $ sudo python setup.py install
 ```
+
+Configuration
+-------------
+
+The configuration file format has changed in Release 3.2 to a python `settings.py` file. To override default settings in this file create `/etc/alertad.conf` or set `ALERTA_SVR_CONF_FILE` environment variable to `~/.alertad.conf` or `~/.config/alertad` or something similar. Make sure to to export the environment variable before running the server, like so:
+
+```
+export ALERTA_SVR_CONF_FILE=~/.alertad.conf
+```
+
+The default configuration should work. If you are using RabbitMQ change the `AMQP_URL` setting to:
+
+```
+AMQP_URL = 'amqp://guest:guest@localhost:5672//'
+```
+
+Running
+-------
 
 To start the alerta server simply run:
 
@@ -76,20 +94,17 @@ To view alerts in a terminal run:
 $ alerta query
 ```
 
-If the response is `ERROR - 401 Client Error: UNAUTHORIZED` then check the command-line configuration file `~/.alerta.conf`:
+To view alerts in a web console install the [Alerta Web UI][3]
 
-```
-[DEFAULT]
-endpoint = http://localhost:8080
-key = demo-key
-```
+Deploy to the Cloud
+-------------------
 
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
 More Information
 ----------------
 
-See the alerta [docs][7]. Documentation is a work in progress. Feedback welcome.
+See the alerta [docs][4]. Documentation is a work in progress. Feedback welcome.
 
 Contribute
 ----------
@@ -119,9 +134,6 @@ License
     limitations under the License.
 
 [1]: <https://github.com/alerta/> "Alerta GitHub Repo"
-[2]: <http://www.rabbitmq.com> "RabbitMQ"
-[3]: <http://redis.io/> "Redis"
-[4]: <https://www.mongodb.org/> "MongoDB"
-[5]: <http://www.elasticsearch.org/> "elasticsearch"
-[6]: <http://www.elasticsearch.org/overview/kibana/> "Kibana"
-[7]: <http://docs.alerta.io/> "Alerta Documentation"
+[2]: <http://kombu.readthedocs.org/en/latest/userguide/connections.html#amqp-transports> "Kombu Transports"
+[3]: <https://github.com/alerta/angular-alerta-webui> "Alerta Web UI"
+[4]: <http://docs.alerta.io/> "Alerta Documentation"
