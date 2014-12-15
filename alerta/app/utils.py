@@ -8,6 +8,7 @@ from flask import make_response, request, current_app
 from functools import update_wrapper
 
 from alerta.app import app
+from alerta.alert import Alert
 
 LOG = app.logger
 
@@ -166,3 +167,62 @@ def crossdomain(origin=None, methods=None, headers=None,
         f.provide_automatic_options = False
         return update_wrapper(wrapped_function, f)
     return decorator
+
+
+def parse_notification(notification):
+
+    notification = json.loads(notification)
+    alarm = json.loads(notification['Message'])
+
+    if 'Trigger' not in alarm:
+        return
+
+    # Defaults
+    resource = '%s:%s' % (alarm['Trigger']['Dimensions'][0]['name'], alarm['Trigger']['Dimensions'][0]['value'])
+    event = alarm['AlarmName']
+    severity = cw_state_to_severity(alarm['NewStateValue'])
+    group = 'CloudWatch'
+    value = alarm['Trigger']['MetricName']
+    text = alarm['AlarmDescription']
+    service = [alarm['AWSAccountId']]
+    tags = [alarm['Trigger']['Namespace']]
+    correlate = list()
+    origin = notification['TopicArn']
+    timeout = None
+    create_time = datetime.datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
+    raw_data = notification['Message']
+
+    return Alert(
+        resource=resource,
+        event=event,
+        environment='Production',
+        severity=severity,
+        correlate=correlate,
+        service=service,
+        group=group,
+        value=value,
+        text=text,
+        tags=tags,
+        attributes={
+            'awsMessageId': notification['MessageId'],
+            'awsRegion': alarm['Region'],
+            'thresholdInfo': alarm['NewStateReason']
+        },
+        origin=origin,
+        event_type='cloudwatchAlarm',
+        create_time=create_time,
+        timeout=timeout,
+        raw_data=raw_data,
+    )
+
+
+def cw_state_to_severity(state):
+
+    if state == 'ALARM':
+        return 'major'
+    elif state == 'INSUFFICIENT_DATA':
+        return 'warning'
+    elif state == 'OK':
+        return 'normal'
+    else:
+        return 'unknown'
