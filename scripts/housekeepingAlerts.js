@@ -1,5 +1,5 @@
 // Run this script from cron like so:
-// * * * * * /usr/bin/mongo --quiet monitoring /opt/bin/housekeepingAlerts.js
+// * * * * * /usr/bin/mongo --quiet monitoring housekeepingAlerts.js
 
 // mark timed out alerts as EXPIRED and update alert history
 now = new Date();
