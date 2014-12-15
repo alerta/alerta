@@ -1,3 +1,6 @@
+
+PYTHON = python
+
 all:	help
 
 help:
@@ -19,3 +22,9 @@ pylint:
 
 test:
 	nosetests tests
+
+run:
+	alertad
+
+upload:
+	$(PYTHON) setup.py sdist upload
