@@ -1,21 +1,21 @@
-all: help
+all:	help
 
 help:
-    clear
-    @echo ""
-    @echo "Usage: make <command>"
-    @echo ""
-    @echo "Commands:"
-    @echo "   init    Initialise environment"
-    @echo "   pylint  Lint source code"
-    @echo "   test    Run tests"
-    @echo ""
+	@echo ""
+	@echo "Usage: make <command>"
+	@echo ""
+	@echo "Commands:"
+	@echo "   init    Initialise environment"
+	@echo "   pylint  Lint source code"
+	@echo "   test    Run tests"
+	@echo ""
 
 init:
-	pip install -r requirements.txt --use-mirrors
+	pip install -r requirements.txt
 
 pylint:
-    pylint --rcfile pylintrc alerta
+	@pip -q install pylint
+	pylint --rcfile pylintrc alerta
 
 test:
 	nosetests tests

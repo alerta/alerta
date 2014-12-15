@@ -18,8 +18,8 @@ __version__ = pkg_resources.require("alerta")[0].version
 
 switches = [
     Switch('auto-refresh-allow', 'Allow consoles to auto-refresh alerts', SwitchState.ON),
-#    Switch('console-api-allow', 'Allow consoles to use the alert API', SwitchState.ON),    # TODO(nsatterl)
-#    Switch('sender-api-allow', 'Allow alerts to be submitted via the API', SwitchState.ON),  # TODO(nsatterl)
+    # Switch('console-api-allow', 'Allow consoles to use the alert API', SwitchState.ON),    # TODO(nsatterl)
+    # Switch('sender-api-allow', 'Allow alerts to be submitted via the API', SwitchState.ON),  # TODO(nsatterl)
 ]
 total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of alerts in the database')
 started = time.time() * 1000
