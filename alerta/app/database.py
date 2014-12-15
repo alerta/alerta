@@ -65,8 +65,8 @@ class Mongo(object):
                 LOG.error('MongoDB Client ReplicaSet connection error - %s:%s (replicaSet=%s) : %s',
                           app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_REPLSET'], e)
                 sys.exit(1)
-            LOG.debug('Connected to mongodb://%s:%s/%s?replicaSet=%s',
-                     app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_DATABASE'], app.config['MONGO_REPLSET'])
+            LOG.debug('Connected to mongodb://%s:%s/%s?replicaSet=%s', app.config['MONGO_HOST'],
+                      app.config['MONGO_PORT'], app.config['MONGO_DATABASE'], app.config['MONGO_REPLSET'])
 
         self.db = self.conn[app.config['MONGO_DATABASE']]
 
@@ -341,8 +341,7 @@ class Mongo(object):
                                    query=query,
                                    update=update,
                                    new=True,
-                                   fields={"history": 0}
-                                   )["value"]
+                                   fields={"history": 0})["value"]
 
         return AlertDocument(
             id=response['_id'],
@@ -454,8 +453,7 @@ class Mongo(object):
                                    query=query,
                                    update=update,
                                    new=True,
-                                   fields={"history": 0}
-                                   )["value"]
+                                   fields={"history": 0})["value"]
 
         return AlertDocument(
             id=response['_id'],
@@ -490,7 +488,7 @@ class Mongo(object):
 
         trend_indication = severity_code.trend(severity_code.UNKNOWN, alert.severity)
         if alert.status == status_code.UNKNOWN:
-                    status = severity_code.status_from_severity(severity_code.UNKNOWN, alert.severity)
+            status = severity_code.status_from_severity(severity_code.UNKNOWN, alert.severity)
         else:
             status = alert.status
 
@@ -647,8 +645,7 @@ class Mongo(object):
                                    query=query,
                                    update=update,
                                    new=True,
-                                   fields={"history": 0}
-                                   )["value"]
+                                   fields={"history": 0})["value"]
 
         return AlertDocument(
             id=response['_id'],
@@ -859,8 +856,8 @@ class Mongo(object):
                                        query={"origin": heartbeat.origin},
                                        update=update,
                                        new=True,
-                                       upsert=True
-                                       )["value"]
+                                       upsert=True)["value"]
+
             return HeartbeatDocument(
                 id=response['_id'],
                 origin=response['origin'],

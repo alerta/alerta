@@ -1,5 +1,5 @@
 
-from alerta.plugins import PluginBase, RejectException
+from alerta.plugins import PluginBase
 
 
 class EnhanceAlert(PluginBase):

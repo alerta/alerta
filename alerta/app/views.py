@@ -4,7 +4,7 @@ import requests
 
 from collections import defaultdict
 from functools import wraps
-from flask import request, current_app, render_template, redirect, abort
+from flask import request, current_app, render_template, abort
 
 from alerta.app import app, db, status_code
 from alerta.app.switch import Switch
