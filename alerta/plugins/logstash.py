@@ -28,3 +28,6 @@ class LogStashOutput(PluginBase):
             raise RuntimeError("logstash exception")
 
         self.sock.close()
+
+        return
+

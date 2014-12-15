@@ -4,9 +4,9 @@ import requests
 
 from collections import defaultdict
 from functools import wraps
-from flask import request, current_app, render_template, abort
+from flask import request, current_app, render_template
 
-from alerta.app import app, db, status_code
+from alerta.app import app, db
 from alerta.app.switch import Switch
 from alerta.app.utils import parse_fields, crossdomain
 from alerta.app.metrics import Timer
@@ -485,7 +485,7 @@ def delete_alert(id):
 def get_counts():
 
     try:
-        query, _, _, _, query_time = parse_fields(request)
+        query, _, _, _, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -522,7 +522,7 @@ def get_counts():
 def get_top10():
 
     try:
-        query, _, group, _, query_time = parse_fields(request)
+        query, _, group, _, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -556,7 +556,7 @@ def get_top10():
 def get_environments():
 
     try:
-        query, _, _, limit, query_time = parse_fields(request)
+        query, _, _, limit, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -587,7 +587,7 @@ def get_environments():
 def get_services():
 
     try:
-        query, _, _, limit, query_time = parse_fields(request)
+        query, _, _, limit, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
