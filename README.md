@@ -85,7 +85,7 @@ $ alertad
 To send some test alerts run:
 
 ```
-$ contrib/examples/create-new-alert.sh
+$ contrib/examples/create-alerts.sh
 ```
 
 To view alerts in a terminal run:
