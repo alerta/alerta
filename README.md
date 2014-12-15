@@ -9,9 +9,9 @@ The alerta monitoring tool was developed with the following aims in mind:
 *   minimal **CONFIGURATION** that easily accepts alerts from any source
 *   quick at-a-glance **VISUALISATION** with drill-down to detail
 
-![console](/doc/images/alerta-dashboard-v2.png?raw=true)
+![console](/docs/images/alert-list-rel32.png?raw=true)
 
-More screenshots are available [here](/doc/images/)
+More screenshots are available [here](/docs/images/)
 
 Related projects can be found [here][1].
 
@@ -31,6 +31,8 @@ A messaging transport that supports AMQP is required for notification to alert s
 - [Redis][3]
 - [MongoDB][4]
 
+Note: The default setting uses MongoDB so that no additional configuration is required.
+
 Installation
 ------------
 
@@ -41,23 +43,10 @@ $ sudo apt-get update
 $ sudo apt-get install mongodb-server
 ```
 
-To use RabbitMQ as the message transport:
+To use RabbitMQ as the message transport instead of the default MongoDB:
 
 ```
 $ sudo apt-get install rabbitmq-server
-```
-
-To use MongoDB as the message transport instead of RabbitMQ, add the following to
-`/etc/alerta/alerta.conf`:
-
-```
-amqp_url = mongodb://localhost:27017/kombu
-```
-
-And to use Redis as the message transport:
-
-```
-amqp_url = redis://localhost:6379/
 ```
 
 To install from git:
@@ -69,41 +58,30 @@ $ sudo pip install -r requirements.txt
 $ sudo python setup.py install
 ```
 
-To use the alert console modify `$HOME/.alerta.conf` so that the API uses a free port and static content can be found:
+To start the alerta server simply run:
+
+```
+$ alertad
+```
+
+To send some test alerts run:
+
+```
+$ contrib/examples/create-new-alert.sh
+```
+
+To view alerts in a terminal run:
+
+```
+$ alerta query
+```
+
+If the response is `ERROR - 401 Client Error: UNAUTHORIZED` then check the command-line configuration file `~/.alerta.conf`:
 
 ```
 [DEFAULT]
 endpoint = http://localhost:8080
-
-[alerta-dashboard]
-dashboard_dir = /path/to/alerta/dashboard/v2/assets/
-```
-
-For example, if the repo was cloned to `/home/foobar/git/alerta` then the `dashboard_dir` directory path will be `/home/foobar/git/alerta/dashboard/v2/assets/`.
-
-To start alerta simply run:
-
-```
-$ alerta
-```
-
-To run in `DEBUG` mode and send log output to stderr:
-
-```
-$ alerta --debug --use-stderr
-$ alerta-dashboard --debug --use-stderr          <--- listens on port 5000 in dev, 80 in prod
-```
-
-And then the alert console can be found at:
-
-````
-http://localhost:5000/dashboard/index.html
-```
-
-To see some test alerts in the console run:
-
-```
-$ contrib/examples/create-new-alert.sh
+key = demo-key
 ```
 
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
@@ -111,14 +89,16 @@ $ contrib/examples/create-new-alert.sh
 More Information
 ----------------
 
-See the alerta [docs][7]. Feedback welcome.
+See the alerta [docs][7]. Documentation is a work in progress. Feedback welcome.
 
 Contribute
 ----------
 
-If you'd like to hack on Alerta, start by forking this repo on GitHub.
+If you'd like to contribute to Alerta, start by forking this repo on GitHub.
 
 http://github.com/guardian/alerta
+
+Create a branch for your work and then send us a pull request.
 
 License
 -------
