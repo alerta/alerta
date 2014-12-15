@@ -1,12 +1,14 @@
 #!/bin/sh
 
-curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+ENDPOINT=${1:-http://localhost:8080}
+
+curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Key demo-key" ${ENDPOINT}/alert -d '
 {
   "resource": "host678:eth0",
   "event": "HW:NIC:FAILED",
   "group": "Hardware",
   "severity": "major",
-  "environment": "production",
+  "environment": "Production",
   "service": [
       "Network"
   ],
@@ -15,14 +17,14 @@ curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/al
 }'
 echo
 
-curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Key demo-key" ${ENDPOINT}/alert -d '
 {
     "resource": "fw010",
     "event": "NodeDown",
     "group": "Firewall",
     "value": "Down",
     "severity": "major",
-    "environment": "development",
+    "environment": "Development",
     "service": [
         "Network"
     ],
@@ -34,14 +36,14 @@ curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/al
 }'
 echo
 
-curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Key demo-key" ${ENDPOINT}/alert -d '
 {
     "resource": "router0011",
     "event": "node_up",
     "group": "Network",
     "value": "UP",
     "severity": "normal",
-    "environment": "infrastructure",
+    "environment": "Production",
     "service": [
         "Shared"
     ],
@@ -53,14 +55,14 @@ curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/al
 }'
 echo
 
-curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Key demo-key" ${ENDPOINT}/alert -d '
 {
     "resource": "mydb",
     "event": "OraError",
     "group": "Oracle",
     "value": "ERROR 011",
     "severity": "warning",
-    "environment": "development",
+    "environment": "Development",
     "service": [
         "Database"
     ],
@@ -72,14 +74,14 @@ curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/al
 }'
 echo
 
-curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Key demo-key" ${ENDPOINT}/alert -d '
 {
     "resource": "myapp",
     "event": "SlowResponse",
     "group": "Application",
     "value": "5005ms",
     "severity": "critical",
-    "environment": "development",
+    "environment": "Development",
     "service": [
         "Web"
     ],
@@ -91,14 +93,14 @@ curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/al
 }'
 echo
 
-curl -s -XPOST -H "Content-type: application/json" 'http://localhost:8080/api/alert' -d '
+curl -s -XPOST -H "Content-type: application/json" -H "Authorization: Key demo-key" ${ENDPOINT}/alert -d '
 {
     "resource": "host44",
     "event": "SwapUtil",
     "group": "OS",
     "value": "94%",
     "severity": "minor",
-    "environment": "production",
+    "environment": "Production",
     "service": [
         "Platform"
     ],

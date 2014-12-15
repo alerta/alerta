@@ -12,4 +12,4 @@ class NormaliseAlert(PluginBase):
 
     def post_receive(self, alert):
 
-        pass
+        return
