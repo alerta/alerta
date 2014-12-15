@@ -34,4 +34,4 @@ class RejectPolicy(PluginBase):
 
     def post_receive(self, alert):
 
-        pass
+        return

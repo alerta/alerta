@@ -1,5 +1,5 @@
 #
-# DEFAULT SETTINGS - DO NOT MODIFY THIS FILE
+# ***** ALERTA SERVER DEFAULT SETTINGS -- DO NOT MODIFY THIS FILE *****
 #
 # To override these settings use /etc/alertad.conf or the contents of the
 # configuration file set by the environment variable ALERTA_SVR_CONF_FILE.
@@ -23,26 +23,26 @@ MONGO_PASSWORD = None
 AUTH_REQUIRED = False
 OAUTH2_CLIENT_ID = 'INSERT-OAUTH2-CLIENT-ID-HERE'  # required for access token validation
 ALLOWED_EMAIL_DOMAINS = ['gmail.com']
-ACCESS_TOKEN_CACHE_MINS = 60
-API_KEY_EXPIRE_DAYS = 365
+ACCESS_TOKEN_CACHE_MINS = 1440  # 1 day
+API_KEY_EXPIRE_DAYS = 365  # 1 year
+
+# Plug-ins
+PLUGINS = ['reject', 'amqp']
+# PLUGINS = ['amqp', 'enhance', 'logstash', 'normalise', 'reject', 'sns']
+
+# AMQP Credentials
+AMQP_URL = 'mongodb://localhost:27017/kombu'        # MongoDB
+# AMQP_URL = 'amqp://guest:guest@localhost:5672//'  # RabbitMQ
+# AMQP_URL = 'redis://localhost:6379/'              # Redis
 
 # AWS Credentials
 AWS_ACCESS_KEY_ID = ''
 AWS_SECRET_ACCESS_KEY = ''
 AWS_REGION = 'eu-west-1'
 
-# AMQP Credentials
-AMQP_URL = 'amqp://guest:guest@localhost:5672//'  # RabbitMQ
-# AMQP_URL = 'mongodb://localhost:27017/kombu'    # MongoDB
-# AMQP_URL = 'redis://localhost:6379/'            # Redis
-
 # Inbound
-AWS_SQS_QUEUE = 'alerts'
 AMQP_QUEUE = 'alerts'
-
-# Plugins
-PLUGINS = ['reject']
-# PLUGINS = ['amqp', 'sns', 'logstash']
+AWS_SQS_QUEUE = 'alerts'
 
 # Outbound
 AMQP_TOPIC = 'notify'

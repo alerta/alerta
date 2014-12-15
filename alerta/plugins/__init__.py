@@ -39,5 +39,5 @@ def load_plugins(namespace='alerta.plugins'):
             else:
                 LOG.debug("Server plug-in '%s' not enabled in 'PLUGINS'.", ep.name)
         except Exception as e:
-            LOG.error("Server plug-in '%s' could not loaded: %s", ep.name, e)
+            LOG.error("Server plug-in '%s' could not be loaded: %s", ep.name, e)
     return plugins
