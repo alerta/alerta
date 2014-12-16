@@ -869,8 +869,8 @@ def cloudwatch():
     recv_started = receive_timer.start_timer()
     try:
         incomingAlert = parse_notification(request.data)
-    except RuntimeWarning, e:
-        return jsonify(status="ok", message="subscription confirmation request received")
+    except RuntimeError:
+        return jsonify(status="error", message="failed to parse cloudwatch notification"), 400
     except ValueError, e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 400

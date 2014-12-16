@@ -174,50 +174,40 @@ def parse_notification(notification):
     notification = json.loads(notification)
 
     if notification['Type'] == 'SubscriptionConfirmation':
-        LOG.warning("%s - %s", notification['Message'], notification['SubscribeURL'])
-        raise RuntimeWarning
-    elif notification['Type'] != 'Notification':
-        return
 
-    alarm = json.loads(notification['Message'])
+        return Alert(
+            resource=notification['TopicArn'],
+            event=notification['Type'],
+            environment='Production',
+            severity='informational',
+            service=['Unknown'],
+            group='CloudWatch',
+            text='%s - %s' % (notification['Message'], notification['SubscribeURL']),
+            origin='AWS/CloudWatch',
+            event_type='cloudwatchAlarm',
+            create_time=datetime.datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'),
+            raw_data=notification,
+        )
 
-    # Defaults
-    resource = '%s:%s' % (alarm['Trigger']['Dimensions'][0]['name'], alarm['Trigger']['Dimensions'][0]['value'])
-    event = alarm['AlarmName']
-    severity = cw_state_to_severity(alarm['NewStateValue'])
-    group = 'CloudWatch'
-    value = alarm['Trigger']['MetricName']
-    text = alarm['AlarmDescription']
-    service = [alarm['AWSAccountId']]
-    tags = [alarm['Trigger']['Namespace']]
-    correlate = list()
-    origin = notification['TopicArn']
-    timeout = None
-    create_time = datetime.datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
-    raw_data = notification['Message']
+    elif notification['Type'] == 'Notification':
 
-    return Alert(
-        resource=resource,
-        event=event,
-        environment='Production',
-        severity=severity,
-        correlate=correlate,
-        service=service,
-        group=group,
-        value=value,
-        text=text,
-        tags=tags,
-        attributes={
-            'awsMessageId': notification['MessageId'],
-            'awsRegion': alarm['Region'],
-            'thresholdInfo': alarm['NewStateReason']
-        },
-        origin=origin,
-        event_type='cloudwatchAlarm',
-        create_time=create_time,
-        timeout=timeout,
-        raw_data=raw_data,
-    )
+        alarm = json.loads(notification['Message'])
+
+        return Alert(
+            resource=notification['TopicArn'],
+            event=alarm['AlarmName'],
+            environment='Production',
+            severity=cw_state_to_severity(alarm['NewStateValue']),
+            service=[alarm['AWSAccountId']],
+            group='CloudWatch',
+            value=alarm['Trigger']['MetricName'],
+            text=alarm['AlarmDescription'],
+            attributes=alarm['Trigger'],
+            origin=alarm['Trigger']['Namespace'],
+            event_type='cloudwatchAlarm',
+            create_time=datetime.datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'),
+            raw_data=notification
+        )
 
 
 def cw_state_to_severity(state):
