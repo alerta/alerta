@@ -78,6 +78,7 @@ def parse_pingdom(check):
         return Alert(
             resource=check['host'],
             event=check['description'],
+            correlate=['up', 'down'],
             environment='Production',
             severity='critical',
             service=['Unknown'],
@@ -92,6 +93,7 @@ def parse_pingdom(check):
         return Alert(
             resource=check['host'],
             event=check['description'],
+            correlate=['up', 'down'],
             environment='Production',
             severity='normal',
             service=['Unknown'],
@@ -106,6 +108,7 @@ def parse_pingdom(check):
         return Alert(
             resource=check['host'],
             event=check['description'],
+            correlate=['up', 'down', check['description']],
             environment='Production',
             severity='indeterminate',
             service=['Unknown'],
