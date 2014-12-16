@@ -10,11 +10,16 @@ from flask import make_response, request, current_app
 from functools import update_wrapper
 
 from alerta.app import app, db
+from alerta.app.metrics import Timer
 from alerta.plugins import load_plugins, RejectException
 
 LOG = app.logger
 
 plugins = load_plugins()
+
+duplicate_timer = Timer('alerts', 'duplicate', 'Duplicate alerts', 'Total time to process number of duplicate alerts')
+correlate_timer = Timer('alerts', 'correlate', 'Correlated alerts', 'Total time to process number of correlated alerts')
+create_timer = Timer('alerts', 'create', 'Newly created alerts', 'Total time to process number of new alerts')
 
 
 class DateEncoder(json.JSONEncoder):
@@ -304,11 +309,17 @@ def process_alert(incomingAlert):
 
     try:
         if db.is_duplicate(incomingAlert):
+            started = duplicate_timer.start_timer()
             alert = db.save_duplicate(incomingAlert)
+            duplicate_timer.stop_timer(started)
         elif db.is_correlated(incomingAlert):
+            started = correlate_timer.start_timer()
             alert = db.save_correlated(incomingAlert)
+            correlate_timer.stop_timer(started)
         else:
+            started = create_timer.start_timer()
             alert = db.create_alert(incomingAlert)
+            create_timer.stop_timer(started)
     except Exception as e:
         raise RuntimeError(e)
 

@@ -18,9 +18,6 @@ global plugins
 # Set-up metrics
 gets_timer = Timer('alerts', 'queries', 'Alert queries', 'Total time to process number of alert queries')
 receive_timer = Timer('alerts', 'received', 'Received alerts', 'Total time to process number of received alerts')
-duplicate_timer = Timer('alerts', 'duplicate', 'Duplicate alerts', 'Total time to process number of duplicate alerts')
-correlate_timer = Timer('alerts', 'correlate', 'Correlated alerts', 'Total time to process number of correlated alerts')
-create_timer = Timer('alerts', 'create', 'Newly created alerts', 'Total time to process number of new alerts')
 delete_timer = Timer('alerts', 'deleted', 'Deleted alerts', 'Total time to process number of deleted alerts')
 status_timer = Timer('alerts', 'status', 'Alert status change', 'Total time and number of alerts with status changed')
 tag_timer = Timer('alerts', 'tagged', 'Tagging alerts', 'Total time to tag number of alerts')
@@ -161,17 +158,23 @@ def get_history():
 @jsonp
 def receive_alert():
 
+    recv_started = receive_timer.start_timer()
     try:
         incomingAlert = Alert.parse_alert(request.data)
     except ValueError, e:
+        receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 400
 
     try:
         alert = process_alert(incomingAlert)
     except RejectException as e:
+        receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 403
     except Exception as e:
+        receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 500
+
+    receive_timer.stop_timer(recv_started)
 
     if alert:
         body = alert.get_body()
