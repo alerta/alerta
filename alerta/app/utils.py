@@ -10,9 +10,11 @@ from flask import make_response, request, current_app
 from functools import update_wrapper
 
 from alerta.app import app, db
-from alerta.alert import Alert
+from alerta.plugins import load_plugins, RejectException
 
 LOG = app.logger
+
+plugins = load_plugins()
 
 
 class DateEncoder(json.JSONEncoder):
@@ -47,7 +49,6 @@ def jsonp(func):
 
 def authenticate():
     return jsonify(status="error", message="authentication required"), 401
-
 
 
 def verify_token(token):
@@ -289,54 +290,32 @@ def crossdomain(origin=None, methods=None, headers=None,
     return decorator
 
 
-def parse_notification(notification):
+def process_alert(incomingAlert):
 
-    notification = json.loads(notification)
+    for plugin in plugins:
+        try:
+            incomingAlert = plugin.pre_receive(incomingAlert)
+        except RejectException:
+            raise
+        except Exception as e:
+            raise RuntimeError('Error while running pre-receive plug-in: %s', e)
+        if not incomingAlert:
+            raise SyntaxError('Plug-in pre-receive hook did not return modified alert')
 
-    if notification['Type'] == 'SubscriptionConfirmation':
+    try:
+        if db.is_duplicate(incomingAlert):
+            alert = db.save_duplicate(incomingAlert)
+        elif db.is_correlated(incomingAlert):
+            alert = db.save_correlated(incomingAlert)
+        else:
+            alert = db.create_alert(incomingAlert)
+    except Exception as e:
+        raise RuntimeError(e)
 
-        return Alert(
-            resource=notification['TopicArn'],
-            event=notification['Type'],
-            environment='Production',
-            severity='informational',
-            service=['Unknown'],
-            group='CloudWatch',
-            text='%s <a href="%s" target="_blank">SubscribeURL</a>' % (notification['Message'], notification['SubscribeURL']),
-            origin='AWS/CloudWatch',
-            event_type='cloudwatchAlarm',
-            create_time=datetime.datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'),
-            raw_data=notification,
-        )
+    for plugin in plugins:
+        try:
+            plugin.post_receive(alert)
+        except Exception as e:
+            raise RuntimeError('Error while running post-receive plug-in: %s', e)
 
-    elif notification['Type'] == 'Notification':
-
-        alarm = json.loads(notification['Message'])
-
-        return Alert(
-            resource='%s:%s' % (alarm['Trigger']['Dimensions'][0]['name'], alarm['Trigger']['Dimensions'][0]['value']),
-            event=alarm['Trigger']['MetricName'],
-            environment='Production',
-            severity=cw_state_to_severity(alarm['NewStateValue']),
-            service=[alarm['AWSAccountId']],
-            group='CloudWatch',
-            value=alarm['NewStateReason'],
-            text=notification['Subject'],
-            attributes=alarm['Trigger'],
-            origin=alarm['Trigger']['Namespace'],
-            event_type='cloudwatchAlarm',
-            create_time=datetime.datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'),
-            raw_data=alarm
-        )
-
-
-def cw_state_to_severity(state):
-
-    if state == 'ALARM':
-        return 'major'
-    elif state == 'INSUFFICIENT_DATA':
-        return 'warning'
-    elif state == 'OK':
-        return 'normal'
-    else:
-        return 'unknown'
+    return alert
