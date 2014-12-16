@@ -181,7 +181,7 @@ def receive_alert():
         body['href'] = "%s/%s" % (request.base_url, alert.id)
         return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': '%s/%s' % (request.base_url, alert.id)}
     else:
-        return jsonify(status="error", message="alert insert or update failed"), 500
+        return jsonify(status="error", message="insert or update of received alert failed"), 500
 
 @app.route('/alert/<id>', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
