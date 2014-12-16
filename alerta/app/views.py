@@ -862,14 +862,15 @@ def delete_key(key):
 
 
 @app.route('/cloudwatch', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
-@auth_required
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
 @jsonp
 def cloudwatch():
 
     recv_started = receive_timer.start_timer()
     try:
         incomingAlert = parse_notification(request.data)
+    except RuntimeWarning, e:
+        return jsonify(status="ok", message="subscription confirmation request received")
     except ValueError, e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 400

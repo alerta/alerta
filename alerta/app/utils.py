@@ -172,10 +172,14 @@ def crossdomain(origin=None, methods=None, headers=None,
 def parse_notification(notification):
 
     notification = json.loads(notification)
-    alarm = json.loads(notification['Message'])
 
-    if 'Trigger' not in alarm:
+    if notification['Type'] == 'SubscriptionConfirmation':
+        LOG.warning("%s - %s", notification['Message'], notification['SubscribeURL'])
+        raise RuntimeWarning
+    elif notification['Type'] != 'Notification':
         return
+
+    alarm = json.loads(notification['Message'])
 
     # Defaults
     resource = '%s:%s' % (alarm['Trigger']['Dimensions'][0]['name'], alarm['Trigger']['Dimensions'][0]['value'])
