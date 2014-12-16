@@ -1,16 +1,136 @@
 import json
 import datetime
+import requests
 import pytz
 import re
 
 from datetime import timedelta
+from functools import wraps
 from flask import make_response, request, current_app
 from functools import update_wrapper
 
-from alerta.app import app
+from alerta.app import app, db
 from alerta.alert import Alert
 
 LOG = app.logger
+
+
+class DateEncoder(json.JSONEncoder):
+    def default(self, obj):
+
+        if isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (obj.microsecond // 1000)
+        else:
+            return json.JSONEncoder.default(self, obj)
+
+
+# Over-ride jsonify to support Date Encoding
+def jsonify(*args, **kwargs):
+    return current_app.response_class(json.dumps(dict(*args, **kwargs), cls=DateEncoder,
+                                                 indent=None if request.is_xhr else 2), mimetype='application/json')
+
+
+def jsonp(func):
+    """Wraps JSONified output for JSONP requests."""
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        callback = request.args.get('callback', False)
+        if callback:
+            data = str(func(*args, **kwargs).data)
+            content = str(callback) + '(' + data + ')'
+            mimetype = 'application/javascript'
+            return current_app.response_class(content, mimetype=mimetype)
+        else:
+            return func(*args, **kwargs)
+    return decorated
+
+
+def authenticate():
+    return jsonify(status="error", message="authentication required"), 401
+
+
+
+def verify_token(token):
+    if db.is_token_valid(token):
+        return True
+
+    url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + token
+    response = requests.get(url)
+    token_info = response.json()
+
+    if 'error' in token_info:
+        LOG.warning('Token authentication failed: %s', token_info['error'])
+        return False
+
+    if 'audience' in token_info:
+        if token_info['audience'] != app.config['OAUTH2_CLIENT_ID']:
+            LOG.warning('Token supplied was for different web application')
+            return False
+
+    if 'email' in token_info:
+        if not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
+                or token_info['email'].split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']
+                or db.is_user_valid(token_info['email'])):
+            LOG.info('User %s not authorized to access API', token_info['email'])
+            return False
+    else:
+        LOG.warning('No email address present in token info')
+        return False
+
+    db.save_token(token)
+    return True
+
+
+def verify_api_key(key):
+    if not db.is_key_valid(key):
+        return False
+    db.update_key(key)
+    return True
+
+
+def get_user_info(token):
+    url = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' + token
+    response = requests.get(url)
+    user_info = response.json()
+
+    if 'error' in user_info:
+        LOG.warning('Token authentication failed: %s', user_info['error'])
+        return None
+
+    return user_info
+
+
+def auth_required(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+
+        if not app.config['AUTH_REQUIRED']:
+            return func(*args, **kwargs)
+
+        if 'Authorization' in request.headers:
+            auth = request.headers['Authorization']
+            if auth.startswith('Token'):
+                token = auth.replace('Token ', '')
+                if not verify_token(token):
+                    return authenticate()
+            elif auth.startswith('Key'):
+                key = auth.replace('Key ', '')
+                if not verify_api_key(key):
+                    return authenticate()
+            else:
+                return authenticate()
+        elif 'token' in request.args:
+            token = request.args['token']
+            if not verify_token(token):
+                return authenticate()
+        elif 'api-key' in request.args:
+            key = request.args['api-key']
+            if not verify_api_key(key):
+                return authenticate()
+        else:
+            return authenticate()
+        return func(*args, **kwargs)
+    return decorated
 
 
 PARAMS_EXCLUDE = [
@@ -194,18 +314,19 @@ def parse_notification(notification):
         alarm = json.loads(notification['Message'])
 
         return Alert(
-            resource=notification['TopicArn'],
+            resource='%s:%s' % (alarm['Trigger']['Dimensions'][0]['name'], alarm['Trigger']['Dimensions'][0]['value']),
             event=alarm['Trigger']['MetricName'],
             environment='Production',
             severity=cw_state_to_severity(alarm['NewStateValue']),
             service=[alarm['AWSAccountId']],
             group='CloudWatch',
-            text=alarm['Subject'],
+            value=alarm['NewStateReason'],
+            text=notification['Subject'],
             attributes=alarm['Trigger'],
             origin=alarm['Trigger']['Namespace'],
             event_type='cloudwatchAlarm',
             create_time=datetime.datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'),
-            raw_data=notification
+            raw_data=alarm
         )
 
 

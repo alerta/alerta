@@ -3,7 +3,7 @@
 ENDPOINT=${1:-http://localhost:8080}
 KEY=${2:-demo-key}
 
-curl -XPOST -H "Authorization: Key ${KEY}" "${ENDPOINT}/cloudwatch" -H "Content-type: application/json" -d '
+curl -XPOST -H "Authorization: Key ${KEY}" "${ENDPOINT}/webhooks/cloudwatch" -H "Content-type: application/json" -d '
 {
   "Type" : "Notification",
   "MessageId" : "c820d48d-f681-5419-9c18-9984930fed9e",

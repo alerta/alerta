@@ -1,14 +1,11 @@
-import json
 import datetime
-import requests
 
 from collections import defaultdict
-from functools import wraps
-from flask import request, current_app, render_template
+from flask import request, render_template
 
 from alerta.app import app, db
 from alerta.app.switch import Switch
-from alerta.app.utils import parse_fields, crossdomain, parse_notification
+from alerta.app.utils import jsonify, jsonp, auth_required, parse_fields, crossdomain
 from alerta.app.metrics import Timer
 from alerta.alert import Alert
 from alerta.heartbeat import Heartbeat
@@ -32,123 +29,6 @@ delete_timer = Timer('alerts', 'deleted', 'Deleted alerts', 'Total time to proce
 status_timer = Timer('alerts', 'status', 'Alert status change', 'Total time and number of alerts with status changed')
 tag_timer = Timer('alerts', 'tagged', 'Tagging alerts', 'Total time to tag number of alerts')
 untag_timer = Timer('alerts', 'untagged', 'Removing tags from alerts', 'Total time to un-tag number of alerts')
-
-
-class DateEncoder(json.JSONEncoder):
-    def default(self, obj):
-
-        if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (obj.microsecond // 1000)
-        else:
-            return json.JSONEncoder.default(self, obj)
-
-
-# Over-ride jsonify to support Date Encoding
-def jsonify(*args, **kwargs):
-    return current_app.response_class(json.dumps(dict(*args, **kwargs), cls=DateEncoder,
-                                                 indent=None if request.is_xhr else 2), mimetype='application/json')
-
-
-def authenticate():
-    return jsonify(status="error", message="authentication required"), 401
-
-
-def verify_token(token):
-    if db.is_token_valid(token):
-        return True
-
-    url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + token
-    response = requests.get(url)
-    token_info = response.json()
-
-    if 'error' in token_info:
-        LOG.warning('Token authentication failed: %s', token_info['error'])
-        return False
-
-    if 'audience' in token_info:
-        if token_info['audience'] != app.config['OAUTH2_CLIENT_ID']:
-            LOG.warning('Token supplied was for different web application')
-            return False
-
-    if 'email' in token_info:
-        if not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
-                or token_info['email'].split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']
-                or db.is_user_valid(token_info['email'])):
-            LOG.info('User %s not authorized to access API', token_info['email'])
-            return False
-    else:
-        LOG.warning('No email address present in token info')
-        return False
-
-    db.save_token(token)
-    return True
-
-
-def verify_api_key(key):
-    if not db.is_key_valid(key):
-        return False
-    db.update_key(key)
-    return True
-
-
-def get_user_info(token):
-    url = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' + token
-    response = requests.get(url)
-    user_info = response.json()
-
-    if 'error' in user_info:
-        LOG.warning('Token authentication failed: %s', user_info['error'])
-        return None
-
-    return user_info
-
-
-def auth_required(func):
-    @wraps(func)
-    def decorated(*args, **kwargs):
-
-        if not app.config['AUTH_REQUIRED']:
-            return func(*args, **kwargs)
-
-        if 'Authorization' in request.headers:
-            auth = request.headers['Authorization']
-            if auth.startswith('Token'):
-                token = auth.replace('Token ', '')
-                if not verify_token(token):
-                    return authenticate()
-            elif auth.startswith('Key'):
-                key = auth.replace('Key ', '')
-                if not verify_api_key(key):
-                    return authenticate()
-            else:
-                return authenticate()
-        elif 'token' in request.args:
-            token = request.args['token']
-            if not verify_token(token):
-                return authenticate()
-        elif 'api-key' in request.args:
-            key = request.args['api-key']
-            if not verify_api_key(key):
-                return authenticate()
-        else:
-            return authenticate()
-        return func(*args, **kwargs)
-    return decorated
-
-
-def jsonp(func):
-    """Wraps JSONified output for JSONP requests."""
-    @wraps(func)
-    def decorated(*args, **kwargs):
-        callback = request.args.get('callback', False)
-        if callback:
-            data = str(func(*args, **kwargs).data)
-            content = str(callback) + '(' + data + ')'
-            mimetype = 'application/javascript'
-            return current_app.response_class(content, mimetype=mimetype)
-        else:
-            return func(*args, **kwargs)
-    return decorated
 
 
 @app.route('/_', methods=['OPTIONS', 'PUT', 'POST', 'DELETE', 'GET'])
@@ -859,77 +739,3 @@ def delete_key(key):
             return jsonify(status="ok")
         else:
             return jsonify(status="error", message="not found"), 404
-
-
-@app.route('/cloudwatch', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
-@jsonp
-def cloudwatch():
-
-    recv_started = receive_timer.start_timer()
-    try:
-        incomingAlert = parse_notification(request.data)
-    except RuntimeError:
-        return jsonify(status="error", message="failed to parse cloudwatch notification"), 400
-    except ValueError, e:
-        receive_timer.stop_timer(recv_started)
-        return jsonify(status="error", message=str(e)), 400
-
-    if incomingAlert:
-        for plugin in plugins:
-            try:
-                incomingAlert = plugin.pre_receive(incomingAlert)
-            except RejectException as e:
-                return jsonify(status="error", message=str(e)), 403
-            except Exception as e:
-                LOG.warning('Error while running pre-receive plug-in: %s', e)
-            if not incomingAlert:
-                LOG.error('Plug-in pre-receive hook did not return modified alert')
-
-    try:
-        if db.is_duplicate(incomingAlert):
-
-            started = duplicate_timer.start_timer()
-            alert = db.save_duplicate(incomingAlert)
-            duplicate_timer.stop_timer(started)
-
-            for plugin in plugins:
-                try:
-                    plugin.post_receive(alert)
-                except Exception as e:
-                    LOG.warning('Error while running post-receive plug-in: %s', e)
-
-        elif db.is_correlated(incomingAlert):
-
-            started = correlate_timer.start_timer()
-            alert = db.save_correlated(incomingAlert)
-            correlate_timer.stop_timer(started)
-
-            for plugin in plugins:
-                try:
-                    plugin.post_receive(alert)
-                except Exception as e:
-                    LOG.warning('Error while running post-receive plug-in: %s', e)
-
-        else:
-            started = create_timer.start_timer()
-            alert = db.create_alert(incomingAlert)
-            create_timer.stop_timer(started)
-
-            for plugin in plugins:
-                try:
-                    plugin.post_receive(alert)
-                except Exception as e:
-                    LOG.warning('Error while running post-receive plug-in: %s', e)
-
-        receive_timer.stop_timer(recv_started)
-
-    except Exception, e:
-        return jsonify(status="error", message=str(e)), 500
-
-    if alert:
-        body = alert.get_body()
-        body['href'] = "%s/%s" % (request.base_url, alert.id)
-        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': '%s/%s' % (request.base_url, alert.id)}
-    else:
-        return jsonify(status="error", message="alert insert or update failed"), 500

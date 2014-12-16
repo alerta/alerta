@@ -27,6 +27,7 @@ from alerta.app.database import Mongo
 db = Mongo()
 
 import views
+import webhooks.views
 import management.views
 
 
