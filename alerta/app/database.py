@@ -414,6 +414,8 @@ class Mongo(object):
                 "status": status,
                 "value": alert.value,
                 "text": alert.text,
+                "tags": alert.tags,
+                "attributes": alert.attributes,
                 "createTime": alert.create_time,
                 "rawData": alert.raw_data,
                 "duplicateCount": 0,
