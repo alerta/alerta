@@ -1,5 +1,6 @@
 
-PYTHON = python
+PYTHON=python
+VERSION=`cat VERSION`
 
 all:	help
 
@@ -25,6 +26,9 @@ test:
 
 run:
 	alertad
+
+git-tag:
+	git tag -a v$(VERSION) -m "version $(VERSION)"
 
 upload:
 	$(PYTHON) setup.py sdist upload
