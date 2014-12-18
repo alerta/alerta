@@ -9,7 +9,8 @@ from alerta.app import app, db
 from alerta.app.switch import Switch, SwitchState
 from alerta.app.utils import crossdomain
 from alerta.app.metrics import Gauge, Counter, Timer
-from alerta import build, __version__
+from alerta import build
+from alerta.version import __version__
 
 LOG = logging.getLogger(__name__)
 

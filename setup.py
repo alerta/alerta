@@ -2,8 +2,8 @@
 
 import setuptools
 
-from alerta import __version__
-
+with open('alerta/version.py') as f:
+    exec(f.read())
 
 with open('README.rst') as f:
     readme = f.read()

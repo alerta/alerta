@@ -4,7 +4,7 @@ import logging
 
 from flask import Flask
 
-from alerta import __version__
+from alerta.version import __version__
 
 LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s'
 
