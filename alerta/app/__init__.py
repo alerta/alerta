@@ -4,7 +4,7 @@ import logging
 
 from flask import Flask
 
-import alerta
+from alerta import __version__
 
 LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s'
 
@@ -25,7 +25,7 @@ else:
     app.logger.addHandler(stderr_handler)
     app.logger.setLevel(logging.INFO)
 
-app.logger.info('Starting alerta version %s ...', alerta.version)
+app.logger.info('Starting alerta version %s ...', __version__)
 
 from alerta.app.database import Mongo
 db = Mongo()

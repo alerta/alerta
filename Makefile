@@ -1,6 +1,6 @@
 
 PYTHON=python
-VERSION=`cat VERSION`
+VERSION=`awk '/__version__/ { print $3 }' alerta/__init__.py | sed s/\'//g`
 
 all:	help
 

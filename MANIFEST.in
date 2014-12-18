@@ -1,4 +1,3 @@
-include VERSION
 exclude .gitignore
 global-exclude *.pyc
 include alerta/app/app.wsgi

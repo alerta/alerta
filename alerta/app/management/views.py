@@ -9,12 +9,10 @@ from alerta.app import app, db
 from alerta.app.switch import Switch, SwitchState
 from alerta.app.utils import crossdomain
 from alerta.app.metrics import Gauge, Counter, Timer
-from alerta import build
+from alerta import build, __version__
 
 LOG = logging.getLogger(__name__)
 
-import pkg_resources  # part of setuptools
-__version__ = pkg_resources.require("alerta-server")[0].version
 
 switches = [
     Switch('auto-refresh-allow', 'Allow consoles to auto-refresh alerts', SwitchState.ON),

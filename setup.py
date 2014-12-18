@@ -2,8 +2,8 @@
 
 import setuptools
 
-with open('VERSION') as f:
-    version = f.read().strip()
+from alerta import __version__
+
 
 with open('README.rst') as f:
     readme = f.read()
@@ -11,7 +11,7 @@ with open('README.rst') as f:
 setuptools.setup(
     name='alerta-server',
     namespace_packages=['alerta'],
-    version=version,
+    version=__version__,
     description='Alerta server WSGI application',
     long_description=readme,
     url='https://github.com/guardian/alerta',
