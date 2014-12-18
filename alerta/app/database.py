@@ -29,7 +29,7 @@ class Mongo(object):
         if 'MONGO_PORT' in os.environ and 'tcp://' in os.environ['MONGO_PORT']:  # Docker
             host, port = os.environ['MONGO_PORT'][6:].split(':')
             try:
-                self.conn = pymongo.MongoClient(host, port)
+                self.conn = pymongo.MongoClient(host, int(port))
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGO_PORT'], e)
                 sys.exit(1)
