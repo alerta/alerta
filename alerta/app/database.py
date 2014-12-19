@@ -979,7 +979,7 @@ class Mongo(object):
     def create_key(self, args):
 
         digest = hmac.new(app.config['SECRET_KEY'], msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
-        key = base64.b64encode(digest)[:40]
+        key = base64.urlsafe_b64encode(digest)[:40]
 
         if 'user' not in args:
             return None
