@@ -117,7 +117,7 @@ def get_alerts():
             statusCounts=status_count,
             lastTime=query_time,
             autoRefresh=Switch.get('auto-refresh-allow').is_on()
-        ), 404
+        )
 
 @app.route('/alerts/history', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -150,7 +150,7 @@ def get_history():
             message="not found",
             history=[],
             lastTIme=query_time
-        ), 404
+        )
 
 @app.route('/alert', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -199,7 +199,7 @@ def get_alert(id):
         body['href'] = request.base_url
         return jsonify(status="ok", total=1, alert=body)
     else:
-        return jsonify(status="ok", message="not found", total=0, alert=None), 404
+        return jsonify(status="error", message="not found", total=0, alert=None), 404
 
 
 @app.route('/alert/<id>/status', methods=['OPTIONS', 'POST'])
@@ -341,7 +341,7 @@ def get_counts():
             total=0,
             severityCounts=severity_count,
             statusCounts=status_count
-        ), 404
+        )
 
 @app.route('/alerts/top10', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -375,7 +375,7 @@ def get_top10():
             message="not found",
             total=0,
             top10=[],
-        ), 404
+        )
 
 @app.route('/environments', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -405,7 +405,7 @@ def get_environments():
             message="not found",
             total=0,
             environments=[],
-        ), 404
+        )
 
 
 @app.route('/services', methods=['OPTIONS', 'GET'])
@@ -436,7 +436,7 @@ def get_services():
             message="not found",
             total=0,
             services=[],
-        ), 404
+        )
 
 
 # Return a list of heartbeats
@@ -471,7 +471,7 @@ def get_heartbeats():
             total=0,
             heartbeats=hb_list,
             time=datetime.datetime.utcnow()
-        ), 404
+        )
 
 @app.route('/heartbeat', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -509,7 +509,7 @@ def get_heartbeat(id):
         body['href'] = request.base_url
         return jsonify(status="ok", total=1, heartbeat=body)
     else:
-        return jsonify(status="ok", message="not found", total=0, heartbeat=None), 404
+        return jsonify(status="error", message="not found", total=0, heartbeat=None), 404
 
 @app.route('/heartbeat/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -555,7 +555,7 @@ def get_users():
             users=[],
             domains=app.config['ALLOWED_EMAIL_DOMAINS'],
             time=datetime.datetime.utcnow()
-        ), 404
+        )
 
 @app.route('/user', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -621,13 +621,16 @@ def get_keys():
             total=0,
             keys=[],
             time=datetime.datetime.utcnow()
-        ), 404
+        )
 
 @app.route('/keys/<user>', methods=['OPTIONS', 'GET'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 @auth_required
 @jsonp
 def get_user_keys(user):
+
+    if not db.is_user_valid(user):
+        return jsonify(status="error", message="not found"), 404
 
     try:
         keys = db.get_keys({"user": user})
@@ -648,7 +651,7 @@ def get_user_keys(user):
             total=0,
             keys=[],
             time=datetime.datetime.utcnow()
-        ), 404
+        )
 
 @app.route('/key', methods=['OPTIONS', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
