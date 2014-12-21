@@ -150,7 +150,7 @@ class Mongo(object):
     def get_alerts(self, query=None, fields=None, sort=None, limit=0):
 
         if 'status' not in query:
-            query = {"status": {'$ne': "expired"}}
+            query['status'] = {'$ne': "expired"}
 
         responses = self.db.alerts.find(query, fields=fields, sort=sort).limit(limit)
 
