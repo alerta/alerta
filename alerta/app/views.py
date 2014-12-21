@@ -13,8 +13,6 @@ from alerta.plugins import RejectException
 
 LOG = app.logger
 
-global plugins
-
 # Set-up metrics
 gets_timer = Timer('alerts', 'queries', 'Alert queries', 'Total time to process number of alert queries')
 receive_timer = Timer('alerts', 'received', 'Received alerts', 'Total time to process number of received alerts')
@@ -221,12 +219,6 @@ def set_status(id):
         return jsonify(status="error", message="must supply 'status' as parameter"), 400
 
     if alert:
-        for plugin in plugins:
-            try:
-                plugin.post_receive(alert)
-            except Exception as e:
-                LOG.warning('Error while running post-receive plug-in: %s', e)
-
         status_timer.stop_timer(status_started)
         return jsonify(status="ok")
     else:
