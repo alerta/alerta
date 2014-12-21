@@ -623,7 +623,7 @@ class Mongo(object):
         """
         query = {'_id': {'$regex': '^' + id}}
 
-        event = self.db.alerts.find_one(query, fields={"event": 1, "_id": 0})
+        event = self.db.alerts.find_one(query, fields={"event": 1, "_id": 0})['event']
         if not event:
             return False
 
