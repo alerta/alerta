@@ -5,7 +5,8 @@ from flask import request, render_template
 
 from alerta.app import app, db
 from alerta.app.switch import Switch
-from alerta.app.utils import jsonify, jsonp, auth_required, parse_fields, crossdomain, process_alert
+from alerta.app.auth import auth_required
+from alerta.app.utils import jsonify, jsonp, parse_fields, crossdomain, process_alert
 from alerta.app.metrics import Timer
 from alerta.alert import Alert
 from alerta.heartbeat import Heartbeat

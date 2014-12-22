@@ -22,6 +22,7 @@ MONGO_PASSWORD = None
 
 AUTH_REQUIRED = False
 OAUTH2_CLIENT_ID = 'INSERT-OAUTH2-CLIENT-ID-HERE'  # required for access token validation
+GOOGLE_SECRET = '8HrqJhbrYn9oDtaJqlIBacaW'
 ALLOWED_EMAIL_DOMAINS = ['gmail.com']
 ACCESS_TOKEN_CACHE_MINS = 1440  # 1 day
 API_KEY_EXPIRE_DAYS = 365  # 1 year

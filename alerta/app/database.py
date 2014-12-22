@@ -910,6 +910,10 @@ class Mongo(object):
         response = self.db.heartbeats.remove({'_id': {'$regex': '^' + id}})
         return True if 'ok' in response else False
 
+    def get_user(self, user_id):
+
+        return self.db.users.find_one({"_id": user_id})
+
     def get_users(self):
 
         users = list()
@@ -922,12 +926,15 @@ class Mongo(object):
 
         return bool(self.db.users.find_one({"user": user}))
 
-    def save_user(self, args):
+    def save_user(self, user_id, name=None, email=None, provider=None):
 
         data = {
-            "user": args["user"],
+            "_id": user_id,
+            "name": name,
+            "email": email,
             "createTime": datetime.datetime.utcnow(),
-            "sponsor": args["sponsor"]
+            "sponsor": "",
+            "provider": provider
         }
 
         return self.db.users.insert(data)
