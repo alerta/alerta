@@ -71,7 +71,7 @@ def auth_required(f):
 
         print payload
 
-        g.user_id = payload['sub']
+        g.user_id = payload['sub']['id']
 
         return f(*args, **kwargs)
     return decorated_function
