@@ -12,6 +12,13 @@ from alerta.app import app, db
 from alerta.app.utils import crossdomain, DateEncoder
 
 
+def verify_api_key(key):
+    if not db.is_key_valid(key):
+        return False
+    db.update_key(key)
+    return True
+
+
 def create_token(user):
     payload = {
         'sub': user,
@@ -28,37 +35,44 @@ def parse_token(req):
     return jwt.decode(token, app.config['SECRET_KEY'])
 
 
+def authenticate(message):
+    return jsonify(status="error", message=message), 401
+
+
 def auth_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not request.headers.get('Authorization'):
-            response = jsonify(message='Missing authorization header')
-            response.status_code = 401
-            return response
+
+        if not app.config['AUTH_REQUIRED']:
+            return f(*args, **kwargs)
+
+        if 'api-key' in request.args:
+            key = request.args['api-key']
+            if not verify_api_key(key):
+                return authenticate('API key is invalid')
+            return f(*args, **kwargs)
+
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return authenticate('Missing authorization API Key or Bearer Token')
+
+        if auth_header.startswith('Key'):
+            key = auth_header.replace('Key ', '')
+            if not verify_api_key(key):
+                return authenticate('API key is invalid')
+            return f(*args, **kwargs)
 
         try:
             payload = parse_token(request)
         except DecodeError:
-            response = jsonify(message='Token is invalid')
-            response.status_code = 401
-            return response
+            return authenticate('Token is invalid')
         except ExpiredSignature:
-            response = jsonify(message='Token has expired')
-            response.status_code = 401
-            return response
+            return authenticate('Token has expired')
 
         g.user_id = payload['sub']
 
         return f(*args, **kwargs)
     return decorated_function
-
-
-@app.route('/users/me', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='http://localhost', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
-@auth_required
-def me():
-    user = db.get_user(g.user_id['_id'])
-    return jsonify(user)
 
 
 # @app.route('/auth/github', methods=['POST'])
@@ -129,26 +143,18 @@ def google():
                    code=request.json['code'],
                    grant_type='authorization_code')
 
-    # Step 1. Exchange authorization code for access token.
     r = requests.post(access_token_url, data=payload)
     token = json.loads(r.text)
-    headers = {'Authorization': 'Bearer {0}'.format(token['access_token'])}
+    headers = {'Authorization': 'Bearer ' + token['access_token']}
 
-    # Step 2. Retrieve information about the current user.
     r = requests.get(people_api_url, headers=headers)
     profile = json.loads(r.text)
 
-    print profile
-
-    #user = User.query.filter_by(google=profile['sub']).first()
     user = db.get_user(profile['sub'])
     if user:
         token = create_token(user)
         return jsonify(token=token)
-    # u = User(google=profile['sub'],
-    #          display_name=profile['displayName'])
-    # db.session.add(u)
-    # db.session.commit()
+
     db.save_user(profile['sub'], name=profile['name'], email=profile['email'], provider='google')
     token = create_token(profile['name'])
     return jsonify(token=token)
