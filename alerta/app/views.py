@@ -562,14 +562,14 @@ def create_user():
         email = request.json["email"]
         provider = request.json["provider"]
         try:
-            u = db.save_user(str(uuid4()), name, email, provider)
+            user = db.save_user(str(uuid4()), name, email, provider)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
-        return jsonify(status="error", message="must supply 'user' and 'sponsor' as parameters"), 400
+        return jsonify(status="error", message="must supply user 'name', 'email' and 'provider' as parameters"), 400
 
-    if u:
-        return jsonify(status="ok"), 201, {'Location': '%s/%s' % (request.base_url, u)}
+    if user:
+        return jsonify(status="ok", user=user), 201, {'Location': '%s/%s' % (request.base_url, user)}
     else:
         return jsonify(status="error", message="User with email address already exists"), 409
 
