@@ -665,11 +665,8 @@ def create_key():
 
     if request.json and 'user' in request.json:
         user = db.get_user(request.json.get('user'))
-        print 'request'
     elif g.user_id:
-        LOG.warning('g-> %s' % g.user_id)
         user = db.get_user(g.user_id)
-        LOG.warning('db -> %s' % user)
     else:
         return jsonify(status="error", message="must supply 'user' as parameter"), 400
 
