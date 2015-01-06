@@ -912,7 +912,17 @@ class Mongo(object):
 
     def get_user(self, id):
 
-        return self.db.users.find_one({"_id": id})
+        user = self.db.users.find_one({"_id": id})
+
+        if not user:
+            return
+
+        return {
+            "id": user['_id'],
+            "name": user['name'],
+            "email": user['email'],
+            "provider": user['provider']
+        }
 
     def get_users(self, query=None):
 
@@ -998,19 +1008,16 @@ class Mongo(object):
         else:
             return False
 
-    def create_key(self, args):
+    def create_key(self, user, text=None):
 
         digest = hmac.new(app.config['SECRET_KEY'], msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
         key = base64.urlsafe_b64encode(digest)[:40]
 
-        if 'user' not in args:
-            return None
-
         data = {
-            "user": args["user"],
+            "user": user,
             "key": key,
-            "text": args.get('text', None),
-            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(days=args.get('days', app.config['API_KEY_EXPIRE_DAYS'])),
+            "text": text,
+            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(app.config.get('API_KEY_EXPIRE_DAYS', 30)),
             "count": 0,
             "lastUsedTime": None
         }

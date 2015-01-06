@@ -69,6 +69,8 @@ def auth_required(f):
         except ExpiredSignature:
             return authenticate('Token has expired')
 
+        print payload
+
         g.user_id = payload['sub']
 
         return f(*args, **kwargs)
@@ -145,10 +147,16 @@ def google():
 
     r = requests.post(access_token_url, data=payload)
     token = json.loads(r.text)
+
+    # verify id_token aud = client id
+    print token['id_token']
+
     headers = {'Authorization': 'Bearer ' + token['access_token']}
 
     r = requests.get(people_api_url, headers=headers)
     profile = json.loads(r.text)
+
+    # verify email domain in ALLOWED_EMAIL_DOMAINS
 
     user = db.get_user(profile['sub'])
     if user:

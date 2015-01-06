@@ -1,7 +1,7 @@
 import datetime
 
 from collections import defaultdict
-from flask import request, render_template
+from flask import g, request, render_template
 from uuid import uuid4
 
 from alerta.app import app, db
@@ -579,7 +579,7 @@ def create_user():
 @auth_required
 @jsonp
 def me():
-    user = db.get_user(g.user_id['_id'])
+    user = db.get_user(g.user_id['id'])
     return jsonify(user)
 
 
@@ -664,17 +664,17 @@ def get_user_keys(user):
 def create_key():
 
     if request.json and 'user' in request.json:
-        user = request.json["user"]
-        data = {
-            "user": user,
-            "text": request.json.get("text", "API Key for %s" % user)
-        }
-        try:
-            key = db.create_key(data)
-        except Exception as e:
-            return jsonify(status="error", message=str(e)), 500
+        user = db.get_user(request.json.get('user'))
+    elif g.user_id:
+        user = db.get_user(g.user_id['id'])
     else:
         return jsonify(status="error", message="must supply 'user' as parameter"), 400
+
+    text = request.json.get("text", "API Key for %s" % user)
+    try:
+        key = db.create_key(user, text)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
     return jsonify(status="ok", key=key), 201, {'Location': '%s/%s' % (request.base_url, key)}
 
