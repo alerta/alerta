@@ -97,6 +97,9 @@ def google():
     r = requests.post(access_token_url, data=payload)
     token = json.loads(r.text)
 
+    if 'id_token' not in token:
+        return jsonify(status="error", message=token.get('error', "Invalid token"))
+
     id_token = token['id_token'].split('.')[1].encode('ascii', 'ignore')
     id_token += '=' * (4 - (len(id_token) % 4))
     claims = json.loads(urlsafe_b64decode(id_token))
