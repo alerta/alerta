@@ -21,9 +21,10 @@ MONGO_USERNAME = 'alerta'
 MONGO_PASSWORD = None
 
 AUTH_REQUIRED = False
-OAUTH2_CLIENT_ID = 'INSERT-OAUTH2-CLIENT-ID-HERE'  # required for access token validation
-GOOGLE_SECRET = '8HrqJhbrYn9oDtaJqlIBacaW'
+OAUTH2_CLIENT_ID = 'INSERT-OAUTH2-CLIENT-ID-HERE'  # Google or GitHub OAuth2 client ID and secret
+OAUTH2_CLIENT_SECRET = 'INSERT-OAUTH2-CLIENT-SECRET-HERE'
 ALLOWED_EMAIL_DOMAINS = ['gmail.com']
+ALLOWED_GITHUB_ORGS = ['guardian']
 API_KEY_EXPIRE_DAYS = 365  # 1 year
 
 # Plug-ins

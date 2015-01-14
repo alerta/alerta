@@ -574,14 +574,6 @@ def create_user():
         return jsonify(status="error", message="User with email address already exists"), 409
 
 
-@app.route('/users/me', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
-@auth_required
-@jsonp
-def me():
-    user = db.get_user(g.user_id)
-    return jsonify(user)
-
 
 @app.route('/user/<user>', methods=['OPTIONS', 'DELETE', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -633,9 +625,6 @@ def get_keys():
 @jsonp
 def get_user_keys(user):
 
-    if not db.is_user_valid(user):
-        return jsonify(status="error", message="not found"), 404
-
     try:
         keys = db.get_keys({"user": user})
     except Exception as e:
@@ -664,15 +653,13 @@ def get_user_keys(user):
 def create_key():
 
     if request.json and 'user' in request.json:
-        user = db.get_user(request.json.get('user'))
-    elif g.user_id:
-        user = db.get_user(g.user_id)
+        user = request.json['user']
     else:
         return jsonify(status="error", message="must supply 'user' as parameter"), 400
 
-    text = request.json.get("text", "API Key for %s" % user['name'])
+    text = request.json.get("text", "API Key for %s" % user)
     try:
-        key = db.create_key(user['id'], text)
+        key = db.create_key(user, text)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
