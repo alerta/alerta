@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import g, request, jsonify
 from jwt import DecodeError, ExpiredSignature
+from base64 import urlsafe_b64decode
 
 from alerta.app import app, db
 from alerta.app.utils import crossdomain, DateEncoder
@@ -21,17 +22,20 @@ def verify_api_key(key):
 
 def create_token(user):
     payload = {
-        'sub': user,
-        # 'sub': user.id,
+        'iss': "%s" % request.base_url,
+        'sub': user['id'],
         'iat': datetime.now(),
-        'exp': datetime.now() + timedelta(days=14)
+        'aud': "alerta",
+        'exp': datetime.now() + timedelta(days=14),
+        'email': user['email'],
+        'name': user['name'],
+        'provider': 'google'
     }
     token = jwt.encode(payload, app.config['SECRET_KEY'], json_encoder=DateEncoder)
     return token.decode('unicode_escape')
 
 
-def parse_token(req):
-    token = req.headers.get('Authorization').split()[1]
+def parse_token(token):
     return jwt.decode(token, app.config['SECRET_KEY'])
 
 
@@ -41,7 +45,7 @@ def authenticate(message):
 
 def auth_required(f):
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def decorated(*args, **kwargs):
 
         if not app.config['AUTH_REQUIRED']:
             return f(*args, **kwargs)
@@ -62,19 +66,20 @@ def auth_required(f):
                 return authenticate('API key is invalid')
             return f(*args, **kwargs)
 
-        try:
-            payload = parse_token(request)
-        except DecodeError:
-            return authenticate('Token is invalid')
-        except ExpiredSignature:
-            return authenticate('Token has expired')
+        if auth_header.startswith('Bearer'):
+            token = auth_header.replace('Bearer ', '')
+            try:
+                payload = parse_token(token)
+            except DecodeError:
+                return authenticate('Token is invalid')
+            except ExpiredSignature:
+                return authenticate('Token has expired')
+            g.user_id = payload['sub']
+            return f(*args, **kwargs)
 
-        print payload
+        return authenticate('Authentication required')
 
-        g.user_id = payload['sub']['id']
-
-        return f(*args, **kwargs)
-    return decorated_function
+    return decorated
 
 
 # @app.route('/auth/github', methods=['POST'])
@@ -148,23 +153,31 @@ def google():
     r = requests.post(access_token_url, data=payload)
     token = json.loads(r.text)
 
-    # verify id_token aud = client id
-    print token['id_token']
+    id_token = token['id_token'].split('.')[1].encode('ascii', 'ignore')
+    id_token += '=' * (4 - (len(id_token) % 4))
+    claims = json.loads(urlsafe_b64decode(id_token))
+
+    if claims.get('aud') != app.config['OAUTH2_CLIENT_ID']:
+        return jsonify(status="error", message="Token client audience is invalid"), 400
+
+    email = claims.get('email')
+    if not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
+            or email.split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']
+            or db.is_user_valid(email)):
+        return jsonify(status="error", message="User %s is not authorized" % email), 403
 
     headers = {'Authorization': 'Bearer ' + token['access_token']}
 
     r = requests.get(people_api_url, headers=headers)
     profile = json.loads(r.text)
 
-    # verify email domain in ALLOWED_EMAIL_DOMAINS
-
     user = db.get_user(profile['sub'])
     if user:
         token = create_token(user)
-        return jsonify(token=token)
+    else:
+        db.save_user(profile['sub'], name=profile['name'], email=profile['email'], provider='google')
+        token = create_token(profile['name'])
 
-    db.save_user(profile['sub'], name=profile['name'], email=profile['email'], provider='google')
-    token = create_token(profile['name'])
     return jsonify(token=token)
 
 
