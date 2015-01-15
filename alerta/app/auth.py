@@ -83,7 +83,7 @@ def auth_required(f):
     return decorated
 
 @app.route('/auth/google', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='http://localhost', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def google():
     access_token_url = 'https://accounts.google.com/o/oauth2/token'
     people_api_url = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect'
@@ -122,7 +122,7 @@ def google():
     return jsonify(token=token)
 
 @app.route('/auth/github', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='http://localhost', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
 def github():
     access_token_url = 'https://github.com/login/oauth/access_token'
     users_api_url = 'https://api.github.com/user'
