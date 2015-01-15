@@ -27,6 +27,10 @@ ALLOWED_EMAIL_DOMAINS = ['gmail.com']
 ALLOWED_GITHUB_ORGS = ['guardian']
 API_KEY_EXPIRE_DAYS = 365  # 1 year
 
+CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
+CORS_ORIGINS = ['http://try.alerta.io', 'http://localhost']
+CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
+
 # Plug-ins
 PLUGINS = ['reject', 'amqp']
 # PLUGINS = ['amqp', 'enhance', 'logstash', 'normalise', 'reject', 'sns']

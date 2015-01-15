@@ -4,10 +4,10 @@ import datetime
 import logging
 
 from flask import request, Response, url_for, jsonify, render_template
+from flask.ext.cors import cross_origin
 
 from alerta.app import app, db
 from alerta.app.switch import Switch, SwitchState
-from alerta.app.utils import crossdomain
 from alerta.app.metrics import Gauge, Counter, Timer
 from alerta import build
 from alerta.version import __version__
@@ -24,7 +24,7 @@ total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of al
 started = time.time() * 1000
 
 @app.route('/management', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 def management():
 
     endpoints = [
@@ -38,7 +38,7 @@ def management():
 
 
 @app.route('/management/manifest', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 def manifest():
 
     manifest = {
@@ -56,7 +56,7 @@ def manifest():
 
 
 @app.route('/management/properties', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 def properties():
 
     properties = ''
@@ -71,7 +71,7 @@ def properties():
 
 
 @app.route('/management/switchboard', methods=['OPTIONS', 'GET', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 def switchboard():
 
     if request.method == 'POST':
@@ -94,7 +94,7 @@ def switchboard():
 
 
 @app.route('/management/healthcheck', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 def health_check():
 
     try:
@@ -115,7 +115,7 @@ def health_check():
 
 
 @app.route('/management/status', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 def status():
 
     total_alert_gauge.set(db.get_count())

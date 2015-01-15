@@ -1,4 +1,5 @@
 Flask
+Flask-Cors
 pymongo
 kombu
 librabbitmq

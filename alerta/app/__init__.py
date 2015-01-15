@@ -3,6 +3,7 @@ import os
 import logging
 
 from flask import Flask
+from flask.ext.cors import CORS
 
 from alerta.version import __version__
 
@@ -24,6 +25,8 @@ else:
     stderr_handler.setFormatter(logging.Formatter(LOG_FORMAT))
     app.logger.addHandler(stderr_handler)
     app.logger.setLevel(logging.INFO)
+
+cors = CORS(app)
 
 app.logger.info('Starting alerta version %s ...', __version__)
 
