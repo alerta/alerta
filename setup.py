@@ -27,7 +27,8 @@ setuptools.setup(
         'boto',
         'argparse',
         'requests',
-        'pytz'
+        'pytz',
+        'PyJWT'
     ],
     include_package_data=True,
     zip_safe=False,
