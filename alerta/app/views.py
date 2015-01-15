@@ -2,12 +2,13 @@ import datetime
 
 from collections import defaultdict
 from flask import g, request, render_template
+from flask.ext.cors import cross_origin
 from uuid import uuid4
 
 from alerta.app import app, db
 from alerta.app.switch import Switch
 from alerta.app.auth import auth_required
-from alerta.app.utils import jsonify, jsonp, parse_fields, crossdomain, process_alert
+from alerta.app.utils import jsonify, jsonp, parse_fields, process_alert
 from alerta.app.metrics import Timer
 from alerta.alert import Alert
 from alerta.heartbeat import Heartbeat
@@ -25,7 +26,7 @@ untag_timer = Timer('alerts', 'untagged', 'Removing tags from alerts', 'Total ti
 
 
 @app.route('/_', methods=['OPTIONS', 'PUT', 'POST', 'DELETE', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@cross_origin()
 @jsonp
 def test():
 
@@ -49,7 +50,7 @@ def index():
 
 
 @app.route('/alerts', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_alerts():
@@ -120,7 +121,7 @@ def get_alerts():
         )
 
 @app.route('/alerts/history', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_history():
@@ -153,7 +154,7 @@ def get_history():
         )
 
 @app.route('/alert', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def receive_alert():
@@ -184,7 +185,7 @@ def receive_alert():
         return jsonify(status="error", message="insert or update of received alert failed"), 500
 
 @app.route('/alert/<id>', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_alert(id):
@@ -203,7 +204,7 @@ def get_alert(id):
 
 
 @app.route('/alert/<id>/status', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def set_status(id):
@@ -229,7 +230,7 @@ def set_status(id):
 
 
 @app.route('/alert/<id>/tag', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def tag_alert(id):
@@ -254,7 +255,7 @@ def tag_alert(id):
 
 
 @app.route('/alert/<id>/untag', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def untag_alert(id):
@@ -279,7 +280,7 @@ def untag_alert(id):
 
 
 @app.route('/alert/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def delete_alert(id):
@@ -301,7 +302,7 @@ def delete_alert(id):
 
 # Return severity and status counts
 @app.route('/alerts/count', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_counts():
@@ -338,7 +339,7 @@ def get_counts():
         )
 
 @app.route('/alerts/top10', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_top10():
@@ -372,7 +373,7 @@ def get_top10():
         )
 
 @app.route('/environments', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_environments():
@@ -403,7 +404,7 @@ def get_environments():
 
 
 @app.route('/services', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_services():
@@ -435,7 +436,7 @@ def get_services():
 
 # Return a list of heartbeats
 @app.route('/heartbeats', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_heartbeats():
@@ -468,7 +469,7 @@ def get_heartbeats():
         )
 
 @app.route('/heartbeat', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def create_heartbeat():
@@ -488,7 +489,7 @@ def create_heartbeat():
     return jsonify(status="ok", id=heartbeat.id, heartbeat=body), 201, {'Location': '%s/%s' % (request.base_url, heartbeat.id)}
 
 @app.route('/heartbeat/<id>', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_heartbeat(id):
@@ -506,7 +507,7 @@ def get_heartbeat(id):
         return jsonify(status="error", message="not found", total=0, heartbeat=None), 404
 
 @app.route('/heartbeat/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def delete_heartbeat(id):
@@ -523,7 +524,7 @@ def delete_heartbeat(id):
             return jsonify(status="error", message="not found"), 404
 
 @app.route('/users', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_users():
@@ -552,7 +553,7 @@ def get_users():
         )
 
 @app.route('/user', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def create_user():
@@ -576,7 +577,7 @@ def create_user():
 
 
 @app.route('/user/<user>', methods=['OPTIONS', 'DELETE', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def delete_user(user):
@@ -593,7 +594,7 @@ def delete_user(user):
             return jsonify(status="error", message="not found"), 404
 
 @app.route('/keys', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_keys():
@@ -620,7 +621,7 @@ def get_keys():
         )
 
 @app.route('/keys/<user>', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def get_user_keys(user):
@@ -647,7 +648,7 @@ def get_user_keys(user):
         )
 
 @app.route('/key', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def create_key():
@@ -666,7 +667,7 @@ def create_key():
     return jsonify(status="ok", key=key), 201, {'Location': '%s/%s' % (request.base_url, key)}
 
 @app.route('/key/<path:key>', methods=['OPTIONS', 'DELETE', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
 @auth_required
 @jsonp
 def delete_key(key):

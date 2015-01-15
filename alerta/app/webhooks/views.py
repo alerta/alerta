@@ -2,10 +2,11 @@ import json
 import datetime
 
 from flask import request
+from flask.ext.cors import cross_origin
 
 from alerta.app import app
 from alerta.alert import Alert
-from alerta.app.utils import jsonify, jsonp, crossdomain, process_alert
+from alerta.app.utils import jsonify, jsonp, process_alert
 from alerta.app.metrics import Timer
 from alerta.plugins import RejectException
 
@@ -123,7 +124,7 @@ def parse_pingdom(check):
 
 
 @app.route('/webhooks/cloudwatch', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@cross_origin()
 @jsonp
 def cloudwatch():
 
@@ -155,7 +156,7 @@ def cloudwatch():
 
 
 @app.route('/webhooks/pingdom', methods=['OPTIONS', 'GET'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept'])
+@cross_origin()
 @jsonp
 def pingdom():
 

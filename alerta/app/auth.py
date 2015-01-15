@@ -5,13 +5,14 @@ import requests
 
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import g, request, jsonify
-from jwt import DecodeError, ExpiredSignature
+from flask import g, request
+from flask.ext.cors import cross_origin
+from jwt import DecodeError, ExpiredSignature, InvalidAudience
 from base64 import urlsafe_b64decode
 from urlparse import parse_qsl
 
 from alerta.app import app, db
-from alerta.app.utils import crossdomain, DateEncoder
+from alerta.app.utils import jsonify, jsonp, DateEncoder
 
 
 def verify_api_key(key):
@@ -32,12 +33,12 @@ def create_token(user, name, email, provider=None):
         'email': email,
         'provider': provider
     }
-    token = jwt.encode(payload, app.config['SECRET_KEY'], json_encoder=DateEncoder)
+    token = jwt.encode(payload, key=app.config['SECRET_KEY'], json_encoder=DateEncoder)
     return token.decode('unicode_escape')
 
 
 def parse_token(token):
-    return jwt.decode(token, app.config['SECRET_KEY'])
+    return jwt.decode(token, key=app.config['SECRET_KEY'], audience=app.config['OAUTH2_CLIENT_ID'])
 
 
 def authenticate(message):
@@ -75,6 +76,8 @@ def auth_required(f):
                 return authenticate('Token is invalid')
             except ExpiredSignature:
                 return authenticate('Token has expired')
+            except InvalidAudience:
+                return authenticate('Invalid audience')
             g.user_id = payload['sub']
             return f(*args, **kwargs)
 
@@ -83,7 +86,8 @@ def auth_required(f):
     return decorated
 
 @app.route('/auth/google', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
+@jsonp
 def google():
     access_token_url = 'https://accounts.google.com/o/oauth2/token'
     people_api_url = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect'
@@ -122,7 +126,8 @@ def google():
     return jsonify(token=token)
 
 @app.route('/auth/github', methods=['OPTIONS', 'POST'])
-@crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
+@cross_origin()
+@jsonp
 def github():
     access_token_url = 'https://github.com/login/oauth/access_token'
     users_api_url = 'https://api.github.com/user'

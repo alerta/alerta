@@ -22,6 +22,7 @@ setuptools.setup(
     install_requires=[
         'alerta',
         'Flask',
+        'Flask-Cors',
         'pymongo',
         'kombu',
         'boto',
