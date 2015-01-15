@@ -33,6 +33,7 @@ db = Mongo()
 import views
 import webhooks.views
 import management.views
+import auth
 
 
 def main():

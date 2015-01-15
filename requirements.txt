@@ -8,4 +8,4 @@ requests
 pytz
 alerta
 gunicorn
-
+PyJWT

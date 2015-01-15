@@ -1,11 +1,13 @@
 import datetime
 
 from collections import defaultdict
-from flask import request, render_template
+from flask import g, request, render_template
+from uuid import uuid4
 
 from alerta.app import app, db
 from alerta.app.switch import Switch
-from alerta.app.utils import jsonify, jsonp, auth_required, parse_fields, crossdomain, process_alert
+from alerta.app.auth import auth_required
+from alerta.app.utils import jsonify, jsonp, parse_fields, crossdomain, process_alert
 from alerta.app.metrics import Timer
 from alerta.alert import Alert
 from alerta.heartbeat import Heartbeat
@@ -555,21 +557,23 @@ def get_users():
 @jsonp
 def create_user():
 
-    if request.json and 'user' in request.json:
-        user = request.json["user"]
-        sponsor = request.json["sponsor"]
-        data = {
-            "user": user,
-            "sponsor": sponsor
-        }
+    if request.json and 'name' in request.json:
+        name = request.json["name"]
+        email = request.json["email"]
+        provider = request.json["provider"]
         try:
-            db.save_user(data)
+            user = db.save_user(str(uuid4()), name, email, provider)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
-        return jsonify(status="error", message="must supply 'user' and 'sponsor' as parameters"), 400
+        return jsonify(status="error", message="must supply user 'name', 'email' and 'provider' as parameters"), 400
 
-    return jsonify(status="ok"), 201, {'Location': '%s/%s' % (request.base_url, user)}
+    if user:
+        return jsonify(status="ok", user=user), 201, {'Location': '%s/%s' % (request.base_url, user)}
+    else:
+        return jsonify(status="error", message="User with email address already exists"), 409
+
+
 
 @app.route('/user/<user>', methods=['OPTIONS', 'DELETE', 'POST'])
 @crossdomain(origin='*', headers=['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'])
@@ -621,9 +625,6 @@ def get_keys():
 @jsonp
 def get_user_keys(user):
 
-    if not db.is_user_valid(user):
-        return jsonify(status="error", message="not found"), 404
-
     try:
         keys = db.get_keys({"user": user})
     except Exception as e:
@@ -652,17 +653,15 @@ def get_user_keys(user):
 def create_key():
 
     if request.json and 'user' in request.json:
-        user = request.json["user"]
-        data = {
-            "user": user,
-            "text": request.json.get("text", "API Key for %s" % user)
-        }
-        try:
-            key = db.create_key(data)
-        except Exception as e:
-            return jsonify(status="error", message=str(e)), 500
+        user = request.json['user']
     else:
         return jsonify(status="error", message="must supply 'user' as parameter"), 400
+
+    text = request.json.get("text", "API Key for %s" % user)
+    try:
+        key = db.create_key(user, text)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
     return jsonify(status="ok", key=key), 201, {'Location': '%s/%s' % (request.base_url, key)}
 

@@ -52,93 +52,6 @@ def jsonp(func):
     return decorated
 
 
-def authenticate():
-    return jsonify(status="error", message="authentication required"), 401
-
-
-def verify_token(token):
-    if db.is_token_valid(token):
-        return True
-
-    url = 'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + token
-    response = requests.get(url)
-    token_info = response.json()
-
-    if 'error' in token_info:
-        LOG.warning('Token authentication failed: %s', token_info['error'])
-        return False
-
-    if 'audience' in token_info:
-        if token_info['audience'] != app.config['OAUTH2_CLIENT_ID']:
-            LOG.warning('Token supplied was for different web application')
-            return False
-
-    if 'email' in token_info:
-        if not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
-                or token_info['email'].split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']
-                or db.is_user_valid(token_info['email'])):
-            LOG.info('User %s not authorized to access API', token_info['email'])
-            return False
-    else:
-        LOG.warning('No email address present in token info')
-        return False
-
-    db.save_token(token)
-    return True
-
-
-def verify_api_key(key):
-    if not db.is_key_valid(key):
-        return False
-    db.update_key(key)
-    return True
-
-
-def get_user_info(token):
-    url = 'https://www.googleapis.com/oauth2/v1/userinfo?access_token=' + token
-    response = requests.get(url)
-    user_info = response.json()
-
-    if 'error' in user_info:
-        LOG.warning('Token authentication failed: %s', user_info['error'])
-        return None
-
-    return user_info
-
-
-def auth_required(func):
-    @wraps(func)
-    def decorated(*args, **kwargs):
-
-        if not app.config['AUTH_REQUIRED']:
-            return func(*args, **kwargs)
-
-        if 'Authorization' in request.headers:
-            auth = request.headers['Authorization']
-            if auth.startswith('Token'):
-                token = auth.replace('Token ', '')
-                if not verify_token(token):
-                    return authenticate()
-            elif auth.startswith('Key'):
-                key = auth.replace('Key ', '')
-                if not verify_api_key(key):
-                    return authenticate()
-            else:
-                return authenticate()
-        elif 'token' in request.args:
-            token = request.args['token']
-            if not verify_token(token):
-                return authenticate()
-        elif 'api-key' in request.args:
-            key = request.args['api-key']
-            if not verify_api_key(key):
-                return authenticate()
-        else:
-            return authenticate()
-        return func(*args, **kwargs)
-    return decorated
-
-
 PARAMS_EXCLUDE = [
     '_',
     'callback',
@@ -285,6 +198,7 @@ def crossdomain(origin=None, methods=None, headers=None,
 
             h['Access-Control-Allow-Origin'] = origin
             h['Access-Control-Allow-Methods'] = get_methods()
+            h['Access-Control-Allow-Credentials'] = 'true'
             h['Access-Control-Max-Age'] = str(max_age)
             if headers is not None:
                 h['Access-Control-Allow-Headers'] = headers

@@ -94,8 +94,6 @@ class Mongo(object):
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('expireTime', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING)])
 
-        self.db.tokens.ensure_index([('expireTime', pymongo.ASCENDING)], expireAfterSeconds=0)
-
     def get_severity(self, alert):
         """
         Get severity of correlated alert. Used to determine previous severity.
@@ -910,31 +908,63 @@ class Mongo(object):
         response = self.db.heartbeats.remove({'_id': {'$regex': '^' + id}})
         return True if 'ok' in response else False
 
-    def get_users(self):
+    def get_user(self, id):
+
+        user = self.db.users.find_one({"_id": id})
+
+        if not user:
+            return
+
+        return {
+            "id": user['_id'],
+            "name": user['name'],
+            "email": user['email'],
+            "provider": user['provider']
+        }
+
+    def get_users(self, query=None):
 
         users = list()
 
-        for user in self.db.users.find({}, {"_id": 0}):
-            users.append(user)
+        for user in self.db.users.find(query):
+            users.append(
+                {
+                    "id": user['_id'],
+                    "name": user['name'],
+                    "email": user['email'],
+                    "createTime": user['createTime'],
+                    "provider": user['provider']
+                }
+            )
         return users
 
-    def is_user_valid(self, user):
+    def is_user_valid(self, id=None, name=None, email=None):
 
-        return bool(self.db.users.find_one({"user": user}))
+        if id:
+            return bool(self.db.users.find_one({"_id": id}))
+        if name:
+            return bool(self.db.users.find_one({"name": name}))
+        if email:
+            return bool(self.db.users.find_one({"email": email}))
 
-    def save_user(self, args):
+    def save_user(self, id, name, email, provider):
+
+        if self.is_user_valid(email=email):
+            return
 
         data = {
-            "user": args["user"],
+            "_id": id,
+            "name": name,
+            "email": email,
             "createTime": datetime.datetime.utcnow(),
-            "sponsor": args["sponsor"]
+            "provider": provider
         }
 
         return self.db.users.insert(data)
 
-    def delete_user(self, user):
+    def delete_user(self, id):
 
-        response = self.db.users.remove({"user": user})
+        response = self.db.users.remove({"_id": id})
 
         return response.get('ok', False) and response.get('n', 0) == 1
 
@@ -976,19 +1006,16 @@ class Mongo(object):
         else:
             return False
 
-    def create_key(self, args):
+    def create_key(self, user, text=None):
 
         digest = hmac.new(app.config['SECRET_KEY'], msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
         key = base64.urlsafe_b64encode(digest)[:40]
 
-        if 'user' not in args:
-            return None
-
         data = {
-            "user": args["user"],
+            "user": user,
             "key": key,
-            "text": args.get('text', None),
-            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(days=args.get('days', app.config['API_KEY_EXPIRE_DAYS'])),
+            "text": text,
+            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(app.config.get('API_KEY_EXPIRE_DAYS', 30)),
             "count": 0,
             "lastUsedTime": None
         }
@@ -1017,19 +1044,6 @@ class Mongo(object):
         response = self.db.keys.remove({"key": key})
 
         return response.get('ok', False) and response.get('n', 0) == 1
-
-    def is_token_valid(self, token):
-
-        return bool(self.db.tokens.find_one({"token": token}))
-
-    def save_token(self, token):
-
-        data = {
-            "token": token,
-            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(minutes=app.config['ACCESS_TOKEN_CACHE_MINS'])
-        }
-
-        return self.db.tokens.insert(data)
 
     def disconnect(self):
 
