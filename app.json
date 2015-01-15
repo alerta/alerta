@@ -7,7 +7,7 @@
     "flask"
   ],
   "website": "http://docs.alerta.io",
-  "repository": "https://github.com/guardian/alerta/tree/release/3.2",
+  "repository": "https://github.com/guardian/alerta",
   "success_url": "/",
   "env": {
     "SECRET_KEY": {
