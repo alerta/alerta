@@ -18,8 +18,8 @@ class LogStashOutput(PluginBase):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((app.config['LOGSTASH_HOST'], app.config['LOGSTASH_PORT']))
-        except Exception:
-            raise RuntimeError("Logstash connection error")
+        except Exception as e:
+            raise RuntimeError("Logstash TCP connection error: %s" % str(e))
 
         try:
             self.sock.send("%s\r\n" % alert)

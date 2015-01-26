@@ -174,7 +174,7 @@ def process_alert(incomingAlert):
         except RejectException:
             raise
         except Exception as e:
-            raise RuntimeError('Error while running pre-receive plug-in: %s', e)
+            raise RuntimeError('Error while running pre-receive plug-in: %s' % str(e))
         if not incomingAlert:
             raise SyntaxError('Plug-in pre-receive hook did not return modified alert')
 
@@ -198,6 +198,6 @@ def process_alert(incomingAlert):
         try:
             plugin.post_receive(alert)
         except Exception as e:
-            raise RuntimeError('Error while running post-receive plug-in: %s', e)
+            raise RuntimeError('Error while running post-receive plug-in: %s' % str(e))
 
     return alert
