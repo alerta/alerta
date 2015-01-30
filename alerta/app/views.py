@@ -166,6 +166,8 @@ def receive_alert():
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 400
 
+    incomingAlert.attributes.update(ip=request.remote_addr)
+
     try:
         alert = process_alert(incomingAlert)
     except RejectException as e:
