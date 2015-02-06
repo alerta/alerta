@@ -121,7 +121,10 @@ def google():
     r = requests.get(people_api_url, headers=headers)
     profile = json.loads(r.text)
 
-    token = create_token(profile['sub'], profile['name'], profile['email'], provider='google')
+    try:
+        token = create_token(profile['sub'], profile['name'], profile['email'], provider='google')
+    except KeyError:
+        return jsonify(status="error", message="Google+ API is not enabled for this Client ID")
 
     return jsonify(token=token)
 
