@@ -80,13 +80,29 @@ def parse_fields(r):
         try:
             from_date = datetime.datetime.strptime(params['from-date'], '%Y-%m-%dT%H:%M:%S.%fZ')
         except ValueError, e:
-            LOG.warning('Could not parse from_date query parameter: %s', e)
+            LOG.warning('Could not parse from-date query parameter: %s', e)
             raise
         from_date = from_date.replace(tzinfo=pytz.utc)
+        del params['from-date']
+    else:
+        from_date = None
+
+    if params.get('to-date', None):
+        try:
+            to_date = datetime.datetime.strptime(params['to-date'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        except ValueError, e:
+            LOG.warning('Could not parse to-date query parameter: %s', e)
+            raise
+        to_date = to_date.replace(tzinfo=pytz.utc)
+        del params['to-date']
+    else:
         to_date = query_time
         to_date = to_date.replace(tzinfo=pytz.utc)
+
+    if from_date and to_date:
         query['lastReceiveTime'] = {'$gt': from_date, '$lte': to_date}
-        del params['from-date']
+    elif to_date:
+        query['lastReceiveTime'] = {'$lte': to_date}
 
     if params.get('id', None):
         query['$or'] = [{'_id': {'$regex': '^' + params['id']}},
