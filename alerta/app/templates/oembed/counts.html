@@ -1,0 +1,24 @@
+<div class="alerta-embed" style="max-width: {{ width }}px; max-height: {{ height }}px">
+    <table class="alert table table-bordered table-condensed severity-{{ max }}" style="width:{{ width }}px">
+      <tr><th class="" colspan="6">{{ title }}</th></tr>
+      <tr>
+        <td class="{{ 'severity-critical' if counts['critical'] }}"><b>{{ counts['critical'] }}</b></td>
+        <td class="{{ 'severity-major' if counts['major'] }}"><b>{{ counts['major'] }}</b></td>
+        <td class="{{ 'severity-minor' if counts['minor'] }}"><b>{{ counts['minor'] }}</b></td>
+        <td class="{{ 'severity-warning' if counts['warning'] }}"><b>{{ counts['warning'] }}</b></td>
+        <td class="{{ 'severity-normal' if counts['normal'] }}"><b>{{ counts['normal'] }}</b></td>
+      </tr>
+    </table>
+    <style>
+      .severity-critical{background-color: red;}
+      .severity-major{background-color: orange;}
+      .severity-minor {background-color: yellow;}
+      .severity-warning {background-color: #1E90FF;}
+      .severity-normal, .severity-cleared, .severity-ok, .severity-informational {background-color: #00CC00;}
+      .severity-debug {background-color: #7554BF;}
+      table.alert {font-family: 'Sintony', 'Helvetica Neue',v'Open Sans', Helvetica, Arial, sans-serif;
+      font-size: 20px; line-height: {{ height // 2 }}px;}
+      tr {vertical-align: middle; border-top: 1px solid grey;}
+      td {text-align: center; background-color: lightgray;}
+    </style>
+</div>
