@@ -9,7 +9,7 @@ from alerta.version import __version__
 
 LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s'
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='')
 
 app.config.from_object('alerta.settings')
 app.config.from_pyfile('/etc/alertad.conf', silent=True)
@@ -35,6 +35,7 @@ db = Mongo()
 
 import views
 import webhooks.views
+import oembed.views
 import management.views
 import auth
 
