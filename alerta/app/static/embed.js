@@ -15,14 +15,7 @@
 
   $.fn.alerta = function( url, options ) {
 
-    // if (options) {$.extend(config, $.alerta.defaults, options);}
-
-    console.log(config);
-    console.log($.alerta.defaults);
-    console.log(options);
-
     $.extend(config, $.alerta.defaults, options);
-    console.log(config);
 
     return this.each(function() {
 
@@ -44,3 +37,4 @@
 
   window.Alerta = Alerta;
 }(jQuery, window));
+
