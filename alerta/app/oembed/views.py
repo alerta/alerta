@@ -48,13 +48,19 @@ def oembed(format):
         oembed_timer.stop_timer(oembed_started)
         return jsonify(status="error", message=str(e)), 500
 
+    headers = dict()
+    if key:
+        headers = {'Authorization': 'Key ' + key}
+    response = requests.get(url=url, headers=headers)
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as e:
+        oembed_timer.stop_timer(oembed_started)
+        return jsonify(status="error", message=str(e)), response.status_code
+
     if o.path.endswith('/alerts/count'):
 
-        headers = dict()
-        if key:
-            headers = {'Authorization': 'Key ' + key}
-        response = requests.get(url=url, headers=headers)
-        counts = response.json()['severityCounts']
+        counts = response.json().get('severityCounts', dict())
 
         max = 'normal'
         if counts.get('warning', 0) > 0:
