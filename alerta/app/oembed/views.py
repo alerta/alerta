@@ -13,7 +13,7 @@ from alerta.app.metrics import Timer
 
 LOG = app.logger
 
-oembed_timer = Timer('oembed', 'request', 'Oembed request', 'Total time to process number of oembed requests')
+oembed_timer = Timer('oEmbed', 'request', 'oEmbed request', 'Total time to process number of oEmbed requests')
 
 @app.route('/oembed', defaults={'format': 'json'})
 @app.route('/oembed.<format>', methods=['OPTIONS', 'GET'])
@@ -21,11 +21,15 @@ oembed_timer = Timer('oembed', 'request', 'Oembed request', 'Total time to proce
 @jsonp
 def oembed(format):
 
+    oembed_started = oembed_timer.start_timer()
+
     if format != 'json':
+        oembed_timer.stop_timer(oembed_started)
         return jsonify(status="error", message="unsupported format: %s" % format), 400
 
     if 'url' not in request.args or 'maxwidth' not in request.args \
             or 'maxheight' not in request.args:
+        oembed_timer.stop_timer(oembed_started)
         return jsonify(status="error", message="missing default parameters: url, maxwidth, maxheight"), 400
 
     try:
@@ -35,11 +39,13 @@ def oembed(format):
         height = int(request.args['maxheight'])
         title = request.args.get('title', 'Alerts')
     except Exception as e:
+        oembed_timer.stop_timer(oembed_started)
         return jsonify(status="error", message=str(e)), 400
 
     try:
         o = urlparse(url)
     except Exception as e:
+        oembed_timer.stop_timer(oembed_started)
         return jsonify(status="error", message=str(e)), 500
 
     if o.path.endswith('/alerts/count'):
@@ -68,9 +74,11 @@ def oembed(format):
             max=max,
             counts=counts
         )
+        oembed_timer.stop_timer(oembed_started)
         return jsonify(version="1.0", type="rich", width=width, height=height, title=title,  provider_name="Alerta", provider_url=request.url_root, html=html)
 
     else:
+        oembed_timer.stop_timer(oembed_started)
         return jsonify(status="error", message="unsupported oEmbed URL scheme"), 400
 
 
