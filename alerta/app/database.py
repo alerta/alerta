@@ -145,12 +145,12 @@ class Mongo(object):
         """
         return self.db.alerts.find(query).count()
 
-    def get_alerts(self, query=None, fields=None, sort=None, limit=0):
+    def get_alerts(self, query=None, fields=None, sort=None, page=1, limit=0):
 
         if 'status' not in query:
             query['status'] = {'$ne': "expired"}
 
-        responses = self.db.alerts.find(query, fields=fields, sort=sort).limit(limit)
+        responses = self.db.alerts.find(query, fields=fields, sort=sort).skip((page-1)*limit).limit(limit)
 
         alerts = list()
         for response in responses:

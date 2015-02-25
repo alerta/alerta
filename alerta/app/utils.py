@@ -76,6 +76,11 @@ def parse_fields(r):
     else:
         query = dict()
 
+    page = params.get('page', 1)
+    if 'page' in params:
+        del params['page']
+    page = int(page)
+
     if params.get('from-date', None):
         try:
             from_date = datetime.datetime.strptime(params['from-date'], '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -179,7 +184,7 @@ def parse_fields(r):
                     query[field] = dict()
                     query[field]['$in'] = value
 
-    return query, sort, group, limit, query_time
+    return query, sort, group, page, limit, query_time
 
 
 def process_alert(incomingAlert):
