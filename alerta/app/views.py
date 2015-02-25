@@ -57,24 +57,34 @@ def get_alerts():
 
     gets_started = gets_timer.start_timer()
     try:
-        query, sort, _, limit, query_time = parse_fields(request)
+        query, sort, _, page, limit, query_time = parse_fields(request)
     except Exception, e:
         gets_timer.stop_timer(gets_started)
         return jsonify(status="error", message=str(e)), 400
+
+    try:
+        severity_count = db.get_counts(query=query, fields={"severity": 1}, group="severity")
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
+    try:
+        status_count = db.get_counts(query=query, fields={"status": 1}, group="status")
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
+    total = sum(severity_count.values())
+    pages = ((total - 1) // limit) + 1
+
+    if total and page > pages or page < 0:
+        return jsonify(status="error", message="page out of range: 1-%s" % pages), 416
 
     fields = dict()
     fields['history'] = {'$slice': app.config['HISTORY_LIMIT']}
 
     try:
-        alerts = db.get_alerts(query=query, fields=fields, sort=sort, limit=limit)
+        alerts = db.get_alerts(query=query, fields=fields, sort=sort, page=page, limit=limit)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
-
-    total = db.get_count(query=query)  # because total may be greater than limit
-
-    found = 0
-    severity_count = defaultdict(int)
-    status_count = defaultdict(int)
 
     alert_response = list()
     if len(alerts) > 0:
@@ -84,9 +94,6 @@ def get_alerts():
         for alert in alerts:
             body = alert.get_body()
             body['href'] = "%s/%s" % (request.base_url.replace('alerts', 'alert'), alert.id)
-            found += 1
-            severity_count[body['severity']] += 1
-            status_count[body['status']] += 1
 
             if not last_time:
                 last_time = body['lastReceiveTime']
@@ -98,8 +105,11 @@ def get_alerts():
         gets_timer.stop_timer(gets_started)
         return jsonify(
             status="ok",
-            total=found,
-            more=total > limit,
+            total=total,
+            page=page,
+            pageSize=limit,
+            pages=pages,
+            more=page < pages,
             alerts=alert_response,
             severityCounts=severity_count,
             statusCounts=status_count,
@@ -111,7 +121,10 @@ def get_alerts():
         return jsonify(
             status="ok",
             message="not found",
-            total=0,
+            total=total,
+            page=page,
+            pageSize=limit,
+            pages=pages,
             more=False,
             alerts=[],
             severityCounts=severity_count,
@@ -127,7 +140,7 @@ def get_alerts():
 def get_history():
 
     try:
-        query, _, _, limit, query_time = parse_fields(request)
+        query, _, _, _, limit, query_time = parse_fields(request)
     except Exception, e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -313,7 +326,7 @@ def delete_alert(id):
 def get_counts():
 
     try:
-        query, _, _, _, _ = parse_fields(request)
+        query, _, _, _, _, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -350,7 +363,7 @@ def get_counts():
 def get_top10():
 
     try:
-        query, _, group, _, _ = parse_fields(request)
+        query, _, group, _, _, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -384,7 +397,7 @@ def get_top10():
 def get_environments():
 
     try:
-        query, _, _, limit, _ = parse_fields(request)
+        query, _, _, _, limit, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -415,7 +428,7 @@ def get_environments():
 def get_services():
 
     try:
-        query, _, _, limit, _ = parse_fields(request)
+        query, _, _, _, limit, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
