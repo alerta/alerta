@@ -72,6 +72,9 @@ def get_alerts():
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
+    if limit < 1:
+        return jsonify(status="error", message="page 'limit' of %s is not valid" % limit), 416
+
     total = sum(severity_count.values())
     pages = ((total - 1) // limit) + 1
 
