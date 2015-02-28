@@ -18,6 +18,15 @@ app.config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
 if 'SECRET_KEY' in os.environ:
     app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
+if 'OAUTH2_CLIENT_ID' in os.environ:
+    app.config['OAUTH2_CLIENT_ID'] = os.environ['OAUTH2_CLIENT_ID']
+
+if 'OAUTH2_CLIENT_SECRET' in os.environ:
+    app.config['OAUTH2_CLIENT_SECRET'] = os.environ['OAUTH2_CLIENT_SECRET']
+
+if 'ALLOWED_EMAIL_DOMAINS' in os.environ:
+    app.config['ALLOWED_EMAIL_DOMAINS'] = os.environ['ALLOWED_EMAIL_DOMAINS'].split(',')
+
 if 'CORS_ORIGINS' in os.environ:
     app.config['CORS_ORIGINS'] = os.environ['CORS_ORIGINS'].split(',')
 
