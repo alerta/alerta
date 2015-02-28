@@ -98,7 +98,10 @@ def google():
                    code=request.json['code'],
                    grant_type='authorization_code')
 
-    r = requests.post(access_token_url, data=payload)
+    try:
+        r = requests.post(access_token_url, data=payload)
+    except Exception:
+        return jsonify(status="error", message="Failed to call Google API over HTTPS")
     token = json.loads(r.text)
 
     if 'id_token' not in token:
