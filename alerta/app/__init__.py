@@ -18,6 +18,9 @@ app.config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
 if 'SECRET_KEY' in os.environ:
     app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
+if 'CORS_ORIGINS' in os.environ:
+    app.config['CORS_ORIGINS'] = os.environ['CORS_ORIGINS'].split(',')
+
 if app.debug:
     app.debug_log_format = LOG_FORMAT
 else:
