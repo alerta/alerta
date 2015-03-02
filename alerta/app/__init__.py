@@ -27,6 +27,9 @@ if 'OAUTH2_CLIENT_SECRET' in os.environ:
 if 'ALLOWED_EMAIL_DOMAINS' in os.environ:
     app.config['ALLOWED_EMAIL_DOMAINS'] = os.environ['ALLOWED_EMAIL_DOMAINS'].split(',')
 
+if 'ALLOWED_GITHUB_ORGS' in os.environ:
+    app.config['ALLOWED_GITHUB_ORGS'] = os.environ['ALLOWED_GITHUB_ORGS'].split(',')
+
 if 'CORS_ORIGINS' in os.environ:
     app.config['CORS_ORIGINS'] = os.environ['CORS_ORIGINS'].split(',')
 
