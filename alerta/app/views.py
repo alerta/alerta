@@ -561,6 +561,7 @@ def get_users():
             total=len(users),
             users=users,
             domains=app.config['ALLOWED_EMAIL_DOMAINS'],
+            orgs=app.config['ALLOWED_GITHUB_ORGS'],
             time=datetime.datetime.utcnow()
         )
     else:
@@ -570,6 +571,7 @@ def get_users():
             total=0,
             users=[],
             domains=app.config['ALLOWED_EMAIL_DOMAINS'],
+            orgs=app.config['ALLOWED_GITHUB_ORGS'],
             time=datetime.datetime.utcnow()
         )
 
@@ -581,21 +583,20 @@ def create_user():
 
     if request.json and 'name' in request.json:
         name = request.json["name"]
-        email = request.json["email"]
+        login = request.json["login"]
         provider = request.json["provider"]
+        text = request.json.get("text", "")
         try:
-            user = db.save_user(str(uuid4()), name, email, provider)
+            user = db.save_user(str(uuid4()), name, login, provider, text)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
-        return jsonify(status="error", message="must supply user 'name', 'email' and 'provider' as parameters"), 400
+        return jsonify(status="error", message="must supply user 'name', 'login' and 'provider' as parameters"), 400
 
     if user:
         return jsonify(status="ok", user=user), 201, {'Location': '%s/%s' % (request.base_url, user)}
     else:
-        return jsonify(status="error", message="User with email address already exists"), 409
-
-
+        return jsonify(status="error", message="User with that login already exists"), 409
 
 @app.route('/user/<user>', methods=['OPTIONS', 'DELETE', 'POST'])
 @cross_origin()

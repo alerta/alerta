@@ -22,7 +22,7 @@ def verify_api_key(key):
     return True
 
 
-def create_token(user, name, email, provider=None):
+def create_token(user, name, login, provider=None):
     payload = {
         'iss': "%s" % request.host_url,
         'sub': user,
@@ -30,7 +30,7 @@ def create_token(user, name, email, provider=None):
         'aud': app.config['OAUTH2_CLIENT_ID'],
         'exp': datetime.now() + timedelta(days=14),
         'name': name,
-        'email': email,
+        'login': login,
         'provider': provider
     }
     token = jwt.encode(payload, key=app.config['SECRET_KEY'], json_encoder=DateEncoder)
@@ -117,7 +117,7 @@ def google():
     email = claims.get('email')
     if not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
             or email.split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']
-            or db.is_user_valid(email)):
+            or db.is_user_valid(login=email)):
         return jsonify(status="error", message="User %s is not authorized" % email), 403
 
     headers = {'Authorization': 'Bearer ' + token['access_token']}
@@ -155,9 +155,10 @@ def github():
     organizations = [o['login'] for o in json.loads(r.text)]
 
     if not ('*' in app.config['ALLOWED_GITHUB_ORGS']
-            or (set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations)))):
+            or (set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))))\
+            or db.is_user_valid(login=profile['login']):
         return jsonify(status="error", message="User %s is not authorized" % profile['login']), 403
 
-    token = create_token(profile['login'], profile['name'], profile['email'], provider='github')
+    token = create_token(profile['id'], profile['name'], profile['login'], provider='github')
 
     return jsonify(token=token)

@@ -918,8 +918,9 @@ class Mongo(object):
         return {
             "id": user['_id'],
             "name": user['name'],
-            "email": user['email'],
-            "provider": user['provider']
+            "login": user['login'],
+            "provider": user['provider'],
+            "text": user['text']
         }
 
     def get_users(self, query=None):
@@ -931,33 +932,35 @@ class Mongo(object):
                 {
                     "id": user['_id'],
                     "name": user['name'],
-                    "email": user['email'],
+                    "login": user['login'],
                     "createTime": user['createTime'],
-                    "provider": user['provider']
+                    "provider": user['provider'],
+                    "text": user['text']
                 }
             )
         return users
 
-    def is_user_valid(self, id=None, name=None, email=None):
+    def is_user_valid(self, id=None, name=None, login=None):
 
         if id:
             return bool(self.db.users.find_one({"_id": id}))
         if name:
             return bool(self.db.users.find_one({"name": name}))
-        if email:
-            return bool(self.db.users.find_one({"email": email}))
+        if login:
+            return bool(self.db.users.find_one({"login": login}))
 
-    def save_user(self, id, name, email, provider):
+    def save_user(self, id, name, login, provider, text):
 
-        if self.is_user_valid(email=email):
+        if self.is_user_valid(login=login):
             return
 
         data = {
             "_id": id,
             "name": name,
-            "email": email,
+            "login": login,
             "createTime": datetime.datetime.utcnow(),
-            "provider": provider
+            "provider": provider,
+            "text": text
         }
 
         return self.db.users.insert(data)
