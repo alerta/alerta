@@ -125,7 +125,7 @@ def google():
     profile = json.loads(r.text)
 
     try:
-        token = create_token(profile['sub'], profile['name'], profile['email'], provider='google')
+        token = create_token(profile['sub'], profile['name'], email, provider='google')
     except KeyError:
         return jsonify(status="error", message="Google+ API is not enabled for this Client ID")
 
@@ -154,11 +154,12 @@ def github():
     r = requests.get(profile['organizations_url'], params=access_token)
     organizations = [o['login'] for o in json.loads(r.text)]
 
+    login = profile['login']
     if not ('*' in app.config['ALLOWED_GITHUB_ORGS']
             or set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))
-            or db.is_user_valid(login=profile['login'])):
+            or db.is_user_valid(login=login)):
         return jsonify(status="error", message="User %s is not authorized" % profile['login']), 403
 
-    token = create_token(profile['id'], profile['name'], profile['login'], provider='github')
+    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github')
 
     return jsonify(token=token)
