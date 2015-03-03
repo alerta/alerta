@@ -932,10 +932,10 @@ class Mongo(object):
                 {
                     "id": user['_id'],
                     "name": user['name'],
-                    "login": user['login'],
+                    "login": user.get('login', None) or user.get('email', None),  # for backwards compatibility
                     "createTime": user['createTime'],
                     "provider": user['provider'],
-                    "text": user['text']
+                    "text": user.get('text', "")
                 }
             )
         return users
