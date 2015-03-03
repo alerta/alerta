@@ -156,7 +156,7 @@ def github():
 
     if not ('*' in app.config['ALLOWED_GITHUB_ORGS']
             or (set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))))\
-            or db.is_user_valid(profile['login']):
+            or db.is_user_valid(login=profile['login']):
         return jsonify(status="error", message="User %s is not authorized" % profile['login']), 403
 
     token = create_token(profile['id'], profile['name'], profile['login'], provider='github')
