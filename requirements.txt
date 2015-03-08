@@ -6,6 +6,7 @@ librabbitmq
 boto
 argparse
 requests
+requests-oauthlib
 pytz
 alerta
 gunicorn
