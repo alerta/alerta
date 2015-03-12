@@ -109,11 +109,6 @@ def parse_fields(r):
     elif to_date:
         query['lastReceiveTime'] = {'$lte': to_date}
 
-    if params.get('id', None):
-        query['$or'] = [{'_id': {'$regex': '^' + params['id']}},
-                        {'lastReceiveId': {'$regex': '^' + params['id']}}]
-        del params['id']
-
     if params.get('duplicateCount', None):
         query['duplicateCount'] = int(params.get('duplicateCount'))
         del params['duplicateCount']
@@ -148,6 +143,14 @@ def parse_fields(r):
     else:
         limit = app.config['QUERY_LIMIT']
     limit = int(limit)
+
+    ids = params.getlist('id')
+    if len(ids) == 1:
+        query['$or'] = [{'_id': {'$regex': '^' + ids[0]}}, {'lastReceiveId': {'$regex': '^' + ids[0]}}]
+        del params['id']
+    else:
+        query['$or'] = [{'_id': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}, {'lastReceiveId': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}]
+        del params['id']
 
     for field in params:
         value = params.getlist(field)
