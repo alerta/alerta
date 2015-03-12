@@ -988,6 +988,7 @@ class Mongo(object):
                 {
                     "user": response["user"],
                     "key": response["key"],
+                    "type": response["type"],
                     "text": response["text"],
                     "expireTime": response["expireTime"],
                     "count": response["count"],
@@ -1003,13 +1004,13 @@ class Mongo(object):
 
         if key_info:
             if key_info['expireTime'] > datetime.datetime.utcnow():
-                return True
+                return key_info.get('type', 'read-only')
             else:
-                return False
+                return None
         else:
-            return False
+            return None
 
-    def create_key(self, user, text=None):
+    def create_key(self, user, type='read-only', text=None):
 
         digest = hmac.new(app.config['SECRET_KEY'], msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
         key = base64.urlsafe_b64encode(digest)[:40]
@@ -1017,6 +1018,7 @@ class Mongo(object):
         data = {
             "user": user,
             "key": key,
+            "type": type,  # read-only or read-write
             "text": text,
             "expireTime": datetime.datetime.utcnow() + datetime.timedelta(app.config.get('API_KEY_EXPIRE_DAYS', 30)),
             "count": 0,
