@@ -28,6 +28,7 @@ setuptools.setup(
         'boto',
         'argparse',
         'requests',
+        'requests-oauthlib',
         'pytz',
         'PyJWT'
     ],
