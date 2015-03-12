@@ -148,7 +148,7 @@ def parse_fields(r):
     if len(ids) == 1:
         query['$or'] = [{'_id': {'$regex': '^' + ids[0]}}, {'lastReceiveId': {'$regex': '^' + ids[0]}}]
         del params['id']
-    else:
+    elif ids:
         query['$or'] = [{'_id': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}, {'lastReceiveId': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}]
         del params['id']
 
