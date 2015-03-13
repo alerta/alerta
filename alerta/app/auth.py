@@ -17,8 +17,11 @@ from alerta.app import app, db
 from alerta.app.utils import jsonify, jsonp, DateEncoder
 
 
-def verify_api_key(key):
-    if not db.is_key_valid(key):
+def verify_api_key(key, method):
+    perm = db.is_key_valid(key)
+    if not perm:
+        return False
+    elif perm == 'read-only' and not method == 'GET':
         return False
     db.update_key(key)
     return True
@@ -56,7 +59,7 @@ def auth_required(f):
 
         if 'api-key' in request.args:
             key = request.args['api-key']
-            if not verify_api_key(key):
+            if not verify_api_key(key, request.method):
                 return authenticate('API key is invalid')
             return f(*args, **kwargs)
 
@@ -66,7 +69,7 @@ def auth_required(f):
 
         if auth_header.startswith('Key'):
             key = auth_header.replace('Key ', '')
-            if not verify_api_key(key):
+            if not verify_api_key(key, request.method):
                 return authenticate('API key is invalid')
             return f(*args, **kwargs)
 
