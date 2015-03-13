@@ -3,7 +3,6 @@ import sys
 import datetime
 import base64
 import hmac
-import random
 import hashlib
 
 import pymongo
@@ -1012,7 +1011,7 @@ class Mongo(object):
 
     def create_key(self, user, type='read-only', text=None):
 
-        digest = hmac.new(app.config['SECRET_KEY'], msg=str(random.getrandbits(32)), digestmod=hashlib.sha256).digest()
+        digest = hmac.new(app.config['SECRET_KEY'], msg=str(os.urandom(32)), digestmod=hashlib.sha256).digest()
         key = base64.urlsafe_b64encode(digest)[:40]
 
         data = {
