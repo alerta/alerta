@@ -987,7 +987,7 @@ class Mongo(object):
                 {
                     "user": response["user"],
                     "key": response["key"],
-                    "type": response["type"],
+                    "type": response.get("type", "read-write"),
                     "text": response["text"],
                     "expireTime": response["expireTime"],
                     "count": response["count"],
@@ -1003,7 +1003,7 @@ class Mongo(object):
 
         if key_info:
             if key_info['expireTime'] > datetime.datetime.utcnow():
-                return key_info.get('type', 'read-only')
+                return key_info.get("type", "read-write")
             else:
                 return None
         else:
