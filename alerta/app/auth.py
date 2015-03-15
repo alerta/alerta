@@ -21,7 +21,7 @@ def verify_api_key(key, method):
     perm = db.is_key_valid(key)
     if not perm:
         return False
-    elif method == 'POST' and perm != 'read-write':
+    elif method in ['POST', 'DELETE'] and perm != 'read-write':
         return False
     db.update_key(key)
     return True
