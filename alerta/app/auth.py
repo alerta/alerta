@@ -17,14 +17,17 @@ from alerta.app import app, db
 from alerta.app.utils import jsonify, jsonp, DateEncoder
 
 
+class AuthError(Exception):
+    pass
+
+
 def verify_api_key(key, method):
     perm = db.is_key_valid(key)
     if not perm:
-        return False
-    elif method in ['POST', 'DELETE'] and perm != 'read-write':
-        return False
+        raise AuthError('API key is invalid')
+    if method in ['POST', 'DELETE'] and perm != 'read-write':
+        raise AuthError('%s requires read-write API key' % method)
     db.update_key(key)
-    return True
 
 
 def create_token(user, name, login, provider=None):
@@ -59,8 +62,10 @@ def auth_required(f):
 
         if 'api-key' in request.args:
             key = request.args['api-key']
-            if not verify_api_key(key, request.method):
-                return authenticate('API key is invalid')
+            try:
+                verify_api_key(key, request.method)
+            except AuthError as e:
+                return authenticate(str(e))
             return f(*args, **kwargs)
 
         auth_header = request.headers.get('Authorization')
@@ -69,8 +74,10 @@ def auth_required(f):
 
         if auth_header.startswith('Key'):
             key = auth_header.replace('Key ', '')
-            if not verify_api_key(key, request.method):
-                return authenticate('API key is invalid')
+            try:
+                verify_api_key(key, request.method)
+            except AuthError as e:
+                return authenticate(str(e))
             return f(*args, **kwargs)
 
         if auth_header.startswith('Bearer'):
