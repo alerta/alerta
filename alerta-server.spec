@@ -25,7 +25,7 @@ CloudWatch and Pingdom, and displays them on an alert console.
 %setup -n alerta-%{version}
 
 %build
-/usr/bin/virtualenv --no-site-packages alerta
+/usr/bin/virtualenv alerta
 alerta/bin/pip install -r requirements.txt --upgrade
 alerta/bin/python setup.py install --single-version-externally-managed --root=/
 /usr/bin/virtualenv --relocatable alerta
@@ -49,11 +49,6 @@ WSGISocketPrefix /var/run/wsgi
   WSGIPassAuthorization On
   ErrorLog ${APACHE_LOG_DIR}/error.log
   CustomLog ${APACHE_LOG_DIR}/access.log combined
-</VirtualHost>
-<VirtualHost *:80>
-  ProxyPass /api http://localhost:8080
-  ProxyPassReverse /api http://localhost:8080
-  DocumentRoot /var/www
 </VirtualHost>
 EOF
 
