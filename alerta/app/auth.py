@@ -21,12 +21,16 @@ class AuthError(Exception):
     pass
 
 
+class Forbidden(Exception):
+    pass
+
+
 def verify_api_key(key, method):
     perm = db.is_key_valid(key)
     if not perm:
-        raise AuthError('API key is invalid')
+        raise AuthError("API key '%s' is invalid" % key)
     if method in ['POST', 'DELETE'] and perm != 'read-write':
-        raise AuthError('%s requires read-write API key' % method)
+        raise Forbidden("%s method requires 'read-write' API Key" % method)
     db.update_key(key)
 
 
@@ -49,8 +53,8 @@ def parse_token(token):
     return jwt.decode(token, key=app.config['SECRET_KEY'], audience=app.config['OAUTH2_CLIENT_ID'])
 
 
-def authenticate(message):
-    return jsonify(status="error", message=message), 401
+def authenticate(message, status_code=401):
+    return jsonify(status="error", message=message), status_code
 
 
 def auth_required(f):
@@ -65,7 +69,9 @@ def auth_required(f):
             try:
                 verify_api_key(key, request.method)
             except AuthError as e:
-                return authenticate(str(e))
+                return authenticate(str(e), 401)
+            except Forbidden as e:
+                return authenticate(str(e), 403)
             return f(*args, **kwargs)
 
         auth_header = request.headers.get('Authorization')
@@ -77,7 +83,9 @@ def auth_required(f):
             try:
                 verify_api_key(key, request.method)
             except AuthError as e:
-                return authenticate(str(e))
+                return authenticate(str(e), 401)
+            except Forbidden as e:
+                return authenticate(str(e), 403)
             return f(*args, **kwargs)
 
         if auth_header.startswith('Bearer'):
