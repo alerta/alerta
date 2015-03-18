@@ -1,4 +1,4 @@
-%{!?_with_teamcity: %define version 4.1.8}
+%{!?_with_teamcity: %define version 4.1.0}
 %{!?_with_teamcity: %define release 1}
 
 Name: alerta-server
@@ -60,7 +60,7 @@ execfile(activate_this, dict(__file__=activate_this))
 from alerta.app import app as application
 EOF
 
-#prelink -u %{buildroot}/opt/alerta/bin/python
+prelink -u %{buildroot}/opt/alerta/bin/python*
 
 %clean
 rm -rf %{buildroot}
