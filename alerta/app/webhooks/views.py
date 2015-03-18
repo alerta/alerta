@@ -71,6 +71,36 @@ def cw_state_to_severity(state):
     else:
         return 'unknown'
 
+@app.route('/webhooks/cloudwatch', methods=['OPTIONS', 'POST'])
+@cross_origin()
+@jsonp
+def cloudwatch():
+
+    hook_started = webhook_timer.start_timer()
+    try:
+        incomingAlert = parse_notification(request.data)
+    except ValueError, e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=str(e)), 400
+
+    try:
+        alert = process_alert(incomingAlert)
+    except RejectException as e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=str(e)), 403
+    except Exception as e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=str(e)), 500
+
+    webhook_timer.stop_timer(hook_started)
+
+    if alert:
+        body = alert.get_body()
+        body['href'] = "%s/%s" % (request.base_url, alert.id)
+        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': '%s/%s' % (request.base_url, alert.id)}
+    else:
+        return jsonify(status="error", message="insert or update of cloudwatch alarm failed"), 500
+
 
 def parse_pingdom(check):
 
@@ -121,40 +151,6 @@ def parse_pingdom(check):
             event_type='availabilityAlert',
             raw_data=check,
         )
-
-
-
-@app.route('/webhooks/cloudwatch', methods=['OPTIONS', 'POST'])
-@cross_origin()
-@jsonp
-def cloudwatch():
-
-    hook_started = webhook_timer.start_timer()
-    try:
-        incomingAlert = parse_notification(request.data)
-    except ValueError, e:
-        webhook_timer.stop_timer(hook_started)
-        return jsonify(status="error", message=str(e)), 400
-
-    try:
-        alert = process_alert(incomingAlert)
-    except RejectException as e:
-        webhook_timer.stop_timer(hook_started)
-        return jsonify(status="error", message=str(e)), 403
-    except Exception as e:
-        webhook_timer.stop_timer(hook_started)
-        return jsonify(status="error", message=str(e)), 500
-
-    webhook_timer.stop_timer(hook_started)
-
-    if alert:
-        body = alert.get_body()
-        body['href'] = "%s/%s" % (request.base_url, alert.id)
-        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': '%s/%s' % (request.base_url, alert.id)}
-    else:
-        return jsonify(status="error", message="insert or update of cloudwatch alarm failed"), 500
-
-
 
 @app.route('/webhooks/pingdom', methods=['OPTIONS', 'GET'])
 @cross_origin()
