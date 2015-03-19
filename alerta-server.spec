@@ -37,6 +37,7 @@ cp %{_builddir}/alerta-%{version}/alerta/bin/python* %{buildroot}/opt/alerta/bin
 cp %{_builddir}/alerta-%{version}/alerta/bin/activate* %{buildroot}/opt/alerta/bin/
 cp -r %{_builddir}/alerta-%{version}/alerta/lib %{buildroot}/opt/alerta/
 
+%__mkdir_p %{buildroot}/var/run/wsgi
 %__mkdir_p %{buildroot}%{_sysconfdir}/httpd/conf.d/
 cat > %{buildroot}%{_sysconfdir}/httpd/conf.d/alerta.conf << EOF
 Listen 8080
@@ -47,8 +48,8 @@ WSGISocketPrefix /var/run/wsgi
   WSGIProcessGroup alerta
   WSGIScriptAlias / /var/www/api.wsgi
   WSGIPassAuthorization On
-  ErrorLog ${APACHE_LOG_DIR}/error.log
-  CustomLog ${APACHE_LOG_DIR}/access.log combined
+  ErrorLog logs/error.log
+  CustomLog logs/access.log combined
 </VirtualHost>
 EOF
 
@@ -60,7 +61,9 @@ execfile(activate_this, dict(__file__=activate_this))
 from alerta.app import app as application
 EOF
 
-prelink -u %{buildroot}/opt/alerta/bin/python*
+if [ -n "$(type -p prelink)" ]; then
+    prelink -u %{buildroot}/opt/alerta/bin/python*
+fi
 
 %clean
 rm -rf %{buildroot}
@@ -75,6 +78,7 @@ rm -rf %{buildroot}
 /opt/alerta/bin/python*
 /opt/alerta/bin/activate*
 /opt/alerta/lib/*
+/var/run/wsgi
 
 %pre
 getent group alerta >/dev/null || groupadd -r alerta
