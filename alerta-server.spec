@@ -48,8 +48,8 @@ WSGISocketPrefix /var/run/wsgi
   WSGIProcessGroup alerta
   WSGIScriptAlias / /var/www/api.wsgi
   WSGIPassAuthorization On
-  ErrorLog logs/error.log
-  CustomLog logs/access.log combined
+  ErrorLog logs/alerta-error_log
+  CustomLog logs/alerta-access_log combined
 </VirtualHost>
 EOF
 
