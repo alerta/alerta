@@ -4,7 +4,7 @@ import datetime
 from flask import request
 from flask.ext.cors import cross_origin
 
-from alerta.app import app, db, status_code
+from alerta.app import app, db
 from alerta.alert import Alert
 from alerta.app.utils import jsonify, jsonp, process_alert
 from alerta.app.metrics import Timer
@@ -198,6 +198,8 @@ def parse_pagerduty(message):
         alert = db.get_alerts(query={'attributes.incidentKey': incident_key}, limit=1)[0]
     except IndexError:
         raise
+
+    from alerta.app import status_code
 
     if message['type'] == 'incident.trigger':
         status = status_code.OPEN
