@@ -61,6 +61,14 @@ execfile(activate_this, dict(__file__=activate_this))
 from alerta.app import app as application
 EOF
 
+%__mkdir_p %{buildroot}%{_sysconfdir}/profile.d/
+cat > %{buildroot}%{_sysconfdir}/profile.d/alerta.sh << EOF
+# Set path for Alerta command line tool
+export PATH=$PATH:/opt/alerta/bin
+# Uncomment this line to specify an API Key
+#export ALERTA_API_KEY=
+EOF
+
 if [ -n "$(type -p prelink)" ]; then
     prelink -u %{buildroot}/opt/alerta/bin/python*
 fi
@@ -71,6 +79,7 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root)
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/alerta.conf
+%config(noreplace) %{_sysconfdir}/profile.d/alerta.sh
 %defattr(-,alerta,alerta)
 /opt/alerta/bin/alerta
 /opt/alerta/bin/alertad
