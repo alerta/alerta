@@ -21,6 +21,10 @@ pylint:
 	@pip -q install pylint
 	pylint --rcfile pylintrc alerta
 
+clean:
+	find . -name "*.pyc" -exec rm {} \;
+	rm -Rf build dist *.egg-info
+
 test:
 	nosetests tests
 
