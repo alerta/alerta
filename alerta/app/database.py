@@ -4,7 +4,7 @@ import datetime
 import base64
 import hmac
 import hashlib
-
+import bcrypt
 import pymongo
 
 from alerta.app import app, severity_code, status_code
@@ -932,6 +932,7 @@ class Mongo(object):
                     "id": user['_id'],
                     "name": user['name'],
                     "login": user.get('login', None) or user.get('email', None),  # for backwards compatibility
+                    "password": user.get('password', None),
                     "createTime": user['createTime'],
                     "provider": user['provider'],
                     "text": user.get('text', "")
@@ -948,7 +949,7 @@ class Mongo(object):
         if login:
             return bool(self.db.users.find_one({"login": login}))
 
-    def save_user(self, id, name, login, provider, text):
+    def save_user(self, id, name, login, password=None, provider="", text=""):
 
         if self.is_user_valid(login=login):
             return
@@ -961,6 +962,9 @@ class Mongo(object):
             "provider": provider,
             "text": text
         }
+
+        if password:
+            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
         return self.db.users.insert(data)
 

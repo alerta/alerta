@@ -2,6 +2,7 @@
 import jwt
 import json
 import requests
+import bcrypt
 
 from datetime import datetime, timedelta
 from functools import wraps
@@ -12,6 +13,7 @@ from base64 import urlsafe_b64decode
 from urlparse import parse_qsl
 from urllib import urlencode
 from requests_oauthlib import OAuth1
+from uuid import uuid4
 
 from alerta.app import app, db
 from alerta.app.utils import jsonify, jsonp, DateEncoder
@@ -104,6 +106,54 @@ def auth_required(f):
         return authenticate('Authentication required')
 
     return decorated
+
+
+@app.route('/auth/login', methods=['OPTIONS', 'POST'])
+@cross_origin()
+def login():
+    try:
+        email = request.json['email']
+        password = request.json['password']
+    except KeyError:
+        return jsonify(status="error", message="Must supply email address and password"), 401
+
+    if app.config['AUTH_REQUIRED'] and not db.is_user_valid(login=email):
+        return jsonify(status="error", message="User %s is not authorized" % email), 403
+    else:
+        user = db.get_users(query={"login": email})[0]
+
+    if not bcrypt.hashpw(password.encode('utf-8'), user['password'].encode('utf-8')) == user['password'].encode('utf-8'):
+        return jsonify(status="error", message="User %s is not authorized" % email), 403
+
+    token = create_token(user['id'], user['name'], email, provider='basic')
+    return jsonify(token=token)
+
+
+@app.route('/auth/signup', methods=['OPTIONS', 'POST'])
+@cross_origin()
+def signup():
+
+    if request.json and 'name' in request.json:
+        name = request.json["name"]
+        login = request.json["email"]
+        password = request.json["password"]
+        provider = request.json.get("provider", "basic")
+        text = request.json.get("text", "")
+        try:
+            user_id = db.save_user(str(uuid4()), name, login, password, provider, text)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
+    else:
+        return jsonify(status="error", message="must supply user 'name', 'email' and 'password' as parameters"), 400
+
+    if user_id:
+        user = db.get_user(user_id)
+    else:
+        user = db.get_users(query={"login": login})[0]
+
+    token = create_token(user['id'], user['name'], login, provider='basic')
+    return jsonify(token=token)
+
 
 @app.route('/auth/google', methods=['OPTIONS', 'POST'])
 @cross_origin()

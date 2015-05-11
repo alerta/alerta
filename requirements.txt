@@ -11,3 +11,5 @@ pytz
 alerta
 gunicorn
 PyJWT
+cffi
+bcrypt
