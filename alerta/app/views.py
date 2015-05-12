@@ -584,10 +584,11 @@ def create_user():
     if request.json and 'name' in request.json:
         name = request.json["name"]
         login = request.json["login"]
+        password = request.json.get("password", None)
         provider = request.json["provider"]
         text = request.json.get("text", "")
         try:
-            user = db.save_user(str(uuid4()), name, login, provider, text)
+            user = db.save_user(str(uuid4()), name, login, password, provider, text)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
