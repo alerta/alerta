@@ -118,12 +118,14 @@ def login():
         return jsonify(status="error", message="Must supply email address and password"), 401
 
     if app.config['AUTH_REQUIRED'] and not db.is_user_valid(login=email):
-        return jsonify(status="error", message="User %s is not authorized" % email), 403
+        return jsonify(status="error", message="User %s is not authorized" % email), 401
+    elif not db.is_user_valid(login=email):
+        return jsonify(status="error", message="User %s does not exist" % email), 401
     else:
         user = db.get_users(query={"login": email})[0]
 
     if not bcrypt.hashpw(password.encode('utf-8'), user['password'].encode('utf-8')) == user['password'].encode('utf-8'):
-        return jsonify(status="error", message="User %s is not authorized" % email), 403
+        return jsonify(status="error", message="User %s is not authorized" % email), 401
 
     token = create_token(user['id'], user['name'], email, provider='basic')
     return jsonify(token=token)
@@ -229,7 +231,6 @@ def github():
         return jsonify(status="error", message="User %s is not authorized" % profile['login']), 403
 
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github')
-
     return jsonify(token=token)
 
 @app.route('/auth/twitter')
@@ -252,7 +253,6 @@ def twitter():
             return jsonify(status="error", message="User %s is not authorized" % login), 403
 
         token = create_token(profile['user_id'], '@'+login, login, provider='twitter')
-
         return jsonify(token=token)
     else:
         oauth = OAuth1(app.config['OAUTH2_CLIENT_ID'],
