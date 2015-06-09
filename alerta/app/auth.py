@@ -18,6 +18,8 @@ from uuid import uuid4
 from alerta.app import app, db
 from alerta.app.utils import jsonify, jsonp, DateEncoder
 
+BASIC_AUTH_REALM = "Alerta"
+
 
 class AuthError(Exception):
     pass
@@ -115,17 +117,21 @@ def login():
         email = request.json['email']
         password = request.json['password']
     except KeyError:
-        return jsonify(status="error", message="Must supply email address and password"), 401
+        return jsonify(status="error", message="Must supply email address and password"), 401, \
+            {'WWW-Authenticate': 'Basic realm="%s"' % BASIC_AUTH_REALM}
 
     if app.config['AUTH_REQUIRED'] and not db.is_user_valid(login=email):
-        return jsonify(status="error", message="User %s is not authorized" % email), 401
+        return jsonify(status="error", message="User %s is not authorized" % email), 401, \
+            {'WWW-Authenticate': 'Basic realm="%s"' % BASIC_AUTH_REALM}
     elif not db.is_user_valid(login=email):
-        return jsonify(status="error", message="User %s does not exist" % email), 401
+        return jsonify(status="error", message="User %s does not exist" % email), 401, \
+            {'WWW-Authenticate': 'Basic realm="%s"' % BASIC_AUTH_REALM}
     else:
         user = db.get_users(query={"login": email})[0]
 
     if not bcrypt.hashpw(password.encode('utf-8'), user['password'].encode('utf-8')) == user['password'].encode('utf-8'):
-        return jsonify(status="error", message="User %s is not authorized" % email), 401
+        return jsonify(status="error", message="User %s is not authorized" % email), 401, \
+            {'WWW-Authenticate': 'Basic realm="%s"' % BASIC_AUTH_REALM}
 
     token = create_token(user['id'], user['name'], email, provider='basic')
     return jsonify(token=token)
