@@ -1,6 +1,6 @@
 Flask
 Flask-Cors
-pymongo==2.8
+pymongo>=3.0
 kombu
 librabbitmq
 boto
