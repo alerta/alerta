@@ -21,6 +21,11 @@ class AuthTestCase(unittest.TestCase):
 
         self.api_key = db.create_key('demo-key', type='read-write', text='demo-key')
 
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key,
+            'Content-type': 'application/json'
+        }
+
     def tearDown(self):
 
         pass
@@ -32,60 +37,52 @@ class AuthTestCase(unittest.TestCase):
 
     def test_readwrite_key(self):
 
-        headers = {
-            'Authorization': 'Key %s' % self.api_key,
-            'Content-type': 'application/json'
-        }
         payload = {
             'user': 'rw-demo-key',
             'type': 'read-write'
         }
 
-        response = self.app.post('/key', data=json.dumps(payload), headers=headers)
+        response = self.app.post('/key', data=json.dumps(payload), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data)
         self.assertIsNotNone(data['key'], 'Failed to create read-write key')
 
-        read_write_key = data['key']
+        rw_api_key = data['key']
 
-        response = self.app.post('/alert', data=json.dumps(self.alert), headers={'Authorization': 'Key ' + read_write_key})
+        response = self.app.post('/alert', data=json.dumps(self.alert), headers={'Authorization': 'Key ' + rw_api_key})
         self.assertEqual(response.status_code, 201)
 
-        response = self.app.get('/alerts', headers={'Authorization': 'Key ' + read_write_key})
+        response = self.app.get('/alerts', headers={'Authorization': 'Key ' + rw_api_key})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertGreater(data['total'], 1, "total alerts > 1")
 
-        response = self.app.delete('/key/' + read_write_key, headers={'Authorization': 'Key ' + self.api_key})
+        response = self.app.delete('/key/' + rw_api_key, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
     def test_readonly_key(self):
 
-        headers = {
-            'Authorization': 'Key %s' % self.api_key,
-            'Content-type': 'application/json'
-        }
         payload = {
             'user': 'ro-demo-key',
             'type': 'read-only'
         }
 
-        response = self.app.post('/key', data=json.dumps(payload), headers=headers)
+        response = self.app.post('/key', data=json.dumps(payload), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data)
         self.assertIsNotNone(data['key'], 'Failed to create read-only key')
 
-        read_only_key = data['key']
+        ro_api_key = data['key']
 
-        response = self.app.post('/alert', data=json.dumps(self.alert), headers={'Authorization': 'Key ' + read_only_key})
+        response = self.app.post('/alert', data=json.dumps(self.alert), headers={'Authorization': 'Key ' + ro_api_key})
         self.assertEqual(response.status_code, 403)
 
-        response = self.app.get('/alerts', headers={'Authorization': 'Key ' + read_only_key})
+        response = self.app.get('/alerts', headers={'Authorization': 'Key ' + ro_api_key})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertGreater(data['total'], 1, "total alerts > 1")
 
-        response = self.app.delete('/key/' + read_only_key, headers={'Authorization': 'Key ' + self.api_key})
+        response = self.app.delete('/key/' + ro_api_key, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
     def test_users(self):
