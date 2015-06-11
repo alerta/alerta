@@ -23,14 +23,16 @@ setuptools.setup(
         'alerta',
         'Flask',
         'Flask-Cors',
-        'pymongo',
+        'pymongo>=3.0',
         'kombu',
         'boto',
         'argparse',
         'requests',
         'requests-oauthlib',
         'pytz',
-        'PyJWT'
+        'PyJWT',
+        'cffi',
+        'bcrypt'
     ],
     include_package_data=True,
     zip_safe=False,
