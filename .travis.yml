@@ -6,7 +6,10 @@ python:
 services: mongodb
 
 # command to install dependencies
-install: "pip install -r requirements.txt"
+install:
+  - "pip install ."
+  - "pip install -r requirements.txt"
 
 # command to run tests
 script: nosetests tests/test_alerts.py tests/test_auth.py tests/test_heartbeats.py
+
