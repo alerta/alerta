@@ -37,7 +37,7 @@ CORS_ORIGINS = [
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
 # Plug-ins
-PLUGINS = ['reject', 'amqp']
+PLUGINS = ['reject']
 # PLUGINS = ['amqp', 'enhance', 'logstash', 'normalise', 'reject', 'sns']
 
 # AMQP Credentials
