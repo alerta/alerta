@@ -51,7 +51,7 @@ class HeartbeatTestCase(unittest.TestCase):
         data = json.loads(response.data)
         self.assertIn(heartbeat_id, data['heartbeat']['id'])
 
-        # delete alert
+        # delete heartbeat
         response = self.app.delete('/heartbeat/' + heartbeat_id)
         self.assertEqual(response.status_code, 200)
 

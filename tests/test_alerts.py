@@ -257,12 +257,26 @@ class AlertTestCase(unittest.TestCase):
     def test_aggregations(self):
 
         # counts
-        # service
-        # environments
+        response = self.app.get('/alerts/count')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertIn('statusCounts', data)
+        self.assertIn('severityCounts', data)
+
         # top10
+        response = self.app.get('/alerts/top10')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertIn('top10', data)
 
-        pass
+        # environments
+        response = self.app.get('/environments')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertIn('environments', data)
 
-
-
-
+        # service
+        response = self.app.get('/services')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertIn('services', data)
