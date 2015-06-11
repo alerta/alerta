@@ -282,11 +282,6 @@ class Mongo(object):
                     "event": {'$ne': alert.event},
                     "correlate": alert.event,
                     "severity": {'$ne': alert.severity}
-                },
-                {
-                    "event": {'$ne': alert.event},
-                    "correlate": alert.event,
-                    "severity": alert.severity
                 }]
         }
 

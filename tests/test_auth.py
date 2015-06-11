@@ -88,3 +88,7 @@ class AuthTestCase(unittest.TestCase):
         response = self.app.delete('/key/' + read_only_key, headers={'Authorization': 'Key ' + self.api_key})
         self.assertEqual(response.status_code, 200)
 
+    def test_users(self):
+
+        pass
+
