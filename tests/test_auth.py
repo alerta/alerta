@@ -4,7 +4,7 @@ import unittest
 from alerta.app import app, db
 
 
-class AppTestCase(unittest.TestCase):
+class AuthTestCase(unittest.TestCase):
 
     def setUp(self):
 
