@@ -117,7 +117,7 @@ class Mongo(object):
                 }]
         }
 
-        return self.db.alerts.find_one(query, fields={"severity": 1, "_id": 0})['severity']
+        return self.db.alerts.find_one(query, projection={"severity": 1, "_id": 0})['severity']
 
     def get_status(self, alert):
         """
@@ -136,7 +136,7 @@ class Mongo(object):
             ]
         }
 
-        return self.db.alerts.find_one(query, fields={"status": 1, "_id": 0})['status']
+        return self.db.alerts.find_one(query, projection={"status": 1, "_id": 0})['status']
 
     def get_count(self, query=None):
         """
@@ -149,7 +149,7 @@ class Mongo(object):
         if 'status' not in query:
             query['status'] = {'$ne': "expired"}
 
-        responses = self.db.alerts.find(query, fields=fields, sort=sort).skip((page-1)*limit).limit(limit)
+        responses = self.db.alerts.find(query, projection=fields, sort=sort).skip((page-1)*limit).limit(limit)
 
         alerts = list()
         for response in responses:
@@ -212,7 +212,7 @@ class Mongo(object):
         responses = self.db.alerts.aggregate(pipeline)
 
         history = list()
-        for response in responses['result']:
+        for response in responses:
             if 'severity' in response['history']:
                 history.append(
                     {
@@ -282,6 +282,11 @@ class Mongo(object):
                     "event": {'$ne': alert.event},
                     "correlate": alert.event,
                     "severity": {'$ne': alert.severity}
+                },
+                {
+                    "event": {'$ne': alert.event},
+                    "correlate": alert.event,
+                    "severity": alert.severity
                 }]
         }
 
@@ -540,7 +545,7 @@ class Mongo(object):
 
         LOG.debug('Insert new alert in database: %s', alert)
 
-        response = self.db.alerts.insert(alert)
+        response = self.db.alerts.insert_one(alert)
 
         if not response:
             return
@@ -620,7 +625,7 @@ class Mongo(object):
         """
         query = {'_id': {'$regex': '^' + id}}
 
-        event = self.db.alerts.find_one(query, fields={"event": 1, "_id": 0})['event']
+        event = self.db.alerts.find_one(query, projection={"event": 1, "_id": 0})['event']
         if not event:
             return False
 
@@ -712,7 +717,8 @@ class Mongo(object):
         responses = self.db.alerts.aggregate(pipeline)
 
         counts = dict()
-        for response in responses['result']:
+        for response in responses:
+            print response
             counts[response['_id']] = response['count']
 
         return counts
@@ -742,7 +748,7 @@ class Mongo(object):
         responses = self.db.alerts.aggregate(pipeline)
 
         top = list()
-        for response in responses['result']:
+        for response in responses:
             top.append(
                 {
                     "%s" % group: response['_id'],
@@ -772,7 +778,7 @@ class Mongo(object):
         responses = self.db.alerts.aggregate(pipeline)
 
         environments = list()
-        for response in responses['result']:
+        for response in responses:
             environments.append(
                 {
                     "environment": response['_id'],
@@ -800,7 +806,7 @@ class Mongo(object):
         responses = self.db.alerts.aggregate(pipeline)
 
         services = list()
-        for response in responses['result']:
+        for response in responses:
             services.append(
                 {
                     "environment": response['_id']['environment'],
@@ -869,7 +875,7 @@ class Mongo(object):
         else:
             update = update['$set']
             update["_id"] = heartbeat.id
-            response = self.db.heartbeats.insert(update)
+            response = self.db.heartbeats.insert_one(update)
 
             return HeartbeatDocument(
                 id=response,
@@ -966,7 +972,7 @@ class Mongo(object):
         if password:
             data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-        return self.db.users.insert(data)
+        return self.db.users.insert_one(data)
 
     def delete_user(self, id):
 
@@ -1028,7 +1034,7 @@ class Mongo(object):
             "lastUsedTime": None
         }
 
-        response = self.db.keys.insert(data)
+        response = self.db.keys.insert_one(data)
         if not response:
             return None
 
@@ -1055,7 +1061,6 @@ class Mongo(object):
 
     def disconnect(self):
 
-        if self.conn.alive():
-            self.conn.disconnect()
+        self.conn.close()
 
-        LOG.debug('Mongo disconnected.')
+        LOG.debug('Mongo connection closed.')
