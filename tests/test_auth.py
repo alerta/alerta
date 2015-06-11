@@ -87,4 +87,35 @@ class AuthTestCase(unittest.TestCase):
 
     def test_users(self):
 
-        pass
+        payload = {
+            'name': 'Napoleon Bonaparte',
+            'login': 'napoleon@bonaparte.fr',
+            'password': 'j0s3ph1n3',
+            'provider': 'basic',
+            'text': 'Test login'
+        }
+
+        # create user
+        response = self.app.post('/user', data=json.dumps(payload), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data)
+        #self.assertEqual('foo', data)
+        self.assertIsNotNone(data['user'], 'Failed to create user')
+
+        user_id = data['user']
+
+        # get user
+        response = self.app.get('/users', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertIn(user_id, [u['id'] for u in data['users']])
+
+        # create duplicate user
+        response = self.app.post('/user', data=json.dumps(payload), headers=self.headers)
+        self.assertEqual(response.status_code, 409)
+
+        # delete user
+        response = self.app.delete('/user/' + user_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+
