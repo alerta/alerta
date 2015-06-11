@@ -1,4 +1,4 @@
-Alerta Release 4.0
+Alerta Release 4.4
 ==================
 
 [![Build Status](https://travis-ci.org/satterly/alerta.png)](https://travis-ci.org/satterly/alerta)
