@@ -39,6 +39,14 @@ class AlertTestCase(unittest.TestCase):
             'severity': 'major',
             'correlate': ['node_down', 'node_marginal', 'node_up']
         }
+        self.warn_alert = {
+            'event': 'node_marginal',
+            'resource': self.resource,
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'warning',
+            'correlate': ['node_down', 'node_marginal', 'node_up']
+        }
         self.normal_alert = {
             'event': 'node_up',
             'resource': self.resource,
@@ -148,31 +156,68 @@ class AlertTestCase(unittest.TestCase):
     def test_alert_status(self):
 
         # create alert (status=open)
-        response = self.app.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
+        response = self.app.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data)
         self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['duplicateCount'], 0)
 
         alert_id = data['id']
 
-        # clear alert (status=closed)
-        response = self.app.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
-        self.assertEqual(response.status_code, 201)
-        data = json.loads(response.data)
-        self.assertIn(alert_id, data['alert']['id'])
-        self.assertEqual(data['alert']['status'], 'closed')
-        self.assertEqual(data['alert']['duplicateCount'], 0)
-        self.assertEqual(data['alert']['previousSeverity'], self.major_alert['severity'])
-
-        # reopen alert (status=open)
+        # severity != normal -> status=open
         response = self.app.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data)
-        self.assertIn(alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['duplicateCount'], 0)
-        self.assertEqual(data['alert']['previousSeverity'], self.normal_alert['severity'])
+
+        # ack alert
+        response = self.app.post('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.app.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertEqual(data['alert']['status'], 'ack')
+
+        # new severity > old severity -> status=open
+        response = self.app.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data)
+        self.assertEqual(data['alert']['status'], 'open')
+
+        # ack alert (again)
+        response = self.app.post('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.app.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertEqual(data['alert']['status'], 'ack')
+
+        # new severity <= old severity -> status=ack
+        response = self.app.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data)
+        self.assertEqual(data['alert']['status'], 'ack')
+
+        # severity == normal -> status=closed
+        response = self.app.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data)
+        self.assertEqual(data['alert']['status'], 'closed')
+
+        # severity != normal -> status=open
+        response = self.app.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data)
+        self.assertEqual(data['alert']['status'], 'open')
+
+        # severity = normal -> status=closed
+        response = self.app.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data)
+        self.assertEqual(data['alert']['status'], 'closed')
+
+        # delete alert
+        response = self.app.delete('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
 
     def test_alert_tagging(self):
 
