@@ -718,7 +718,6 @@ class Mongo(object):
 
         counts = dict()
         for response in responses:
-            print response
             counts[response['_id']] = response['count']
 
         return counts
