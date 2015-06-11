@@ -55,7 +55,7 @@ class AuthTestCase(unittest.TestCase):
         response = self.app.get('/alerts', headers={'Authorization': 'Key ' + rw_api_key})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
-        self.assertGreater(data['total'], 1, "total alerts > 1")
+        self.assertIn('total', data)
 
         response = self.app.delete('/key/' + rw_api_key, headers=self.headers)
         self.assertEqual(response.status_code, 200)
@@ -80,7 +80,7 @@ class AuthTestCase(unittest.TestCase):
         response = self.app.get('/alerts', headers={'Authorization': 'Key ' + ro_api_key})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
-        self.assertGreater(data['total'], 1, "total alerts > 1")
+        self.assertIn('total', data)
 
         response = self.app.delete('/key/' + ro_api_key, headers=self.headers)
         self.assertEqual(response.status_code, 200)
@@ -119,9 +119,9 @@ class AuthTestCase(unittest.TestCase):
     def test_login(self):
 
         payload = {
-            'name': 'Napoleon Bonaparte',
-            'email': 'napoleon@bonaparte.fr',
-            'password': 'j0s3ph1n3',
+            'name': 'Josephine de Beauharnais',
+            'email': 'josephine@debeauharnais.fr',
+            'password': 'blackforest',
             'provider': 'basic',
             'text': 'Test login'
         }

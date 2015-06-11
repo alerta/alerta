@@ -149,10 +149,21 @@ class AlertTestCase(unittest.TestCase):
 
     def test_get_alerts(self):
 
+        # create alert
+        response = self.app.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data)
+
+        alert_id = data['id']
+
         response = self.app.get('/alerts')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
-        self.assertGreater(data['total'], 1, "total alerts > 1")
+        self.assertGreater(data['total'], 0)
+
+        # delete alert
+        response = self.app.delete('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
 
     def test_alert_status(self):
 
