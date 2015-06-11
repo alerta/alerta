@@ -44,7 +44,7 @@ class AuthTestCase(unittest.TestCase):
         response = self.app.post('/key', data=json.dumps(payload), headers=headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data)
-        self.assertIsNotNone(data['key'], 'Failed to create read-only key')
+        self.assertIsNotNone(data['key'], 'Failed to create read-write key')
 
         read_write_key = data['key']
 
