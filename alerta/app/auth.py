@@ -42,9 +42,9 @@ def create_token(user, name, login, provider=None):
     payload = {
         'iss': "%s" % request.host_url,
         'sub': user,
-        'iat': datetime.now(),
+        'iat': datetime.utcnow(),
         'aud': app.config['OAUTH2_CLIENT_ID'],
-        'exp': datetime.now() + timedelta(days=14),
+        'exp': datetime.utcnow() + timedelta(days=14),
         'name': name,
         'login': login,
         'provider': provider
