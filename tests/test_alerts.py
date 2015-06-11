@@ -21,7 +21,8 @@ class AlertTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': ['Network'],
             'severity': 'critical',
-            'correlate': ['node_down', 'node_marginal', 'node_up']
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'tags': ['foo']
         }
         self.critical_alert = {
             'event': 'node_marginal',
@@ -221,13 +222,43 @@ class AlertTestCase(unittest.TestCase):
 
     def test_alert_tagging(self):
 
-        pass
+        # create alert
+        response = self.app.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data)
+        self.assertEqual(data['alert']['tags'], ['foo'])
+
+        alert_id = data['id']
+
+        # append tag to existing
+        response = self.app.post('/alert/' + alert_id + '/tag', data=json.dumps({'tags': ['bar']}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.app.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertEqual(data['alert']['tags'], ['foo', 'bar'])
+
+        # duplicate tag is a no-op
+        response = self.app.post('/alert/' + alert_id + '/tag', data=json.dumps({'tags': ['bar']}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.app.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertEqual(data['alert']['tags'], ['foo', 'bar'])
+
+        # delete tag
+        response = self.app.post('/alert/' + alert_id + '/untag', data=json.dumps({'tags': ['foo']}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.app.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertEqual(data['alert']['tags'], ['bar'])
 
     def test_aggregations(self):
 
         # counts
         # service
-        # envrionments
+        # environments
         # top10
 
         pass
