@@ -33,20 +33,31 @@ class AppTestCase(unittest.TestCase):
     def test_readwrite_key(self):
 
         headers = {
-            'Authorization': 'Key %s' % self.api_key
+            'Authorization': 'Key %s' % self.api_key,
+            'Content-type': 'application/json'
+        }
+        payload = {
+            'user': 'rw-demo-key',
+            'type': 'read-write'
         }
 
-        response = self.app.post('/alert', data=json.dumps(self.alert), headers=headers)
+        response = self.app.post('/key', data=json.dumps(payload), headers=headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data)
-        self.assertListEqual(self.alert['service'], data['alert']['service'])
+        self.assertIsNotNone(data['key'], 'Failed to create read-only key')
 
-        new_alert_id = data['id']
+        read_write_key = data['key']
 
-        response = self.app.get('/alert/' + new_alert_id, headers=headers)
+        response = self.app.post('/alert', data=json.dumps(self.alert), headers={'Authorization': 'Key ' + read_write_key})
+        self.assertEqual(response.status_code, 201)
+
+        response = self.app.get('/alerts', headers={'Authorization': 'Key ' + read_write_key})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
-        self.assertIn(new_alert_id, data['alert']['id'])
+        self.assertGreater(data['total'], 1, "total alerts > 1")
+
+        response = self.app.delete('/key/' + read_write_key, headers={'Authorization': 'Key ' + self.api_key})
+        self.assertEqual(response.status_code, 200)
 
     def test_readonly_key(self):
 
