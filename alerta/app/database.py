@@ -878,7 +878,7 @@ class Mongo(object):
             response = self.db.heartbeats.insert_one(update)
 
             return HeartbeatDocument(
-                id=response,
+                id=response.inserted_id,
                 origin=update['origin'],
                 tags=update['tags'],
                 event_type=update['type'],
@@ -972,7 +972,7 @@ class Mongo(object):
         if password:
             data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-        return self.db.users.insert_one(data)
+        return self.db.users.insert_one(data).inserted_id
 
     def delete_user(self, id):
 
