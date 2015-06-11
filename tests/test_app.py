@@ -46,8 +46,10 @@ class AppTestCase(unittest.TestCase):
         response = self.app.get('/alert/doesnotexist')
         self.assertEqual(response.status_code, 404)
 
-    # def test_get_alerts(self):
-    #
-    #     response = self.app.get('/alerts')
-    #     self.assertIn("asldfjasdlfkjasdf", response.data)
+    def test_get_alerts(self):
+
+        response = self.app.get('/alerts')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data)
+        self.assertGreater(data['total'], 1, "total alerts > 1")
 
