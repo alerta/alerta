@@ -676,7 +676,7 @@ class Mongo(object):
         """
         response = self.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$addToSet': {"tags": {'$each': tags}}})
 
-        return response.get('updatedExisting', False)
+        return response.matched_count > 0
 
     def untag_alert(self, id, tags):
         """
@@ -684,7 +684,7 @@ class Mongo(object):
         """
         response = self.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$pullAll': {"tags": tags}})
 
-        return response.get('updatedExisting', False)
+        return response.matched_count > 0
 
     def delete_alert(self, id):
 
