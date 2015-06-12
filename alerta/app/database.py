@@ -690,7 +690,7 @@ class Mongo(object):
 
         response = self.db.alerts.delete_one({'_id': {'$regex': '^' + id}})
 
-        return response.get('ok', False) and response.get('n', 0) == 1
+        return True if response.deleted_count == 1 else False
 
     def get_counts(self, query=None, fields=None, group=None):
         """
@@ -899,7 +899,8 @@ class Mongo(object):
     def delete_heartbeat(self, id):
 
         response = self.db.heartbeats.delete_one({'_id': {'$regex': '^' + id}})
-        return True if 'ok' in response else False
+
+        return True if response.deleted_count == 1 else False
 
     def get_user(self, id):
 
@@ -966,7 +967,7 @@ class Mongo(object):
 
         response = self.db.users.delete_one({"_id": id})
 
-        return response.get('ok', False) and response.get('n', 0) == 1
+        return True if response.deleted_count == 1 else False
 
     def get_metrics(self):
 
@@ -1045,7 +1046,7 @@ class Mongo(object):
 
         response = self.db.keys.delete_one({"key": key})
 
-        return response.get('ok', False) and response.get('n', 0) == 1
+        return True if response.deleted_count == 1 else False
 
     def disconnect(self):
 
