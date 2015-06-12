@@ -22,7 +22,7 @@ class Gauge(object):
 
     def set(self, value):
 
-        db.metrics.update(
+        db.metrics.update_one(
             {
                 "group": self.group,
                 "name": self.name
@@ -55,7 +55,7 @@ class Counter(object):
 
     def inc(self):
 
-        db.metrics.update(
+        db.metrics.update_one(
             {
                 "group": self.group,
                 "name": self.name
@@ -101,7 +101,7 @@ class Timer(object):
 
     def stop_timer(self, start):
 
-        db.metrics.update(
+        db.metrics.update_one(
             {
                 "group": self.group,
                 "name": self.name

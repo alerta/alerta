@@ -331,14 +331,12 @@ class Mongo(object):
             }
 
         LOG.debug('Update duplicate alert in database: %s', update)
-
-        no_obj_error = "No matching object found"
-        response = self.db.command("findAndModify", 'alerts',
-                                   allowable_errors=[no_obj_error],
-                                   query=query,
-                                   update=update,
-                                   new=True,
-                                   fields={"history": 0})["value"]
+        response = self.db.alerts.find_one_and_update(
+            query,
+            update=update,
+            projection={"history": 0},
+            return_document=pymongo.ReturnDocument.AFTER
+        )
 
         return AlertDocument(
             id=response['_id'],
@@ -445,14 +443,12 @@ class Mongo(object):
             })
 
         LOG.debug('Update correlated alert in database: %s', update)
-
-        no_obj_error = "No matching object found"
-        response = self.db.command("findAndModify", 'alerts',
-                                   allowable_errors=[no_obj_error],
-                                   query=query,
-                                   update=update,
-                                   new=True,
-                                   fields={"history": 0})["value"]
+        response = self.db.alerts.find_one_and_update(
+            query,
+            update=update,
+            projection={"history": 0},
+            return_document=pymongo.ReturnDocument.AFTER
+        )
 
         return AlertDocument(
             id=response['_id'],
@@ -638,13 +634,12 @@ class Mongo(object):
             }
         }
 
-        no_obj_error = "No matching object found"
-        response = self.db.command("findAndModify", 'alerts',
-                                   allowable_errors=[no_obj_error],
-                                   query=query,
-                                   update=update,
-                                   new=True,
-                                   fields={"history": 0})["value"]
+        response = self.db.alerts.find_one_and_update(
+            query,
+            update=update,
+            projection={"history": 0},
+            return_document=pymongo.ReturnDocument.AFTER
+        )
 
         return AlertDocument(
             id=response['_id'],
@@ -679,23 +674,23 @@ class Mongo(object):
         """
         Append tags to tag list. Don't add same tag more than once.
         """
-        response = self.db.alerts.update({'_id': {'$regex': '^' + id}}, {'$addToSet': {"tags": {'$each': tags}}})
+        response = self.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$addToSet': {"tags": {'$each': tags}}})
 
-        return response.get('updatedExisting', False)
+        return response.matched_count > 0
 
     def untag_alert(self, id, tags):
         """
         Remove tags from tag list.
         """
-        response = self.db.alerts.update({'_id': {'$regex': '^' + id}}, {'$pullAll': {"tags": tags}})
+        response = self.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$pullAll': {"tags": tags}})
 
-        return response.get('updatedExisting', False)
+        return response.matched_count > 0
 
     def delete_alert(self, id):
 
-        response = self.db.alerts.remove({'_id': {'$regex': '^' + id}})
+        response = self.db.alerts.delete_one({'_id': {'$regex': '^' + id}})
 
-        return response.get('ok', False) and response.get('n', 0) == 1
+        return True if response.deleted_count == 1 else False
 
     def get_counts(self, query=None, fields=None, group=None):
         """
@@ -849,13 +844,12 @@ class Mongo(object):
         heartbeat_id = self.db.heartbeats.find_one({"origin": heartbeat.origin}, {})
 
         if heartbeat_id:
-            no_obj_error = "No matching object found"
-            response = self.db.command("findAndModify", 'heartbeats',
-                                       allowable_errors=[no_obj_error],
-                                       query={"origin": heartbeat.origin},
-                                       update=update,
-                                       new=True,
-                                       upsert=True)["value"]
+            response = self.db.heartbeats.find_one_and_update(
+                {"origin": heartbeat.origin},
+                update=update,
+                upsert=True,
+                return_document=pymongo.ReturnDocument.AFTER
+            )
 
             return HeartbeatDocument(
                 id=response['_id'],
@@ -904,8 +898,9 @@ class Mongo(object):
 
     def delete_heartbeat(self, id):
 
-        response = self.db.heartbeats.remove({'_id': {'$regex': '^' + id}})
-        return True if 'ok' in response else False
+        response = self.db.heartbeats.delete_one({'_id': {'$regex': '^' + id}})
+
+        return True if response.deleted_count == 1 else False
 
     def get_user(self, id):
 
@@ -970,9 +965,9 @@ class Mongo(object):
 
     def delete_user(self, id):
 
-        response = self.db.users.remove({"_id": id})
+        response = self.db.users.delete_one({"_id": id})
 
-        return response.get('ok', False) and response.get('n', 0) == 1
+        return True if response.deleted_count == 1 else False
 
     def get_metrics(self):
 
@@ -1036,7 +1031,7 @@ class Mongo(object):
 
     def update_key(self, key):
 
-        self.db.keys.update(
+        self.db.keys.update_one(
             {
                 "key": key
             },
@@ -1049,9 +1044,9 @@ class Mongo(object):
 
     def delete_key(self, key):
 
-        response = self.db.keys.remove({"key": key})
+        response = self.db.keys.delete_one({"key": key})
 
-        return response.get('ok', False) and response.get('n', 0) == 1
+        return True if response.deleted_count == 1 else False
 
     def disconnect(self):
 

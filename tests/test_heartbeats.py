@@ -43,13 +43,13 @@ class HeartbeatTestCase(unittest.TestCase):
         response = self.app.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data)
-        self.assertIn(heartbeat_id, data['heartbeat']['id'])
+        self.assertEquals(heartbeat_id, data['heartbeat']['id'])
 
         # get heartbeat
         response = self.app.get('/heartbeat/' + heartbeat_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
-        self.assertIn(heartbeat_id, data['heartbeat']['id'])
+        self.assertEquals(heartbeat_id, data['heartbeat']['id'])
 
         # delete heartbeat
         response = self.app.delete('/heartbeat/' + heartbeat_id)
