@@ -331,14 +331,12 @@ class Mongo(object):
             }
 
         LOG.debug('Update duplicate alert in database: %s', update)
-
-        no_obj_error = "No matching object found"
-        response = self.db.command("findAndModify", 'alerts',
-                                   allowable_errors=[no_obj_error],
-                                   query=query,
-                                   update=update,
-                                   new=True,
-                                   fields={"history": 0})["value"]
+        response = self.db.alerts.find_one_and_update(
+            query,
+            update=update,
+            projection={"history": 0},
+            return_document=True
+        )
 
         return AlertDocument(
             id=response['_id'],
@@ -445,14 +443,12 @@ class Mongo(object):
             })
 
         LOG.debug('Update correlated alert in database: %s', update)
-
-        no_obj_error = "No matching object found"
-        response = self.db.command("findAndModify", 'alerts',
-                                   allowable_errors=[no_obj_error],
-                                   query=query,
-                                   update=update,
-                                   new=True,
-                                   fields={"history": 0})["value"]
+        response = self.db.alerts.find_one_and_update(
+            query,
+            update=update,
+            projection={"history": 0},
+            return_document=True
+        )
 
         return AlertDocument(
             id=response['_id'],
@@ -638,13 +634,12 @@ class Mongo(object):
             }
         }
 
-        no_obj_error = "No matching object found"
-        response = self.db.command("findAndModify", 'alerts',
-                                   allowable_errors=[no_obj_error],
-                                   query=query,
-                                   update=update,
-                                   new=True,
-                                   fields={"history": 0})["value"]
+        response = self.db.alerts.find_one_and_update(
+            query,
+            update=update,
+            projection={"history": 0},
+            return_document=True
+        )
 
         return AlertDocument(
             id=response['_id'],
@@ -849,13 +844,12 @@ class Mongo(object):
         heartbeat_id = self.db.heartbeats.find_one({"origin": heartbeat.origin}, {})
 
         if heartbeat_id:
-            no_obj_error = "No matching object found"
-            response = self.db.command("findAndModify", 'heartbeats',
-                                       allowable_errors=[no_obj_error],
-                                       query={"origin": heartbeat.origin},
-                                       update=update,
-                                       new=True,
-                                       upsert=True)["value"]
+            response = self.db.alerts.find_one_and_update(
+                {"origin": heartbeat.origin},
+                update=update,
+                upsert=True,
+                return_document=True
+            )
 
             return HeartbeatDocument(
                 id=response['_id'],
