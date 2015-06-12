@@ -1,7 +1,7 @@
 Alerta Release 4.4
 ==================
 
-[![Build Status](https://travis-ci.org/satterly/alerta.png)](https://travis-ci.org/satterly/alerta)
+[![Build Status](https://travis-ci.org/guardian/alerta.png)](https://travis-ci.org/guardian/alerta)
 
 The alerta monitoring tool was developed with the following aims in mind:
 
