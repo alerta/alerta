@@ -335,7 +335,7 @@ class Mongo(object):
             query,
             update=update,
             projection={"history": 0},
-            return_document=True
+            return_document=pymongo.ReturnDocument.AFTER
         )
 
         return AlertDocument(
@@ -447,7 +447,7 @@ class Mongo(object):
             query,
             update=update,
             projection={"history": 0},
-            return_document=True
+            return_document=pymongo.ReturnDocument.AFTER
         )
 
         return AlertDocument(
@@ -638,7 +638,7 @@ class Mongo(object):
             query,
             update=update,
             projection={"history": 0},
-            return_document=True
+            return_document=pymongo.ReturnDocument.AFTER
         )
 
         return AlertDocument(
@@ -844,11 +844,11 @@ class Mongo(object):
         heartbeat_id = self.db.heartbeats.find_one({"origin": heartbeat.origin}, {})
 
         if heartbeat_id:
-            response = self.db.alerts.find_one_and_update(
+            response = self.db.heartbeats.find_one_and_update(
                 {"origin": heartbeat.origin},
                 update=update,
                 upsert=True,
-                return_document=True
+                return_document=pymongo.ReturnDocument.AFTER
             )
 
             return HeartbeatDocument(
