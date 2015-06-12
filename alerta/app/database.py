@@ -679,7 +679,7 @@ class Mongo(object):
         """
         Append tags to tag list. Don't add same tag more than once.
         """
-        response = self.db.alerts.update({'_id': {'$regex': '^' + id}}, {'$addToSet': {"tags": {'$each': tags}}})
+        response = self.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$addToSet': {"tags": {'$each': tags}}})
 
         return response.get('updatedExisting', False)
 
@@ -687,13 +687,13 @@ class Mongo(object):
         """
         Remove tags from tag list.
         """
-        response = self.db.alerts.update({'_id': {'$regex': '^' + id}}, {'$pullAll': {"tags": tags}})
+        response = self.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$pullAll': {"tags": tags}})
 
         return response.get('updatedExisting', False)
 
     def delete_alert(self, id):
 
-        response = self.db.alerts.remove({'_id': {'$regex': '^' + id}})
+        response = self.db.alerts.delete_one({'_id': {'$regex': '^' + id}})
 
         return response.get('ok', False) and response.get('n', 0) == 1
 
@@ -904,7 +904,7 @@ class Mongo(object):
 
     def delete_heartbeat(self, id):
 
-        response = self.db.heartbeats.remove({'_id': {'$regex': '^' + id}})
+        response = self.db.heartbeats.delete_one({'_id': {'$regex': '^' + id}})
         return True if 'ok' in response else False
 
     def get_user(self, id):
@@ -970,7 +970,7 @@ class Mongo(object):
 
     def delete_user(self, id):
 
-        response = self.db.users.remove({"_id": id})
+        response = self.db.users.delete_one({"_id": id})
 
         return response.get('ok', False) and response.get('n', 0) == 1
 
@@ -1036,7 +1036,7 @@ class Mongo(object):
 
     def update_key(self, key):
 
-        self.db.keys.update(
+        self.db.keys.update_one(
             {
                 "key": key
             },
@@ -1049,7 +1049,7 @@ class Mongo(object):
 
     def delete_key(self, key):
 
-        response = self.db.keys.remove({"key": key})
+        response = self.db.keys.delete_one({"key": key})
 
         return response.get('ok', False) and response.get('n', 0) == 1
 
