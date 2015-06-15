@@ -23,6 +23,8 @@ class Mongo(object):
         self.conn = None
         self.connect()
 
+        self.version = self.db.client.server_info()['version']
+
     def connect(self):
 
         if 'MONGO_PORT' in os.environ and 'tcp://' in os.environ['MONGO_PORT']:  # Docker

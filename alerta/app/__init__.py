@@ -47,6 +47,7 @@ app.logger.info('Starting alerta version %s ...', __version__)
 
 from alerta.app.database import Mongo
 db = Mongo()
+app.logger.info('Using MongoDB version %s ...', db.version)
 
 import views
 import webhooks.views
