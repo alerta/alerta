@@ -3,6 +3,8 @@
 #
 # To override these settings use /etc/alertad.conf or the contents of the
 # configuration file set by the environment variable ALERTA_SVR_CONF_FILE.
+#
+# Further information on settings can be found at http://docs.alerta.io
 
 DEBUG = False
 
