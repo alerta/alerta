@@ -28,14 +28,16 @@ class Gauge(object):
                 "name": self.name
             },
             {
-                "group": self.group,
-                "name": self.name,
-                "title": self.title,
-                "description": self.description,
-                "value": value,
-                "type": "gauge"
+                '$set': {
+                    "group": self.group,
+                    "name": self.name,
+                    "title": self.title,
+                    "description": self.description,
+                    "value": value,
+                    "type": "gauge"
+                }
             },
-            True
+            upsert=True
         )
 
     @classmethod
@@ -70,7 +72,7 @@ class Counter(object):
                 },
                 '$inc': {"count": 1}
             },
-            True
+            upsert=True
         )
 
     @classmethod
@@ -116,7 +118,7 @@ class Timer(object):
                 },
                 '$inc': {"count": 1, "totalTime": self._time_in_millis() - start}
             },
-            True
+            upsert=True
         )
 
     @classmethod

@@ -1039,7 +1039,7 @@ class Mongo(object):
                 '$set': {"lastUsedTime": datetime.datetime.utcnow()},
                 '$inc': {"count": 1}
             },
-            True
+            upsert=True
         )
 
     def delete_key(self, key):
