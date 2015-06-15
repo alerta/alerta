@@ -111,7 +111,7 @@ def auth_required(f):
 
 
 @app.route('/auth/login', methods=['OPTIONS', 'POST'])
-@cross_origin()
+@cross_origin(supports_credentials=True)
 def login():
     try:
         email = request.json['email']
@@ -138,7 +138,7 @@ def login():
 
 
 @app.route('/auth/signup', methods=['OPTIONS', 'POST'])
-@cross_origin()
+@cross_origin(supports_credentials=True)
 def signup():
 
     if request.json and 'name' in request.json:
@@ -164,7 +164,7 @@ def signup():
 
 
 @app.route('/auth/google', methods=['OPTIONS', 'POST'])
-@cross_origin()
+@cross_origin(supports_credentials=True)
 def google():
     access_token_url = 'https://accounts.google.com/o/oauth2/token'
     people_api_url = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect'
@@ -209,7 +209,7 @@ def google():
     return jsonify(token=token)
 
 @app.route('/auth/github', methods=['OPTIONS', 'POST'])
-@cross_origin()
+@cross_origin(supports_credentials=True)
 def github():
     access_token_url = 'https://github.com/login/oauth/access_token'
     users_api_url = 'https://api.github.com/user'
@@ -240,7 +240,7 @@ def github():
     return jsonify(token=token)
 
 @app.route('/auth/twitter')
-@cross_origin()
+@cross_origin(supports_credentials=True)
 def twitter():
     request_token_url = 'https://api.twitter.com/oauth/request_token'
     access_token_url = 'https://api.twitter.com/oauth/access_token'
