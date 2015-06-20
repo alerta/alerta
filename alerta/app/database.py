@@ -23,7 +23,8 @@ class Mongo(object):
         self.conn = None
         self.connect()
 
-        self.version = self.db.client.server_info()['version']
+        # FIXME: Get "ServerSelectionTimeoutError: No servers found yet" with PyMongo 3.0
+        self.version = '?'  # self.db.client.server_info()['version']
 
     def connect(self):
 
@@ -78,7 +79,8 @@ class Mongo(object):
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
-        LOG.debug('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
+        # FIXME: Get "ServerSelectionTimeoutError: No servers found yet" with PyMongo 3.0
+        # LOG.debug('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
 
         if app.config['MONGO_REPLSET']:
             self.create_indexes()
