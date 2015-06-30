@@ -1,15 +1,14 @@
+alerta
 Flask
 Flask-Cors
 pymongo>=3.0
 kombu
-librabbitmq
 boto
 argparse
 requests
 requests-oauthlib
 pytz
-alerta
-gunicorn
 PyJWT
 cffi
 bcrypt
+gunicorn
