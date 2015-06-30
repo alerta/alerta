@@ -83,7 +83,7 @@ def cloudwatch():
     hook_started = webhook_timer.start_timer()
     try:
         incomingAlert = parse_notification(request.data)
-    except ValueError, e:
+    except ValueError as e:
         webhook_timer.stop_timer(hook_started)
         return jsonify(status="error", message=str(e)), 400
 
@@ -164,7 +164,7 @@ def pingdom():
     hook_started = webhook_timer.start_timer()
     try:
         incomingAlert = parse_pingdom(request.args.get('message'))
-    except ValueError, e:
+    except ValueError as e:
         webhook_timer.stop_timer(hook_started)
         return jsonify(status="error", message=str(e)), 400
 
@@ -249,7 +249,7 @@ def pagerduty():
         for message in data['messages']:
             try:
                 id, status, text = parse_pagerduty(message)
-            except IndexError, e:
+            except IndexError as e:
                 webhook_timer.stop_timer(hook_started)
                 return jsonify(status="error", message=str(e)), 400
 

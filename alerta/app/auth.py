@@ -10,10 +10,14 @@ from flask import g, request, redirect
 from flask.ext.cors import cross_origin
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 from base64 import urlsafe_b64decode
-from urlparse import parse_qsl
-from urllib import urlencode
 from requests_oauthlib import OAuth1
 from uuid import uuid4
+
+try:
+    from urllib.parse import parse_qsl, urlencode
+except ImportError:
+    from urlparse import parse_qsl
+    from urllib import urlencode
 
 from alerta.app import app, db
 from alerta.app.utils import jsonify, jsonp, DateEncoder

@@ -84,7 +84,7 @@ def parse_fields(r):
     if params.get('from-date', None):
         try:
             from_date = datetime.datetime.strptime(params['from-date'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        except ValueError, e:
+        except ValueError as e:
             LOG.warning('Could not parse from-date query parameter: %s', e)
             raise
         from_date = from_date.replace(tzinfo=pytz.utc)
@@ -95,7 +95,7 @@ def parse_fields(r):
     if params.get('to-date', None):
         try:
             to_date = datetime.datetime.strptime(params['to-date'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        except ValueError, e:
+        except ValueError as e:
             LOG.warning('Could not parse to-date query parameter: %s', e)
             raise
         to_date = to_date.replace(tzinfo=pytz.utc)

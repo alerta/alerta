@@ -2,6 +2,7 @@
 import abc
 import pkg_resources
 
+from six import add_metaclass
 from alerta.app import app
 
 LOG = app.logger
@@ -11,9 +12,8 @@ class RejectException(Exception):
     """The alert was rejected because the format did not meet the required policy."""
 
 
+@add_metaclass(abc.ABCMeta)
 class PluginBase(object):
-    __metaclass__ = abc.ABCMeta
-
     @abc.abstractmethod
     def pre_receive(self, alert):
         """Pre-process an alert based on alert properties or reject it by raising RejectException."""

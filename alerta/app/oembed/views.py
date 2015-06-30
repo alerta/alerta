@@ -2,9 +2,13 @@ import json
 import datetime
 import requests
 
-from urlparse import urlparse
 from flask import request, render_template
 from flask.ext.cors import cross_origin
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 from alerta.app import app
 from alerta.alert import Alert
