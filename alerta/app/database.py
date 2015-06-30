@@ -32,14 +32,14 @@ class Mongo(object):
             host, port = os.environ['MONGO_PORT'][6:].split(':')
             try:
                 self.conn = pymongo.MongoClient(host, int(port))
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGO_PORT'], e)
                 sys.exit(1)
 
         elif 'MONGOHQ_URL' in os.environ:
             try:
                 self.conn = pymongo.MongoClient(os.environ['MONGOHQ_URL'])
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOHQ_URL'], e)
                 sys.exit(1)
             app.config['MONGO_DATABASE'] = os.environ['MONGOHQ_URL'].split('/')[-1]
@@ -47,7 +47,7 @@ class Mongo(object):
         elif 'MONGOLAB_URI' in os.environ:
             try:
                 self.conn = pymongo.MongoClient(os.environ['MONGOLAB_URI'])
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOLAB_URI'], e)
                 sys.exit(1)
             app.config['MONGO_DATABASE'] = os.environ['MONGOLAB_URI'].split('/')[-1]
@@ -55,7 +55,7 @@ class Mongo(object):
         elif not app.config['MONGO_REPLSET']:
             try:
                 self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'])
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB Client connection error - %s:%s : %s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], e)
                 sys.exit(1)
             LOG.debug('Connected to mongodb://%s:%s/%s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_DATABASE'])
@@ -63,7 +63,7 @@ class Mongo(object):
         else:
             try:
                 self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], replicaSet=app.config['MONGO_REPLSET'])
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB Client ReplicaSet connection error - %s:%s (replicaSet=%s) : %s',
                           app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_REPLSET'], e)
                 sys.exit(1)
@@ -75,7 +75,7 @@ class Mongo(object):
         if app.config['MONGO_PASSWORD']:
             try:
                 self.db.authenticate(app.config['MONGO_USERNAME'], password=app.config['MONGO_PASSWORD'])
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
