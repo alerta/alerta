@@ -5,7 +5,8 @@ import base64
 import hmac
 import hashlib
 import bcrypt
-import pymongo
+
+from pymongo import MongoClient, ASCENDING, TEXT, ReturnDocument
 
 from alerta.app import app, severity_code, status_code
 from alerta.alert import AlertDocument
@@ -19,26 +20,21 @@ class Mongo(object):
 
     def __init__(self):
 
-        self.db = None
-        self.conn = None
-        self.version = None
-
         self.connect()
-        self.create_indexes()
 
     def connect(self):
 
         if 'MONGO_PORT' in os.environ and 'tcp://' in os.environ['MONGO_PORT']:  # Docker
             host, port = os.environ['MONGO_PORT'][6:].split(':')
             try:
-                self.conn = pymongo.MongoClient(host, int(port), connect=False)
+                self._client = MongoClient(host, int(port), connect=False)
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGO_PORT'], e)
                 sys.exit(1)
 
         elif 'MONGOHQ_URL' in os.environ:
             try:
-                self.conn = pymongo.MongoClient(os.environ['MONGOHQ_URL'], connect=False)
+                self._client = MongoClient(os.environ['MONGOHQ_URL'], connect=False)
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOHQ_URL'], e)
                 sys.exit(1)
@@ -46,7 +42,7 @@ class Mongo(object):
 
         elif 'MONGOLAB_URI' in os.environ:
             try:
-                self.conn = pymongo.MongoClient(os.environ['MONGOLAB_URI'], connect=False)
+                self._client = MongoClient(os.environ['MONGOLAB_URI'], connect=False)
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOLAB_URI'], e)
                 sys.exit(1)
@@ -54,7 +50,7 @@ class Mongo(object):
 
         elif not app.config['MONGO_REPLSET']:
             try:
-                self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], connect=False)
+                self._client = MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], connect=False)
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s:%s : %s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], e)
                 sys.exit(1)
@@ -62,7 +58,7 @@ class Mongo(object):
 
         else:
             try:
-                self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], replicaSet=app.config['MONGO_REPLSET'], connect=False)
+                self._client = MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], replicaSet=app.config['MONGO_REPLSET'], connect=False)
             except Exception, e:
                 LOG.error('MongoDB Client ReplicaSet connection error - %s:%s (replicaSet=%s) : %s',
                           app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_REPLSET'], e)
@@ -70,34 +66,38 @@ class Mongo(object):
             LOG.debug('Connected to mongodb://%s:%s/%s?replicaSet=%s', app.config['MONGO_HOST'],
                       app.config['MONGO_PORT'], app.config['MONGO_DATABASE'], app.config['MONGO_REPLSET'])
 
-        self.db = self.conn[app.config['MONGO_DATABASE']]
+        self._db = self._client[app.config['MONGO_DATABASE']]
 
         if app.config['MONGO_PASSWORD']:
             try:
-                self.db.authenticate(app.config['MONGO_USERNAME'], password=app.config['MONGO_PASSWORD'])
+                self._db.authenticate(app.config['MONGO_USERNAME'], password=app.config['MONGO_PASSWORD'])
             except Exception, e:
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
-        LOG.debug('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
+        self._create_indexes()
 
-        self.version = self.db.client.server_info()['version']
+    def _create_indexes(self):
 
-    def create_indexes(self):
+        self._db.alerts.create_index([('environment', ASCENDING), ('resource', ASCENDING), ('event', ASCENDING), ('severity', ASCENDING)])
+        self._db.alerts.create_index([('status', ASCENDING), ('lastReceiveTime', ASCENDING)])
+        self._db.alerts.create_index([('status', ASCENDING), ('lastReceiveTime', ASCENDING), ('environment', ASCENDING)])
+        self._db.alerts.create_index([('status', ASCENDING), ('service', ASCENDING)])
+        self._db.alerts.create_index([('status', ASCENDING), ('environment', ASCENDING)])
+        self._db.alerts.create_index([('status', ASCENDING), ('expireTime', ASCENDING)])
+        self._db.alerts.create_index([('status', ASCENDING)])
 
-        self.db.alerts.create_index([('environment', pymongo.ASCENDING), ('resource', pymongo.ASCENDING),
-                                     ('event', pymongo.ASCENDING), ('severity', pymongo.ASCENDING)])
-        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('lastReceiveTime', pymongo.ASCENDING)])
-        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('lastReceiveTime', pymongo.ASCENDING),
-                                     ('environment', pymongo.ASCENDING)])
-        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('service', pymongo.ASCENDING)])
-        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('environment', pymongo.ASCENDING)])
-        self.db.alerts.create_index([('status', pymongo.ASCENDING), ('expireTime', pymongo.ASCENDING)])
-        self.db.alerts.create_index([('status', pymongo.ASCENDING)])
-
-        major, minor, patch = [int(v) for v in self.version.split('.')]
+        major, minor, patch = [int(v) for v in self.get_version().split('.')]
         if (major == 2 and minor > 4) or major >= 3:
-            self.db.alerts.create_index([('$**', pymongo.TEXT)])
+            self._db.alerts.create_index([('$**', TEXT)])
+
+    def get_db(self):
+
+        return self._db
+
+    def get_version(self):
+
+        return self._db.client.server_info()['version']
 
     def get_severity(self, alert):
         """
@@ -123,7 +123,7 @@ class Mongo(object):
                 }]
         }
 
-        return self.db.alerts.find_one(query, projection={"severity": 1, "_id": 0})['severity']
+        return self._db.alerts.find_one(query, projection={"severity": 1, "_id": 0})['severity']
 
     def get_status(self, alert):
         """
@@ -142,20 +142,20 @@ class Mongo(object):
             ]
         }
 
-        return self.db.alerts.find_one(query, projection={"status": 1, "_id": 0})['status']
+        return self._db.alerts.find_one(query, projection={"status": 1, "_id": 0})['status']
 
     def get_count(self, query=None):
         """
         Return total number of alerts that meet the query filter.
         """
-        return self.db.alerts.find(query).count()
+        return self._db.alerts.find(query).count()
 
     def get_alerts(self, query=None, fields=None, sort=None, page=1, limit=0):
 
         if 'status' not in query:
             query['status'] = {'$ne': "expired"}
 
-        responses = self.db.alerts.find(query, projection=fields, sort=sort).skip((page-1)*limit).limit(limit)
+        responses = self._db.alerts.find(query, projection=fields, sort=sort).skip((page-1)*limit).limit(limit)
 
         alerts = list()
         for response in responses:
@@ -215,7 +215,7 @@ class Mongo(object):
             {'$sort': {'history.updateTime': 1}}
         ]
 
-        responses = self.db.alerts.aggregate(pipeline)
+        responses = self._db.alerts.aggregate(pipeline)
 
         history = list()
         for response in responses:
@@ -267,7 +267,7 @@ class Mongo(object):
             "severity": alert.severity
         }
 
-        return bool(self.db.alerts.find_one(query))
+        return bool(self._db.alerts.find_one(query))
 
     def is_correlated(self, alert):
 
@@ -291,7 +291,7 @@ class Mongo(object):
                 }]
         }
 
-        return bool(self.db.alerts.find_one(query))
+        return bool(self._db.alerts.find_one(query))
 
     def save_duplicate(self, alert):
         """
@@ -337,11 +337,11 @@ class Mongo(object):
             }
 
         LOG.debug('Update duplicate alert in database: %s', update)
-        response = self.db.alerts.find_one_and_update(
+        response = self._db.alerts.find_one_and_update(
             query,
             update=update,
             projection={"history": 0},
-            return_document=pymongo.ReturnDocument.AFTER
+            return_document=ReturnDocument.AFTER
         )
 
         return AlertDocument(
@@ -449,11 +449,11 @@ class Mongo(object):
             })
 
         LOG.debug('Update correlated alert in database: %s', update)
-        response = self.db.alerts.find_one_and_update(
+        response = self._db.alerts.find_one_and_update(
             query,
             update=update,
             projection={"history": 0},
-            return_document=pymongo.ReturnDocument.AFTER
+            return_document=ReturnDocument.AFTER
         )
 
         return AlertDocument(
@@ -542,7 +542,7 @@ class Mongo(object):
 
         LOG.debug('Insert new alert in database: %s', alert)
 
-        response = self.db.alerts.insert_one(alert)
+        response = self._db.alerts.insert_one(alert)
 
         if not response:
             return
@@ -583,7 +583,7 @@ class Mongo(object):
         else:
             query = {'$or': [{'_id': id}, {'lastReceiveId': id}]}
 
-        response = self.db.alerts.find_one(query)
+        response = self._db.alerts.find_one(query)
         if not response:
             return
 
@@ -622,7 +622,7 @@ class Mongo(object):
         """
         query = {'_id': {'$regex': '^' + id}}
 
-        event = self.db.alerts.find_one(query, projection={"event": 1, "_id": 0})['event']
+        event = self._db.alerts.find_one(query, projection={"event": 1, "_id": 0})['event']
         if not event:
             return False
 
@@ -640,11 +640,11 @@ class Mongo(object):
             }
         }
 
-        response = self.db.alerts.find_one_and_update(
+        response = self._db.alerts.find_one_and_update(
             query,
             update=update,
             projection={"history": 0},
-            return_document=pymongo.ReturnDocument.AFTER
+            return_document=ReturnDocument.AFTER
         )
 
         return AlertDocument(
@@ -680,7 +680,7 @@ class Mongo(object):
         """
         Append tags to tag list. Don't add same tag more than once.
         """
-        response = self.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$addToSet': {"tags": {'$each': tags}}})
+        response = self._db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$addToSet': {"tags": {'$each': tags}}})
 
         return response.matched_count > 0
 
@@ -688,13 +688,13 @@ class Mongo(object):
         """
         Remove tags from tag list.
         """
-        response = self.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$pullAll': {"tags": tags}})
+        response = self._db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$pullAll': {"tags": tags}})
 
         return response.matched_count > 0
 
     def delete_alert(self, id):
 
-        response = self.db.alerts.delete_one({'_id': {'$regex': '^' + id}})
+        response = self._db.alerts.delete_one({'_id': {'$regex': '^' + id}})
 
         return True if response.deleted_count == 1 else False
 
@@ -710,7 +710,7 @@ class Mongo(object):
             {'$group': {"_id": "$" + group, "count": {'$sum': 1}}}
         ]
 
-        responses = self.db.alerts.aggregate(pipeline)
+        responses = self._db.alerts.aggregate(pipeline)
 
         counts = dict()
         for response in responses:
@@ -740,7 +740,7 @@ class Mongo(object):
             {'$limit': limit}
         ]
 
-        responses = self.db.alerts.aggregate(pipeline)
+        responses = self._db.alerts.aggregate(pipeline)
 
         top = list()
         for response in responses:
@@ -770,7 +770,7 @@ class Mongo(object):
             {'$group': {"_id": "$environment", "count": {'$sum': 1}}}
         ]
 
-        responses = self.db.alerts.aggregate(pipeline)
+        responses = self._db.alerts.aggregate(pipeline)
 
         environments = list()
         for response in responses:
@@ -798,7 +798,7 @@ class Mongo(object):
             {'$group': {"_id": {"environment": "$environment", "service": "$service"}, "count": {'$sum': 1}}}
         ]
 
-        responses = self.db.alerts.aggregate(pipeline)
+        responses = self._db.alerts.aggregate(pipeline)
 
         services = list()
         for response in responses:
@@ -813,7 +813,7 @@ class Mongo(object):
 
     def get_heartbeats(self):
 
-        responses = self.db.heartbeats.find()
+        responses = self._db.heartbeats.find()
 
         heartbeats = list()
         for response in responses:
@@ -847,14 +847,14 @@ class Mongo(object):
 
         LOG.debug('Save heartbeat to database: %s', update)
 
-        heartbeat_id = self.db.heartbeats.find_one({"origin": heartbeat.origin}, {})
+        heartbeat_id = self._db.heartbeats.find_one({"origin": heartbeat.origin}, {})
 
         if heartbeat_id:
-            response = self.db.heartbeats.find_one_and_update(
+            response = self._db.heartbeats.find_one_and_update(
                 {"origin": heartbeat.origin},
                 update=update,
                 upsert=True,
-                return_document=pymongo.ReturnDocument.AFTER
+                return_document=ReturnDocument.AFTER
             )
 
             return HeartbeatDocument(
@@ -869,7 +869,7 @@ class Mongo(object):
         else:
             update = update['$set']
             update["_id"] = heartbeat.id
-            response = self.db.heartbeats.insert_one(update)
+            response = self._db.heartbeats.insert_one(update)
 
             return HeartbeatDocument(
                 id=response.inserted_id,
@@ -888,7 +888,7 @@ class Mongo(object):
         else:
             query = {'$or': [{'_id': id}, {'lastReceiveId': id}]}
 
-        response = self.db.heartbeats.find_one(query)
+        response = self._db.heartbeats.find_one(query)
         if not response:
             return
 
@@ -904,13 +904,13 @@ class Mongo(object):
 
     def delete_heartbeat(self, id):
 
-        response = self.db.heartbeats.delete_one({'_id': {'$regex': '^' + id}})
+        response = self._db.heartbeats.delete_one({'_id': {'$regex': '^' + id}})
 
         return True if response.deleted_count == 1 else False
 
     def get_user(self, id):
 
-        user = self.db.users.find_one({"_id": id})
+        user = self._db.users.find_one({"_id": id})
 
         if not user:
             return
@@ -927,7 +927,7 @@ class Mongo(object):
 
         users = list()
 
-        for user in self.db.users.find(query):
+        for user in self._db.users.find(query):
             users.append(
                 {
                     "id": user['_id'],
@@ -944,11 +944,11 @@ class Mongo(object):
     def is_user_valid(self, id=None, name=None, login=None):
 
         if id:
-            return bool(self.db.users.find_one({"_id": id}))
+            return bool(self._db.users.find_one({"_id": id}))
         if name:
-            return bool(self.db.users.find_one({"name": name}))
+            return bool(self._db.users.find_one({"name": name}))
         if login:
-            return bool(self.db.users.find_one({"login": login}))
+            return bool(self._db.users.find_one({"login": login}))
 
     def save_user(self, id, name, login, password=None, provider="", text=""):
 
@@ -967,11 +967,11 @@ class Mongo(object):
         if password:
             data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-        return self.db.users.insert_one(data).inserted_id
+        return self._db.users.insert_one(data).inserted_id
 
     def delete_user(self, id):
 
-        response = self.db.users.delete_one({"_id": id})
+        response = self._db.users.delete_one({"_id": id})
 
         return True if response.deleted_count == 1 else False
 
@@ -979,13 +979,13 @@ class Mongo(object):
 
         metrics = list()
 
-        for stat in self.db.metrics.find({}, {"_id": 0}):
+        for stat in self._db.metrics.find({}, {"_id": 0}):
             metrics.append(stat)
         return metrics
 
     def get_keys(self, query=None):
 
-        responses = self.db.keys.find(query)
+        responses = self._db.keys.find(query)
         keys = list()
         for response in responses:
             keys.append(
@@ -1004,7 +1004,7 @@ class Mongo(object):
 
     def is_key_valid(self, key):
 
-        key_info = self.db.keys.find_one({"key": key})
+        key_info = self._db.keys.find_one({"key": key})
 
         if key_info:
             if key_info['expireTime'] > datetime.datetime.utcnow():
@@ -1029,7 +1029,7 @@ class Mongo(object):
             "lastUsedTime": None
         }
 
-        response = self.db.keys.insert_one(data)
+        response = self._db.keys.insert_one(data)
         if not response:
             return None
 
@@ -1037,7 +1037,7 @@ class Mongo(object):
 
     def update_key(self, key):
 
-        self.db.keys.update_one(
+        self._db.keys.update_one(
             {
                 "key": key
             },
@@ -1050,12 +1050,12 @@ class Mongo(object):
 
     def delete_key(self, key):
 
-        response = self.db.keys.delete_one({"key": key})
+        response = self._db.keys.delete_one({"key": key})
 
         return True if response.deleted_count == 1 else False
 
     def disconnect(self):
 
-        self.conn.close()
+        self._client.close()
 
         LOG.debug('Mongo connection closed.')
