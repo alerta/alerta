@@ -75,7 +75,7 @@ class Mongo(object):
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
-        self._create_indexes()
+        # self._create_indexes()
 
     def _create_indexes(self):
 
