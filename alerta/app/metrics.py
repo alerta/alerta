@@ -7,8 +7,7 @@ from alerta.app.database import Mongo
 
 LOG = app.logger
 
-mongo = Mongo()
-db = mongo.db
+db = Mongo().get_db()
 
 
 class Gauge(object):
