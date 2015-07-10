@@ -21,24 +21,24 @@ class Mongo(object):
 
         self.db = None
         self.conn = None
-        self.connect()
+        self.version = None
 
-        # FIXME: Get "ServerSelectionTimeoutError: No servers found yet" with PyMongo 3.0
-        self.version = '?'  # self.db.client.server_info()['version']
+        self.connect()
+        self.create_indexes()
 
     def connect(self):
 
         if 'MONGO_PORT' in os.environ and 'tcp://' in os.environ['MONGO_PORT']:  # Docker
             host, port = os.environ['MONGO_PORT'][6:].split(':')
             try:
-                self.conn = pymongo.MongoClient(host, int(port))
+                self.conn = pymongo.MongoClient(host, int(port), connect=False)
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGO_PORT'], e)
                 sys.exit(1)
 
         elif 'MONGOHQ_URL' in os.environ:
             try:
-                self.conn = pymongo.MongoClient(os.environ['MONGOHQ_URL'])
+                self.conn = pymongo.MongoClient(os.environ['MONGOHQ_URL'], connect=False)
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOHQ_URL'], e)
                 sys.exit(1)
@@ -46,7 +46,7 @@ class Mongo(object):
 
         elif 'MONGOLAB_URI' in os.environ:
             try:
-                self.conn = pymongo.MongoClient(os.environ['MONGOLAB_URI'])
+                self.conn = pymongo.MongoClient(os.environ['MONGOLAB_URI'], connect=False)
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOLAB_URI'], e)
                 sys.exit(1)
@@ -54,7 +54,7 @@ class Mongo(object):
 
         elif not app.config['MONGO_REPLSET']:
             try:
-                self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'])
+                self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], connect=False)
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s:%s : %s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], e)
                 sys.exit(1)
@@ -62,7 +62,7 @@ class Mongo(object):
 
         else:
             try:
-                self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], replicaSet=app.config['MONGO_REPLSET'])
+                self.conn = pymongo.MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], replicaSet=app.config['MONGO_REPLSET'], connect=False)
             except Exception, e:
                 LOG.error('MongoDB Client ReplicaSet connection error - %s:%s (replicaSet=%s) : %s',
                           app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_REPLSET'], e)
@@ -79,11 +79,9 @@ class Mongo(object):
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
-        # FIXME: Get "ServerSelectionTimeoutError: No servers found yet" with PyMongo 3.0
-        # LOG.debug('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
+        LOG.debug('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
 
-        if app.config['MONGO_REPLSET']:
-            self.create_indexes()
+        self.version = self.db.client.server_info()['version']
 
     def create_indexes(self):
 
@@ -96,6 +94,10 @@ class Mongo(object):
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('environment', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('expireTime', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING)])
+
+        major, minor, patch = [int(v) for v in self.version.split('.')]
+        if (major == 2 and minor > 4) or major >= 3:
+            self.db.alerts.create_index([('$**', pymongo.TEXT)])
 
     def get_severity(self, alert):
         """
