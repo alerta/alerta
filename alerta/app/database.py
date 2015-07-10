@@ -21,10 +21,9 @@ class Mongo(object):
 
         self.db = None
         self.conn = None
+        self.version = None
+
         self.connect()
-
-        self.version = self.db.client.server_info()['version']
-
         self.create_indexes()
 
     def connect(self):
@@ -82,9 +81,9 @@ class Mongo(object):
 
         LOG.debug('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
 
-    def create_indexes(self):
+        self.version = self.db.client.server_info()['version']
 
-        LOG.info('Creating indexes...')
+    def create_indexes(self):
 
         self.db.alerts.create_index([('environment', pymongo.ASCENDING), ('resource', pymongo.ASCENDING),
                                      ('event', pymongo.ASCENDING), ('severity', pymongo.ASCENDING)])
@@ -96,7 +95,7 @@ class Mongo(object):
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('expireTime', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING)])
 
-        major, minor, patch = self.version.split('.')
+        major, minor, patch = [int(v) for v in self.version.split('.')]
         if (major == 2 and minor > 4) or major >= 3:
             self.db.alerts.create_index([('$**', pymongo.TEXT)])
 
