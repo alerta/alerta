@@ -82,10 +82,11 @@ class Mongo(object):
         # FIXME: Get "ServerSelectionTimeoutError: No servers found yet" with PyMongo 3.0
         # LOG.debug('Available MongoDB collections: %s', ','.join(self.db.collection_names()))
 
-        if app.config['MONGO_REPLSET']:
-            self.create_indexes()
+        self.create_indexes()
 
     def create_indexes(self):
+
+        LOG.info('Creating indexes...')
 
         self.db.alerts.create_index([('environment', pymongo.ASCENDING), ('resource', pymongo.ASCENDING),
                                      ('event', pymongo.ASCENDING), ('severity', pymongo.ASCENDING)])
@@ -96,6 +97,7 @@ class Mongo(object):
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('environment', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('expireTime', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING)])
+        self.db.alerts.create_index([('$**', pymongo.TEXT)])
 
     def get_severity(self, alert):
         """
