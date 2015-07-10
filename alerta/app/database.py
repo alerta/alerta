@@ -96,7 +96,8 @@ class Mongo(object):
         self.db.alerts.create_index([('status', pymongo.ASCENDING), ('expireTime', pymongo.ASCENDING)])
         self.db.alerts.create_index([('status', pymongo.ASCENDING)])
 
-        if float(self.version[:-2]) > 2.4:
+        major, minor, patch = self.version.split('.')
+        if (major == 2 and minor > 4) or major >= 3:
             self.db.alerts.create_index([('$**', pymongo.TEXT)])
 
     def get_severity(self, alert):
