@@ -5,6 +5,8 @@ python:
 
 services: mongodb
 
+sudo: false
+
 # command to install dependencies
 install:
   - "pip install ."
