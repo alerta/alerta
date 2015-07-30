@@ -1016,7 +1016,7 @@ class Mongo(object):
 
     def create_key(self, user, type='read-only', text=None):
 
-        digest = hmac.new(app.config['SECRET_KEY'], msg=str(os.urandom(32)), digestmod=hashlib.sha256).digest()
+        digest = hmac.new(app.config['SECRET_KEY'].encode(), msg=str(os.urandom(32)).encode(), digestmod=hashlib.sha256).digest()
         key = base64.urlsafe_b64encode(digest)[:40]
 
         data = {
