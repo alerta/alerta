@@ -76,6 +76,8 @@ def auth_required(f):
                 return authenticate(str(e), 401)
             except Forbidden as e:
                 return authenticate(str(e), 403)
+            except Exception as e:
+                return authenticate(str(e), 500)
             return f(*args, **kwargs)
 
         auth_header = request.headers.get('Authorization')
@@ -90,6 +92,8 @@ def auth_required(f):
                 return authenticate(str(e), 401)
             except Forbidden as e:
                 return authenticate(str(e), 403)
+            except Exception as e:
+                return authenticate(str(e), 500)
             return f(*args, **kwargs)
 
         if auth_header.startswith('Bearer'):

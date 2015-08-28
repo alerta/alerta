@@ -7,6 +7,7 @@ import hashlib
 import bcrypt
 
 from pymongo import MongoClient, ASCENDING, TEXT, ReturnDocument
+from urlparse import urlparse
 
 from alerta.app import app, severity_code, status_code
 from alerta.alert import AlertDocument
@@ -24,29 +25,34 @@ class Mongo(object):
 
     def connect(self):
 
-        if 'MONGO_PORT' in os.environ and 'tcp://' in os.environ['MONGO_PORT']:  # Docker
+        mongo_uri = (os.environ.get('MONGO_URI', None) or
+                     os.environ.get('MONGOHQ_URL', None) or
+                     os.environ.get('MONGOLAB_URI', None))
+        if mongo_uri:
+            try:
+                self._client = MongoClient(mongo_uri, connect=False)
+            except Exception, e:
+                LOG.error('MongoDB Client connection error - %s : %s', mongo_uri, e)
+                sys.exit(1)
+
+            uri = urlparse(mongo_uri)
+
+            app.config['MONGO_HOST'] = uri.hostname
+            app.config['MONGO_PORT'] = uri.port
+            app.config['MONGO_DATABASE'] = uri.path.lstrip('/')
+            app.config['MONGO_REPLSET'] = None
+
+            if uri.username:
+                app.config['MONGO_USERNAME'] = uri.username
+                app.config['MONGO_PASSWORD'] = uri.password
+
+        elif 'MONGO_PORT' in os.environ and 'tcp://' in os.environ['MONGO_PORT']:  # Docker
             host, port = os.environ['MONGO_PORT'][6:].split(':')
             try:
                 self._client = MongoClient(host, int(port), connect=False)
             except Exception, e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGO_PORT'], e)
                 sys.exit(1)
-
-        elif 'MONGOHQ_URL' in os.environ:
-            try:
-                self._client = MongoClient(os.environ['MONGOHQ_URL'], connect=False)
-            except Exception, e:
-                LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOHQ_URL'], e)
-                sys.exit(1)
-            app.config['MONGO_DATABASE'] = os.environ['MONGOHQ_URL'].split('/')[-1]
-
-        elif 'MONGOLAB_URI' in os.environ:
-            try:
-                self._client = MongoClient(os.environ['MONGOLAB_URI'], connect=False)
-            except Exception, e:
-                LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGOLAB_URI'], e)
-                sys.exit(1)
-            app.config['MONGO_DATABASE'] = os.environ['MONGOLAB_URI'].split('/')[-1]
 
         elif not app.config['MONGO_REPLSET']:
             try:
