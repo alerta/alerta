@@ -42,6 +42,9 @@ CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 PLUGINS = ['reject']
 # PLUGINS = ['amqp', 'enhance', 'logstash', 'normalise', 'reject', 'sns']
 
+ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
+ALLOWED_ENVIRONMENTS = ['Production', 'Development']  # reject alerts without allowed environments
+
 # AMQP Credentials
 AMQP_URL = 'mongodb://localhost:27017/kombu'        # MongoDB
 # AMQP_URL = 'amqp://guest:guest@localhost:5672//'  # RabbitMQ
