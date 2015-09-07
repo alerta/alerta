@@ -192,6 +192,9 @@ def receive_alert():
     except RejectException as e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 403
+    except RuntimeWarning as e:
+        receive_timer.stop_timer(recv_started)
+        return jsonify(status="ok", id=incomingAlert.id, message=str(e)), 202
     except Exception as e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 500
@@ -453,6 +456,75 @@ def get_services():
             total=0,
             services=[],
         )
+
+@app.route('/blackouts', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@auth_required
+@jsonp
+def get_blackouts():
+
+    try:
+        blackouts = db.get_blackouts()
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
+    if len(blackouts):
+        return jsonify(
+            status="ok",
+            total=len(blackouts),
+            blackouts=blackouts,
+            time=datetime.datetime.utcnow()
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            blackouts=[],
+            time=datetime.datetime.utcnow()
+        )
+
+@app.route('/blackout', methods=['OPTIONS', 'POST'])
+@cross_origin()
+@auth_required
+@jsonp
+def create_blackout():
+
+    if request.json and 'environment' in request.json:
+        environment = request.json['environment']
+    else:
+        return jsonify(status="error", message="must supply 'environment' as parameter"), 400
+
+    resource = request.json.get("resource", None)
+    service = request.json.get("service", None)
+    event = request.json.get("event", None)
+    groups = request.json.get("groups", None)
+    tags = request.json.get("tags", None)
+    duration = request.json.get("service", 60)
+
+    try:
+        blackout = db.create_blackout(environment, resource, service, event, groups, tags, duration)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
+    return jsonify(status="ok", blackout=blackout), 201, {'Location': '%s/%s' % (request.base_url, blackout)}
+
+@app.route('/blackout/<path:blackout>', methods=['OPTIONS', 'DELETE', 'POST'])
+@cross_origin()
+@auth_required
+@jsonp
+def delete_blackout(blackout):
+
+    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+        try:
+            response = db.delete_blackout(blackout)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
+
+        if response:
+            return jsonify(status="ok")
+        else:
+            return jsonify(status="error", message="not found"), 404
 
 
 # Return a list of heartbeats

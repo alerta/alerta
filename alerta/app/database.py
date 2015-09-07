@@ -6,6 +6,7 @@ import hmac
 import hashlib
 import bcrypt
 
+from uuid import uuid4
 from pymongo import MongoClient, ASCENDING, TEXT, ReturnDocument
 from urlparse import urlparse
 
@@ -816,6 +817,119 @@ class Mongo(object):
                 }
             )
         return services
+
+    def get_blackouts(self, query=None):
+
+        responses = self._db.blackouts.find(query)
+        blackouts = list()
+        for response in responses:
+            response['id'] = response['_id']
+            del response['_id']
+            blackouts.append(response)
+
+        return blackouts
+
+    def is_blackout_period(self, alert):
+
+        now = datetime.datetime.utcnow()
+
+        query = dict()
+        query['expireTime'] = {'$gt': now}
+        query['$or'] = [
+            {
+                "environment": alert.environment,
+                "resource": {'$exists': False},
+                "service": {'$exists': False},
+                "event": {'$exists': False},
+                "group": {'$exists': False},
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": alert.resource,
+                "service": {'$exists': False},
+                "event": {'$exists': False},
+                "group": {'$exists': False},
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": {'$exists': False},
+                "service": alert.service,
+                "event": {'$exists': False},
+                "group": {'$exists': False},
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": {'$exists': False},
+                "service": {'$exists': False},
+                "event": alert.event,
+                "group": {'$exists': False},
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": {'$exists': False},
+                "service": {'$exists': False},
+                "event": {'$exists': False},
+                "group": alert.group,
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": alert.resource,
+                "service": {'$exists': False},
+                "event": alert.event,
+                "group": {'$exists': False},
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": {'$exists': False},
+                "service": {'$exists': False},
+                "event": {'$exists': False},
+                "group": {'$exists': False},
+                "tags": {"$not": {"$elemMatch": {"$nin": alert.tags}}}
+            }
+        ]
+
+        if self._db.blackouts.find_one(query):
+            return True
+
+        return False
+
+    def create_blackout(self, environment, resource=None, service=None, event=None, group=None, tags=None, duration=None):
+
+        data = {
+            "_id": str(uuid4()),
+            "priority": 1,
+            "environment": environment,
+            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(duration or app.config['BLACKOUT_DURATION'])
+        }
+        if resource and not event:
+            data["priority"] = 2
+            data["resource"] = resource
+        elif service:
+            data["priority"] = 3
+            data["service"] = service
+        elif resource and event:
+            data["priority"] = 4
+            data["event"] = event
+        elif group:
+            data["priority"] = 5
+            data["group"] = group
+        elif tags:
+            data["priority"] = 6
+            data["tags"] = tags
+
+        return self._db.blackouts.insert_one(data).inserted_id
+
+    def delete_blackout(self, id):
+
+        response = self._db.blackouts.delete_one({"_id": id})
+
+        return True if response.deleted_count == 1 else False
 
     def get_heartbeats(self):
 

@@ -39,7 +39,7 @@ CORS_ORIGINS = [
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
 # Plug-ins
-PLUGINS = ['reject']
+PLUGINS = ['reject', 'blackout']
 # PLUGINS = ['amqp', 'enhance', 'logstash', 'normalise', 'reject', 'sns']
 
 ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
