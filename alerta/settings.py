@@ -38,8 +38,10 @@ CORS_ORIGINS = [
 ]
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
+BLACKOUT_DURATION = 3600  # default period = 1 hour
+
 # Plug-ins
-PLUGINS = ['reject', 'blackout']
+PLUGINS = ['reject']
 # PLUGINS = ['amqp', 'enhance', 'logstash', 'normalise', 'reject', 'sns']
 
 ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
