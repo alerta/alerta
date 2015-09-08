@@ -820,11 +820,22 @@ class Mongo(object):
 
     def get_blackouts(self, query=None):
 
+        now = datetime.datetime.utcnow()
+
         responses = self._db.blackouts.find(query)
         blackouts = list()
         for response in responses:
             response['id'] = response['_id']
             del response['_id']
+            if response['startTime'] < now and response['endTime'] > now:
+                response['status'] = "active"
+                response['remaining'] = int((response['endTime'] - now).total_seconds())
+            elif response['startTime'] > now:
+                response['status'] = "pending"
+                response['remaining'] = response['duration']
+            elif response['endTime'] < now:
+                response['status'] = "expired"
+                response['remaining'] = 0
             blackouts.append(response)
 
         return blackouts
@@ -834,7 +845,8 @@ class Mongo(object):
         now = datetime.datetime.utcnow()
 
         query = dict()
-        query['expireTime'] = {'$gt': now}
+        query['startTime'] = {'$lte': now}
+        query['endTime'] = {'$gt': now}
         query['$or'] = [
             {
                 "environment": alert.environment,
@@ -899,13 +911,18 @@ class Mongo(object):
 
         return False
 
-    def create_blackout(self, environment, resource=None, service=None, event=None, group=None, tags=None, duration=None):
+    def create_blackout(self, environment, resource=None, service=None, event=None, group=None, tags=None, start=None, duration=None):
+
+        start = start or datetime.datetime.utcnow()
+        duration = duration or app.config['BLACKOUT_DURATION']
 
         data = {
             "_id": str(uuid4()),
             "priority": 1,
             "environment": environment,
-            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(duration or app.config['BLACKOUT_DURATION'])
+            "startTime": start,
+            "endTime": start + datetime.timedelta(seconds=duration),
+            "duration": duration
         }
         if resource and not event:
             data["priority"] = 2
