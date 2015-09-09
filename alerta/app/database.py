@@ -930,14 +930,18 @@ class Mongo(object):
         elif service:
             data["priority"] = 3
             data["service"] = service
-        elif resource and event:
+        elif event and not resource:
             data["priority"] = 4
             data["event"] = event
         elif group:
             data["priority"] = 5
             data["group"] = group
-        elif tags:
+        elif resource and event:
             data["priority"] = 6
+            data["resource"] = resource
+            data["event"] = event
+        elif tags:
+            data["priority"] = 7
             data["tags"] = tags
 
         return self._db.blackouts.insert_one(data).inserted_id
