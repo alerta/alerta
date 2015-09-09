@@ -6,6 +6,7 @@ import hmac
 import hashlib
 import bcrypt
 
+from uuid import uuid4
 from pymongo import MongoClient, ASCENDING, TEXT, ReturnDocument
 from urlparse import urlparse
 
@@ -816,6 +817,144 @@ class Mongo(object):
                 }
             )
         return services
+
+    def get_blackouts(self, query=None):
+
+        now = datetime.datetime.utcnow()
+
+        responses = self._db.blackouts.find(query)
+        blackouts = list()
+        for response in responses:
+            response['id'] = response['_id']
+            del response['_id']
+            if response['startTime'] < now and response['endTime'] > now:
+                response['status'] = "active"
+                response['remaining'] = int((response['endTime'] - now).total_seconds())
+            elif response['startTime'] > now:
+                response['status'] = "pending"
+                response['remaining'] = response['duration']
+            elif response['endTime'] < now:
+                response['status'] = "expired"
+                response['remaining'] = 0
+            blackouts.append(response)
+
+        return blackouts
+
+    def is_blackout_period(self, alert):
+
+        now = datetime.datetime.utcnow()
+
+        query = dict()
+        query['startTime'] = {'$lte': now}
+        query['endTime'] = {'$gt': now}
+        query['$or'] = [
+            {
+                "environment": alert.environment,
+                "resource": {'$exists': False},
+                "service": {'$exists': False},
+                "event": {'$exists': False},
+                "group": {'$exists': False},
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": alert.resource,
+                "service": {'$exists': False},
+                "event": {'$exists': False},
+                "group": {'$exists': False},
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": {'$exists': False},
+                "service": {"$not": {"$elemMatch": {"$nin": alert.service}}},
+                "event": {'$exists': False},
+                "group": {'$exists': False},
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": {'$exists': False},
+                "service": {'$exists': False},
+                "event": alert.event,
+                "group": {'$exists': False},
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": {'$exists': False},
+                "service": {'$exists': False},
+                "event": {'$exists': False},
+                "group": alert.group,
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": alert.resource,
+                "service": {'$exists': False},
+                "event": alert.event,
+                "group": {'$exists': False},
+                "tags": {'$exists': False}
+            },
+            {
+                "environment": alert.environment,
+                "resource": {'$exists': False},
+                "service": {'$exists': False},
+                "event": {'$exists': False},
+                "group": {'$exists': False},
+                "tags": {"$not": {"$elemMatch": {"$nin": alert.tags}}}
+            }
+        ]
+
+        if self._db.blackouts.find_one(query):
+            return True
+
+        return False
+
+    def create_blackout(self, environment, resource=None, service=None, event=None, group=None, tags=None, start=None, end=None, duration=None):
+
+        start = start or datetime.datetime.utcnow()
+        if end:
+            duration = int((end - start).total_seconds())
+        else:
+            duration = duration or app.config['BLACKOUT_DURATION']
+            end = start + datetime.timedelta(seconds=duration)
+
+        data = {
+            "_id": str(uuid4()),
+            "priority": 1,
+            "environment": environment,
+            "startTime": start,
+            "endTime": end,
+            "duration": duration
+        }
+        if resource and not event:
+            data["priority"] = 2
+            data["resource"] = resource
+        elif service:
+            data["priority"] = 3
+            data["service"] = service
+        elif event and not resource:
+            data["priority"] = 4
+            data["event"] = event
+        elif group:
+            data["priority"] = 5
+            data["group"] = group
+        elif resource and event:
+            data["priority"] = 6
+            data["resource"] = resource
+            data["event"] = event
+        elif tags:
+            data["priority"] = 7
+            data["tags"] = tags
+
+        return self._db.blackouts.insert_one(data).inserted_id
+
+    def delete_blackout(self, id):
+
+        response = self._db.blackouts.delete_one({"_id": id})
+
+        return True if response.deleted_count == 1 else False
 
     def get_heartbeats(self):
 

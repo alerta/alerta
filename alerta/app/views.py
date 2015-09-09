@@ -192,6 +192,9 @@ def receive_alert():
     except RejectException as e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 403
+    except RuntimeWarning as e:
+        receive_timer.stop_timer(recv_started)
+        return jsonify(status="ok", id=incomingAlert.id, message=str(e)), 202
     except Exception as e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 500
@@ -453,6 +456,82 @@ def get_services():
             total=0,
             services=[],
         )
+
+@app.route('/blackouts', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@auth_required
+@jsonp
+def get_blackouts():
+
+    try:
+        blackouts = db.get_blackouts()
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
+    if len(blackouts):
+        return jsonify(
+            status="ok",
+            total=len(blackouts),
+            blackouts=blackouts,
+            time=datetime.datetime.utcnow()
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            blackouts=[],
+            time=datetime.datetime.utcnow()
+        )
+
+@app.route('/blackout', methods=['OPTIONS', 'POST'])
+@cross_origin()
+@auth_required
+@jsonp
+def create_blackout():
+
+    if request.json and 'environment' in request.json:
+        environment = request.json['environment']
+    else:
+        return jsonify(status="error", message="must supply 'environment' as parameter"), 400
+
+    resource = request.json.get("resource", None)
+    service = request.json.get("service", None)
+    event = request.json.get("event", None)
+    group = request.json.get("group", None)
+    tags = request.json.get("tags", None)
+    start_time = request.json.get("startTime", None)
+    end_time = request.json.get("endTime", None)
+    duration = request.json.get("duration", None)
+
+    if start_time:
+        start_time = datetime.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+    if end_time:
+        end_time = datetime.datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+
+    try:
+        blackout = db.create_blackout(environment, resource, service, event, group, tags, start_time, end_time, duration)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
+    return jsonify(status="ok", blackout=blackout), 201, {'Location': '%s/%s' % (request.base_url, blackout)}
+
+@app.route('/blackout/<path:blackout>', methods=['OPTIONS', 'DELETE', 'POST'])
+@cross_origin()
+@auth_required
+@jsonp
+def delete_blackout(blackout):
+
+    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+        try:
+            response = db.delete_blackout(blackout)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
+
+        if response:
+            return jsonify(status="ok")
+        else:
+            return jsonify(status="error", message="not found"), 404
 
 
 # Return a list of heartbeats

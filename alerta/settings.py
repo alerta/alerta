@@ -38,6 +38,8 @@ CORS_ORIGINS = [
 ]
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
+BLACKOUT_DURATION = 3600  # default period = 1 hour
+
 # Plug-ins
 PLUGINS = ['reject']
 # PLUGINS = ['amqp', 'enhance', 'logstash', 'normalise', 'reject', 'sns']
