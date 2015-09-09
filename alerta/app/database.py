@@ -911,17 +911,21 @@ class Mongo(object):
 
         return False
 
-    def create_blackout(self, environment, resource=None, service=None, event=None, group=None, tags=None, start=None, duration=None):
+    def create_blackout(self, environment, resource=None, service=None, event=None, group=None, tags=None, start=None, end=None, duration=None):
 
         start = start or datetime.datetime.utcnow()
-        duration = duration or app.config['BLACKOUT_DURATION']
+        if end:
+            duration = int((end - start).total_seconds())
+        else:
+            duration = duration or app.config['BLACKOUT_DURATION']
+            end = start + datetime.timedelta(seconds=duration)
 
         data = {
             "_id": str(uuid4()),
             "priority": 1,
             "environment": environment,
             "startTime": start,
-            "endTime": start + datetime.timedelta(seconds=duration),
+            "endTime": end,
             "duration": duration
         }
         if resource and not event:

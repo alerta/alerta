@@ -501,12 +501,16 @@ def create_blackout():
     group = request.json.get("group", None)
     tags = request.json.get("tags", None)
     start_time = request.json.get("startTime", None)
-    if start_time:
-        start_time = datetime.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+    end_time = request.json.get("endTime", None)
     duration = request.json.get("duration", None)
 
+    if start_time:
+        start_time = datetime.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+    if end_time:
+        end_time = datetime.datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+
     try:
-        blackout = db.create_blackout(environment, resource, service, event, group, tags, start_time, duration)
+        blackout = db.create_blackout(environment, resource, service, event, group, tags, start_time, end_time, duration)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
