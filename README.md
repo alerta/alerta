@@ -115,6 +115,11 @@ http://github.com/guardian/alerta
 
 Create a branch for your work and then send us a pull request.
 
+IRC Discussion
+----------
+
+Project discussion can be found on irc.freenode.net in #alerta
+
 License
 -------
 
