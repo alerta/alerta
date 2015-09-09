@@ -867,7 +867,7 @@ class Mongo(object):
             {
                 "environment": alert.environment,
                 "resource": {'$exists': False},
-                "service": alert.service,
+                "service": {"$not": {"$elemMatch": {"$nin": alert.service}}},
                 "event": {'$exists': False},
                 "group": {'$exists': False},
                 "tags": {'$exists': False}
