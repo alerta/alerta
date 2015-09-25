@@ -104,7 +104,7 @@ def health_check():
             delta = datetime.datetime.utcnow() - heartbeat.receive_time
             threshold = float(heartbeat.timeout) * 4
             if delta.seconds > threshold:
-                return 'HEARTBEAT_STALE', 503
+                return 'HEARTBEAT_STALE: %s' % heartbeat.origin , 503
 
     except Exception as e:
         return 'HEALTH_CHECK_FAILED: %s' % e, 503
