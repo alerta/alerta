@@ -98,8 +98,6 @@ def switchboard():
 def health_check():
 
     try:
-        if not db.conn.alive():
-            return 'NO_DATABASE', 503
 
         heartbeats = db.get_heartbeats()
         for heartbeat in heartbeats:
