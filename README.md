@@ -1,7 +1,7 @@
 Alerta Release 4.4
 ==================
 
-[![Build Status](https://travis-ci.org/guardian/alerta.png)](https://travis-ci.org/guardian/alerta)
+[![Build Status](https://travis-ci.org/guardian/alerta.png)](https://travis-ci.org/guardian/alerta) [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
 
 The alerta monitoring tool was developed with the following aims in mind:
 
@@ -114,11 +114,6 @@ If you'd like to contribute to Alerta, start by forking this repo on GitHub.
 http://github.com/guardian/alerta
 
 Create a branch for your work and then send us a pull request.
-
-IRC Discussion
-----------
-
-Project discussion can be found on irc.freenode.net in #alerta
 
 License
 -------
