@@ -7,7 +7,7 @@ import bcrypt
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import g, request, redirect
-from flask.ext.cors import cross_origin
+from flask_cors import cross_origin
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 from base64 import urlsafe_b64decode
 from urlparse import parse_qsl
