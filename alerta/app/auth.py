@@ -273,3 +273,42 @@ def twitter():
         oauth_token = dict(parse_qsl(r.text))
         qs = urlencode(dict(oauth_token=oauth_token['oauth_token']))
         return redirect(authenticate_url + '?' + qs)
+
+@app.route('/auth/gitlab', methods=['OPTIONS', 'POST'])
+@cross_origin(supports_credentials=True)
+def gitlab():
+
+    if not app.config['GITLAB_URL']:
+        return jsonify(status="error", message="Must define GITLAB_URL setting in server configuration."), 503
+
+    access_token_url = app.config['GITLAB_URL'] + '/oauth/token'
+    gitlab_api_url = app.config['GITLAB_URL'] + '/api/v3'
+
+    payload = {
+        'client_id': request.json['clientId'],
+        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
+        'redirect_uri': request.json['redirectUri'],
+        'grant_type': 'authorization_code',
+        'code': request.json['code'],
+    }
+
+    try:
+        r = requests.post(access_token_url, data=payload)
+    except Exception:
+        return jsonify(status="error", message="Failed to call Gitlab API over HTTPS")
+    access_token = r.json()
+
+    r = requests.get(gitlab_api_url+'/user', params=access_token)
+    profile = r.json()
+
+    r = requests.get(gitlab_api_url+'/groups', params=access_token)
+    groups = [g['path'] for g in r.json()]
+
+    login = profile['username']
+    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITLAB_GROUPS']
+            or set(app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))
+            or db.is_user_valid(login=login)):
+        return jsonify(status="error", message="User %s is not authorized" % profile['username']), 403
+
+    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab')
+    return jsonify(token=token)
