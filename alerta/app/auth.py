@@ -173,17 +173,19 @@ def google():
     access_token_url = 'https://accounts.google.com/o/oauth2/token'
     people_api_url = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect'
 
-    payload = dict(client_id=request.json['clientId'],
-                   redirect_uri=request.json['redirectUri'],
-                   client_secret=app.config['OAUTH2_CLIENT_SECRET'],
-                   code=request.json['code'],
-                   grant_type='authorization_code')
+    payload = {
+        'client_id': request.json['clientId'],
+        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
+        'redirect_uri': request.json['redirectUri'],
+        'grant_type': 'authorization_code',
+        'code': request.json['code'],
+    }
 
     try:
         r = requests.post(access_token_url, data=payload)
     except Exception:
         return jsonify(status="error", message="Failed to call Google API over HTTPS")
-    token = json.loads(r.text)
+    token = r.json()
 
     if 'id_token' not in token:
         return jsonify(status="error", message=token.get('error', "Invalid token"))
@@ -203,7 +205,7 @@ def google():
 
     headers = {'Authorization': 'Bearer ' + token['access_token']}
     r = requests.get(people_api_url, headers=headers)
-    profile = json.loads(r.text)
+    profile = r.json()
 
     try:
         token = create_token(profile['sub'], profile['name'], email, provider='google')
@@ -225,20 +227,21 @@ def github():
         'code': request.json['code']
     }
 
-    r = requests.get(access_token_url, params=params)
-    access_token = dict(parse_qsl(r.text))
+    headers = {'Accept': 'application/json'}
+    r = requests.get(access_token_url, headers=headers, params=params)
+    access_token = r.json()
 
     r = requests.get(users_api_url, params=access_token)
-    profile = json.loads(r.text)
+    profile = r.json()
 
     r = requests.get(profile['organizations_url'], params=access_token)
-    organizations = [o['login'] for o in json.loads(r.text)]
+    organizations = [o['login'] for o in r.json()]
 
     login = profile['login']
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITHUB_ORGS']
             or set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))
             or db.is_user_valid(login=login)):
-        return jsonify(status="error", message="User %s is not authorized" % profile['login']), 403
+        return jsonify(status="error", message="User %s is not authorized" % login), 403
 
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github')
     return jsonify(token=token)
@@ -308,7 +311,7 @@ def gitlab():
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITLAB_GROUPS']
             or set(app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))
             or db.is_user_valid(login=login)):
-        return jsonify(status="error", message="User %s is not authorized" % profile['username']), 403
+        return jsonify(status="error", message="User %s is not authorized" % login), 403
 
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab')
     return jsonify(token=token)
