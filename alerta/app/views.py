@@ -641,6 +641,7 @@ def get_users():
             users=users,
             domains=app.config['ALLOWED_EMAIL_DOMAINS'],
             orgs=app.config['ALLOWED_GITHUB_ORGS'],
+            groups=app.config['ALLOWED_GITLAB_GROUPS'],
             time=datetime.datetime.utcnow()
         )
     else:
