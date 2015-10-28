@@ -214,6 +214,7 @@ def google():
 
     return jsonify(token=token)
 
+
 @app.route('/auth/github', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def github():
@@ -246,6 +247,7 @@ def github():
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github')
     return jsonify(token=token)
 
+
 @app.route('/auth/twitter')
 @cross_origin(supports_credentials=True)
 def twitter():
@@ -276,6 +278,7 @@ def twitter():
         oauth_token = dict(parse_qsl(r.text))
         qs = urlencode(dict(oauth_token=oauth_token['oauth_token']))
         return redirect(authenticate_url + '?' + qs)
+
 
 @app.route('/auth/gitlab', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
