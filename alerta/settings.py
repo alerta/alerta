@@ -37,7 +37,6 @@ CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Ori
 CORS_ORIGINS = [
     'http://try.alerta.io',
     'http://explorer.alerta.io',
-    'chrome-extension://jplkjnjaegjgacpfafdopnpnhmobhlaf',
     'http://localhost'
 ]
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
