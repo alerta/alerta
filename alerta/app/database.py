@@ -120,13 +120,7 @@ class Mongo(object):
                 },
                 {
                     "event": {'$ne': alert.event},
-                    "correlate": alert.event,
-                    "severity": alert.severity
-                },
-                {
-                    "event": {'$ne': alert.event},
-                    "correlate": alert.event,
-                    "severity": {'$ne': alert.severity}
+                    "correlate": alert.event
                 }]
         }
 
@@ -288,13 +282,7 @@ class Mongo(object):
                 },
                 {
                     "event": {'$ne': alert.event},
-                    "correlate": alert.event,
-                    "severity": alert.severity
-                },
-                {
-                    "event": {'$ne': alert.event},
-                    "correlate": alert.event,
-                    "severity": {'$ne': alert.severity}
+                    "correlate": alert.event
                 }]
         }
 
@@ -404,13 +392,7 @@ class Mongo(object):
                 },
                 {
                     "event": {'$ne': alert.event},
-                    "correlate": alert.event,
-                    "severity": alert.severity
-                },
-                {
-                    "event": {'$ne': alert.event},
-                    "correlate": alert.event,
-                    "severity": {'$ne': alert.severity}
+                    "correlate": alert.event
                 }]
         }
 
