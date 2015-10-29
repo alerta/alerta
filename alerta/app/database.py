@@ -8,7 +8,11 @@ import bcrypt
 
 from uuid import uuid4
 from pymongo import MongoClient, ASCENDING, TEXT, ReturnDocument
-from urlparse import urlparse
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 from alerta.app import app, severity_code, status_code
 from alerta.alert import AlertDocument
@@ -32,7 +36,7 @@ class Mongo(object):
         if mongo_uri:
             try:
                 self._client = MongoClient(mongo_uri, connect=False)
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB Client connection error - %s : %s', mongo_uri, e)
                 sys.exit(1)
 
@@ -1143,7 +1147,7 @@ class Mongo(object):
 
     def create_key(self, user, type='read-only', text=None):
 
-        digest = hmac.new(app.config['SECRET_KEY'].encode(), msg=str(os.urandom(32)).encode(), digestmod=hashlib.sha256).digest()
+        digest = hmac.new(app.config['SECRET_KEY'].encode('utf-8'), msg=str(os.urandom(32)).encode('utf-8'), digestmod=hashlib.sha256).digest()
         key = base64.urlsafe_b64encode(digest)[:40]
 
         data = {
