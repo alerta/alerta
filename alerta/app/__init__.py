@@ -31,6 +31,12 @@ if 'ALLOWED_EMAIL_DOMAINS' in os.environ:
 if 'ALLOWED_GITHUB_ORGS' in os.environ:
     app.config['ALLOWED_GITHUB_ORGS'] = os.environ['ALLOWED_GITHUB_ORGS'].split(',')
 
+if 'GITLAB_URL' in os.environ:
+    app.config['GITLAB_URL'] = os.environ['GITLAB_URL']
+
+if 'ALLOWED_GITLAB_GROUPS' in os.environ:
+    app.config['ALLOWED_GITLAB_GROUPS'] = os.environ['ALLOWED_GITLAB_GROUPS'].split(',')
+
 if 'CORS_ORIGINS' in os.environ:
     app.config['CORS_ORIGINS'] = os.environ['CORS_ORIGINS'].split(',')
 

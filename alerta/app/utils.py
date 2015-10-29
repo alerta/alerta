@@ -202,6 +202,9 @@ def process_alert(incomingAlert):
         if not incomingAlert:
             raise SyntaxError('Plug-in pre-receive hook did not return modified alert')
 
+    if db.is_blackout_period(incomingAlert):
+        raise RuntimeWarning('Suppressed during blackout period')
+
     try:
         if db.is_duplicate(incomingAlert):
             started = duplicate_timer.start_timer()

@@ -1,7 +1,7 @@
 Alerta Release 4.4
 ==================
 
-[![Build Status](https://travis-ci.org/guardian/alerta.png)](https://travis-ci.org/guardian/alerta)
+[![Build Status](https://travis-ci.org/guardian/alerta.png)](https://travis-ci.org/guardian/alerta) [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
 
 The alerta monitoring tool was developed with the following aims in mind:
 

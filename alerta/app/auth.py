@@ -7,7 +7,7 @@ import bcrypt
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import g, request, redirect
-from flask.ext.cors import cross_origin
+from flask_cors import cross_origin
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 from base64 import urlsafe_b64decode
 from requests_oauthlib import OAuth1
@@ -80,6 +80,8 @@ def auth_required(f):
                 return authenticate(str(e), 401)
             except Forbidden as e:
                 return authenticate(str(e), 403)
+            except Exception as e:
+                return authenticate(str(e), 500)
             return f(*args, **kwargs)
 
         auth_header = request.headers.get('Authorization')
@@ -94,6 +96,8 @@ def auth_required(f):
                 return authenticate(str(e), 401)
             except Forbidden as e:
                 return authenticate(str(e), 403)
+            except Exception as e:
+                return authenticate(str(e), 500)
             return f(*args, **kwargs)
 
         if auth_header.startswith('Bearer'):
@@ -173,17 +177,19 @@ def google():
     access_token_url = 'https://accounts.google.com/o/oauth2/token'
     people_api_url = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect'
 
-    payload = dict(client_id=request.json['clientId'],
-                   redirect_uri=request.json['redirectUri'],
-                   client_secret=app.config['OAUTH2_CLIENT_SECRET'],
-                   code=request.json['code'],
-                   grant_type='authorization_code')
+    payload = {
+        'client_id': request.json['clientId'],
+        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
+        'redirect_uri': request.json['redirectUri'],
+        'grant_type': 'authorization_code',
+        'code': request.json['code'],
+    }
 
     try:
         r = requests.post(access_token_url, data=payload)
     except Exception:
         return jsonify(status="error", message="Failed to call Google API over HTTPS")
-    token = json.loads(r.text)
+    token = r.json()
 
     if 'id_token' not in token:
         return jsonify(status="error", message=token.get('error', "Invalid token"))
@@ -203,7 +209,7 @@ def google():
 
     headers = {'Authorization': 'Bearer ' + token['access_token']}
     r = requests.get(people_api_url, headers=headers)
-    profile = json.loads(r.text)
+    profile = r.json()
 
     try:
         token = create_token(profile['sub'], profile['name'], email, provider='google')
@@ -211,6 +217,7 @@ def google():
         return jsonify(status="error", message="Google+ API is not enabled for this Client ID")
 
     return jsonify(token=token)
+
 
 @app.route('/auth/github', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
@@ -225,36 +232,37 @@ def github():
         'code': request.json['code']
     }
 
-    r = requests.get(access_token_url, params=params)
-    access_token = dict(parse_qsl(r.text))
+    headers = {'Accept': 'application/json'}
+    r = requests.get(access_token_url, headers=headers, params=params)
+    access_token = r.json()
 
     r = requests.get(users_api_url, params=access_token)
-    profile = json.loads(r.text)
+    profile = r.json()
 
     r = requests.get(profile['organizations_url'], params=access_token)
-    organizations = [o['login'] for o in json.loads(r.text)]
+    organizations = [o['login'] for o in r.json()]
 
     login = profile['login']
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITHUB_ORGS']
             or set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))
             or db.is_user_valid(login=login)):
-        return jsonify(status="error", message="User %s is not authorized" % profile['login']), 403
+        return jsonify(status="error", message="User %s is not authorized" % login), 403
 
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github')
     return jsonify(token=token)
 
-@app.route('/auth/twitter')
+
+@app.route('/auth/twitter', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def twitter():
     request_token_url = 'https://api.twitter.com/oauth/request_token'
     access_token_url = 'https://api.twitter.com/oauth/access_token'
-    authenticate_url = 'https://api.twitter.com/oauth/authenticate'
 
-    if request.args.get('oauth_token') and request.args.get('oauth_verifier'):
+    if request.json.get('oauth_token') and request.json.get('oauth_verifier'):
         auth = OAuth1(app.config['OAUTH2_CLIENT_ID'],
                       client_secret=app.config['OAUTH2_CLIENT_SECRET'],
-                      resource_owner_key=request.args.get('oauth_token'),
-                      verifier=request.args.get('oauth_verifier'))
+                      resource_owner_key=request.json.get('oauth_token'),
+                      verifier=request.json.get('oauth_verifier'))
         r = requests.post(access_token_url, auth=auth)
         profile = dict(parse_qsl(r.text))
 
@@ -271,5 +279,44 @@ def twitter():
         )
         r = requests.post(request_token_url, auth=oauth)
         oauth_token = dict(parse_qsl(r.text))
-        qs = urlencode(dict(oauth_token=oauth_token['oauth_token']))
-        return redirect(authenticate_url + '?' + qs)
+        return jsonify(oauth_token)
+
+
+@app.route('/auth/gitlab', methods=['OPTIONS', 'POST'])
+@cross_origin(supports_credentials=True)
+def gitlab():
+
+    if not app.config['GITLAB_URL']:
+        return jsonify(status="error", message="Must define GITLAB_URL setting in server configuration."), 503
+
+    access_token_url = app.config['GITLAB_URL'] + '/oauth/token'
+    gitlab_api_url = app.config['GITLAB_URL'] + '/api/v3'
+
+    payload = {
+        'client_id': request.json['clientId'],
+        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
+        'redirect_uri': request.json['redirectUri'],
+        'grant_type': 'authorization_code',
+        'code': request.json['code'],
+    }
+
+    try:
+        r = requests.post(access_token_url, data=payload)
+    except Exception:
+        return jsonify(status="error", message="Failed to call Gitlab API over HTTPS")
+    access_token = r.json()
+
+    r = requests.get(gitlab_api_url+'/user', params=access_token)
+    profile = r.json()
+
+    r = requests.get(gitlab_api_url+'/groups', params=access_token)
+    groups = [g['path'] for g in r.json()]
+
+    login = profile['username']
+    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITLAB_GROUPS']
+            or set(app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))
+            or db.is_user_valid(login=login)):
+        return jsonify(status="error", message="User %s is not authorized" % login), 403
+
+    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab')
+    return jsonify(token=token)

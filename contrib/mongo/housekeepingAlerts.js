@@ -1,11 +1,30 @@
 // Run this script from cron like so:
 // * * * * * /usr/bin/mongo --quiet monitoring housekeepingAlerts.js
 
-// mark timed out alerts as EXPIRED and update alert history
 now = new Date();
-db.alerts.update({status: 'open', expireTime: {$lt: now}}, {$set: {status: 'expired'}, $push: {history: {status: 'expired', updateTime: now}}}, false, true);
 
-// delete CLOSED alerts older than 2 hours
+// mark timed out alerts as EXPIRED and update alert history
+db.alerts.aggregate([
+    { $project: { event: 1, status: 1, expireTime: { $add: [ "$lastReceiveTime", { $multiply: [ "$timeout", 1000 ]}]}}},
+    { $match: { status: 'open', "expireTime": { $lt: now }}}
+]).forEach( function(alert) {
+    db.alerts.update(
+        { _id: alert._id },
+        {
+            $set: { status: 'expired' },
+            $push: {
+                history: {
+                    event: alert.event,
+                    status: 'expired',
+                    text: "alert timeout status change",
+                    id: alert._id,
+                    updateTime: now
+                }
+            }
+        }, false, true);
+})
+
+// delete CLOSED or EXPIRED alerts older than 2 hours
 two_hrs_ago = new Date(new Date() - 2*60*60*1000);
 db.alerts.remove({status: {$in: ['closed', 'expired']}, lastReceiveTime: {$lt: two_hrs_ago}});
 
