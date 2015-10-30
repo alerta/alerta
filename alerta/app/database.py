@@ -1097,7 +1097,7 @@ class Mongo(object):
         }
 
         if password:
-            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode ('utf-8')
+            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         return self._db.users.insert_one(data).inserted_id
 
@@ -1148,7 +1148,11 @@ class Mongo(object):
 
     def create_key(self, user, type='read-only', text=None):
 
-        digest = hmac.new(app.config['SECRET_KEY'].encode('utf-8'), msg=str(os.urandom(32)).encode('utf-8'), digestmod=hashlib.sha256).digest()
+        try:
+            random = str(os.urandom(32)).encode('utf-8')  # python 3
+        except UnicodeDecodeError:
+            random = str(os.urandom(32))  # python 2
+        digest = hmac.new(app.config['SECRET_KEY'].encode('utf-8'), msg=random, digestmod=hashlib.sha256).digest()
         key = base64.urlsafe_b64encode(digest).decode('utf-8')[:40]
 
         data = {
