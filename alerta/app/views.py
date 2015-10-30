@@ -34,7 +34,7 @@ def test():
         status="ok",
         method=request.method,
         json=request.json,
-        data=request.data,
+        data=request.data.decode('utf-8'),
         args=request.args,
         app_root=app.root_path,
     )
@@ -58,7 +58,7 @@ def get_alerts():
     gets_started = gets_timer.start_timer()
     try:
         query, sort, _, page, limit, query_time = parse_fields(request)
-    except Exception, e:
+    except Exception as e:
         gets_timer.stop_timer(gets_started)
         return jsonify(status="error", message=str(e)), 400
 
@@ -144,7 +144,7 @@ def get_history():
 
     try:
         query, _, _, _, limit, query_time = parse_fields(request)
-    except Exception, e:
+    except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
     try:
@@ -178,7 +178,7 @@ def receive_alert():
     recv_started = receive_timer.start_timer()
     try:
         incomingAlert = Alert.parse_alert(request.data)
-    except ValueError, e:
+    except ValueError as e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 400
 
@@ -440,7 +440,7 @@ def get_services():
 
     try:
         services = db.get_services(query=query, limit=limit)
-    except Exception, e:
+    except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
     if services:

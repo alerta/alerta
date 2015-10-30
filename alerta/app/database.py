@@ -8,7 +8,11 @@ import bcrypt
 
 from uuid import uuid4
 from pymongo import MongoClient, ASCENDING, TEXT, ReturnDocument
-from urlparse import urlparse
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 from alerta.app import app, severity_code, status_code
 from alerta.alert import AlertDocument
@@ -32,7 +36,7 @@ class Mongo(object):
         if mongo_uri:
             try:
                 self._client = MongoClient(mongo_uri, connect=False)
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB Client connection error - %s : %s', mongo_uri, e)
                 sys.exit(1)
 
@@ -51,14 +55,14 @@ class Mongo(object):
             host, port = os.environ['MONGO_PORT'][6:].split(':')
             try:
                 self._client = MongoClient(host, int(port), connect=False)
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB Client connection error - %s : %s', os.environ['MONGO_PORT'], e)
                 sys.exit(1)
 
         elif not app.config['MONGO_REPLSET']:
             try:
                 self._client = MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], connect=False)
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB Client connection error - %s:%s : %s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], e)
                 sys.exit(1)
             LOG.debug('Connected to mongodb://%s:%s/%s', app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_DATABASE'])
@@ -66,7 +70,7 @@ class Mongo(object):
         else:
             try:
                 self._client = MongoClient(app.config['MONGO_HOST'], app.config['MONGO_PORT'], replicaSet=app.config['MONGO_REPLSET'], connect=False)
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB Client ReplicaSet connection error - %s:%s (replicaSet=%s) : %s',
                           app.config['MONGO_HOST'], app.config['MONGO_PORT'], app.config['MONGO_REPLSET'], e)
                 sys.exit(1)
@@ -78,7 +82,7 @@ class Mongo(object):
         if app.config['MONGO_PASSWORD']:
             try:
                 self._db.authenticate(app.config['MONGO_USERNAME'], password=app.config['MONGO_PASSWORD'])
-            except Exception, e:
+            except Exception as e:
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
@@ -1047,6 +1051,7 @@ class Mongo(object):
             "name": user['name'],
             "login": user['login'],
             "provider": user['provider'],
+            "createTime": user['createTime'],
             "text": user['text']
         }
 
@@ -1092,7 +1097,7 @@ class Mongo(object):
         }
 
         if password:
-            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         return self._db.users.insert_one(data).inserted_id
 
@@ -1143,15 +1148,19 @@ class Mongo(object):
 
     def create_key(self, user, type='read-only', text=None):
 
-        digest = hmac.new(app.config['SECRET_KEY'], msg=str(os.urandom(32)), digestmod=hashlib.sha256).digest()
-        key = base64.urlsafe_b64encode(digest)[:40]
+        try:
+            random = str(os.urandom(32)).encode('utf-8')  # python 3
+        except UnicodeDecodeError:
+            random = str(os.urandom(32))  # python 2
+        digest = hmac.new(app.config['SECRET_KEY'].encode('utf-8'), msg=random, digestmod=hashlib.sha256).digest()
+        key = base64.urlsafe_b64encode(digest).decode('utf-8')[:40]
 
         data = {
             "user": user,
             "key": key,
             "type": type,  # read-only or read-write
             "text": text,
-            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(app.config.get('API_KEY_EXPIRE_DAYS', 30)),
+            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(days=app.config.get('API_KEY_EXPIRE_DAYS', 30)),
             "count": 0,
             "lastUsedTime": None
         }

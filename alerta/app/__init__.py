@@ -1,5 +1,6 @@
 
 import os
+import sys
 import logging
 
 from flask import Flask
@@ -52,11 +53,18 @@ cors = CORS(app)
 from alerta.app.database import Mongo
 db = Mongo()
 
-import views
-import webhooks.views
-import oembed.views
-import management.views
-import auth
+if sys.version_info[0] == 2:
+    import views
+    import webhooks.views
+    import oembed.views
+    import management.views
+    import auth
+else:
+    from .views import *
+    from .webhooks.views import *
+    from .oembed.views import *
+    from .management.views import *
+    from .auth import *
 
 
 def main():

@@ -18,7 +18,7 @@ class SnsTopicPublisher(PluginBase):
                 aws_access_key_id=app.config['AWS_ACCESS_KEY_ID'],
                 aws_secret_access_key=app.config['AWS_SECRET_ACCESS_KEY']
             )
-        except Exception, e:
+        except Exception as e:
             LOG.error('Error connecting to SNS topic %s: %s', app.config['AWS_SNS_TOPIC'], e)
             raise RuntimeError
 

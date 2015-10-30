@@ -44,7 +44,7 @@ class AuthTestCase(unittest.TestCase):
 
         response = self.app.post('/key', data=json.dumps(payload), headers=self.headers)
         self.assertEqual(response.status_code, 201)
-        data = json.loads(response.data)
+        data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data['key'], 'Failed to create read-write key')
 
         rw_api_key = data['key']
@@ -54,7 +54,7 @@ class AuthTestCase(unittest.TestCase):
 
         response = self.app.get('/alerts', headers={'Authorization': 'Key ' + rw_api_key})
         self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data)
+        data = json.loads(response.data.decode('utf-8'))
         self.assertIn('total', data)
 
         response = self.app.delete('/key/' + rw_api_key, headers=self.headers)
@@ -69,7 +69,7 @@ class AuthTestCase(unittest.TestCase):
 
         response = self.app.post('/key', data=json.dumps(payload), headers=self.headers)
         self.assertEqual(response.status_code, 201)
-        data = json.loads(response.data)
+        data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data['key'], 'Failed to create read-only key')
 
         ro_api_key = data['key']
@@ -79,7 +79,7 @@ class AuthTestCase(unittest.TestCase):
 
         response = self.app.get('/alerts', headers={'Authorization': 'Key ' + ro_api_key})
         self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data)
+        data = json.loads(response.data.decode('utf-8'))
         self.assertIn('total', data)
 
         response = self.app.delete('/key/' + ro_api_key, headers=self.headers)
@@ -97,7 +97,7 @@ class AuthTestCase(unittest.TestCase):
         # create user
         response = self.app.post('/user', data=json.dumps(payload), headers=self.headers)
         self.assertEqual(response.status_code, 201)
-        data = json.loads(response.data)
+        data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data['user'], 'Failed to create user')
 
         user_id = data['user']
@@ -105,7 +105,7 @@ class AuthTestCase(unittest.TestCase):
         # get user
         response = self.app.get('/users', headers=self.headers)
         self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data)
+        data = json.loads(response.data.decode('utf-8'))
         self.assertIn(user_id, [u['id'] for u in data['users']])
 
         # create duplicate user
@@ -129,7 +129,7 @@ class AuthTestCase(unittest.TestCase):
         # sign-up user
         response = self.app.post('/auth/signup', data=json.dumps(payload), headers={'Content-type': 'application/json'})
         self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data)
+        data = json.loads(response.data.decode('utf-8'))
         self.assertIn('token', data)
 
         token = data['token']
@@ -142,7 +142,7 @@ class AuthTestCase(unittest.TestCase):
         # get user
         response = self.app.get('/users', headers=headers)
         self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data)
+        data = json.loads(response.data.decode('utf-8'))
         self.assertIn(payload['name'], [u['name'] for u in data['users']])
 
         user_id = [u['id'] for u in data['users'] if u['name'] == payload['name']][0]
