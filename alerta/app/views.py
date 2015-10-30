@@ -34,7 +34,7 @@ def test():
         status="ok",
         method=request.method,
         json=request.json,
-        data=request.data,
+        data=request.data.decode('utf-8'),
         args=request.args,
         app_root=app.root_path,
     )

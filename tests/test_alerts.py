@@ -69,7 +69,7 @@ class AlertTestCase(unittest.TestCase):
 
         response = self.app.get('/_')
         self.assertEqual(response.status_code, 200)
-        self.assertIn("ok", response.data)
+        self.assertIn("ok", response.data.decode('utf-8'))
 
     def test_alert(self):
 
