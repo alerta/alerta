@@ -1148,14 +1148,14 @@ class Mongo(object):
     def create_key(self, user, type='read-only', text=None):
 
         digest = hmac.new(app.config['SECRET_KEY'].encode('utf-8'), msg=str(os.urandom(32)).encode('utf-8'), digestmod=hashlib.sha256).digest()
-        key = base64.urlsafe_b64encode(digest)[:40]
+        key = base64.urlsafe_b64encode(digest).decode('utf-8')[:40]
 
         data = {
             "user": user,
             "key": key,
             "type": type,  # read-only or read-write
             "text": text,
-            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(app.config.get('API_KEY_EXPIRE_DAYS', 30)),
+            "expireTime": datetime.datetime.utcnow() + datetime.timedelta(days=app.config.get('API_KEY_EXPIRE_DAYS', 30)),
             "count": 0,
             "lastUsedTime": None
         }
