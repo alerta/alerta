@@ -1051,6 +1051,7 @@ class Mongo(object):
             "name": user['name'],
             "login": user['login'],
             "provider": user['provider'],
+            "createTime": user['createTime'],
             "text": user['text']
         }
 
@@ -1096,7 +1097,7 @@ class Mongo(object):
         }
 
         if password:
-            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode ('utf-8')
 
         return self._db.users.insert_one(data).inserted_id
 
