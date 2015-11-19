@@ -5,6 +5,7 @@
 # configuration file set by the environment variable ALERTA_SVR_CONF_FILE.
 #
 # Further information on settings can be found at http://docs.alerta.io
+import os
 
 DEBUG = False
 
@@ -54,6 +55,10 @@ ALLOWED_ENVIRONMENTS = ['Production', 'Development']  # reject alerts without al
 AMQP_URL = 'mongodb://localhost:27017/kombu'        # MongoDB
 # AMQP_URL = 'amqp://guest:guest@localhost:5672//'  # RabbitMQ
 # AMQP_URL = 'redis://localhost:6379/'              # Redis
+
+# Override AMQP default if REDIS_URL environment variable is set
+if 'REDIS_URL' in os.environ:
+    AMQP_URL = os.environ['REDIS_URL']
 
 # AWS Credentials
 AWS_ACCESS_KEY_ID = ''
