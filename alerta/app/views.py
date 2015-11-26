@@ -745,7 +745,7 @@ def delete_user(user):
 def get_customers():
 
     if g.get('customer', None):
-        return jsonify(status="error", message="only admin can create customers"), 403
+        return jsonify(status="error", message="only admin can list customers"), 403
 
     try:
         customers = db.get_customers()
