@@ -34,15 +34,16 @@ class Forbidden(Exception):
 
 
 def verify_api_key(key, method):
-    perm = db.is_key_valid(key)
-    if not perm:
+    key_info = db.is_key_valid(key)
+    if not key_info:
         raise AuthError("API key '%s' is invalid" % key)
-    if method in ['POST', 'DELETE'] and perm != 'read-write':
+    if method in ['POST', 'DELETE'] and key_info['type'] != 'read-write':
         raise Forbidden("%s method requires 'read-write' API Key" % method)
     db.update_key(key)
+    return key_info
 
 
-def create_token(user, name, login, provider=None):
+def create_token(user, name, login, provider=None, customer=None, role='user'):
     payload = {
         'iss': "%s" % request.host_url,
         'sub': user,
@@ -51,7 +52,9 @@ def create_token(user, name, login, provider=None):
         'exp': datetime.utcnow() + timedelta(days=14),
         'name': name,
         'login': login,
-        'provider': provider
+        'provider': provider,
+        'customer': customer,
+        'role': role
     }
     token = jwt.encode(payload, key=app.config['SECRET_KEY'], json_encoder=DateEncoder)
     return token.decode('unicode_escape')
@@ -75,13 +78,14 @@ def auth_required(f):
         if 'api-key' in request.args:
             key = request.args['api-key']
             try:
-                verify_api_key(key, request.method)
+                ki = verify_api_key(key, request.method)
             except AuthError as e:
                 return authenticate(str(e), 401)
             except Forbidden as e:
                 return authenticate(str(e), 403)
             except Exception as e:
                 return authenticate(str(e), 500)
+            g.customer = ki.get('customer', None)
             return f(*args, **kwargs)
 
         auth_header = request.headers.get('Authorization')
@@ -91,13 +95,14 @@ def auth_required(f):
         if auth_header.startswith('Key'):
             key = auth_header.replace('Key ', '')
             try:
-                verify_api_key(key, request.method)
+                ki = verify_api_key(key, request.method)
             except AuthError as e:
                 return authenticate(str(e), 401)
             except Forbidden as e:
                 return authenticate(str(e), 403)
             except Exception as e:
                 return authenticate(str(e), 500)
+            g.customer = ki.get('customer', None)
             return f(*args, **kwargs)
 
         if auth_header.startswith('Bearer'):
@@ -110,7 +115,7 @@ def auth_required(f):
                 return authenticate('Token has expired')
             except InvalidAudience:
                 return authenticate('Invalid audience')
-            g.user_id = payload['sub']
+            g.customer = payload.get('customer', None)
             return f(*args, **kwargs)
 
         return authenticate('Authentication required')
@@ -154,9 +159,10 @@ def signup():
         login = request.json["email"]
         password = request.json["password"]
         provider = request.json.get("provider", "basic")
+        customer = request.json.get("customer", None)
         text = request.json.get("text", "")
         try:
-            user_id = db.save_user(str(uuid4()), name, login, password, provider, text)
+            user_id = db.save_user(str(uuid4()), name, login, password, provider, customer, text)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
@@ -211,8 +217,14 @@ def google():
     r = requests.get(people_api_url, headers=headers)
     profile = r.json()
 
+    if email in app.config['ADMIN_USERS']:
+        customer = None
+        role = 'admin'
+    else:
+        customer = db.get_customer_by_group(email.split('@')[1])
+        role = 'user'
     try:
-        token = create_token(profile['sub'], profile['name'], email, provider='google')
+        token = create_token(profile['sub'], profile['name'], email, provider='google', customer=customer, role=role)
     except KeyError:
         return jsonify(status="error", message="Google+ API is not enabled for this Client ID")
 

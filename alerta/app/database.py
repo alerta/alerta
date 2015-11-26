@@ -125,7 +125,8 @@ class Mongo(object):
                 {
                     "event": {'$ne': alert.event},
                     "correlate": alert.event
-                }]
+                }],
+            "customer": alert.customer
         }
 
         return self._db.alerts.find_one(query, projection={"severity": 1, "_id": 0})['severity']
@@ -144,7 +145,8 @@ class Mongo(object):
                 {
                     "correlate": alert.event,
                 }
-            ]
+            ],
+            "customer": alert.customer
         }
 
         return self._db.alerts.find_one(query, projection={"status": 1, "_id": 0})['status']
@@ -184,6 +186,7 @@ class Mongo(object):
                     create_time=response['createTime'],
                     timeout=response['timeout'],
                     raw_data=response['rawData'],
+                    customer=response.get('customer', None),
                     duplicate_count=response['duplicateCount'],
                     repeat=response['repeat'],
                     previous_severity=response['previousSeverity'],
@@ -203,6 +206,7 @@ class Mongo(object):
                 "resource": 1,
                 "event": 1,
                 "environment": 1,
+                "customer": 1,
                 "service": 1,
                 "group": 1,
                 "tags": 1,
@@ -240,7 +244,8 @@ class Mongo(object):
                         "attributes": response['attributes'],
                         "origin": response['origin'],
                         "type": response['type'],
-                        "updateTime": response['history']['updateTime']
+                        "updateTime": response['history']['updateTime'],
+                        "customer": response.get('customer', None)
                     }
                 )
             elif 'status' in response['history']:
@@ -258,7 +263,8 @@ class Mongo(object):
                         "attributes": response['attributes'],
                         "origin": response['origin'],
                         "type": response['type'],
-                        "updateTime": response['history']['updateTime']
+                        "updateTime": response['history']['updateTime'],
+                        "customer": response.get('customer', None)
                     }
                 )
         return history
@@ -269,7 +275,8 @@ class Mongo(object):
             "environment": alert.environment,
             "resource": alert.resource,
             "event": alert.event,
-            "severity": alert.severity
+            "severity": alert.severity,
+            "customer": alert.customer
         }
 
         return bool(self._db.alerts.find_one(query))
@@ -287,7 +294,8 @@ class Mongo(object):
                 {
                     "event": {'$ne': alert.event},
                     "correlate": alert.event
-                }]
+                }],
+            "customer": alert.customer
         }
 
         return bool(self._db.alerts.find_one(query))
@@ -308,7 +316,8 @@ class Mongo(object):
             "environment": alert.environment,
             "resource": alert.resource,
             "event": alert.event,
-            "severity": alert.severity
+            "severity": alert.severity,
+            "customer": alert.customer
         }
 
         now = datetime.datetime.utcnow()
@@ -362,6 +371,7 @@ class Mongo(object):
             create_time=response['createTime'],
             timeout=response['timeout'],
             raw_data=response['rawData'],
+            customer=response.get('customer', None),
             duplicate_count=response['duplicateCount'],
             repeat=response['repeat'],
             previous_severity=response['previousSeverity'],
@@ -397,7 +407,8 @@ class Mongo(object):
                 {
                     "event": {'$ne': alert.event},
                     "correlate": alert.event
-                }]
+                }],
+            "customer": alert.customer
         }
 
         now = datetime.datetime.utcnow()
@@ -468,6 +479,7 @@ class Mongo(object):
             create_time=response['createTime'],
             timeout=response['timeout'],
             raw_data=response['rawData'],
+            customer=response.get('customer', None),
             duplicate_count=response['duplicateCount'],
             repeat=response['repeat'],
             previous_severity=response['previousSeverity'],
@@ -523,6 +535,7 @@ class Mongo(object):
             "createTime": alert.create_time,
             "timeout": alert.timeout,
             "rawData": alert.raw_data,
+            "customer": alert.customer,
             "duplicateCount": 0,
             "repeat": False,
             "previousSeverity": severity_code.UNKNOWN,
@@ -559,6 +572,7 @@ class Mongo(object):
             create_time=alert['createTime'],
             timeout=alert['timeout'],
             raw_data=alert['rawData'],
+            customer=alert['customer'],
             duplicate_count=alert['duplicateCount'],
             repeat=alert['repeat'],
             previous_severity=alert['previousSeverity'],
@@ -599,6 +613,7 @@ class Mongo(object):
             create_time=response['createTime'],
             timeout=response['timeout'],
             raw_data=response['rawData'],
+            customer=response.get('customer', None),
             duplicate_count=response['duplicateCount'],
             repeat=response['repeat'],
             previous_severity=response['previousSeverity'],
@@ -659,6 +674,7 @@ class Mongo(object):
             create_time=response['createTime'],
             timeout=response['timeout'],
             raw_data=response['rawData'],
+            customer=response.get('customer', None),
             duplicate_count=response['duplicateCount'],
             repeat=response['repeat'],
             previous_severity=response['previousSeverity'],
@@ -956,7 +972,8 @@ class Mongo(object):
                     event_type=response['type'],
                     create_time=response['createTime'],
                     timeout=response['timeout'],
-                    receive_time=response['receiveTime']
+                    receive_time=response['receiveTime'],
+                    customer=response.get('customer', None)
                 )
             )
         return heartbeats
@@ -972,7 +989,8 @@ class Mongo(object):
                 "type": heartbeat.event_type,
                 "createTime": heartbeat.create_time,
                 "timeout": heartbeat.timeout,
-                "receiveTime": now
+                "receiveTime": now,
+                "customer": heartbeat.customer
             }
         }
 
@@ -995,7 +1013,8 @@ class Mongo(object):
                 event_type=response['type'],
                 create_time=response['createTime'],
                 timeout=response['timeout'],
-                receive_time=response['receiveTime']
+                receive_time=response['receiveTime'],
+                customer=response.get('customer', None)
             )
         else:
             update = update['$set']
@@ -1009,7 +1028,8 @@ class Mongo(object):
                 event_type=update['type'],
                 create_time=update['createTime'],
                 timeout=update['timeout'],
-                receive_time=update['receiveTime']
+                receive_time=update['receiveTime'],
+                customer=update.get('customer', None)
             )
 
     def get_heartbeat(self, id):
@@ -1030,7 +1050,8 @@ class Mongo(object):
             event_type=response['type'],
             create_time=response['createTime'],
             timeout=response['timeout'],
-            receive_time=response['receiveTime']
+            receive_time=response['receiveTime'],
+            customer=response.get('customer', None)
         )
 
     def delete_heartbeat(self, id):
@@ -1052,7 +1073,8 @@ class Mongo(object):
             "login": user['login'],
             "provider": user['provider'],
             "createTime": user['createTime'],
-            "text": user['text']
+            "text": user['text'],
+            "customer": user.get('customer', None)
         }
 
     def get_users(self, query=None):
@@ -1068,7 +1090,8 @@ class Mongo(object):
                     "password": user.get('password', None),
                     "createTime": user['createTime'],
                     "provider": user['provider'],
-                    "text": user.get('text', "")
+                    "text": user.get('text', ""),
+                    "customer": user.get('customer', None)
                 }
             )
         return users
@@ -1082,7 +1105,7 @@ class Mongo(object):
         if login:
             return bool(self._db.users.find_one({"login": login}))
 
-    def save_user(self, id, name, login, password=None, provider="", text=""):
+    def save_user(self, id, name, login, password=None, provider="", text="", customer=None):
 
         if self.is_user_valid(login=login):
             return
@@ -1093,7 +1116,8 @@ class Mongo(object):
             "login": login,
             "createTime": datetime.datetime.utcnow(),
             "provider": provider,
-            "text": text
+            "text": text,
+            "customer": customer
         }
 
         if password:
@@ -1128,7 +1152,8 @@ class Mongo(object):
                     "text": response["text"],
                     "expireTime": response["expireTime"],
                     "count": response["count"],
-                    "lastUsedTime": response["lastUsedTime"]
+                    "lastUsedTime": response["lastUsedTime"],
+                    "customer": response.get("customer", None)
                 }
             )
 
@@ -1137,16 +1162,17 @@ class Mongo(object):
     def is_key_valid(self, key):
 
         key_info = self._db.keys.find_one({"key": key})
-
         if key_info:
             if key_info['expireTime'] > datetime.datetime.utcnow():
-                return key_info.get("type", "read-write")
+                if 'type' not in key_info:
+                    key_info['type'] = "read-write"
+                return key_info
             else:
                 return None
         else:
             return None
 
-    def create_key(self, user, type='read-only', text=None):
+    def create_key(self, user, type='read-only', customer=None, text=None):
 
         try:
             random = str(os.urandom(32)).encode('utf-8')  # python 3
@@ -1162,7 +1188,8 @@ class Mongo(object):
             "text": text,
             "expireTime": datetime.datetime.utcnow() + datetime.timedelta(days=app.config.get('API_KEY_EXPIRE_DAYS', 30)),
             "count": 0,
-            "lastUsedTime": None
+            "lastUsedTime": None,
+            "customer": customer
         }
 
         response = self._db.keys.insert_one(data)
@@ -1187,7 +1214,39 @@ class Mongo(object):
     def delete_key(self, key):
 
         response = self._db.keys.delete_one({"key": key})
+        return True if response.deleted_count == 1 else False
 
+    def create_customer(self, customer, group):
+
+        data = {
+            "_id": str(uuid4()),
+            "customer": customer,
+            "group": group
+        }
+
+        return self._db.customers.insert_one(data).inserted_id
+
+    def get_customer_by_group(self, group):
+
+        return self._db.customers.find_one({"group": group}, projection={"customer": 1, "_id": 0})['customer']
+
+    def get_customers(self, query=None):
+
+        responses = self._db.customers.find(query)
+        customers = list()
+        for response in responses:
+            customers.append(
+                {
+                    "id": response["_id"],
+                    "customer": response["customer"],
+                    "group": response["group"]
+                }
+            )
+        return customers
+
+    def delete_customer(self, customer):
+
+        response = self._db.customers.delete_one({"customer": customer})
         return True if response.deleted_count == 1 else False
 
     def disconnect(self):
