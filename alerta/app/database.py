@@ -1145,7 +1145,9 @@ class Mongo(object):
 
     def get_customer_by_reference(self, reference):
 
-        return self._db.customers.find_one({"reference": reference}, projection={"customer": 1, "_id": 0})['customer']
+        response = self._db.customers.find_one({"reference": reference}, projection={"customer": 1, "_id": 0})
+        if response:
+            return response['customer']
 
     def get_customers(self, query=None):
 

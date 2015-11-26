@@ -126,6 +126,21 @@ def auth_required(f):
     return decorated
 
 
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+
+        if not app.config['CUSTOMER_VIEWS']:
+            return f(*args, **kwargs)
+
+        if g.role != 'admin':
+            return authenticate('Admin required', 403)
+        else:
+            return f(*args, **kwargs)
+
+    return decorated
+
+
 @app.route('/auth/login', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def login():
@@ -227,6 +242,9 @@ def google():
         customer = db.get_customer_by_reference(email.split('@')[1])
         role = 'user'
 
+        if not customer:
+            return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
+
     try:
         token = create_token(profile['sub'], profile['name'], email, provider='google', customer=customer, role=role)
     except KeyError:
@@ -267,6 +285,9 @@ def github():
         cs = [db.get_customer_by_reference(o) for o in organizations]
         customer = next((c for c in cs if c is not None), None)
         role = 'user'
+
+        if not customer:
+            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
 
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITHUB_ORGS']
             or set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))
@@ -346,6 +367,9 @@ def gitlab():
         cs = [db.get_customer_by_reference(g) for g in groups]
         customer = next((c for c in cs if c is not None), None)
         role = 'user'
+
+        if not customer:
+            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
 
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITLAB_GROUPS']
             or set(app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))
