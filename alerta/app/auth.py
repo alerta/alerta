@@ -86,6 +86,7 @@ def auth_required(f):
             except Exception as e:
                 return authenticate(str(e), 500)
             g.customer = ki.get('customer', None)
+            g.role = ki.get('role', None)
             return f(*args, **kwargs)
 
         auth_header = request.headers.get('Authorization')
@@ -103,6 +104,7 @@ def auth_required(f):
             except Exception as e:
                 return authenticate(str(e), 500)
             g.customer = ki.get('customer', None)
+            g.role = 'user' if g.customer else 'admin'
             return f(*args, **kwargs)
 
         if auth_header.startswith('Bearer'):
@@ -116,9 +118,25 @@ def auth_required(f):
             except InvalidAudience:
                 return authenticate('Invalid audience')
             g.customer = payload.get('customer', None)
+            g.role = payload.get('role', None)
             return f(*args, **kwargs)
 
         return authenticate('Authentication required')
+
+    return decorated
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+
+        if not app.config['CUSTOMER_VIEWS']:
+            return f(*args, **kwargs)
+
+        if g.role != 'admin':
+            return authenticate('Admin required', 403)
+        else:
+            return f(*args, **kwargs)
 
     return decorated
 
@@ -221,8 +239,12 @@ def google():
         customer = None
         role = 'admin'
     else:
-        customer = db.get_customer_by_group(email.split('@')[1])
+        customer = db.get_customer_by_reference(email.split('@')[1])
         role = 'user'
+
+        if not customer:
+            return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
+
     try:
         token = create_token(profile['sub'], profile['name'], email, provider='google', customer=customer, role=role)
     except KeyError:
@@ -255,12 +277,24 @@ def github():
     organizations = [o['login'] for o in r.json()]
 
     login = profile['login']
+
+    if login in app.config['ADMIN_USERS']:
+        customer = None
+        role = 'admin'
+    else:
+        cs = [db.get_customer_by_reference(o) for o in organizations]
+        customer = next((c for c in cs if c is not None), None)
+        role = 'user'
+
+        if not customer:
+            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
+
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITHUB_ORGS']
             or set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))
             or db.is_user_valid(login=login)):
         return jsonify(status="error", message="User %s is not authorized" % login), 403
 
-    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github')
+    token = create_token(profile['id'], profile.get('name', None) or '@' + login, login, provider='github', customer=customer, role=role)
     return jsonify(token=token)
 
 
@@ -325,10 +359,22 @@ def gitlab():
     groups = [g['path'] for g in r.json()]
 
     login = profile['username']
+
+    if login in app.config['ADMIN_USERS']:
+        customer = None
+        role = 'admin'
+    else:
+        cs = [db.get_customer_by_reference(g) for g in groups]
+        customer = next((c for c in cs if c is not None), None)
+        role = 'user'
+
+        if not customer:
+            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
+
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITLAB_GROUPS']
             or set(app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))
             or db.is_user_valid(login=login)):
         return jsonify(status="error", message="User %s is not authorized" % login), 403
 
-    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab')
+    token = create_token(profile['id'], profile.get('name', None) or '@' + login, login, provider='gitlab', customer=customer, role=role)
     return jsonify(token=token)

@@ -1131,13 +1131,42 @@ class Mongo(object):
 
         return True if response.deleted_count == 1 else False
 
-    def get_metrics(self):
+    def create_customer(self, customer, reference):
 
-        metrics = list()
+        if self.get_customer_by_reference(reference=reference):
+            return
 
-        for stat in self._db.metrics.find({}, {"_id": 0}):
-            metrics.append(stat)
-        return metrics
+        data = {
+            "_id": str(uuid4()),
+            "customer": customer,
+            "reference": reference
+        }
+        return self._db.customers.insert_one(data).inserted_id
+
+    def get_customer_by_reference(self, reference):
+
+        response = self._db.customers.find_one({"reference": reference}, projection={"customer": 1, "_id": 0})
+        if response:
+            return response['customer']
+
+    def get_customers(self, query=None):
+
+        responses = self._db.customers.find(query)
+        customers = list()
+        for response in responses:
+            customers.append(
+                {
+                    "id": response["_id"],
+                    "customer": response["customer"],
+                    "reference": response["reference"]
+                }
+            )
+        return customers
+
+    def delete_customer(self, customer):
+
+        response = self._db.customers.delete_one({"customer": customer})
+        return True if response.deleted_count == 1 else False
 
     def get_keys(self, query=None):
 
@@ -1216,38 +1245,13 @@ class Mongo(object):
         response = self._db.keys.delete_one({"key": key})
         return True if response.deleted_count == 1 else False
 
-    def create_customer(self, customer, group):
+    def get_metrics(self):
 
-        data = {
-            "_id": str(uuid4()),
-            "customer": customer,
-            "group": group
-        }
+        metrics = list()
 
-        return self._db.customers.insert_one(data).inserted_id
-
-    def get_customer_by_group(self, group):
-
-        return self._db.customers.find_one({"group": group}, projection={"customer": 1, "_id": 0})['customer']
-
-    def get_customers(self, query=None):
-
-        responses = self._db.customers.find(query)
-        customers = list()
-        for response in responses:
-            customers.append(
-                {
-                    "id": response["_id"],
-                    "customer": response["customer"],
-                    "group": response["group"]
-                }
-            )
-        return customers
-
-    def delete_customer(self, customer):
-
-        response = self._db.customers.delete_one({"customer": customer})
-        return True if response.deleted_count == 1 else False
+        for stat in self._db.metrics.find({}, {"_id": 0}):
+            metrics.append(stat)
+        return metrics
 
     def disconnect(self):
 
