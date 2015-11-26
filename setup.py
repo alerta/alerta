@@ -20,7 +20,7 @@ setuptools.setup(
     author_email='nick.satterly@theguardian.com',
     packages=setuptools.find_packages(exclude=['bin', 'tests']),
     install_requires=[
-        'alerta',
+        'alerta>=4.6.0',
         'Flask',
         'Flask-Cors',
         'pymongo>=3.0',
