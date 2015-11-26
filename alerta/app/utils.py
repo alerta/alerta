@@ -1,13 +1,10 @@
 import json
 import datetime
-import requests
 import pytz
 import re
 
-from datetime import timedelta
 from functools import wraps
-from flask import make_response, request, current_app
-from functools import update_wrapper
+from flask import request, g, current_app
 
 from alerta.app import app, db
 from alerta.app.metrics import Timer
@@ -75,6 +72,9 @@ def parse_fields(r):
         del params['q']
     else:
         query = dict()
+
+    if g.get('customer', None):
+        query['customer'] = g.get('customer')
 
     page = params.get('page', 1)
     if 'page' in params:
