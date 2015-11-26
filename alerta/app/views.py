@@ -478,6 +478,9 @@ def get_services():
 @jsonp
 def get_blackouts():
 
+    if g.get('customer', None):
+        return jsonify(status="error", message="only admin can list blackouts"), 403
+
     try:
         blackouts = db.get_blackouts()
     except Exception as e:
@@ -505,6 +508,9 @@ def get_blackouts():
 @auth_required
 @jsonp
 def create_blackout():
+
+    if g.get('customer', None):
+        return jsonify(status="error", message="only admin can delete blackouts"), 403
 
     if request.json and 'environment' in request.json:
         environment = request.json['environment']
@@ -538,6 +544,9 @@ def create_blackout():
 @auth_required
 @jsonp
 def delete_blackout(blackout):
+
+    if g.get('customer', None):
+        return jsonify(status="error", message="only admin can delete blackouts"), 403
 
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
         try:
@@ -660,12 +669,11 @@ def delete_heartbeat(id):
 @jsonp
 def get_users():
 
-    query = dict()
     if g.get('customer', None):
-        query['customer'] = g.get('customer')
+        return jsonify(status="error", message="only admin can list users"), 403
 
     try:
-        users = db.get_users(query)
+        users = db.get_users()
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
@@ -697,13 +705,16 @@ def get_users():
 @jsonp
 def create_user():
 
+    if g.get('customer', None):
+        return jsonify(status="error", message="only admin can create users"), 403
+
     if request.json and 'name' in request.json:
         name = request.json["name"]
         login = request.json["login"]
         password = request.json.get("password", None)
         provider = request.json["provider"]
         text = request.json.get("text", "")
-        customer = g.get('customer', None) or request.json.get("customer", None)
+        customer = request.json.get("customer", None)
         try:
             user = db.save_user(str(uuid4()), name, login, password, provider, text, customer)
         except Exception as e:
