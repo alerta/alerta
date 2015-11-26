@@ -43,7 +43,7 @@ def verify_api_key(key, method):
     return key_info
 
 
-def create_token(user, name, login, provider=None, customer=None, tier='user'):
+def create_token(user, name, login, provider=None, customer=None, role='user'):
     payload = {
         'iss': "%s" % request.host_url,
         'sub': user,
@@ -54,7 +54,7 @@ def create_token(user, name, login, provider=None, customer=None, tier='user'):
         'login': login,
         'provider': provider,
         'customer': customer,
-        'tier': tier
+        'role': role
     }
     token = jwt.encode(payload, key=app.config['SECRET_KEY'], json_encoder=DateEncoder)
     return token.decode('unicode_escape')
@@ -219,12 +219,12 @@ def google():
 
     if email in app.config['ADMIN_USERS']:
         customer = None
-        tier = 'admin'
+        role = 'admin'
     else:
         customer = email.split('@')[1]
-        tier = 'user'
+        role = 'user'
     try:
-        token = create_token(profile['sub'], profile['name'], email, provider='google', customer=customer, tier=tier)
+        token = create_token(profile['sub'], profile['name'], email, provider='google', customer=customer, role=role)
     except KeyError:
         return jsonify(status="error", message="Google+ API is not enabled for this Client ID")
 
