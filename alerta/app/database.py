@@ -1214,7 +1214,39 @@ class Mongo(object):
     def delete_key(self, key):
 
         response = self._db.keys.delete_one({"key": key})
+        return True if response.deleted_count == 1 else False
 
+    def create_customer(self, customer, group):
+
+        data = {
+            "_id": str(uuid4()),
+            "customer": customer,
+            "group": group
+        }
+
+        return self._db.customers.insert_one(data).inserted_id
+
+    def get_customer_by_group(self, group):
+
+        return self._db.customers.find_one({"group": group}, projection={"customer": 1, "_id": 0})['customer']
+
+    def get_customers(self, query=None):
+
+        responses = self._db.customers.find(query)
+        customers = list()
+        for response in responses:
+            customers.append(
+                {
+                    "id": response["_id"],
+                    "customer": response["customer"],
+                    "group": response["group"]
+                }
+            )
+        return customers
+
+    def delete_customer(self, customer):
+
+        response = self._db.customers.delete_one({"customer": customer})
         return True if response.deleted_count == 1 else False
 
     def disconnect(self):

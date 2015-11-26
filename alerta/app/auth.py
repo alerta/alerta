@@ -221,7 +221,7 @@ def google():
         customer = None
         role = 'admin'
     else:
-        customer = email.split('@')[1]
+        customer = db.get_customer_by_group(email.split('@')[1])
         role = 'user'
     try:
         token = create_token(profile['sub'], profile['name'], email, provider='google', customer=customer, role=role)

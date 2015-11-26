@@ -738,6 +738,80 @@ def delete_user(user):
             return jsonify(status="error", message="not found"), 404
 
 
+@app.route('/customers', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@auth_required
+@jsonp
+def get_customers():
+
+    if g.get('customer', None):
+        return jsonify(status="error", message="only admin can create customers"), 403
+
+    try:
+        customers = db.get_customers()
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
+    if len(customers):
+        return jsonify(
+            status="ok",
+            total=len(customers),
+            customers=customers,
+            time=datetime.datetime.utcnow()
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            customers=[],
+            time=datetime.datetime.utcnow()
+        )
+
+
+@app.route('/customer', methods=['OPTIONS', 'POST'])
+@cross_origin()
+@auth_required
+@jsonp
+def create_customer():
+
+    if g.get('customer', None):
+        return jsonify(status="error", message="only admin can create customers"), 403
+
+    if request.json and 'customer' in request.json and 'group' in request.json:
+        customer = request.json["customer"]
+        group = request.json["group"]
+        try:
+            cid = db.create_customer(customer, group)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
+    else:
+        return jsonify(status="error", message="must supply user 'customer' and 'group' as parameters"), 400
+
+    return jsonify(status="ok", id=cid), 201, {'Location': '%s/%s' % (request.base_url, cid)}
+
+
+@app.route('/customer/<customer>', methods=['OPTIONS', 'DELETE', 'POST'])
+@cross_origin()
+@auth_required
+@jsonp
+def delete_customer(customer):
+
+    if g.get('customer', None):
+        return jsonify(status="error", message="only admin can delete customers"), 403
+
+    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+        try:
+            response = db.delete_customer(customer)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
+
+        if response:
+            return jsonify(status="ok")
+        else:
+            return jsonify(status="error", message="not found"), 404
+
+
 @app.route('/keys', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @auth_required
