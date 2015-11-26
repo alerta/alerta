@@ -805,7 +805,10 @@ def create_customer():
     else:
         return jsonify(status="error", message="must supply user 'customer' and 'reference' as parameters"), 400
 
-    return jsonify(status="ok", id=cid), 201, {'Location': '%s/%s' % (request.base_url, cid)}
+    if cid:
+        return jsonify(status="ok", id=cid), 201, {'Location': '%s/%s' % (request.base_url, cid)}
+    else:
+        return jsonify(status="error", message="Customer lookup for this reference already exists"), 409
 
 
 @app.route('/customer/<customer>', methods=['OPTIONS', 'DELETE', 'POST'])

@@ -1133,6 +1133,9 @@ class Mongo(object):
 
     def create_customer(self, customer, reference):
 
+        if self.get_customer_by_reference(reference=reference):
+            return
+
         data = {
             "_id": str(uuid4()),
             "customer": customer,
