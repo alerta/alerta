@@ -104,7 +104,7 @@ def auth_required(f):
             except Exception as e:
                 return authenticate(str(e), 500)
             g.customer = ki.get('customer', None)
-            g.role = ki.get('role', None)
+            g.role = 'user' if g.customer else 'admin'
             return f(*args, **kwargs)
 
         if auth_header.startswith('Bearer'):
@@ -224,8 +224,9 @@ def google():
         customer = None
         role = 'admin'
     else:
-        customer = db.get_customer_by_group(email.split('@')[1])
+        customer = db.get_customer_by_reference(email.split('@')[1])
         role = 'user'
+
     try:
         token = create_token(profile['sub'], profile['name'], email, provider='google', customer=customer, role=role)
     except KeyError:
@@ -258,12 +259,21 @@ def github():
     organizations = [o['login'] for o in r.json()]
 
     login = profile['login']
+
+    if login in app.config['ADMIN_USERS']:
+        customer = None
+        role = 'admin'
+    else:
+        cs = [db.get_customer_by_reference(o) for o in organizations]
+        customer = next((c for c in cs if c is not None), None)
+        role = 'user'
+
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITHUB_ORGS']
             or set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))
             or db.is_user_valid(login=login)):
         return jsonify(status="error", message="User %s is not authorized" % login), 403
 
-    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github')
+    token = create_token(profile['id'], profile.get('name', None) or '@' + login, login, provider='github', customer=customer, role=role)
     return jsonify(token=token)
 
 
@@ -328,10 +338,19 @@ def gitlab():
     groups = [g['path'] for g in r.json()]
 
     login = profile['username']
+
+    if login in app.config['ADMIN_USERS']:
+        customer = None
+        role = 'admin'
+    else:
+        cs = [db.get_customer_by_reference(g) for g in groups]
+        customer = next((c for c in cs if c is not None), None)
+        role = 'user'
+
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITLAB_GROUPS']
             or set(app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))
             or db.is_user_valid(login=login)):
         return jsonify(status="error", message="User %s is not authorized" % login), 403
 
-    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab')
+    token = create_token(profile['id'], profile.get('name', None) or '@' + login, login, provider='gitlab', customer=customer, role=role)
     return jsonify(token=token)

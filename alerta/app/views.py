@@ -795,15 +795,15 @@ def create_customer():
     if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can create customers"), 403
 
-    if request.json and 'customer' in request.json and 'group' in request.json:
+    if request.json and 'customer' in request.json and 'reference' in request.json:
         customer = request.json["customer"]
-        group = request.json["group"]
+        reference = request.json["reference"]
         try:
-            cid = db.create_customer(customer, group)
+            cid = db.create_customer(customer, reference)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
-        return jsonify(status="error", message="must supply user 'customer' and 'group' as parameters"), 400
+        return jsonify(status="error", message="must supply user 'customer' and 'reference' as parameters"), 400
 
     return jsonify(status="ok", id=cid), 201, {'Location': '%s/%s' % (request.base_url, cid)}
 
