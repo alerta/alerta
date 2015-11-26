@@ -86,6 +86,7 @@ def auth_required(f):
             except Exception as e:
                 return authenticate(str(e), 500)
             g.customer = ki.get('customer', None)
+            g.role = ki.get('role', None)
             return f(*args, **kwargs)
 
         auth_header = request.headers.get('Authorization')
@@ -103,6 +104,7 @@ def auth_required(f):
             except Exception as e:
                 return authenticate(str(e), 500)
             g.customer = ki.get('customer', None)
+            g.role = ki.get('role', None)
             return f(*args, **kwargs)
 
         if auth_header.startswith('Bearer'):
@@ -116,6 +118,7 @@ def auth_required(f):
             except InvalidAudience:
                 return authenticate('Invalid audience')
             g.customer = payload.get('customer', None)
+            g.role = payload.get('role', None)
             return f(*args, **kwargs)
 
         return authenticate('Authentication required')

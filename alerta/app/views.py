@@ -225,7 +225,7 @@ def get_alert(id):
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
-    if g.get('customer', None) and not alert.customer == g.get('customer'):
+    if g.get('role', None) != 'admin' and not alert.customer == g.get('customer'):
         return jsonify(status="error", message="not found", total=0, alert=None), 404
 
     if alert:
@@ -241,6 +241,8 @@ def get_alert(id):
 @auth_required
 @jsonp
 def set_status(id):
+
+    # FIXME - should only allow role=user to set status for alerts for that customer
 
     status_started = status_timer.start_timer()
     data = request.json
@@ -268,6 +270,8 @@ def set_status(id):
 @jsonp
 def tag_alert(id):
 
+    # FIXME - should only allow role=user to set status for alerts for that customer
+
     tag_started = tag_timer.start_timer()
     data = request.json
 
@@ -292,6 +296,8 @@ def tag_alert(id):
 @auth_required
 @jsonp
 def untag_alert(id):
+
+    # FIXME - should only allow role=user to set status for alerts for that customer
 
     untag_started = untag_timer.start_timer()
     data = request.json
@@ -318,7 +324,7 @@ def untag_alert(id):
 @jsonp
 def delete_alert(id):
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can delete alerts"), 403
 
     if (request.method == 'DELETE' or
@@ -478,7 +484,7 @@ def get_services():
 @jsonp
 def get_blackouts():
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can list blackouts"), 403
 
     try:
@@ -509,7 +515,7 @@ def get_blackouts():
 @jsonp
 def create_blackout():
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can delete blackouts"), 403
 
     if request.json and 'environment' in request.json:
@@ -545,7 +551,7 @@ def create_blackout():
 @jsonp
 def delete_blackout(blackout):
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can delete blackouts"), 403
 
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
@@ -574,7 +580,7 @@ def get_heartbeats():
     hb_list = list()
     for hb in heartbeats:
         body = hb.get_body()
-        if g.get('customer', None) and not body.customer == g.get('customer'):
+        if g.get('role', None) != 'admin' and not body.customer == g.get('customer'):
             continue
         body['href'] = "%s/%s" % (request.base_url.replace('heartbeats', 'heartbeat'), hb.id)
         hb_list.append(body)
@@ -607,8 +613,8 @@ def create_heartbeat():
     except ValueError as e:
         return jsonify(status="error", message=str(e)), 400
 
-    if g.get('customer', None):
-        heartbeat.customer = g.get('customer')
+    if g.get('role', None) != 'admin':
+        heartbeat.customer = g.get('customer', None)
 
     try:
         heartbeat = db.save_heartbeat(heartbeat)
@@ -631,7 +637,7 @@ def get_heartbeat(id):
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
-    if g.get('customer', None) and not heartbeat.customer == g.get('customer'):
+    if g.get('role', None) != 'admin' and not heartbeat.customer == g.get('customer'):
         return jsonify(status="error", message="not found", total=0, alert=None), 404
 
     if heartbeat:
@@ -648,7 +654,7 @@ def get_heartbeat(id):
 @jsonp
 def delete_heartbeat(id):
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can delete heartbeats"), 403
 
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
@@ -669,7 +675,7 @@ def delete_heartbeat(id):
 @jsonp
 def get_users():
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can list users"), 403
 
     try:
@@ -705,7 +711,7 @@ def get_users():
 @jsonp
 def create_user():
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can create users"), 403
 
     if request.json and 'name' in request.json:
@@ -734,7 +740,7 @@ def create_user():
 @jsonp
 def delete_user(user):
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can delete users"), 403
 
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
@@ -755,7 +761,7 @@ def delete_user(user):
 @jsonp
 def get_customers():
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can list customers"), 403
 
     try:
@@ -786,7 +792,7 @@ def get_customers():
 @jsonp
 def create_customer():
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can create customers"), 403
 
     if request.json and 'customer' in request.json and 'group' in request.json:
@@ -808,7 +814,7 @@ def create_customer():
 @jsonp
 def delete_customer(customer):
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can delete customers"), 403
 
     if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
@@ -830,7 +836,7 @@ def delete_customer(customer):
 def get_keys():
 
     query = dict()
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         query['customer'] = g.get('customer')
 
     try:
@@ -862,7 +868,7 @@ def get_keys():
 def get_user_keys(user):
 
     query = {"user": user}
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         query['customer'] = g.get('customer')
 
     try:
@@ -918,7 +924,7 @@ def create_key():
 @jsonp
 def delete_key(key):
 
-    if g.get('customer', None):
+    if g.get('role', None) != 'admin':
         return jsonify(status="error", message="only admin can delete API keys"), 403
 
     query = {"key": key}
