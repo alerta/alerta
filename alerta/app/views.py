@@ -62,6 +62,9 @@ def get_alerts():
         gets_timer.stop_timer(gets_started)
         return jsonify(status="error", message=str(e)), 400
 
+    if g.get('customer', None):
+        query['customer'] = g.get('customer')
+
     try:
         severity_count = db.get_counts(query=query, fields={"severity": 1}, group="severity")
     except Exception as e:
@@ -147,6 +150,9 @@ def get_history():
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
+    if g.get('customer', None):
+        query['customer'] = g.get('customer')
+
     try:
         history = db.get_history(query=query, limit=limit)
     except Exception as e:
@@ -181,6 +187,9 @@ def receive_alert():
     except ValueError as e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 400
+
+    if g.get('customer', None):
+        incomingAlert.customer = g.get('customer')
 
     if request.headers.getlist("X-Forwarded-For"):
        incomingAlert.attributes.update(ip=request.headers.getlist("X-Forwarded-For")[0])
@@ -218,6 +227,9 @@ def get_alert(id):
         alert = db.get_alert(id=id)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
+
+    if g.get('customer', None) and not alert.customer == g.get('customer'):
+        return jsonify(status="error", message="not found", total=0, alert=None), 404
 
     if alert:
         body = alert.get_body()
@@ -765,9 +777,10 @@ def create_key():
     if type not in ['read-only', 'read-write']:
         return jsonify(status="error", message="API key must be read-only or read-write"), 400
 
+    customer = request.json.get("customer", None)
     text = request.json.get("text", "API Key for %s" % user)
     try:
-        key = db.create_key(user, type, text)
+        key = db.create_key(user, type, customer, text)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
