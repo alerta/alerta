@@ -7,6 +7,7 @@ from flask import request, Response, url_for, jsonify, render_template
 from flask.ext.cors import cross_origin
 
 from alerta.app import app, db
+from alerta.app.auth import auth_required
 from alerta.app.switch import Switch, SwitchState
 from alerta.app.metrics import Gauge, Counter, Timer
 from alerta import build
@@ -39,6 +40,7 @@ def management():
 
 @app.route('/management/manifest', methods=['OPTIONS', 'GET'])
 @cross_origin()
+@auth_required
 def manifest():
 
     manifest = {
@@ -57,6 +59,7 @@ def manifest():
 
 @app.route('/management/properties', methods=['OPTIONS', 'GET'])
 @cross_origin()
+@auth_required
 def properties():
 
     properties = ''
@@ -72,6 +75,7 @@ def properties():
 
 @app.route('/management/switchboard', methods=['OPTIONS', 'GET', 'POST'])
 @cross_origin()
+@auth_required
 def switchboard():
 
     if request.method == 'POST':
@@ -114,6 +118,7 @@ def health_check():
 
 @app.route('/management/status', methods=['OPTIONS', 'GET'])
 @cross_origin()
+@auth_required
 def status():
 
     total_alert_gauge.set(db.get_count())
