@@ -1108,7 +1108,7 @@ class Mongo(object):
         if login:
             return bool(self._db.users.find_one({"login": login}))
 
-    def save_user(self, id, name, login, password=None, provider="", text=""):
+    def save_user(self, id, name, login, password=None, provider="", text="", email_verified=False):
 
         if self.is_user_valid(login=login):
             return
@@ -1119,7 +1119,8 @@ class Mongo(object):
             "login": login,
             "createTime": datetime.datetime.utcnow(),
             "provider": provider,
-            "text": text
+            "text": text,
+            "email_verified": email_verified
         }
 
         if password:
@@ -1142,6 +1143,36 @@ class Mongo(object):
             upsert=True
         )
         return True
+
+    def set_user_hash(self, login, hash):
+
+        self._db.users.find_one_and_update(
+            {'login': login},
+            update={
+                '$set': {'hash': hash, 'updateTime': datetime.datetime.utcnow()}
+            },
+            upsert=False,
+        )
+
+    def is_hash_valid(self, hash):
+
+        user = self._db.users.find_one({"hash": hash})
+        if user:
+            return user['login']
+
+    def validate_user(self, login):
+
+        self._db.users.update_one(
+            {"login": login},
+            update={
+                '$set': {'email_verified': True, "updateTime": datetime.datetime.utcnow()}
+            },
+            upsert=False
+        )
+
+    def is_email_verified(self, login):
+
+        return self._db.users.find_one({'login': login}, projection={"email_verified": 1, "_id": 0}).get('email_verified', False)
 
     def delete_user(self, id):
 
