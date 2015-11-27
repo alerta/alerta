@@ -1105,7 +1105,7 @@ class Mongo(object):
         if login:
             return bool(self._db.users.find_one({"login": login}))
 
-    def save_user(self, id, name, login, password=None, provider="", text="", customer=None):
+    def save_user(self, id, name, login, password=None, provider="", text=""):
 
         if self.is_user_valid(login=login):
             return
@@ -1116,8 +1116,7 @@ class Mongo(object):
             "login": login,
             "createTime": datetime.datetime.utcnow(),
             "provider": provider,
-            "text": text,
-            "customer": customer
+            "text": text
         }
 
         if password:
