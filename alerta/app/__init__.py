@@ -48,6 +48,15 @@ else:
     app.logger.addHandler(stderr_handler)
     app.logger.setLevel(logging.INFO)
 
+# Runtime config check
+if app.config['CUSTOMER_VIEWS'] and not app.config['AUTH_REQUIRED']:
+    app.logger.error('To use customer views you must enable authentication')
+    sys.exit(1)
+
+if app.config['CUSTOMER_VIEWS'] and not app.config['ADMIN_USERS']:
+    app.logger.error('Customer views is enabled but there are no admin users')
+    sys.exit(1)
+
 cors = CORS(app)
 
 from alerta.app.database import Mongo

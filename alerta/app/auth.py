@@ -179,7 +179,6 @@ def login():
     else:
         domain = email.split('@')[1]
         customer = db.get_customer_by_reference(domain)
-        print customer
         if not customer:
             return jsonify(status="error", message="No customer lookup defined for domain %s" % domain), 403
 
