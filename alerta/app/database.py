@@ -106,6 +106,10 @@ class Mongo(object):
 
         return self._db
 
+    def get_info(self):
+
+        return self._db.name
+
     def get_version(self):
 
         return self._db.client.server_info()['version']

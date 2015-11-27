@@ -177,10 +177,11 @@ def login():
     if role == 'admin':
         customer = None
     else:
-        customer = db.get_customer_by_reference(email)
+        domain = email.split('@')[1]
+        customer = db.get_customer_by_reference(domain)
         print customer
         if not customer:
-            return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
+            return jsonify(status="error", message="No customer lookup defined for domain %s" % domain), 403
 
     token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role)
     return jsonify(token=token)
@@ -216,10 +217,10 @@ def signup():
     if role == 'admin':
         customer = None
     else:
-        customer = db.get_customer_by_reference(email)
-        print customer
+        domain = email.split('@')[1]
+        customer = db.get_customer_by_reference(domain)
         if not customer:
-            return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
+            return jsonify(status="error", message="No customer lookup defined for domain %s" % domain), 403
 
     token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role)
     return jsonify(token=token)
