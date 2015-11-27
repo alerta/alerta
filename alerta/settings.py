@@ -24,14 +24,8 @@ MONGO_USERNAME = 'alerta'
 MONGO_PASSWORD = None
 
 AUTH_REQUIRED = False
+ADMIN_USERS = []
 CUSTOMER_VIEWS = False
-
-ADMIN_USERS = [
-    'first.last@gmail.com',  # google
-    '@twitter',              # twitter
-    'octocat',               # github/gitlab
-    'username'               # basic
-]
 
 OAUTH2_CLIENT_ID = 'INSERT-OAUTH2-CLIENT-ID-HERE'  # Google or GitHub OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = 'INSERT-OAUTH2-CLIENT-SECRET-HERE'

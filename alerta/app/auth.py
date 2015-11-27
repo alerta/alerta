@@ -52,10 +52,15 @@ def create_token(user, name, login, provider=None, customer=None, role='user'):
         'exp': datetime.utcnow() + timedelta(days=14),
         'name': name,
         'login': login,
-        'provider': provider,
-        'customer': customer,
-        'role': role
+        'provider': provider
     }
+
+    if app.config['ADMIN_USERS']:
+        payload['role'] = role
+
+    if app.config['CUSTOMER_VIEWS']:
+        payload['customer'] = customer
+
     token = jwt.encode(payload, key=app.config['SECRET_KEY'], json_encoder=DateEncoder)
     return token.decode('unicode_escape')
 
@@ -130,7 +135,7 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
 
-        if not app.config['CUSTOMER_VIEWS']:
+        if not app.config['ADMIN_USERS']:
             return f(*args, **kwargs)
 
         if g.role != 'admin':
@@ -236,12 +241,14 @@ def google():
     profile = r.json()
 
     if email in app.config['ADMIN_USERS']:
-        customer = None
         role = 'admin'
     else:
-        customer = db.get_customer_by_reference(email.split('@')[1])
         role = 'user'
 
+    if role == 'admin':
+        customer = None
+    else:
+        customer = db.get_customer_by_reference(email.split('@')[1])
         if not customer:
             return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
 
@@ -279,13 +286,15 @@ def github():
     login = profile['login']
 
     if login in app.config['ADMIN_USERS']:
-        customer = None
         role = 'admin'
+    else:
+        role = 'user'
+
+    if role == 'admin':
+        customer = None
     else:
         cs = [db.get_customer_by_reference(o) for o in organizations]
         customer = next((c for c in cs if c is not None), None)
-        role = 'user'
-
         if not customer:
             return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
 
@@ -294,7 +303,7 @@ def github():
             or db.is_user_valid(login=login)):
         return jsonify(status="error", message="User %s is not authorized" % login), 403
 
-    token = create_token(profile['id'], profile.get('name', None) or '@' + login, login, provider='github', customer=customer, role=role)
+    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github', customer=customer, role=role)
     return jsonify(token=token)
 
 
@@ -361,13 +370,15 @@ def gitlab():
     login = profile['username']
 
     if login in app.config['ADMIN_USERS']:
-        customer = None
         role = 'admin'
+    else:
+        role = 'user'
+
+    if role == 'admin':
+        customer = None
     else:
         cs = [db.get_customer_by_reference(g) for g in groups]
         customer = next((c for c in cs if c is not None), None)
-        role = 'user'
-
         if not customer:
             return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
 
@@ -376,5 +387,5 @@ def gitlab():
             or db.is_user_valid(login=login)):
         return jsonify(status="error", message="User %s is not authorized" % login), 403
 
-    token = create_token(profile['id'], profile.get('name', None) or '@' + login, login, provider='gitlab', customer=customer, role=role)
+    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab', customer=customer, role=role)
     return jsonify(token=token)
