@@ -19,6 +19,15 @@ app.config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
 if 'SECRET_KEY' in os.environ:
     app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
+if 'AUTH_REQUIRED' in os.environ:
+    app.config['AUTH_REQUIRED'] = True if os.environ['AUTH_REQUIRED'] == 'True' else False
+
+if 'ADMIN_USERS' in os.environ:
+    app.config['ADMIN_USERS'] = os.environ['ADMIN_USERS'].split(',')
+
+if 'CUSTOMER_VIEWS' in os.environ:
+    app.config['CUSTOMER_VIEWS'] = True if os.environ['CUSTOMER_VIEWS'] == 'True' else False
+
 if 'OAUTH2_CLIENT_ID' in os.environ:
     app.config['OAUTH2_CLIENT_ID'] = os.environ['OAUTH2_CLIENT_ID']
 
