@@ -118,16 +118,35 @@ class AuthTestCase(unittest.TestCase):
 
     def test_login(self):
 
+        name = 'Josephine de Beauharnais'
+
         payload = {
-            'name': 'Josephine de Beauharnais',
+            'name': name,
             'email': 'josephine@debeauharnais.fr',
             'password': 'blackforest',
             'provider': 'basic',
             'text': 'Test login'
         }
 
-        # sign-up user
+        # sign-up user with no customer mapping
         response = self.app.post('/auth/signup', data=json.dumps(payload), headers={'Content-type': 'application/json'})
+        self.assertEqual(response.status_code, 403)
+
+        # add customer mapping
+        payload = {
+            'customer': 'Bonaparte Industries',
+            'reference': 'debeauharnais.fr'
+        }
+        response = self.app.post('/customer', data=json.dumps(payload), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        payload = {
+            'email': 'josephine@debeauharnais.fr',
+            'password': 'blackforest'
+        }
+
+        # login now that customer mapping exists
+        response = self.app.post('/auth/login', data=json.dumps(payload), headers={'Content-type': 'application/json'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn('token', data)
@@ -139,13 +158,37 @@ class AuthTestCase(unittest.TestCase):
             'Content-type': 'application/json'
         }
 
-        # get user
-        response = self.app.get('/users', headers=headers)
+        # create a customer demo key
+        payload = {
+            'user': 'customer-demo-key',
+            'type': 'read-only'
+        }
+
+        response = self.app.post('/key', data=json.dumps(payload), headers=headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIsNotNone(data['key'], 'Failed to create read-only key')
+
+        customer_api_key = data['key']
+
+        response = self.app.get('/alerts', headers={'Authorization': 'Key ' + customer_api_key})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertIn(payload['name'], [u['name'] for u in data['users']])
+        self.assertIn('total', data)
 
-        user_id = [u['id'] for u in data['users'] if u['name'] == payload['name']][0]
+        response = self.app.delete('/key/' + customer_api_key, headers={'Authorization': 'Key ' + customer_api_key})
+        self.assertEqual(response.status_code, 403)
+
+        response = self.app.delete('/key/' + customer_api_key, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # get user
+        response = self.app.get('/users', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn(name, [u['name'] for u in data['users']])
+
+        user_id = [u['id'] for u in data['users'] if u['name'] == name][0]
 
         # delete user
         response = self.app.delete('/user/' + user_id, headers=self.headers)

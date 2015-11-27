@@ -169,7 +169,20 @@ def login():
         return jsonify(status="error", message="User %s is not authorized" % email), 401, \
             {'WWW-Authenticate': 'Basic realm="%s"' % BASIC_AUTH_REALM}
 
-    token = create_token(user['id'], user['name'], email, provider='basic')
+    if email in app.config['ADMIN_USERS']:
+        role = 'admin'
+    else:
+        role = 'user'
+
+    if role == 'admin':
+        customer = None
+    else:
+        domain = email.split('@')[1]
+        customer = db.get_customer_by_reference(domain)
+        if not customer:
+            return jsonify(status="error", message="No customer lookup defined for domain %s" % domain), 403
+
+    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role)
     return jsonify(token=token)
 
 
@@ -179,13 +192,12 @@ def signup():
 
     if request.json and 'name' in request.json:
         name = request.json["name"]
-        login = request.json["email"]
+        email = request.json["email"]
         password = request.json["password"]
         provider = request.json.get("provider", "basic")
-        customer = request.json.get("customer", None)
         text = request.json.get("text", "")
         try:
-            user_id = db.save_user(str(uuid4()), name, login, password, provider, customer, text)
+            user_id = db.save_user(str(uuid4()), name, email, password, provider, text)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
@@ -194,9 +206,22 @@ def signup():
     if user_id:
         user = db.get_user(user_id)
     else:
-        user = db.get_users(query={"login": login})[0]
+        user = db.get_users(query={"login": email})[0]
 
-    token = create_token(user['id'], user['name'], login, provider='basic')
+    if email in app.config['ADMIN_USERS']:
+        role = 'admin'
+    else:
+        role = 'user'
+
+    if role == 'admin':
+        customer = None
+    else:
+        domain = email.split('@')[1]
+        customer = db.get_customer_by_reference(domain)
+        if not customer:
+            return jsonify(status="error", message="No customer lookup defined for domain %s" % domain), 403
+
+    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role)
     return jsonify(token=token)
 
 
