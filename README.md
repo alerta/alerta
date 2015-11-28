@@ -1,4 +1,4 @@
-Alerta Release 4.4
+Alerta Release 4.6
 ==================
 
 [![Build Status](https://travis-ci.org/guardian/alerta.png)](https://travis-ci.org/guardian/alerta) [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
@@ -119,7 +119,7 @@ License
 -------
 
     Alerta monitoring system and console
-    Copyright 2012 Guardian News & Media
+    Copyright 2012-2015 Guardian News & Media
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
