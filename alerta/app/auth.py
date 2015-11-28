@@ -163,7 +163,7 @@ def login():
         return jsonify(status="error", message="User %s does not exist" % email), 401, \
             {'WWW-Authenticate': 'Basic realm="%s"' % BASIC_AUTH_REALM}
     else:
-        user = db.get_users(query={"login": email})[0]
+        user = db.get_users(query={"login": email}, password=True)[0]
 
     if not bcrypt.hashpw(password.encode('utf-8'), user['password'].encode('utf-8')) == user['password'].encode('utf-8'):
         return jsonify(status="error", message="User %s is not authorized" % email), 401, \
@@ -178,7 +178,7 @@ def login():
         customer = None
     else:
         domain = email.split('@')[1]
-        customer = db.get_customer_by_reference(domain)
+        customer = db.get_customer_by_match(domain)
         if not customer:
             return jsonify(status="error", message="No customer lookup defined for domain %s" % domain), 403
 
@@ -217,7 +217,7 @@ def signup():
         customer = None
     else:
         domain = email.split('@')[1]
-        customer = db.get_customer_by_reference(domain)
+        customer = db.get_customer_by_match(domain)
         if not customer:
             return jsonify(status="error", message="No customer lookup defined for domain %s" % domain), 403
 
@@ -273,7 +273,7 @@ def google():
     if role == 'admin':
         customer = None
     else:
-        customer = db.get_customer_by_reference(email.split('@')[1])
+        customer = db.get_customer_by_match(email.split('@')[1])
         if not customer:
             return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
 
@@ -318,7 +318,7 @@ def github():
     if role == 'admin':
         customer = None
     else:
-        cs = [db.get_customer_by_reference(o) for o in organizations]
+        cs = [db.get_customer_by_match(o) for o in organizations]
         customer = next((c for c in cs if c is not None), None)
         if not customer:
             return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
@@ -402,7 +402,7 @@ def gitlab():
     if role == 'admin':
         customer = None
     else:
-        cs = [db.get_customer_by_reference(g) for g in groups]
+        cs = [db.get_customer_by_match(g) for g in groups]
         customer = next((c for c in cs if c is not None), None)
         if not customer:
             return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403

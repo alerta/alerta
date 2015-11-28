@@ -765,6 +765,24 @@ def get_customers():
         )
 
 
+@app.route('/customer/<user>', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@auth_required
+@admin_required
+@jsonp
+def get_user_customer(user):
+
+    try:
+        customer = db.get_customer_by_match(user)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
+    if customer:
+        return jsonify(status="ok", total=1, customer=customer)
+    else:
+        return jsonify(status="error", message="not found", total=0, customer=None), 404
+
+
 @app.route('/customer', methods=['OPTIONS', 'POST'])
 @cross_origin()
 @auth_required
@@ -772,20 +790,20 @@ def get_customers():
 @jsonp
 def create_customer():
 
-    if request.json and 'customer' in request.json and 'reference' in request.json:
+    if request.json and 'customer' in request.json and 'match' in request.json:
         customer = request.json["customer"]
-        reference = request.json["reference"]
+        match = request.json["match"]
         try:
-            cid = db.create_customer(customer, reference)
+            cid = db.create_customer(customer, match)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
-        return jsonify(status="error", message="must supply user 'customer' and 'reference' as parameters"), 400
+        return jsonify(status="error", message="must supply user 'customer' and 'match' as parameters"), 400
 
     if cid:
         return jsonify(status="ok", id=cid), 201, {'Location': '%s/%s' % (request.base_url, cid)}
     else:
-        return jsonify(status="error", message="Customer lookup for this reference already exists"), 409
+        return jsonify(status="error", message="Customer lookup for this match already exists"), 409
 
 
 @app.route('/customer/<customer>', methods=['OPTIONS', 'DELETE', 'POST'])
