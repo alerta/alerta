@@ -765,24 +765,6 @@ def get_customers():
         )
 
 
-@app.route('/customer/<user>', methods=['OPTIONS', 'GET'])
-@cross_origin()
-@auth_required
-@admin_required
-@jsonp
-def get_user_customer(user):
-
-    try:
-        customer = db.get_customer_by_match(user)
-    except Exception as e:
-        return jsonify(status="error", message=str(e)), 500
-
-    if customer:
-        return jsonify(status="ok", total=1, customer=customer)
-    else:
-        return jsonify(status="error", message="not found", total=0, customer=None), 404
-
-
 @app.route('/customer', methods=['OPTIONS', 'POST'])
 @cross_origin()
 @auth_required

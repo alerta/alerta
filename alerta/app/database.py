@@ -1134,7 +1134,7 @@ class Mongo(object):
 
     def create_customer(self, customer, match):
 
-        if self.get_customer_by_match(match=match):
+        if self.get_customer_by_match(match):
             return
 
         data = {
@@ -1144,11 +1144,18 @@ class Mongo(object):
         }
         return self._db.customers.insert_one(data).inserted_id
 
-    def get_customer_by_match(self, match):
+    def get_customer_by_match(self, matches):
 
-        response = self._db.customers.find_one({"match": match}, projection={"customer": 1, "_id": 0})
-        if response:
-            return response['customer']
+        if isinstance(matches, basestring):
+            matches = [matches]
+
+        def find_customer(match):
+            response = self._db.customers.find_one({"match": match}, projection={"customer": 1, "_id": 0})
+            if response:
+                return response['customer']
+
+        results = [find_customer(m) for m in matches]
+        return next((r for r in results if r is not None), None)
 
     def get_customers(self, query=None):
 
