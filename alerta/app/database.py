@@ -7,6 +7,7 @@ import hashlib
 import bcrypt
 
 from uuid import uuid4
+from six import string_types
 from pymongo import MongoClient, ASCENDING, TEXT, ReturnDocument
 
 try:
@@ -1146,7 +1147,7 @@ class Mongo(object):
 
     def get_customer_by_match(self, matches):
 
-        if isinstance(matches, basestring):
+        if isinstance(matches, string_types):
             matches = [matches]
 
         def find_customer(match):
