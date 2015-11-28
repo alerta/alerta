@@ -146,6 +146,25 @@ def admin_required(f):
     return decorated
 
 
+def role(user):
+    return 'admin' if user in app.config['ADMIN_USERS'] else 'user'
+
+
+class NoCustomerMatch(KeyError):
+    pass
+
+
+def customer_match(user, groups):
+    if role(user) == 'admin':
+        return None
+    else:
+        match = db.get_customer_by_match([user] + groups)
+        if match:
+            return match
+        else:
+            raise NoCustomerMatch
+
+
 @app.route('/auth/login', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def login():
@@ -169,20 +188,12 @@ def login():
         return jsonify(status="error", message="User %s is not authorized" % email), 401, \
             {'WWW-Authenticate': 'Basic realm="%s"' % BASIC_AUTH_REALM}
 
-    if email in app.config['ADMIN_USERS']:
-        role = 'admin'
-    else:
-        role = 'user'
+    try:
+        customer = customer_match(email, groups=[email.split('@')[1]])
+    except NoCustomerMatch:
+        return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
 
-    if role == 'admin':
-        customer = None
-    else:
-        domain = email.split('@')[1]
-        customer = db.get_customer_by_match(domain)
-        if not customer:
-            return jsonify(status="error", message="No customer lookup defined for domain %s" % domain), 403
-
-    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role)
+    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role(email))
     return jsonify(token=token)
 
 
@@ -208,20 +219,12 @@ def signup():
     else:
         user = db.get_users(query={"login": email})[0]
 
-    if email in app.config['ADMIN_USERS']:
-        role = 'admin'
-    else:
-        role = 'user'
+    try:
+        customer = customer_match(email, groups=[email.split('@')[1]])
+    except NoCustomerMatch:
+        return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
 
-    if role == 'admin':
-        customer = None
-    else:
-        domain = email.split('@')[1]
-        customer = db.get_customer_by_match(domain)
-        if not customer:
-            return jsonify(status="error", message="No customer lookup defined for domain %s" % domain), 403
-
-    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role)
+    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role(email))
     return jsonify(token=token)
 
 
@@ -265,20 +268,14 @@ def google():
     r = requests.get(people_api_url, headers=headers)
     profile = r.json()
 
-    if email in app.config['ADMIN_USERS']:
-        role = 'admin'
-    else:
-        role = 'user'
-
-    if role == 'admin':
-        customer = None
-    else:
-        customer = db.get_customer_by_match(email.split('@')[1])
-        if not customer:
-            return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
+    try:
+        customer = customer_match(email, groups=[email.split('@')[1]])
+    except NoCustomerMatch:
+        return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
 
     try:
-        token = create_token(profile['sub'], profile['name'], email, provider='google', customer=customer, role=role)
+        token = create_token(profile['sub'], profile['name'], email, provider='google',
+                             customer=customer, role=role(email))
     except KeyError:
         return jsonify(status="error", message="Google+ API is not enabled for this Client ID")
 
@@ -307,28 +304,20 @@ def github():
 
     r = requests.get(profile['organizations_url'], params=access_token)
     organizations = [o['login'] for o in r.json()]
-
     login = profile['login']
 
-    if login in app.config['ADMIN_USERS']:
-        role = 'admin'
-    else:
-        role = 'user'
-
-    if role == 'admin':
-        customer = None
-    else:
-        cs = [db.get_customer_by_match(o) for o in organizations]
-        customer = next((c for c in cs if c is not None), None)
-        if not customer:
-            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
+    try:
+        customer = customer_match(login, organizations)
+    except NoCustomerMatch:
+        return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
 
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITHUB_ORGS']
             or set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))
             or db.is_user_valid(login=login)):
         return jsonify(status="error", message="User %s is not authorized" % login), 403
 
-    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github', customer=customer, role=role)
+    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github',
+                         customer=customer, role=role(login))
     return jsonify(token=token)
 
 
@@ -391,26 +380,18 @@ def gitlab():
 
     r = requests.get(gitlab_api_url+'/groups', params=access_token)
     groups = [g['path'] for g in r.json()]
-
     login = profile['username']
 
-    if login in app.config['ADMIN_USERS']:
-        role = 'admin'
-    else:
-        role = 'user'
-
-    if role == 'admin':
-        customer = None
-    else:
-        cs = [db.get_customer_by_match(g) for g in groups]
-        customer = next((c for c in cs if c is not None), None)
-        if not customer:
-            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
+    try:
+        customer = customer_match(login, groups)
+    except NoCustomerMatch:
+        return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
 
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITLAB_GROUPS']
             or set(app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))
             or db.is_user_valid(login=login)):
         return jsonify(status="error", message="User %s is not authorized" % login), 403
 
-    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab', customer=customer, role=role)
+    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab',
+                         customer=customer, role=role(login))
     return jsonify(token=token)
