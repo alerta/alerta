@@ -135,7 +135,7 @@ class AuthTestCase(unittest.TestCase):
         # add customer mapping
         payload = {
             'customer': 'Bonaparte Industries',
-            'reference': 'debeauharnais.fr'
+            'match': 'debeauharnais.fr'
         }
         response = self.app.post('/customer', data=json.dumps(payload), headers=self.headers)
         self.assertEqual(response.status_code, 201)

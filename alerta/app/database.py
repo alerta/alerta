@@ -1077,27 +1077,25 @@ class Mongo(object):
             "login": user['login'],
             "provider": user['provider'],
             "createTime": user['createTime'],
-            "text": user['text'],
-            "customer": user.get('customer', None)
+            "text": user['text']
         }
 
-    def get_users(self, query=None):
+    def get_users(self, query=None, password=False):
 
         users = list()
 
         for user in self._db.users.find(query):
-            users.append(
-                {
-                    "id": user['_id'],
-                    "name": user['name'],
-                    "login": user.get('login', None) or user.get('email', None),  # for backwards compatibility
-                    "password": user.get('password', None),
-                    "createTime": user['createTime'],
-                    "provider": user['provider'],
-                    "text": user.get('text', ""),
-                    "customer": user.get('customer', None)
-                }
-            )
+            u = {
+                "id": user['_id'],
+                "name": user['name'],
+                "login": user.get('login', None) or user.get('email', None),  # for backwards compatibility
+                "createTime": user['createTime'],
+                "provider": user['provider'],
+                "text": user.get('text', "")
+            }
+            if password:
+                u['password'] = user.get('password', None)
+            users.append(u)
         return users
 
     def is_user_valid(self, id=None, name=None, login=None):
@@ -1134,21 +1132,21 @@ class Mongo(object):
 
         return True if response.deleted_count == 1 else False
 
-    def create_customer(self, customer, reference):
+    def create_customer(self, customer, match):
 
-        if self.get_customer_by_reference(reference=reference):
+        if self.get_customer_by_match(match=match):
             return
 
         data = {
             "_id": str(uuid4()),
             "customer": customer,
-            "reference": reference
+            "match": match
         }
         return self._db.customers.insert_one(data).inserted_id
 
-    def get_customer_by_reference(self, reference):
+    def get_customer_by_match(self, match):
 
-        response = self._db.customers.find_one({"reference": reference}, projection={"customer": 1, "_id": 0})
+        response = self._db.customers.find_one({"match": match}, projection={"customer": 1, "_id": 0})
         if response:
             return response['customer']
 
@@ -1161,7 +1159,7 @@ class Mongo(object):
                 {
                     "id": response["_id"],
                     "customer": response["customer"],
-                    "reference": response["reference"]
+                    "match": response.get("match", None) or response["reference"]
                 }
             )
         return customers
