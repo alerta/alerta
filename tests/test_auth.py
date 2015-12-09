@@ -130,7 +130,7 @@ class AuthTestCase(unittest.TestCase):
 
         # sign-up user with no customer mapping
         response = self.app.post('/auth/signup', data=json.dumps(payload), headers={'Content-type': 'application/json'})
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
 
         # add customer mapping
         payload = {
