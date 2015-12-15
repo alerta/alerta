@@ -96,6 +96,15 @@ $ alerta query
 
 To view alerts in a web console install the [Alerta Web UI][3]
 
+Running Tests
+-------------
+
+Running tests in a python virtual environment:
+
+```
+$ ALERTA_SVR_CONF_FILE= python -m nose
+```
+
 Deploy to the Cloud
 -------------------
 
