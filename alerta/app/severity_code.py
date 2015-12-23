@@ -128,6 +128,8 @@ def trend(previous, current):
 def status_from_severity(previous_severity, current_severity, current_status=None):
     if current_severity in [NORMAL, CLEARED, OK]:
         return status_code.CLOSED
+    if current_status == status_code.EXPIRED:
+        return status_code.OPEN
     if trend(previous_severity, current_severity) == MORE_SEVERE:
         return status_code.OPEN
     return current_status
