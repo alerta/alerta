@@ -315,7 +315,7 @@ class Mongo(object):
         if alert.status != status_code.UNKNOWN and alert.status != previous_status:
             status = alert.status
         else:
-            status = previous_status
+            status = severity_code.status_from_severity(alert.severity, alert.severity, previous_status)
 
         query = {
             "environment": alert.environment,
