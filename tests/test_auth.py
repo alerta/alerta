@@ -10,6 +10,7 @@ class AuthTestCase(unittest.TestCase):
 
         app.config['TESTING'] = True
         app.config['AUTH_REQUIRED'] = True
+        app.config['CUSTOMER_VIEWS'] = True
         self.app = app.test_client()
 
         self.alert = {
@@ -130,7 +131,7 @@ class AuthTestCase(unittest.TestCase):
 
         # sign-up user with no customer mapping
         response = self.app.post('/auth/signup', data=json.dumps(payload), headers={'Content-type': 'application/json'})
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 403)
 
         # add customer mapping
         payload = {
@@ -192,4 +193,8 @@ class AuthTestCase(unittest.TestCase):
 
         # delete user
         response = self.app.delete('/user/' + user_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # delete customer mapping
+        response = self.app.delete('/customer/' + 'Bonaparte Industries', headers=self.headers)
         self.assertEqual(response.status_code, 200)
