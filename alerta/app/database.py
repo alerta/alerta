@@ -1127,6 +1127,22 @@ class Mongo(object):
 
         return self._db.users.insert_one(data).inserted_id
 
+    def reset_user_password(self, login, password):
+
+        if not self.is_user_valid(login=login):
+            return False
+
+        self._db.users.update_one(
+            {
+                "login": login
+            },
+            {
+                '$set': {"password": bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')}
+            },
+            upsert=True
+        )
+        return True
+
     def delete_user(self, id):
 
         response = self._db.users.delete_one({"_id": id})

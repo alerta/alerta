@@ -37,7 +37,7 @@ def verify_api_key(key, method):
     key_info = db.is_key_valid(key)
     if not key_info:
         raise AuthError("API key '%s' is invalid" % key)
-    if method in ['POST', 'DELETE'] and key_info['type'] != 'read-write':
+    if method in ['POST', 'PUT', 'DELETE'] and key_info['type'] != 'read-write':
         raise Forbidden("%s method requires 'read-write' API Key" % method)
     db.update_key(key)
     return key_info
@@ -109,7 +109,7 @@ def auth_required(f):
             except Exception as e:
                 return authenticate(str(e), 500)
             g.customer = ki.get('customer', None)
-            g.role = 'user' if g.customer else 'admin'
+            g.role = ki.get('role', None)
             return f(*args, **kwargs)
 
         if auth_header.startswith('Bearer'):

@@ -717,6 +717,29 @@ def create_user():
         return jsonify(status="error", message="User with that login already exists"), 409
 
 
+@app.route('/user/<user>', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@auth_required
+@admin_required
+@jsonp
+def update_user(user):
+
+    if 'password' in request.json:
+        try:
+            password = request.json["password"]
+            response = db.reset_user_password(user, password)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
+
+        if response:
+            return jsonify(status="ok")
+        else:
+            return jsonify(status="error", message="not found"), 404
+
+    else:
+        return jsonify(status="error", message="Must supply new password for user")
+
+
 @app.route('/user/<user>', methods=['OPTIONS', 'DELETE', 'POST'])
 @cross_origin()
 @auth_required
