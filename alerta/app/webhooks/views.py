@@ -268,3 +268,64 @@ def pagerduty():
         return jsonify(status="ok"), 200
     else:
         return jsonify(status="error", message="update PagerDuty incident status failed"), 500
+
+
+def parse_prometheus(notification):
+
+    labels = notification['labels']
+    annotations = notification['annotations']
+
+    text = annotations.get('description', None) or annotations.get('summary', None) or \
+        '%s: %s on %s' % (labels['job'], labels['alertname'], labels['instance'])
+
+    if 'description' in annotations:
+        del annotations['description']
+    if 'summary' in annotations:
+        del annotations['summary']
+
+    if 'generatorURL' in notification:
+        annotations['generatorUrl'] = notification['generatorURL']
+
+    return Alert(
+        resource=labels['instance'],
+        event=labels['alertname'],
+        environment=labels.get('environment', 'Production'),
+        severity=labels.get('severity', 'warning'),
+        correlate=labels['correlate'].split(',') if 'correlate' in labels else None,
+        service=labels.get('service', '').split(','),
+        group=labels.get('job', None),
+        value=labels.get('value', None),
+        text=text,
+        tags=labels.get('tags', '').split(','),
+        attributes=annotations,
+        origin='Prometheus',
+        event_type='performanceAlert',
+        raw_data=notification
+    )
+
+
+@app.route('/webhooks/prometheus', methods=['OPTIONS', 'POST'])
+@cross_origin()
+def prometheus():
+
+    hook_started = webhook_timer.start_timer()
+
+    for notification in request.json:
+        try:
+            incomingAlert = parse_prometheus(notification)
+        except ValueError as e:
+            webhook_timer.stop_timer(hook_started)
+            return jsonify(status="error", message=str(e)), 400
+
+        try:
+            process_alert(incomingAlert)
+        except RejectException as e:
+            webhook_timer.stop_timer(hook_started)
+            return jsonify(status="error", message=str(e)), 403
+        except Exception as e:
+            webhook_timer.stop_timer(hook_started)
+            return jsonify(status="error", message=str(e)), 500
+
+    webhook_timer.stop_timer(hook_started)
+
+    return jsonify(status="ok"), 200
