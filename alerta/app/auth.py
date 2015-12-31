@@ -269,8 +269,7 @@ def google():
 
     email = claims.get('email')
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
-            or email.split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']
-            or db.is_user_valid(login=email)):
+            or email.split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']):
         return jsonify(status="error", message="User %s is not authorized" % email), 403
 
     headers = {'Authorization': 'Bearer ' + token['access_token']}
@@ -318,6 +317,10 @@ def github():
     organizations = [o['login'] for o in r.json()]
     login = profile['login']
 
+    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITHUB_ORGS']
+            or set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))):
+        return jsonify(status="error", message="User %s is not authorized" % login), 403
+
     if app.config['CUSTOMER_VIEWS']:
         try:
             customer = customer_match(login, organizations)
@@ -325,11 +328,6 @@ def github():
             return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
     else:
         customer = None
-
-    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITHUB_ORGS']
-            or set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))
-            or db.is_user_valid(login=login)):
-        return jsonify(status="error", message="User %s is not authorized" % login), 403
 
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github',
                          customer=customer, role=role(login))
@@ -367,6 +365,10 @@ def gitlab():
     groups = [g['path'] for g in r.json()]
     login = profile['username']
 
+    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITLAB_GROUPS']
+            or set(app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))):
+        return jsonify(status="error", message="User %s is not authorized" % login), 403
+
     if app.config['CUSTOMER_VIEWS']:
         try:
             customer = customer_match(login, groups)
@@ -374,11 +376,6 @@ def gitlab():
             return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
     else:
         customer = None
-
-    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITLAB_GROUPS']
-            or set(app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))
-            or db.is_user_valid(login=login)):
-        return jsonify(status="error", message="User %s is not authorized" % login), 403
 
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab',
                          customer=customer, role=role(login))
