@@ -336,36 +336,6 @@ def github():
     return jsonify(token=token)
 
 
-@app.route('/auth/twitter', methods=['OPTIONS', 'POST'])
-@cross_origin(supports_credentials=True)
-def twitter():
-    request_token_url = 'https://api.twitter.com/oauth/request_token'
-    access_token_url = 'https://api.twitter.com/oauth/access_token'
-
-    if request.json.get('oauth_token') and request.json.get('oauth_verifier'):
-        auth = OAuth1(app.config['OAUTH2_CLIENT_ID'],
-                      client_secret=app.config['OAUTH2_CLIENT_SECRET'],
-                      resource_owner_key=request.json.get('oauth_token'),
-                      verifier=request.json.get('oauth_verifier'))
-        r = requests.post(access_token_url, auth=auth)
-        profile = dict(parse_qsl(r.text))
-
-        login = profile['screen_name']
-        if app.config['AUTH_REQUIRED'] and not db.is_user_valid(login=login):
-            return jsonify(status="error", message="User %s is not authorized" % login), 403
-
-        token = create_token(profile['user_id'], '@'+login, login, provider='twitter')
-        return jsonify(token=token)
-    else:
-        oauth = OAuth1(app.config['OAUTH2_CLIENT_ID'],
-                       client_secret=app.config['OAUTH2_CLIENT_SECRET'],
-                       callback_uri=app.config.get('TWITTER_CALLBACK_URL', request.headers.get('Referer', ''))
-        )
-        r = requests.post(request_token_url, auth=oauth)
-        oauth_token = dict(parse_qsl(r.text))
-        return jsonify(oauth_token)
-
-
 @app.route('/auth/gitlab', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def gitlab():
