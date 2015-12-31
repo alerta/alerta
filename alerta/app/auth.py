@@ -135,6 +135,9 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
 
+        if not app.config['AUTH_REQUIRED']:
+            return f(*args, **kwargs)
+
         if not app.config['ADMIN_USERS']:
             return f(*args, **kwargs)
 
