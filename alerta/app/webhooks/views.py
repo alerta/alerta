@@ -287,7 +287,7 @@ def parse_prometheus(notification):
         annotations['generatorUrl'] = notification['generatorURL']
 
     return Alert(
-        resource=labels['instance'],
+        resource=labels.get('exported_instance', None) or labels['instance'],
         event=labels['alertname'],
         environment=labels.get('environment', 'Production'),
         severity=labels.get('severity', 'warning'),
@@ -308,24 +308,26 @@ def parse_prometheus(notification):
 @cross_origin()
 def prometheus():
 
-    hook_started = webhook_timer.start_timer()
+    if request.json:
+        hook_started = webhook_timer.start_timer()
+        for notification in request.json:
+            try:
+                incomingAlert = parse_prometheus(notification)
+            except ValueError as e:
+                webhook_timer.stop_timer(hook_started)
+                return jsonify(status="error", message=str(e)), 400
 
-    for notification in request.json:
-        try:
-            incomingAlert = parse_prometheus(notification)
-        except ValueError as e:
-            webhook_timer.stop_timer(hook_started)
-            return jsonify(status="error", message=str(e)), 400
+            try:
+                process_alert(incomingAlert)
+            except RejectException as e:
+                webhook_timer.stop_timer(hook_started)
+                return jsonify(status="error", message=str(e)), 403
+            except Exception as e:
+                webhook_timer.stop_timer(hook_started)
+                return jsonify(status="error", message=str(e)), 500
 
-        try:
-            process_alert(incomingAlert)
-        except RejectException as e:
-            webhook_timer.stop_timer(hook_started)
-            return jsonify(status="error", message=str(e)), 403
-        except Exception as e:
-            webhook_timer.stop_timer(hook_started)
-            return jsonify(status="error", message=str(e)), 500
-
-    webhook_timer.stop_timer(hook_started)
+        webhook_timer.stop_timer(hook_started)
+    else:
+        return jsonify(status="error", message="no alerts in Prometheus notification payload"), 400
 
     return jsonify(status="ok"), 200
