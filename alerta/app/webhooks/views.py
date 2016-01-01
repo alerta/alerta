@@ -1,5 +1,6 @@
 import json
 import datetime
+import copy
 
 from flask import request
 from flask.ext.cors import cross_origin
@@ -274,6 +275,7 @@ def parse_prometheus(notification):
 
     labels = notification['labels']
     annotations = notification['annotations']
+    raw_data = copy.deepcopy(notification)
 
     text = annotations.get('description', None) or annotations.get('summary', None) or \
         '%s: %s on %s' % (labels['job'], labels['alertname'], labels['instance'])
@@ -300,7 +302,7 @@ def parse_prometheus(notification):
         attributes=annotations,
         origin='Prometheus',
         event_type='performanceAlert',
-        raw_data=notification
+        raw_data=raw_data
     )
 
 
