@@ -281,7 +281,7 @@ def parse_prometheus(notification):
     text = description or summary or '%s: %s on %s' % (labels['job'], labels['alertname'], labels['instance'])
 
     if 'generatorURL' in notification:
-        annotations['generatorUrl'] = notification['generatorURL']
+        annotations['moreInfo'] = '<a href="%s" target="_blank">Prometheus Graph</a>' % notification['generatorURL']
 
     return Alert(
         resource=labels.pop('exported_instance', None) or labels.pop('instance'),
