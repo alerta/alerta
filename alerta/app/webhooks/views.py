@@ -1,7 +1,7 @@
 import json
 import datetime
-import copy
 
+from copy import copy
 from flask import request
 from flask.ext.cors import cross_origin
 
@@ -273,9 +273,8 @@ def pagerduty():
 
 def parse_prometheus(notification):
 
-    labels = notification['labels']
-    annotations = notification['annotations']
-    raw_data = copy.deepcopy(notification)
+    labels = copy(notification['labels'])
+    annotations = copy(notification['annotations'])
 
     summary = annotations.pop('summary', None)
     description = annotations.pop('description', None)
@@ -298,7 +297,7 @@ def parse_prometheus(notification):
         attributes=annotations,
         origin='prometheus/' + labels.get('job', '-'),
         event_type='prometheusAlert',
-        raw_data=raw_data
+        raw_data=notification
     )
 
 
