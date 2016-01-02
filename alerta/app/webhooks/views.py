@@ -277,31 +277,27 @@ def parse_prometheus(notification):
     annotations = notification['annotations']
     raw_data = copy.deepcopy(notification)
 
-    text = annotations.get('description', None) or annotations.get('summary', None) or \
-        '%s: %s on %s' % (labels['job'], labels['alertname'], labels['instance'])
-
-    if 'description' in annotations:
-        del annotations['description']
-    if 'summary' in annotations:
-        del annotations['summary']
+    summary = annotations.pop('summary', None)
+    description = annotations.pop('description', None)
+    text = description or summary or '%s: %s on %s' % (labels['job'], labels['alertname'], labels['instance'])
 
     if 'generatorURL' in notification:
         annotations['generatorUrl'] = notification['generatorURL']
 
     return Alert(
-        resource=labels.get('exported_instance', None) or labels['instance'],
-        event=labels['alertname'],
-        environment=labels.get('environment', 'Production'),
-        severity=labels.get('severity', 'warning'),
-        correlate=labels['correlate'].split(',') if 'correlate' in labels else None,
-        service=labels.get('service', '').split(','),
-        group=labels.get('job', None),
-        value=labels.get('value', None),
+        resource=labels.pop('exported_instance', None) or labels.pop('instance'),
+        event=labels.pop('alertname'),
+        environment=labels.pop('environment', 'Production'),
+        severity=labels.pop('severity', 'warning'),
+        correlate=labels.pop('correlate').split(',') if 'correlate' in labels else None,
+        service=labels.pop('service', '').split(','),
+        group=labels.pop('group', None),
+        value=labels.pop('value', None),
         text=text,
-        tags=labels.get('tags', '').split(','),
+        tags=["%s=%s" % t for t in labels.items()],
         attributes=annotations,
-        origin='Prometheus',
-        event_type='performanceAlert',
+        origin='prometheus/' + labels.get('job', '-'),
+        event_type='prometheusAlert',
         raw_data=raw_data
     )
 
