@@ -271,33 +271,41 @@ def pagerduty():
         return jsonify(status="error", message="update PagerDuty incident status failed"), 500
 
 
-def parse_prometheus(notification):
+def parse_prometheus(status, alert):
 
-    labels = copy(notification['labels'])
-    annotations = copy(notification['annotations'])
+    labels = copy(alert['labels'])
+    annotations = copy(alert['annotations'])
+
+    if status == 'firing':
+        severity = labels.pop('severity', 'warning')
+    elif status == 'resolved':
+        severity = 'normal'
+    else:
+        severity = 'unknown'
 
     summary = annotations.pop('summary', None)
     description = annotations.pop('description', None)
     text = description or summary or '%s: %s on %s' % (labels['job'], labels['alertname'], labels['instance'])
 
-    if 'generatorURL' in notification:
-        annotations['moreInfo'] = '<a href="%s" target="_blank">Prometheus Graph</a>' % notification['generatorURL']
+    if 'generatorURL' in alert:
+        annotations['moreInfo'] = '<a href="%s" target="_blank">Prometheus Graph</a>' % alert['generatorURL']
 
     return Alert(
         resource=labels.pop('exported_instance', None) or labels.pop('instance'),
         event=labels.pop('alertname'),
         environment=labels.pop('environment', 'Production'),
-        severity=labels.pop('severity', 'warning'),
+        severity=severity,
         correlate=labels.pop('correlate').split(',') if 'correlate' in labels else None,
         service=labels.pop('service', '').split(','),
         group=labels.pop('group', None),
         value=labels.pop('value', None),
         text=text,
+        customer=labels.pop('customer', None),
         tags=["%s=%s" % t for t in labels.items()],
         attributes=annotations,
         origin='prometheus/' + labels.get('job', '-'),
         event_type='prometheusAlert',
-        raw_data=notification
+        raw_data=alert
     )
 
 
@@ -305,11 +313,12 @@ def parse_prometheus(notification):
 @cross_origin()
 def prometheus():
 
-    if request.json:
+    if request.json and 'alert' in request.json:
         hook_started = webhook_timer.start_timer()
-        for notification in request.json:
+        status = request.json['status']
+        for alert in request.json['alert']:
             try:
-                incomingAlert = parse_prometheus(notification)
+                incomingAlert = parse_prometheus(status, alert)
             except ValueError as e:
                 webhook_timer.stop_timer(hook_started)
                 return jsonify(status="error", message=str(e)), 400
