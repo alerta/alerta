@@ -112,10 +112,6 @@ class Counter(object):
             return_document=ReturnDocument.AFTER
         )['count']
 
-    @classmethod
-    def get_counters(cls):
-        return list(db.metrics.find({"type": "counter"}, {"_id": 0}))
-
     def to_json(self):
         return json.dumps(self, cls=MetricEncoder)
 
