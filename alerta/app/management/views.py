@@ -123,9 +123,9 @@ def status():
 
     total_alert_gauge.set(db.get_count())
 
-    metrics = Gauge.get_gauges()
-    metrics.extend(Counter.get_counters())
-    metrics.extend(Timer.get_timers())
+    metrics = Gauge.get_gauges(format='json')
+    metrics.extend(Counter.get_counters(format='json'))
+    metrics.extend(Timer.get_timers(format='json'))
 
     auto_refresh_allow = {
         "group": "switch",
@@ -140,3 +140,16 @@ def status():
     now = int(time.time() * 1000)
 
     return jsonify(application="alerta", version=__version__, time=now, uptime=int(now - started), metrics=metrics)
+
+
+@app.route('/metrics', methods=['OPTIONS', 'GET'])
+@cross_origin()
+def prometheus_metrics():
+
+    total_alert_gauge.set(db.get_count())
+
+    output = Gauge.get_gauges(format='prometheus')
+    output += Counter.get_counters(format='prometheus')
+    output += Timer.get_timers(format='prometheus')
+
+    return Response(output, content_type='text/plain; version=0.0.4; charset=utf-8')

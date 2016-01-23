@@ -7,17 +7,20 @@ from functools import wraps
 from flask import request, g, current_app
 
 from alerta.app import app, db
-from alerta.app.metrics import Timer
+from alerta.app.metrics import Counter, Timer
 from alerta.plugins import load_plugins, RejectException
 
 LOG = app.logger
 
 plugins = load_plugins()
 
+reject_counter = Counter('alerts', 'rejected', 'Rejected alerts', 'Number of rejected alerts')
+error_counter = Counter('alerts', 'errored', 'Errored alerts', 'Number of errored alerts')
 duplicate_timer = Timer('alerts', 'duplicate', 'Duplicate alerts', 'Total time to process number of duplicate alerts')
 correlate_timer = Timer('alerts', 'correlate', 'Correlated alerts', 'Total time to process number of correlated alerts')
 create_timer = Timer('alerts', 'create', 'Newly created alerts', 'Total time to process number of new alerts')
-
+pre_plugin_timer = Timer('plugins', 'prereceive', 'Pre-receive plugins', 'Total number of pre-receive plugins')
+post_plugin_timer = Timer('plugins', 'postreceive', 'Post-receive plugins', 'Total number of post-receive plugins')
 
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -193,14 +196,22 @@ def parse_fields(r):
 def process_alert(incomingAlert):
 
     for plugin in plugins:
+        started = pre_plugin_timer.start_timer()
         try:
             incomingAlert = plugin.pre_receive(incomingAlert)
         except RejectException:
+            reject_counter.inc()
+            pre_plugin_timer.stop_timer(started)
             raise
         except Exception as e:
+            error_counter.inc()
+            pre_plugin_timer.stop_timer(started)
             raise RuntimeError('Error while running pre-receive plug-in: %s' % str(e))
         if not incomingAlert:
+            error_counter.inc()
+            pre_plugin_timer.stop_timer(started)
             raise SyntaxError('Plug-in pre-receive hook did not return modified alert')
+        pre_plugin_timer.stop_timer(started)
 
     if db.is_blackout_period(incomingAlert):
         raise RuntimeWarning('Suppressed during blackout period')
@@ -219,12 +230,17 @@ def process_alert(incomingAlert):
             alert = db.create_alert(incomingAlert)
             create_timer.stop_timer(started)
     except Exception as e:
+        error_counter.inc()
         raise RuntimeError(e)
 
     for plugin in plugins:
+        started = post_plugin_timer.start_timer()
         try:
             plugin.post_receive(alert)
         except Exception as e:
+            error_counter.inc()
+            post_plugin_timer.stop_timer(started)
             raise RuntimeError('Error while running post-receive plug-in: %s' % str(e))
+        post_plugin_timer.stop_timer(started)
 
     return alert
