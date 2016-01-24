@@ -24,6 +24,7 @@ switches = [
 total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of alerts in the database')
 started = time.time() * 1000
 
+
 @app.route('/management', methods=['OPTIONS', 'GET'])
 @cross_origin()
 def management():
@@ -33,7 +34,8 @@ def management():
         url_for('properties'),
         url_for('switchboard'),
         url_for('health_check'),
-        url_for('status')
+        url_for('status'),
+        url_for('prometheus_metrics')
     ]
     return render_template('management/index.html', endpoints=endpoints)
 
@@ -142,8 +144,9 @@ def status():
     return jsonify(application="alerta", version=__version__, time=now, uptime=int(now - started), metrics=metrics)
 
 
-@app.route('/metrics', methods=['OPTIONS', 'GET'])
+@app.route('/management/metrics', methods=['OPTIONS', 'GET'])
 @cross_origin()
+# @auth_required  # FIXME - prometheus only supports Authorization header with "Bearer" token
 def prometheus_metrics():
 
     total_alert_gauge.set(db.get_count())
