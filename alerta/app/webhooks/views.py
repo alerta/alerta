@@ -276,12 +276,21 @@ def parse_prometheus(status, alert):
     labels = copy(alert['labels'])
     annotations = copy(alert['annotations'])
 
+    starts_at = datetime.datetime.strptime(alert['startsAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+    if alert['endsAt'] == '0001-01-01T00:00:00Z':
+        ends_at = None
+    else:
+        ends_at = datetime.datetime.strptime(alert['endsAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+
     if status == 'firing':
         severity = labels.pop('severity', 'warning')
+        create_time = starts_at
     elif status == 'resolved':
         severity = 'normal'
+        create_time = ends_at
     else:
         severity = 'unknown'
+        create_time = ends_at or starts_at
 
     summary = annotations.pop('summary', None)
     description = annotations.pop('description', None)
@@ -305,6 +314,7 @@ def parse_prometheus(status, alert):
         attributes=annotations,
         origin='prometheus/' + labels.get('job', '-'),
         event_type='prometheusAlert',
+        create_time=create_time,
         raw_data=alert
     )
 
