@@ -29,6 +29,7 @@ setuptools.setup(
         'argparse',
         'requests',
         'requests-oauthlib',
+        'python-dateutil',
         'pytz',
         'PyJWT',
         'cffi',
