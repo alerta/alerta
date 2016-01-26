@@ -4,6 +4,7 @@ import datetime
 from copy import copy
 from flask import request
 from flask.ext.cors import cross_origin
+from dateutil.parser import parse as parse_date
 
 from alerta.app import app, db
 from alerta.alert import Alert
@@ -276,11 +277,11 @@ def parse_prometheus(status, alert):
     labels = copy(alert['labels'])
     annotations = copy(alert['annotations'])
 
-    starts_at = datetime.datetime.strptime(alert['startsAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+    starts_at = parse_date(alert['startsAt'])
     if alert['endsAt'] == '0001-01-01T00:00:00Z':
         ends_at = None
     else:
-        ends_at = datetime.datetime.strptime(alert['endsAt'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        ends_at = parse_date(alert['endsAt'])
 
     if status == 'firing':
         severity = labels.pop('severity', 'warning')
