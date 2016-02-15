@@ -10,7 +10,6 @@ from flask import g, request, redirect
 from flask_cors import cross_origin
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 from base64 import urlsafe_b64decode
-from requests_oauthlib import OAuth1
 from uuid import uuid4
 
 try:
