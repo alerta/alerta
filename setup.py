@@ -28,7 +28,6 @@ setuptools.setup(
         'boto',
         'argparse',
         'requests',
-        'requests-oauthlib',
         'python-dateutil',
         'pytz',
         'PyJWT',
