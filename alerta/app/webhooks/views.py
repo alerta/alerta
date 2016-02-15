@@ -58,7 +58,7 @@ def parse_notification(notification):
 
         return Alert(
             resource='%s:%s' % (alarm['Trigger']['Dimensions'][0]['name'], alarm['Trigger']['Dimensions'][0]['value']),
-            event=alarm['Trigger']['MetricName'],
+            event=alarm['AlarmName'],
             environment='Production',
             severity=cw_state_to_severity(alarm['NewStateValue']),
             service=[alarm['AWSAccountId']],
