@@ -1120,9 +1120,8 @@ class Mongo(object):
             return
 
         data = {}
-        data["login"] = login
-        data["id"] = user["_id"]
-        data["createTime"] = user['createTime'],
+        # data["login"] = login
+        # data["id"] = user["_id"]
         
         if not fields:
             return login
