@@ -705,14 +705,14 @@ def create_user():
         provider = request.json["provider"]
         text = request.json.get("text", "")
         try:
-            user = db.save_user(str(uuid4()), name, login, password, provider, text)
+            user_id = db.save_user(str(uuid4()), name, login, password, provider, text)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
         return jsonify(status="error", message="must supply user 'name', 'login' and 'provider' as parameters"), 400
 
-    if user:
-        return jsonify(status="ok", user=user), 201, {'Location': '%s/%s' % (request.base_url, user)}
+    if user_id:
+        return jsonify(status="ok", user=user_id), 201, {'Location': '%s/%s' % (request.base_url, user_id)}
     else:
         return jsonify(status="error", message="User with that login already exists"), 409
 

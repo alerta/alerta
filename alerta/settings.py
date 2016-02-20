@@ -47,6 +47,12 @@ CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
 BLACKOUT_DURATION = 3600  # default period = 1 hour
 
+EMAIL_VERIFICATION = False
+SMTP_HOST = 'smtp.gmail.com'
+SMTP_PORT = 587
+MAIL_FROM = 'your@gmail.com'  # replace with valid sender address
+SMTP_PASSWORD = ''  # password for MAIL_FROM account, Gmail uses application-specific passwords
+
 # Plug-ins
 PLUGINS = ['reject']
 # PLUGINS = ['amqp', 'enhance', 'logstash', 'normalise', 'reject', 'sns']

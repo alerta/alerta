@@ -11,6 +11,7 @@ class AuthTestCase(unittest.TestCase):
         app.config['TESTING'] = True
         app.config['AUTH_REQUIRED'] = True
         app.config['CUSTOMER_VIEWS'] = True
+        app.config['ALLOWED_EMAIL_DOMAINS'] = ['debeauharnais.fr']
         self.app = app.test_client()
 
         self.alert = {

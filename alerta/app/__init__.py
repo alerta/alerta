@@ -46,6 +46,12 @@ if 'GITLAB_URL' in os.environ:
 if 'ALLOWED_GITLAB_GROUPS' in os.environ:
     app.config['ALLOWED_GITLAB_GROUPS'] = os.environ['ALLOWED_GITLAB_GROUPS'].split(',')
 
+if 'MAIL_FROM' in os.environ:
+    app.config['MAIL_FROM'] = os.environ['MAIL_FROM']
+
+if 'SMTP_PASSWORD' in os.environ:
+    app.config['SMTP_PASSWORD'] = os.environ['SMTP_PASSWORD']
+
 if 'CORS_ORIGINS' in os.environ:
     app.config['CORS_ORIGINS'] = os.environ['CORS_ORIGINS'].split(',')
 
