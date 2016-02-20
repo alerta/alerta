@@ -248,7 +248,7 @@ def signup():
     if user_id:
         user = db.get_user(user_id)
     else:
-        user = db.get_users(query={"login": email})[0]
+        return jsonify(status="error", message="User with that login already exists"), 409
 
     if app.config['CUSTOMER_VIEWS']:
         try:
