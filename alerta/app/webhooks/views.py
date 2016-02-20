@@ -324,10 +324,10 @@ def parse_prometheus(status, alert):
 @cross_origin()
 def prometheus():
 
-    if request.json and 'alert' in request.json:
+    if request.json and 'alerts' in request.json:
         hook_started = webhook_timer.start_timer()
         status = request.json['status']
-        for alert in request.json['alert']:
+        for alert in request.json['alerts']:
             try:
                 incomingAlert = parse_prometheus(status, alert)
             except ValueError as e:
