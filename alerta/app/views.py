@@ -723,15 +723,35 @@ def create_user():
 @admin_required
 @jsonp
 def update_user(user):
+   
+    name, login, password, provider, text, email_verified = None, None, None, None, None, None
+       
+    if not request.json:
+        return jsonify(status="ok", user=user, message="Nothing to update, request was empty")
+
+    if 'name' in request.json:
+        name = request.json['name']
+    if 'login' in request.json:
+        login = request.json['login']
+    if 'password' in request.json:
+        password = request.json['password']
+    if 'provider' in request.json:
+        provider = request.json['provider']
+    if 'text' in request.json:
+        text = request.json['text']
+    if 'email_verified' in request.json:
+        email_verified = request.json['email_verified']
 
     try:
-        user = db.update_user(user, request.json)
-        if user:
-            return jsonify(status="ok")
-        else:
-            return jsonify(status="error", message="not found"), 404
+        user = db.update_user(user, name=name, login=login, password=password, provider=provider,
+                text=text, email_verified=email_verified)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
+    
+    if user:
+        return jsonify(status="ok", user=user)
+    else:
+        return jsonify(status="error", message="not found"), 404
 
 
 @app.route('/user/<user>', methods=['OPTIONS', 'DELETE', 'POST'])
