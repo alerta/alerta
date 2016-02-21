@@ -25,7 +25,7 @@ except ImportError:
     from urllib import urlencode
 
 from alerta.app import app, db
-from alerta.app.utils import jsonify, DateEncoder
+from alerta.app.utils import absolute_url, jsonify, DateEncoder
 
 BASIC_AUTH_REALM = "Alerta"
 
@@ -278,10 +278,10 @@ def send_confirmation(name, email):
 
     text = 'Hello {name}!\n\n' \
            'Please verify your email address is {email} by clicking on the link below:\n\n' \
-           '{url}/{hash}\n\n' \
+           '{url}\n\n' \
            'You\'re receiving this email because you recently created a new Alerta account.' \
            ' If this wasn\'t you, please ignore this email.'.format(
-               name=name, email=email, url=request.base_url.replace('signup', 'confirm'), hash=confirm_hash)
+               name=name, email=email, url=absolute_url('/confirm/' + confirm_hash))
 
     msg_text = MIMEText(text, 'plain', 'utf-8')
     msg.attach(msg_text)
