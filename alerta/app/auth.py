@@ -3,6 +3,7 @@ import jwt
 import json
 import requests
 import bcrypt
+import re
 
 from datetime import datetime, timedelta
 from functools import wraps
@@ -107,8 +108,9 @@ def auth_required(f):
         if not auth_header:
             return authenticate('Missing authorization API Key or Bearer Token')
 
-        if auth_header.startswith('Key'):
-            key = auth_header.replace('Key ', '')
+        m = re.match('Key (\S+)', auth_header)
+        if m:
+            key = m.group(1)
             try:
                 ki = verify_api_key(key, request.method)
             except AuthError as e:
@@ -121,8 +123,9 @@ def auth_required(f):
             g.role = ki.get('role', None)
             return f(*args, **kwargs)
 
-        if auth_header.startswith('Bearer'):
-            token = auth_header.replace('Bearer ', '')
+        m = re.match('Bearer (\S+)', auth_header)
+        if m:
+            token = m.group(1)
             try:
                 payload = parse_token(token)
             except DecodeError:
