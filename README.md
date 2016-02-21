@@ -13,7 +13,7 @@ The Alerta monitoring tool was developed with the following aims in mind:
 
 Related projects can be found on the Alerta Org Repo at <https://github.com/alerta/>.
 
----
+----
 
 Requirements
 ------------
