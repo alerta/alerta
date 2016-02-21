@@ -278,6 +278,36 @@ class AlertTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'closed')
 
+        # severity == warning -> status=open
+        response = self.app.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'open')
+
+    def test_duplicate_status(self):
+
+        # create alert
+        response = self.app.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['duplicateCount'], 0)
+
+        alert_id = data['id']
+
+        # close alert
+        response = self.app.post('/alert/' + alert_id + '/status', data=json.dumps({'status': 'closed'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.app.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], "closed")
+
+        # duplicate alert -> status=open
+        response = self.app.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'open')
+
     def test_alert_tagging(self):
 
         # create alert
