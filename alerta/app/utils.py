@@ -22,6 +22,7 @@ create_timer = Timer('alerts', 'create', 'Newly created alerts', 'Total time to 
 pre_plugin_timer = Timer('plugins', 'prereceive', 'Pre-receive plugins', 'Total number of pre-receive plugins')
 post_plugin_timer = Timer('plugins', 'postreceive', 'Post-receive plugins', 'Total number of post-receive plugins')
 
+
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
 
@@ -50,6 +51,10 @@ def jsonp(func):
         else:
             return func(*args, **kwargs)
     return decorated
+
+
+def absolute_url(path=None):
+    return (app.config.get('BASE_URL', None) or request.base_url.replace(request.path, '')) + path
 
 
 PARAMS_EXCLUDE = [
