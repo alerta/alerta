@@ -1,9 +1,9 @@
-Alerta Release 4.6
+Alerta Release 4.7
 ==================
 
 [![Build Status](https://travis-ci.org/guardian/alerta.png)](https://travis-ci.org/guardian/alerta) [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
 
-The alerta monitoring tool was developed with the following aims in mind:
+The Alerta monitoring tool was developed with the following aims in mind:
 
 *   distributed and de-coupled so that it is **SCALABLE**
 *   minimal **CONFIGURATION** that easily accepts alerts from any source
@@ -11,124 +11,81 @@ The alerta monitoring tool was developed with the following aims in mind:
 
 ![console](/docs/images/alert-list-rel32.png?raw=true)
 
-More screenshots are available [here](/docs/images/)
+Related projects can be found on the Alerta Org Repo at <https://github.com/alerta/>.
 
-Related projects can be found [here][1].
+----
 
 Requirements
 ------------
 
-The only requirement is MongoDB. Everything else is optional.
+The only mandatory dependency is MongoDB. Everything else is optional.
 
-- MongoDB
+- MongoDB version 3.x
 
 Optional
 --------
 
-A messaging transport that supports [AMQP][2] is required for notification to alert subscribers. It is recommended to use RabbitMQ, but Redis and even MongoDB have been tested and shown to work.
+A messaging transport that supports AMQP is required *if* it is wanted to send notifications to alert subscribers.
+It is recommended to use RabbitMQ, but Redis and even MongoDB have been tested and shown to work.
 
 - RabbitMQ
 - Redis
 - MongoDB
 
-Note: The default setting uses MongoDB so that no additional configuration is required.
+Note: The default settings use MongoDB so that no additional configuration is required.
 
 Installation
 ------------
 
-To install and configure on Debian/Ubuntu:
+To install MongoDB on Debian/Ubuntu run::
 
-```
-$ sudo apt-get update
-$ sudo apt-get install mongodb-server
-```
+    $ sudo apt-get install -y mongodb-org
+    $ mongod
 
-To use RabbitMQ as the message transport instead of the default MongoDB install the additional packages:
+To install the Alerta server and client run::
 
-```
-$ sudo apt-get install rabbitmq-server
-```
+    $ pip install alerta-server
+    $ alertad
 
-To install from git:
+To install the web console run::
 
-```
-$ git clone https://github.com/guardian/alerta.git alerta
-$ cd alerta
-$ sudo pip install -r requirements.txt
-$ sudo python setup.py install
-```
+    $ wget -O alerta-web.tgz https://github.com/alerta/angular-alerta-webui/tarball/master
+    $ tar zxvf alerta-web.tgz
+    $ cd alerta-angular-alerta-webui-*/app
+    $ python -m SimpleHTTPServer 8000
+
+    >> browse to http://localhost:8000
 
 Configuration
 -------------
 
-The configuration file format has changed in Release 3.2 to a python `settings.py` file. To override default settings in this file create `/etc/alertad.conf` or set `ALERTA_SVR_CONF_FILE` environment variable to `~/.alertad.conf` or `~/.config/alertad` or something similar. Make sure to to export the environment variable before running the server, like so:
+To configure the ``alertad`` server override the default settings using ``~/.alertad.conf``.
 
-```
-export ALERTA_SVR_CONF_FILE=~/.alertad.conf
-```
-
-The default configuration should work. If you are using RabbitMQ change the `AMQP_URL` setting to:
-
-```
-AMQP_URL = 'amqp://guest:guest@localhost:5672//'
-```
-
-Running
--------
-
-To start the alerta server simply run:
-
-```
-$ alertad
-```
-
-To send some test alerts run:
-
-```
-$ contrib/examples/create-alerts.sh
-```
-
-To view alerts in a terminal run:
-
-```
-$ alerta query
-```
-
-To view alerts in a web console install the [Alerta Web UI][3]
-
-Running Tests
+Documentation
 -------------
 
-Running tests in a python virtual environment:
+More information on configuration and other aspects of alerta can be found at <http://docs.alerta.io>
 
-```
-$ ALERTA_SVR_CONF_FILE= python -m nose
-```
+Tests
+-----
 
-Deploy to the Cloud
--------------------
+To run the tests use::
 
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+    $ ALERTA_SVR_CONF_FILE= python -m nose
 
-More Information
+Cloud Deployment
 ----------------
 
-See the alerta [docs][4]. Documentation is a work in progress. Feedback welcome.
+Alerta can be deployed to the cloud easily using Heroku, AWS EC2 <https://github.com/alerta/alerta-cloudformation>
+or RedHat OpenShift <https://github.com/alerta/openshift-api-alerta>::
 
-Contribute
-----------
-
-If you'd like to contribute to Alerta, start by forking this repo on GitHub.
-
-http://github.com/guardian/alerta
-
-Create a branch for your work and then send us a pull request.
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
 License
 -------
 
     Alerta monitoring system and console
-    Copyright 2012-2015 Guardian News & Media
+    Copyright 2012-2016 Guardian News & Media
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -141,8 +98,3 @@ License
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-
-[1]: <https://github.com/alerta/> "Alerta GitHub Repo"
-[2]: <http://kombu.readthedocs.org/en/latest/userguide/connections.html#amqp-transports> "Kombu Transports"
-[3]: <https://github.com/alerta/angular-alerta-webui> "Alerta Web UI"
-[4]: <http://docs.alerta.io/> "Alerta Documentation"
