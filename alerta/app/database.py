@@ -1117,20 +1117,18 @@ class Mongo(object):
             return
 
         data = {}
-
         if name:
             data['name'] = name
         if login:
             data['login'] = login
+        if password:
+            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         if provider:
             data['provider'] = provider
         if text:
             data['text'] = text
         if email_verified:
             data['email_verified'] = email_verified
-
-        if password:
-            data['password'] = bcrypt.hashpw(fields['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         response = self._db.users.update_one({"_id": id}, {'$set': data})
 
