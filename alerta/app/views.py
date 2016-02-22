@@ -724,23 +724,16 @@ def create_user():
 @jsonp
 def update_user(user):
    
-    name, login, password, provider, text, email_verified = None, None, None, None, None, None
-       
     if not request.json:
         return jsonify(status="ok", user=user, message="Nothing to update, request was empty")
 
-    if 'name' in request.json:
-        name = request.json['name']
-    if 'login' in request.json:
-        login = request.json['login']
-    if 'password' in request.json:
-        password = request.json['password']
-    if 'provider' in request.json:
-        provider = request.json['provider']
-    if 'text' in request.json:
-        text = request.json['text']
-    if 'email_verified' in request.json:
-        email_verified = request.json['email_verified']
+    name = request.json.get('name', None)
+    login = request.json.get('login', None)
+    password = request.json.get('password', None)
+    provider = request.json.get('provider', None)
+    text = request.json.get('text', None)
+    email_verified = request.json.get('email_verified', None)
+
 
     try:
         user = db.update_user(user, name=name, login=login, password=password, provider=provider,
