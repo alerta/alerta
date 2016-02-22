@@ -664,8 +664,21 @@ def delete_heartbeat(id):
 @jsonp
 def get_users():
 
+    user_id = request.args.get("id")
+    name = request.args.get("name")
+    login = request.args.get("login")
+
+    if user_id:
+        query = {'user': user_id}
+    elif name:
+        query = {'name': name}
+    elif login:
+        query = {'login': login}
+    else:
+        query = {}
+
     try:
-        users = db.get_users()
+        users = db.get_users(query)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
