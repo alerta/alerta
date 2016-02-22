@@ -3,6 +3,7 @@ import jwt
 import json
 import requests
 import bcrypt
+import re
 
 from datetime import datetime, timedelta
 from functools import wraps
@@ -24,7 +25,7 @@ except ImportError:
     from urllib import urlencode
 
 from alerta.app import app, db
-from alerta.app.utils import jsonify, DateEncoder
+from alerta.app.utils import absolute_url, jsonify, DateEncoder
 
 BASIC_AUTH_REALM = "Alerta"
 
@@ -107,8 +108,9 @@ def auth_required(f):
         if not auth_header:
             return authenticate('Missing authorization API Key or Bearer Token')
 
-        if auth_header.startswith('Key'):
-            key = auth_header.replace('Key ', '')
+        m = re.match('Key (\S+)', auth_header)
+        if m:
+            key = m.group(1)
             try:
                 ki = verify_api_key(key, request.method)
             except AuthError as e:
@@ -121,8 +123,9 @@ def auth_required(f):
             g.role = ki.get('role', None)
             return f(*args, **kwargs)
 
-        if auth_header.startswith('Bearer'):
-            token = auth_header.replace('Bearer ', '')
+        m = re.match('Bearer (\S+)', auth_header)
+        if m:
+            token = m.group(1)
             try:
                 payload = parse_token(token)
             except DecodeError:
@@ -275,10 +278,10 @@ def send_confirmation(name, email):
 
     text = 'Hello {name}!\n\n' \
            'Please verify your email address is {email} by clicking on the link below:\n\n' \
-           '{url}/{hash}\n\n' \
+           '{url}\n\n' \
            'You\'re receiving this email because you recently created a new Alerta account.' \
            ' If this wasn\'t you, please ignore this email.'.format(
-               name=name, email=email, url=request.base_url.replace('signup', 'confirm'), hash=confirm_hash)
+               name=name, email=email, url=absolute_url('/confirm/' + confirm_hash))
 
     msg_text = MIMEText(text, 'plain', 'utf-8')
     msg.attach(msg_text)

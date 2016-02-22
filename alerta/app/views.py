@@ -7,7 +7,7 @@ from uuid import uuid4
 from alerta.app import app, db
 from alerta.app.switch import Switch
 from alerta.app.auth import auth_required, admin_required
-from alerta.app.utils import jsonify, jsonp, parse_fields, process_alert
+from alerta.app.utils import absolute_url, jsonify, jsonp, parse_fields, process_alert
 from alerta.app.metrics import Timer
 from alerta.alert import Alert
 from alerta.heartbeat import Heartbeat
@@ -96,7 +96,7 @@ def get_alerts():
 
         for alert in alerts:
             body = alert.get_body()
-            body['href'] = "%s/%s" % (request.base_url.replace('alerts', 'alert'), alert.id)
+            body['href'] = absolute_url('/alert/' + alert.id)
 
             if not last_time:
                 last_time = body['lastReceiveTime']
@@ -154,7 +154,7 @@ def get_history():
         return jsonify(status="error", message=str(e)), 500
 
     for alert in history:
-        alert['href'] = "%s/%s" % (request.base_url.replace('alerts/history', 'alert'), alert['id'])
+        alert['href'] = absolute_url('/alert/' + alert['id'])
 
     if len(history) > 0:
         return jsonify(
@@ -208,8 +208,8 @@ def receive_alert():
 
     if alert:
         body = alert.get_body()
-        body['href'] = "%s/%s" % (request.base_url, alert.id)
-        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': '%s/%s' % (request.base_url, alert.id)}
+        body['href'] = absolute_url('/alert/' + alert.id)
+        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': body['href']}
     else:
         return jsonify(status="error", message="insert or update of received alert failed"), 500
 
@@ -229,7 +229,7 @@ def get_alert(id):
         if g.get('role', None) != 'admin' and not alert.customer == g.get('customer', None):
             return jsonify(status="error", message="not found", total=0, alert=None), 404
         body = alert.get_body()
-        body['href'] = request.base_url
+        body['href'] = absolute_url('/alert/' + alert.id)
         return jsonify(status="ok", total=1, alert=body)
     else:
         return jsonify(status="error", message="not found", total=0, alert=None), 404
@@ -396,7 +396,7 @@ def get_top10():
 
     for item in top10:
         for resource in item['resources']:
-            resource['href'] = "%s/%s" % (request.base_url.replace('alerts/top10', 'alert'), resource['id'])
+            resource['href'] = absolute_url('/alert/' + resource['id'])
 
     if top10:
         return jsonify(
@@ -535,7 +535,7 @@ def create_blackout():
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
-    return jsonify(status="ok", blackout=blackout), 201, {'Location': '%s/%s' % (request.base_url, blackout)}
+    return jsonify(status="ok", blackout=blackout), 201, {'Location': absolute_url('/blackout/' + blackout)}
 
 
 @app.route('/blackout/<path:blackout>', methods=['OPTIONS', 'DELETE', 'POST'])
@@ -573,7 +573,7 @@ def get_heartbeats():
         body = hb.get_body()
         if g.get('role', None) != 'admin' and not body['customer'] == g.get('customer', None):
             continue
-        body['href'] = "%s/%s" % (request.base_url.replace('heartbeats', 'heartbeat'), hb.id)
+        body['href'] = absolute_url('/heartbeat/' + hb.id)
         hb_list.append(body)
 
     if hb_list:
@@ -613,8 +613,8 @@ def create_heartbeat():
         return jsonify(status="error", message=str(e)), 500
 
     body = heartbeat.get_body()
-    body['href'] = "%s/%s" % (request.base_url, heartbeat.id)
-    return jsonify(status="ok", id=heartbeat.id, heartbeat=body), 201, {'Location': '%s/%s' % (request.base_url, heartbeat.id)}
+    body['href'] = absolute_url('/heartbeat/' + heartbeat.id)
+    return jsonify(status="ok", id=heartbeat.id, heartbeat=body), 201, {'Location': body['href']}
 
 
 @app.route('/heartbeat/<id>', methods=['OPTIONS', 'GET'])
@@ -632,7 +632,7 @@ def get_heartbeat(id):
         if g.get('role', None) != 'admin' and not heartbeat.customer == g.get('customer', None):
             return jsonify(status="error", message="not found", total=0, alert=None), 404
         body = heartbeat.get_body()
-        body['href'] = request.base_url
+        body['href'] = absolute_url('/hearbeat/' + heartbeat.id)
         return jsonify(status="ok", total=1, heartbeat=body)
     else:
         return jsonify(status="error", message="not found", total=0, heartbeat=None), 404
@@ -712,7 +712,7 @@ def create_user():
         return jsonify(status="error", message="must supply user 'name', 'login' and 'provider' as parameters"), 400
 
     if user_id:
-        return jsonify(status="ok", user=user_id), 201, {'Location': '%s/%s' % (request.base_url, user_id)}
+        return jsonify(status="ok", user=user_id), 201, {'Location': absolute_url('/user/' + user_id)}
     else:
         return jsonify(status="error", message="User with that login already exists"), 409
 
@@ -813,7 +813,7 @@ def create_customer():
         return jsonify(status="error", message="must supply user 'customer' and 'match' as parameters"), 400
 
     if cid:
-        return jsonify(status="ok", id=cid), 201, {'Location': '%s/%s' % (request.base_url, cid)}
+        return jsonify(status="ok", id=cid), 201, {'Location': absolute_url('/customer/' + cid)}
     else:
         return jsonify(status="error", message="Customer lookup for this match already exists"), 409
 
@@ -923,7 +923,7 @@ def create_key():
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
-    return jsonify(status="ok", key=key), 201, {'Location': '%s/%s' % (request.base_url, key)}
+    return jsonify(status="ok", key=key), 201, {'Location': absolute_url('/key/' + key)}
 
 
 @app.route('/key/<path:key>', methods=['OPTIONS', 'DELETE', 'POST'])

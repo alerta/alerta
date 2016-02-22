@@ -8,7 +8,7 @@ from dateutil.parser import parse as parse_date
 
 from alerta.app import app, db
 from alerta.alert import Alert
-from alerta.app.utils import jsonify, jsonp, process_alert
+from alerta.app.utils import absolute_url, jsonify, jsonp, process_alert
 from alerta.app.metrics import Timer
 from alerta.plugins import RejectException
 
@@ -102,8 +102,8 @@ def cloudwatch():
 
     if alert:
         body = alert.get_body()
-        body['href'] = "%s/%s" % (request.base_url, alert.id)
-        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': '%s/%s' % (request.base_url, alert.id)}
+        body['href'] = absolute_url('/alert/' + alert.id)
+        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': body['href']}
     else:
         return jsonify(status="error", message="insert or update of cloudwatch alarm failed"), 500
 
@@ -183,8 +183,8 @@ def pingdom():
 
     if alert:
         body = alert.get_body()
-        body['href'] = "%s/%s" % (request.base_url, alert.id)
-        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': '%s/%s' % (request.base_url, alert.id)}
+        body['href'] = absolute_url('/alert/' + alert.id)
+        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': body['href']}
     else:
         return jsonify(status="error", message="insert or update of pingdom check failed"), 500
 
