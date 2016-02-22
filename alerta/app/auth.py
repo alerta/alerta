@@ -101,7 +101,7 @@ def auth_required(f):
             except Exception as e:
                 return authenticate(str(e), 500)
             g.customer = ki.get('customer', None)
-            g.role = ki.get('role', None)
+            g.role = role(ki['user'])
             return f(*args, **kwargs)
 
         auth_header = request.headers.get('Authorization')
@@ -120,7 +120,7 @@ def auth_required(f):
             except Exception as e:
                 return authenticate(str(e), 500)
             g.customer = ki.get('customer', None)
-            g.role = ki.get('role', None)
+            g.role = role(ki['user'])
             return f(*args, **kwargs)
 
         m = re.match('Bearer (\S+)', auth_header)
