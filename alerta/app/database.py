@@ -1108,6 +1108,37 @@ class Mongo(object):
         if login:
             return bool(self._db.users.find_one({"login": login}))
 
+
+    def update_user(self, id, name=None, login=None, password=None, provider=None, text=None, email_verified=None):
+
+        user = self._db.users.find_one({"_id": id})
+
+        if not user:
+            return
+
+        data = {}
+
+        if name:
+            data['name'] = name
+        if login:
+            data['login'] = login
+        if provider:
+            data['provider'] = provider
+        if text:
+            data['text'] = text
+        if email_verified:
+            data['email_verified'] = email_verified
+
+        if password:
+            data['password'] = bcrypt.hashpw(fields['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        response = self._db.users.update_one({"_id": id}, {'$set': data})
+
+        if response.matched_count > 0:
+            return id
+        else:
+            return 
+
     def save_user(self, id, name, login, password=None, provider="", text="", email_verified=False):
 
         if self.is_user_valid(login=login):
