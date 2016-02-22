@@ -281,7 +281,7 @@ def send_confirmation(name, email):
            '{url}\n\n' \
            'You\'re receiving this email because you recently created a new Alerta account.' \
            ' If this wasn\'t you, please ignore this email.'.format(
-               name=name, email=email, url=absolute_url('/confirm/' + confirm_hash))
+               name=name, email=email, url=absolute_url('/auth/confirm/' + confirm_hash))
 
     msg_text = MIMEText(text, 'plain', 'utf-8')
     msg.attach(msg_text)
