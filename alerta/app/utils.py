@@ -54,7 +54,13 @@ def jsonp(func):
 
 
 def absolute_url(path=None):
-    return (app.config.get('BASE_URL', None) or request.base_url.replace(request.path, '')) + path
+    base_url = app.config.get('BASE_URL', None)
+    if not base_url:
+        return request.base_url.replace(request.path, '') + path
+    elif base_url.startswith('/'):
+        return request.base_url.replace(request.path, base_url) + path
+    else:
+        return base_url + path
 
 
 PARAMS_EXCLUDE = [
