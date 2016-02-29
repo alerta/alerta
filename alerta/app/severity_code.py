@@ -14,20 +14,8 @@ http://www.itu.int/rec/T-REC-X.736-199201-I
            Indeterminate               5 (Notice)
            Cleared                     5 (Notice)
 """
+from alerta.app import app
 from alerta.app import status_code
-
-CRITICAL_SEV_CODE = 1
-MAJOR_SEV_CODE = 2
-MINOR_SEV_CODE = 3
-WARNING_SEV_CODE = 4
-INDETER_SEV_CODE = 5
-CLEARED_SEV_CODE = 5
-NORMAL_SEV_CODE = 5
-OK_SEV_CODE = 5
-INFORM_SEV_CODE = 6
-DEBUG_SEV_CODE = 7
-AUTH_SEV_CODE = 8
-UNKNOWN_SEV_CODE = 9
 
 # NOTE: The display text in single quotes can be changed depending on preference.
 # eg. CRITICAL = 'critical' or CRITICAL = 'CRITICAL'
@@ -46,26 +34,11 @@ AUTH = 'security'
 UNKNOWN = 'unknown'
 NOT_VALID = 'notValid'
 
-ALL = [CRITICAL, MAJOR, MINOR, WARNING, INDETERMINATE, CLEARED, NORMAL, OK, INFORM, DEBUG, AUTH, UNKNOWN, NOT_VALID]
-
 MORE_SEVERE = 'moreSevere'
 LESS_SEVERE = 'lessSevere'
 NO_CHANGE = 'noChange'
 
-_SEVERITY_MAP = {
-    CRITICAL: CRITICAL_SEV_CODE,
-    MAJOR: MAJOR_SEV_CODE,
-    MINOR: MINOR_SEV_CODE,
-    WARNING: WARNING_SEV_CODE,
-    INDETERMINATE: INDETER_SEV_CODE,
-    CLEARED: CLEARED_SEV_CODE,
-    NORMAL: NORMAL_SEV_CODE,
-    OK: OK_SEV_CODE,
-    INFORM: INFORM_SEV_CODE,
-    DEBUG: DEBUG_SEV_CODE,
-    AUTH: AUTH_SEV_CODE,
-    UNKNOWN: UNKNOWN_SEV_CODE,
-}
+SEVERITY_MAP = app.config['SEVERITY_MAP']
 
 _ABBREV_SEVERITY_MAP = {
     CRITICAL: 'Crit',
@@ -101,16 +74,16 @@ ENDC = '\033[0m'
 
 
 def is_valid(name):
-    return name in _SEVERITY_MAP
+    return name in SEVERITY_MAP
 
 
 def name_to_code(name):
-    return _SEVERITY_MAP.get(name.lower(), UNKNOWN_SEV_CODE)
+    return SEVERITY_MAP.get(name, SEVERITY_MAP.get(UNKNOWN))
 
 
 def parse_severity(name):
     if name:
-        for severity in _SEVERITY_MAP:
+        for severity in SEVERITY_MAP:
             if name.lower() == severity.lower():
                 return severity
     return NOT_VALID
@@ -125,7 +98,7 @@ def trend(previous, current):
         return NO_CHANGE
 
 
-def status_from_severity(previous_severity, current_severity, current_status=None):
+def status_from_severity(previous_severity, current_severity, current_status=status_code.UNKNOWN):
     if current_severity in [NORMAL, CLEARED, OK]:
         return status_code.CLOSED
     if current_status in [status_code.CLOSED, status_code.EXPIRED]:
@@ -133,5 +106,3 @@ def status_from_severity(previous_severity, current_severity, current_status=Non
     if trend(previous_severity, current_severity) == MORE_SEVERE:
         return status_code.OPEN
     return current_status
-
-
