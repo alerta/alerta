@@ -45,6 +45,21 @@ CORS_ORIGINS = [
 ]
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
+SEVERITY_MAP = {
+    'critical': 1,
+    'major': 2,
+    'minor': 3,
+    'warning': 4,
+    'indeterminate': 5,
+    'cleared': 5,
+    'normal': 5,
+    'ok': 5,
+    'informational': 6,
+    'debug': 7,
+    'security': 8,
+    'unknown': 9  # default
+}
+
 BLACKOUT_DURATION = 3600  # default period = 1 hour
 
 EMAIL_VERIFICATION = False
