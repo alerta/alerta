@@ -31,7 +31,6 @@ setuptools.setup(
         'python-dateutil',
         'pytz',
         'PyJWT',
-        'cffi',
         'bcrypt'
     ],
     include_package_data=True,
