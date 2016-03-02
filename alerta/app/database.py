@@ -588,12 +588,15 @@ class Mongo(object):
             history=list()
         )
 
-    def get_alert(self, id):
+    def get_alert(self, id, customer=None):
 
         if len(id) == 8:
             query = {'$or': [{'_id': {'$regex': '^' + id}}, {'lastReceiveId': {'$regex': '^' + id}}]}
         else:
             query = {'$or': [{'_id': id}, {'lastReceiveId': id}]}
+
+        if customer:
+            query['customer'] = customer
 
         response = self._db.alerts.find_one(query)
         if not response:
@@ -963,9 +966,9 @@ class Mongo(object):
 
         return True if response.deleted_count == 1 else False
 
-    def get_heartbeats(self):
+    def get_heartbeats(self, query=None):
 
-        responses = self._db.heartbeats.find()
+        responses = self._db.heartbeats.find(query)
 
         heartbeats = list()
         for response in responses:
@@ -1037,12 +1040,15 @@ class Mongo(object):
                 customer=update.get('customer', None)
             )
 
-    def get_heartbeat(self, id):
+    def get_heartbeat(self, id, customer=None):
 
         if len(id) == 8:
             query = {'$or': [{'_id': {'$regex': '^' + id}}, {'lastReceiveId': {'$regex': '^' + id}}]}
         else:
             query = {'$or': [{'_id': id}, {'lastReceiveId': id}]}
+
+        if customer:
+            query['customer'] = customer
 
         response = self._db.heartbeats.find_one(query)
         if not response:

@@ -220,14 +220,13 @@ def receive_alert():
 @jsonp
 def get_alert(id):
 
+    customer = g.get('customer', None)
     try:
-        alert = db.get_alert(id=id)
+        alert = db.get_alert(id=id, customer=customer)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
     if alert:
-        if g.get('role', None) != 'admin' and not alert.customer == g.get('customer', None):
-            return jsonify(status="error", message="not found", total=0, alert=None), 404
         body = alert.get_body()
         body['href'] = absolute_url('/alert/' + alert.id)
         return jsonify(status="ok", total=1, alert=body)
@@ -563,16 +562,20 @@ def delete_blackout(blackout):
 @jsonp
 def get_heartbeats():
 
+    customer = g.get('customer', None)
+    if customer:
+        query = {'customer': customer}
+    else:
+        query = {}
+
     try:
-        heartbeats = db.get_heartbeats()
+        heartbeats = db.get_heartbeats(query)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
     hb_list = list()
     for hb in heartbeats:
         body = hb.get_body()
-        if g.get('role', None) != 'admin' and not body['customer'] == g.get('customer', None):
-            continue
         body['href'] = absolute_url('/heartbeat/' + hb.id)
         hb_list.append(body)
 
@@ -623,14 +626,14 @@ def create_heartbeat():
 @jsonp
 def get_heartbeat(id):
 
+    customer = g.get('customer', None)
+
     try:
-        heartbeat = db.get_heartbeat(id=id)
+        heartbeat = db.get_heartbeat(id=id, customer=customer)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
     if heartbeat:
-        if g.get('role', None) != 'admin' and not heartbeat.customer == g.get('customer', None):
-            return jsonify(status="error", message="not found", total=0, alert=None), 404
         body = heartbeat.get_body()
         body['href'] = absolute_url('/hearbeat/' + heartbeat.id)
         return jsonify(status="ok", total=1, heartbeat=body)
