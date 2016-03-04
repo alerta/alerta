@@ -5,6 +5,7 @@ set -e
 export AUTH_REQUIRED=False
 
 apt-get -y update
+apt-get -y upgrade
 DEBIAN_FRONTEND=noninteractive apt-get -y install git wget build-essential python python-setuptools python-pip python-dev python-virtualenv libffi-dev
 DEBIAN_FRONTEND=noninteractive apt-get -y install mongodb-server apache2 libapache2-mod-wsgi
 
