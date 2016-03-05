@@ -52,11 +52,11 @@ def verify_api_key(key, method):
 
 def create_token(user, name, login, provider=None, customer=None, role='user'):
     payload = {
-        'iss': "%s" % request.host_url,
+        'iss': request.url_root,
         'sub': user,
         'iat': datetime.utcnow(),
-        'aud': app.config['OAUTH2_CLIENT_ID'],
-        'exp': datetime.utcnow() + timedelta(days=14),
+        'aud': app.config['OAUTH2_CLIENT_ID'] or request.url_root,
+        'exp': datetime.utcnow() + timedelta(days=app.config['TOKEN_EXPIRE_DAYS']),
         'name': name,
         'login': login,
         'provider': provider
@@ -76,7 +76,7 @@ def create_token(user, name, login, provider=None, customer=None, role='user'):
 
 
 def parse_token(token):
-    return jwt.decode(token, key=app.config['SECRET_KEY'], audience=app.config['OAUTH2_CLIENT_ID'])
+    return jwt.decode(token, key=app.config['SECRET_KEY'], audience=app.config['OAUTH2_CLIENT_ID'] or request.url_root)
 
 
 def authenticate(message, status_code=401):
@@ -185,13 +185,14 @@ def customer_match(user, groups):
 def login():
     try:
         email = request.json['email']
+        domain = email.split('@')[1]
         password = request.json['password']
     except KeyError:
-        return jsonify(status="error", message="Must supply email address and password"), 401, \
+        return jsonify(status="error", message="Must supply 'email' and 'password'"), 401, \
             {'WWW-Authenticate': 'Basic realm="%s"' % BASIC_AUTH_REALM}
 
     if app.config['AUTH_REQUIRED'] and not db.is_user_valid(login=email):
-        return jsonify(status="error", message="User %s is not authorized" % email), 401, \
+        return jsonify(status="error", message="User or password not valid"), 401, \
             {'WWW-Authenticate': 'Basic realm="%s"' % BASIC_AUTH_REALM}
     elif not db.is_user_valid(login=email):
         return jsonify(status="error", message="User %s does not exist" % email), 401, \
@@ -200,21 +201,21 @@ def login():
         user = db.get_users(query={"login": email}, password=True)[0]
 
     if not bcrypt.hashpw(password.encode('utf-8'), user['password'].encode('utf-8')) == user['password'].encode('utf-8'):
-        return jsonify(status="error", message="User %s is not authorized" % email), 401, \
+        return jsonify(status="error", message="User or password not valid"), 401, \
             {'WWW-Authenticate': 'Basic realm="%s"' % BASIC_AUTH_REALM}
 
     if app.config['EMAIL_VERIFICATION'] and not db.is_email_verified(email):
         return jsonify(status="error", message="email address %s has not been verified" % email), 401
 
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
-            or email.split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']):
-        return jsonify(status="error", message="User %s is not authorized" % email), 403
+            or domain in app.config['ALLOWED_EMAIL_DOMAINS']):
+        return jsonify(status="error", message="Login for user domain %s not allowed" % domain), 403
 
     if app.config['CUSTOMER_VIEWS']:
         try:
-            customer = customer_match(email, groups=[email.split('@')[1]])
+            customer = customer_match(email, groups=[domain])
         except NoCustomerMatch:
-            return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
+            return jsonify(status="error", message="No customer lookup defined for user domain %s" % domain), 403
     else:
         customer = None
 
@@ -229,6 +230,7 @@ def signup():
     if request.json and 'name' in request.json:
         name = request.json["name"]
         email = request.json["email"]
+        domain = email.split('@')[1]
         password = request.json["password"]
         provider = request.json.get("provider", "basic")
         text = request.json.get("text", "")
@@ -237,7 +239,12 @@ def signup():
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
-        return jsonify(status="error", message="must supply user 'name', 'email' and 'password' as parameters"), 400
+        return jsonify(status="error", message="Must supply user 'name', 'email' and 'password' as parameters"), 400
+
+    if user_id:
+        user = db.get_user(user_id)
+    else:
+        return jsonify(status="error", message="User with email %s already exists" % email), 409
 
     if app.config['EMAIL_VERIFICATION']:
         send_confirmation(name, email)
@@ -245,19 +252,14 @@ def signup():
             return jsonify(status="error", message="email address %s has not been verified" % email), 401
 
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
-            or email.split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']):
-        return jsonify(status="error", message="User %s is not authorized" % email), 403
-
-    if user_id:
-        user = db.get_user(user_id)
-    else:
-        return jsonify(status="error", message="User with that login already exists"), 409
+            or domain in app.config['ALLOWED_EMAIL_DOMAINS']):
+        return jsonify(status="error", message="Login for user domain %s not allowed" % domain), 403
 
     if app.config['CUSTOMER_VIEWS']:
         try:
-            customer = customer_match(email, groups=[email.split('@')[1]])
+            customer = customer_match(email, groups=[domain])
         except NoCustomerMatch:
-            return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
+            return jsonify(status="error", message="No customer lookup defined for user domain %s" % domain), 403
     else:
         customer = None
 
