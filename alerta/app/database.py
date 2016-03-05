@@ -1114,7 +1114,6 @@ class Mongo(object):
         if login:
             return bool(self._db.users.find_one({"login": login}))
 
-
     def update_user(self, id, name=None, login=None, password=None, provider=None, text=None, email_verified=None):
 
         user = self._db.users.find_one({"_id": id})

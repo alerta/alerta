@@ -27,14 +27,15 @@ AUTH_REQUIRED = False
 ADMIN_USERS = []
 CUSTOMER_VIEWS = False
 
-OAUTH2_CLIENT_ID = 'INSERT-OAUTH2-CLIENT-ID-HERE'  # Google or GitHub OAuth2 client ID and secret
-OAUTH2_CLIENT_SECRET = 'INSERT-OAUTH2-CLIENT-SECRET-HERE'
-ALLOWED_EMAIL_DOMAINS = ['gmail.com']
-ALLOWED_GITHUB_ORGS = ['guardian']
+OAUTH2_CLIENT_ID = None  # Google or GitHub OAuth2 client ID and secret
+OAUTH2_CLIENT_SECRET = None
+ALLOWED_EMAIL_DOMAINS = ['*']
+ALLOWED_GITHUB_ORGS = ['*']
 
 GITLAB_URL = None
 ALLOWED_GITLAB_GROUPS = ['*']
 
+TOKEN_EXPIRE_DAYS = 14
 API_KEY_EXPIRE_DAYS = 365  # 1 year
 
 CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
