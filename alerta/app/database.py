@@ -857,9 +857,13 @@ class Mongo(object):
         query = dict()
         query['startTime'] = {'$lte': now}
         query['endTime'] = {'$gt': now}
+
+        query['environment'] = alert.environment
+        if app.config['CUSTOMER_VIEWS']:
+            query['customer'] = alert.customer
+
         query['$or'] = [
             {
-                "environment": alert.environment,
                 "resource": {'$exists': False},
                 "service": {'$exists': False},
                 "event": {'$exists': False},
@@ -867,7 +871,6 @@ class Mongo(object):
                 "tags": {'$exists': False}
             },
             {
-                "environment": alert.environment,
                 "resource": alert.resource,
                 "service": {'$exists': False},
                 "event": {'$exists': False},
@@ -875,7 +878,6 @@ class Mongo(object):
                 "tags": {'$exists': False}
             },
             {
-                "environment": alert.environment,
                 "resource": {'$exists': False},
                 "service": {"$not": {"$elemMatch": {"$nin": alert.service}}},
                 "event": {'$exists': False},
@@ -883,7 +885,6 @@ class Mongo(object):
                 "tags": {'$exists': False}
             },
             {
-                "environment": alert.environment,
                 "resource": {'$exists': False},
                 "service": {'$exists': False},
                 "event": alert.event,
@@ -891,7 +892,6 @@ class Mongo(object):
                 "tags": {'$exists': False}
             },
             {
-                "environment": alert.environment,
                 "resource": {'$exists': False},
                 "service": {'$exists': False},
                 "event": {'$exists': False},
@@ -899,7 +899,6 @@ class Mongo(object):
                 "tags": {'$exists': False}
             },
             {
-                "environment": alert.environment,
                 "resource": alert.resource,
                 "service": {'$exists': False},
                 "event": alert.event,
@@ -907,7 +906,6 @@ class Mongo(object):
                 "tags": {'$exists': False}
             },
             {
-                "environment": alert.environment,
                 "resource": {'$exists': False},
                 "service": {'$exists': False},
                 "event": {'$exists': False},
@@ -921,7 +919,7 @@ class Mongo(object):
 
         return False
 
-    def create_blackout(self, environment, resource=None, service=None, event=None, group=None, tags=None, start=None, end=None, duration=None):
+    def create_blackout(self, environment, resource=None, service=None, event=None, group=None, tags=None, customer=None, start=None, end=None, duration=None):
 
         start = start or datetime.datetime.utcnow()
         if end:
@@ -957,6 +955,9 @@ class Mongo(object):
         elif tags:
             data["priority"] = 7
             data["tags"] = tags
+
+        if app.config['CUSTOMER_VIEWS'] and customer:
+            data["customer"] = customer
 
         return self._db.blackouts.insert_one(data).inserted_id
 
