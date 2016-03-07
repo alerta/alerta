@@ -30,5 +30,5 @@ class LogStashOutput(PluginBase):
 
         self.sock.close()
 
-    def status_change(self, alert, status):
+    def status_change(self, alert, status, text):
         return

@@ -25,7 +25,7 @@ class PluginBase(object):
         return None
 
     @abc.abstractmethod
-    def status_change(self, alert, status):
+    def status_change(self, alert, status, text):
         """Trigger integrations based on status changes."""
         return None
 

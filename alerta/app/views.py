@@ -245,12 +245,12 @@ def set_status(id):
     status_started = status_timer.start_timer()
     customer = g.get('customer', None)
     try:
-        changeAlert = db.get_alert(id=id, customer=customer)
+        alert = db.get_alert(id=id, customer=customer)
     except Exception as e:
         status_timer.stop_timer(status_started)
         return jsonify(status="error", message=str(e)), 500
 
-    if not changeAlert:
+    if not alert:
         status_timer.stop_timer(status_started)
         return jsonify(status="error", message="not found", total=0, alert=None), 404
 
@@ -263,7 +263,7 @@ def set_status(id):
 
     for plugin in plugins:
         try:
-            changeAlert = plugin.status_change(changeAlert, status)
+            plugin.status_change(alert, status, text)
         except RejectException as e:
             status_timer.stop_timer(status_started)
             return jsonify(status="error", message=str(e)), 403
