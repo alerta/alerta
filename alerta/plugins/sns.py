@@ -11,7 +11,6 @@ LOG = app.logger
 class SnsTopicPublisher(PluginBase):
 
     def __init__(self):
-
         try:
             self.connection = boto.sns.connect_to_region(
                 region_name=app.config['AWS_REGION'],
@@ -41,7 +40,6 @@ class SnsTopicPublisher(PluginBase):
         LOG.info('Configured SNS publisher on topic "%s"', self.topic_arn)
 
     def pre_receive(self, alert):
-
         return alert
 
     def post_receive(self, alert):
@@ -51,3 +49,6 @@ class SnsTopicPublisher(PluginBase):
 
         response = self.connection.publish(topic=self.topic_arn, message=alert.get_body())
         LOG.debug('Response: %s', response)
+
+    def status_change(self, alert, status):
+        return

@@ -24,6 +24,11 @@ class PluginBase(object):
         """Send an alert to another service or notify users."""
         return None
 
+    @abc.abstractmethod
+    def status_change(self, alert, status):
+        """Trigger integrations based on status changes."""
+        return None
+
 
 def load_plugins(namespace='alerta.plugins'):
 

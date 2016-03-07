@@ -9,12 +9,13 @@ LOG = app.logger
 
 class LogStashOutput(PluginBase):
 
-    def pre_receive(self, alert):
+    def __init__(self):
+        self.sock = None
 
+    def pre_receive(self, alert):
         return alert
 
     def post_receive(self, alert):
-
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((app.config['LOGSTASH_HOST'], app.config['LOGSTASH_PORT']))
@@ -29,5 +30,5 @@ class LogStashOutput(PluginBase):
 
         self.sock.close()
 
+    def status_change(self, alert, status):
         return
-

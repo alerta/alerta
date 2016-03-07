@@ -40,3 +40,6 @@ class FanoutPublisher(PluginBase):
         LOG.debug('Message: %s', alert.get_body())
 
         self.producer.publish(alert.get_body(), declare=[self.exchange], retry=True)
+
+    def status_change(self, alert, status):
+        return
