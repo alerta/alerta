@@ -46,7 +46,6 @@ setuptools.setup(
             'amqp = alerta.plugins.amqp:FanoutPublisher',
             'sns = alerta.plugins.sns:SnsTopicPublisher',
             'logstash = alerta.plugins.logstash:LogStashOutput',
-            'prometheus = alerta.plugins.prometheus:AlertmanagerSilence',
         ],
     },
     keywords='alert monitoring system wsgi application api',
