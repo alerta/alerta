@@ -50,5 +50,5 @@ class SnsTopicPublisher(PluginBase):
         response = self.connection.publish(topic=self.topic_arn, message=alert.get_body())
         LOG.debug('Response: %s', response)
 
-    def status_change(self, alert, status):
+    def status_change(self, alert, status, text):
         return

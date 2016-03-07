@@ -12,5 +12,5 @@ class NormaliseAlert(PluginBase):
     def post_receive(self, alert):
         return
 
-    def status_change(self, alert, status):
+    def status_change(self, alert, status, text):
         return
