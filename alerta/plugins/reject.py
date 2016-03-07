@@ -10,7 +10,6 @@ ORIGIN_BLACKLIST_REGEX = [re.compile(x) for x in settings.ORIGIN_BLACKLIST]
 class RejectPolicy(PluginBase):
 
     def pre_receive(self, alert):
-
         if any(regex.match(alert.origin) for regex in ORIGIN_BLACKLIST_REGEX):
             raise RejectException("[POLICY] Alert origin '%s' has been blacklisted" % alert.origin)
 
@@ -23,5 +22,7 @@ class RejectPolicy(PluginBase):
         return alert
 
     def post_receive(self, alert):
+        return
 
+    def status_change(self, alert, status):
         return

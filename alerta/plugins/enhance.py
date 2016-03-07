@@ -5,7 +5,6 @@ from alerta.plugins import PluginBase
 class EnhanceAlert(PluginBase):
 
     def pre_receive(self, alert):
-
         if 'TPS reports' in alert.text:
             alert.attributes['customer'] = 'Initech'
         elif 'nexus' in alert.text:
@@ -22,5 +21,7 @@ class EnhanceAlert(PluginBase):
         return alert
 
     def post_receive(self, alert):
+        return
 
+    def status_change(self, alert, status):
         return

@@ -11,9 +11,11 @@ from alerta.app.utils import absolute_url, jsonify, jsonp, parse_fields, process
 from alerta.app.metrics import Timer
 from alerta.alert import Alert
 from alerta.heartbeat import Heartbeat
-from alerta.plugins import RejectException
+from alerta.plugins import load_plugins, RejectException
 
 LOG = app.logger
+
+plugins = load_plugins()
 
 # Set-up metrics
 gets_timer = Timer('alerts', 'queries', 'Alert queries', 'Total time to process number of alert queries')
@@ -240,19 +242,37 @@ def get_alert(id):
 @jsonp
 def set_status(id):
 
-    # FIXME - should only allow role=user to set status for alerts for that customer
-
     status_started = status_timer.start_timer()
-    data = request.json
+    customer = g.get('customer', None)
+    try:
+        changeAlert = db.get_alert(id=id, customer=customer)
+    except Exception as e:
+        status_timer.stop_timer(status_started)
+        return jsonify(status="error", message=str(e)), 500
 
-    if data and 'status' in data:
-        try:
-            alert = db.set_status(id=id, status=data['status'], text=data.get('text', ''))
-        except Exception as e:
-            return jsonify(status="error", message=str(e)), 500
-    else:
+    if not changeAlert:
+        status_timer.stop_timer(status_started)
+        return jsonify(status="error", message="not found", total=0, alert=None), 404
+
+    status = request.json.get('status', None)
+    text = request.json.get('text', '')
+
+    if not status:
         status_timer.stop_timer(status_started)
         return jsonify(status="error", message="must supply 'status' as parameter"), 400
+
+    for plugin in plugins:
+        try:
+            changeAlert = plugin.status_change(changeAlert, status)
+        except RejectException as e:
+            status_timer.stop_timer(status_started)
+            return jsonify(status="error", message=str(e)), 403
+
+    try:
+        alert = db.set_status(id=id, status=status, text=text)
+    except Exception as e:
+        status_timer.stop_timer(status_started)
+        return jsonify(status="error", message=str(e)), 500
 
     if alert:
         status_timer.stop_timer(status_started)
