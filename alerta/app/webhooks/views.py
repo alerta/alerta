@@ -2,14 +2,15 @@ import json
 import datetime
 
 from copy import copy
-from flask import request
-from flask.ext.cors import cross_origin
 from dateutil.parser import parse as parse_date
+from flask import g, request
+from flask.ext.cors import cross_origin
 
 from alerta.app import app, db
-from alerta.alert import Alert
-from alerta.app.utils import absolute_url, jsonify, jsonp, process_alert
+from alerta.app.auth import auth_required
 from alerta.app.metrics import Timer
+from alerta.app.utils import absolute_url, jsonify, process_alert
+from alerta.alert import Alert
 from alerta.plugins import RejectException
 
 LOG = app.logger
@@ -79,7 +80,7 @@ def parse_notification(notification):
 
 @app.route('/webhooks/cloudwatch', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@jsonp
+@auth_required
 def cloudwatch():
 
     hook_started = webhook_timer.start_timer()
@@ -88,6 +89,9 @@ def cloudwatch():
     except ValueError as e:
         webhook_timer.stop_timer(hook_started)
         return jsonify(status="error", message=str(e)), 400
+
+    if g.get('customer', None):
+        incomingAlert.customer = g.get('customer')
 
     try:
         alert = process_alert(incomingAlert)
@@ -160,7 +164,7 @@ def parse_pingdom(check):
 
 @app.route('/webhooks/pingdom', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@jsonp
+@auth_required
 def pingdom():
 
     hook_started = webhook_timer.start_timer()
@@ -169,6 +173,9 @@ def pingdom():
     except ValueError as e:
         webhook_timer.stop_timer(hook_started)
         return jsonify(status="error", message=str(e)), 400
+
+    if g.get('customer', None):
+        incomingAlert.customer = g.get('customer')
 
     try:
         alert = process_alert(incomingAlert)
@@ -242,6 +249,7 @@ def parse_pagerduty(message):
 
 @app.route('/webhooks/pagerduty', methods=['OPTIONS', 'POST'])
 @cross_origin()
+@auth_required
 def pagerduty():
 
     hook_started = webhook_timer.start_timer()
@@ -322,6 +330,7 @@ def parse_prometheus(status, alert):
 
 @app.route('/webhooks/prometheus', methods=['OPTIONS', 'POST'])
 @cross_origin()
+@auth_required
 def prometheus():
 
     if request.json and 'alerts' in request.json:
@@ -333,6 +342,9 @@ def prometheus():
             except ValueError as e:
                 webhook_timer.stop_timer(hook_started)
                 return jsonify(status="error", message=str(e)), 400
+
+            if g.get('customer', None):
+                incomingAlert.customer = g.get('customer')
 
             try:
                 process_alert(incomingAlert)
