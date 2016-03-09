@@ -3,7 +3,7 @@ import datetime
 
 from copy import copy
 from dateutil.parser import parse as parse_date
-from flask import request
+from flask import g, request
 from flask.ext.cors import cross_origin
 
 from alerta.app import app, db
@@ -90,6 +90,9 @@ def cloudwatch():
         webhook_timer.stop_timer(hook_started)
         return jsonify(status="error", message=str(e)), 400
 
+    if g.get('customer', None):
+        incomingAlert.customer = g.get('customer')
+
     try:
         alert = process_alert(incomingAlert)
     except RejectException as e:
@@ -170,6 +173,9 @@ def pingdom():
     except ValueError as e:
         webhook_timer.stop_timer(hook_started)
         return jsonify(status="error", message=str(e)), 400
+
+    if g.get('customer', None):
+        incomingAlert.customer = g.get('customer')
 
     try:
         alert = process_alert(incomingAlert)
@@ -336,6 +342,9 @@ def prometheus():
             except ValueError as e:
                 webhook_timer.stop_timer(hook_started)
                 return jsonify(status="error", message=str(e)), 400
+
+            if g.get('customer', None):
+                incomingAlert.customer = g.get('customer')
 
             try:
                 process_alert(incomingAlert)
