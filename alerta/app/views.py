@@ -944,16 +944,17 @@ def get_user_keys(user):
 @jsonp
 def create_key():
 
-    if request.json and 'user' in request.json:
-        user = request.json['user']
+    if g.get('role', None) != 'admin':
+        user = g.user
+        customer = g.customer
     else:
-        return jsonify(status="error", message="must supply 'user' as parameter"), 400
+        user = request.json.get('user', g.user)
+        customer = request.json.get('customer', None)
 
     type = request.json.get("type", "read-only")
     if type not in ['read-only', 'read-write']:
         return jsonify(status="error", message="API key must be read-only or read-write"), 400
 
-    customer = g.get('customer', None) or request.json.get("customer", None)
     text = request.json.get("text", "API Key for %s" % user)
     try:
         key = db.create_key(user, type, customer, text)
