@@ -100,6 +100,7 @@ def auth_required(f):
                 return authenticate(str(e), 403)
             except Exception as e:
                 return authenticate(str(e), 500)
+            g.user = ki['user']
             g.customer = ki.get('customer', None)
             g.role = role(ki['user'])
             return f(*args, **kwargs)
@@ -119,6 +120,7 @@ def auth_required(f):
                 return authenticate(str(e), 403)
             except Exception as e:
                 return authenticate(str(e), 500)
+            g.user = ki['user']
             g.customer = ki.get('customer', None)
             g.role = role(ki['user'])
             return f(*args, **kwargs)
@@ -134,6 +136,7 @@ def auth_required(f):
                 return authenticate('Token has expired')
             except InvalidAudience:
                 return authenticate('Invalid audience')
+            g.user = payload['login']
             g.customer = payload.get('customer', None)
             g.role = payload.get('role', None)
             return f(*args, **kwargs)
