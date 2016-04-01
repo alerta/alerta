@@ -341,11 +341,14 @@ class Mongo(object):
         if status != previous_status:
             update['$push'] = {
                 "history": {
-                    "event": alert.event,
-                    "status": status,
-                    "text": "duplicate alert status change",
-                    "id": alert.id,
-                    "updateTime": now
+                    '$each': [{
+                        "event": alert.event,
+                        "status": status,
+                        "text": "duplicate alert status change",
+                        "id": alert.id,
+                        "updateTime": now
+                    }],
+                    '$slice': -abs(app.config['HISTORY_LIMIT'])
                 }
             }
 
@@ -436,20 +439,23 @@ class Mongo(object):
                 "lastReceiveId": alert.id,
                 "lastReceiveTime": now
             },
-            '$pushAll': {
-                "history": [{
-                    "event": alert.event,
-                    "severity": alert.severity,
-                    "value": alert.value,
-                    "text": alert.text,
-                    "id": alert.id,
-                    "updateTime": alert.create_time
-                }]
+            '$push': {
+                "history": {
+                    '$each': [{
+                        "event": alert.event,
+                        "severity": alert.severity,
+                        "value": alert.value,
+                        "text": alert.text,
+                        "id": alert.id,
+                        "updateTime": alert.create_time
+                    }],
+                    '$slice': -abs(app.config['HISTORY_LIMIT'])
+                }
             }
         }
 
         if status != previous_status:
-            update['$pushAll']['history'].append({
+            update['$push']['history']['$each'].append({
                 "event": alert.event,
                 "status": status,
                 "text": "correlated alert status change",
@@ -647,11 +653,14 @@ class Mongo(object):
             '$set': {"status": status},
             '$push': {
                 "history": {
-                    "event": event,
-                    "status": status,
-                    "text": text,
-                    "id": id,
-                    "updateTime": now
+                    '$each': [{
+                        "event": event,
+                        "status": status,
+                        "text": text,
+                        "id": id,
+                        "updateTime": now
+                    }],
+                    '$slice': -abs(app.config['HISTORY_LIMIT'])
                 }
             }
         }
