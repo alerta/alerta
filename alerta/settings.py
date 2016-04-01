@@ -12,7 +12,7 @@ DEBUG = False
 SECRET_KEY = r'0Afk\(,8$cr(Y8:MA""knd>[@$U[G.eQL6DjAmVs'
 
 QUERY_LIMIT = 10000  # maximum number of alerts returned by a single query
-HISTORY_LIMIT = 100  #
+HISTORY_LIMIT = 100  # cap the number of alert history entries
 
 # MongoDB
 MONGO_HOST = 'localhost'
