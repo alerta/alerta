@@ -860,6 +860,9 @@ class Mongo(object):
         return blackouts
 
     def is_blackout_period(self, alert):
+        
+        if alert.severity in app.config.get('BLACKOUT_ACCEPT', []):
+            return False
 
         now = datetime.datetime.utcnow()
 
