@@ -6,8 +6,6 @@ import logging
 from flask import Flask
 from flask.ext.cors import CORS
 
-from alerta.version import __version__
-
 LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s'
 
 app = Flask(__name__, static_url_path='')
