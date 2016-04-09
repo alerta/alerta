@@ -37,7 +37,7 @@ setuptools.setup(
     zip_safe=False,
     entry_points={
         'console_scripts': [
-            'alertad = alerta.app:main'
+            'alertad = alerta.app.shell:main'
         ],
         'alerta.plugins': [
             'reject = alerta.plugins.reject:RejectPolicy',
