@@ -360,3 +360,88 @@ def prometheus():
         return jsonify(status="error", message="no alerts in Prometheus notification payload"), 400
 
     return jsonify(status="ok"), 200
+
+
+def parse_stackdriver(notification):
+
+    notification = json.loads(notification)
+    incident = notification['incident']
+    state = incident['state']
+
+    if state == 'acknowledged':
+        try:
+            alert = db.get_alerts(query={'attributes.incidentId': incident['incident_id']}, limit=1)[0]
+        except IndexError:
+            raise ValueError('unknown Stackdriver Incident ID: %s' % incident['incident_id'])
+        return state, alert
+
+    else:
+        if state == 'open':
+            severity = 'critical'
+            create_time = datetime.datetime.fromtimestamp(incident['started_at'])
+        elif state == 'closed':
+            severity = 'ok'
+            create_time = datetime.datetime.fromtimestamp(incident['ended_at'])
+        else:
+            severity = 'indeterminate'
+            create_time = None
+
+        return state, Alert(
+            resource=incident['resource_name'],
+            event=incident['condition_name'],
+            environment='Production',
+            severity=severity,
+            service=[incident['policy_name']],
+            group='Cloud',
+            text=incident['summary'],
+            attributes={
+                'incidentId': incident['incident_id'],
+                'resourceId': incident['resource_id'],
+                'moreInfo': '<a href="%s" target="_blank">Stackdriver Console</a>' % incident['url']
+            },
+            origin='Stackdriver',
+            event_type='stackdriverAlert',
+            create_time=create_time,
+            raw_data=notification
+        )
+
+
+@app.route('/webhooks/stackdriver', methods=['OPTIONS', 'POST'])
+@cross_origin()
+@auth_required
+def stackdriver():
+
+    hook_started = webhook_timer.start_timer()
+    try:
+        state, incomingAlert = parse_stackdriver(request.data)
+    except ValueError as e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=str(e)), 400
+
+    if g.get('customer', None):
+        incomingAlert.customer = g.get('customer')
+
+    if state == 'acknowledged':
+        try:
+            alert = db.set_status(id=incomingAlert.id, status='ack', text='acknowledged via Stackdriver')
+        except Exception as e:
+            webhook_timer.stop_timer(hook_started)
+            return jsonify(status="error", message=str(e)), 500
+    else:
+        try:
+            alert = process_alert(incomingAlert)
+        except RejectException as e:
+            webhook_timer.stop_timer(hook_started)
+            return jsonify(status="error", message=str(e)), 403
+        except Exception as e:
+            webhook_timer.stop_timer(hook_started)
+            return jsonify(status="error", message=str(e)), 500
+
+    webhook_timer.stop_timer(hook_started)
+
+    if alert:
+        body = alert.get_body()
+        body['href'] = absolute_url('/alert/' + alert.id)
+        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': body['href']}
+    else:
+        return jsonify(status="error", message="notification from stackdriver failed"), 500
