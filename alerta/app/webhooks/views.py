@@ -372,16 +372,19 @@ def parse_stackdriver(notification):
         try:
             alert = db.get_alerts(query={'attributes.incidentId': incident['incident_id']}, limit=1)[0]
         except IndexError:
-            raise
+            raise ValueError('unknown Stackdriver Incident ID: %s' % incident['incident_id'])
         return state, alert
 
     else:
         if state == 'open':
             severity = 'critical'
+            create_time = datetime.datetime.fromtimestamp(incident['started_at'])
         elif state == 'closed':
             severity = 'ok'
+            create_time = datetime.datetime.fromtimestamp(incident['ended_at'])
         else:
             severity = 'indeterminate'
+            create_time = None
 
         return state, Alert(
             resource=incident['resource_name'],
@@ -398,7 +401,8 @@ def parse_stackdriver(notification):
             },
             origin='Stackdriver',
             event_type='stackdriverAlert',
-            raw_data=notification,
+            create_time=create_time,
+            raw_data=notification
         )
 
 
