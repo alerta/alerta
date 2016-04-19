@@ -1122,7 +1122,7 @@ class Mongo(object):
         if login:
             data['login'] = login
         if password:
-            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
         if provider:
             data['provider'] = provider
         if text:
@@ -1153,7 +1153,7 @@ class Mongo(object):
         }
 
         if password:
-            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
 
         return self._db.users.insert_one(data).inserted_id
 
@@ -1167,7 +1167,7 @@ class Mongo(object):
                 "login": login
             },
             {
-                '$set': {"password": bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')}
+                '$set': {"password": bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(prefix=b'2a')).decode('utf-8')}
             },
             upsert=True
         )
