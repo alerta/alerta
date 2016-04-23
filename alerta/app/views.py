@@ -48,7 +48,7 @@ def index():
     for rule in app.url_map.iter_rules():
         if rule.endpoint not in ['test', 'static']:
             rules.append(rule)
-    return render_template('index.html', rules=rules)
+    return render_template('index.html', base_url=absolute_url(), rules=rules)
 
 
 @app.route('/alerts', methods=['OPTIONS', 'GET'])
