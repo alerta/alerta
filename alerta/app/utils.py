@@ -6,6 +6,11 @@ import re
 from functools import wraps
 from flask import request, g, current_app
 
+try:
+    from urllib.parse import urljoin
+except ImportError:
+    from urlparse import urljoin
+
 from alerta.app import app, db
 from alerta.app.metrics import Counter, Timer
 from alerta.plugins import load_plugins, RejectException
@@ -53,14 +58,8 @@ def jsonp(func):
     return decorated
 
 
-def absolute_url(path=None):
-    base_url = app.config.get('BASE_URL', None)
-    if not base_url:
-        return request.base_url.replace(request.path, '') + path
-    elif base_url.startswith('/'):
-        return request.base_url.replace(request.path, base_url) + path
-    else:
-        return base_url + path
+def absolute_url(path=''):
+    return urljoin(request.base_url.rstrip('/'), app.config.get('BASE_URL', '') + path)
 
 
 PARAMS_EXCLUDE = [
