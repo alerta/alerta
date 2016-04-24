@@ -1288,13 +1288,12 @@ class Mongo(object):
             )
         return keys
 
-    def get_user_keys(self, id):
+    def get_user_keys(self, login):
 
-        user = self._db.users.find_one({"_id": id})
-        if not user:
+        if not self.is_user_valid(login=login):
             return
 
-        return self.get_keys({"user": user['login']})
+        return self.get_keys({"user": login})
 
     def is_key_valid(self, key):
 

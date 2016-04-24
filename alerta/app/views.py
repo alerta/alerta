@@ -880,44 +880,19 @@ def delete_customer(customer):
 @jsonp
 def get_keys():
 
-    query = dict()
-    if g.get('role', None) != 'admin':
-        query['customer'] = g.get('customer')
-
-    try:
-        keys = db.get_keys(query)
-    except Exception as e:
-        return jsonify(status="error", message=str(e)), 500
-
-    if len(keys):
-        return jsonify(
-            status="ok",
-            total=len(keys),
-            keys=keys,
-            time=datetime.datetime.utcnow()
-        )
+    if g.get('role', None) == 'admin':
+        try:
+            keys = db.get_keys()
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
     else:
-        return jsonify(
-            status="ok",
-            message="not found",
-            total=0,
-            keys=[],
-            time=datetime.datetime.utcnow()
-        )
+        user = g.get('user')
+        try:
+            keys = db.get_user_keys(user)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
 
-
-@app.route('/keys/<user>', methods=['OPTIONS', 'GET'])
-@cross_origin()
-@auth_required
-@jsonp
-def get_user_keys(user):
-
-    try:
-        keys = db.get_user_keys(user)
-    except Exception as e:
-        return jsonify(status="error", message=str(e)), 500
-
-    if len(keys):
+    if keys:
         return jsonify(
             status="ok",
             total=len(keys),
