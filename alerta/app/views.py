@@ -912,12 +912,8 @@ def get_keys():
 @jsonp
 def get_user_keys(user):
 
-    query = {"user": user}
-    if g.get('role', None) != 'admin':
-        query['customer'] = g.get('customer')
-
     try:
-        keys = db.get_keys(query)
+        keys = db.get_user_keys(user)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
