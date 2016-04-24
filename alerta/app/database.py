@@ -1129,9 +1129,7 @@ class Mongo(object):
 
     def update_user(self, id, name=None, login=None, password=None, provider=None, text=None, email_verified=None):
 
-        user = self._db.users.find_one({"_id": id})
-
-        if not user:
+        if not self.is_user_valid(id=id):
             return
 
         data = {}
@@ -1288,8 +1286,15 @@ class Mongo(object):
                     "customer": response.get("customer", None)
                 }
             )
-
         return keys
+
+    def get_user_keys(self, id):
+
+        user = self._db.users.find_one({"_id": id})
+        if not user:
+            return
+
+        return self.get_keys({"user": user['login']})
 
     def is_key_valid(self, key):
 
