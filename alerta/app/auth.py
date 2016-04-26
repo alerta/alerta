@@ -102,9 +102,7 @@ def auth_required(f):
             g.role = role(ki['user'])
             return f(*args, **kwargs)
 
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return authenticate('Missing authorization API Key or Bearer Token')
+        auth_header = request.headers.get('Authorization', '')
 
         m = re.match('Key (\S+)', auth_header)
         if m:
@@ -141,7 +139,7 @@ def auth_required(f):
         if not app.config['AUTH_REQUIRED']:
             return f(*args, **kwargs)
 
-        return authenticate('Authentication required')
+        return authenticate('Missing authorization API Key or Bearer Token')
 
     return decorated
 
