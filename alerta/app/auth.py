@@ -87,9 +87,6 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
 
-        if not app.config['AUTH_REQUIRED']:
-            return f(*args, **kwargs)
-
         if 'api-key' in request.args:
             key = request.args['api-key']
             try:
@@ -139,6 +136,9 @@ def auth_required(f):
             g.user = payload['login']
             g.customer = payload.get('customer', None)
             g.role = payload.get('role', None)
+            return f(*args, **kwargs)
+
+        if not app.config['AUTH_REQUIRED']:
             return f(*args, **kwargs)
 
         return authenticate('Authentication required')

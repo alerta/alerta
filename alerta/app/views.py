@@ -915,16 +915,19 @@ def get_keys():
 @jsonp
 def create_key():
 
-    if g.get('role', None) != 'admin':
-        user = g.user
-        customer = g.customer
-    else:
-        user = request.json.get('user', g.user)
-        customer = request.json.get('customer', None)
+    try:
+        if g.get('role', None) != 'admin':
+            user = g.user
+            customer = g.get('customer', None)
+        else:
+            user = request.json.get('user', g.user)
+            customer = request.json.get('customer', None)
+    except AttributeError:
+        return jsonify(status="error", message="Must supply 'user' as parameter"), 400
 
     type = request.json.get("type", "read-only")
     if type not in ['read-only', 'read-write']:
-        return jsonify(status="error", message="API key must be read-only or read-write"), 400
+        return jsonify(status="error", message="API key 'type' must be 'read-only' or 'read-write'"), 400
 
     text = request.json.get("text", "API Key for %s" % user)
     try:
