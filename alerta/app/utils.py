@@ -165,6 +165,16 @@ def parse_fields(r):
         query['$or'] = [{'_id': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}, {'lastReceiveId': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}]
         del params['id']
 
+    if 'fields' in params:
+        fields = dict([(field, True) for field in params.get('fields').split(',')])
+        fields.update({'resource': True, 'event': True, 'environment': True, 'createTime': True, 'receiveTime': True, 'lastReceiveTime': True})
+        del params['fields']
+    elif 'fields!' in params:
+        fields = dict([(field, False) for field in params.get('fields!').split(',')])
+        del params['fields!']
+    else:
+        fields = dict()
+
     for field in params:
         value = params.getlist(field)
         if len(value) == 1:
@@ -200,7 +210,7 @@ def parse_fields(r):
                     query[field] = dict()
                     query[field]['$in'] = value
 
-    return query, sort, group, page, limit, query_time
+    return query, fields, sort, group, page, limit, query_time
 
 
 def process_alert(incomingAlert):

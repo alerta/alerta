@@ -59,7 +59,7 @@ def get_alerts():
 
     gets_started = gets_timer.start_timer()
     try:
-        query, sort, _, page, limit, query_time = parse_fields(request)
+        query, fields, sort, _, page, limit, query_time = parse_fields(request)
     except Exception as e:
         gets_timer.stop_timer(gets_started)
         return jsonify(status="error", message=str(e)), 400
@@ -83,8 +83,8 @@ def get_alerts():
     if total and page > pages or page < 0:
         return jsonify(status="error", message="page out of range: 1-%s" % pages), 416
 
-    fields = dict()
-    fields['history'] = {'$slice': app.config['HISTORY_LIMIT']}
+    if 'history' not in fields:
+        fields['history'] = {'$slice': app.config['HISTORY_LIMIT']}
 
     try:
         alerts = db.get_alerts(query=query, fields=fields, sort=sort, page=page, limit=limit)
@@ -146,7 +146,7 @@ def get_alerts():
 def get_history():
 
     try:
-        query, _, _, _, limit, query_time = parse_fields(request)
+        query, _, _, _, _, limit, query_time = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -366,7 +366,7 @@ def delete_alert(id):
 def get_counts():
 
     try:
-        query, _, _, _, _, _ = parse_fields(request)
+        query, _, _, _, _, _, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -404,7 +404,7 @@ def get_counts():
 def get_top10():
 
     try:
-        query, _, group, _, _, _ = parse_fields(request)
+        query, _, _, group, _, _, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -439,7 +439,7 @@ def get_top10():
 def get_environments():
 
     try:
-        query, _, _, _, limit, _ = parse_fields(request)
+        query, _, _, _, _, limit, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -470,7 +470,7 @@ def get_environments():
 def get_services():
 
     try:
-        query, _, _, _, limit, _ = parse_fields(request)
+        query, _, _, _, _, limit, _ = parse_fields(request)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
