@@ -87,9 +87,6 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
 
-        if not app.config['AUTH_REQUIRED']:
-            return f(*args, **kwargs)
-
         if 'api-key' in request.args:
             key = request.args['api-key']
             try:
@@ -105,9 +102,7 @@ def auth_required(f):
             g.role = role(ki['user'])
             return f(*args, **kwargs)
 
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return authenticate('Missing authorization API Key or Bearer Token')
+        auth_header = request.headers.get('Authorization', '')
 
         m = re.match('Key (\S+)', auth_header)
         if m:
@@ -141,7 +136,10 @@ def auth_required(f):
             g.role = payload.get('role', None)
             return f(*args, **kwargs)
 
-        return authenticate('Authentication required')
+        if not app.config['AUTH_REQUIRED']:
+            return f(*args, **kwargs)
+
+        return authenticate('Missing authorization API Key or Bearer Token')
 
     return decorated
 
