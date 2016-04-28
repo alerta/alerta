@@ -447,7 +447,7 @@ class Mongo(object):
                         "value": alert.value,
                         "text": alert.text,
                         "id": alert.id,
-                        "updateTime": alert.create_time
+                        "updateTime": now
                     }],
                     '$slice': -abs(app.config['HISTORY_LIMIT'])
                 }
