@@ -5,7 +5,7 @@ now = new Date();
 
 // mark timed out alerts as EXPIRED and update alert history
 db.alerts.aggregate([
-    { $project: { event: 1, status: 1, timeout: 1, expireTime: { $add: [ "$lastReceiveTime", { $multiply: [ "$timeout", 1000 ]} ]} } },
+    { $project: { event: 1, status: 1, lastReceiveId: 1, timeout: 1, expireTime: { $add: [ "$lastReceiveTime", { $multiply: [ "$timeout", 1000 ]} ]} } },
     { $match: { status: 'open', expireTime: { $lt: now }, timeout: { $ne: 0 }}}
 ]).forEach( function(alert) {
     db.alerts.update(
@@ -17,7 +17,7 @@ db.alerts.aggregate([
                     event: alert.event,
                     status: 'expired',
                     text: "alert timeout status change",
-                    id: alert._id,
+                    id: alert.lastReceiveId,
                     updateTime: now
                 }
             }
