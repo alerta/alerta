@@ -248,8 +248,8 @@ class Mongo(object):
                         "tags": response['tags'],
                         "attributes": response['attributes'],
                         "origin": response['origin'],
-                        "type": response['type'],
                         "updateTime": response['history']['updateTime'],
+                        "type": response['history'].get('type', 'unknown'),
                         "customer": response.get('customer', None)
                     }
                 )
@@ -267,8 +267,8 @@ class Mongo(object):
                         "tags": response['tags'],
                         "attributes": response['attributes'],
                         "origin": response['origin'],
-                        "type": response['type'],
                         "updateTime": response['history']['updateTime'],
+                        "type": response['history'].get('type', 'unknown'),
                         "customer": response.get('customer', None)
                     }
                 )
@@ -344,6 +344,7 @@ class Mongo(object):
                     '$each': [{
                         "event": alert.event,
                         "status": status,
+                        "type": "internal",
                         "text": "duplicate alert status change",
                         "id": alert.id,
                         "updateTime": now
@@ -445,6 +446,7 @@ class Mongo(object):
                         "event": alert.event,
                         "severity": alert.severity,
                         "value": alert.value,
+                        "type": "external",
                         "text": alert.text,
                         "id": alert.id,
                         "updateTime": now
@@ -458,6 +460,7 @@ class Mongo(object):
             update['$push']['history']['$each'].append({
                 "event": alert.event,
                 "status": status,
+                "type": "internal",
                 "text": "correlated alert status change",
                 "id": alert.id,
                 "updateTime": now
@@ -515,6 +518,7 @@ class Mongo(object):
             "event": alert.event,
             "severity": alert.severity,
             "value": alert.value,
+            "type": "external",
             "text": alert.text,
             "updateTime": alert.create_time
         }]
@@ -522,6 +526,7 @@ class Mongo(object):
             history.append({
                 "event": alert.event,
                 "status": status,
+                "type": "internal",
                 "text": "new alert status change",
                 "id": alert.id,
                 "updateTime": now
@@ -656,6 +661,7 @@ class Mongo(object):
                     '$each': [{
                         "event": event,
                         "status": status,
+                        "type": "external",
                         "text": text,
                         "id": id,
                         "updateTime": now
