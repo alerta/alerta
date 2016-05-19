@@ -248,8 +248,8 @@ class Mongo(object):
                         "tags": response['tags'],
                         "attributes": response['attributes'],
                         "origin": response['origin'],
-                        "type": response['type'],
                         "updateTime": response['history']['updateTime'],
+                        "type": response['history'].get('type', 'unknown'),
                         "customer": response.get('customer', None)
                     }
                 )
@@ -267,8 +267,8 @@ class Mongo(object):
                         "tags": response['tags'],
                         "attributes": response['attributes'],
                         "origin": response['origin'],
-                        "type": response['type'],
                         "updateTime": response['history']['updateTime'],
+                        "type": response['history'].get('type', 'unknown'),
                         "customer": response.get('customer', None)
                     }
                 )
