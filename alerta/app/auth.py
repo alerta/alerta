@@ -379,6 +379,7 @@ def google():
 def github():
     access_token_url = 'https://github.com/login/oauth/access_token'
     users_api_url = 'https://api.github.com/user'
+    user_orgs_url = 'https://api.github.com/user/orgs'
 
     params = {
         'client_id': request.json['clientId'],
@@ -394,7 +395,7 @@ def github():
     r = requests.get(users_api_url, params=access_token)
     profile = r.json()
 
-    r = requests.get(profile['organizations_url'], params=access_token)
+    r = requests.get(user_orgs_url, params=access_token)  # list public and private Github orgs
     organizations = [o['login'] for o in r.json()]
     login = profile['login']
 
