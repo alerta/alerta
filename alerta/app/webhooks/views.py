@@ -445,3 +445,66 @@ def stackdriver():
         return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': body['href']}
     else:
         return jsonify(status="error", message="notification from stackdriver failed"), 500
+
+
+def parse_serverdensity(payload):
+
+    alert = json.loads(payload)
+
+    if alert['fixed']:
+        severity = 'ok'
+    else:
+        severity = 'critical'
+
+    return Alert(
+        resource=alert['item_name'],
+        event=alert['alert_type'],
+        environment='Production',
+        severity=severity,
+        service=[alert['item_type']],
+        group=alert['alert_section'],
+        value=alert['configured_trigger_value'],
+        text='Alert created for %s:%s' % (alert['item_type'], alert['item_name']),
+        tags=['cloud'] if alert['item_cloud'] else [],
+        attributes={
+            'alertId': alert['alert_id'],
+            'itemId': alert['item_id']
+        },
+        origin='ServerDensity',
+        event_type='serverDensityAlert',
+        raw_data=alert
+    )
+
+
+@app.route('/webhooks/serverdensity', methods=['OPTIONS', 'POST'])
+@cross_origin()
+@auth_required
+def serverdensity():
+
+    hook_started = webhook_timer.start_timer()
+    try:
+        incomingAlert = parse_serverdensity(request.data)
+    except ValueError as e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=str(e)), 400
+
+    if g.get('customer', None):
+        incomingAlert.customer = g.get('customer')
+
+    try:
+        alert = process_alert(incomingAlert)
+    except RejectException as e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=str(e)), 403
+    except Exception as e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=str(e)), 500
+
+    webhook_timer.stop_timer(hook_started)
+
+    if alert:
+        body = alert.get_body()
+        body['href'] = absolute_url('/alert/' + alert.id)
+        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': body['href']}
+    else:
+        return jsonify(status="error", message="insert or update of serverdensity alert failed"), 500
