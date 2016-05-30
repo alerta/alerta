@@ -1111,12 +1111,14 @@ class Mongo(object):
         users = list()
 
         for user in self._db.users.find(query):
+            login = user.get('login', None) or user.get('email', None)  # for backwards compatibility
             u = {
                 "id": user['_id'],
                 "name": user['name'],
-                "login": user.get('login', None) or user.get('email', None),  # for backwards compatibility
+                "login": login,
                 "createTime": user['createTime'],
                 "provider": user['provider'],
+                "role": 'admin' if login in app.config.get('ADMIN_USERS') else 'user',
                 "text": user.get('text', "")
             }
             if password:
