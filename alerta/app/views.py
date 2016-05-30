@@ -839,6 +839,9 @@ def get_customers():
 @jsonp
 def create_customer():
 
+    if not app.config['AUTH_REQUIRED']:
+        return jsonify(status="error", message="Must enable authentication before creating customers"), 400
+
     if request.json and 'customer' in request.json and 'match' in request.json:
         customer = request.json["customer"]
         match = request.json["match"]
@@ -914,6 +917,9 @@ def get_keys():
 @auth_required
 @jsonp
 def create_key():
+
+    if not app.config['AUTH_REQUIRED']:
+        return jsonify(status="error", message="Must enable authentication before creating API keys"), 400
 
     try:
         if g.get('role', None) != 'admin':
