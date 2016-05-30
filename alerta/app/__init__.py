@@ -69,7 +69,7 @@ else:
 
 # Runtime config check
 if app.config['CUSTOMER_VIEWS'] and not app.config['AUTH_REQUIRED']:
-    raise RuntimeError('To use customer views you must enable authentication')
+    raise RuntimeError('Must enable authentication to use customer views')
 
 if app.config['CUSTOMER_VIEWS'] and not app.config['ADMIN_USERS']:
     raise RuntimeError('Customer views is enabled but there are no admin users')
