@@ -839,9 +839,6 @@ def get_customers():
 @jsonp
 def create_customer():
 
-    if not app.config['AUTH_REQUIRED']:
-        return jsonify(status="error", message="Must enable authentication before creating customers"), 400
-
     if request.json and 'customer' in request.json and 'match' in request.json:
         customer = request.json["customer"]
         match = request.json["match"]
@@ -850,7 +847,7 @@ def create_customer():
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
-        return jsonify(status="error", message="must supply user 'customer' and 'match' as parameters"), 400
+        return jsonify(status="error", message="Must supply user 'customer' and 'match' as parameters"), 400
 
     if cid:
         return jsonify(status="ok", id=cid), 201, {'Location': absolute_url('/customer/' + cid)}
@@ -918,18 +915,18 @@ def get_keys():
 @jsonp
 def create_key():
 
-    if not app.config['AUTH_REQUIRED']:
-        return jsonify(status="error", message="Must enable authentication before creating API keys"), 400
-
-    try:
-        if g.get('role', None) != 'admin':
-            user = g.user
-            customer = g.get('customer', None)
-        else:
+    if g.get('role', None) == 'admin':
+        try:
             user = request.json.get('user', g.user)
             customer = request.json.get('customer', None)
-    except AttributeError:
-        return jsonify(status="error", message="Must supply 'user' as parameter"), 400
+        except AttributeError:
+            return jsonify(status="error", message="Must supply 'user' as parameter"), 400
+    else:
+        try:
+            user = g.user
+            customer = g.get('customer', None)
+        except AttributeError:
+            return jsonify(status="error", message="Must supply API Key or Bearer Token when creating new API key"), 400
 
     type = request.json.get("type", "read-only")
     if type not in ['read-only', 'read-write']:
