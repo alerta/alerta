@@ -61,6 +61,7 @@ if 'PLUGINS' in os.environ:
 
 if app.debug:
     app.debug_log_format = LOG_FORMAT
+    app.logger.setLevel(logging.DEBUG)
 else:
     stderr_handler = logging.StreamHandler()
     stderr_handler.setFormatter(logging.Formatter(LOG_FORMAT))
