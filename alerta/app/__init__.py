@@ -14,6 +14,9 @@ app.config.from_object('alerta.settings')
 app.config.from_pyfile('/etc/alertad.conf', silent=True)
 app.config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
 
+if 'DEBUG' in os.environ:
+    app.debug = True
+
 if 'BASE_URL' in os.environ:
     app.config['BASE_URL'] = os.environ['BASE_URL']
 
@@ -61,6 +64,7 @@ if 'PLUGINS' in os.environ:
 
 if app.debug:
     app.debug_log_format = LOG_FORMAT
+    app.logger.setLevel(logging.DEBUG)
 else:
     stderr_handler = logging.StreamHandler()
     stderr_handler.setFormatter(logging.Formatter(LOG_FORMAT))
