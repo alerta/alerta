@@ -341,7 +341,7 @@ def untag_alert(id):
 @cross_origin()
 @auth_required
 @jsonp
-def set_attributes(id):
+def update_attributes(id):
 
     attrs_started = attrs_timer.start_timer()
     customer = g.get('customer', None)
@@ -362,7 +362,7 @@ def set_attributes(id):
         return jsonify(status="error", message="must supply 'attributes' as parameter"), 400
 
     try:
-        alert = db.set_attributes(id, attributes)
+        alert = db.update_attributes(id, attributes)
     except Exception as e:
         attrs_timer.stop_timer(attrs_started)
         return jsonify(status="error", message=str(e)), 500

@@ -340,6 +340,7 @@ class Mongo(object):
             '$inc': {"duplicateCount": 1}
         }
 
+        # exclude private attributes (starting with an underscore) from update
         attributes = {'attributes.'+k: v for k, v in alert.attributes.items() if not k.startswith('_')}
         update['$set'].update(attributes)
 
@@ -460,6 +461,7 @@ class Mongo(object):
             }
         }
 
+        # exclude private attributes (starting with an underscore) from update
         attributes = {'attributes.'+k: v for k, v in alert.attributes.items() if not k.startswith('_')}
         update['$set'].update(attributes)
 
@@ -512,6 +514,10 @@ class Mongo(object):
         )
 
     def create_alert(self, alert):
+        """
+        Create new alert, set duplicate count to zero and set repeat=False, keep track of last
+        receive id and time, appending all to history. Append to history again if status changes.
+        """
 
         trend_indication = severity_code.trend(severity_code.UNKNOWN, alert.severity)
         if alert.status == status_code.UNKNOWN:
@@ -730,14 +736,19 @@ class Mongo(object):
 
         return response.matched_count > 0
 
-    def set_attributes(self, id, attrs):
+    def update_attributes(self, id, attrs):
         """
-        Set attributes.
+        Set all attributes (including private attributes) and unset attributes by using a value of 'null'.
         """
-        response = self._db.alerts.update_one(
-            {'_id': {'$regex': '^' + id}},
-            {'$set': {'attributes.' + k: v for k, v in attrs.items()}}
-        )
+        update = dict()
+        set_value = {'attributes.' + k: v for k, v in attrs.items() if v is not None}
+        if set_value:
+            update['$set'] = set_value
+        unset_value = {'attributes.' + k: v for k, v in attrs.items() if v is None}
+        if unset_value:
+            update['$unset'] = unset_value
+
+        response = self._db.alerts.update_one({'_id': {'$regex': '^' + id}}, update=update)
         return response.matched_count > 0
 
     def delete_alert(self, id):
