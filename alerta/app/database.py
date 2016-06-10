@@ -331,6 +331,8 @@ class Mongo(object):
                 "status": status,
                 "value": alert.value,
                 "text": alert.text,
+                "tags": alert.tags,
+                "attributes": alert.attributes,
                 "rawData": alert.raw_data,
                 "repeat": True,
                 "lastReceiveId": alert.id,
