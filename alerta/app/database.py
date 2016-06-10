@@ -730,6 +730,16 @@ class Mongo(object):
 
         return response.matched_count > 0
 
+    def set_attributes(self, id, attrs):
+        """
+        Set attributes.
+        """
+        response = self._db.alerts.update_one(
+            {'_id': {'$regex': '^' + id}},
+            {'$set': {'attributes.' + k: v for k, v in attrs.items()}}
+        )
+        return response.matched_count > 0
+
     def delete_alert(self, id):
 
         response = self._db.alerts.delete_one({'_id': {'$regex': '^' + id}})
