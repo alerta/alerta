@@ -332,7 +332,6 @@ class Mongo(object):
                 "value": alert.value,
                 "text": alert.text,
                 "tags": alert.tags,
-                "attributes": alert.attributes,
                 "rawData": alert.raw_data,
                 "repeat": True,
                 "lastReceiveId": alert.id,
@@ -340,6 +339,10 @@ class Mongo(object):
             },
             '$inc': {"duplicateCount": 1}
         }
+
+        attributes = {'attributes.'+k: v for k, v in alert.attributes.items() if not k.startswith('_')}
+        update['$set'].update(attributes)
+
         if status != previous_status:
             update['$push'] = {
                 "history": {
@@ -431,7 +434,6 @@ class Mongo(object):
                 "value": alert.value,
                 "text": alert.text,
                 "tags": alert.tags,
-                "attributes": alert.attributes,
                 "createTime": alert.create_time,
                 "rawData": alert.raw_data,
                 "duplicateCount": 0,
@@ -457,6 +459,9 @@ class Mongo(object):
                 }
             }
         }
+
+        attributes = {'attributes.'+k: v for k, v in alert.attributes.items() if not k.startswith('_')}
+        update['$set'].update(attributes)
 
         if status != previous_status:
             update['$push']['history']['$each'].append({
@@ -534,7 +539,7 @@ class Mongo(object):
                 "updateTime": now
             })
 
-        alert = {
+        new = {
             "_id": alert.id,
             "resource": alert.resource,
             "event": alert.event,
@@ -547,7 +552,7 @@ class Mongo(object):
             "value": alert.value,
             "text": alert.text,
             "tags": alert.tags,
-            "attributes": alert.attributes,
+            "attributes": {k: v for k, v in alert.attributes.items() if not k.startswith('_')},
             "origin": alert.origin,
             "type": alert.event_type,
             "createTime": alert.create_time,
@@ -564,40 +569,39 @@ class Mongo(object):
             "history": history
         }
 
-        LOG.debug('Insert new alert in database: %s', alert)
+        LOG.debug('Insert new alert in database: %s', new)
 
-        response = self._db.alerts.insert_one(alert)
-
+        response = self._db.alerts.insert_one(new)
         if not response:
             return
 
         return AlertDocument(
-            id=alert['_id'],
-            resource=alert['resource'],
-            event=alert['event'],
-            environment=alert['environment'],
-            severity=alert['severity'],
-            correlate=alert['correlate'],
-            status=alert['status'],
-            service=alert['service'],
-            group=alert['group'],
-            value=alert['value'],
-            text=alert['text'],
-            tags=alert['tags'],
-            attributes=alert['attributes'],
-            origin=alert['origin'],
-            event_type=alert['type'],
-            create_time=alert['createTime'],
-            timeout=alert['timeout'],
-            raw_data=alert['rawData'],
-            customer=alert['customer'],
-            duplicate_count=alert['duplicateCount'],
-            repeat=alert['repeat'],
-            previous_severity=alert['previousSeverity'],
-            trend_indication=alert['trendIndication'],
-            receive_time=alert['receiveTime'],
-            last_receive_id=alert['lastReceiveId'],
-            last_receive_time=alert['lastReceiveTime'],
+            id=new['_id'],
+            resource=new['resource'],
+            event=new['event'],
+            environment=new['environment'],
+            severity=new['severity'],
+            correlate=new['correlate'],
+            status=new['status'],
+            service=new['service'],
+            group=new['group'],
+            value=new['value'],
+            text=new['text'],
+            tags=new['tags'],
+            attributes=new['attributes'],
+            origin=new['origin'],
+            event_type=new['type'],
+            create_time=new['createTime'],
+            timeout=new['timeout'],
+            raw_data=new['rawData'],
+            customer=new['customer'],
+            duplicate_count=new['duplicateCount'],
+            repeat=new['repeat'],
+            previous_severity=new['previousSeverity'],
+            trend_indication=new['trendIndication'],
+            receive_time=new['receiveTime'],
+            last_receive_id=new['lastReceiveId'],
+            last_receive_time=new['lastReceiveTime'],
             history=list()
         )
 
