@@ -87,8 +87,8 @@ def auth_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
 
-        if 'api-key' in request.args:
-            key = request.args['api-key']
+        key = request.args.get('api-key', None)
+        if key:
             try:
                 ki = verify_api_key(key, request.method)
             except AuthError as e:
