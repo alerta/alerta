@@ -4,7 +4,7 @@ import datetime
 from copy import copy
 from dateutil.parser import parse as parse_date
 from flask import g, request
-from flask.ext.cors import cross_origin
+from flask_cors import cross_origin
 
 from alerta.app import app, db
 from alerta.app.auth import auth_required

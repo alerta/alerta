@@ -4,7 +4,7 @@ import datetime
 import logging
 
 from flask import request, Response, url_for, jsonify, render_template
-from flask.ext.cors import cross_origin
+from flask_cors import cross_origin
 
 from alerta.app import app, db
 from alerta.app.auth import auth_required

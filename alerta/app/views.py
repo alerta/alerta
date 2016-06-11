@@ -1,7 +1,7 @@
 import datetime
 
 from flask import g, request, render_template
-from flask.ext.cors import cross_origin
+from flask_cors import cross_origin
 from uuid import uuid4
 
 from alerta.app import app, db

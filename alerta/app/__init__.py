@@ -4,7 +4,7 @@ import sys
 import logging
 
 from flask import Flask
-from flask.ext.cors import CORS
+from flask_cors import CORS
 
 LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s'
 
