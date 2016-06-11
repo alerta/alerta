@@ -340,8 +340,8 @@ class Mongo(object):
             '$inc': {"duplicateCount": 1}
         }
 
-        # exclude private attributes (starting with an underscore) from update
-        attributes = {'attributes.'+k: v for k, v in alert.attributes.items() if not k.startswith('_')}
+        # only update those attributes that are specifically defined
+        attributes = {'attributes.'+k: v for k, v in alert.attributes.items()}
         update['$set'].update(attributes)
 
         if status != previous_status:
@@ -461,8 +461,8 @@ class Mongo(object):
             }
         }
 
-        # exclude private attributes (starting with an underscore) from update
-        attributes = {'attributes.'+k: v for k, v in alert.attributes.items() if not k.startswith('_')}
+        # only update those attributes that are specifically defined
+        attributes = {'attributes.'+k: v for k, v in alert.attributes.items()}
         update['$set'].update(attributes)
 
         if status != previous_status:
@@ -558,7 +558,7 @@ class Mongo(object):
             "value": alert.value,
             "text": alert.text,
             "tags": alert.tags,
-            "attributes": {k: v for k, v in alert.attributes.items() if not k.startswith('_')},
+            "attributes": alert.attributes,
             "origin": alert.origin,
             "type": alert.event_type,
             "createTime": alert.create_time,
