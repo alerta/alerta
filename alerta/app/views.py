@@ -23,6 +23,7 @@ receive_timer = Timer('alerts', 'received', 'Received alerts', 'Total time to pr
 delete_timer = Timer('alerts', 'deleted', 'Deleted alerts', 'Total time to process number of deleted alerts')
 status_timer = Timer('alerts', 'status', 'Alert status change', 'Total time and number of alerts with status changed')
 tag_timer = Timer('alerts', 'tagged', 'Tagging alerts', 'Total time to tag number of alerts')
+attrs_timer = Timer('alerts', 'attributes', 'Alert attributes change', 'Total time and number of alerts with attributes changed')
 untag_timer = Timer('alerts', 'untagged', 'Removing tags from alerts', 'Total time to un-tag number of alerts')
 
 
@@ -333,6 +334,44 @@ def untag_alert(id):
     if response:
         return jsonify(status="ok")
     else:
+        return jsonify(status="error", message="not found"), 404
+
+
+@app.route('/alert/<id>/attributes', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@auth_required
+@jsonp
+def update_attributes(id):
+
+    attrs_started = attrs_timer.start_timer()
+    customer = g.get('customer', None)
+    try:
+        alert = db.get_alert(id=id, customer=customer)
+    except Exception as e:
+        attrs_timer.stop_timer(attrs_started)
+        return jsonify(status="error", message=str(e)), 500
+
+    if not alert:
+        attrs_timer.stop_timer(attrs_started)
+        return jsonify(status="error", message="not found", total=0, alert=None), 404
+
+    attributes = request.json.get('attributes', None)
+
+    if not attributes:
+        attrs_timer.stop_timer(attrs_started)
+        return jsonify(status="error", message="must supply 'attributes' as parameter"), 400
+
+    try:
+        alert = db.update_attributes(id, attributes)
+    except Exception as e:
+        attrs_timer.stop_timer(attrs_started)
+        return jsonify(status="error", message=str(e)), 500
+
+    if alert:
+        attrs_timer.stop_timer(attrs_started)
+        return jsonify(status="ok")
+    else:
+        attrs_timer.stop_timer(attrs_started)
         return jsonify(status="error", message="not found"), 404
 
 

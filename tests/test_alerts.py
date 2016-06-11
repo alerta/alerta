@@ -22,7 +22,8 @@ class AlertTestCase(unittest.TestCase):
             'service': ['Network'],
             'severity': 'critical',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
-            'tags': ['foo']
+            'tags': ['foo'],
+            'attributes': {'foo': 'abc def', 'bar': 1234, 'baz': False}
         }
         self.critical_alert = {
             'event': 'node_marginal',
@@ -341,6 +342,46 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['tags'], ['bar'])
+
+    def test_alert_attributes(self):
+
+        # create alert with custom attributes
+        response = self.app.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['attributes'], {'foo': 'abc def', 'bar': 1234, 'baz': False, 'ip': None})
+
+        alert_id = data['id']
+
+        # modify some attributes, add a new one and delete another
+        response = self.app.put('/alert/' + alert_id + '/attributes', data=json.dumps({'attributes': {'quux': ['q', 'u', 'u', 'x'], 'bar': None}}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.app.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['attributes'], {'foo': 'abc def', 'baz': False, 'quux': ['q', 'u', 'u', 'x'], 'ip': None})
+
+        # re-send duplicate alert with custom attributes ('quux' should not change)
+        response = self.app.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['attributes'], {'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': ['q', 'u', 'u', 'x'], 'ip': None})
+
+        # update custom attribute again (only 'quux' should change)
+        response = self.app.put('/alert/' + alert_id + '/attributes', data=json.dumps({'attributes': {'quux': [1, 'u', 'u', 4]}}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.app.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['attributes'], {'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': None})
+
+        # send correlated alert with custom attributes (nothing should change)
+        response = self.app.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        response = self.app.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['attributes'], {'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': None})
 
     def test_aggregations(self):
 
