@@ -1,9 +1,7 @@
-import json
-import datetime
 import requests
 
 from flask import request, render_template
-from flask.ext.cors import cross_origin
+from flask_cors import cross_origin
 
 try:
     from urllib.parse import urlparse
@@ -11,13 +9,13 @@ except ImportError:
     from urlparse import urlparse
 
 from alerta.app import app
-from alerta.alert import Alert
 from alerta.app.utils import jsonify, jsonp
 from alerta.app.metrics import Timer
 
 LOG = app.logger
 
 oembed_timer = Timer('oEmbed', 'request', 'oEmbed request', 'Total time to process number of oEmbed requests')
+
 
 @app.route('/oembed', defaults={'format': 'json'})
 @app.route('/oembed.<format>', methods=['OPTIONS', 'GET'])
