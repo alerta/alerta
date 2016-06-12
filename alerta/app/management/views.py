@@ -7,7 +7,7 @@ from flask import request, Response, url_for, jsonify, render_template
 from flask_cors import cross_origin
 
 from alerta.app import app, db
-from alerta.app.auth import auth_required
+from alerta.app.auth import auth_required, admin_required
 from alerta.app.switch import Switch, SwitchState
 from alerta.app.metrics import Gauge, Counter, Timer
 from alerta import build
@@ -18,8 +18,7 @@ LOG = logging.getLogger(__name__)
 
 switches = [
     Switch('auto-refresh-allow', 'Allow consoles to auto-refresh alerts', SwitchState.ON),
-    # Switch('console-api-allow', 'Allow consoles to use the alert API', SwitchState.ON),    # TODO(nsatterl)
-    # Switch('sender-api-allow', 'Allow alerts to be submitted via the API', SwitchState.ON),  # TODO(nsatterl)
+    Switch('sender-api-allow', 'Allow alerts to be submitted via the API', SwitchState.ON)
 ]
 total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of alerts in the database')
 started = time.time() * 1000
@@ -51,7 +50,7 @@ def manifest():
         "build": build.BUILD_NUMBER,
         "date": build.BUILD_DATE,
         "revision": build.BUILD_VCS_NUMBER,
-        "description": "The Guardian's Alerta monitoring system",
+        "description": "Alerta monitoring system",
         "built-by": build.BUILT_BY,
         "built-on": build.HOSTNAME,
     }
@@ -78,6 +77,7 @@ def properties():
 @app.route('/management/switchboard', methods=['OPTIONS', 'GET', 'POST'])
 @cross_origin()
 @auth_required
+@admin_required
 def switchboard():
 
     if request.method == 'POST':
