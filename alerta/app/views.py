@@ -180,6 +180,9 @@ def get_history():
 @jsonp
 def receive_alert():
 
+    if not Switch.get('sender-api-allow').is_on():
+        return jsonify(status="error", message="API not accepting alerts. Try again later."), 503
+
     recv_started = receive_timer.start_timer()
     try:
         incomingAlert = Alert.parse_alert(request.data)
