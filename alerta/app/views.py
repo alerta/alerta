@@ -289,9 +289,18 @@ def set_status(id):
 @jsonp
 def tag_alert(id):
 
-    # FIXME - should only allow role=user to set status for alerts for that customer
-
     tag_started = tag_timer.start_timer()
+    customer = g.get('customer', None)
+    try:
+        alert = db.get_alert(id=id, customer=customer)
+    except Exception as e:
+        tag_timer.stop_timer(tag_started)
+        return jsonify(status="error", message=str(e)), 500
+
+    if not alert:
+        tag_timer.stop_timer(tag_started)
+        return jsonify(status="error", message="not found", total=0, alert=None), 404
+
     data = request.json
 
     if data and 'tags' in data:
@@ -316,9 +325,18 @@ def tag_alert(id):
 @jsonp
 def untag_alert(id):
 
-    # FIXME - should only allow role=user to set status for alerts for that customer
-
     untag_started = untag_timer.start_timer()
+    customer = g.get('customer', None)
+    try:
+        alert = db.get_alert(id=id, customer=customer)
+    except Exception as e:
+        untag_timer.stop_timer(untag_started)
+        return jsonify(status="error", message=str(e)), 500
+
+    if not alert:
+        untag_timer.stop_timer(untag_started)
+        return jsonify(status="error", message="not found", total=0, alert=None), 404
+
     data = request.json
 
     if data and 'tags' in data:
