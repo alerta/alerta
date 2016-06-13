@@ -350,7 +350,7 @@ class Mongo(object):
                     '$each': [{
                         "event": alert.event,
                         "status": status,
-                        "type": "internal",
+                        "type": "auto",
                         "text": "duplicate alert status change",
                         "id": alert.id,
                         "updateTime": now
@@ -469,7 +469,7 @@ class Mongo(object):
             update['$push']['history']['$each'].append({
                 "event": alert.event,
                 "status": status,
-                "type": "internal",
+                "type": "auto",
                 "text": "correlated alert status change",
                 "id": alert.id,
                 "updateTime": now
@@ -539,7 +539,7 @@ class Mongo(object):
             history.append({
                 "event": alert.event,
                 "status": status,
-                "type": "internal",
+                "type": "auto",
                 "text": "new alert status change",
                 "id": alert.id,
                 "updateTime": now
