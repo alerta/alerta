@@ -13,11 +13,11 @@ except ImportError:
 
 from alerta.app import app, db
 from alerta.app.metrics import Counter, Timer
-from alerta.plugins import load_plugins, RejectException
+from alerta.plugins import Plugins, RejectException
 
 LOG = app.logger
 
-plugins = load_plugins()
+plugins = Plugins()
 
 reject_counter = Counter('alerts', 'rejected', 'Rejected alerts', 'Number of rejected alerts')
 error_counter = Counter('alerts', 'errored', 'Errored alerts', 'Number of errored alerts')
@@ -198,22 +198,9 @@ def parse_fields(r):
     return query, fields, sort, group, page, limit, query_time
 
 
-def process_status(alert, status, text):
-
-    for plugin in plugins:
-        try:
-            plugin.status_change(alert, status, text)
-        except RejectException as e:
-            reject_counter.inc()
-            raise
-        except Exception as e:
-            error_counter.inc()
-            raise RuntimeError("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
-
-
 def process_alert(alert):
 
-    for plugin in plugins:
+    for plugin in plugins.routing(alert):
         started = pre_plugin_timer.start_timer()
         try:
             alert = plugin.pre_receive(alert)
@@ -251,7 +238,7 @@ def process_alert(alert):
         error_counter.inc()
         raise RuntimeError(e)
 
-    for plugin in plugins:
+    for plugin in plugins.routing(alert):
         started = post_plugin_timer.start_timer()
         try:
             plugin.post_receive(alert)
@@ -262,3 +249,16 @@ def process_alert(alert):
         post_plugin_timer.stop_timer(started)
 
     return alert
+
+
+def process_status(alert, status, text):
+
+    for plugin in plugins.routing(alert):
+        try:
+            plugin.status_change(alert, status, text)
+        except RejectException:
+            reject_counter.inc()
+            raise
+        except Exception as e:
+            error_counter.inc()
+            raise RuntimeError("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))

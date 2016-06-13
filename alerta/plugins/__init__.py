@@ -1,8 +1,9 @@
 
 import abc
-import pkg_resources
 
 from six import add_metaclass
+from pkg_resources import iter_entry_points, load_entry_point, DistributionNotFound
+
 from alerta.app import app
 
 LOG = app.logger
@@ -34,19 +35,38 @@ class PluginBase(object):
         return None
 
 
-def load_plugins(namespace='alerta.plugins'):
+class Plugins(object):
 
-    plugins = []
-    for ep in list(pkg_resources.iter_entry_points(namespace)):
-        LOG.debug("Server plug-in '%s' found.", ep.name)
+    def __init__(self):
+
+        self.plugins = {}
+        self.rules = None
+
+        self.register()
+
+    def register(self):
+
+        for ep in iter_entry_points('alerta.plugins'):
+            LOG.debug("Server plug-in '%s' found.", ep.name)
+            try:
+                if ep.name in app.config['PLUGINS']:
+                    plugin = ep.load()
+                    if plugin:
+                        self.plugins[ep.name] = plugin()
+                        LOG.info("Server plug-in '%s' enabled.", ep.name)
+                else:
+                    LOG.debug("Server plug-in '%s' not enabled in 'PLUGINS'.", ep.name)
+            except Exception as e:
+                LOG.error("Server plug-in '%s' could not be loaded: %s", ep.name, e)
+
         try:
-            if ep.name in app.config['PLUGINS']:
-                plugin = ep.load()
-                if plugin:
-                    plugins.append(plugin(ep.name))
-                    LOG.info("Server plug-in '%s' enabled.", ep.name)
-            else:
-                LOG.debug("Server plug-in '%s' not enabled in 'PLUGINS'.", ep.name)
-        except Exception as e:
-            LOG.error("Server plug-in '%s' could not be loaded: %s", ep.name, e)
-    return plugins
+            self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')
+        except (DistributionNotFound, ImportError):
+            LOG.info('Failed to load any plugin routing rules. All plugins will be evaluated.')
+
+    def routing(self, alert):
+
+        if self.rules:
+            return self.rules(alert, self.plugins)
+        else:
+            return self.plugins.values()
