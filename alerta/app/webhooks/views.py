@@ -57,6 +57,9 @@ def parse_notification(notification):
 
         alarm = json.loads(notification['Message'])
 
+        if 'Trigger' not in alarm:
+            raise ValueError("SNS message is not a Cloudwatch notification")
+
         return Alert(
             resource='%s:%s' % (alarm['Trigger']['Dimensions'][0]['name'], alarm['Trigger']['Dimensions'][0]['value']),
             event=alarm['AlarmName'],
