@@ -14,6 +14,10 @@ class RejectException(Exception):
 
 @add_metaclass(abc.ABCMeta)
 class PluginBase(object):
+
+    def __init__(self, name=None):
+        self.name = name or self.__module__
+
     @abc.abstractmethod
     def pre_receive(self, alert):
         """Pre-process an alert based on alert properties or reject it by raising RejectException."""
@@ -39,7 +43,7 @@ def load_plugins(namespace='alerta.plugins'):
             if ep.name in app.config['PLUGINS']:
                 plugin = ep.load()
                 if plugin:
-                    plugins.append(plugin())
+                    plugins.append(plugin(ep.name))
                     LOG.info("Server plug-in '%s' enabled.", ep.name)
             else:
                 LOG.debug("Server plug-in '%s' not enabled in 'PLUGINS'.", ep.name)
