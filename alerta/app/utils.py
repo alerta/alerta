@@ -213,12 +213,25 @@ def parse_fields(r):
     return query, fields, sort, group, page, limit, query_time
 
 
-def process_alert(incomingAlert):
+def process_status(alert, status, text):
+
+    for plugin in plugins:
+        try:
+            plugin.status_change(alert, status, text)
+        except RejectException as e:
+            reject_counter.inc()
+            raise
+        except Exception as e:
+            error_counter.inc()
+            raise RuntimeError("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
+
+
+def process_alert(alert):
 
     for plugin in plugins:
         started = pre_plugin_timer.start_timer()
         try:
-            incomingAlert = plugin.pre_receive(incomingAlert)
+            alert = plugin.pre_receive(alert)
         except RejectException:
             reject_counter.inc()
             pre_plugin_timer.stop_timer(started)
@@ -226,28 +239,28 @@ def process_alert(incomingAlert):
         except Exception as e:
             error_counter.inc()
             pre_plugin_timer.stop_timer(started)
-            raise RuntimeError('Error while running pre-receive plug-in: %s' % str(e))
-        if not incomingAlert:
+            raise RuntimeError("Error while running pre-receive plug-in '%s': %s" % (plugin.name, str(e)))
+        if not alert:
             error_counter.inc()
             pre_plugin_timer.stop_timer(started)
-            raise SyntaxError('Plug-in pre-receive hook did not return modified alert')
+            raise SyntaxError("Plug-in '%s' pre-receive hook did not return modified alert" % plugin.name)
         pre_plugin_timer.stop_timer(started)
 
-    if db.is_blackout_period(incomingAlert):
-        raise RuntimeWarning('Suppressed during blackout period')
+    if db.is_blackout_period(alert):
+        raise RuntimeWarning("Suppressed alert during blackout period")
 
     try:
-        if db.is_duplicate(incomingAlert):
+        if db.is_duplicate(alert):
             started = duplicate_timer.start_timer()
-            alert = db.save_duplicate(incomingAlert)
+            alert = db.save_duplicate(alert)
             duplicate_timer.stop_timer(started)
-        elif db.is_correlated(incomingAlert):
+        elif db.is_correlated(alert):
             started = correlate_timer.start_timer()
-            alert = db.save_correlated(incomingAlert)
+            alert = db.save_correlated(alert)
             correlate_timer.stop_timer(started)
         else:
             started = create_timer.start_timer()
-            alert = db.create_alert(incomingAlert)
+            alert = db.create_alert(alert)
             create_timer.stop_timer(started)
     except Exception as e:
         error_counter.inc()
@@ -260,7 +273,7 @@ def process_alert(incomingAlert):
         except Exception as e:
             error_counter.inc()
             post_plugin_timer.stop_timer(started)
-            raise RuntimeError('Error while running post-receive plug-in: %s' % str(e))
+            raise RuntimeError("Error while running post-receive plug-in '%s': %s" % (plugin.name, str(e)))
         post_plugin_timer.stop_timer(started)
 
     return alert

@@ -7,7 +7,7 @@ from uuid import uuid4
 from alerta.app import app, db
 from alerta.app.switch import Switch
 from alerta.app.auth import auth_required, admin_required
-from alerta.app.utils import absolute_url, jsonify, jsonp, parse_fields, process_alert
+from alerta.app.utils import absolute_url, jsonify, jsonp, parse_fields, process_alert, process_status
 from alerta.app.metrics import Timer
 from alerta.alert import Alert
 from alerta.heartbeat import Heartbeat
@@ -265,12 +265,14 @@ def set_status(id):
         status_timer.stop_timer(status_started)
         return jsonify(status="error", message="must supply 'status' as parameter"), 400
 
-    for plugin in plugins:
-        try:
-            plugin.status_change(alert, status, text)
-        except RejectException as e:
-            status_timer.stop_timer(status_started)
-            return jsonify(status="error", message=str(e)), 403
+    try:
+        process_status(alert, status, text)
+    except RejectException as e:
+        status_timer.stop_timer(status_started)
+        return jsonify(status="error", message=str(e)), 403
+    except Exception as e:
+        status_timer.stop_timer(status_started)
+        return jsonify(status="error", message=str(e)), 500
 
     try:
         alert = db.set_status(id=id, status=status, text=text)
