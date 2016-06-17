@@ -38,14 +38,12 @@ class PluginBase(object):
 class Plugins(object):
 
     def __init__(self):
-
         self.plugins = {}
         self.rules = None
 
         self.register()
 
     def register(self):
-
         for ep in iter_entry_points('alerta.plugins'):
             LOG.debug("Server plug-in '%s' found.", ep.name)
             try:
@@ -58,15 +56,16 @@ class Plugins(object):
                     LOG.debug("Server plug-in '%s' not enabled in 'PLUGINS'.", ep.name)
             except Exception as e:
                 LOG.error("Server plug-in '%s' could not be loaded: %s", ep.name, e)
-
         try:
             self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')
         except (DistributionNotFound, ImportError):
             LOG.info('Failed to load any plugin routing rules. All plugins will be evaluated.')
 
     def routing(self, alert):
+        try:
+            if self.plugins and self.rules:
+                return self.rules(alert, self.plugins)
+        except Exception as e:
+            LOG.warning("Plugin routing rules failed: %s" % str(e))
 
-        if self.rules and self.plugins:
-            return self.rules(alert, self.plugins)
-        else:
-            return self.plugins.values()
+        return self.plugins.values()
