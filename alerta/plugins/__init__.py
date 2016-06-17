@@ -66,7 +66,7 @@ class Plugins(object):
 
     def routing(self, alert):
 
-        if self.rules:
+        if self.rules and self.plugins:
             return self.rules(alert, self.plugins)
         else:
             return self.plugins.values()
