@@ -87,21 +87,12 @@ class Mongo(object):
                 LOG.error('MongoDB authentication failed: %s', e)
                 sys.exit(1)
 
-        # self._create_indexes()
+        self._create_indexes()
 
     def _create_indexes(self):
 
-        self._db.alerts.create_index([('environment', ASCENDING), ('resource', ASCENDING), ('event', ASCENDING), ('severity', ASCENDING)])
-        self._db.alerts.create_index([('status', ASCENDING), ('lastReceiveTime', ASCENDING)])
-        self._db.alerts.create_index([('status', ASCENDING), ('lastReceiveTime', ASCENDING), ('environment', ASCENDING)])
-        self._db.alerts.create_index([('status', ASCENDING), ('service', ASCENDING)])
-        self._db.alerts.create_index([('status', ASCENDING), ('environment', ASCENDING)])
-        self._db.alerts.create_index([('status', ASCENDING), ('expireTime', ASCENDING)])
-        self._db.alerts.create_index([('status', ASCENDING)])
-
-        major, minor, patch = [int(v) for v in self.get_version().split('.')]
-        if (major == 2 and minor > 4) or major >= 3:
-            self._db.alerts.create_index([('$**', TEXT)])
+        self._db.alerts.create_index([('environment', ASCENDING), ('resource', ASCENDING), ('event', ASCENDING)], unique=True)
+        self._db.alerts.create_index([('$**', TEXT)])
 
     def get_db(self):
 

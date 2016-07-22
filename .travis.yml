@@ -8,6 +8,13 @@ services: mongodb
 
 sudo: false
 
+addons:
+  apt:
+    sources:
+    - mongodb-3.0-precise
+    packages:
+    - mongodb-org-server
+
 # command to install dependencies
 install:
   - "pip install ."
