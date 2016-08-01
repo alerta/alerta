@@ -9,8 +9,9 @@ LOG = app.logger
 
 class LogStashOutput(PluginBase):
 
-    def __init__(self):
+    def __init__(self, name=None):
         self.sock = None
+        super(LogStashOutput, self).__init__(name)
 
     def pre_receive(self, alert):
         return alert

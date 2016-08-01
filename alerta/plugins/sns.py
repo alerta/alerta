@@ -10,7 +10,7 @@ LOG = app.logger
 
 class SnsTopicPublisher(PluginBase):
 
-    def __init__(self):
+    def __init__(self, name=None):
         try:
             self.connection = boto.sns.connect_to_region(
                 region_name=app.config['AWS_REGION'],
@@ -36,6 +36,8 @@ class SnsTopicPublisher(PluginBase):
         except KeyError:
             LOG.error('Failed to get SNS TopicArn for %s', app.config['AWS_SNS_TOPIC'])
             raise RuntimeError
+
+        super(SnsTopicPublisher, self).__init__(name)
 
         LOG.info('Configured SNS publisher on topic "%s"', self.topic_arn)
 
