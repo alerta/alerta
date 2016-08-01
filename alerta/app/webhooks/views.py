@@ -308,6 +308,11 @@ def parse_prometheus(status, alert):
     description = annotations.pop('description', None)
     text = description or summary or '%s: %s on %s' % (labels['job'], labels['alertname'], labels['instance'])
 
+    try:
+        timeout = int(labels.pop('timeout', 0)) or None
+    except ValueError:
+        timeout = None
+
     if 'generatorURL' in alert:
         annotations['moreInfo'] = '<a href="%s" target="_blank">Prometheus Graph</a>' % alert['generatorURL']
 
@@ -321,13 +326,14 @@ def parse_prometheus(status, alert):
         group=labels.pop('group', None),
         value=labels.pop('value', None),
         text=text,
-        customer=labels.pop('customer', None),
-        tags=["%s=%s" % t for t in labels.items()],
         attributes=annotations,
         origin='prometheus/' + labels.get('job', '-'),
         event_type='prometheusAlert',
         create_time=create_time,
-        raw_data=alert
+        timeout=timeout,
+        raw_data=alert,
+        customer=labels.pop('customer', None),
+        tags=["%s=%s" % t for t in labels.items()]  # any labels left are used for tags
     )
 
 
@@ -336,6 +342,7 @@ def parse_prometheus(status, alert):
 @auth_required
 def prometheus():
 
+    ids = []
     if request.json and 'alerts' in request.json:
         hook_started = webhook_timer.start_timer()
         status = request.json['status']
@@ -350,19 +357,25 @@ def prometheus():
                 incomingAlert.customer = g.get('customer')
 
             try:
-                process_alert(incomingAlert)
+                alert = process_alert(incomingAlert)
             except RejectException as e:
                 webhook_timer.stop_timer(hook_started)
                 return jsonify(status="error", message=str(e)), 403
             except Exception as e:
                 webhook_timer.stop_timer(hook_started)
                 return jsonify(status="error", message=str(e)), 500
+            ids.append(alert.id)
 
         webhook_timer.stop_timer(hook_started)
     else:
         return jsonify(status="error", message="no alerts in Prometheus notification payload"), 400
 
-    return jsonify(status="ok"), 200
+    if len(ids) == 1:
+        body = alert.get_body()
+        body['href'] = absolute_url('/alert/' + alert.id)
+        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': body['href']}
+    else:
+        return jsonify(status="ok", ids=ids), 201
 
 
 def parse_stackdriver(notification):
