@@ -10,7 +10,7 @@ LOG = app.logger
 
 class FanoutPublisher(PluginBase):
 
-    def __init__(self):
+    def __init__(self, name=None):
 
         if app.debug:
             setup_logging(loglevel='DEBUG', loggers=[''])
@@ -27,6 +27,8 @@ class FanoutPublisher(PluginBase):
 
         self.exchange = Exchange(name=self.exchange_name, type='fanout', channel=self.channel)
         self.producer = Producer(exchange=self.exchange, channel=self.channel)
+
+        super(FanoutPublisher, self).__init__(name)
 
         LOG.info('Configured fanout publisher on topic "%s"', app.config['AMQP_TOPIC'])
 
