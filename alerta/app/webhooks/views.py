@@ -283,7 +283,9 @@ def pagerduty():
         return jsonify(status="error", message="update PagerDuty incident status failed"), 500
 
 
-def parse_prometheus(status, alert):
+def parse_prometheus(alert):
+
+    status = alert.get('status', 'firing')
 
     labels = copy(alert['labels'])
     annotations = copy(alert['annotations'])
@@ -342,13 +344,12 @@ def parse_prometheus(status, alert):
 @auth_required
 def prometheus():
 
-    ids = []
+    alerts = []
     if request.json and 'alerts' in request.json:
         hook_started = webhook_timer.start_timer()
-        status = request.json['status']
         for alert in request.json['alerts']:
             try:
-                incomingAlert = parse_prometheus(status, alert)
+                incomingAlert = parse_prometheus(alert)
             except ValueError as e:
                 webhook_timer.stop_timer(hook_started)
                 return jsonify(status="error", message=str(e)), 400
@@ -364,18 +365,18 @@ def prometheus():
             except Exception as e:
                 webhook_timer.stop_timer(hook_started)
                 return jsonify(status="error", message=str(e)), 500
-            ids.append(alert.id)
+            alerts.append(alert)
 
         webhook_timer.stop_timer(hook_started)
     else:
         return jsonify(status="error", message="no alerts in Prometheus notification payload"), 400
 
-    if len(ids) == 1:
-        body = alert.get_body()
-        body['href'] = absolute_url('/alert/' + alert.id)
-        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': body['href']}
+    if len(alerts) == 1:
+        body = alerts[0].get_body()
+        body['href'] = absolute_url('/alert/' + alerts[0].id)
+        return jsonify(status="ok", id=alerts[0].id, alert=body), 201, {'Location': body['href']}
     else:
-        return jsonify(status="ok", ids=ids), 201
+        return jsonify(status="ok", ids=[alert.id for alert in alerts]), 201
 
 
 def parse_stackdriver(notification):
