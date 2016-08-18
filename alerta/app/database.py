@@ -934,9 +934,6 @@ class Mongo(object):
         query['endTime'] = {'$gt': now}
 
         query['environment'] = alert.environment
-        if app.config['CUSTOMER_VIEWS']:
-            query['customer'] = alert.customer
-
         query['$or'] = [
             {
                 "resource": {'$exists': False},
@@ -988,9 +985,13 @@ class Mongo(object):
                 "tags": {"$not": {"$elemMatch": {"$nin": alert.tags}}}
             }
         ]
-
         if self._db.blackouts.find_one(query):
             return True
+
+        if app.config['CUSTOMER_VIEWS']:
+            query['customer'] = alert.customer
+            if self._db.blackouts.find_one(query):
+                return True
 
         return False
 
