@@ -460,10 +460,11 @@ def get_counts():
 
 
 @app.route('/alerts/top10', methods=['OPTIONS', 'GET'])
+@app.route('/alerts/top10/count', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @auth_required
 @jsonp
-def get_top10():
+def get_top10_count():
 
     try:
         query, _, _, group, _, _, _ = parse_fields(request)
@@ -471,7 +472,42 @@ def get_top10():
         return jsonify(status="error", message=str(e)), 400
 
     try:
-        top10 = db.get_topn(query=query, group=group, limit=10)
+        top10 = db.get_topn_count(query=query, group=group, limit=10)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
+    for item in top10:
+        for resource in item['resources']:
+            resource['href'] = absolute_url('/alert/' + resource['id'])
+
+    if top10:
+        return jsonify(
+            status="ok",
+            total=len(top10),
+            top10=top10
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            top10=[],
+        )
+
+
+@app.route('/alerts/top10/flapping', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@auth_required
+@jsonp
+def get_top10_flapping():
+
+    try:
+        query, _, _, group, _, _, _ = parse_fields(request)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 400
+
+    try:
+        top10 = db.get_topn_flapping(query=query, group=group, limit=10)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 

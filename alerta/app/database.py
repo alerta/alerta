@@ -768,7 +768,7 @@ class Mongo(object):
 
         return counts
 
-    def get_topn(self, query=None, group=None, limit=10):
+    def get_topn_count(self, query=None, group=None, limit=10):
 
         if not group:
             group = "event"  # group by event is nothing specified
@@ -781,6 +781,45 @@ class Mongo(object):
                     "_id": "$%s" % group,
                     "count": {'$sum': 1},
                     "duplicateCount": {'$sum': "$duplicateCount"},
+                    "environments": {'$addToSet': "$environment"},
+                    "services": {'$addToSet': "$service"},
+                    "resources": {'$addToSet': {"id": "$_id", "resource": "$resource"}}
+                }
+            },
+            {'$sort': {"count": -1, "duplicateCount": -1}},
+            {'$limit': limit}
+        ]
+
+        responses = self._db.alerts.aggregate(pipeline)
+
+        top = list()
+        for response in responses:
+            top.append(
+                {
+                    "%s" % group: response['_id'],
+                    "environments": response['environments'],
+                    "services": response['services'],
+                    "resources": response['resources'],
+                    "count": response['count'],
+                    "duplicateCount": response['duplicateCount']
+                }
+            )
+        return top
+
+    def get_topn_flapping(self, query=None, group=None, limit=10):
+
+        if not group:
+            group = "event"
+
+        pipeline = [
+            {'$match': query},
+            {'$unwind': '$service'},
+            {'$unwind': '$history'},
+            {
+                '$group': {
+                    "_id": "$%s" % group,
+                    "count": {'$sum': 1},
+                    "duplicateCount": {'$max': "$duplicateCount"},
                     "environments": {'$addToSet': "$environment"},
                     "services": {'$addToSet': "$service"},
                     "resources": {'$addToSet': {"id": "$_id", "resource": "$resource"}}
