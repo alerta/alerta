@@ -71,7 +71,7 @@ Tests
 
 To run the tests use::
 
-    $ ALERTA_SVR_CONF_FILE= python -m nose
+    $ ALERTA_SVR_CONF_FILE= nosetests tests/*
 
 Cloud Deployment
 ----------------
