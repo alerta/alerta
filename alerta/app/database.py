@@ -322,12 +322,12 @@ class Mongo(object):
                 "status": status,
                 "value": alert.value,
                 "text": alert.text,
-                "tags": alert.tags,
                 "rawData": alert.raw_data,
                 "repeat": True,
                 "lastReceiveId": alert.id,
                 "lastReceiveTime": now
             },
+            '$addToSet': {"tags": {'$each': alert.tags}},
             '$inc': {"duplicateCount": 1}
         }
 
@@ -425,7 +425,6 @@ class Mongo(object):
                 "status": status,
                 "value": alert.value,
                 "text": alert.text,
-                "tags": alert.tags,
                 "createTime": alert.create_time,
                 "rawData": alert.raw_data,
                 "duplicateCount": 0,
@@ -436,6 +435,7 @@ class Mongo(object):
                 "lastReceiveId": alert.id,
                 "lastReceiveTime": now
             },
+            '$addToSet': {"tags": {'$each': alert.tags}},
             '$push': {
                 "history": {
                     '$each': [{
