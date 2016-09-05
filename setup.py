@@ -2,16 +2,15 @@
 
 import setuptools
 
-with open('alerta/version.py') as f:
-    exec(f.read())
+with open('VERSION') as f:
+    version = f.read().strip()
 
 with open('README.md') as f:
     readme = f.read()
 
 setuptools.setup(
     name='alerta-server',
-    namespace_packages=['alerta'],
-    version=__version__,
+    version=version,
     description='Alerta server WSGI application',
     long_description=readme,
     url='https://github.com/guardian/alerta',
@@ -20,12 +19,9 @@ setuptools.setup(
     author_email='nick.satterly@theguardian.com',
     packages=setuptools.find_packages(exclude=['bin', 'tests']),
     install_requires=[
-        'alerta>=4.6.0',
         'Flask',
         'Flask-Cors',
         'pymongo>=3.0',
-        'kombu',
-        'boto',
         'argparse',
         'requests',
         'python-dateutil',
@@ -40,12 +36,7 @@ setuptools.setup(
             'alertad = alerta.app.shell:main'
         ],
         'alerta.plugins': [
-            'reject = alerta.plugins.reject:RejectPolicy',
-            'normalise = alerta.plugins.normalise:NormaliseAlert',
-            'enhance = alerta.plugins.enhance:EnhanceAlert',
-            'amqp = alerta.plugins.amqp:FanoutPublisher',
-            'sns = alerta.plugins.sns:SnsTopicPublisher',
-            'logstash = alerta.plugins.logstash:LogStashOutput',
+            'reject = alerta.plugins.reject:RejectPolicy'
         ],
     },
     keywords='alert monitoring system wsgi application api',
@@ -57,6 +48,7 @@ setuptools.setup(
         'Intended Audience :: System Administrators',
         'Intended Audience :: Telecommunications Industry',
         'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 2.7',
         'Topic :: System :: Monitoring',

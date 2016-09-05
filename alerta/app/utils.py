@@ -28,21 +28,6 @@ pre_plugin_timer = Timer('plugins', 'prereceive', 'Pre-receive plugins', 'Total 
 post_plugin_timer = Timer('plugins', 'postreceive', 'Post-receive plugins', 'Total number of post-receive plugins')
 
 
-class DateEncoder(json.JSONEncoder):
-    def default(self, obj):
-
-        if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (obj.microsecond // 1000)
-        else:
-            return json.JSONEncoder.default(self, obj)
-
-
-# Over-ride jsonify to support Date Encoding
-def jsonify(*args, **kwargs):
-    return current_app.response_class(json.dumps(dict(*args, **kwargs), cls=DateEncoder,
-                                                 indent=None if request.is_xhr else 2), mimetype='application/json')
-
-
 def jsonp(func):
     """Wraps JSONified output for JSONP requests."""
     @wraps(func)
