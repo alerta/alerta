@@ -5,7 +5,6 @@
 # configuration file set by the environment variable ALERTA_SVR_CONF_FILE.
 #
 # Further information on settings can be found at http://docs.alerta.io
-import os
 
 DEBUG = False
 
@@ -71,34 +70,7 @@ SMTP_PASSWORD = ''  # password for MAIL_FROM account, Gmail uses application-spe
 
 # Plug-ins
 PLUGINS = ['reject']
-# PLUGINS = ['amqp', 'enhance', 'logstash', 'normalise', 'reject', 'sns']
 
-ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
+ORIGIN_BLACKLIST = []  # reject all foo alerts from bar, and everything from qux
+#ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
 ALLOWED_ENVIRONMENTS = ['Production', 'Development']  # reject alerts without allowed environments
-
-# AMQP Credentials
-AMQP_URL = 'mongodb://localhost:27017/kombu'        # MongoDB
-# AMQP_URL = 'amqp://guest:guest@localhost:5672//'  # RabbitMQ
-# AMQP_URL = 'redis://localhost:6379/'              # Redis
-
-# Override AMQP default if REDIS_URL environment variable is set
-if 'REDIS_URL' in os.environ:
-    AMQP_URL = os.environ['REDIS_URL']
-
-# AWS Credentials
-AWS_ACCESS_KEY_ID = ''
-AWS_SECRET_ACCESS_KEY = ''
-AWS_REGION = 'eu-west-1'
-
-# Inbound
-AMQP_QUEUE = 'alerts'
-AWS_SQS_QUEUE = 'alerts'
-
-# Outbound
-AMQP_TOPIC = 'notify'
-AWS_SNS_TOPIC = 'notify'
-
-# Logstash
-LOGSTASH_HOST = 'localhost'
-LOGSTASH_PORT = 6379
-

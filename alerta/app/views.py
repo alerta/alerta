@@ -1,16 +1,16 @@
 import datetime
 
-from flask import g, request, render_template
+from flask import g, request, render_template, jsonify
 from flask_cors import cross_origin
 from uuid import uuid4
 
 from alerta.app import app, db
 from alerta.app.switch import Switch
 from alerta.app.auth import auth_required, admin_required
-from alerta.app.utils import absolute_url, jsonify, jsonp, parse_fields, process_alert, process_status
+from alerta.app.utils import absolute_url, jsonp, parse_fields, process_alert, process_status
 from alerta.app.metrics import Timer
-from alerta.alert import Alert
-from alerta.heartbeat import Heartbeat
+from alerta.app.alert import Alert
+from alerta.app.heartbeat import Heartbeat
 from alerta.plugins import load_plugins, RejectException
 
 LOG = app.logger

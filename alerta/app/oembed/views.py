@@ -1,6 +1,6 @@
 import requests
 
-from flask import request, render_template
+from flask import request, render_template, jsonify
 from flask_cors import cross_origin
 
 try:
@@ -9,7 +9,7 @@ except ImportError:
     from urlparse import urlparse
 
 from alerta.app import app
-from alerta.app.utils import jsonify, jsonp
+from alerta.app.utils import jsonp
 from alerta.app.metrics import Timer
 
 LOG = app.logger

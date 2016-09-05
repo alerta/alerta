@@ -6,9 +6,13 @@ import logging
 from flask import Flask
 from flask_cors import CORS
 
+from alerta.app.alert import DateEncoder
+
 LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s'
 
 app = Flask(__name__, static_url_path='')
+
+app.json_encoder = DateEncoder
 
 app.config.from_object('alerta.settings')
 app.config.from_pyfile('/etc/alertad.conf', silent=True)

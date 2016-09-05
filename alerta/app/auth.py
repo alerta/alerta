@@ -7,7 +7,7 @@ import re
 
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import g, request, render_template
+from flask import g, request, render_template, jsonify
 from flask_cors import cross_origin
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 from base64 import urlsafe_b64decode
@@ -25,7 +25,7 @@ except ImportError:
     from urllib import urlencode
 
 from alerta.app import app, db
-from alerta.app.utils import absolute_url, jsonify, DateEncoder
+from alerta.app.utils import absolute_url
 
 BASIC_AUTH_REALM = "Alerta"
 
@@ -71,7 +71,7 @@ def create_token(user, name, login, provider=None, customer=None, role='user'):
     if provider == 'basic':
         payload['email_verified'] = db.is_email_verified(login)
 
-    token = jwt.encode(payload, key=app.config['SECRET_KEY'], json_encoder=DateEncoder)
+    token = jwt.encode(payload, key=app.config['SECRET_KEY'])
     return token.decode('unicode_escape')
 
 

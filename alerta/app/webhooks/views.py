@@ -3,14 +3,14 @@ import datetime
 
 from copy import copy
 from dateutil.parser import parse as parse_date
-from flask import g, request
+from flask import g, request, jsonify
 from flask_cors import cross_origin
 
 from alerta.app import app, db
 from alerta.app.auth import auth_required
 from alerta.app.metrics import Timer
-from alerta.app.utils import absolute_url, jsonify, process_alert
-from alerta.alert import Alert
+from alerta.app.utils import absolute_url, process_alert
+from alerta.app.alert import Alert
 from alerta.plugins import RejectException
 
 LOG = app.logger

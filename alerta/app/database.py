@@ -16,8 +16,8 @@ except ImportError:
     from urlparse import urlparse
 
 from alerta.app import app, severity_code, status_code
-from alerta.alert import AlertDocument
-from alerta.heartbeat import HeartbeatDocument
+from alerta.app.alert import AlertDocument
+from alerta.app.heartbeat import HeartbeatDocument
 
 
 LOG = app.logger
