@@ -1,4 +1,4 @@
-Alerta Release 4.7
+Alerta Release 4.8
 ==================
 
 [![Build Status](https://travis-ci.org/guardian/alerta.png)](https://travis-ci.org/guardian/alerta) [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
