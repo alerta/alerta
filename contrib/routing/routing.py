@@ -1,10 +1,8 @@
-
+# Example plugin routing rules file
 
 def rules(alert, plugins):
 
-    print alert
-
-    if 'reject' in alert.text:
-        return [plugins['reject']]
+    if alert.severity == 'debug':
+        return []
     else:
-        return [plugins['normalise'], plugins['enhance']]
+        return [plugins['reject']]
