@@ -1,8 +1,11 @@
 
 import time
-import json
 
-from json import JSONEncoder
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
 from pymongo import ReturnDocument
 
 from alerta.app import app
@@ -14,7 +17,7 @@ LOG = app.logger
 db = Mongo().get_db()
 
 
-class MetricEncoder(JSONEncoder):
+class MetricEncoder(json.JSONEncoder):
 
     def default(self, o):
         return o.__dict__

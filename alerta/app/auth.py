@@ -1,9 +1,13 @@
 
 import jwt
-import json
 import requests
 import bcrypt
 import re
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from datetime import datetime, timedelta
 from functools import wraps

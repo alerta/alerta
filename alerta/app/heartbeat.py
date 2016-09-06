@@ -5,7 +5,11 @@ import platform
 import time
 import datetime
 import pytz
-import json
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from uuid import uuid4
 from email import utils
