@@ -1,7 +1,11 @@
-import json
+
 import unittest
 
-from uuid import uuid4
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
 from alerta.app import app
 
 
