@@ -20,7 +20,7 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=['bin', 'tests']),
     install_requires=[
         'Flask==0.10.1',
-        'Flask-Cors==2.1.3',
+        'Flask-Cors>=3.0.1',
         'pymongo>=3.0',
         'argparse',
         'requests',
