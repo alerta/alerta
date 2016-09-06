@@ -1,7 +1,12 @@
-import json
+
 import datetime
 import pytz
 import re
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from functools import wraps
 from flask import request, g, current_app

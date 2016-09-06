@@ -1,5 +1,10 @@
-import json
+
 import unittest
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from uuid import uuid4
 

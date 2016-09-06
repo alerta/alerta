@@ -1,5 +1,10 @@
-import json
+
 import datetime
+
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from copy import copy
 from dateutil.parser import parse as parse_date
