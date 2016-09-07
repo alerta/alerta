@@ -37,6 +37,10 @@ ALLOWED_GITLAB_GROUPS = ['*']
 TOKEN_EXPIRE_DAYS = 14
 API_KEY_EXPIRE_DAYS = 365  # 1 year
 
+# switches
+AUTO_REFRESH_ALLOW = 'ON'  # set to 'OFF' to reduce load on API server by forcing clients to manually refresh
+SENDER_API_ALLOW = 'ON'    # set to 'OFF' to block clients from sending new alerts to API server
+
 CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
 CORS_ORIGINS = [
     'http://try.alerta.io',
