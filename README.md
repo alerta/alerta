@@ -76,10 +76,7 @@ To run the tests use::
 Cloud Deployment
 ----------------
 
-Alerta can be deployed to the cloud easily using Heroku, AWS EC2 <https://github.com/alerta/alerta-cloudformation>
-or RedHat OpenShift <https://github.com/alerta/openshift-api-alerta>::
-
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+Alerta can be deployed to the cloud easily using Heroku <https://github.com/alerta/heroku-api-alerta>, AWS EC2 <https://github.com/alerta/alerta-cloudformation>, or RedHat OpenShift <https://github.com/alerta/openshift-api-alerta>
 
 License
 -------
