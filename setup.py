@@ -37,7 +37,7 @@ setuptools.setup(
         ],
         'alerta.plugins': [
             'reject = alerta.plugins.reject:RejectPolicy'
-        ],
+        ]
     },
     keywords='alert monitoring system wsgi application api',
     classifiers=[
