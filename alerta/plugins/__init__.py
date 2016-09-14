@@ -1,12 +1,13 @@
 
 import abc
+import logging
 
 from six import add_metaclass
 from pkg_resources import iter_entry_points, load_entry_point, DistributionNotFound
 
 from alerta.app import app
 
-LOG = app.logger
+LOG = logging.getLogger('alerta.plugins')
 
 
 class RejectException(Exception):
