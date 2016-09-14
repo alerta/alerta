@@ -8,6 +8,9 @@
 
 DEBUG = False
 
+LOGGER_NAME = 'alerta'
+LOG_FILE = None
+
 SECRET_KEY = 'changeme'
 
 QUERY_LIMIT = 10000  # maximum number of alerts returned by a single query

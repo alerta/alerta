@@ -8,7 +8,7 @@ from flask_cors import CORS
 
 from alerta.app.alert import DateEncoder
 
-LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s'
+LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
 
 app = Flask(__name__, static_url_path='')
 
@@ -66,14 +66,22 @@ if 'SMTP_PASSWORD' in os.environ:
 if 'PLUGINS' in os.environ:
     app.config['PLUGINS'] = os.environ['PLUGINS'].split(',')
 
+# Setup logging
+from logging import getLogger
+loggers = [app.logger, getLogger('werkzeug'), getLogger('requests'), getLogger('flask_cors')]
+
 if app.debug:
-    app.debug_log_format = LOG_FORMAT
-    app.logger.setLevel(logging.DEBUG)
-else:
-    stderr_handler = logging.StreamHandler()
-    stderr_handler.setFormatter(logging.Formatter(LOG_FORMAT))
-    app.logger.addHandler(stderr_handler)
-    app.logger.setLevel(logging.INFO)
+    for logger in loggers:
+        logger.setLevel(logging.DEBUG)
+
+if app.config['LOG_FILE']:
+    from logging.handlers import RotatingFileHandler
+    del app.logger.handlers[:]
+    logfile_handler = RotatingFileHandler(app.config['LOG_FILE'], maxBytes=100000, backupCount=2)
+    logfile_handler.setLevel(logging.DEBUG)
+    logfile_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+    for logger in loggers:
+        logger.addHandler(logfile_handler)
 
 # Runtime config check
 if app.config['CUSTOMER_VIEWS'] and not app.config['AUTH_REQUIRED']:
