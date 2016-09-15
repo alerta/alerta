@@ -13,8 +13,7 @@ from alerta.app.metrics import Gauge, Counter, Timer
 from alerta import build
 from alerta.version import __version__
 
-LOG = logging.getLogger(__name__)
-
+LOG = app.logger
 
 switches = [
     Switch('auto-refresh-allow', 'Allow consoles to auto-refresh alerts', SwitchState.to_state(app.config['AUTO_REFRESH_ALLOW'])),
