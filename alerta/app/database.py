@@ -32,6 +32,7 @@ class Mongo(object):
     def connect(self):
 
         mongo_uri = (os.environ.get('MONGO_URI', None) or
+                     os.environ.get('MONGODB_URI', None) or
                      os.environ.get('MONGOHQ_URL', None) or
                      os.environ.get('MONGOLAB_URI', None))
         if mongo_uri:
