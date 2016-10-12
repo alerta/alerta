@@ -109,7 +109,6 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['previousSeverity'], self.major_alert['severity'])
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
-
         # de-duplicate
         response = self.app.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)

@@ -20,6 +20,7 @@ from alerta.app import status_code
 # NOTE: The display text in single quotes can be changed depending on preference.
 # eg. CRITICAL = 'critical' or CRITICAL = 'CRITICAL'
 
+AUTH = 'security'
 CRITICAL = 'critical'
 MAJOR = 'major'
 MINOR = 'minor'
@@ -30,7 +31,7 @@ NORMAL = 'normal'
 OK = 'ok'
 INFORM = 'informational'
 DEBUG = 'debug'
-AUTH = 'security'
+TRACE = 'trace'
 UNKNOWN = 'unknown'
 NOT_VALID = 'notValid'
 
@@ -41,6 +42,7 @@ NO_CHANGE = 'noChange'
 SEVERITY_MAP = app.config['SEVERITY_MAP']
 
 _ABBREV_SEVERITY_MAP = {
+    AUTH: 'Sec ',
     CRITICAL: 'Crit',
     MAJOR: 'Majr',
     MINOR: 'Minr',
@@ -51,11 +53,12 @@ _ABBREV_SEVERITY_MAP = {
     OK: 'Ok',
     INFORM: 'Info',
     DEBUG: 'Dbug',
-    AUTH: 'Sec ',
+    TRACE: 'Trce',
     UNKNOWN: 'Unkn',
 }
 
 _COLOR_MAP = {
+    AUTH: '\033[94m',
     CRITICAL: '\033[91m',
     MAJOR: '\033[95m',
     MINOR: '\033[93m',
@@ -66,7 +69,7 @@ _COLOR_MAP = {
     OK: '\033[92m',
     INFORM: '\033[92m',
     DEBUG: '\033[90m',
-    AUTH: '\033[90m',
+    TRACE: '\033[97m',
     UNKNOWN: '\033[90m',
 }
 
@@ -90,6 +93,8 @@ def parse_severity(name):
 
 
 def trend(previous, current):
+    if previous == UNKNOWN:
+        previous = NORMAL  # assume normal for the purposes of calculating trend indication
     if name_to_code(previous) > name_to_code(current):
         return MORE_SEVERE
     elif name_to_code(previous) < name_to_code(current):
@@ -99,6 +104,8 @@ def trend(previous, current):
 
 
 def status_from_severity(previous_severity, current_severity, current_status=status_code.UNKNOWN):
+    if current_severity in [DEBUG, TRACE]:
+        return current_status
     if current_severity in [NORMAL, CLEARED, OK]:
         return status_code.CLOSED
     if current_status in [status_code.CLOSED, status_code.EXPIRED]:
