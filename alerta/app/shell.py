@@ -5,6 +5,7 @@ from alerta.app import app
 from alerta.app import db
 from alerta.version import __version__
 
+LOG = app.logger
 
 def main():
 
@@ -27,6 +28,6 @@ def main():
     )
     args = parser.parse_args()
 
-    app.logger.info('Starting alerta version %s ...', __version__)
-    app.logger.info('Using MongoDB version %s ...', db.get_version())
+    LOG.info('Starting alerta version %s ...', __version__)
+    LOG.info('Using MongoDB version %s ...', db.get_version())
     app.run(host='0.0.0.0', port=args.port, debug=args.debug, threaded=True)

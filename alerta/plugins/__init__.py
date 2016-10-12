@@ -1,12 +1,13 @@
 
 import abc
+import logging
 
 from six import add_metaclass
 from pkg_resources import iter_entry_points, load_entry_point, DistributionNotFound
 
 from alerta.app import app
 
-LOG = app.logger
+LOG = logging.getLogger('alerta.plugins')
 
 
 class RejectException(Exception):
@@ -44,6 +45,7 @@ class Plugins(object):
         self.register()
 
     def register(self):
+        plugins_enabled = []
         for ep in iter_entry_points('alerta.plugins'):
             LOG.debug("Server plug-in '%s' found.", ep.name)
             try:
@@ -51,21 +53,23 @@ class Plugins(object):
                     plugin = ep.load()
                     if plugin:
                         self.plugins[ep.name] = plugin()
+                        plugins_enabled.append(ep.name)
                         LOG.info("Server plug-in '%s' enabled.", ep.name)
                 else:
                     LOG.debug("Server plug-in '%s' not enabled in 'PLUGINS'.", ep.name)
             except Exception as e:
                 LOG.error("Server plug-in '%s' could not be loaded: %s", ep.name, e)
+        LOG.info("All server plug-ins enabled: %s" % ', '.join(plugins_enabled))
         try:
             self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')
         except (DistributionNotFound, ImportError):
-            LOG.info('Failed to load any plugin routing rules. All plugins will be evaluated.')
+            LOG.info('No plug-in routing rules found. All plug-ins will be evaluated.')
 
     def routing(self, alert):
         try:
             if self.plugins and self.rules:
                 return self.rules(alert, self.plugins)
         except Exception as e:
-            LOG.warning("Plugin routing rules failed: %s" % str(e))
+            LOG.warning("Plug-in routing rules failed: %s" % str(e))
 
         return self.plugins.values()

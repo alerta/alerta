@@ -11,3 +11,4 @@ build
 .DS_Store
 dist
 rpmbuild
+*.log
