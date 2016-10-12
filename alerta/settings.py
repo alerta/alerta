@@ -53,6 +53,7 @@ CORS_ORIGINS = [
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
 SEVERITY_MAP = {
+    'security': 0,
     'critical': 1,
     'major': 2,
     'minor': 3,
@@ -63,7 +64,7 @@ SEVERITY_MAP = {
     'ok': 5,
     'informational': 6,
     'debug': 7,
-    'security': 8,
+    'trace': 8,
     'unknown': 9  # default
 }
 
