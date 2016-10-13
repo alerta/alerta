@@ -307,7 +307,7 @@ class Mongo(object):
         if alert.status != status_code.UNKNOWN and alert.status != previous_status:
             status = alert.status
         else:
-            status = severity_code.status_from_severity(alert.severity, alert.severity, previous_status)
+            status = status_code.status_from_severity(alert.severity, alert.severity, previous_status)
 
         query = {
             "environment": alert.environment,
@@ -399,7 +399,7 @@ class Mongo(object):
         previous_status = self.get_status(alert)
         trend_indication = severity_code.trend(previous_severity, alert.severity)
         if alert.status == status_code.UNKNOWN:
-            status = severity_code.status_from_severity(previous_severity, alert.severity, previous_status)
+            status = status_code.status_from_severity(previous_severity, alert.severity, previous_status)
         else:
             status = alert.status
 
@@ -511,9 +511,9 @@ class Mongo(object):
         receive id and time, appending all to history. Append to history again if status changes.
         """
 
-        trend_indication = severity_code.trend(severity_code.UNKNOWN, alert.severity)
+        trend_indication = severity_code.trend(app.config['DEFAULT_SEVERITY'], alert.severity)
         if alert.status == status_code.UNKNOWN:
-            status = severity_code.status_from_severity(severity_code.UNKNOWN, alert.severity)
+            status = status_code.status_from_severity(app.config['DEFAULT_SEVERITY'], alert.severity)
         else:
             status = alert.status
 
@@ -559,7 +559,7 @@ class Mongo(object):
             "customer": alert.customer,
             "duplicateCount": 0,
             "repeat": False,
-            "previousSeverity": severity_code.UNKNOWN,
+            "previousSeverity": app.config['DEFAULT_SEVERITY'],
             "trendIndication": trend_indication,
             "receiveTime": now,
             "lastReceiveId": alert.id,

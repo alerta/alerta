@@ -96,7 +96,7 @@ class AlertTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['duplicateCount'], 1)
-        self.assertEqual(data['alert']['previousSeverity'], 'unknown')
+        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
         # correlate alert (same event, diff sev)

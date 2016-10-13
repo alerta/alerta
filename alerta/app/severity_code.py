@@ -6,16 +6,15 @@ http://tools.ietf.org/html/rfc5674
 http://www.itu.int/rec/T-REC-M.3100
 http://www.itu.int/rec/T-REC-X.736-199201-I
 
-           ITU Perceived Severity      syslog SEVERITY (Name)
-           Critical                    1 (Alert)
-           Major                       2 (Critical)
-           Minor                       3 (Error)
-           Warning                     4 (Warning)
-           Indeterminate               5 (Notice)
-           Cleared                     5 (Notice)
+Alarm Model State           ITU Perceived Severity      syslog SEVERITY (Name)
+      6                     Critical                    1 (Alert)
+      5                     Major                       2 (Critical)
+      4                     Minor                       3 (Error)
+      3                     Warning                     4 (Warning)
+      2                     Indeterminate               5 (Notice)
+      1                     Cleared                     5 (Notice)
 """
 from alerta.app import app
-from alerta.app import status_code
 
 # NOTE: The display text in single quotes can be changed depending on preference.
 # eg. CRITICAL = 'critical' or CRITICAL = 'CRITICAL'
@@ -36,8 +35,8 @@ UNKNOWN = 'unknown'
 NOT_VALID = 'notValid'
 
 MORE_SEVERE = 'moreSevere'
-LESS_SEVERE = 'lessSevere'
 NO_CHANGE = 'noChange'
+LESS_SEVERE = 'lessSevere'
 
 SEVERITY_MAP = app.config['SEVERITY_MAP']
 
@@ -93,23 +92,9 @@ def parse_severity(name):
 
 
 def trend(previous, current):
-    if previous == UNKNOWN:
-        previous = NORMAL  # assume normal for the purposes of calculating trend indication
     if name_to_code(previous) > name_to_code(current):
         return MORE_SEVERE
     elif name_to_code(previous) < name_to_code(current):
         return LESS_SEVERE
     else:
         return NO_CHANGE
-
-
-def status_from_severity(previous_severity, current_severity, current_status=status_code.UNKNOWN):
-    if current_severity in [DEBUG, TRACE]:
-        return current_status
-    if current_severity in [NORMAL, CLEARED, OK]:
-        return status_code.CLOSED
-    if current_status in [status_code.CLOSED, status_code.EXPIRED]:
-        return status_code.OPEN
-    if trend(previous_severity, current_severity) == MORE_SEVERE:
-        return status_code.OPEN
-    return current_status
