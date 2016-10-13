@@ -1,3 +1,6 @@
+
+from alerta.app import severity_code
+
 """
 Possible alert status codes.
 """
@@ -43,3 +46,13 @@ def parse_status(name):
             if name.lower() == st.lower():
                 return st
     return NOT_VALID
+
+
+def status_from_severity(previous_severity, current_severity, current_status=OPEN):
+    if current_severity in [severity_code.NORMAL, severity_code.CLEARED, severity_code.OK]:
+        return CLOSED
+    if current_status in [CLOSED, EXPIRED]:
+        return OPEN
+    if severity_code.trend(previous_severity, current_severity) == severity_code.MORE_SEVERE:
+        return OPEN
+    return current_status

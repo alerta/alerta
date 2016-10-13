@@ -65,8 +65,9 @@ SEVERITY_MAP = {
     'informational': 6,
     'debug': 7,
     'trace': 8,
-    'unknown': 9  # default
+    'unknown': 9
 }
+DEFAULT_SEVERITY = 'indeterminate'
 
 BLACKOUT_DURATION = 3600  # default period = 1 hour
 

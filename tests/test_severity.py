@@ -18,13 +18,15 @@ class SeverityTestCase(unittest.TestCase):
         app.config['AUTH_REQUIRED'] = False
         self.app = app.test_client()
 
+        correlate = ['node_down', 'node_marginal', 'node_up', 'node_pwned', 'node_trace']
+
         self.auth_alert = {
             'event': 'node_pwned',
             'resource': 'node1',
             'environment': 'Production',
             'service': ['Network'],
             'severity': 'security',
-            'correlate': ['node_trace', 'node_down', 'node_marginal', 'node_up', 'node_pwned'],
+            'correlate': correlate,
             'tags': ['foo'],
             'attributes': {'foo': 'abc def', 'bar': 1234, 'baz': False}
         }
@@ -34,7 +36,7 @@ class SeverityTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': ['Network'],
             'severity': 'critical',
-            'correlate': ['node_trace', 'node_down', 'node_marginal', 'node_up', 'node_pwned']
+            'correlate': correlate
         }
         self.major_alert = {
             'event': 'node_marginal',
@@ -42,7 +44,7 @@ class SeverityTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': ['Network'],
             'severity': 'major',
-            'correlate': ['node_trace', 'node_down', 'node_marginal', 'node_up', 'node_pwned']
+            'correlate': correlate
         }
         self.warn_alert = {
             'event': 'node_marginal',
@@ -50,7 +52,7 @@ class SeverityTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': ['Network'],
             'severity': 'warning',
-            'correlate': ['node_trace', 'node_down', 'node_marginal', 'node_up', 'node_pwned']
+            'correlate': correlate
         }
         self.normal_alert = {
             'event': 'node_up',
@@ -58,7 +60,7 @@ class SeverityTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': ['Network'],
             'severity': 'normal',
-            'correlate': ['node_trace', 'node_down', 'node_marginal', 'node_up', 'node_pwned']
+            'correlate': correlate
         }
 
         self.trace_alert = {
@@ -67,7 +69,7 @@ class SeverityTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': ['Network'],
             'severity': 'trace',
-            'correlate': ['node_trace', 'node_down', 'node_marginal', 'node_up', 'node_pwned']
+            'correlate': correlate
         }
 
         self.ok_alert = {
@@ -88,6 +90,15 @@ class SeverityTestCase(unittest.TestCase):
             'correlate': []
         }
 
+        self.debug_alert = {
+            'event': 'node_debug',
+            'resource': 'node4',
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'debug',
+            'correlate': []
+        }
+
         self.headers = {
             'Content-type': 'application/json'
         }
@@ -98,37 +109,48 @@ class SeverityTestCase(unittest.TestCase):
 
     def test_inactive(self):
 
-        # prevSev=unknown, sev=ok, status=closed, trend=noChange
+        # prevSev=(DEFAULT_SEVERITY=indeterminate), sev=ok, status=closed, trend=noChange
         response = self.app.post('/alert', data=json.dumps(self.ok_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['repeat'], False)
-        self.assertEqual(data['alert']['previousSeverity'], 'unknown')
+        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'ok')
         self.assertEqual(data['alert']['status'], 'closed')
         self.assertEqual(data['alert']['trendIndication'], 'noChange')
 
-        # prevSev=unknown, sev=informational, status=unknown, trend=lessSevere
+        # prevSev=(DEFAULT_SEVERITY=indeterminate), sev=informational, status=open, trend=lessSevere
         response = self.app.post('/alert', data=json.dumps(self.inform_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['repeat'], False)
-        self.assertEqual(data['alert']['previousSeverity'], 'unknown')
+        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'informational')
-        self.assertEqual(data['alert']['status'], 'unknown')
+        self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
+
+        # prevSev=(DEFAULT_SEVERITY=indeterminate), sev=debug, status=open, trend=lessSevere
+        response = self.app.post('/alert', data=json.dumps(self.debug_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['duplicateCount'], 0)
+        self.assertEqual(data['alert']['repeat'], False)
+        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
+        self.assertEqual(data['alert']['severity'], 'debug')
+        self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
     def test_active(self):
 
-        # prevSev=unknown, sev=major, status=open, trend=moreSevere
+        # prevSev=(DEFAULT_SEVERITY=indeterminate), sev=major, status=open, trend=moreSevere
         response = self.app.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['repeat'], False)
-        self.assertEqual(data['alert']['previousSeverity'], 'unknown')
+        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'major')
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
@@ -143,13 +165,13 @@ class SeverityTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'ack')
 
-        # prevSev=unknown, sev=major, status=(current=ack), trend=moreSevere
+        # prevSev=(DEFAULT_SEVERITY=indeterminate), sev=major, status=(current=ack), trend=moreSevere
         response = self.app.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 1)
         self.assertEqual(data['alert']['repeat'], True)
-        self.assertEqual(data['alert']['previousSeverity'], 'unknown')
+        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'major')
         self.assertEqual(data['alert']['status'], 'ack')
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
@@ -217,7 +239,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'closed')
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
-        # prevSev=normal, sev=trace, status=closed, trend=lessSevere
+        # prevSev=normal, sev=trace, status=open, trend=lessSevere
         response = self.app.post('/alert', data=json.dumps(self.trace_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
@@ -225,7 +247,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['repeat'], False)
         self.assertEqual(data['alert']['previousSeverity'], 'normal')
         self.assertEqual(data['alert']['severity'], 'trace')
-        self.assertEqual(data['alert']['status'], 'closed')
+        self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
         # prevSev=trace, sev=security, status=open, trend=moreSevere
