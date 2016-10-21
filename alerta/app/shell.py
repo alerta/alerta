@@ -21,6 +21,13 @@ def main():
         help='Listen port (default: 8080)'
     )
     parser.add_argument(
+        '-H',
+        '--host',
+        type=str,
+        default='0.0.0.0',
+        help='Bind host (default: 0.0.0.0)'
+    )
+    parser.add_argument(
         '--debug',
         action='store_true',
         default=False,
@@ -30,4 +37,4 @@ def main():
 
     LOG.info('Starting alerta version %s ...', __version__)
     LOG.info('Using MongoDB version %s ...', db.get_version())
-    app.run(host='0.0.0.0', port=args.port, debug=args.debug, threaded=True)
+    app.run(host=args.host, port=args.port, debug=args.debug, threaded=True)
