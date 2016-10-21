@@ -92,7 +92,7 @@ class Mongo(object):
 
     def _create_indexes(self):
 
-        self._db.alerts.create_index([('environment', ASCENDING), ('resource', ASCENDING), ('event', ASCENDING)], unique=True)
+        self._db.alerts.create_index([('environment', ASCENDING), ('resource', ASCENDING), ('event', ASCENDING), ('remote', ASCENDING)], unique=True)
         self._db.alerts.create_index([('$**', TEXT)])
 
     def get_db(self):
@@ -123,7 +123,8 @@ class Mongo(object):
                     "event": {'$ne': alert.event},
                     "correlate": alert.event
                 }],
-            "customer": alert.customer
+            "customer": alert.customer,
+            "remote": alert.remote
         }
 
         return self._db.alerts.find_one(query, projection={"severity": 1, "_id": 0})['severity']
@@ -143,7 +144,8 @@ class Mongo(object):
                     "correlate": alert.event,
                 }
             ],
-            "customer": alert.customer
+            "customer": alert.customer,
+            "remote": alert.remote
         }
 
         return self._db.alerts.find_one(query, projection={"status": 1, "_id": 0})['status']
@@ -184,6 +186,7 @@ class Mongo(object):
                     timeout=response.get('timeout'),
                     raw_data=response.get('rawData'),
                     customer=response.get('customer', None),
+                    remote=response.get('remote', None),
                     duplicate_count=response.get('duplicateCount'),
                     repeat=response.get('repeat'),
                     previous_severity=response.get('previousSeverity'),
@@ -204,6 +207,7 @@ class Mongo(object):
                 "event": 1,
                 "environment": 1,
                 "customer": 1,
+                "remote": 1,
                 "service": 1,
                 "group": 1,
                 "tags": 1,
@@ -242,7 +246,8 @@ class Mongo(object):
                         "origin": response['origin'],
                         "updateTime": response['history']['updateTime'],
                         "type": response['history'].get('type', 'unknown'),
-                        "customer": response.get('customer', None)
+                        "customer": response.get('customer', None),
+                        "remote": response.get('remote', None)
                     }
                 )
             elif 'status' in response['history']:
@@ -261,7 +266,8 @@ class Mongo(object):
                         "origin": response['origin'],
                         "updateTime": response['history']['updateTime'],
                         "type": response['history'].get('type', 'unknown'),
-                        "customer": response.get('customer', None)
+                        "customer": response.get('customer', None),
+                        "remote": response.get('remote', None)
                     }
                 )
         return history
@@ -273,7 +279,8 @@ class Mongo(object):
             "resource": alert.resource,
             "event": alert.event,
             "severity": alert.severity,
-            "customer": alert.customer
+            "customer": alert.customer,
+            "remote": alert.remote
         }
 
         return bool(self._db.alerts.find_one(query))
@@ -292,7 +299,8 @@ class Mongo(object):
                     "event": {'$ne': alert.event},
                     "correlate": alert.event
                 }],
-            "customer": alert.customer
+            "customer": alert.customer,
+            "remote": alert.remote
         }
 
         return bool(self._db.alerts.find_one(query))
@@ -314,7 +322,8 @@ class Mongo(object):
             "resource": alert.resource,
             "event": alert.event,
             "severity": alert.severity,
-            "customer": alert.customer
+            "customer": alert.customer,
+            "remote": alert.remote
         }
 
         now = datetime.datetime.utcnow()
@@ -379,6 +388,7 @@ class Mongo(object):
             timeout=response['timeout'],
             raw_data=response['rawData'],
             customer=response.get('customer', None),
+            remote=response.get('remote', None),
             duplicate_count=response['duplicateCount'],
             repeat=response['repeat'],
             previous_severity=response['previousSeverity'],
@@ -415,7 +425,8 @@ class Mongo(object):
                     "event": {'$ne': alert.event},
                     "correlate": alert.event
                 }],
-            "customer": alert.customer
+            "customer": alert.customer,
+            "remote": alert.remote
         }
 
         now = datetime.datetime.utcnow()
@@ -495,6 +506,7 @@ class Mongo(object):
             timeout=response['timeout'],
             raw_data=response['rawData'],
             customer=response.get('customer', None),
+            remote=response.get('remote', None),
             duplicate_count=response['duplicateCount'],
             repeat=response['repeat'],
             previous_severity=response['previousSeverity'],
@@ -557,6 +569,7 @@ class Mongo(object):
             "timeout": alert.timeout,
             "rawData": alert.raw_data,
             "customer": alert.customer,
+            "remote": alert.remote,
             "duplicateCount": 0,
             "repeat": False,
             "previousSeverity": app.config['DEFAULT_SEVERITY'],
@@ -593,6 +606,7 @@ class Mongo(object):
             timeout=new['timeout'],
             raw_data=new['rawData'],
             customer=new['customer'],
+            remote=new['remote'],
             duplicate_count=new['duplicateCount'],
             repeat=new['repeat'],
             previous_severity=new['previousSeverity'],
@@ -637,6 +651,7 @@ class Mongo(object):
             timeout=response['timeout'],
             raw_data=response['rawData'],
             customer=response.get('customer', None),
+            remote=response.get('remote', None),
             duplicate_count=response['duplicateCount'],
             repeat=response['repeat'],
             previous_severity=response['previousSeverity'],
@@ -702,6 +717,7 @@ class Mongo(object):
             timeout=response['timeout'],
             raw_data=response['rawData'],
             customer=response.get('customer', None),
+            remote=response.get('remote', None),
             duplicate_count=response['duplicateCount'],
             repeat=response['repeat'],
             previous_severity=response['previousSeverity'],
