@@ -101,6 +101,9 @@ def cloudwatch():
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
 
+    if hasattr(request, 'remote_addr'):
+        incomingAlert.remote = request.remote_addr
+
     try:
         alert = process_alert(incomingAlert)
     except RejectException as e:
@@ -184,6 +187,9 @@ def pingdom():
 
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
+
+    if hasattr(request, 'remote_addr'):
+        incomingAlert.remote = request.remote_addr
 
     try:
         alert = process_alert(incomingAlert)
@@ -361,6 +367,9 @@ def prometheus():
 
             if g.get('customer', None):
                 incomingAlert.customer = g.get('customer')
+
+            if hasattr(request, 'remote_addr'):
+                incomingAlert.remote = request.remote_addr
 
             try:
                 alert = process_alert(incomingAlert)

@@ -62,6 +62,7 @@ class Alert(object):
         self.timeout = kwargs.get('timeout', DEFAULT_TIMEOUT)
         self.raw_data = kwargs.get('raw_data', kwargs.get('rawData', None)) or ""
         self.customer = kwargs.get('customer', None)
+        self.remote = kwargs.get('remote', None)
 
     def get_id(self, short=False):
 
@@ -99,7 +100,8 @@ class Alert(object):
             'createTime': self.get_date('create_time', 'iso'),
             'timeout': self.timeout,
             'rawData': self.raw_data,
-            'customer': self.customer
+            'customer': self.customer,
+            'remote': self.remote
         }
 
     def get_date(self, attr, fmt='iso', timezone='Europe/London'):
@@ -182,7 +184,8 @@ class Alert(object):
             create_time=alert.get('createTime', None),
             timeout=alert.get('timeout', None),
             raw_data=alert.get('rawData', None),
-            customer=alert.get('customer', None)
+            customer=alert.get('customer', None),
+            remote=alert.get('remote', None)
         )
 
 
@@ -190,7 +193,7 @@ class AlertDocument(object):
 
     def __init__(self, id, resource, event, environment, severity, correlate, status, service, group, value, text,
                  tags, attributes, origin, event_type, create_time, timeout, raw_data, duplicate_count, repeat,
-                 previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time, history, customer):
+                 previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time, history, customer, remote):
 
         self.id = id
         self.resource = resource
@@ -211,6 +214,7 @@ class AlertDocument(object):
         self.timeout = timeout if timeout is not None else DEFAULT_TIMEOUT
         self.raw_data = raw_data
         self.customer = customer
+        self.remote = remote
 
         self.duplicate_count = duplicate_count
         self.repeat = repeat
@@ -258,6 +262,7 @@ class AlertDocument(object):
             'timeout': self.timeout,
             'rawData': self.raw_data,
             'customer': self.customer,
+            'remote': self.remote,
             'duplicateCount': self.duplicate_count,
             'repeat': self.repeat,
             'previousSeverity': self.previous_severity,
@@ -336,6 +341,7 @@ class AlertDocument(object):
             timeout=alert.get('timeout', None),
             raw_data=alert.get('rawData', None),
             customer=alert.get('customer', None),
+            remote=alert.get('remote', None),
             duplicate_count=alert.get('duplicateCount', None),
             repeat=alert.get('repeat', None),
             previous_severity=alert.get('previousSeverity', None),
