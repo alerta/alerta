@@ -11,21 +11,22 @@ def main():
 
     parser = argparse.ArgumentParser(
         prog='alertad',
-        description='Alerta server (for development purposes only)'
-    )
-    parser.add_argument(
-        '-P',
-        '--port',
-        type=int,
-        default=8080,
-        help='Listen port (default: 8080)'
+        description='Alerta server (for development purposes only)',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
         '-H',
         '--host',
         type=str,
         default='0.0.0.0',
-        help='Bind host (default: 0.0.0.0)'
+        help='Bind host'
+    )
+    parser.add_argument(
+        '-P',
+        '--port',
+        type=int,
+        default=8080,
+        help='Listen port'
     )
     parser.add_argument(
         '--debug',
