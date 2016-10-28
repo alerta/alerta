@@ -60,7 +60,7 @@ def get_alerts():
 
     gets_started = gets_timer.start_timer()
     try:
-        query, fields, sort, _, page, limit, query_time = parse_fields(request)
+        query, fields, sort, _, page, limit, query_time = parse_fields(request.args)
     except Exception as e:
         gets_timer.stop_timer(gets_started)
         return jsonify(status="error", message=str(e)), 400
@@ -147,7 +147,7 @@ def get_alerts():
 def get_history():
 
     try:
-        query, _, _, _, _, limit, query_time = parse_fields(request)
+        query, _, _, _, _, limit, query_time = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -428,7 +428,7 @@ def delete_alert(id):
 def get_counts():
 
     try:
-        query, _, _, _, _, _, _ = parse_fields(request)
+        query, _, _, _, _, _, _ = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -467,7 +467,7 @@ def get_counts():
 def get_top10_count():
 
     try:
-        query, _, _, group, _, _, _ = parse_fields(request)
+        query, _, _, group, _, _, _ = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -502,7 +502,7 @@ def get_top10_count():
 def get_top10_flapping():
 
     try:
-        query, _, _, group, _, _, _ = parse_fields(request)
+        query, _, _, group, _, _, _ = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -537,7 +537,7 @@ def get_top10_flapping():
 def get_environments():
 
     try:
-        query, _, _, _, _, limit, _ = parse_fields(request)
+        query, _, _, _, _, limit, _ = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -568,7 +568,7 @@ def get_environments():
 def get_services():
 
     try:
-        query, _, _, _, _, limit, _ = parse_fields(request)
+        query, _, _, _, _, limit, _ = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
