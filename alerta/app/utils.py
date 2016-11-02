@@ -60,8 +60,9 @@ PARAMS_EXCLUDE = [
 ]
 
 
-def parse_fields(params):
+def parse_fields(p):
 
+    params = p.copy()
     query_time = datetime.datetime.utcnow()
 
     for s in PARAMS_EXCLUDE:
