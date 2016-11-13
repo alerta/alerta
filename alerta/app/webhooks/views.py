@@ -1,5 +1,6 @@
 
 import datetime
+import pytz
 
 try:
     import simplejson as json
@@ -336,7 +337,7 @@ def parse_prometheus(alert):
         attributes=annotations,
         origin='prometheus/' + labels.get('job', '-'),
         event_type='prometheusAlert',
-        create_time=create_time,
+        create_time=create_time.astimezone(tz=pytz.UTC).replace(tzinfo=None),
         timeout=timeout,
         raw_data=alert,
         customer=labels.pop('customer', None),
