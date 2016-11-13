@@ -7,11 +7,14 @@ except ImportError:
     import json
 
 from alerta.app import app
+from pymongo import MongoClient
 
 
 class AlertTestCase(unittest.TestCase):
 
     def setUp(self):
+
+        MongoClient().drop_database(app.config['MONGO_DATABASE'])
 
         app.config['TESTING'] = True
         app.config['AUTH_REQUIRED'] = False
