@@ -15,7 +15,7 @@ from flask_cors import cross_origin
 from alerta.app import app, db
 from alerta.app.auth import auth_required
 from alerta.app.metrics import Timer
-from alerta.app.utils import absolute_url, process_alert
+from alerta.app.utils import absolute_url, process_alert, add_remote_ip
 from alerta.app.alert import Alert
 from alerta.plugins import RejectException
 
@@ -102,6 +102,8 @@ def cloudwatch():
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
 
+    add_remote_ip(request, incomingAlert)
+
     try:
         alert = process_alert(incomingAlert)
     except RejectException as e:
@@ -185,6 +187,8 @@ def pingdom():
 
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
+
+    add_remote_ip(request, incomingAlert)
 
     try:
         alert = process_alert(incomingAlert)
@@ -363,6 +367,8 @@ def prometheus():
             if g.get('customer', None):
                 incomingAlert.customer = g.get('customer')
 
+            add_remote_ip(request, incomingAlert)
+
             try:
                 alert = process_alert(incomingAlert)
             except RejectException as e:
@@ -443,6 +449,8 @@ def stackdriver():
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
 
+    add_remote_ip(request, incomingAlert)
+
     try:
         alert = process_alert(incomingAlert)
     except RejectException as e:
@@ -503,6 +511,8 @@ def serverdensity():
 
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
+
+    add_remote_ip(request, incomingAlert)
 
     try:
         alert = process_alert(incomingAlert)
@@ -573,6 +583,8 @@ def newrelic():
 
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
+
+    add_remote_ip(request, incomingAlert)
 
     try:
         alert = process_alert(incomingAlert)

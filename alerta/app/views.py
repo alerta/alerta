@@ -7,7 +7,7 @@ from uuid import uuid4
 from alerta.app import app, db
 from alerta.app.switch import Switch
 from alerta.app.auth import auth_required, admin_required
-from alerta.app.utils import absolute_url, jsonp, parse_fields, process_alert, process_status
+from alerta.app.utils import absolute_url, jsonp, parse_fields, process_alert, process_status, add_remote_ip
 from alerta.app.metrics import Timer
 from alerta.app.alert import Alert
 from alerta.app.heartbeat import Heartbeat
@@ -193,10 +193,7 @@ def receive_alert():
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
 
-    if request.headers.getlist("X-Forwarded-For"):
-       incomingAlert.attributes.update(ip=request.headers.getlist("X-Forwarded-For")[0])
-    else:
-       incomingAlert.attributes.update(ip=request.remote_addr)
+    add_remote_ip(request, incomingAlert)
 
     try:
         alert = process_alert(incomingAlert)
