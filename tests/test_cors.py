@@ -10,11 +10,14 @@ from flask_cors import CORS
 from flask_cors.extension import ACL_ORIGIN, ACL_ALLOW_HEADERS
 
 from alerta.app import app
+from pymongo import MongoClient
 
 
 class AlertTestCase(unittest.TestCase):
 
     def setUp(self):
+
+        MongoClient().drop_database(app.config['MONGO_DATABASE'])
 
         app.config['TESTING'] = True
         app.config['AUTH_REQUIRED'] = False

@@ -6,13 +6,15 @@ try:
 except ImportError:
     import json
 
-from uuid import uuid4
 from alerta.app import app
+from pymongo import MongoClient
 
 
 class SeverityTestCase(unittest.TestCase):
 
     def setUp(self):
+
+        MongoClient().drop_database(app.config['MONGO_DATABASE'])
 
         app.config['TESTING'] = True
         app.config['AUTH_REQUIRED'] = False
