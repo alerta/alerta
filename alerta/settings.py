@@ -8,6 +8,7 @@
 
 DEBUG = False
 
+BASE_URL = ''
 LOGGER_NAME = 'alerta'
 LOG_FILE = None
 
@@ -80,6 +81,6 @@ SMTP_PASSWORD = ''  # password for MAIL_FROM account, Gmail uses application-spe
 # Plug-ins
 PLUGINS = ['reject']
 
-ORIGIN_BLACKLIST = []  # reject all foo alerts from bar, and everything from qux
+ORIGIN_BLACKLIST = []
 #ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
 ALLOWED_ENVIRONMENTS = ['Production', 'Development']  # reject alerts without allowed environments
