@@ -52,6 +52,13 @@ def absolute_url(path=''):
     return urljoin(request.base_url.rstrip('/'), app.config.get('BASE_URL', '') + path)
 
 
+def add_remote_ip(request, alert):
+    if request.headers.getlist("X-Forwarded-For"):
+       alert.attributes.update(ip=request.headers.getlist("X-Forwarded-For")[0])
+    else:
+       alert.attributes.update(ip=request.remote_addr)
+
+
 PARAMS_EXCLUDE = [
     '_',
     'callback',
