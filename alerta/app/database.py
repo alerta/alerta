@@ -31,6 +31,11 @@ class Mongo(object):
 
     def connect(self):
 
+        if app.config.get('MONGO_HOST', None):
+            LOG.error('MongoDB Client: `MONGO_HOST` and friends are deprecated. Use `MONGO_URI` instead. '
+                      'See http://docs.alerta.io/en/latest/configuration.html#mongodb-settings for more info.')
+            sys.exit(1)
+
         mongo_uri = (os.environ.get('MONGO_URI', None) or
                      os.environ.get('MONGODB_URI', None) or
                      os.environ.get('MONGOHQ_URL', None) or
@@ -44,7 +49,7 @@ class Mongo(object):
         try:
             self._client = MongoClient(mongo_uri, connect=False)
         except Exception as e:
-            LOG.error('MongoDB Client: ERROR - %s : %s', mongo_uri, e)
+            LOG.error('MongoDB Client: %s : %s', mongo_uri, e)
             sys.exit(1)
         LOG.info('MongoDB Client: Connected to %s', mongo_uri)
 
