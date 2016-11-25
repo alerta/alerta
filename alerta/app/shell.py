@@ -37,5 +37,4 @@ def main():
     args = parser.parse_args()
 
     LOG.info('Starting alerta version %s ...', __version__)
-    LOG.info('Using MongoDB version %s ...', db.get_version())
     app.run(host=args.host, port=args.port, debug=args.debug, threaded=True)
