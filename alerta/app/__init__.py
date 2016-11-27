@@ -92,8 +92,9 @@ if app.config['CUSTOMER_VIEWS'] and not app.config['ADMIN_USERS']:
 
 cors = CORS(app)
 
-from alerta.app.database import Mongo
-db = Mongo()
+from alerta.app.database.utils import Connection
+conn = Connection()
+db = conn.connect()
 
 if sys.version_info[0] == 2:
     import views
