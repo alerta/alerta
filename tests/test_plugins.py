@@ -8,15 +8,12 @@ except ImportError:
 
 from uuid import uuid4
 
-from alerta.app import app
-from pymongo import MongoClient
+from alerta.app import app, db
 
 
 class PluginsTestCase(unittest.TestCase):
 
     def setUp(self):
-
-        MongoClient().drop_database(app.config['MONGO_DATABASE'])
 
         app.config['TESTING'] = True
         app.config['AUTH_REQUIRED'] = False
@@ -49,7 +46,7 @@ class PluginsTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        pass
+        db.destroy_db()
 
     def test_reject_alert(self):
 

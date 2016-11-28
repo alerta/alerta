@@ -7,14 +7,11 @@ except ImportError:
     import json
 
 from alerta.app import app, db
-from pymongo import MongoClient
 
 
 class BlackoutsTestCase(unittest.TestCase):
 
     def setUp(self):
-
-        MongoClient().drop_database(app.config['MONGO_DATABASE'])
 
         app.config['TESTING'] = True
         app.config['AUTH_REQUIRED'] = True
@@ -35,7 +32,7 @@ class BlackoutsTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        pass
+        db.destroy_db()
 
     def test_suppress_alerts(self):
 
