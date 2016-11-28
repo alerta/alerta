@@ -7,15 +7,12 @@ except ImportError:
     import json
 
 from uuid import uuid4
-from alerta.app import app
-from pymongo import MongoClient
+from alerta.app import app, db
 
 
 class AlertTestCase(unittest.TestCase):
 
     def setUp(self):
-
-        MongoClient().drop_database(app.config['MONGO_DATABASE'])
 
         app.config['TESTING'] = True
         app.config['AUTH_REQUIRED'] = False
@@ -72,7 +69,7 @@ class AlertTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        pass
+        db.destroy_db()
 
     def test_debug_output(self):
 

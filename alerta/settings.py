@@ -20,7 +20,7 @@ HISTORY_LIMIT = 100  # cap the number of alert history entries
 # MongoDB
 DATABASE_ENGINE = 'mongo'
 MONGO_URI = 'mongodb://localhost:27017/monitoring'
-MONGO_DATABASE = 'monitoring'  # can be used to override default database, above
+MONGO_DATABASE = None  # can be used to override default database, above
 
 AUTH_REQUIRED = False
 ADMIN_USERS = []

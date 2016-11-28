@@ -55,11 +55,11 @@ class Database(object):
             sys.exit(1)
         LOG.info('MongoDB Client: Connected to %s', mongo_uri)
 
-        if app.config['MONGO_DATABASE']:
+        if app.config.get('MONGO_DATABASE', None):
             self.db = self.connection[app.config['MONGO_DATABASE']]
         else:
             self.db = self.connection.get_default_database()
-        LOG.info('MongoDB Client: MongoDB v%s, using database "%s"', self.get_version(), self.get_info())
+        LOG.info('MongoDB Client: MongoDB v%s, using database "%s"', self.get_version(), self.get_db_name())
 
         self._create_indexes()
 
@@ -72,7 +72,7 @@ class Database(object):
 
         return self.db
 
-    def get_info(self):
+    def get_db_name(self):
 
         return self.db.name
 
@@ -85,6 +85,13 @@ class Database(object):
         self.connection.close()
 
         LOG.debug('Mongo connection closed.')
+
+    def destroy_db(self, name=None):
+
+        name = name or self.get_db_name()
+        self.connection.drop_database(name)
+
+        LOG.warning('Mongo database "%s" deleted.' % name)
 
     ####
 
