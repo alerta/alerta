@@ -55,7 +55,7 @@ class Database(object):
             sys.exit(1)
         LOG.info('MongoDB Client: Connected to %s', mongo_uri)
 
-        if app.config['MONGO_DATABASE']:
+        if app.config.get('MONGO_DATABASE', None):
             self.db = self.connection[app.config['MONGO_DATABASE']]
         else:
             self.db = self.connection.get_default_database()
