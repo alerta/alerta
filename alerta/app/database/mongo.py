@@ -285,6 +285,27 @@ class Database(object):
 
         return bool(self.db.alerts.find_one(query))
 
+    def is_flapping(self, alert, window=1800, count=2):
+        """
+        Return true if alert status has changed more than X times in Y seconds
+        """
+        pipeline = [
+            {'$match': {"environment": alert.environment, "resource": alert.resource, "event": alert.event}},
+            {'$unwind': '$history'},
+            {'$match': {"history.updateTime": {'$gt': datetime.datetime.utcnow() - datetime.timedelta(seconds=window)}}},
+            {
+                '$group': {
+                    "_id": '$history.type',
+                    "count": {'$sum': 1}
+                }
+            }
+        ]
+        responses = self.db.alerts.aggregate(pipeline)
+        for r in responses:
+            if r['count'] > count:
+                return True
+        return False
+
     def save_duplicate(self, alert):
         """
         Update alert value, text and rawData, increment duplicate count and set repeat=True, and

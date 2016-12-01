@@ -17,7 +17,7 @@ from alerta.app.auth import auth_required
 from alerta.app.metrics import Timer
 from alerta.app.utils import absolute_url, process_alert, add_remote_ip
 from alerta.app.alert import Alert
-from alerta.plugins import RejectException
+from alerta.app.exceptions import RejectException
 
 LOG = app.logger
 

@@ -10,8 +10,9 @@ from alerta.app.auth import auth_required, admin_required
 from alerta.app.utils import absolute_url, jsonp, parse_fields, process_alert, process_status, add_remote_ip
 from alerta.app.metrics import Timer
 from alerta.app.alert import Alert
+from alerta.app.exceptions import RejectException, RateLimit, BlackoutPeriod
 from alerta.app.heartbeat import Heartbeat
-from alerta.plugins import Plugins, RejectException
+from alerta.plugins import Plugins
 
 LOG = app.logger
 
@@ -200,7 +201,10 @@ def receive_alert():
     except RejectException as e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 403
-    except RuntimeWarning as e:
+    except RateLimit as e:
+        receive_timer.stop_timer(recv_started)
+        return jsonify(status="error", id=incomingAlert.id, message=str(e)), 429
+    except BlackoutPeriod as e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="ok", id=incomingAlert.id, message=str(e)), 202
     except Exception as e:
