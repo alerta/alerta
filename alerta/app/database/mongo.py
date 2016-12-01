@@ -1431,7 +1431,7 @@ class Database(object):
     def get_metrics(self, type=None):
 
         query = {"type": type} if type else {}
-        return self.db.metrics.find(query, {"_id": 0})
+        return list(self.db.metrics.find(query, {"_id": 0}))
 
     def set_gauge(self, group, name, title=None, description=None, value=0):
 
