@@ -44,7 +44,8 @@ class Database(object):
                      os.environ.get('MONGOLAB_URI', None))
 
         if 'MONGO_PORT' in os.environ and 'tcp://' in os.environ['MONGO_PORT']:  # Docker
-            mongo_uri = os.environ['MONGO_PORT'] + os.environ['MONGO_NAME']
+            host, port = os.environ['MONGO_PORT'][6:].split(':')
+            mongo_uri = 'mongodb://%s:%s/%s' % (host, port, os.environ['MONGO_NAME'])
 
         mongo_uri = mongo_uri or app.config['MONGO_URI']  # use app config if no env var overrides
 
