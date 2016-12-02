@@ -8,6 +8,7 @@
 
 DEBUG = False
 
+BASE_URL = ''
 LOGGER_NAME = 'alerta'
 LOG_FILE = None
 
@@ -17,13 +18,9 @@ QUERY_LIMIT = 10000  # maximum number of alerts returned by a single query
 HISTORY_LIMIT = 100  # cap the number of alert history entries
 
 # MongoDB
-MONGO_HOST = 'localhost'
-MONGO_PORT = 27017
-MONGO_DATABASE = 'monitoring'
-MONGO_REPLSET = None  # 'alerta'
-
-MONGO_USERNAME = 'alerta'
-MONGO_PASSWORD = None
+DATABASE_ENGINE = 'mongo'
+MONGO_URI = 'mongodb://localhost:27017/monitoring'
+MONGO_DATABASE = None  # can be used to override default database, above
 
 AUTH_REQUIRED = False
 ADMIN_USERS = []
@@ -53,6 +50,7 @@ CORS_ORIGINS = [
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
 SEVERITY_MAP = {
+    'security': 0,
     'critical': 1,
     'major': 2,
     'minor': 3,
@@ -63,9 +61,10 @@ SEVERITY_MAP = {
     'ok': 5,
     'informational': 6,
     'debug': 7,
-    'security': 8,
-    'unknown': 9  # default
+    'trace': 8,
+    'unknown': 9
 }
+DEFAULT_SEVERITY = 'indeterminate'
 
 BLACKOUT_DURATION = 3600  # default period = 1 hour
 
@@ -78,6 +77,6 @@ SMTP_PASSWORD = ''  # password for MAIL_FROM account, Gmail uses application-spe
 # Plug-ins
 PLUGINS = ['reject']
 
-ORIGIN_BLACKLIST = []  # reject all foo alerts from bar, and everything from qux
+ORIGIN_BLACKLIST = []
 #ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
 ALLOWED_ENVIRONMENTS = ['Production', 'Development']  # reject alerts without allowed environments

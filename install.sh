@@ -24,10 +24,10 @@ Listen 8080
   ServerName localhost
   WSGIDaemonProcess alerta processes=5 threads=5
   WSGIProcessGroup alerta
+  WSGIApplicationGroup %{GLOBAL}
   WSGIScriptAlias / /var/www/api.wsgi
   WSGIPassAuthorization On
   <Directory /opt/alerta>
-    WSGIApplicationGroup %{GLOBAL}
     Require all granted
   </Directory>
 </VirtualHost>

@@ -1,5 +1,6 @@
 
 import datetime
+import pytz
 
 try:
     import simplejson as json
@@ -14,9 +15,9 @@ from flask_cors import cross_origin
 from alerta.app import app, db
 from alerta.app.auth import auth_required
 from alerta.app.metrics import Timer
-from alerta.app.utils import absolute_url, process_alert
+from alerta.app.utils import absolute_url, process_alert, add_remote_ip
 from alerta.app.alert import Alert
-from alerta.plugins import RejectException
+from alerta.app.exceptions import RejectException
 
 LOG = app.logger
 
@@ -101,6 +102,8 @@ def cloudwatch():
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
 
+    add_remote_ip(request, incomingAlert)
+
     try:
         alert = process_alert(incomingAlert)
     except RejectException as e:
@@ -184,6 +187,8 @@ def pingdom():
 
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
+
+    add_remote_ip(request, incomingAlert)
 
     try:
         alert = process_alert(incomingAlert)
@@ -336,7 +341,7 @@ def parse_prometheus(alert):
         attributes=annotations,
         origin='prometheus/' + labels.get('job', '-'),
         event_type='prometheusAlert',
-        create_time=create_time,
+        create_time=create_time.astimezone(tz=pytz.UTC).replace(tzinfo=None),
         timeout=timeout,
         raw_data=alert,
         customer=labels.pop('customer', None),
@@ -361,6 +366,8 @@ def prometheus():
 
             if g.get('customer', None):
                 incomingAlert.customer = g.get('customer')
+
+            add_remote_ip(request, incomingAlert)
 
             try:
                 alert = process_alert(incomingAlert)
@@ -442,6 +449,8 @@ def stackdriver():
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
 
+    add_remote_ip(request, incomingAlert)
+
     try:
         alert = process_alert(incomingAlert)
     except RejectException as e:
@@ -502,6 +511,8 @@ def serverdensity():
 
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
+
+    add_remote_ip(request, incomingAlert)
 
     try:
         alert = process_alert(incomingAlert)
@@ -572,6 +583,8 @@ def newrelic():
 
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
+
+    add_remote_ip(request, incomingAlert)
 
     try:
         alert = process_alert(incomingAlert)

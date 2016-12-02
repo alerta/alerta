@@ -6,15 +6,7 @@ try:
 except ImportError:
     import json
 
-from pymongo import ReturnDocument
-
-from alerta.app import app
-from alerta.app.database import Mongo
-
-
-LOG = app.logger
-
-db = Mongo().get_db()
+from alerta.app import db
 
 
 class MetricEncoder(json.JSONEncoder):
@@ -35,24 +27,7 @@ class Gauge(object):
 
     def set(self, value):
 
-        self.value = db.metrics.find_one_and_update(
-            {
-                "group": self.group,
-                "name": self.name
-            },
-            {
-                '$set': {
-                    "group": self.group,
-                    "name": self.name,
-                    "title": self.title,
-                    "description": self.description,
-                    "value": value,
-                    "type": "gauge"
-                }
-            },
-            upsert=True,
-            return_document=ReturnDocument.AFTER
-        )['value']
+        self.value = db.set_gauge(self.group, self.name, self.title, self.description, value)
 
     def to_json(self):
         return json.dumps(self, cls=MetricEncoder)
@@ -60,7 +35,7 @@ class Gauge(object):
     @classmethod
     def get_gauges(cls, format=None):
         if format == 'json':
-            return list(db.metrics.find({"type": "gauge"}, {"_id": 0}))
+            return db.get_metrics(type='gauge')
         elif format == 'prometheus':
             gauges = list()
             for g in Gauge.get_gauges():
@@ -73,15 +48,7 @@ class Gauge(object):
                 )
             return "".join(gauges)
         else:
-            return [
-                Gauge(
-                    group=g.get('group'),
-                    name=g.get('name'),
-                    title=g.get('title', ''),
-                    description=g.get('description', ''),
-                    value=g.get('value', 0)
-                ) for g in db.metrics.find({"type": "gauge"}, {"_id": 0})
-            ]
+            return db.get_gauges()
 
 
 class Counter(object):
@@ -96,24 +63,7 @@ class Counter(object):
 
     def inc(self, count=1):
 
-        self.count = db.metrics.find_one_and_update(
-            {
-                "group": self.group,
-                "name": self.name
-            },
-            {
-                '$set': {
-                    "group": self.group,
-                    "name": self.name,
-                    "title": self.title,
-                    "description": self.description,
-                    "type": "counter"
-                },
-                '$inc': {"count": count}
-            },
-            upsert=True,
-            return_document=ReturnDocument.AFTER
-        )['count']
+        self.count = db.inc_counter(self.group, self.name, self.title, self.description, count)
 
     def to_json(self):
         return json.dumps(self, cls=MetricEncoder)
@@ -121,7 +71,7 @@ class Counter(object):
     @classmethod
     def get_counters(cls, format=None):
         if format == 'json':
-            return list(db.metrics.find({"type": "counter"}, {"_id": 0}))
+            return db.get_metrics(type='counter')
         elif format == 'prometheus':
             counters = list()
             for c in Counter.get_counters():
@@ -134,15 +84,7 @@ class Counter(object):
                 )
             return "".join(counters)
         else:
-            return [
-                Counter(
-                    group=c.get('group'),
-                    name=c.get('name'),
-                    title=c.get('title', ''),
-                    description=c.get('description', ''),
-                    count=c.get('count', 0)
-                ) for c in db.metrics.find({"type": "counter"}, {"_id": 0})
-            ]
+            return db.get_counters()
 
 
 class Timer(object):
@@ -171,24 +113,7 @@ class Timer(object):
 
         now = self._time_in_millis()
 
-        r = db.metrics.find_one_and_update(
-            {
-                "group": self.group,
-                "name": self.name
-            },
-            {
-                '$set': {
-                    "group": self.group,
-                    "name": self.name,
-                    "title": self.title,
-                    "description": self.description,
-                    "type": "timer"
-                },
-                '$inc': {"count": 1, "totalTime": now - start}
-            },
-            upsert=True,
-            return_document=ReturnDocument.AFTER
-        )
+        r = db.update_timer(self.group, self.name, self.title, self.description, count, duration=(now - start))
         self.count, self.total_time = r['count'], r['totalTime']
 
     def to_json(self):
@@ -197,7 +122,7 @@ class Timer(object):
     @classmethod
     def get_timers(cls, format=None):
         if format == 'json':
-            return list(db.metrics.find({"type": "timer"}, {"_id": 0}))
+            return db.get_metrics(type='timer')
         elif format == 'prometheus':
             timers = list()
             for t in Timer.get_timers():
@@ -211,13 +136,4 @@ class Timer(object):
                 )
             return "".join(timers)
         else:
-            return [
-                Timer(
-                    group=t.get('group'),
-                    name=t.get('name'),
-                    title=t.get('title', ''),
-                    description=t.get('description', ''),
-                    count=t.get('count', 0),
-                    total_time=t.get('totalTime', 0)
-                ) for t in db.metrics.find({"type": "timer"}, {"_id": 0})
-            ]
+            return db.get_timers()

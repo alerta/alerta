@@ -35,7 +35,7 @@ class AuthTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        pass
+        db.destroy_db()
 
     def test_401_error(self):
 

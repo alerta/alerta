@@ -8,7 +8,7 @@ except ImportError:
 
 from uuid import uuid4
 
-from alerta.app import app
+from alerta.app import app, db
 
 
 class PluginsTestCase(unittest.TestCase):
@@ -46,7 +46,7 @@ class PluginsTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        pass
+        db.destroy_db()
 
     def test_reject_alert(self):
 

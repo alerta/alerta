@@ -32,7 +32,7 @@ class BlackoutsTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        pass
+        db.destroy_db()
 
     def test_suppress_alerts(self):
 

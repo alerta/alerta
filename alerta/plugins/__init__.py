@@ -10,10 +10,6 @@ from alerta.app import app
 LOG = logging.getLogger('alerta.plugins')
 
 
-class RejectException(Exception):
-    """The alert was rejected because the format did not meet the required policy."""
-
-
 @add_metaclass(abc.ABCMeta)
 class PluginBase(object):
 

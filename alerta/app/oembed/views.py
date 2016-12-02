@@ -1,25 +1,27 @@
-import requests
+from alerta.app import app, db
+from alerta.app.auth import auth_required
+from alerta.app.utils import jsonp, parse_fields
+from alerta.app.metrics import Timer
 
 from flask import request, render_template, jsonify
 from flask_cors import cross_origin
+from werkzeug import urls
+from werkzeug.datastructures import ImmutableMultiDict
 
 try:
     from urllib.parse import urlparse
 except ImportError:
     from urlparse import urlparse
 
-from alerta.app import app
-from alerta.app.utils import jsonp
-from alerta.app.metrics import Timer
 
 LOG = app.logger
 
 oembed_timer = Timer('oEmbed', 'request', 'oEmbed request', 'Total time to process number of oEmbed requests')
 
-
-@app.route('/oembed', defaults={'format': 'json'})
+@app.route('/oembed', defaults={'format':'json'}, methods=['OPTIONS', 'GET'])
 @app.route('/oembed.<format>', methods=['OPTIONS', 'GET'])
 @cross_origin()
+@auth_required
 @jsonp
 def oembed(format):
 
@@ -36,7 +38,6 @@ def oembed(format):
 
     try:
         url = request.args['url']
-        key = request.args.get('api-key')
         width = int(request.args['maxwidth'])
         height = int(request.args['maxheight'])
         title = request.args.get('title', 'Alerts')
@@ -46,32 +47,26 @@ def oembed(format):
 
     try:
         o = urlparse(url)
+        params = ImmutableMultiDict(urls.url_decode(o.query))
+        query, _, _, _, _, _, _ = parse_fields(params)
     except Exception as e:
         oembed_timer.stop_timer(oembed_started)
         return jsonify(status="error", message=str(e)), 500
 
-    headers = dict()
-    if key:
-        headers = {'Authorization': 'Key ' + key}
-    response = requests.get(url=url, headers=headers)
-    try:
-        response.raise_for_status()
-    except requests.HTTPError as e:
-        oembed_timer.stop_timer(oembed_started)
-        return jsonify(status="error", message=str(e)), response.status_code
-
     if o.path.endswith('/alerts/count'):
-
-        counts = response.json().get('severityCounts', dict())
+        try:
+            severity_count = db.get_counts(query=query, fields={"severity": 1}, group="severity")
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
 
         max = 'normal'
-        if counts.get('warning', 0) > 0:
+        if severity_count.get('warning', 0) > 0:
             max = 'warning'
-        if counts.get('minor', 0) > 0:
+        if severity_count.get('minor', 0) > 0:
             max = 'minor'
-        if counts.get('major', 0) > 0:
+        if severity_count.get('major', 0) > 0:
             max = 'major'
-        if counts.get('critical', 0) > 0:
+        if severity_count.get('critical', 0) > 0:
             max = 'critical'
 
         html = render_template(
@@ -80,11 +75,14 @@ def oembed(format):
             width=width,
             height=height,
             max=max,
-            counts=counts
+            counts=severity_count
         )
         oembed_timer.stop_timer(oembed_started)
         return jsonify(version="1.0", type="rich", width=width, height=height, title=title,  provider_name="Alerta", provider_url=request.url_root, html=html)
 
+    elif o.path.endswith('/alerts/top10/count'):
+        # TODO: support top10 oembed widget
+        pass
     else:
         oembed_timer.stop_timer(oembed_started)
         return jsonify(status="error", message="unsupported oEmbed URL scheme"), 400

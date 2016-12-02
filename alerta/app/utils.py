@@ -17,8 +17,9 @@ except ImportError:
     from urlparse import urljoin
 
 from alerta.app import app, db
+from alerta.app.exceptions import RejectException, RateLimit, BlackoutPeriod
 from alerta.app.metrics import Counter, Timer
-from alerta.plugins import Plugins, RejectException
+from alerta.plugins import Plugins
 
 LOG = app.logger
 
@@ -52,6 +53,13 @@ def absolute_url(path=''):
     return urljoin(request.base_url.rstrip('/'), app.config.get('BASE_URL', '') + path)
 
 
+def add_remote_ip(request, alert):
+    if request.headers.getlist("X-Forwarded-For"):
+       alert.attributes.update(ip=request.headers.getlist("X-Forwarded-For")[0])
+    else:
+       alert.attributes.update(ip=request.remote_addr)
+
+
 PARAMS_EXCLUDE = [
     '_',
     'callback',
@@ -60,11 +68,10 @@ PARAMS_EXCLUDE = [
 ]
 
 
-def parse_fields(r):
+def parse_fields(p):
 
+    params = p.copy()
     query_time = datetime.datetime.utcnow()
-
-    params = r.args.copy()
 
     for s in PARAMS_EXCLUDE:
         if s in params:
@@ -209,7 +216,7 @@ def process_alert(alert):
         started = pre_plugin_timer.start_timer()
         try:
             alert = plugin.pre_receive(alert)
-        except RejectException:
+        except (RejectException, RateLimit):
             reject_counter.inc()
             pre_plugin_timer.stop_timer(started)
             raise
@@ -224,7 +231,7 @@ def process_alert(alert):
         pre_plugin_timer.stop_timer(started)
 
     if db.is_blackout_period(alert):
-        raise RuntimeWarning("Suppressed alert during blackout period")
+        raise BlackoutPeriod("Suppressed alert during blackout period")
 
     try:
         if db.is_duplicate(alert):

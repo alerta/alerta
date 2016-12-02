@@ -6,7 +6,7 @@ try:
 except ImportError:
     import json
 
-from alerta.app import app
+from alerta.app import app, db
 
 
 class AlertTestCase(unittest.TestCase):
@@ -66,12 +66,13 @@ class AlertTestCase(unittest.TestCase):
             }
         """
         self.headers = {
-            'Content-type': 'application/json'
+            'Content-type': 'application/json',
+            'X-Forwarded-For': ['10.1.1.1', '172.16.1.1', '192.168.1.1'],
         }
 
     def tearDown(self):
 
-        pass
+        db.destroy_db()
 
     def test_alert(self):
 
@@ -84,3 +85,5 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['severity'], 'critical')
         self.assertEqual(data['alert']['timeout'], 600)
+        self.assertEqual(data['alert']['createTime'], "2016-08-01T10:27:08.008Z")
+        self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')

@@ -7,7 +7,7 @@ except ImportError:
     import json
 
 from uuid import uuid4
-from alerta.app import app
+from alerta.app import app, db
 
 
 class HeartbeatTestCase(unittest.TestCase):
@@ -31,7 +31,7 @@ class HeartbeatTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        pass
+        db.destroy_db()
 
     def test_heartbeat(self):
 

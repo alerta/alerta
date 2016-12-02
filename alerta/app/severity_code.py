@@ -6,20 +6,20 @@ http://tools.ietf.org/html/rfc5674
 http://www.itu.int/rec/T-REC-M.3100
 http://www.itu.int/rec/T-REC-X.736-199201-I
 
-           ITU Perceived Severity      syslog SEVERITY (Name)
-           Critical                    1 (Alert)
-           Major                       2 (Critical)
-           Minor                       3 (Error)
-           Warning                     4 (Warning)
-           Indeterminate               5 (Notice)
-           Cleared                     5 (Notice)
+Alarm Model State           ITU Perceived Severity      syslog SEVERITY (Name)
+      6                     Critical                    1 (Alert)
+      5                     Major                       2 (Critical)
+      4                     Minor                       3 (Error)
+      3                     Warning                     4 (Warning)
+      2                     Indeterminate               5 (Notice)
+      1                     Cleared                     5 (Notice)
 """
 from alerta.app import app
-from alerta.app import status_code
 
 # NOTE: The display text in single quotes can be changed depending on preference.
 # eg. CRITICAL = 'critical' or CRITICAL = 'CRITICAL'
 
+AUTH = 'security'
 CRITICAL = 'critical'
 MAJOR = 'major'
 MINOR = 'minor'
@@ -30,17 +30,18 @@ NORMAL = 'normal'
 OK = 'ok'
 INFORM = 'informational'
 DEBUG = 'debug'
-AUTH = 'security'
+TRACE = 'trace'
 UNKNOWN = 'unknown'
 NOT_VALID = 'notValid'
 
 MORE_SEVERE = 'moreSevere'
-LESS_SEVERE = 'lessSevere'
 NO_CHANGE = 'noChange'
+LESS_SEVERE = 'lessSevere'
 
 SEVERITY_MAP = app.config['SEVERITY_MAP']
 
 _ABBREV_SEVERITY_MAP = {
+    AUTH: 'Sec ',
     CRITICAL: 'Crit',
     MAJOR: 'Majr',
     MINOR: 'Minr',
@@ -51,11 +52,12 @@ _ABBREV_SEVERITY_MAP = {
     OK: 'Ok',
     INFORM: 'Info',
     DEBUG: 'Dbug',
-    AUTH: 'Sec ',
+    TRACE: 'Trce',
     UNKNOWN: 'Unkn',
 }
 
 _COLOR_MAP = {
+    AUTH: '\033[94m',
     CRITICAL: '\033[91m',
     MAJOR: '\033[95m',
     MINOR: '\033[93m',
@@ -66,7 +68,7 @@ _COLOR_MAP = {
     OK: '\033[92m',
     INFORM: '\033[92m',
     DEBUG: '\033[90m',
-    AUTH: '\033[90m',
+    TRACE: '\033[97m',
     UNKNOWN: '\033[90m',
 }
 
@@ -96,13 +98,3 @@ def trend(previous, current):
         return LESS_SEVERE
     else:
         return NO_CHANGE
-
-
-def status_from_severity(previous_severity, current_severity, current_status=status_code.UNKNOWN):
-    if current_severity in [NORMAL, CLEARED, OK]:
-        return status_code.CLOSED
-    if current_status in [status_code.CLOSED, status_code.EXPIRED]:
-        return status_code.OPEN
-    if trend(previous_severity, current_severity) == MORE_SEVERE:
-        return status_code.OPEN
-    return current_status

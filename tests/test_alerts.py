@@ -7,7 +7,7 @@ except ImportError:
     import json
 
 from uuid import uuid4
-from alerta.app import app
+from alerta.app import app, db
 
 
 class AlertTestCase(unittest.TestCase):
@@ -69,7 +69,7 @@ class AlertTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        pass
+        db.destroy_db()
 
     def test_debug_output(self):
 
@@ -96,7 +96,7 @@ class AlertTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['duplicateCount'], 1)
-        self.assertEqual(data['alert']['previousSeverity'], 'unknown')
+        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
         # correlate alert (same event, diff sev)
@@ -108,7 +108,6 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['previousSeverity'], self.major_alert['severity'])
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
-
 
         # de-duplicate
         response = self.app.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)

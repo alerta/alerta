@@ -2,7 +2,8 @@ import re
 import logging
 
 from alerta.app import app
-from alerta.plugins import PluginBase, RejectException
+from alerta.app.exceptions import RejectException
+from alerta.plugins import PluginBase
 
 LOG = logging.getLogger('alerta.plugins.reject')
 

@@ -9,7 +9,7 @@ except ImportError:
 from flask_cors import CORS
 from flask_cors.extension import ACL_ORIGIN, ACL_ALLOW_HEADERS
 
-from alerta.app import app
+from alerta.app import app, db
 
 
 class AlertTestCase(unittest.TestCase):
@@ -24,7 +24,8 @@ class AlertTestCase(unittest.TestCase):
         CORS(self.app.application, origins=app.config['CORS_ORIGINS'])
 
     def tearDown(self):
-        pass
+
+        db.destroy_db()
 
     def test_cors_headers(self):
 

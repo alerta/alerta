@@ -7,11 +7,12 @@ from uuid import uuid4
 from alerta.app import app, db
 from alerta.app.switch import Switch
 from alerta.app.auth import auth_required, admin_required
-from alerta.app.utils import absolute_url, jsonp, parse_fields, process_alert, process_status
+from alerta.app.utils import absolute_url, jsonp, parse_fields, process_alert, process_status, add_remote_ip
 from alerta.app.metrics import Timer
 from alerta.app.alert import Alert
+from alerta.app.exceptions import RejectException, RateLimit, BlackoutPeriod
 from alerta.app.heartbeat import Heartbeat
-from alerta.plugins import Plugins, RejectException
+from alerta.plugins import Plugins
 
 LOG = app.logger
 
@@ -60,7 +61,7 @@ def get_alerts():
 
     gets_started = gets_timer.start_timer()
     try:
-        query, fields, sort, _, page, limit, query_time = parse_fields(request)
+        query, fields, sort, _, page, limit, query_time = parse_fields(request.args)
     except Exception as e:
         gets_timer.stop_timer(gets_started)
         return jsonify(status="error", message=str(e)), 400
@@ -147,7 +148,7 @@ def get_alerts():
 def get_history():
 
     try:
-        query, _, _, _, _, limit, query_time = parse_fields(request)
+        query, _, _, _, _, limit, query_time = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -193,17 +194,17 @@ def receive_alert():
     if g.get('customer', None):
         incomingAlert.customer = g.get('customer')
 
-    if request.headers.getlist("X-Forwarded-For"):
-       incomingAlert.attributes.update(ip=request.headers.getlist("X-Forwarded-For")[0])
-    else:
-       incomingAlert.attributes.update(ip=request.remote_addr)
+    add_remote_ip(request, incomingAlert)
 
     try:
         alert = process_alert(incomingAlert)
     except RejectException as e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="error", message=str(e)), 403
-    except RuntimeWarning as e:
+    except RateLimit as e:
+        receive_timer.stop_timer(recv_started)
+        return jsonify(status="error", id=incomingAlert.id, message=str(e)), 429
+    except BlackoutPeriod as e:
         receive_timer.stop_timer(recv_started)
         return jsonify(status="ok", id=incomingAlert.id, message=str(e)), 202
     except Exception as e:
@@ -428,7 +429,7 @@ def delete_alert(id):
 def get_counts():
 
     try:
-        query, _, _, _, _, _, _ = parse_fields(request)
+        query, _, _, _, _, _, _ = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -467,7 +468,7 @@ def get_counts():
 def get_top10_count():
 
     try:
-        query, _, _, group, _, _, _ = parse_fields(request)
+        query, _, _, group, _, _, _ = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -502,7 +503,7 @@ def get_top10_count():
 def get_top10_flapping():
 
     try:
-        query, _, _, group, _, _, _ = parse_fields(request)
+        query, _, _, group, _, _, _ = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -537,7 +538,7 @@ def get_top10_flapping():
 def get_environments():
 
     try:
-        query, _, _, _, _, limit, _ = parse_fields(request)
+        query, _, _, _, _, limit, _ = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
@@ -568,7 +569,7 @@ def get_environments():
 def get_services():
 
     try:
-        query, _, _, _, _, limit, _ = parse_fields(request)
+        query, _, _, _, _, limit, _ = parse_fields(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 400
 
