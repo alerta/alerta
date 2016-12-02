@@ -639,7 +639,7 @@ def grafana():
 
 def parse_grafana(check):
     check = json.loads(check)
-    timeout = 60
+    timeout = 300
 
     alerts = []
 
