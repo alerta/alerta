@@ -49,7 +49,7 @@ class Database(object):
         mongo_uri = mongo_uri or app.config['MONGO_URI']  # use app config if no env var overrides
 
         try:
-            self.connection = MongoClient(mongo_uri, connect=False)
+            self.connection = MongoClient(mongo_uri, serverSelectionTimeoutMS=2000, connect=False)
         except Exception as e:
             LOG.error('MongoDB Client: %s : %s', mongo_uri, e)
             sys.exit(1)
@@ -79,6 +79,15 @@ class Database(object):
     def get_version(self):
 
         return self.db.client.server_info()['version']
+
+    def is_alive(self):
+
+        from pymongo.errors import ConnectionFailure
+        try:
+            self.db.client.admin.command('ismaster')
+        except ConnectionFailure:
+            return False
+        return True
 
     def disconnect(self):
 
