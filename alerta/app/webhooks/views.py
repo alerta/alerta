@@ -657,7 +657,7 @@ def parse_grafana(check):
             raw_data=item['value'],
             timeout=timeout,
             value='Error',
-            group='group'
+            group='Grafana'
         ))
 
     return alerts
