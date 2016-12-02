@@ -116,7 +116,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['timeout'], 300)
-        self.assertEqual(data['alert']['resource'], "grafana")
+        self.assertEqual(data['alert']['resource'], "Higher Value")
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['severity'], 'critical')
 
