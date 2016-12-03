@@ -98,6 +98,16 @@ def switchboard():
             return render_template('management/switchboard.html', switches=switches)
 
 
+@app.route('/management/gtg', methods=['OPTIONS', 'GET'])
+@cross_origin()
+def good_to_go():
+
+    if db.is_alive():
+        return 'OK'
+    else:
+        return 'FAILED', 503
+
+
 @app.route('/management/healthcheck', methods=['OPTIONS', 'GET'])
 @cross_origin()
 def health_check():
