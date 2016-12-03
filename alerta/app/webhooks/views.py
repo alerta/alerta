@@ -651,7 +651,7 @@ def parse_grafana(check):
             environment='Production',
             severity='critical',
             service=[check['ruleName']],
-            text="Value:" + str(item['value']),
+            text=item['metric'] + ":" + str(item['value']),
             origin='Grafana',
             event_type='Grafana_event',
             raw_data=item['value'],
