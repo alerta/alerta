@@ -31,6 +31,7 @@ def management():
         url_for('manifest'),
         url_for('properties'),
         url_for('switchboard'),
+        url_for('good_to_go'),
         url_for('health_check'),
         url_for('status'),
         url_for('prometheus_metrics')
