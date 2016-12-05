@@ -1,6 +1,8 @@
 
 import unittest
 
+from uuid import uuid4
+
 try:
     import simplejson as json
 except ImportError:
@@ -9,13 +11,110 @@ except ImportError:
 from alerta.app import app, db
 
 
-class AlertTestCase(unittest.TestCase):
+class WebhooksTestCase(unittest.TestCase):
 
     def setUp(self):
 
         app.config['TESTING'] = True
         app.config['AUTH_REQUIRED'] = False
         self.app = app.test_client()
+
+
+        self.trigger_alert = {
+            'event': 'node_down',
+            'resource': str(uuid4()).upper()[:8],
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'critical',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'tags': ['foo'],
+            'attributes': {'foo': 'abc def', 'bar': 1234, 'baz': False}
+        }
+        self.resolve_alert = {
+            'event': 'node_marginal',
+            'resource': str(uuid4()).upper()[:8],
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'critical',
+            'correlate': ['node_down', 'node_marginal', 'node_up']
+        }
+
+        self.pagerduty_alert = """
+            {
+              "messages": [
+                {
+                  "id": "bb8b8fe0-e8d5-11e2-9c1e-22000afd16cf",
+                  "created_on": "2013-07-09T20:25:44Z",
+                  "type": "incident.acknowledge",
+                  "data": {
+                    "incident": {
+                      "id": "PIJ90N7",
+                      "incident_number": 1,
+                      "created_on": "2013-07-09T20:25:44Z",
+                      "status": "triggered",
+                      "html_url": "https://acme.pagerduty.com/incidents/PIJ90N7",
+                      "incident_key": "%s",
+                      "service": {
+                        "id": "PBAZLIU",
+                        "name": "service",
+                        "html_url": "https://acme.pagerduty.com/services/PBAZLIU"
+                      },
+                      "assigned_to_user": {
+                        "id": "PPI9KUT",
+                        "name": "Alan Kay",
+                        "email": "alan@pagerduty.com",
+                        "html_url": "https://acme.pagerduty.com/users/PPI9KUT"
+                      },
+                      "trigger_summary_data": {
+                        "subject": "45645"
+                      },
+                      "trigger_details_html_url": "https://acme.pagerduty.com/incidents/PIJ90N7/log_entries/PIJ90N7",
+                      "last_status_change_on": "2013-07-09T20:25:44Z",
+                      "last_status_change_by": "null"
+                    }
+                  }
+                },
+                {
+                  "id": "8a1d6420-e9c4-11e2-b33e-f23c91699516",
+                  "created_on": "2013-07-09T20:25:45Z",
+                  "type": "incident.resolve",
+                  "data": {
+                    "incident": {
+                      "id": "PIJ90N7",
+                      "incident_number": 1,
+                      "created_on": "2013-07-09T20:25:44Z",
+                      "status": "resolved",
+                      "html_url": "https://acme.pagerduty.com/incidents/PIJ90N7",
+                      "incident_key": "%s",
+                      "service": {
+                        "id": "PBAZLIU",
+                        "name": "service",
+                        "html_url": "https://acme.pagerduty.com/services/PBAZLIU"
+                      },
+                      "assigned_to_user": "null",
+                      "resolved_by_user": {
+                        "id": "PPI9KUT",
+                        "name": "Alan Kay",
+                        "email": "alan@pagerduty.com",
+                        "html_url": "https://acme.pagerduty.com/users/PPI9KUT"
+                      },
+                      "trigger_summary_data": {
+                        "subject": "45645"
+                      },
+                      "trigger_details_html_url": "https://acme.pagerduty.com/incidents/PIJ90N7/log_entries/PIJ90N7",
+                      "last_status_change_on": "2013-07-09T20:25:45Z",
+                      "last_status_change_by": {
+                        "id": "PPI9KUT",
+                        "name": "Alan Kay",
+                        "email": "alan@pagerduty.com",
+                        "html_url": "https://acme.pagerduty.com/users/PPI9KUT"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+        """
 
         self.prometheus_alert = """
             {
@@ -74,7 +173,26 @@ class AlertTestCase(unittest.TestCase):
 
         db.destroy_db()
 
-    def test_alert(self):
+    def test_pagerduty_webhook(self):
+
+        # trigger alert
+        response = self.app.post('/alert', data=json.dumps(self.trigger_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        trigger_alert_id = data['id']
+
+        # resolve alert
+        response = self.app.post('/alert', data=json.dumps(self.resolve_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        resolve_alert_id = data['id']
+
+        response = self.app.post('/webhooks/pagerduty', data=self.pagerduty_alert % (trigger_alert_id, resolve_alert_id), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(db.get_alert(trigger_alert_id).status, "ack")
+        self.assertEqual(db.get_alert(resolve_alert_id).status, "closed")
+
+    def test_prometheus_webhook(self):
 
         # create alert
         response = self.app.post('/webhooks/prometheus', data=self.prometheus_alert, headers=self.headers)
