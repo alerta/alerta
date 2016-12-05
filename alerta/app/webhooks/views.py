@@ -217,7 +217,7 @@ def parse_pagerduty(message):
     incident_url = '<a href="%s">#%s</a>' % (html_url, incident_number)
 
     try:
-        alert = db.get_alerts(query={'attributes.incidentKey': incident_key}, limit=1)[0]
+        alert = db.get_alerts(query={'_id': incident_key}, limit=1)[0]
     except IndexError:
         raise
 
