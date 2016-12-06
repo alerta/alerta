@@ -66,7 +66,7 @@ class Database(object):
 
     def _create_indexes(self):
 
-        self.db.alerts.create_index([('environment', ASCENDING), ('resource', ASCENDING), ('event', ASCENDING)], unique=True)
+        self.db.alerts.create_index([('environment', ASCENDING), ('customer', ASCENDING), ('resource', ASCENDING), ('event', ASCENDING)], unique=True)
         self.db.alerts.create_index([('$**', TEXT)])
 
     def get_db(self):
