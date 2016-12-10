@@ -614,59 +614,72 @@ def newrelic():
         return jsonify(status="error", message="insert or update of New Relic alert failed"), 500
 
 
+def parse_grafana(alert, match):
+
+    if alert['state'] == 'alerting':
+        severity = 'major'
+    elif alert['state'] == 'ok':
+        severity = 'normal'
+    else:
+        severity = 'indeterminate'
+
+    return Alert(
+        resource=match['metric'],
+        event=alert['ruleName'],
+        environment='Production',
+        severity=severity,
+        service=['Grafana'],
+        group='Performance',
+        value=match['value'],
+        text=alert.get('message', None) or alert.get('title', alert['state']),
+        tags=match.get('tags', []),
+        attributes={
+            'ruleUrl': '<a href="%s" target="_blank">Rule</a>' % alert['ruleUrl'],
+            'imageUrl': '<a href="%s" target="_blank">Image</a>' % alert['imageUrl']
+        },
+        origin='Grafana',
+        event_type='performanceAlert',
+        timeout=300,
+        raw_data=alert
+    )
+
 @app.route('/webhooks/grafana', methods=['OPTIONS', 'POST'])
 @cross_origin()
 @auth_required
 def grafana():
 
-    hook_started = webhook_timer.start_timer()
-    alerts = parse_grafana(request.data)
+    alerts = []
+    if request.json and 'evalMatches' in request.json:
+        hook_started = webhook_timer.start_timer()
+        for match in request.json['evalMatches']:
+            try:
+                incomingAlert = parse_grafana(request.json, match)
+            except ValueError as e:
+                webhook_timer.stop_timer(hook_started)
+                return jsonify(status="error", message=str(e)), 400
 
-    for incomingAlert in alerts:
-        if g.get('customer', None):
-            incomingAlert.customer = g.get('customer')
+            if g.get('customer', None):
+                incomingAlert.customer = g.get('customer')
 
-        add_remote_ip(request, incomingAlert)
+            add_remote_ip(request, incomingAlert)
 
-        try:
-            alert = process_alert(incomingAlert)
-        except RejectException as e:
-            webhook_timer.stop_timer(hook_started)
-            return jsonify(status="error", message=str(e)), 403
-        except Exception as e:
-            webhook_timer.stop_timer(hook_started)
-            return jsonify(status="error", message=str(e)), 500
+            try:
+                alert = process_alert(incomingAlert)
+            except RejectException as e:
+                webhook_timer.stop_timer(hook_started)
+                return jsonify(status="error", message=str(e)), 403
+            except Exception as e:
+                webhook_timer.stop_timer(hook_started)
+                return jsonify(status="error", message=str(e)), 500
+            alerts.append(alert)
 
         webhook_timer.stop_timer(hook_started)
-
-    if alert:
-        body = alert.get_body()
-        body['href'] = absolute_url('/alert/' + alert.id)
-        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': body['href']}
     else:
-        return jsonify(status="error", message="insert or update of grafana check failed"), 500
+        return jsonify(status="error", message="no alerts in Grafana notification payload"), 400
 
-def parse_grafana(check):
-    check = json.loads(check)
-    timeout = 300
-
-    alerts = []
-
-    for item in check['evalMatches']:
-        alerts.append(Alert(
-            status='open',
-            resource=item['metric'],
-            event=check['state'],
-            environment='Production',
-            severity='critical',
-            service=[check['ruleName']],
-            text=item['metric'] + ":" + str(item['value']),
-            origin='Grafana',
-            event_type='Grafana_event',
-            raw_data=item['value'],
-            timeout=timeout,
-            value='Error',
-            group='Grafana'
-        ))
-
-    return alerts
+    if len(alerts) == 1:
+        body = alerts[0].get_body()
+        body['href'] = absolute_url('/alert/' + alerts[0].id)
+        return jsonify(status="ok", id=alerts[0].id, alert=body), 201, {'Location': body['href']}
+    else:
+        return jsonify(status="ok", ids=[alert.id for alert in alerts]), 201
