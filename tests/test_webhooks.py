@@ -164,10 +164,6 @@ class WebhooksTestCase(unittest.TestCase):
                 "version": "3"
             }
         """
-        self.headers = {
-            'Content-type': 'application/json',
-            'X-Forwarded-For': ['10.1.1.1', '172.16.1.1', '192.168.1.1'],
-        }
 
         self.grafana_alert = """
         {  
@@ -183,15 +179,20 @@ class WebhooksTestCase(unittest.TestCase):
                  "tags":null
               }
            ],
-           "imageUrl":"http://grafana.org/assets/img/blog/mixed_styles.png",
-           "ruleId":0,
+           "message": "Test notification from grafana",
+           "ruleId":1,
            "ruleName":"Test notification",
            "ruleUrl":"http://localhost:3000/",
+           "imageUrl":"http://grafana.org/assets/img/blog/mixed_styles.png",
            "state":"alerting",
            "title":"[Alerting] Test notification"
         }
         """
 
+        self.headers = {
+            'Content-type': 'application/json',
+            'X-Forwarded-For': ['10.1.1.1', '172.16.1.1', '192.168.1.1'],
+        }
 
     def tearDown(self):
 
@@ -230,11 +231,10 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['createTime'], "2016-08-01T10:27:08.008Z")
         self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
 
+    def test_grafana_webhook(self):
+
         response = self.app.post('/webhooks/grafana', data=self.grafana_alert, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['timeout'], 300)
-        self.assertEqual(data['alert']['resource'], "Higher Value")
-        self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['status'], "ok")
 
