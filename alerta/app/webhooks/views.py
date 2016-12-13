@@ -623,6 +623,12 @@ def parse_grafana(alert, match):
     else:
         severity = 'indeterminate'
 
+    attributes = dict()
+    if 'ruleUrl' in alert:
+        attributes['ruleUrl'] = '<a href="%s" target="_blank">Rule</a>' % alert['ruleUrl'],
+    if 'imageUrl' in alert:
+        attributes['imageUrl'] = '<a href="%s" target="_blank">Image</a>' % alert['imageUrl']
+
     return Alert(
         resource=match['metric'],
         event=alert['ruleName'],
@@ -633,10 +639,7 @@ def parse_grafana(alert, match):
         value=match['value'],
         text=alert.get('message', None) or alert.get('title', alert['state']),
         tags=match.get('tags', []),
-        attributes={
-            'ruleUrl': '<a href="%s" target="_blank">Rule</a>' % alert['ruleUrl'],
-            'imageUrl': '<a href="%s" target="_blank">Image</a>' % alert['imageUrl']
-        },
+        attributes=attributes,
         origin='Grafana',
         event_type='performanceAlert',
         timeout=300,
