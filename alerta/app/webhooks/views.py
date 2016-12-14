@@ -623,9 +623,11 @@ def parse_grafana(alert, match):
     else:
         severity = 'indeterminate'
 
-    attributes = dict()
+    attributes = {
+        'ruleId': alert['ruleId']
+    }
     if 'ruleUrl' in alert:
-        attributes['ruleUrl'] = '<a href="%s" target="_blank">Rule</a>' % alert['ruleUrl'],
+        attributes['ruleUrl'] = '<a href="%s" target="_blank">Rule</a>' % alert['ruleUrl']
     if 'imageUrl' in alert:
         attributes['imageUrl'] = '<a href="%s" target="_blank">Image</a>' % alert['imageUrl']
 
@@ -646,17 +648,20 @@ def parse_grafana(alert, match):
         raw_data=alert
     )
 
+
 @app.route('/webhooks/grafana', methods=['OPTIONS', 'POST'])
 @cross_origin()
 @auth_required
 def grafana():
 
+    hook_started = webhook_timer.start_timer()
+
     alerts = []
-    if request.json and 'evalMatches' in request.json:
-        hook_started = webhook_timer.start_timer()
-        for match in request.json['evalMatches']:
+    data = request.json
+    if data and data['state'] == 'alerting':
+        for match in data.get('evalMatches', []):
             try:
-                incomingAlert = parse_grafana(request.json, match)
+                incomingAlert = parse_grafana(data, match)
             except ValueError as e:
                 webhook_timer.stop_timer(hook_started)
                 return jsonify(status="error", message=str(e)), 400
@@ -668,6 +673,29 @@ def grafana():
 
             try:
                 alert = process_alert(incomingAlert)
+            except RejectException as e:
+                webhook_timer.stop_timer(hook_started)
+                return jsonify(status="error", message=str(e)), 403
+            except Exception as e:
+                webhook_timer.stop_timer(hook_started)
+                return jsonify(status="error", message=str(e)), 500
+            alerts.append(alert)
+
+        webhook_timer.stop_timer(hook_started)
+
+    elif data and data['state'] == 'ok' and data.get('ruleId', None):
+        try:
+            existingAlerts = db.get_alerts({'attributes.ruleId': data['ruleId'], 'customer': g.get('customer', None)})
+        except Exception as e:
+            webhook_timer.stop_timer(hook_started)
+            return jsonify(status="error", message=str(e)), 500
+
+        for updateAlert in existingAlerts:
+            updateAlert.severity = 'normal'
+            updateAlert.status = 'closed'
+
+            try:
+                alert = process_alert(updateAlert)
             except RejectException as e:
                 webhook_timer.stop_timer(hook_started)
                 return jsonify(status="error", message=str(e)), 403
