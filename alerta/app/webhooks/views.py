@@ -638,7 +638,7 @@ def parse_grafana(alert, match):
         severity=severity,
         service=['Grafana'],
         group='Performance',
-        value=match['value'],
+        value='%s' % match['value'],
         text=alert.get('message', None) or alert.get('title', alert['state']),
         tags=match.get('tags', []),
         attributes=attributes,
