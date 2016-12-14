@@ -165,7 +165,7 @@ class WebhooksTestCase(unittest.TestCase):
             }
         """
 
-        self.grafana_alert = """
+        self.grafana_alert_alerting = """
         {  
            "evalMatches":[  
               {  
@@ -186,6 +186,18 @@ class WebhooksTestCase(unittest.TestCase):
            "imageUrl":"http://grafana.org/assets/img/blog/mixed_styles.png",
            "state":"alerting",
            "title":"[Alerting] Test notification"
+        }
+        """
+
+        self.grafana_alert_ok = """
+        {
+           "evalMatches":[],
+           "message": "Test notification from grafana",
+           "ruleId":1,
+           "ruleName":"Test notification",
+           "ruleUrl":"http://localhost:3000/",
+           "state":"ok",
+           "title":"[OK] Test notification"
         }
         """
 
@@ -233,8 +245,23 @@ class WebhooksTestCase(unittest.TestCase):
 
     def test_grafana_webhook(self):
 
-        response = self.app.post('/webhooks/grafana', data=self.grafana_alert, headers=self.headers)
+        # state=alerting
+        response = self.app.post('/webhooks/grafana', data=self.grafana_alert_alerting, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], "ok")
 
+        alert_id = data['ids'][0]
+
+        # state=ok
+        response = self.app.post('/webhooks/grafana', data=self.grafana_alert_ok, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], "ok")
+
+        # get alert
+        response = self.app.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn(alert_id, data['alert']['id'])
+        self.assertEqual(data['alert']['status'], 'closed')
