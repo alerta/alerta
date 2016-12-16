@@ -714,3 +714,25 @@ def grafana():
         return jsonify(status="ok", id=alerts[0].id, alert=body), 201, {'Location': body['href']}
     else:
         return jsonify(status="ok", ids=[alert.id for alert in alerts]), 201
+
+
+@app.route('/webhooks/telegram', methods=['OPTIONS', 'POST'])
+@cross_origin()
+@auth_required
+def telegram():
+
+    data = request.json
+    if 'callback_query' in data:
+        command, alert = data['callback_query']['data'].split(' ', 1)
+
+        if command == '/ack':
+            db.set_status(alert, 'ack', 'status change via Telegram')
+        elif command == '/close':
+            db.set_status(alert, 'closed', 'status change via Telegram')
+        elif command == '/blackout':
+            environment, resource, event = alert.split('|', 2)
+            db.create_blackout(environment,resource=resource, event=event)
+
+        return jsonify(status="ok")
+    else:
+        return jsonify(status="error", message="no callback_query in Telegram message"), 400

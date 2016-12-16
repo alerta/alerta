@@ -201,6 +201,58 @@ class WebhooksTestCase(unittest.TestCase):
         }
         """
 
+        self.telegram_alert = {
+            'event': 'node_down',
+            'resource': str(uuid4()).upper()[:8],
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'critical',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'tags': ['foo'],
+            'attributes': {'foo': 'abc def', 'bar': 1234, 'baz': False}
+        }
+
+        self.telegram_ack = """
+        {
+            "update_id": 913527394,
+            "callback_query": {
+                "id": "688111769854308995",
+                "from": {
+                    "id": 160213506,
+                    "first_name": "Nick",
+                    "last_name": "Satterly",
+                    "username": "satterly"
+                },
+                "message": {
+                    "message_id": 37,
+                    "from": {
+                        "id": 264434259,
+                        "first_name": "alerta-bot",
+                        "username": "alertaio_bot"
+                    },
+                    "chat": {
+                        "id": -163056465,
+                        "title": "Alerta Telegram",
+                        "type": "group",
+                        "all_members_are_administrators": true
+                    },
+                    "date": 1481841548,
+                    "text": "",
+                    "entities": [
+                        {
+                            "type": "text_link",
+                            "offset": 0,
+                            "length": 8,
+                            "url": "https://try.alerta.io/#/alert/a2b47856-1779-49a9-a2aa-5cbd2e539b56"
+                        }
+                    ]
+                },
+                "chat_instance": "-428019502972440238",
+                "data": "/ack %s"
+            }
+        }
+        """
+
         self.headers = {
             'Content-type': 'application/json',
             'X-Forwarded-For': ['10.1.1.1', '172.16.1.1', '192.168.1.1'],
@@ -265,3 +317,17 @@ class WebhooksTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['status'], 'closed')
+
+    def test_telegram_webhook(self):
+
+        # telegram alert
+        response = self.app.post('/alert', data=json.dumps(self.telegram_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        telegram_alert_id = data['id']
+
+        # command=/ack
+        response = self.app.post('/webhooks/telegram', data=self.telegram_ack % telegram_alert_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], "ok")
