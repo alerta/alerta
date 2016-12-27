@@ -116,6 +116,16 @@ class WebhooksTestCase(unittest.TestCase):
             }
         """
 
+        self.riemann_alert = """
+          {
+	        "host": "hostbob",
+	        "service": "servicejane",
+	        "state": "ok",
+	        "description": "This is a description",
+	        "metric": 1
+          }
+        """
+
         self.prometheus_alert = """
             {
                 "alerts": [
@@ -294,6 +304,18 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['timeout'], 600)
         self.assertEqual(data['alert']['createTime'], "2016-08-01T10:27:08.008Z")
         self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+
+    def test_riemann_webhook(self):
+
+        # create alert
+        response = self.app.post('/webhooks/riemann', data=self.riemann_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'hostbob-servicejane')
+        self.assertEqual(data['alert']['event'], 'servicejane')
+        self.assertEqual(data['alert']['severity'], 'ok')
+        self.assertEqual(data['alert']['text'], 'This is a description')
+        self.assertEqual(data['alert']['value'], 1)
 
     def test_grafana_webhook(self):
 

@@ -736,3 +736,56 @@ def telegram():
         return jsonify(status="ok")
     else:
         return jsonify(status="error", message="no callback_query in Telegram message"), 400
+
+
+def parse_riemann(alert):
+
+    return Alert(
+        resource='%s-%s' % (alert['host'], alert['service']),
+        event=alert['service'],
+        environment=alert.get('environment', 'Production'),
+        severity=alert.get('state', 'unknown'),
+        service=[alert['service']],
+        group=alert.get('group', 'Performance'),
+        text=alert.get('description', None),
+        value=alert.get('metric', None),
+        tags=alert.get('tags', None),
+        origin='Riemann',
+        raw_data=alert
+    )
+
+
+@app.route('/webhooks/riemann', methods=['OPTIONS', 'POST'])
+@cross_origin()
+@auth_required
+def riemann():
+
+    hook_started = webhook_timer.start_timer()
+    try:
+        incomingAlert = parse_riemann(request.json)
+    except ValueError as e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=str(e)), 400
+
+    if g.get('customer', None):
+        incomingAlert.customer = g.get('customer')
+
+    add_remote_ip(request, incomingAlert)
+
+    try:
+        alert = process_alert(incomingAlert)
+    except RejectException as e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=str(e)), 403
+    except Exception as e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=str(e)), 500
+
+    webhook_timer.stop_timer(hook_started)
+
+    if alert:
+        body = alert.get_body()
+        body['href'] = absolute_url('/alert/' + alert.id)
+        return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': body['href']}
+    else:
+        return jsonify(status="error", message="insert or update of Riemann alert failed"), 500
