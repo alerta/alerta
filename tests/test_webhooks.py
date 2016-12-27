@@ -313,7 +313,6 @@ class WebhooksTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'hostbob-servicejane')
         self.assertEqual(data['alert']['event'], 'servicejane')
-        self.assertEqual(data['alert']['status'], 'ok')
         self.assertEqual(data['alert']['severity'], 'ok')
         self.assertEqual(data['alert']['text'], 'This is a description')
         self.assertEqual(data['alert']['value'], 1)
