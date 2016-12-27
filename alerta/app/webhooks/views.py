@@ -745,7 +745,6 @@ def parse_riemann(alert):
         event=alert['service'],
         environment=alert.get('environment', 'Production'),
         severity=alert.get('state', 'unknown'),
-        status=alert.get('state', 'unknown'),
         service=[alert['service']],
         group=alert.get('group', 'Performance'),
         text=alert.get('description', None),
