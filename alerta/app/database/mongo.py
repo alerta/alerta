@@ -297,12 +297,15 @@ class Database(object):
 
     def is_flapping(self, alert, window=1800, count=2):
         """
-        Return true if alert status has changed more than X times in Y seconds
+        Return true if alert severity has changed more than X times in Y seconds
         """
         pipeline = [
             {'$match': {"environment": alert.environment, "resource": alert.resource, "event": alert.event}},
             {'$unwind': '$history'},
-            {'$match': {"history.updateTime": {'$gt': datetime.datetime.utcnow() - datetime.timedelta(seconds=window)}}},
+            {'$match': {
+                "history.updateTime": {'$gt': datetime.datetime.utcnow() - datetime.timedelta(seconds=window)}},
+                "history.type": "severity"
+            },
             {
                 '$group': {
                     "_id": '$history.type',
@@ -361,7 +364,7 @@ class Database(object):
                     '$each': [{
                         "event": alert.event,
                         "status": status,
-                        "type": "auto",
+                        "type": "status",
                         "text": "duplicate alert status change",
                         "id": alert.id,
                         "updateTime": now
@@ -462,7 +465,7 @@ class Database(object):
                         "event": alert.event,
                         "severity": alert.severity,
                         "value": alert.value,
-                        "type": "external",
+                        "type": "severity",
                         "text": alert.text,
                         "id": alert.id,
                         "updateTime": now
@@ -480,7 +483,7 @@ class Database(object):
             update['$push']['history']['$each'].append({
                 "event": alert.event,
                 "status": status,
-                "type": "auto",
+                "type": "status",
                 "text": "correlated alert status change",
                 "id": alert.id,
                 "updateTime": now
@@ -542,7 +545,7 @@ class Database(object):
             "event": alert.event,
             "severity": alert.severity,
             "value": alert.value,
-            "type": "external",
+            "type": "severity",
             "text": alert.text,
             "updateTime": alert.create_time
         }]
@@ -550,7 +553,7 @@ class Database(object):
             history.append({
                 "event": alert.event,
                 "status": status,
-                "type": "auto",
+                "type": "status",
                 "text": "new alert status change",
                 "id": alert.id,
                 "updateTime": now
@@ -684,7 +687,7 @@ class Database(object):
                     '$each': [{
                         "event": event,
                         "status": status,
-                        "type": "external",
+                        "type": "status",
                         "text": text,
                         "id": id,
                         "updateTime": now
@@ -791,7 +794,7 @@ class Database(object):
     def get_topn_count(self, query=None, group=None, limit=10):
 
         if not group:
-            group = "event"  # group by event is nothing specified
+            group = "event"  # group by event if nothing specified
 
         pipeline = [
             {'$match': query},
@@ -829,12 +832,13 @@ class Database(object):
     def get_topn_flapping(self, query=None, group=None, limit=10):
 
         if not group:
-            group = "event"
+            group = "event"  # group by event if nothing specified
 
         pipeline = [
             {'$match': query},
             {'$unwind': '$service'},
             {'$unwind': '$history'},
+            {'$match': {"history.type": "severity"}},
             {
                 '$group': {
                     "_id": "$%s" % group,
