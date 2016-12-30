@@ -466,3 +466,12 @@ def gitlab():
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab',
                          customer=customer, role=role(login))
     return jsonify(token=token)
+
+
+@app.route('/userinfo', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@auth_required
+def userinfo():
+
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    return jsonify(parse_token(token))
