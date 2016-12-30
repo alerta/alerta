@@ -25,8 +25,9 @@ The only mandatory dependency is MongoDB. Everything else is optional.
 Optional
 --------
 
-A messaging transport that supports AMQP is required *if* it is wanted to send notifications to alert subscribers.
-It is recommended to use RabbitMQ, but Redis and even MongoDB have been tested and shown to work.
+A messaging transport that supports AMQP is required *if* it is wanted to send notifications
+to alert subscribers. It is recommended to use RabbitMQ, but Redis and even MongoDB have been
+tested and shown to work.
 
 - RabbitMQ
 - Redis
@@ -44,7 +45,7 @@ To install MongoDB on Debian/Ubuntu run::
 
 To install the Alerta server and client run::
 
-    $ pip install alerta-server
+    $ pip install alerta-server alerta
     $ alertad
 
 To install the web console run::
@@ -59,7 +60,11 @@ To install the web console run::
 Configuration
 -------------
 
-To configure the ``alertad`` server override the default settings using ``~/.alertad.conf``.
+To configure the ``alertad`` server override the default settings in ``/etc/alertad.conf``
+or using ``ALERTA_SVR_CONF_FILE`` environment variable::
+
+    $ ALERTA_SVR_CONF_FILE=~/.alertad.conf
+    $ echo "DEBUG=True" > $ALERTA_SVR_CONF_FILE
 
 Documentation
 -------------
@@ -76,7 +81,9 @@ To run the tests use::
 Cloud Deployment
 ----------------
 
-Alerta can be deployed to the cloud easily using Heroku <https://github.com/alerta/heroku-api-alerta>, AWS EC2 <https://github.com/alerta/alerta-cloudformation>, or RedHat OpenShift <https://github.com/alerta/openshift-api-alerta>
+Alerta can be deployed to the cloud easily using Heroku <https://github.com/alerta/heroku-api-alerta>,
+AWS EC2 <https://github.com/alerta/alerta-cloudformation>, or RedHat OpenShift
+<https://github.com/alerta/openshift-api-alerta>
 
 License
 -------
