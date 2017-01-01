@@ -27,8 +27,8 @@ class BlackoutsTestCase(unittest.TestCase):
             'correlate': ['node_down', 'node_marginal', 'node_up']
         }
 
-        self.admin_api_key = db.create_key('admin-api-key', type='read-write', text='demo-key')
-        self.customer_api_key = db.create_key('customer-api-key', customer='Foo', type='read-write', text='demo-key')
+        self.admin_api_key = db.create_key('admin-api-key', type='read-write', text='demo-key')['key']
+        self.customer_api_key = db.create_key('customer-api-key', customer='Foo', type='read-write', text='demo-key')['key']
 
     def tearDown(self):
 

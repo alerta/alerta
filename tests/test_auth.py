@@ -26,7 +26,7 @@ class AuthTestCase(unittest.TestCase):
             'service': ['Quux']
         }
 
-        self.api_key = db.create_key('demo-key', type='read-write', text='demo-key')
+        self.api_key = db.create_key('demo-key', type='read-write', text='demo-key')['key']
 
         self.headers = {
             'Authorization': 'Key %s' % self.api_key,
@@ -107,7 +107,7 @@ class AuthTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data['user'], 'Failed to create user')
 
-        user_id = data['user']
+        user_id = data['user']['id']
 
         # get user
         response = self.app.get('/users', headers=self.headers)
