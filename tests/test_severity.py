@@ -157,7 +157,7 @@ class SeverityTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # ack alert
-        response = self.app.post('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        response = self.app.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.app.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -198,7 +198,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
         # ack alert
-        response = self.app.post('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        response = self.app.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.app.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)

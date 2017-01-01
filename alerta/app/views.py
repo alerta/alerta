@@ -241,7 +241,7 @@ def get_alert(id):
         return jsonify(status="error", message="not found", total=0, alert=None), 404
 
 
-@app.route('/alert/<id>/status', methods=['OPTIONS', 'POST'])
+@app.route('/alert/<id>/status', methods=['OPTIONS', 'PUT', 'POST'])  # POST is deprecated
 @cross_origin()
 @auth_required
 @jsonp
@@ -289,7 +289,7 @@ def set_status(id):
         return jsonify(status="error", message="not found"), 404
 
 
-@app.route('/alert/<id>/tag', methods=['OPTIONS', 'POST'])
+@app.route('/alert/<id>/tag', methods=['OPTIONS', 'PUT', 'POST'])  # POST is deprecated
 @cross_origin()
 @auth_required
 @jsonp
@@ -325,7 +325,7 @@ def tag_alert(id):
         return jsonify(status="error", message="not found"), 404
 
 
-@app.route('/alert/<id>/untag', methods=['OPTIONS', 'POST'])
+@app.route('/alert/<id>/untag', methods=['OPTIONS', 'PUT', 'POST'])  # POST is deprecated
 @cross_origin()
 @auth_required
 @jsonp

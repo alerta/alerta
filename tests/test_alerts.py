@@ -197,7 +197,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
 
         # ack alert
-        response = self.app.post('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        response = self.app.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.app.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -211,7 +211,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
 
         # ack alert (again)
-        response = self.app.post('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        response = self.app.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.app.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -257,7 +257,7 @@ class AlertTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # expire alert
-        response = self.app.post('/alert/' + alert_id + '/status', data=json.dumps({'status': 'expired'}), headers=self.headers)
+        response = self.app.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'expired'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.app.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -271,7 +271,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
 
         # expire alert
-        response = self.app.post('/alert/' + alert_id + '/status', data=json.dumps({'status': 'expired'}), headers=self.headers)
+        response = self.app.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'expired'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.app.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -301,7 +301,7 @@ class AlertTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # close alert
-        response = self.app.post('/alert/' + alert_id + '/status', data=json.dumps({'status': 'closed'}), headers=self.headers)
+        response = self.app.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'closed'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.app.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -325,7 +325,7 @@ class AlertTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # append tag to existing
-        response = self.app.post('/alert/' + alert_id + '/tag', data=json.dumps({'tags': ['bar']}), headers=self.headers)
+        response = self.app.put('/alert/' + alert_id + '/tag', data=json.dumps({'tags': ['bar']}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.app.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -333,7 +333,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['tags'], ['foo', 'bar'])
 
         # duplicate tag is a no-op
-        response = self.app.post('/alert/' + alert_id + '/tag', data=json.dumps({'tags': ['bar']}), headers=self.headers)
+        response = self.app.put('/alert/' + alert_id + '/tag', data=json.dumps({'tags': ['bar']}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.app.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -341,7 +341,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['tags'], ['foo', 'bar'])
 
         # delete tag
-        response = self.app.post('/alert/' + alert_id + '/untag', data=json.dumps({'tags': ['foo']}), headers=self.headers)
+        response = self.app.put('/alert/' + alert_id + '/untag', data=json.dumps({'tags': ['foo']}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.app.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
