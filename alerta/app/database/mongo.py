@@ -1245,13 +1245,13 @@ class Database(object):
         else:
             return
 
-    def create_user(self, id, name, login, password=None, provider="", text="", email_verified=False):
+    def create_user(self, name, login, password=None, provider="", text="", email_verified=False):
 
         if self.is_user_valid(login=login):
             return
 
         data = {
-            "_id": id,
+            "_id": str(uuid4()),
             "name": name,
             "login": login,
             "createTime": datetime.datetime.utcnow(),
