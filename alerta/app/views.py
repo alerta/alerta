@@ -654,7 +654,7 @@ def create_blackout():
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
-    return jsonify(status="ok", blackout=blackout), 201, {'Location': absolute_url('/blackout/' + blackout)}
+    return jsonify(status="ok", id=blackout['id'], blackout=blackout), 201, {'Location': absolute_url('/blackout/' + blackout['id'])}
 
 
 @app.route('/blackout/<path:blackout>', methods=['OPTIONS', 'DELETE', 'POST'])

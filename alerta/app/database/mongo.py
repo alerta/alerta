@@ -947,7 +947,7 @@ class Database(object):
         return blackouts
 
     def is_blackout_period(self, alert):
-        
+
         if alert.severity in app.config.get('BLACKOUT_ACCEPT', []):
             return False
 
@@ -1059,7 +1059,9 @@ class Database(object):
         if app.config['CUSTOMER_VIEWS'] and customer:
             data["customer"] = customer
 
-        return self.db.blackouts.insert_one(data).inserted_id
+        if self.db.blackouts.insert_one(data).inserted_id:
+            data['id'] = data.pop('_id')
+            return data
 
     def delete_blackout(self, id):
 
@@ -1241,7 +1243,7 @@ class Database(object):
         if response.matched_count > 0:
             return id
         else:
-            return 
+            return
 
     def save_user(self, id, name, login, password=None, provider="", text="", email_verified=False):
 
