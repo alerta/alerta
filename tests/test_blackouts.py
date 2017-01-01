@@ -50,7 +50,7 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
-        blackout_id = data['blackout']
+        blackout_id = data['id']
 
         # suppress alert
         response = self.app.post('/alert', data=json.dumps(self.alert), headers=self.headers)
