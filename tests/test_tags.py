@@ -61,7 +61,7 @@ class TagTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # tag alert
-        response = self.app.post('/alert/%s/tag' % alert_id, data=json.dumps({'tags': ['bar', 'baz']}), headers=self.headers)
+        response = self.app.put('/alert/%s/tag' % alert_id, data=json.dumps({'tags': ['bar', 'baz']}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
         # duplicate alert
@@ -73,7 +73,7 @@ class TagTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['duplicateCount'], 1)
 
         # tag alert
-        response = self.app.post('/alert/%s/tag' % alert_id, data=json.dumps({'tags': ['quux']}), headers=self.headers)
+        response = self.app.put('/alert/%s/tag' % alert_id, data=json.dumps({'tags': ['quux']}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
         # correlate alert
@@ -84,7 +84,7 @@ class TagTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['tags'], ['foo', 'bar', 'baz', 'quux'])
 
         # untag alert
-        response = self.app.post('/alert/%s/untag' % alert_id, data=json.dumps({'tags': ['quux']}), headers=self.headers)
+        response = self.app.put('/alert/%s/untag' % alert_id, data=json.dumps({'tags': ['quux']}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
         # duplicate alert (again)
