@@ -1059,7 +1059,7 @@ class Database(object):
         if app.config['CUSTOMER_VIEWS'] and customer:
             data["customer"] = customer
 
-        if self.db.blackouts.insert_one(data).inserted_id:
+        if self.db.blackouts.insert_one(data):
             data['id'] = data.pop('_id')
             return data
 
@@ -1245,7 +1245,7 @@ class Database(object):
         else:
             return
 
-    def save_user(self, id, name, login, password=None, provider="", text="", email_verified=False):
+    def create_user(self, id, name, login, password=None, provider="", text="", email_verified=False):
 
         if self.is_user_valid(login=login):
             return
@@ -1263,7 +1263,10 @@ class Database(object):
         if password:
             data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
 
-        return self.db.users.insert_one(data).inserted_id
+        if self.db.users.insert_one(data):
+            data['id'] = data.pop('_id')
+            data.pop('password', None)
+            return data
 
     def reset_user_password(self, login, password):
 
@@ -1327,7 +1330,9 @@ class Database(object):
             "customer": customer,
             "match": match
         }
-        return self.db.customers.insert_one(data).inserted_id
+        if self.db.customers.insert_one(data):
+            data['id'] = data.pop('_id')
+            return data
 
     def get_customer_by_match(self, matches):
 
@@ -1420,11 +1425,8 @@ class Database(object):
             "customer": customer
         }
 
-        response = self.db.keys.insert_one(data)
-        if not response:
-            return None
-
-        return key
+        if self.db.keys.insert_one(data.copy()):
+            return data
 
     def update_key(self, key):
 

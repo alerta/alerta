@@ -841,14 +841,14 @@ def create_user():
         provider = request.json["provider"]
         text = request.json.get("text", "")
         try:
-            user_id = db.save_user(str(uuid4()), name, login, password, provider, text)
+            user = db.create_user(str(uuid4()), name, login, password, provider, text)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
         return jsonify(status="error", message="must supply user 'name', 'login' and 'provider' as parameters"), 400
 
-    if user_id:
-        return jsonify(status="ok", user=user_id), 201, {'Location': absolute_url('/user/' + user_id)}
+    if user:
+        return jsonify(status="ok", id=user['id'], user=user), 201, {'Location': absolute_url('/user/' + user['id'])}
     else:
         return jsonify(status="error", message="User with that login already exists"), 409
 
@@ -942,14 +942,14 @@ def create_customer():
         customer = request.json["customer"]
         match = request.json["match"]
         try:
-            cid = db.create_customer(customer, match)
+            customer = db.create_customer(customer, match)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
         return jsonify(status="error", message="Must supply user 'customer' and 'match' as parameters"), 400
 
-    if cid:
-        return jsonify(status="ok", id=cid), 201, {'Location': absolute_url('/customer/' + cid)}
+    if customer:
+        return jsonify(status="ok", id=customer['id'], customer=customer), 201, {'Location': absolute_url('/customer/' + customer['id'])}
     else:
         return jsonify(status="error", message="Customer lookup for this match already exists"), 409
 
@@ -1037,7 +1037,7 @@ def create_key():
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
-    return jsonify(status="ok", key=key), 201, {'Location': absolute_url('/key/' + key)}
+    return jsonify(status="ok", key=key['key'], data=key), 201, {'Location': absolute_url('/key/' + key['key'])}
 
 
 @app.route('/key/<path:key>', methods=['OPTIONS', 'DELETE', 'POST'])

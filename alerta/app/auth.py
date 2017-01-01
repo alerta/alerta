@@ -240,7 +240,7 @@ def signup():
         provider = request.json.get("provider", "basic")
         text = request.json.get("text", "")
         try:
-            user_id = db.save_user(str(uuid4()), name, email, password, provider, text, email_verified=False)
+            user_id = db.create_user(str(uuid4()), name, email, password, provider, text, email_verified=False)['id']
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
