@@ -240,35 +240,33 @@ def signup():
         provider = request.json.get("provider", "basic")
         text = request.json.get("text", "")
         try:
-            user_id = db.create_user(name, email, password, provider, text, email_verified=False)['id']
+            user = db.create_user(name, email, password, provider, text, email_verified=False)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
         return jsonify(status="error", message="Must supply user 'name', 'email' and 'password' as parameters"), 400
 
-    if user_id:
-        user = db.get_user(user_id)
-    else:
-        return jsonify(status="error", message="User with email %s already exists" % email), 409
+    if not user:
+        return jsonify(status="error", message="User with email '%s' already exists" % email), 409
 
     if app.config['EMAIL_VERIFICATION']:
         send_confirmation(name, email)
         if not db.is_email_verified(email):
-            return jsonify(status="error", message="email address %s has not been verified" % email), 401
+            return jsonify(status="error", message="email address '%s' has not been verified" % email), 401
 
     if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
             or domain in app.config['ALLOWED_EMAIL_DOMAINS']):
-        return jsonify(status="error", message="Login for user domain %s not allowed" % domain), 403
+        return jsonify(status="error", message="Login for user domain '%s' not allowed" % domain), 403
 
     if app.config['CUSTOMER_VIEWS']:
         try:
             customer = customer_match(email, groups=[domain])
         except NoCustomerMatch:
-            return jsonify(status="error", message="No customer lookup defined for user domain %s" % domain), 403
+            return jsonify(status="error", message="No customer lookup defined for user domain '%s'" % domain), 403
     else:
         customer = None
 
-    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role(email))
+    token = create_token(user['id'], user['name'], email, provider=provider, customer=customer, role=role(email))
     return jsonify(token=token)
 
 

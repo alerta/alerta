@@ -837,20 +837,22 @@ def create_user():
     if request.json and 'name' in request.json:
         name = request.json["name"]
         login = request.json["login"]
-        password = request.json.get("password", None)
-        provider = request.json["provider"]
+        password = request.json["password"]
+        provider = request.json.get("provider", "basic")
         text = request.json.get("text", "")
-        try:
-            user = db.create_user(name, login, password, provider, text)
-        except Exception as e:
-            return jsonify(status="error", message=str(e)), 500
+        email_verified = request.json.get("email_verified", False)
     else:
-        return jsonify(status="error", message="must supply user 'name', 'login' and 'provider' as parameters"), 400
+        return jsonify(status="error", message="Must supply user 'name', 'login' and 'password' as parameters"), 400
+
+    try:
+        user = db.create_user(name, login, password, provider, text, email_verified)
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
 
     if user:
         return jsonify(status="ok", id=user['id'], user=user), 201, {'Location': absolute_url('/user/' + user['id'])}
     else:
-        return jsonify(status="error", message="User with that login already exists"), 409
+        return jsonify(status="error", message="User with login '%s' already exists" % login), 409
 
 
 @app.route('/user/<user>', methods=['OPTIONS', 'PUT'])
@@ -860,25 +862,23 @@ def create_user():
 @jsonp
 def update_user(user):
    
-    if not request.json:
-        return jsonify(status="ok", user=user, message="Nothing to update, request was empty")
-
-    name = request.json.get('name', None)
-    login = request.json.get('login', None)
-    password = request.json.get('password', None)
-    provider = request.json.get('provider', None)
-    text = request.json.get('text', None)
-    email_verified = request.json.get('email_verified', None)
-
+    if request.json:
+        name = request.json.get('name', None)
+        login = request.json.get('login', None)
+        password = request.json.get('password', None)
+        provider = request.json.get('provider', None)
+        text = request.json.get('text', None)
+        email_verified = request.json.get('email_verified', None)
+    else:
+        return jsonify(status="error", message="Nothing to update, request was empty"), 400
 
     try:
-        user = db.update_user(user, name=name, login=login, password=password, provider=provider,
-                text=text, email_verified=email_verified)
+        user = db.update_user(user, name, login, password, provider, text, email_verified)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
     
     if user:
-        return jsonify(status="ok", user=user)
+        return jsonify(status="ok")
     else:
         return jsonify(status="error", message="not found"), 404
 
