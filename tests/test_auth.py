@@ -147,6 +147,9 @@ class AuthTestCase(unittest.TestCase):
         }
         response = self.app.post('/customer', data=json.dumps(payload), headers=self.headers)
         self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        customer_id = data['id']
 
         payload = {
             'email': 'josephine@debeauharnais.fr',
@@ -203,5 +206,5 @@ class AuthTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         # delete customer mapping
-        response = self.app.delete('/customer/' + 'Bonaparte Industries', headers=self.headers)
+        response = self.app.delete('/customer/' + customer_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)

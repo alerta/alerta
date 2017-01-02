@@ -1363,7 +1363,7 @@ class Database(object):
 
     def delete_customer(self, customer):
 
-        response = self.db.customers.delete_one({"customer": customer})
+        response = self.db.customers.delete_one({"_id": customer})
         return True if response.deleted_count == 1 else False
 
     def get_keys(self, query=None):
