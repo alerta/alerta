@@ -1187,7 +1187,8 @@ class Database(object):
             "login": user['login'],
             "provider": user['provider'],
             "createTime": user['createTime'],
-            "text": user['text']
+            "text": user['text'],
+            "email_verified": user.get('email_verified', False)
         }
 
     def get_users(self, query=None, password=False):
@@ -1203,7 +1204,8 @@ class Database(object):
                 "createTime": user['createTime'],
                 "provider": user['provider'],
                 "role": 'admin' if login in app.config.get('ADMIN_USERS') else 'user',
-                "text": user.get('text', "")
+                "text": user.get('text', ""),
+                "email_verified": user.get('email_verified', False)
             }
             if password:
                 u['password'] = user.get('password', None)
@@ -1242,8 +1244,6 @@ class Database(object):
 
         if response.matched_count > 0:
             return id
-        else:
-            return
 
     def create_user(self, name, login, password=None, provider="", text="", email_verified=False):
 

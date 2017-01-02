@@ -97,7 +97,8 @@ class AuthTestCase(unittest.TestCase):
         payload = {
             'name': 'Napoleon Bonaparte',
             'login': 'napoleon@bonaparte.fr',
-            'provider': 'google',
+            'password': 'blackforest',
+            'provider': 'basic',
             'text': 'added to circle of trust'
         }
 
@@ -130,7 +131,7 @@ class AuthTestCase(unittest.TestCase):
         payload = {
             'name': name,
             'email': 'josephine@debeauharnais.fr',
-            'password': 'blackforest',
+            'password': 'jojo',
             'provider': 'basic',
             'text': 'Test login'
         }
@@ -149,7 +150,7 @@ class AuthTestCase(unittest.TestCase):
 
         payload = {
             'email': 'josephine@debeauharnais.fr',
-            'password': 'blackforest'
+            'password': 'jojo'
         }
 
         # login now that customer mapping exists
