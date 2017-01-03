@@ -2,6 +2,7 @@
 import abc
 import logging
 
+from collections import OrderedDict
 from six import add_metaclass
 from pkg_resources import iter_entry_points, load_entry_point, DistributionNotFound
 
@@ -35,37 +36,37 @@ class PluginBase(object):
 class Plugins(object):
 
     def __init__(self):
-        self.plugins = {}
+        self.plugins = OrderedDict()
         self.rules = None
 
         self.register()
 
     def register(self):
-        plugins_enabled = []
+
+        entry_points = {}
         for ep in iter_entry_points('alerta.plugins'):
-            LOG.debug("Server plug-in '%s' found.", ep.name)
+            LOG.debug("Server plugin '%s' installed.", ep.name)
+            entry_points[ep.name] = ep
+
+        for name in app.config['PLUGINS']:
             try:
-                if ep.name in app.config['PLUGINS']:
-                    plugin = ep.load()
-                    if plugin:
-                        self.plugins[ep.name] = plugin()
-                        plugins_enabled.append(ep.name)
-                        LOG.info("Server plug-in '%s' enabled.", ep.name)
-                else:
-                    LOG.debug("Server plug-in '%s' not enabled in 'PLUGINS'.", ep.name)
+                plugin = entry_points[name].load()
+                if plugin:
+                    self.plugins[name] = plugin()
+                    LOG.info("Server plugin '%s' enabled.", name)
             except Exception as e:
-                LOG.error("Server plug-in '%s' could not be loaded: %s", ep.name, e)
-        LOG.info("All server plug-ins enabled: %s" % ', '.join(plugins_enabled))
+                LOG.error("Server plugin '%s' could not be loaded: %s", name, e)
+        LOG.info("All server plugins enabled: %s" % ', '.join(self.plugins.keys()))
         try:
             self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')
         except (DistributionNotFound, ImportError):
-            LOG.info('No plug-in routing rules found. All plug-ins will be evaluated.')
+            LOG.info('No plugin routing rules found. All plugins will be evaluated.')
 
     def routing(self, alert):
         try:
             if self.plugins and self.rules:
                 return self.rules(alert, self.plugins)
         except Exception as e:
-            LOG.warning("Plug-in routing rules failed: %s" % str(e))
+            LOG.warning("Plugin routing rules failed: %s" % str(e))
 
         return self.plugins.values()
