@@ -629,10 +629,9 @@ def get_blackouts():
 @jsonp
 def create_blackout():
 
-    if request.json and 'environment' in request.json:
-        environment = request.json.get('environment', None) or ''
-    else:
-        return jsonify(status="error", message="must supply 'environment' as parameter"), 400
+    environment = request.json.get('environment', None)
+    if not environment:
+        return jsonify(status="error", message="Must supply non-empty 'environment' for blackouts."), 400
 
     resource = request.json.get("resource", None)
     service = request.json.get("service", None)
@@ -871,6 +870,9 @@ def update_user(user):
         email_verified = request.json.get('email_verified', None)
     else:
         return jsonify(status="error", message="Nothing to update, request was empty"), 400
+
+    if password and provider!='basic':
+        return jsonify(status="error", message="Can only change the password for Basic Auth users."), 400
 
     try:
         user = db.update_user(user, name, login, password, provider, text, email_verified)
