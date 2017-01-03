@@ -871,6 +871,9 @@ def update_user(user):
     else:
         return jsonify(status="error", message="Nothing to update, request was empty"), 400
 
+    if password and provider!='basic':
+        return jsonify(status="error", message="Can only change the password for Basic Auth users."), 400
+
     try:
         user = db.update_user(user, name, login, password, provider, text, email_verified)
     except Exception as e:
