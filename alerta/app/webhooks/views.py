@@ -302,7 +302,7 @@ def pagerduty():
         return jsonify(status="error", message="update PagerDuty incident status failed"), 500
 
 
-def parse_prometheus(alert):
+def parse_prometheus(alert, external_url):
 
     status = alert.get('status', 'firing')
 
@@ -334,6 +334,8 @@ def parse_prometheus(alert):
     except ValueError:
         timeout = None
 
+    if external_url:
+        annotations['externalUrl'] = external_url
     if 'generatorURL' in alert:
         annotations['moreInfo'] = '<a href="%s" target="_blank">Prometheus Graph</a>' % alert['generatorURL']
 
@@ -344,16 +346,15 @@ def parse_prometheus(alert):
         severity=severity,
         correlate=labels.pop('correlate').split(',') if 'correlate' in labels else None,
         service=labels.pop('service', '').split(','),
-        group=labels.pop('group', None),
+        group=labels.pop('job', 'Prometheus'),
         value=labels.pop('value', None),
         text=text,
         attributes=annotations,
-        origin='prometheus/' + labels.get('job', '-'),
+        origin='prometheus/' + labels.pop('monitor', '-'),
         event_type='prometheusAlert',
         create_time=create_time.astimezone(tz=pytz.UTC).replace(tzinfo=None),
         timeout=timeout,
         raw_data=alert,
-        customer=labels.pop('customer', None),
         tags=["%s=%s" % t for t in labels.items()]  # any labels left are used for tags
     )
 
@@ -366,9 +367,10 @@ def prometheus():
     alerts = []
     if request.json and 'alerts' in request.json:
         hook_started = webhook_timer.start_timer()
+        external_url = request.json.get('externalURL', None)
         for alert in request.json['alerts']:
             try:
-                incomingAlert = parse_prometheus(alert)
+                incomingAlert = parse_prometheus(alert, external_url)
             except ValueError as e:
                 webhook_timer.stop_timer(hook_started)
                 return jsonify(status="error", message=str(e)), 400
