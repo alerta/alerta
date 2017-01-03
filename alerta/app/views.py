@@ -629,10 +629,9 @@ def get_blackouts():
 @jsonp
 def create_blackout():
 
-    if request.json and 'environment' in request.json:
-        environment = request.json.get('environment', None) or ''
-    else:
-        return jsonify(status="error", message="must supply 'environment' as parameter"), 400
+    environment = request.json.get('environment', None)
+    if not environment:
+        return jsonify(status="error", message="Must supply non-empty 'environment' for blackouts."), 400
 
     resource = request.json.get("resource", None)
     service = request.json.get("service", None)
