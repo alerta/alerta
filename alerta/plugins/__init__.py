@@ -1,18 +1,21 @@
 
 import abc
-import pkg_resources
+import logging
+
+from collections import OrderedDict
+from six import add_metaclass
+from pkg_resources import iter_entry_points, load_entry_point, DistributionNotFound
 
 from alerta.app import app
 
-LOG = app.logger
+LOG = logging.getLogger('alerta.plugins')
 
 
-class RejectException(Exception):
-    """The alert was rejected because the format did not meet the required policy."""
-
-
+@add_metaclass(abc.ABCMeta)
 class PluginBase(object):
-    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, name=None):
+        self.name = name or self.__module__
 
     @abc.abstractmethod
     def pre_receive(self, alert):
@@ -24,20 +27,46 @@ class PluginBase(object):
         """Send an alert to another service or notify users."""
         return None
 
+    @abc.abstractmethod
+    def status_change(self, alert, status, text):
+        """Trigger integrations based on status changes."""
+        return None
 
-def load_plugins(namespace='alerta.plugins'):
 
-    plugins = []
-    for ep in list(pkg_resources.iter_entry_points(namespace)):
-        LOG.debug("Server plug-in '%s' found.", ep.name)
-        try:
-            if ep.name in app.config['PLUGINS']:
-                plugin = ep.load()
+class Plugins(object):
+
+    def __init__(self):
+        self.plugins = OrderedDict()
+        self.rules = None
+
+        self.register()
+
+    def register(self):
+
+        entry_points = {}
+        for ep in iter_entry_points('alerta.plugins'):
+            LOG.debug("Server plugin '%s' installed.", ep.name)
+            entry_points[ep.name] = ep
+
+        for name in app.config['PLUGINS']:
+            try:
+                plugin = entry_points[name].load()
                 if plugin:
-                    plugins.append(plugin())
-                    LOG.info("Server plug-in '%s' enabled.", ep.name)
-            else:
-                LOG.debug("Server plug-in '%s' not enabled in 'PLUGINS'.", ep.name)
+                    self.plugins[name] = plugin()
+                    LOG.info("Server plugin '%s' enabled.", name)
+            except Exception as e:
+                LOG.error("Server plugin '%s' could not be loaded: %s", name, e)
+        LOG.info("All server plugins enabled: %s" % ', '.join(self.plugins.keys()))
+        try:
+            self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')
+        except (DistributionNotFound, ImportError):
+            LOG.info('No plugin routing rules found. All plugins will be evaluated.')
+
+    def routing(self, alert):
+        try:
+            if self.plugins and self.rules:
+                return self.rules(alert, self.plugins)
         except Exception as e:
-            LOG.error("Server plug-in '%s' could not be loaded: %s", ep.name, e)
-    return plugins
+            LOG.warning("Plugin routing rules failed: %s" % str(e))
+
+        return self.plugins.values()

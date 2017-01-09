@@ -13,5 +13,5 @@ data = {
     "lastUsedTime": None
 }
 
-Mongo().db.keys.insert(data)
+Mongo()._db.keys.insert(data)
 

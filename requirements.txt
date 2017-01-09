@@ -1,15 +1,9 @@
 Flask
-Flask-Cors
+Flask-Cors>=3.0.2
 pymongo>=3.0
-kombu
-librabbitmq
-boto
 argparse
 requests
-requests-oauthlib
+python-dateutil
 pytz
-alerta
-gunicorn
 PyJWT
-cffi
 bcrypt

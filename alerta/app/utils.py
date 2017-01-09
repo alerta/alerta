@@ -1,40 +1,37 @@
-import json
+
 import datetime
-import requests
 import pytz
 import re
 
-from datetime import timedelta
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
 from functools import wraps
-from flask import make_response, request, current_app
-from functools import update_wrapper
+from flask import request, g, current_app
+
+try:
+    from urllib.parse import urljoin
+except ImportError:
+    from urlparse import urljoin
 
 from alerta.app import app, db
-from alerta.app.metrics import Timer
-from alerta.plugins import load_plugins, RejectException
+from alerta.app.exceptions import RejectException, RateLimit, BlackoutPeriod
+from alerta.app.metrics import Counter, Timer
+from alerta.plugins import Plugins
 
 LOG = app.logger
 
-plugins = load_plugins()
+plugins = Plugins()
 
+reject_counter = Counter('alerts', 'rejected', 'Rejected alerts', 'Number of rejected alerts')
+error_counter = Counter('alerts', 'errored', 'Errored alerts', 'Number of errored alerts')
 duplicate_timer = Timer('alerts', 'duplicate', 'Duplicate alerts', 'Total time to process number of duplicate alerts')
 correlate_timer = Timer('alerts', 'correlate', 'Correlated alerts', 'Total time to process number of correlated alerts')
 create_timer = Timer('alerts', 'create', 'Newly created alerts', 'Total time to process number of new alerts')
-
-
-class DateEncoder(json.JSONEncoder):
-    def default(self, obj):
-
-        if isinstance(obj, (datetime.date, datetime.datetime)):
-            return obj.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (obj.microsecond // 1000)
-        else:
-            return json.JSONEncoder.default(self, obj)
-
-
-# Over-ride jsonify to support Date Encoding
-def jsonify(*args, **kwargs):
-    return current_app.response_class(json.dumps(dict(*args, **kwargs), cls=DateEncoder,
-                                                 indent=None if request.is_xhr else 2), mimetype='application/json')
+pre_plugin_timer = Timer('plugins', 'prereceive', 'Pre-receive plugins', 'Total number of pre-receive plugins')
+post_plugin_timer = Timer('plugins', 'postreceive', 'Post-receive plugins', 'Total number of post-receive plugins')
 
 
 def jsonp(func):
@@ -52,6 +49,17 @@ def jsonp(func):
     return decorated
 
 
+def absolute_url(path=''):
+    return urljoin(request.base_url.rstrip('/'), app.config.get('BASE_URL', '') + path)
+
+
+def add_remote_ip(request, alert):
+    if request.headers.getlist("X-Forwarded-For"):
+       alert.attributes.update(ip=request.headers.getlist("X-Forwarded-For")[0])
+    else:
+       alert.attributes.update(ip=request.remote_addr)
+
+
 PARAMS_EXCLUDE = [
     '_',
     'callback',
@@ -60,11 +68,10 @@ PARAMS_EXCLUDE = [
 ]
 
 
-def parse_fields(r):
+def parse_fields(p):
 
+    params = p.copy()
     query_time = datetime.datetime.utcnow()
-
-    params = r.args.copy()
 
     for s in PARAMS_EXCLUDE:
         if s in params:
@@ -76,6 +83,9 @@ def parse_fields(r):
     else:
         query = dict()
 
+    if g.get('customer', None):
+        query['customer'] = g.get('customer')
+
     page = params.get('page', 1)
     if 'page' in params:
         del params['page']
@@ -84,7 +94,7 @@ def parse_fields(r):
     if params.get('from-date', None):
         try:
             from_date = datetime.datetime.strptime(params['from-date'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        except ValueError, e:
+        except ValueError as e:
             LOG.warning('Could not parse from-date query parameter: %s', e)
             raise
         from_date = from_date.replace(tzinfo=pytz.utc)
@@ -95,7 +105,7 @@ def parse_fields(r):
     if params.get('to-date', None):
         try:
             to_date = datetime.datetime.strptime(params['to-date'], '%Y-%m-%dT%H:%M:%S.%fZ')
-        except ValueError, e:
+        except ValueError as e:
             LOG.warning('Could not parse to-date query parameter: %s', e)
             raise
         to_date = to_date.replace(tzinfo=pytz.utc)
@@ -152,6 +162,16 @@ def parse_fields(r):
         query['$or'] = [{'_id': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}, {'lastReceiveId': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}]
         del params['id']
 
+    if 'fields' in params:
+        fields = dict([(field, True) for field in params.get('fields').split(',')])
+        fields.update({'resource': True, 'event': True, 'environment': True, 'createTime': True, 'receiveTime': True, 'lastReceiveTime': True})
+        del params['fields']
+    elif 'fields!' in params:
+        fields = dict([(field, False) for field in params.get('fields!').split(',')])
+        del params['fields!']
+    else:
+        fields = dict()
+
     for field in params:
         value = params.getlist(field)
         if len(value) == 1:
@@ -187,44 +207,70 @@ def parse_fields(r):
                     query[field] = dict()
                     query[field]['$in'] = value
 
-    return query, sort, group, page, limit, query_time
+    return query, fields, sort, group, page, limit, query_time
 
 
-def process_alert(incomingAlert):
+def process_alert(alert):
 
-    for plugin in plugins:
+    for plugin in plugins.routing(alert):
+        started = pre_plugin_timer.start_timer()
         try:
-            incomingAlert = plugin.pre_receive(incomingAlert)
-        except RejectException:
+            alert = plugin.pre_receive(alert)
+        except (RejectException, RateLimit):
+            reject_counter.inc()
+            pre_plugin_timer.stop_timer(started)
             raise
         except Exception as e:
-            raise RuntimeError('Error while running pre-receive plug-in: %s' % str(e))
-        if not incomingAlert:
-            raise SyntaxError('Plug-in pre-receive hook did not return modified alert')
+            error_counter.inc()
+            pre_plugin_timer.stop_timer(started)
+            raise RuntimeError("Error while running pre-receive plug-in '%s': %s" % (plugin.name, str(e)))
+        if not alert:
+            error_counter.inc()
+            pre_plugin_timer.stop_timer(started)
+            raise SyntaxError("Plug-in '%s' pre-receive hook did not return modified alert" % plugin.name)
+        pre_plugin_timer.stop_timer(started)
 
-    if db.is_blackout_period(incomingAlert):
-        raise RuntimeWarning('Suppressed during blackout period')
+    if db.is_blackout_period(alert):
+        raise BlackoutPeriod("Suppressed alert during blackout period")
 
     try:
-        if db.is_duplicate(incomingAlert):
+        if db.is_duplicate(alert):
             started = duplicate_timer.start_timer()
-            alert = db.save_duplicate(incomingAlert)
+            alert = db.save_duplicate(alert)
             duplicate_timer.stop_timer(started)
-        elif db.is_correlated(incomingAlert):
+        elif db.is_correlated(alert):
             started = correlate_timer.start_timer()
-            alert = db.save_correlated(incomingAlert)
+            alert = db.save_correlated(alert)
             correlate_timer.stop_timer(started)
         else:
             started = create_timer.start_timer()
-            alert = db.create_alert(incomingAlert)
+            alert = db.create_alert(alert)
             create_timer.stop_timer(started)
     except Exception as e:
+        error_counter.inc()
         raise RuntimeError(e)
 
-    for plugin in plugins:
+    for plugin in plugins.routing(alert):
+        started = post_plugin_timer.start_timer()
         try:
             plugin.post_receive(alert)
         except Exception as e:
-            raise RuntimeError('Error while running post-receive plug-in: %s' % str(e))
+            error_counter.inc()
+            post_plugin_timer.stop_timer(started)
+            raise RuntimeError("Error while running post-receive plug-in '%s': %s" % (plugin.name, str(e)))
+        post_plugin_timer.stop_timer(started)
 
     return alert
+
+
+def process_status(alert, status, text):
+
+    for plugin in plugins.routing(alert):
+        try:
+            plugin.status_change(alert, status, text)
+        except RejectException:
+            reject_counter.inc()
+            raise
+        except Exception as e:
+            error_counter.inc()
+            raise RuntimeError("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
