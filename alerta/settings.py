@@ -29,6 +29,8 @@ CUSTOMER_VIEWS = False
 OAUTH2_CLIENT_ID = None  # Google or GitHub OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = None
 ALLOWED_EMAIL_DOMAINS = ['*']
+
+GITHUB_URL = None
 ALLOWED_GITHUB_ORGS = ['*']
 
 GITLAB_URL = None
