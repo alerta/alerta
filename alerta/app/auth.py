@@ -379,9 +379,13 @@ def google():
 @app.route('/auth/github', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def github():
-    access_token_url = 'https://github.com/login/oauth/access_token'
-    users_api_url = 'https://api.github.com/user'
-    user_orgs_url = 'https://api.github.com/user/orgs'
+
+    if app.config['GITHUB_URL']:
+        access_token_url = app.config['GITHUB_URL'] + '/login/oauth/access_token'
+        github_api_url = app.config['GITHUB_URL'] + '/api/v3'
+    else:
+        access_token_url = 'https://github.com/login/oauth/access_token'
+        github_api_url = 'https://api.github.com'
 
     params = {
         'client_id': request.json['clientId'],
@@ -394,10 +398,10 @@ def github():
     r = requests.get(access_token_url, headers=headers, params=params)
     access_token = r.json()
 
-    r = requests.get(users_api_url, params=access_token)
+    r = requests.get(github_api_url+'/user', params=access_token)
     profile = r.json()
 
-    r = requests.get(user_orgs_url, params=access_token)  # list public and private Github orgs
+    r = requests.get(github_api_url+'/user/orgs', params=access_token)  # list public and private Github orgs
     organizations = [o['login'] for o in r.json()]
     login = profile['login']
 
