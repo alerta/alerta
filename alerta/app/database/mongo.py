@@ -551,11 +551,11 @@ class Database(object):
         }]
         if status != alert.status:
             history.append({
+                "id": alert.id,
                 "event": alert.event,
                 "status": status,
                 "type": "status",
                 "text": "new alert status change",
-                "id": alert.id,
                 "updateTime": now
             })
 
