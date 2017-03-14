@@ -5,6 +5,7 @@ import base64
 import hmac
 import hashlib
 import bcrypt
+import ssl
 
 from uuid import uuid4
 from six import string_types
@@ -49,8 +50,25 @@ class Database(object):
 
         mongo_uri = mongo_uri or app.config['MONGO_URI']  # use app config if no env var overrides
 
+        # Validate SSL options
+        to_verify = ['MONGO_SSL_CERT', 'MONGO_SSL_CA']
+        ssl_opts = { k: os.environ.get(k, False) or app.config.get(k, False) for k in to_verify }
+        missing_ssl_opts = { k:v for k, v in ssl_opts.items() if not v }
+
+        # All missing or none missing
+        if len(missing_ssl_opts) < len(ssl_opts) and len(missing_ssl_opts) != 0:
+            LOG.error('Missing option(s): {} '.format(", ".join(missing_ssl_opts)))
+            sys.exit(1)
+
+        ssl_args = {}
+        if len(missing_ssl_opts) == 0:
+            ssl_args = { 'ssl': True,
+                         'ssl_certfile': ssl_opts['MONGO_SSL_CERT'],
+                         'ssl_ca_certs': ssl_opts['MONGO_SSL_CA'],
+                         'ssl_cert_reqs': ssl.CERT_REQUIRED }
+
         try:
-            self.connection = MongoClient(mongo_uri, serverSelectionTimeoutMS=2000, connect=False)
+            self.connection = MongoClient(mongo_uri, serverSelectionTimeoutMS=2000, connect=False, **ssl_args)
         except Exception as e:
             LOG.error('MongoDB Client: %s : %s', mongo_uri, e)
             sys.exit(1)
