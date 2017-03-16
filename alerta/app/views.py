@@ -809,6 +809,7 @@ def get_users():
             domains=app.config['ALLOWED_EMAIL_DOMAINS'],
             orgs=app.config['ALLOWED_GITHUB_ORGS'],
             groups=app.config['ALLOWED_GITLAB_GROUPS'],
+            roles=app.config['ALLOWED_KEYCLOAK_ROLES'],
             time=datetime.datetime.utcnow()
         )
     else:

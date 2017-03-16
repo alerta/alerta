@@ -470,6 +470,52 @@ def gitlab():
     return jsonify(token=token)
 
 
+@app.route('/auth/keycloak', methods=['OPTIONS', 'POST'])
+@cross_origin(supports_credentials=True)
+def keycloak():
+
+    if not app.config['KEYCLOAK_URL']:
+        return jsonify(status="error", message="Must define KEYCLOAK_URL setting in server configuration."), 503
+
+    access_token_url = "{0}/auth/realms/{1}/protocol/openid-connect/token".format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM'])
+
+    payload = {
+        'client_id': request.json['clientId'],
+        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
+        'redirect_uri': request.json['redirectUri'],
+        'grant_type': 'authorization_code',
+        'code': request.json['code'],
+    }
+
+    try:
+        r = requests.post(access_token_url, data=payload)
+    except Exception:
+        return jsonify(status="error", message="Failed to call Keycloak API over HTTPS")
+    access_token = r.json()
+
+    headers = {"Authorization": "{0} {1}".format(access_token['token_type'], access_token['access_token'])}
+    r = requests.get("{0}/auth/realms/{1}/protocol/openid-connect/userinfo".format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM']), headers=headers)
+    profile = r.json()
+
+    roles = profile['roles']
+    login = profile['preferred_username']
+
+    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_KEYCLOAK_ROLES']
+            or set(app.config['ALLOWED_KEYCLOAK_ROLES']).intersection(set(roles))):
+        return jsonify(status="error", message="User %s is not authorized" % login), 403
+
+    if app.config['CUSTOMER_VIEWS']:
+        try:
+            customer = customer_match(login, roles)
+        except NoCustomerMatch:
+            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
+    else:
+        customer = None
+
+    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customer=customer, role=role(login))
+    return jsonify(token=token)
+
+
 @app.route('/userinfo', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @auth_required
