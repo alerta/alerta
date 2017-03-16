@@ -5,6 +5,7 @@ import base64
 import hmac
 import hashlib
 import bcrypt
+import ssl
 
 from uuid import uuid4
 from six import string_types
@@ -49,8 +50,24 @@ class Database(object):
 
         mongo_uri = mongo_uri or app.config['MONGO_URI']  # use app config if no env var overrides
 
+        # Validate SSL options
+        ssl_args = {}
+        ssl_cert = os.environ.get('MONGO_SSL_CERT', False) or app.config.get('MONGO_SSL_CERT', False)
+        ssl_ca = os.environ.get('MONGO_SSL_CA', False) or app.config.get('MONGO_SSL_CA', False)
+
+        if bool(ssl_cert) ^ bool(ssl_ca):
+            LOG.error('Mongo SSL setup failed - must define MONGO_SSL_CERT and MONGO_SSL_CA')
+            sys.exit(1)
+
+        if ssl_cert and ssl_ca:
+            ssl_args = {
+                'ssl': True,
+                'ssl_certfile': ssl_cert,
+                'ssl_ca_certs': ssl_ca,
+                'ssl_cert_reqs': ssl.CERT_REQUIRED }
+
         try:
-            self.connection = MongoClient(mongo_uri, serverSelectionTimeoutMS=2000, connect=False)
+            self.connection = MongoClient(mongo_uri, serverSelectionTimeoutMS=2000, connect=False, **ssl_args)
         except Exception as e:
             LOG.error('MongoDB Client: %s : %s', mongo_uri, e)
             sys.exit(1)
