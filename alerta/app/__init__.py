@@ -57,6 +57,15 @@ if 'GITLAB_URL' in os.environ:
 if 'ALLOWED_GITLAB_GROUPS' in os.environ:
     app.config['ALLOWED_GITLAB_GROUPS'] = os.environ['ALLOWED_GITLAB_GROUPS'].split(',')
 
+if 'KEYCLOAK_URL' in os.environ:
+    app.config['KEYCLOAK_URL'] = os.environ['KEYCLOAK_URL']
+
+if 'KEYCLOAK_REALM' in os.environ:
+    app.config['KEYCLOAK_REALM'] = os.environ['KEYCLOAK_REALM']
+
+if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
+    app.config['ALLOWED_KEYCLOAK_ROLES'] = os.environ['ALLOWED_KEYCLOAK_ROLES'].split(',')
+
 if 'CORS_ORIGINS' in os.environ:
     app.config['CORS_ORIGINS'] = os.environ['CORS_ORIGINS'].split(',')
 
