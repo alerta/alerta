@@ -319,9 +319,11 @@ class Database(object):
         pipeline = [
             {'$match': {"environment": alert.environment, "resource": alert.resource, "event": alert.event}},
             {'$unwind': '$history'},
-            {'$match': {
-                "history.updateTime": {'$gt': datetime.datetime.utcnow() - datetime.timedelta(seconds=window)}},
-                "history.type": "severity"
+            {
+                '$match': {
+                    "history.updateTime": {'$gt': datetime.datetime.utcnow() - datetime.timedelta(seconds=window)},
+                    "history.type": "severity"
+                }
             },
             {
                 '$group': {
