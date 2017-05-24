@@ -744,7 +744,7 @@ def parse_riemann(alert):
 
     return Alert(
         resource='%s-%s' % (alert['host'], alert['service']),
-        event=alert['service'],
+        event=alert.get('event', alert['service']),
         environment=alert.get('environment', 'Production'),
         severity=alert.get('state', 'unknown'),
         service=[alert['service']],
