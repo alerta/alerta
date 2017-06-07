@@ -180,6 +180,8 @@ def customer_match(user, groups):
     else:
         match = db.get_customer_by_match([user] + groups)
         if match:
+            if match == '*':
+                return None
             return match
         else:
             raise NoCustomerMatch
