@@ -1126,11 +1126,11 @@ class Database(object):
 
         LOG.debug('Save heartbeat to database: %s', update)
 
-        heartbeat_id = self.db.heartbeats.find_one({"origin": heartbeat.origin}, {})
+        heartbeat_id = self.db.heartbeats.find_one({"origin": heartbeat.origin, "customer": heartbeat.customer}, {})
 
         if heartbeat_id:
             response = self.db.heartbeats.find_one_and_update(
-                {"origin": heartbeat.origin},
+                {"origin": heartbeat.origin, "customer": heartbeat.customer},
                 update=update,
                 upsert=True,
                 return_document=ReturnDocument.AFTER

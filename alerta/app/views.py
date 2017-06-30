@@ -726,8 +726,8 @@ def create_heartbeat():
     except ValueError as e:
         return jsonify(status="error", message=str(e)), 400
 
-    if g.get('role', None) != 'admin':
-        heartbeat.customer = g.get('customer', None)
+    if g.get('customer', None):
+        heartbeat.customer = g.get('customer')
 
     try:
         heartbeat = db.save_heartbeat(heartbeat)
