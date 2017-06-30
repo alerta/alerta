@@ -123,64 +123,73 @@ def cloudwatch():
         return jsonify(status="error", message="insert or update of cloudwatch alarm failed"), 500
 
 
+# {
+#     "second_probe": {},
+#     "check_type": "HTTP",
+#     "first_probe": {},
+#     "tags": [],
+#     "check_id": 803318,
+#     "current_state": "DOWN",
+#     "check_params": {
+#         "url": "/",
+#         "encryption": false,
+#         "hostname": "api.alerta.io",
+#         "basic_auth": false,
+#         "port": 80,
+#         "header": "User-Agent:Pingdom.com_bot_version_1.4_(http://www.pingdom.com/)",
+#         "ipv6": false,
+#         "full_url": "http://api.alerta.io/"
+#     },
+#     "previous_state": "UP",
+#     "check_name": "Alerta API on OpenShift",
+#     "version": 1,
+#     "state_changed_timestamp": 1498859836,
+#     "importance_level": "HIGH",
+#     "state_changed_utc_time": "2017-06-30T21:57:16",
+#     "long_description": "This is a test message triggered by a user in My Pingdom",
+#     "description": "test"
+# }
+
+
+
 def parse_pingdom(check):
 
-    check = json.loads(check)
-
-    if check['action'] == 'assign':
-        return Alert(
-            resource=check['host'],
-            event=check['description'],
-            correlate=['up', 'down'],
-            environment='Production',
-            severity='critical',
-            service=[check['checkname']],
-            group='Network',
-            text='%s is %s.' % (check['checkname'], check['description']),
-            attributes={'incidentKey': check['incidentid']},
-            origin='Pingdom',
-            event_type='availabilityAlert',
-            raw_data=check,
-        )
-    elif check['action'] == 'notify_of_close':
-        return Alert(
-            resource=check['host'],
-            event=check['description'],
-            correlate=['up', 'down'],
-            environment='Production',
-            severity='normal',
-            service=[check['checkname']],
-            group='Network',
-            text='%s is %s.' % (check['checkname'], check['description']),
-            attributes={'incidentKey': check['incidentid']},
-            origin='Pingdom',
-            event_type='availabilityAlert',
-            raw_data=check,
-        )
+    if check['importance_level'] == 'HIGH':
+        severity = 'critical'
     else:
-        return Alert(
-            resource=check['host'],
-            event=check['description'],
-            correlate=['up', 'down', check['description']],
-            environment='Production',
-            severity='indeterminate',
-            service=[check['checkname']],
-            group='Network',
-            text='%s is %s.' % (check['checkname'], check['description']),
-            attributes={'incidentKey': check['incidentid']},
-            origin='Pingdom',
-            event_type='availabilityAlert',
-            raw_data=check,
-        )
+        severity = 'warning'
 
-@app.route('/webhooks/pingdom', methods=['OPTIONS', 'GET'])
+    if check['current_state'] == 'UP':
+        severity = 'normal'
+
+    return Alert(
+        resource=check['check_name'],
+        event=check['current_state'],
+        correlate=['UP', 'DOWN'],
+        environment='Production',
+        severity=severity,
+        service=[check['check_type']],
+        group='Network',
+        value=check['description'],
+        text='%s: %s' % (check['importance_level'], check['long_description']),
+        tags=check['tags'],
+        attributes={'checkId': check['check_id']},
+        origin='Pingdom',
+        event_type='availabilityAlert',
+        raw_data=check
+    )
+
+
+@app.route('/webhooks/pingdom', methods=['OPTIONS', 'POST'])
 @cross_origin()
 @auth_required
 def pingdom():
 
+    LOG.info(json.dumps(request.json))
+
     hook_started = webhook_timer.start_timer()
     try:
-        incomingAlert = parse_pingdom(request.args.get('message'))
+        incomingAlert = parse_pingdom(request.json)
     except ValueError as e:
         webhook_timer.stop_timer(hook_started)
         return jsonify(status="error", message=str(e)), 400
