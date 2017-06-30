@@ -39,6 +39,76 @@ class WebhooksTestCase(unittest.TestCase):
             'correlate': ['node_down', 'node_marginal', 'node_up']
         }
 
+        self.pingdom_down = """
+            {
+                "second_probe": {
+                    "ip": "185.39.146.214",
+                    "location": "Stockholm 2, Sweden",
+                    "ipv6": "2a02:752:100:e::4002"
+                },
+                "check_type": "HTTP",
+                "first_probe": {
+                    "ip": "85.93.93.123",
+                    "location": "Strasbourg 5, France",
+                    "ipv6": ""
+                },
+                "tags": [],
+                "check_id": 803318,
+                "current_state": "DOWN",
+                "check_params": {
+                    "url": "/",
+                    "encryption": false,
+                    "hostname": "api.alerta.io",
+                    "basic_auth": false,
+                    "port": 80,
+                    "header": "User-Agent:Pingdom.com_bot_version_1.4_(http://www.pingdom.com/)",
+                    "ipv6": false,
+                    "full_url": "http://api.alerta.io/"
+                },
+                "previous_state": "UP",
+                "check_name": "Alerta API on OpenShift",
+                "version": 1,
+                "state_changed_timestamp": 1498861543,
+                "importance_level": "HIGH",
+                "state_changed_utc_time": "2017-06-30T22:25:43",
+                "long_description": "HTTP Server Error 503 Service Unavailable",
+                "description": "HTTP Error 503"
+            }
+        """
+
+        self.pingdom_up = """
+            {
+                "second_probe": {},
+                "check_type": "HTTP",
+                "first_probe": {
+                    "ip": "185.70.76.23",
+                    "location": "Athens, Greece",
+                    "ipv6": ""
+                },
+                "tags": [],
+                "check_id": 803318,
+                "current_state": "UP",
+                "check_params": {
+                    "url": "/",
+                    "encryption": false,
+                    "hostname": "api.alerta.io",
+                    "basic_auth": false,
+                    "port": 80,
+                    "header": "User-Agent:Pingdom.com_bot_version_1.4_(http://www.pingdom.com/)",
+                    "ipv6": false,
+                    "full_url": "http://api.alerta.io/"
+                },
+                "previous_state": "DOWN",
+                "check_name": "Alerta API on OpenShift",
+                "version": 1,
+                "state_changed_timestamp": 1498861843,
+                "importance_level": "HIGH",
+                "state_changed_utc_time": "2017-06-30T22:30:43",
+                "long_description": "OK",
+                "description": "OK"
+            }
+        """
+
         self.pagerduty_alert = """
             {
               "messages": [
@@ -271,6 +341,28 @@ class WebhooksTestCase(unittest.TestCase):
     def tearDown(self):
 
         db.destroy_db()
+
+    def test_pingdom_webhook(self):
+
+        # http down
+        response = self.app.post('/webhooks/pingdom', data=self.pingdom_down, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'Alerta API on OpenShift')
+        self.assertEqual(data['alert']['event'], 'DOWN')
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['text'], 'HIGH: HTTP Server Error 503 Service Unavailable')
+        self.assertEqual(data['alert']['value'], 'HTTP Error 503')
+
+        # http up
+        response = self.app.post('/webhooks/pingdom', data=self.pingdom_up, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'Alerta API on OpenShift')
+        self.assertEqual(data['alert']['event'], 'UP')
+        self.assertEqual(data['alert']['severity'], 'normal')
+        self.assertEqual(data['alert']['text'], 'HIGH: OK')
+        self.assertEqual(data['alert']['value'], 'OK')
 
     def test_pagerduty_webhook(self):
 
