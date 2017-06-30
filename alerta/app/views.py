@@ -596,7 +596,6 @@ def get_services():
 @app.route('/blackouts', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @auth_required
-@admin_required
 @jsonp
 def get_blackouts():
 
@@ -625,7 +624,6 @@ def get_blackouts():
 @app.route('/blackout', methods=['OPTIONS', 'POST'])
 @cross_origin()
 @auth_required
-@admin_required
 @jsonp
 def create_blackout():
 
@@ -659,7 +657,6 @@ def create_blackout():
 @app.route('/blackout/<path:blackout>', methods=['OPTIONS', 'DELETE', 'POST'])
 @cross_origin()
 @auth_required
-@admin_required
 @jsonp
 def delete_blackout(blackout):
 
