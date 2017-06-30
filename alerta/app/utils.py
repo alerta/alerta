@@ -2,6 +2,7 @@
 import datetime
 import pytz
 import re
+from os.path import join as path_join
 
 try:
     import simplejson as json
@@ -12,9 +13,9 @@ from functools import wraps
 from flask import request, g, current_app
 
 try:
-    from urllib.parse import urljoin
+    from urllib.parse import urljoin, urlparse, urlunparse
 except ImportError:
-    from urlparse import urljoin
+    from urlparse import urljoin, urlparse, urlunparse
 
 from alerta.app import app, db
 from alerta.app.exceptions import RejectException, RateLimit, BlackoutPeriod
@@ -50,7 +51,13 @@ def jsonp(func):
 
 
 def absolute_url(path=''):
-    return urljoin(request.base_url.rstrip('/'), app.config.get('BASE_URL', '') + path)
+    # ensure that "path" (see urlparse result) part of url has both leading and trailing slashes
+    conf_base_url = urlunparse([(x if i != 2 else path_join('/', x, '')) for i, x in enumerate(urlparse(app.config.get('BASE_URL', '/')))])
+    try:
+        base_url = urljoin(request.base_url, conf_base_url)
+    except RuntimeError:  # Working outside of request context
+        base_url = conf_base_url
+    return urljoin(base_url, path.lstrip('/'))
 
 
 def add_remote_ip(request, alert):
@@ -274,3 +281,19 @@ def process_status(alert, status, text):
         except Exception as e:
             error_counter.inc()
             raise RuntimeError("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
+
+
+def deepmerge(first, second):
+    result = {}
+    for key in first.keys():
+        if key in second:
+            if isinstance(first[key], dict) and isinstance(second[key], dict):
+                result[key] = deepmerge(first[key], second[key])
+            else:
+                result[key] = second[key]
+        else:
+            result[key] = first[key]
+    for key, value in second.items():
+        if key not in first:  # already processed above
+            result[key] = value
+    return result
