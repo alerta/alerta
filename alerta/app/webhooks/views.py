@@ -433,7 +433,7 @@ def parse_stackdriver(notification):
         status = None
         create_time = None
 
-    return state, Alert(
+    return Alert(
         resource=incident['resource_name'],
         event=incident['condition_name'],
         environment='Production',
@@ -461,7 +461,7 @@ def stackdriver():
 
     hook_started = webhook_timer.start_timer()
     try:
-        incomingAlert = parse_stackdriver(request.json)
+        incomingAlert = parse_stackdriver(request.get_json(force=True))
     except ValueError as e:
         webhook_timer.stop_timer(hook_started)
         return jsonify(status="error", message=str(e)), 400
