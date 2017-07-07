@@ -196,6 +196,42 @@ class WebhooksTestCase(unittest.TestCase):
           }
         """
 
+        self.stackdriver_open = """
+        {
+            "incident": {
+                "incident_id": "f2e08c333dc64cb09f75eaab355393bz",
+                "resource_id": "i-4a266a2d",
+                "resource_name": "webserver-85",
+                "state": "open",
+                "started_at": 1499368214,
+                "ended_at": null,
+                "policy_name": "Webserver Health",
+                "condition_name": "CPU usage",
+                "url": "https://app.stackdriver.com/incidents/f2e08c333dc64cb09f75eaab355393bz",
+                "summary": "CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%"
+            },
+            "version": "1.1"
+        }
+        """
+
+        self.stackdriver_closed = """
+        {
+            "incident": {
+                "incident_id": "f2e08c333dc64cb09f75eaab355393bz",
+                "resource_id": "i-4a266a2d",
+                "resource_name": "webserver-85",
+                "state": "closed",
+                "started_at": 1499368214,
+                "ended_at": 1499368836,
+                "policy_name": "Webserver Health",
+                "condition_name": "CPU usage",
+                "url": "https://app.stackdriver.com/incidents/f2e08c333dc64cb09f75eaab355393bz",
+                "summary": "CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%"
+            },
+            "version": "1.1"
+        }
+        """
+
         self.prometheus_alert = """
             {
                 "alerts": [
@@ -408,6 +444,28 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['severity'], 'ok')
         self.assertEqual(data['alert']['text'], 'This is a description')
         self.assertEqual(data['alert']['value'], 1)
+
+    def test_stackdriver_webhook(self):
+
+        # open alert
+        response = self.app.post('/webhooks/stackdriver', data=self.stackdriver_open, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'webserver-85')
+        self.assertEqual(data['alert']['event'], 'CPU usage')
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['service'], ['Webserver Health'])
+        self.assertEqual(data['alert']['text'], 'CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%')
+
+        # closed alert
+        response = self.app.post('/webhooks/stackdriver', data=self.stackdriver_closed, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'webserver-85')
+        self.assertEqual(data['alert']['event'], 'CPU usage')
+        self.assertEqual(data['alert']['severity'], 'ok')
+        self.assertEqual(data['alert']['service'], ['Webserver Health'])
+        self.assertEqual(data['alert']['text'], 'CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%')
 
     def test_grafana_webhook(self):
 
