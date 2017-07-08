@@ -1339,6 +1339,26 @@ class Database(object):
 
         return True if response.deleted_count == 1 else False
 
+    def get_role_by_match(self, matches):
+        if matches[0] in app.config['ADMIN_USERS']:
+            return 'admin'
+
+        if isinstance(matches, string_types):
+            matches = [matches]
+
+        def find_role(match):
+            response = self.db.roles.find_one({"match": match}, projection={"role": 1, "_id": 0})
+            if response:
+                return response['role']
+
+        results = [find_role(m) for m in matches]
+        return next((r for r in results if r is not None), 'user')
+
+    def get_scopes(self, role):
+        role = self.db.roles.find_one({"role": role})
+        if role:
+            return role['scopes']
+
     def create_customer(self, customer, match):
 
         if self.get_customer_by_match(match):
@@ -1385,16 +1405,40 @@ class Database(object):
         response = self.db.customers.delete_one({"_id": customer})
         return True if response.deleted_count == 1 else False
 
+    @staticmethod
+    def key_type_to_scope(user, key_type):
+        if user in app.config['ADMIN_USERS']:
+            return ['admin', 'read', 'write']
+        if key_type == "read-write":
+            return ['read', 'write']
+        if key_type == "read-only":
+            return ['read']
+        return []
+
+    @staticmethod
+    def scope_to_key_type(scopes):
+        for scope in scopes:
+            if scope.startswith("write") or scope.startswith("admin"):
+                return "read-write"
+        return "read-only"
+
     def get_keys(self, query=None):
 
         responses = self.db.keys.find(query)
         keys = list()
         for response in responses:
+            if 'scopes' in response:
+                scopes = response['scopes']
+            else:
+                scopes = self.key_type_to_scope(response['user'], response.get('type', "read-write"))
+
+            key_type = self.scope_to_key_type(scopes)
             keys.append(
                 {
                     "user": response["user"],
                     "key": response["key"],
-                    "type": response.get("type", "read-write"),
+                    "scopes": scopes,
+                    "type": key_type,  # NOTE: 'type' is deprecated, replaced with 'scopes'
                     "text": response["text"],
                     "expireTime": response["expireTime"],
                     "count": response["count"],
@@ -1405,7 +1449,6 @@ class Database(object):
         return keys
 
     def get_user_keys(self, login):
-
         if not self.is_user_valid(login=login):
             return
 
@@ -1416,15 +1459,17 @@ class Database(object):
         key_info = self.db.keys.find_one({"key": key})
         if key_info:
             if key_info['expireTime'] > datetime.datetime.utcnow():
-                if 'type' not in key_info:
-                    key_info['type'] = "read-write"
+                if 'type' in key_info:
+                    key_info['scopes'] = self.key_type_to_scope(key_info['user'], key_info['type'])
+                elif 'scopes' not in key_info:
+                    key_info['scopes'] = ['read', 'write']
                 return key_info
             else:
-                return None
+                return
         else:
-            return None
+            return
 
-    def create_key(self, user, type='read-only', customer=None, text=None):
+    def create_key(self, user, scopes=None, type=None, customer=None, text=None):
 
         try:
             random = str(os.urandom(32)).encode('utf-8')  # python 3
@@ -1436,7 +1481,7 @@ class Database(object):
         data = {
             "user": user,
             "key": key,
-            "type": type,  # read-only or read-write
+            "scopes": scopes or self.key_type_to_scope(user, type) or [],
             "text": text,
             "expireTime": datetime.datetime.utcnow() + datetime.timedelta(days=app.config.get('API_KEY_EXPIRE_DAYS', 30)),
             "count": 0,

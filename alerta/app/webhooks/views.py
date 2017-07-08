@@ -13,7 +13,7 @@ from flask import g, request, jsonify
 from flask_cors import cross_origin
 
 from alerta.app import app, db
-from alerta.app.auth import auth_required
+from alerta.app.auth import permission
 from alerta.app.metrics import Timer
 from alerta.app.utils import absolute_url, process_alert, add_remote_ip
 from alerta.app.alert import Alert
@@ -89,7 +89,7 @@ def parse_notification(notification):
 
 @app.route('/webhooks/cloudwatch', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:webhooks')
 def cloudwatch():
 
     hook_started = webhook_timer.start_timer()
@@ -182,7 +182,7 @@ def parse_pingdom(check):
 
 @app.route('/webhooks/pingdom', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:webhooks')
 def pingdom():
 
     LOG.info(json.dumps(request.json))
@@ -269,7 +269,7 @@ def parse_pagerduty(message):
 
 @app.route('/webhooks/pagerduty', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:webhooks')
 def pagerduty():
 
     hook_started = webhook_timer.start_timer()
@@ -370,7 +370,7 @@ def parse_prometheus(alert, external_url):
 
 @app.route('/webhooks/prometheus', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:webhooks')
 def prometheus():
 
     alerts = []
@@ -456,7 +456,7 @@ def parse_stackdriver(notification):
 
 @app.route('/webhooks/stackdriver', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:webhooks')
 def stackdriver():
 
     hook_started = webhook_timer.start_timer()
@@ -519,7 +519,7 @@ def parse_serverdensity(alert):
 
 @app.route('/webhooks/serverdensity', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:webhooks')
 def serverdensity():
 
     hook_started = webhook_timer.start_timer()
@@ -591,7 +591,7 @@ def parse_newrelic(alert):
 
 @app.route('/webhooks/newrelic', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:webhooks')
 def newrelic():
 
     hook_started = webhook_timer.start_timer()
@@ -662,7 +662,7 @@ def parse_grafana(alert, match):
 
 @app.route('/webhooks/grafana', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:webhooks')
 def grafana():
 
     hook_started = webhook_timer.start_timer()
@@ -729,7 +729,7 @@ def grafana():
 
 @app.route('/webhooks/telegram', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:webhooks')
 def telegram():
 
     data = request.json
@@ -768,7 +768,7 @@ def parse_riemann(alert):
 
 @app.route('/webhooks/riemann', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:webhooks')
 def riemann():
 
     hook_started = webhook_timer.start_timer()

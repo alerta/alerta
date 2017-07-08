@@ -1,5 +1,5 @@
 from alerta.app import app, db
-from alerta.app.auth import auth_required
+from alerta.app.auth import permission
 from alerta.app.utils import jsonp, parse_fields
 from alerta.app.metrics import Timer
 
@@ -21,7 +21,7 @@ oembed_timer = Timer('oEmbed', 'request', 'oEmbed request', 'Total time to proce
 @app.route('/oembed', defaults={'format':'json'}, methods=['OPTIONS', 'GET'])
 @app.route('/oembed.<format>', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:oembed')
 @jsonp
 def oembed(format):
 

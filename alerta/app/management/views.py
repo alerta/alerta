@@ -7,7 +7,7 @@ from flask import request, Response, url_for, jsonify, render_template
 from flask_cors import cross_origin
 
 from alerta.app import app, db
-from alerta.app.auth import auth_required, admin_required
+from alerta.app.auth import permission
 from alerta.app.switch import Switch, SwitchState
 from alerta.app.metrics import Gauge, Counter, Timer
 from alerta import build
@@ -41,7 +41,7 @@ def management():
 
 @app.route('/management/manifest', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:management')
 def manifest():
 
     manifest = {
@@ -60,7 +60,7 @@ def manifest():
 
 @app.route('/management/properties', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('admin:management')
 def properties():
 
     properties = ''
@@ -76,8 +76,7 @@ def properties():
 
 @app.route('/management/switchboard', methods=['OPTIONS', 'GET', 'POST'])
 @cross_origin()
-@auth_required
-@admin_required
+@permission('admin:management')
 def switchboard():
 
     if request.method == 'POST':
@@ -130,7 +129,7 @@ def health_check():
 
 @app.route('/management/status', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:management')
 def status():
 
     total_alert_gauge.set(db.get_count())
@@ -156,7 +155,7 @@ def status():
 
 @app.route('/management/metrics', methods=['OPTIONS', 'GET'])
 @cross_origin()
-# @auth_required  # FIXME - prometheus only supports Authorization header with "Bearer" token
+# @permission('read:management')  # FIXME - prometheus only supports Authorization header with "Bearer" token
 def prometheus_metrics():
 
     total_alert_gauge.set(db.get_count())
