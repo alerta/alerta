@@ -24,6 +24,7 @@ MONGO_DATABASE = None  # can be used to override default database, above
 
 AUTH_REQUIRED = False
 ADMIN_USERS = []
+USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includes 'read'
 CUSTOMER_VIEWS = False
 
 OAUTH2_CLIENT_ID = None  # Google or GitHub OAuth2 client ID and secret

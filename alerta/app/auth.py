@@ -44,12 +44,10 @@ class Forbidden(Exception):
     pass
 
 
-def verify_api_key(key, method):
+def verify_api_key(key):
     key_info = db.is_key_valid(key)
     if not key_info:
         raise AuthError("API key '%s' is invalid" % key)
-    if method in ['POST', 'PUT', 'DELETE'] and key_info['type'] != 'read-write':
-        raise Forbidden("%s method requires 'read-write' API Key" % method)
     db.update_key(key)
     return key_info
 
@@ -63,11 +61,10 @@ def create_token(user, name, login, provider=None, customer=None, role='user'):
         'exp': datetime.utcnow() + timedelta(days=app.config['TOKEN_EXPIRE_DAYS']),
         'name': name,
         'login': login,
-        'provider': provider
+        'provider': provider,
+        'role': role,
+        'scope': ' '.join(scopes(role))
     }
-
-    if app.config['ADMIN_USERS']:
-        payload['role'] = role
 
     if app.config['CUSTOMER_VIEWS']:
         payload['customer'] = customer
@@ -87,87 +84,87 @@ def authenticate(message, status_code=401):
     return jsonify(status="error", message=message), status_code
 
 
-def auth_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
+def is_in_scope(scope):
+    if scope in g.scopes or scope.split(':')[0] in g.scopes:
+        return True
+    elif scope.startswith('read'):
+        return is_in_scope(scope.replace('read', 'write'))
+    elif scope.startswith('write'):
+        return is_in_scope(scope.replace('write', 'admin'))
+    else:
+        return False
 
-        key = request.args.get('api-key', None)
-        if key:
-            try:
-                ki = verify_api_key(key, request.method)
-            except AuthError as e:
-                return authenticate(str(e), 401)
-            except Forbidden as e:
-                return authenticate(str(e), 403)
-            except Exception as e:
-                return authenticate(str(e), 500)
-            g.user = ki['user']
-            g.customer = ki.get('customer', None)
-            g.role = role(ki['user'])
-            return f(*args, **kwargs)
 
-        auth_header = request.headers.get('Authorization', '')
+def permission(scope):
+    def decorated(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
 
-        m = re.match('Key (\S+)', auth_header)
-        if m:
-            key = m.group(1)
-            try:
-                ki = verify_api_key(key, request.method)
-            except AuthError as e:
-                return authenticate(str(e), 401)
-            except Forbidden as e:
-                return authenticate(str(e), 403)
-            except Exception as e:
-                return authenticate(str(e), 500)
-            g.user = ki['user']
-            g.customer = ki.get('customer', None)
-            g.role = role(ki['user'])
-            return f(*args, **kwargs)
+            auth_header = request.headers.get('Authorization', '')
+            m = re.match('Key (\S+)', auth_header)
+            key = m.group(1) if m else request.args.get('api-key', None)
 
-        m = re.match('Bearer (\S+)', auth_header)
-        if m:
-            token = m.group(1)
-            try:
-                payload = parse_token(token)
-            except DecodeError:
-                return authenticate('Token is invalid')
-            except ExpiredSignature:
-                return authenticate('Token has expired')
-            except InvalidAudience:
-                return authenticate('Invalid audience')
-            g.user = payload['login']
-            g.customer = payload.get('customer', None)
-            g.role = payload.get('role', None)
-            return f(*args, **kwargs)
+            if key:
+                try:
+                    ki = verify_api_key(key)
+                except AuthError as e:
+                    return authenticate(str(e), 401)
+                except Forbidden as e:
+                    return authenticate(str(e), 403)
+                except Exception as e:
+                    return authenticate(str(e), 500)
+                g.user = ki['user']
+                g.customer = ki.get('customer', None)
+                g.scopes = ki['scopes']
 
-        if not app.config['AUTH_REQUIRED']:
-            return f(*args, **kwargs)
+                if is_in_scope(scope):
+                    return f(*args, **kwargs)
+                else:
+                    return authenticate('Missing required scope: %s' % scope, 403)
 
-        return authenticate('Missing authorization API Key or Bearer Token')
+            auth_header = request.headers.get('Authorization', '')
+            m = re.match('Bearer (\S+)', auth_header)
+            token = m.group(1) if m else None
 
+            if token:
+                try:
+                    payload = parse_token(token)
+                except DecodeError:
+                    return authenticate('Token is invalid')
+                except ExpiredSignature:
+                    return authenticate('Token has expired')
+                except InvalidAudience:
+                    return authenticate('Invalid audience')
+                g.user = payload['login']
+                g.customer = payload.get('customer', None)
+                g.scopes = payload.get('scope', '').split(' ')
+
+                if is_in_scope(scope):
+                    return f(*args, **kwargs)
+                else:
+                    return authenticate('Missing required scope: %s' % scope, 403)
+
+            if not app.config['AUTH_REQUIRED']:
+                return f(*args, **kwargs)
+
+            return authenticate('Missing authorization API Key or Bearer Token')
+
+        return wrapped
     return decorated
 
 
-def admin_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-
-        if not app.config['AUTH_REQUIRED']:
-            return f(*args, **kwargs)
-
-        if not app.config['ADMIN_USERS']:
-            return f(*args, **kwargs)
-
-        if g.role != 'admin':
-            return authenticate('Admin required', 403)
-        else:
-            return f(*args, **kwargs)
-
-    return decorated
+def role(user, groups):
+    return db.get_role_by_match([user] + groups)
 
 
-def role(user):
-    return 'admin' if user in app.config['ADMIN_USERS'] else 'user'
+def scopes(role):
+    scopes = db.get_scopes(role)
+    if scopes:
+        return scopes
+    elif role == 'admin':
+        return ['admin', 'read', 'write']  # Note: 'admin' scope implicitly includes 'read' and 'write'
+    else:
+        return app.config['USER_DEFAULT_SCOPES']
 
 
 class NoCustomerMatch(KeyError):
@@ -175,7 +172,7 @@ class NoCustomerMatch(KeyError):
 
 
 def customer_match(user, groups):
-    if role(user) == 'admin':
+    if role(user, groups) == 'admin':
         return None
     else:
         match = db.get_customer_by_match([user] + groups)
@@ -226,7 +223,7 @@ def login():
     else:
         customer = None
 
-    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role(email))
+    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role(email, groups=[domain]))
     return jsonify(token=token)
 
 
@@ -268,7 +265,7 @@ def signup():
     else:
         customer = None
 
-    token = create_token(user['id'], user['name'], email, provider=provider, customer=customer, role=role(email))
+    token = create_token(user['id'], user['name'], email, provider=provider, customer=customer, role=role(email, groups=[domain]))
     return jsonify(token=token)
 
 
@@ -371,7 +368,7 @@ def google():
 
     try:
         token = create_token(profile['sub'], profile['name'], email, provider='google',
-                             customer=customer, role=role(email))
+                             customer=customer, role=role(email, groups=[email.split('@')[1]]))
     except KeyError:
         return jsonify(status="error", message="Google+ API is not enabled for this Client ID")
 
@@ -420,7 +417,7 @@ def github():
         customer = None
 
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github',
-                         customer=customer, role=role(login))
+                         customer=customer, role=role(login, groups=organizations))
     return jsonify(token=token)
 
 
@@ -468,7 +465,7 @@ def gitlab():
         customer = None
 
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab',
-                         customer=customer, role=role(login))
+                         customer=customer, role=role(login, groups))
     return jsonify(token=token)
 
 
@@ -514,13 +511,13 @@ def keycloak():
     else:
         customer = None
 
-    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customer=customer, role=role(login))
+    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customer=customer, role=role(login, groups=[]))
     return jsonify(token=token)
 
 
 @app.route('/userinfo', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:userinfo')
 def userinfo():
 
     token = request.headers.get('Authorization', '').replace('Bearer ', '')

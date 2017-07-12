@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from alerta.app import app, db
 from alerta.app.switch import Switch
-from alerta.app.auth import auth_required, admin_required
+from alerta.app.auth import permission, is_in_scope
 from alerta.app.utils import absolute_url, jsonp, parse_fields, process_alert, process_status, add_remote_ip
 from alerta.app.metrics import Timer
 from alerta.app.alert import Alert
@@ -55,7 +55,7 @@ def index():
 
 @app.route('/alerts', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:alerts')
 @jsonp
 def get_alerts():
 
@@ -143,7 +143,7 @@ def get_alerts():
 
 @app.route('/alerts/history', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:alerts')
 @jsonp
 def get_history():
 
@@ -177,7 +177,7 @@ def get_history():
 
 @app.route('/alert', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:alerts')
 @jsonp
 def receive_alert():
 
@@ -223,7 +223,7 @@ def receive_alert():
 
 @app.route('/alert/<id>', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:alerts')
 @jsonp
 def get_alert(id):
 
@@ -243,7 +243,7 @@ def get_alert(id):
 
 @app.route('/alert/<id>/status', methods=['OPTIONS', 'PUT', 'POST'])  # POST is deprecated
 @cross_origin()
-@auth_required
+@permission('write:alerts')
 @jsonp
 def set_status(id):
 
@@ -291,7 +291,7 @@ def set_status(id):
 
 @app.route('/alert/<id>/tag', methods=['OPTIONS', 'PUT', 'POST'])  # POST is deprecated
 @cross_origin()
-@auth_required
+@permission('write:alerts')
 @jsonp
 def tag_alert(id):
 
@@ -327,7 +327,7 @@ def tag_alert(id):
 
 @app.route('/alert/<id>/untag', methods=['OPTIONS', 'PUT', 'POST'])  # POST is deprecated
 @cross_origin()
-@auth_required
+@permission('write:alerts')
 @jsonp
 def untag_alert(id):
 
@@ -363,7 +363,7 @@ def untag_alert(id):
 
 @app.route('/alert/<id>/attributes', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@auth_required
+@permission('write:alerts')
 @jsonp
 def update_attributes(id):
 
@@ -401,8 +401,7 @@ def update_attributes(id):
 
 @app.route('/alert/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
 @cross_origin()
-@auth_required
-@admin_required
+@permission('admin:alerts')
 @jsonp
 def delete_alert(id):
 
@@ -424,7 +423,7 @@ def delete_alert(id):
 # Return severity and status counts
 @app.route('/alerts/count', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:alerts')
 @jsonp
 def get_counts():
 
@@ -463,7 +462,7 @@ def get_counts():
 @app.route('/alerts/top10', methods=['OPTIONS', 'GET'])
 @app.route('/alerts/top10/count', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:alerts')
 @jsonp
 def get_top10_count():
 
@@ -498,7 +497,7 @@ def get_top10_count():
 
 @app.route('/alerts/top10/flapping', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:alerts')
 @jsonp
 def get_top10_flapping():
 
@@ -533,7 +532,7 @@ def get_top10_flapping():
 
 @app.route('/environments', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:alerts')
 @jsonp
 def get_environments():
 
@@ -564,7 +563,7 @@ def get_environments():
 
 @app.route('/services', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:alerts')
 @jsonp
 def get_services():
 
@@ -595,7 +594,7 @@ def get_services():
 
 @app.route('/blackouts', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:blackouts')
 @jsonp
 def get_blackouts():
 
@@ -623,7 +622,7 @@ def get_blackouts():
 
 @app.route('/blackout', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:blackouts')
 @jsonp
 def create_blackout():
 
@@ -656,7 +655,7 @@ def create_blackout():
 
 @app.route('/blackout/<path:blackout>', methods=['OPTIONS', 'DELETE', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:blackouts')
 @jsonp
 def delete_blackout(blackout):
 
@@ -674,7 +673,7 @@ def delete_blackout(blackout):
 
 @app.route('/heartbeats', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:heartbeats')
 @jsonp
 def get_heartbeats():
 
@@ -714,7 +713,7 @@ def get_heartbeats():
 
 @app.route('/heartbeat', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:heartbeats')
 @jsonp
 def create_heartbeat():
 
@@ -738,7 +737,7 @@ def create_heartbeat():
 
 @app.route('/heartbeat/<id>', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:heartbeats')
 @jsonp
 def get_heartbeat(id):
 
@@ -759,8 +758,7 @@ def get_heartbeat(id):
 
 @app.route('/heartbeat/<id>', methods=['OPTIONS', 'DELETE', 'POST'])
 @cross_origin()
-@auth_required
-@admin_required
+@permission('admin:heartbeats')
 @jsonp
 def delete_heartbeat(id):
 
@@ -778,8 +776,7 @@ def delete_heartbeat(id):
 
 @app.route('/users', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
-@admin_required
+@permission('admin:users')
 @jsonp
 def get_users():
 
@@ -823,8 +820,7 @@ def get_users():
 
 @app.route('/user', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
-@admin_required
+@permission('admin:users')
 @jsonp
 def create_user():
 
@@ -851,8 +847,7 @@ def create_user():
 
 @app.route('/user/<user>', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@auth_required
-@admin_required
+@permission('admin:users')
 @jsonp
 def update_user(user):
    
@@ -882,8 +877,7 @@ def update_user(user):
 
 @app.route('/user/<user>', methods=['OPTIONS', 'DELETE', 'POST'])
 @cross_origin()
-@auth_required
-@admin_required
+@permission('admin:users')
 @jsonp
 def delete_user(user):
 
@@ -901,8 +895,7 @@ def delete_user(user):
 
 @app.route('/customers', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
-@admin_required
+@permission('admin:customers')
 @jsonp
 def get_customers():
 
@@ -930,8 +923,7 @@ def get_customers():
 
 @app.route('/customer', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
-@admin_required
+@permission('admin:customers')
 @jsonp
 def create_customer():
 
@@ -953,8 +945,7 @@ def create_customer():
 
 @app.route('/customer/<customer>', methods=['OPTIONS', 'DELETE', 'POST'])
 @cross_origin()
-@auth_required
-@admin_required
+@permission('admin:customers')
 @jsonp
 def delete_customer(customer):
 
@@ -972,11 +963,11 @@ def delete_customer(customer):
 
 @app.route('/keys', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@auth_required
+@permission('read:keys')
 @jsonp
 def get_keys():
 
-    if g.get('role', None) == 'admin':
+    if 'admin' in g.scopes or 'admin:keys' in g.scopes:
         try:
             keys = db.get_keys()
         except Exception as e:
@@ -1007,11 +998,11 @@ def get_keys():
 
 @app.route('/key', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@auth_required
+@permission('write:keys')
 @jsonp
 def create_key():
 
-    if g.get('role', None) == 'admin':
+    if 'admin' in g.scopes or 'admin:keys' in g.scopes:
         try:
             user = request.json.get('user', g.user)
             customer = request.json.get('customer', None)
@@ -1024,13 +1015,18 @@ def create_key():
         except AttributeError:
             return jsonify(status="error", message="Must supply API Key or Bearer Token when creating new API key"), 400
 
-    type = request.json.get("type", "read-only")
-    if type not in ['read-only', 'read-write']:
+    scopes = request.json.get("scopes", [])
+    for scope in scopes:
+        if not is_in_scope(scope):
+            return jsonify(status="error", message="Requested scope %s is beyond existing scopes: %s." % (scope, ','.join(g.scopes))), 403
+
+    type = request.json.get("type", None)
+    if type and type not in ['read-only', 'read-write']:
         return jsonify(status="error", message="API key 'type' must be 'read-only' or 'read-write'"), 400
 
     text = request.json.get("text", "API Key for %s" % user)
     try:
-        key = db.create_key(user, type, customer, text)
+        key = db.create_key(user, scopes=scopes, type=type, customer=customer, text=text)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
@@ -1039,8 +1035,7 @@ def create_key():
 
 @app.route('/key/<path:key>', methods=['OPTIONS', 'DELETE', 'POST'])
 @cross_origin()
-@auth_required
-@admin_required
+@permission('admin:keys')
 @jsonp
 def delete_key(key):
 

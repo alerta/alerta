@@ -26,7 +26,7 @@ class AuthTestCase(unittest.TestCase):
             'service': ['Quux']
         }
 
-        self.api_key = db.create_key('demo-key', type='read-write', text='demo-key')['key']
+        self.api_key = db.create_key('demo-key', scopes=['admin'], text='demo-key')['key']
 
         self.headers = {
             'Authorization': 'Key %s' % self.api_key,
