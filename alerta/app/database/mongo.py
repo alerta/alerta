@@ -1222,7 +1222,6 @@ class Database(object):
                 "login": login,
                 "createTime": user['createTime'],
                 "provider": user['provider'],
-                "role": 'admin' if login in app.config.get('ADMIN_USERS') else 'user',
                 "text": user.get('text', ""),
                 "email_verified": user.get('email_verified', False)
             }
@@ -1339,25 +1338,20 @@ class Database(object):
 
         return True if response.deleted_count == 1 else False
 
-    def get_role_by_match(self, matches):
+    def get_scopes_by_match(self, matches):
         if matches[0] in app.config['ADMIN_USERS']:
-            return 'admin'
+            return ['admin', 'read', 'write']
 
         if isinstance(matches, string_types):
             matches = [matches]
 
-        def find_role(match):
-            response = self.db.roles.find_one({"match": match}, projection={"role": 1, "_id": 0})
+        def find_scopes(match):
+            response = self.db.scopes.find_one({"match": match}, projection={"scopes": 1, "_id": 0})
             if response:
-                return response['role']
+                return response['scopes']
 
-        results = [find_role(m) for m in matches]
-        return next((r for r in results if r is not None), 'user')
-
-    def get_scopes(self, role):
-        role = self.db.roles.find_one({"role": role})
-        if role:
-            return role['scopes']
+        results = [find_scopes(m) for m in matches]
+        return next((r for r in results if r is not None), app.config['USER_DEFAULT_SCOPES'])
 
     def create_customer(self, customer, match):
 

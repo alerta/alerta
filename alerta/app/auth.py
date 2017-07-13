@@ -61,7 +61,7 @@ def verify_api_key(key):
     return key_info
 
 
-def create_token(user, name, login, provider=None, customer=None, role='user'):
+def create_token(user, name, login, provider, customer, scopes):
     payload = {
         'iss': request.url_root,
         'sub': user,
@@ -71,8 +71,7 @@ def create_token(user, name, login, provider=None, customer=None, role='user'):
         'name': name,
         'login': login,
         'provider': provider,
-        'role': role,
-        'scope': ' '.join(scopes(role))
+        'scope': ' '.join(scopes)
     }
 
     if app.config['CUSTOMER_VIEWS']:
@@ -162,18 +161,8 @@ def permission(scope):
     return decorated
 
 
-def role(user, groups):
-    return db.get_role_by_match([user] + groups)
-
-
-def scopes(role):
-    scopes = db.get_scopes(role)
-    if scopes:
-        return scopes
-    elif role == 'admin':
-        return ['admin', 'read', 'write']  # Note: 'admin' scope implicitly includes 'read' and 'write'
-    else:
-        return app.config['USER_DEFAULT_SCOPES']
+def scopes(user, groups):
+    return db.get_scopes_by_match([user] + groups)
 
 
 class NoCustomerMatch(KeyError):
@@ -181,7 +170,7 @@ class NoCustomerMatch(KeyError):
 
 
 def customer_match(user, groups):
-    if role(user, groups) == 'admin':
+    if 'admin' in scopes(user, groups):
         return None
     else:
         match = db.get_customer_by_match([user] + groups)
@@ -232,7 +221,7 @@ def login():
     else:
         customer = None
 
-    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role(email, groups=[domain]))
+    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, scopes=scopes(email, groups=[domain]))
     return jsonify(token=token)
 
 
@@ -274,7 +263,7 @@ def signup():
     else:
         customer = None
 
-    token = create_token(user['id'], user['name'], email, provider=provider, customer=customer, role=role(email, groups=[domain]))
+    token = create_token(user['id'], user['name'], email, provider, customer, scopes=scopes(email, groups=[domain]))
     return jsonify(token=token)
 
 
@@ -469,7 +458,7 @@ def google():
 
     try:
         token = create_token(profile['sub'], profile['name'], email, provider='google',
-                             customer=customer, role=role(email, groups=[email.split('@')[1]]))
+                             customer=customer, scopes=scopes(email, groups=[email.split('@')[1]]))
     except KeyError:
         return jsonify(status="error", message="Google+ API is not enabled for this Client ID")
 
@@ -518,7 +507,7 @@ def github():
         customer = None
 
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github',
-                         customer=customer, role=role(login, groups=organizations))
+                         customer=customer, scopes=scopes(login, groups=organizations))
     return jsonify(token=token)
 
 
@@ -566,7 +555,7 @@ def gitlab():
         customer = None
 
     token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab',
-                         customer=customer, role=role(login, groups))
+                         customer=customer, scopes=scopes(login, groups))
     return jsonify(token=token)
 
 
@@ -612,7 +601,7 @@ def keycloak():
     else:
         customer = None
 
-    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customer=customer, role=role(login, groups=[]))
+    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customer=customer, scopes=scopes(login, groups=[]))
     return jsonify(token=token)
 
 
