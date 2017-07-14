@@ -829,13 +829,14 @@ def create_user():
         login = request.json["login"]
         password = request.json["password"]
         provider = request.json.get("provider", "basic")
+        role = request.json.get("role", "user")
         text = request.json.get("text", "")
         email_verified = request.json.get("email_verified", False)
     else:
         return jsonify(status="error", message="Must supply user 'name', 'login' and 'password' as parameters"), 400
 
     try:
-        user = db.create_user(name, login, password, provider, text, email_verified)
+        user = db.create_user(name, login, password, provider, role, text, email_verified)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
@@ -856,6 +857,7 @@ def update_user(user):
         login = request.json.get('login', None)
         password = request.json.get('password', None)
         provider = request.json.get('provider', None)
+        role = request.json.get('role', None)
         text = request.json.get('text', None)
         email_verified = request.json.get('email_verified', None)
     else:
@@ -865,7 +867,7 @@ def update_user(user):
         return jsonify(status="error", message="Can only change the password for Basic Auth users."), 400
 
     try:
-        user = db.update_user(user, name, login, password, provider, text, email_verified)
+        user = db.update_user(user, name, login, password, provider, role, text, email_verified)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
     

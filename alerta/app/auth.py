@@ -235,9 +235,10 @@ def signup():
         domain = email.split('@')[1]
         password = request.json["password"]
         provider = request.json.get("provider", "basic")
+        role = 'admin' if email in app.config.get('ADMIN_USERS') else 'user'
         text = request.json.get("text", "")
         try:
-            user = db.create_user(name, email, password, provider, text, email_verified=False)
+            user = db.create_user(name, email, password, provider, role, text, email_verified=False)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
@@ -257,13 +258,13 @@ def signup():
 
     if app.config['CUSTOMER_VIEWS']:
         try:
-            customer = customer_match(email, groups=[domain])
+            customer = customer_match(email, groups=[role])
         except NoCustomerMatch:
             return jsonify(status="error", message="No customer lookup defined for user domain '%s'" % domain), 403
     else:
         customer = None
 
-    token = create_token(user['id'], user['name'], email, provider, customer, scopes=scopes(email, groups=[domain]))
+    token = create_token(user['id'], user['name'], email, provider, customer, scopes=scopes(email, groups=[role]))
     return jsonify(token=token)
 
 

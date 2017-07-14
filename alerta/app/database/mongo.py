@@ -1213,7 +1213,6 @@ class Database(object):
     def get_users(self, query=None, password=False):
 
         users = list()
-
         for user in self.db.users.find(query):
             login = user.get('login', None) or user.get('email', None)  # for backwards compatibility
             u = {
@@ -1222,6 +1221,7 @@ class Database(object):
                 "login": login,
                 "createTime": user['createTime'],
                 "provider": user['provider'],
+                "role": 'admin' if login in app.config.get('ADMIN_USERS') else user.get('role', 'user'),
                 "text": user.get('text', ""),
                 "email_verified": user.get('email_verified', False)
             }
@@ -1239,7 +1239,7 @@ class Database(object):
         if login:
             return bool(self.db.users.find_one({"login": login}))
 
-    def update_user(self, id, name=None, login=None, password=None, provider=None, text=None, email_verified=None):
+    def update_user(self, id, name=None, login=None, password=None, provider=None, role=None, text=None, email_verified=None):
 
         if not self.is_user_valid(id=id):
             return
@@ -1253,6 +1253,8 @@ class Database(object):
             data['password'] = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
         if provider:
             data['provider'] = provider
+        if role:
+            data['role'] = role
         if text:
             data['text'] = text
         if email_verified:
@@ -1263,7 +1265,7 @@ class Database(object):
         if response.matched_count > 0:
             return id
 
-    def create_user(self, name, login, password=None, provider="", text="", email_verified=False):
+    def create_user(self, name, login, password=None, provider="basic", role="user", text="", email_verified=False):
 
         if self.is_user_valid(login=login):
             return
@@ -1274,6 +1276,7 @@ class Database(object):
             "login": login,
             "createTime": datetime.datetime.utcnow(),
             "provider": provider,
+            "role": role,
             "text": text,
             "email_verified": email_verified
         }
@@ -1339,19 +1342,18 @@ class Database(object):
         return True if response.deleted_count == 1 else False
 
     def get_scopes_by_match(self, matches):
-        if matches[0] in app.config['ADMIN_USERS']:
-            return ['admin', 'read', 'write']
 
         if isinstance(matches, string_types):
             matches = [matches]
 
-        def find_scopes(match):
+        if matches[0] in app.config['ADMIN_USERS']:
+            return ['admin', 'read', 'write']
+
+        for match in matches:
             response = self.db.scopes.find_one({"match": match}, projection={"scopes": 1, "_id": 0})
             if response:
                 return response['scopes']
-
-        results = [find_scopes(m) for m in matches]
-        return next((r for r in results if r is not None), app.config['USER_DEFAULT_SCOPES'])
+        return app.config['USER_DEFAULT_SCOPES']
 
     def create_customer(self, customer, match):
 
@@ -1372,13 +1374,11 @@ class Database(object):
         if isinstance(matches, string_types):
             matches = [matches]
 
-        def find_customer(match):
+        for match in matches:
             response = self.db.customers.find_one({"match": match}, projection={"customer": 1, "_id": 0})
             if response:
                 return response['customer']
-
-        results = [find_customer(m) for m in matches]
-        return next((r for r in results if r is not None), None)
+        return
 
     def get_customers(self, query=None):
 
