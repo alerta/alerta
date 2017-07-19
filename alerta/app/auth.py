@@ -16,6 +16,7 @@ from flask_cors import cross_origin
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 from base64 import urlsafe_b64decode
 from uuid import uuid4
+
 try:
     import saml2
     import saml2.entity
@@ -61,7 +62,7 @@ def verify_api_key(key):
     return key_info
 
 
-def create_token(user, name, login, provider=None, customer=None, role='user'):
+def create_token(user, name, login, provider, customer, scopes):
     payload = {
         'iss': request.url_root,
         'sub': user,
@@ -71,8 +72,7 @@ def create_token(user, name, login, provider=None, customer=None, role='user'):
         'name': name,
         'login': login,
         'provider': provider,
-        'role': role,
-        'scope': ' '.join(scopes(role))
+        'scope': ' '.join(scopes)
     }
 
     if app.config['CUSTOMER_VIEWS']:
@@ -162,18 +162,8 @@ def permission(scope):
     return decorated
 
 
-def role(user, groups):
-    return db.get_role_by_match([user] + groups)
-
-
-def scopes(role):
-    scopes = db.get_scopes(role)
-    if scopes:
-        return scopes
-    elif role == 'admin':
-        return ['admin', 'read', 'write']  # Note: 'admin' scope implicitly includes 'read' and 'write'
-    else:
-        return app.config['USER_DEFAULT_SCOPES']
+def scopes(user, groups):
+    return db.get_scopes_by_match([user] + groups)
 
 
 class NoCustomerMatch(KeyError):
@@ -181,7 +171,7 @@ class NoCustomerMatch(KeyError):
 
 
 def customer_match(user, groups):
-    if role(user, groups) == 'admin':
+    if 'admin' in scopes(user, groups):
         return None
     else:
         match = db.get_customer_by_match([user] + groups)
@@ -232,7 +222,7 @@ def login():
     else:
         customer = None
 
-    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, role=role(email, groups=[domain]))
+    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, scopes=scopes(email, groups=[user['role']]))
     return jsonify(token=token)
 
 
@@ -246,9 +236,10 @@ def signup():
         domain = email.split('@')[1]
         password = request.json["password"]
         provider = request.json.get("provider", "basic")
+        role = 'admin' if email in app.config.get('ADMIN_USERS') else 'user'
         text = request.json.get("text", "")
         try:
-            user = db.create_user(name, email, password, provider, text, email_verified=False)
+            user = db.create_user(name, email, password, provider, role, text, email_verified=False)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
     else:
@@ -274,7 +265,7 @@ def signup():
     else:
         customer = None
 
-    token = create_token(user['id'], user['name'], email, provider=provider, customer=customer, role=role(email, groups=[domain]))
+    token = create_token(user['id'], user['name'], email, provider, customer, scopes=scopes(email, groups=[role]))
     return jsonify(token=token)
 
 
@@ -326,6 +317,202 @@ def verify_email(hash):
         return render_template('auth/verify_success.html', email=email)
     else:
         return render_template('auth/verify_failed.html')
+
+
+@app.route('/auth/google', methods=['OPTIONS', 'POST'])
+@cross_origin(supports_credentials=True)
+def google():
+    access_token_url = 'https://accounts.google.com/o/oauth2/token'
+    people_api_url = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect'
+
+    payload = {
+        'client_id': request.json['clientId'],
+        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
+        'redirect_uri': request.json['redirectUri'],
+        'grant_type': 'authorization_code',
+        'code': request.json['code'],
+    }
+
+    try:
+        r = requests.post(access_token_url, data=payload)
+    except Exception:
+        return jsonify(status="error", message="Failed to call Google API over HTTPS")
+    token = r.json()
+
+    if 'id_token' not in token:
+        return jsonify(status="error", message=token.get('error', "Invalid token"))
+
+    id_token = token['id_token'].split('.')[1].encode('ascii', 'ignore')
+    id_token += '=' * (4 - (len(id_token) % 4))
+    claims = json.loads(urlsafe_b64decode(id_token))
+
+    if claims.get('aud') != app.config['OAUTH2_CLIENT_ID']:
+        return jsonify(status="error", message="Token client audience is invalid"), 400
+
+    email = claims.get('email')
+    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
+            or email.split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']):
+        return jsonify(status="error", message="User %s is not authorized" % email), 403
+
+    headers = {'Authorization': 'Bearer ' + token['access_token']}
+    r = requests.get(people_api_url, headers=headers)
+    profile = r.json()
+
+    if app.config['CUSTOMER_VIEWS']:
+        try:
+            customer = customer_match(email, groups=[email.split('@')[1]])
+        except NoCustomerMatch:
+            return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
+    else:
+        customer = None
+
+    try:
+        token = create_token(profile['sub'], profile['name'], email, provider='google',
+                             customer=customer, scopes=scopes(email, groups=[email.split('@')[1]]))
+    except KeyError:
+        return jsonify(status="error", message="Google+ API is not enabled for this Client ID")
+
+    return jsonify(token=token)
+
+
+@app.route('/auth/github', methods=['OPTIONS', 'POST'])
+@cross_origin(supports_credentials=True)
+def github():
+
+    if app.config['GITHUB_URL']:
+        access_token_url = app.config['GITHUB_URL'] + '/login/oauth/access_token'
+        github_api_url = app.config['GITHUB_URL'] + '/api/v3'
+    else:
+        access_token_url = 'https://github.com/login/oauth/access_token'
+        github_api_url = 'https://api.github.com'
+
+    params = {
+        'client_id': request.json['clientId'],
+        'redirect_uri': request.json['redirectUri'],
+        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
+        'code': request.json['code']
+    }
+
+    headers = {'Accept': 'application/json'}
+    r = requests.get(access_token_url, headers=headers, params=params)
+    access_token = r.json()
+
+    r = requests.get(github_api_url+'/user', params=access_token)
+    profile = r.json()
+
+    r = requests.get(github_api_url+'/user/orgs', params=access_token)  # list public and private Github orgs
+    organizations = [o['login'] for o in r.json()]
+    login = profile['login']
+
+    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITHUB_ORGS']
+            or set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))):
+        return jsonify(status="error", message="User %s is not authorized" % login), 403
+
+    if app.config['CUSTOMER_VIEWS']:
+        try:
+            customer = customer_match(login, organizations)
+        except NoCustomerMatch:
+            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
+    else:
+        customer = None
+
+    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github',
+                         customer=customer, scopes=scopes(login, groups=organizations))
+    return jsonify(token=token)
+
+
+@app.route('/auth/gitlab', methods=['OPTIONS', 'POST'])
+@cross_origin(supports_credentials=True)
+def gitlab():
+
+    if not app.config['GITLAB_URL']:
+        return jsonify(status="error", message="Must define GITLAB_URL setting in server configuration."), 503
+
+    access_token_url = app.config['GITLAB_URL'] + '/oauth/token'
+    gitlab_api_url = app.config['GITLAB_URL'] + '/api/v3'
+
+    payload = {
+        'client_id': request.json['clientId'],
+        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
+        'redirect_uri': request.json['redirectUri'],
+        'grant_type': 'authorization_code',
+        'code': request.json['code'],
+    }
+
+    try:
+        r = requests.post(access_token_url, data=payload)
+    except Exception:
+        return jsonify(status="error", message="Failed to call Gitlab API over HTTPS")
+    access_token = r.json()
+
+    r = requests.get(gitlab_api_url+'/user', params=access_token)
+    profile = r.json()
+
+    r = requests.get(gitlab_api_url+'/groups', params=access_token)
+    groups = [g['path'] for g in r.json()]
+    login = profile['username']
+
+    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITLAB_GROUPS']
+            or set(app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))):
+        return jsonify(status="error", message="User %s is not authorized" % login), 403
+
+    if app.config['CUSTOMER_VIEWS']:
+        try:
+            customer = customer_match(login, groups)
+        except NoCustomerMatch:
+            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
+    else:
+        customer = None
+
+    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab',
+                         customer=customer, scopes=scopes(login, groups))
+    return jsonify(token=token)
+
+
+@app.route('/auth/keycloak', methods=['OPTIONS', 'POST'])
+@cross_origin(supports_credentials=True)
+def keycloak():
+
+    if not app.config['KEYCLOAK_URL']:
+        return jsonify(status="error", message="Must define KEYCLOAK_URL setting in server configuration."), 503
+
+    access_token_url = "{0}/auth/realms/{1}/protocol/openid-connect/token".format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM'])
+
+    payload = {
+        'client_id': request.json['clientId'],
+        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
+        'redirect_uri': request.json['redirectUri'],
+        'grant_type': 'authorization_code',
+        'code': request.json['code'],
+    }
+
+    try:
+        r = requests.post(access_token_url, data=payload)
+    except Exception:
+        return jsonify(status="error", message="Failed to call Keycloak API over HTTPS")
+    access_token = r.json()
+
+    headers = {"Authorization": "{0} {1}".format(access_token['token_type'], access_token['access_token'])}
+    r = requests.get("{0}/auth/realms/{1}/protocol/openid-connect/userinfo".format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM']), headers=headers)
+    profile = r.json()
+
+    roles = profile['roles']
+    login = profile['preferred_username']
+
+    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_KEYCLOAK_ROLES']
+            or set(app.config['ALLOWED_KEYCLOAK_ROLES']).intersection(set(roles))):
+        return jsonify(status="error", message="User %s is not authorized" % login), 403
+
+    if app.config['CUSTOMER_VIEWS']:
+        try:
+            customer = customer_match(login, roles)
+        except NoCustomerMatch:
+            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
+    else:
+        customer = None
+
+    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customer=customer, scopes=scopes(login, groups=[]))
+    return jsonify(token=token)
 
 
 if 'SAML2_CONFIG' in app.config:
@@ -408,7 +595,7 @@ def saml_response_from_idp():
     else:
         customer = None
 
-    token = create_token(email, name, email, provider='saml2', customer=customer, role=role(email, groups=groups))
+    token = create_token(email, name, email, provider='saml2', customer=customer, scopes=scopes(email, groups=groups))
     return _make_response({'status': 'ok', 'token': token}, 200)
 
 
@@ -418,202 +605,6 @@ def saml_metadata():
     response = make_response(str(edesc))
     response.headers['Content-Type'] = 'text/xml; charset=utf-8'
     return response
-
-
-@app.route('/auth/google', methods=['OPTIONS', 'POST'])
-@cross_origin(supports_credentials=True)
-def google():
-    access_token_url = 'https://accounts.google.com/o/oauth2/token'
-    people_api_url = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect'
-
-    payload = {
-        'client_id': request.json['clientId'],
-        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
-        'redirect_uri': request.json['redirectUri'],
-        'grant_type': 'authorization_code',
-        'code': request.json['code'],
-    }
-
-    try:
-        r = requests.post(access_token_url, data=payload)
-    except Exception:
-        return jsonify(status="error", message="Failed to call Google API over HTTPS")
-    token = r.json()
-
-    if 'id_token' not in token:
-        return jsonify(status="error", message=token.get('error', "Invalid token"))
-
-    id_token = token['id_token'].split('.')[1].encode('ascii', 'ignore')
-    id_token += '=' * (4 - (len(id_token) % 4))
-    claims = json.loads(urlsafe_b64decode(id_token))
-
-    if claims.get('aud') != app.config['OAUTH2_CLIENT_ID']:
-        return jsonify(status="error", message="Token client audience is invalid"), 400
-
-    email = claims.get('email')
-    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_EMAIL_DOMAINS']
-            or email.split('@')[1] in app.config['ALLOWED_EMAIL_DOMAINS']):
-        return jsonify(status="error", message="User %s is not authorized" % email), 403
-
-    headers = {'Authorization': 'Bearer ' + token['access_token']}
-    r = requests.get(people_api_url, headers=headers)
-    profile = r.json()
-
-    if app.config['CUSTOMER_VIEWS']:
-        try:
-            customer = customer_match(email, groups=[email.split('@')[1]])
-        except NoCustomerMatch:
-            return jsonify(status="error", message="No customer lookup defined for user %s" % email), 403
-    else:
-        customer = None
-
-    try:
-        token = create_token(profile['sub'], profile['name'], email, provider='google',
-                             customer=customer, role=role(email, groups=[email.split('@')[1]]))
-    except KeyError:
-        return jsonify(status="error", message="Google+ API is not enabled for this Client ID")
-
-    return jsonify(token=token)
-
-
-@app.route('/auth/github', methods=['OPTIONS', 'POST'])
-@cross_origin(supports_credentials=True)
-def github():
-
-    if app.config['GITHUB_URL']:
-        access_token_url = app.config['GITHUB_URL'] + '/login/oauth/access_token'
-        github_api_url = app.config['GITHUB_URL'] + '/api/v3'
-    else:
-        access_token_url = 'https://github.com/login/oauth/access_token'
-        github_api_url = 'https://api.github.com'
-
-    params = {
-        'client_id': request.json['clientId'],
-        'redirect_uri': request.json['redirectUri'],
-        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
-        'code': request.json['code']
-    }
-
-    headers = {'Accept': 'application/json'}
-    r = requests.get(access_token_url, headers=headers, params=params)
-    access_token = r.json()
-
-    r = requests.get(github_api_url+'/user', params=access_token)
-    profile = r.json()
-
-    r = requests.get(github_api_url+'/user/orgs', params=access_token)  # list public and private Github orgs
-    organizations = [o['login'] for o in r.json()]
-    login = profile['login']
-
-    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITHUB_ORGS']
-            or set(app.config['ALLOWED_GITHUB_ORGS']).intersection(set(organizations))):
-        return jsonify(status="error", message="User %s is not authorized" % login), 403
-
-    if app.config['CUSTOMER_VIEWS']:
-        try:
-            customer = customer_match(login, organizations)
-        except NoCustomerMatch:
-            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
-    else:
-        customer = None
-
-    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='github',
-                         customer=customer, role=role(login, groups=organizations))
-    return jsonify(token=token)
-
-
-@app.route('/auth/gitlab', methods=['OPTIONS', 'POST'])
-@cross_origin(supports_credentials=True)
-def gitlab():
-
-    if not app.config['GITLAB_URL']:
-        return jsonify(status="error", message="Must define GITLAB_URL setting in server configuration."), 503
-
-    access_token_url = app.config['GITLAB_URL'] + '/oauth/token'
-    gitlab_api_url = app.config['GITLAB_URL'] + '/api/v3'
-
-    payload = {
-        'client_id': request.json['clientId'],
-        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
-        'redirect_uri': request.json['redirectUri'],
-        'grant_type': 'authorization_code',
-        'code': request.json['code'],
-    }
-
-    try:
-        r = requests.post(access_token_url, data=payload)
-    except Exception:
-        return jsonify(status="error", message="Failed to call Gitlab API over HTTPS")
-    access_token = r.json()
-
-    r = requests.get(gitlab_api_url+'/user', params=access_token)
-    profile = r.json()
-
-    r = requests.get(gitlab_api_url+'/groups', params=access_token)
-    groups = [g['path'] for g in r.json()]
-    login = profile['username']
-
-    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_GITLAB_GROUPS']
-            or set(app.config['ALLOWED_GITLAB_GROUPS']).intersection(set(groups))):
-        return jsonify(status="error", message="User %s is not authorized" % login), 403
-
-    if app.config['CUSTOMER_VIEWS']:
-        try:
-            customer = customer_match(login, groups)
-        except NoCustomerMatch:
-            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
-    else:
-        customer = None
-
-    token = create_token(profile['id'], profile.get('name', None) or '@'+login, login, provider='gitlab',
-                         customer=customer, role=role(login, groups))
-    return jsonify(token=token)
-
-
-@app.route('/auth/keycloak', methods=['OPTIONS', 'POST'])
-@cross_origin(supports_credentials=True)
-def keycloak():
-
-    if not app.config['KEYCLOAK_URL']:
-        return jsonify(status="error", message="Must define KEYCLOAK_URL setting in server configuration."), 503
-
-    access_token_url = "{0}/auth/realms/{1}/protocol/openid-connect/token".format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM'])
-
-    payload = {
-        'client_id': request.json['clientId'],
-        'client_secret': app.config['OAUTH2_CLIENT_SECRET'],
-        'redirect_uri': request.json['redirectUri'],
-        'grant_type': 'authorization_code',
-        'code': request.json['code'],
-    }
-
-    try:
-        r = requests.post(access_token_url, data=payload)
-    except Exception:
-        return jsonify(status="error", message="Failed to call Keycloak API over HTTPS")
-    access_token = r.json()
-
-    headers = {"Authorization": "{0} {1}".format(access_token['token_type'], access_token['access_token'])}
-    r = requests.get("{0}/auth/realms/{1}/protocol/openid-connect/userinfo".format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM']), headers=headers)
-    profile = r.json()
-
-    roles = profile['roles']
-    login = profile['preferred_username']
-
-    if app.config['AUTH_REQUIRED'] and not ('*' in app.config['ALLOWED_KEYCLOAK_ROLES']
-            or set(app.config['ALLOWED_KEYCLOAK_ROLES']).intersection(set(roles))):
-        return jsonify(status="error", message="User %s is not authorized" % login), 403
-
-    if app.config['CUSTOMER_VIEWS']:
-        try:
-            customer = customer_match(login, roles)
-        except NoCustomerMatch:
-            return jsonify(status="error", message="No customer lookup defined for user %s" % login), 403
-    else:
-        customer = None
-
-    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customer=customer, role=role(login, groups=[]))
-    return jsonify(token=token)
 
 
 @app.route('/userinfo', methods=['OPTIONS', 'GET'])
