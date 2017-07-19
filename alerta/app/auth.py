@@ -221,7 +221,7 @@ def login():
     else:
         customer = None
 
-    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, scopes=scopes(email, groups=[domain]))
+    token = create_token(user['id'], user['name'], email, provider='basic', customer=customer, scopes=scopes(email, groups=[user['role']]))
     return jsonify(token=token)
 
 
@@ -258,7 +258,7 @@ def signup():
 
     if app.config['CUSTOMER_VIEWS']:
         try:
-            customer = customer_match(email, groups=[role])
+            customer = customer_match(email, groups=[domain])
         except NoCustomerMatch:
             return jsonify(status="error", message="No customer lookup defined for user domain '%s'" % domain), 403
     else:
@@ -398,7 +398,7 @@ def saml_response_from_idp():
     else:
         customer = None
 
-    token = create_token(email, name, email, provider='saml2', customer=customer, role=role(email, groups=groups))
+    token = create_token(email, name, email, provider='saml2', customer=customer, scopes=scopes(email, groups=groups))
     return _make_response({'status': 'ok', 'token': token}, 200)
 
 
