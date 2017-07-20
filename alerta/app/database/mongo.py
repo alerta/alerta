@@ -1363,11 +1363,12 @@ class Database(object):
         if matches[0] in app.config['ADMIN_USERS']:
             return ['admin', 'read', 'write']
 
+        scopes = list()
         for match in matches:
             response = self.db.perms.find_one({"match": match}, projection={"scopes": 1, "_id": 0})
             if response:
-                return response['scopes']
-        return app.config['USER_DEFAULT_SCOPES']
+                scopes.extend(response['scopes'])
+        return set(scopes) or app.config['USER_DEFAULT_SCOPES']
 
     def get_perms(self, query=None):
 
