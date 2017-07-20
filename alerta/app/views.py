@@ -895,6 +895,79 @@ def delete_user(user):
             return jsonify(status="error", message="not found"), 404
 
 
+@app.route('/perms', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission('read:perms')
+@jsonp
+def get_perms():
+
+    try:
+        perms = db.get_perms()
+    except Exception as e:
+        return jsonify(status="error", message=str(e)), 500
+
+    if perms:
+        return jsonify(
+            status="ok",
+            total=len(perms),
+            permissions=perms,
+            time=datetime.datetime.utcnow()
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            total=0,
+            permissions=[],
+            time=datetime.datetime.utcnow()
+        )
+
+
+@app.route('/perm', methods=['OPTIONS', 'POST'])
+@cross_origin()
+@permission('admin:perms')
+@jsonp
+def create_perm():
+
+    if request.json and 'scopes' in request.json and 'match' in request.json:
+        scopes = request.json["scopes"]
+        match = request.json["match"]
+
+        for s in scopes:
+            if not is_in_scope(s):
+                return jsonify(status="error", message="Requested scope %s is beyond existing scopes: %s." % (s, ','.join(g.scopes))), 403
+
+        try:
+            perm = db.create_perm(scopes, match)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
+    else:
+        return jsonify(status="error", message="Must supply user 'scope' and 'match' as parameters"), 400
+
+    if perm:
+        return jsonify(status="ok", id=perm['id'], permission=perm), 201, {'Location': absolute_url('/scope/' + perm['id'])}
+    else:
+        return jsonify(status="error", message="Permissions lookup for this match already exists"), 409
+
+
+@app.route('/perm/<perm>', methods=['OPTIONS', 'DELETE', 'POST'])
+@cross_origin()
+@permission('admin:perms')
+@jsonp
+def delete_perm(perm):
+
+    if request.method == 'DELETE' or (request.method == 'POST' and request.json['_method'] == 'delete'):
+        try:
+            response = db.delete_perm(perm)
+        except Exception as e:
+            return jsonify(status="error", message=str(e)), 500
+
+        if response:
+            return jsonify(status="ok")
+        else:
+            return jsonify(status="error", message="not found"), 404
+
+
 @app.route('/customers', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission('admin:customers')
