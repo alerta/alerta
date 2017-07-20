@@ -1341,6 +1341,20 @@ class Database(object):
 
         return True if response.deleted_count == 1 else False
 
+    def create_perm(self, scopes, match):
+
+        if bool(self.db.perms.find_one({"match": match})):
+            return
+
+        data = {
+            "_id": str(uuid4()),
+            "scopes": scopes,
+            "match": match
+        }
+        if self.db.perms.insert_one(data):
+            data['id'] = data.pop('_id')
+            return data
+
     def get_scopes_by_match(self, matches):
 
         if isinstance(matches, string_types):
@@ -1350,10 +1364,29 @@ class Database(object):
             return ['admin', 'read', 'write']
 
         for match in matches:
-            response = self.db.scopes.find_one({"match": match}, projection={"scopes": 1, "_id": 0})
+            response = self.db.perms.find_one({"match": match}, projection={"scopes": 1, "_id": 0})
             if response:
                 return response['scopes']
         return app.config['USER_DEFAULT_SCOPES']
+
+    def get_perms(self, query=None):
+
+        responses = self.db.perms.find(query)
+        perms = list()
+        for response in responses:
+            perms.append(
+                {
+                    "id": response["_id"],
+                    "scopes": response["scopes"],
+                    "match": response["match"]
+                }
+            )
+        return perms
+
+    def delete_perm(self, perm):
+
+        response = self.db.perms.delete_one({"_id": perm})
+        return True if response.deleted_count == 1 else False
 
     def create_customer(self, customer, match):
 
