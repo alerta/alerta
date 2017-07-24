@@ -67,7 +67,7 @@ class Database(object):
                 'ssl_cert_reqs': ssl.CERT_REQUIRED }
 
         try:
-            self.connection = MongoClient(mongo_uri, serverSelectionTimeoutMS=2000, connect=False, **ssl_args)
+            self.connection = MongoClient(mongo_uri, serverselectiontimeoutms=2000, connect=False, **ssl_args)
         except Exception as e:
             LOG.error('MongoDB Client: %s : %s', mongo_uri, e)
             sys.exit(1)
