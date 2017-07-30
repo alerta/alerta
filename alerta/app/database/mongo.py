@@ -64,7 +64,8 @@ class Database(object):
                 'ssl': True,
                 'ssl_certfile': ssl_cert,
                 'ssl_ca_certs': ssl_ca,
-                'ssl_cert_reqs': ssl.CERT_REQUIRED }
+                'ssl_cert_reqs': ssl.CERT_REQUIRED
+            }
 
         try:
             self.connection = MongoClient(mongo_uri, serverSelectionTimeoutMS=2000, connect=False, **ssl_args)
