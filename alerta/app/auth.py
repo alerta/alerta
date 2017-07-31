@@ -163,7 +163,7 @@ def permission(scope):
 
 
 def scopes(user, groups):
-    return db.get_scopes_by_match([user] + groups)
+    return db.get_scopes_by_match(user, groups)
 
 
 class NoCustomerMatch(KeyError):
@@ -511,7 +511,7 @@ def keycloak():
     else:
         customer = None
 
-    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customer=customer, scopes=scopes(login, groups=[]))
+    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customer=customer, scopes=scopes(login, groups=roles))
     return jsonify(token=token)
 
 

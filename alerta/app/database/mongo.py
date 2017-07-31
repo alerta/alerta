@@ -1355,12 +1355,9 @@ class Database(object):
             data['id'] = data.pop('_id')
             return data
 
-    def get_scopes_by_match(self, matches):
+    def get_scopes_by_match(self, login, matches):
 
-        if isinstance(matches, string_types):
-            matches = [matches]
-
-        if matches[0] in app.config['ADMIN_USERS']:
+        if login in app.config['ADMIN_USERS']:
             return ['admin', 'read', 'write']
 
         scopes = list()
