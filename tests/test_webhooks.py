@@ -232,7 +232,7 @@ class WebhooksTestCase(unittest.TestCase):
         }
         """
 
-        self.prometheus_alert = """
+        self.prometheus_v3_alert = """
             {
                 "alerts": [
                     {
@@ -278,6 +278,43 @@ class WebhooksTestCase(unittest.TestCase):
                 "receiver": "alerta",
                 "status": "firing",
                 "version": "3"
+            }
+        """
+
+        self.prometheus_v4_alert = """
+            {
+                "receiver": "alerta",
+                "status": "firing",
+                "alerts": [
+                    {
+                        "status": "firing",
+                        "labels": {
+                            "alertname": "thing_dead"
+                        },
+                        "annotations": {
+                            "description": "No things have been recorded for over 10 minutes. Something terrible is happening.",
+                            "severity": "critical",
+                            "summary": "No things for over 10 minutes"
+                        },
+                        "startsAt": "2017-08-03T15:17:37.804-04:00",
+                        "endsAt": "0001-01-01T00:00:00Z",
+                        "generatorURL": "http://somehost:9090/graph?g0.expr=sum%28irate%28messages_received_total%5B5m%5D%29%29+%3D%3D+0&g0.tab=0"
+                    }
+                ],
+                "groupLabels": {
+                    "alertname": "thing_dead"
+                },
+                "commonLabels": {
+                    "alertname": "thing_dead"
+                },
+                "commonAnnotations": {
+                    "description": "No things have been recorded for over 10 minutes. Something terrible is happening.",
+                    "severity": "critical",
+                    "summary": "No things for over 10 minutes"
+                },
+                "externalURL": "http://somehost:9093",
+                "version": "4",
+                "groupKey": "{}:{alertname=thing_dead}"
             }
         """
 
@@ -421,8 +458,8 @@ class WebhooksTestCase(unittest.TestCase):
 
     def test_prometheus_webhook(self):
 
-        # create alert
-        response = self.app.post('/webhooks/prometheus', data=self.prometheus_alert, headers=self.headers)
+        # create v3 alert
+        response = self.app.post('/webhooks/prometheus', data=self.prometheus_v3_alert, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], "host2")
@@ -431,6 +468,18 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['severity'], 'critical')
         self.assertEqual(data['alert']['timeout'], 600)
         self.assertEqual(data['alert']['createTime'], "2016-08-01T10:27:08.008Z")
+        self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+
+        # create v4 alert
+        response = self.app.post('/webhooks/prometheus', data=self.prometheus_v4_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], "n/a")
+        self.assertEqual(data['alert']['event'], "thing_dead")
+        self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['timeout'], 86400)
+        self.assertEqual(data['alert']['createTime'], "2017-08-03T19:17:37.804Z")
         self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
 
     def test_riemann_webhook(self):
