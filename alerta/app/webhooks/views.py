@@ -349,7 +349,7 @@ def parse_prometheus(alert, external_url):
         annotations['moreInfo'] = '<a href="%s" target="_blank">Prometheus Graph</a>' % alert['generatorURL']
 
     return Alert(
-        resource=labels.pop('exported_instance', None) or labels.pop('instance'),
+        resource=labels.pop('exported_instance', None) or labels.pop('instance', 'n/a'),
         event=labels.pop('alertname'),
         environment=labels.pop('environment', 'Production'),
         severity=severity,
