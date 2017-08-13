@@ -260,14 +260,14 @@ def set_status(id):
         return jsonify(status="error", message="not found", total=0, alert=None), 404
 
     status = request.json.get('status', None)
-    text = request.json.get('text', '')
+    text = request.json.get('text', None) or ''
 
     if not status:
         status_timer.stop_timer(status_started)
         return jsonify(status="error", message="must supply 'status' as parameter"), 400
 
     try:
-        process_status(alert, status, text)
+        alert, status, text = process_status(alert, status, text)
     except RejectException as e:
         status_timer.stop_timer(status_started)
         return jsonify(status="error", message=str(e)), 403
@@ -276,12 +276,12 @@ def set_status(id):
         return jsonify(status="error", message=str(e)), 500
 
     try:
-        alert = db.set_status(id=id, status=status, text=text)
+        success = db.set_status(id, status, text)
     except Exception as e:
         status_timer.stop_timer(status_started)
         return jsonify(status="error", message=str(e)), 500
 
-    if alert:
+    if success:
         status_timer.stop_timer(status_started)
         return jsonify(status="ok")
     else:
@@ -386,12 +386,12 @@ def update_attributes(id):
         return jsonify(status="error", message="must supply 'attributes' as parameter"), 400
 
     try:
-        alert = db.update_attributes(id, attributes)
+        success = db.update_attributes(id, attributes)
     except Exception as e:
         attrs_timer.stop_timer(attrs_started)
         return jsonify(status="error", message=str(e)), 500
 
-    if alert:
+    if success:
         attrs_timer.stop_timer(attrs_started)
         return jsonify(status="ok")
     else:
