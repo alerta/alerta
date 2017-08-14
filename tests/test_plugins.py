@@ -50,11 +50,13 @@ class PluginsTestCase(unittest.TestCase):
 
         plugins.plugins['test1'] = TestPlugin1()
         plugins.plugins['test2'] = TestPlugin2()
+        plugins.plugins['test3'] = TestPlugin3()
 
     def tearDown(self):
 
         del plugins.plugins['test1']
         del plugins.plugins['test2']
+        del plugins.plugins['test3']
 
         db.destroy_db()
 
@@ -101,7 +103,7 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['attributes']['baz'], 'quux')
         self.assertNotIn('abc', data['alert']['attributes'])
         self.assertEqual(data['alert']['attributes']['xyz'], 'down')
-        self.assertEqual(data['alert']['history'][-1]['text'], 'input-plugin1-plugin2')
+        self.assertEqual(data['alert']['history'][-1]['text'], 'input-plugin1-plugin3')
 
 
 class TestPlugin1(PluginBase):
@@ -133,11 +135,26 @@ class TestPlugin2(PluginBase):
         return alert
 
     def status_change(self, alert, status, text):
+        # alert.tags.extend(['skip?'])
+        status = 'skipped'
+        text = text + '-plugin2'
+        return # does not return alert, status, text
+
+
+class TestPlugin3(PluginBase):
+
+    def pre_receive(self, alert):
+        return alert
+
+    def post_receive(self, alert):
+        return alert
+
+    def status_change(self, alert, status, text):
         alert.tags.extend(['this', 'that', 'more'])
         alert.attributes['baz'] = 'quux'
         if alert.attributes['abc'] == 123:
             alert.attributes['abc'] = None
         alert.attributes['xyz'] = 'down'
         status = 'owned'
-        text = text + '-plugin2'
+        text = text + '-plugin3'
         return alert, status, text
