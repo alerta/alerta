@@ -9,6 +9,8 @@ except ImportError:
 from uuid import uuid4
 
 from alerta.app import app, db
+from alerta.plugins import PluginBase
+from alerta.app.utils import plugins
 
 
 class PluginsTestCase(unittest.TestCase):
@@ -28,7 +30,8 @@ class PluginsTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': [],  # alert will be rejected because service not defined
             'severity': 'warning',
-            'correlate': ['node_down', 'node_marginal', 'node_up']
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'tags': ['one', 'two']
         }
 
         self.accept_alert = {
@@ -37,14 +40,21 @@ class PluginsTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': ['Network'],  # alert will be accepted because service not defined
             'severity': 'warning',
-            'correlate': ['node_down', 'node_marginal', 'node_up']
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'tags': ['three', 'four']
         }
 
         self.headers = {
             'Content-type': 'application/json'
         }
 
+        plugins.plugins['test1'] = TestPlugin1()
+        plugins.plugins['test2'] = TestPlugin2()
+
     def tearDown(self):
+
+        del plugins.plugins['test1']
+        del plugins.plugins['test2']
 
         db.destroy_db()
 
@@ -63,3 +73,71 @@ class PluginsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
         self.assertRegexpMatches(data['id'], '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+
+    def test_status_update(self):
+
+        # create alert that will be accepted
+        response = self.app.post('/alert', data=json.dumps(self.accept_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+        self.assertRegexpMatches(data['id'], '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+        self.assertEqual(data['alert']['attributes']['aaa'], 'post1')
+
+        alert_id = data['id']
+
+        # ack alert
+        response = self.app.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack', 'text': 'input'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.app.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['attributes']['aaa'], 'post1')
+
+        # alert status, tags, attributes and history text modified by plugin1 & plugin2
+        self.assertEqual(data['alert']['status'], 'owned')
+        self.assertListEqual(data['alert']['tags'], ['three', 'four', 'this', 'that', 'the', 'other', 'more'])
+        self.assertEqual(data['alert']['attributes']['foo'], 'bar')
+        self.assertEqual(data['alert']['attributes']['baz'], 'quux')
+        self.assertNotIn('abc', data['alert']['attributes'])
+        self.assertEqual(data['alert']['attributes']['xyz'], 'down')
+        self.assertEqual(data['alert']['history'][-1]['text'], 'input-plugin1-plugin2')
+
+
+class TestPlugin1(PluginBase):
+
+    def pre_receive(self, alert):
+        alert.attributes['aaa'] = 'pre1'
+        return alert
+
+    def post_receive(self, alert):
+        alert.attributes['aaa'] = 'post1'
+        return alert
+
+    def status_change(self, alert, status, text):
+        alert.tags.extend(['this', 'that', 'the', 'other'])
+        alert.attributes['foo'] = 'bar'
+        alert.attributes['abc'] = 123
+        alert.attributes['xyz'] = 'up'
+        status = 'assign'
+        text = text + '-plugin1'
+        return alert, status, text
+
+
+class TestPlugin2(PluginBase):
+
+    def pre_receive(self, alert):
+        return alert
+
+    def post_receive(self, alert):
+        return alert
+
+    def status_change(self, alert, status, text):
+        alert.tags.extend(['this', 'that', 'more'])
+        alert.attributes['baz'] = 'quux'
+        if alert.attributes['abc'] == 123:
+            alert.attributes['abc'] = None
+        alert.attributes['xyz'] = 'down'
+        status = 'owned'
+        text = text + '-plugin2'
+        return alert, status, text

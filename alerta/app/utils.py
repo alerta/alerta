@@ -257,30 +257,49 @@ def process_alert(alert):
         error_counter.inc()
         raise RuntimeError(e)
 
+    updated = None
     for plugin in plugins.routing(alert):
         started = post_plugin_timer.start_timer()
         try:
-            plugin.post_receive(alert)
+            updated = plugin.post_receive(alert)
         except Exception as e:
             error_counter.inc()
             post_plugin_timer.stop_timer(started)
             raise RuntimeError("Error while running post-receive plug-in '%s': %s" % (plugin.name, str(e)))
+        if updated:
+            alert = updated
         post_plugin_timer.stop_timer(started)
+
+    if updated:
+        db.tag_alert(alert.id, alert.tags)
+        db.update_attributes(alert.id, alert.attributes)
 
     return alert
 
 
 def process_status(alert, status, text):
 
+    updated = None
     for plugin in plugins.routing(alert):
         try:
-            plugin.status_change(alert, status, text)
+            updated = plugin.status_change(alert, status, text)
         except RejectException:
             reject_counter.inc()
             raise
         except Exception as e:
             error_counter.inc()
             raise RuntimeError("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
+        if updated:
+            try:
+                alert, status, text = updated
+            except Exception:
+                alert = updated
+
+    if updated:
+        db.tag_alert(alert.id, alert.tags)
+        db.update_attributes(alert.id, alert.attributes)
+
+    return alert, status, text
 
 
 def deepmerge(first, second):
