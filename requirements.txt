@@ -1,4 +1,4 @@
-Flask
+Flask>=0.10.1
 Flask-Cors>=3.0.2
 pymongo>=3.0
 argparse

@@ -19,7 +19,7 @@ setuptools.setup(
     author_email='nick.satterly@theguardian.com',
     packages=setuptools.find_packages(exclude=['bin', 'tests']),
     install_requires=[
-        'Flask',
+        'Flask>=0.10.1',
         'Flask-Cors>=3.0.2',
         'pymongo>=3.0',
         'argparse',
