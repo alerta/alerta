@@ -8,19 +8,22 @@ except ImportError:
 
 from uuid import uuid4
 
-from alerta.app import app, db
+from alerta.app import create_app, db
 from alerta.plugins import PluginBase
-from alerta.app.utils import plugins
+from alerta.app import plugins
 
 
 class PluginsTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        app.config['TESTING'] = True
-        app.config['AUTH_REQUIRED'] = False
-        app.config['PLUGINS'] = ['reject']
-        self.app = app.test_client()
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': False,
+            'PLUGINS': ['reject']
+        }
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
 
         self.resource = str(uuid4()).upper()[:8]
 
@@ -58,19 +61,20 @@ class PluginsTestCase(unittest.TestCase):
         del plugins.plugins['test2']
         del plugins.plugins['test3']
 
-        db.destroy_db()
+        with self.app.app_context():
+            db.destroy()
 
     def test_reject_alert(self):
 
         # create alert that will be rejected
-        response = self.app.post('/alert', data=json.dumps(self.reject_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.reject_alert), headers=self.headers)
         self.assertEqual(response.status_code, 403)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'error')
         self.assertEqual(data['message'], '[POLICY] Alert must define a service')
 
         # create alert that will be accepted
-        response = self.app.post('/alert', data=json.dumps(self.accept_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.accept_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
@@ -79,7 +83,7 @@ class PluginsTestCase(unittest.TestCase):
     def test_status_update(self):
 
         # create alert that will be accepted
-        response = self.app.post('/alert', data=json.dumps(self.accept_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.accept_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
@@ -89,9 +93,9 @@ class PluginsTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # ack alert
-        response = self.app.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack', 'text': 'input'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack', 'text': 'input'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
-        response = self.app.get('/alert/' + alert_id)
+        response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['attributes']['aaa'], 'post1')

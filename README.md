@@ -1,4 +1,4 @@
-Alerta Release 4.9
+Alerta Release 5.0
 ==================
 
 [![Build Status](https://travis-ci.org/guardian/alerta.png)](https://travis-ci.org/guardian/alerta) [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
@@ -46,7 +46,7 @@ To install MongoDB on Debian/Ubuntu run::
 To install the Alerta server and client run::
 
     $ pip install alerta-server alerta
-    $ alertad
+    $ alertad run
 
 To install the web console run::
 
@@ -89,7 +89,7 @@ License
 -------
 
     Alerta monitoring system and console
-    Copyright 2012-2016 Guardian News & Media
+    Copyright 2012-2017 Guardian News & Media
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

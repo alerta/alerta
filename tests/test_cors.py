@@ -9,23 +9,28 @@ except ImportError:
 from flask_cors import CORS
 from flask_cors.extension import ACL_ORIGIN, ACL_ALLOW_HEADERS
 
-from alerta.app import app, db
+from alerta.app import create_app, db
 
 
 class AlertTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        app.config['TESTING'] = True
-        app.config['AUTH_REQUIRED'] = False
-        app.config['CORS_ORIGINS'] = ['http://localhost:5000', 'http://try.alerta.io']
-        app.config['CORS_ALLOWED_HEADERS'] = ['Content-Type', 'Authorization', 'X-PING-PONG']
-        self.app = app.test_client()
-        CORS(self.app.application, origins=app.config['CORS_ORIGINS'])
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': False,
+            'CORS_ORIGINS': ['http://localhost:5000', 'http://try.alerta.io'],
+            'CORS_ALLOWED_HEADERS': ['Content-Type', 'Authorization', 'X-PING-PONG']
+        }
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        CORS(self.client.application, origins=self.app.config['CORS_ORIGINS'])
 
     def tearDown(self):
 
-        db.destroy_db()
+        with self.app.app_context():
+            db.destroy()
 
     def test_cors_headers(self):
 
@@ -36,7 +41,7 @@ class AlertTestCase(unittest.TestCase):
         }
 
         # check Access-Control-Allow-Headers header
-        response = self.app.options('/alerts', headers=headers)
+        response = self.client.options('/alerts', headers=headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers.get(ACL_ALLOW_HEADERS), 'authorization, content-type')
 
@@ -45,6 +50,6 @@ class AlertTestCase(unittest.TestCase):
         }
 
         # check Access-Control-Allow-Origin header
-        response = self.app.get('/alerts', headers=headers)
+        response = self.client.get('/alerts', headers=headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers.get(ACL_ORIGIN), 'http://try.alerta.io')

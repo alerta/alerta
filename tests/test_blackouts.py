@@ -6,17 +6,21 @@ try:
 except ImportError:
     import json
 
-from alerta.app import app, db
+from alerta.app import create_app, db
+from alerta.app.models.key import ApiKey
 
 
 class BlackoutsTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        app.config['TESTING'] = True
-        app.config['AUTH_REQUIRED'] = True
-        app.config['CUSTOMER_VIEWS'] = True
-        self.app = app.test_client()
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': True,
+            'CUSTOMER_VIEWS': True
+        }
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
 
         self.alert = {
             'event': 'node_marginal',
@@ -27,12 +31,27 @@ class BlackoutsTestCase(unittest.TestCase):
             'correlate': ['node_down', 'node_marginal', 'node_up']
         }
 
-        self.admin_api_key = db.create_key('admin-api-key', type='read-write', text='demo-key')['key']
-        self.customer_api_key = db.create_key('customer-api-key', customer='Foo', type='read-write', text='demo-key')['key']
+        with self.app.app_context():
+            self.admin_api_key = db.create_key(
+                ApiKey(
+                    user='admin',
+                    scopes=['admin', 'read', 'write'],
+                    text='demo-key'
+                )
+            )['_id']
+            self.customer_api_key = db.create_key(
+                ApiKey(
+                    user='admin',
+                    scopes=['admin', 'read', 'write'],
+                    text='demo-key',
+                    customer='Foo'
+                )
+            )['_id']
 
     def tearDown(self):
 
-        db.destroy_db()
+        with self.app.app_context():
+            db.destroy()
 
     def test_suppress_alerts(self):
 
@@ -42,18 +61,18 @@ class BlackoutsTestCase(unittest.TestCase):
         }
 
         # create alert
-        response = self.app.post('/alert', data=json.dumps(self.alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
 
         # create blackout
-        response = self.app.post('/blackout', data=json.dumps({"environment": "Production"}), headers=self.headers)
+        response = self.client.post('/blackout', data=json.dumps({"environment": "Production"}), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
         blackout_id = data['id']
 
         # suppress alert
-        response = self.app.post('/alert', data=json.dumps(self.alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
         self.assertEqual(response.status_code, 202)
 
         self.headers = {
@@ -62,7 +81,7 @@ class BlackoutsTestCase(unittest.TestCase):
         }
 
         # create alert
-        response = self.app.post('/alert', data=json.dumps(self.alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
         self.assertEqual(response.status_code, 202)
 
 
@@ -71,5 +90,5 @@ class BlackoutsTestCase(unittest.TestCase):
             'Content-type': 'application/json'
         }
 
-        response = self.app.delete('/blackout/' + blackout_id, headers=self.headers)
+        response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)

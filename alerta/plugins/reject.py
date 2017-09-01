@@ -1,7 +1,11 @@
 import re
 import logging
 
-from alerta.app import app
+try:
+    from alerta.plugins.config import app  # alerta >= 5.0
+except ImportError:
+    from alerta.app import app  # alerta < 5.0
+
 from alerta.app.exceptions import RejectException
 from alerta.plugins import PluginBase
 
@@ -9,6 +13,7 @@ LOG = logging.getLogger('alerta.plugins.reject')
 
 ORIGIN_BLACKLIST_REGEX = [re.compile(x) for x in app.config['ORIGIN_BLACKLIST']]
 ALLOWED_ENVIRONMENTS = app.config.get('ALLOWED_ENVIRONMENTS', [])
+
 
 class RejectPolicy(PluginBase):
 

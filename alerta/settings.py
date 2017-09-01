@@ -11,16 +11,25 @@ DEBUG = False
 BASE_URL = ''
 LOGGER_NAME = 'alerta'
 LOG_FILE = None
+LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
 
 SECRET_KEY = 'changeme'
 
-QUERY_LIMIT = 10000  # maximum number of alerts returned by a single query
+QUERY_LIMIT = 1000
+DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single query
 HISTORY_LIMIT = 100  # cap the number of alert history entries
 
 # MongoDB
-DATABASE_ENGINE = 'mongo'
 MONGO_URI = 'mongodb://localhost:27017/monitoring'
 MONGO_DATABASE = None  # can be used to override default database, above
+
+# Postgres
+# DATABASE_DSN = 'postgresql://localhost:5432/monitoring'
+
+# Database backend (default: mongodb)
+DATABASE_ENGINE = 'mongodb'
+DATABASE_DSN = MONGO_URI
+DATABASE_NAME = MONGO_DATABASE
 
 AUTH_REQUIRED = False
 ADMIN_USERS = []
@@ -34,21 +43,17 @@ ALLOWED_EMAIL_DOMAINS = ['*']
 GITHUB_URL = None
 ALLOWED_GITHUB_ORGS = ['*']
 
-GITLAB_URL = None
+GITLAB_URL = 'https://gitlab.com'
 ALLOWED_GITLAB_GROUPS = ['*']
 
 KEYCLOAK_URL = None
 KEYCLOAK_REALM = None
 ALLOWED_KEYCLOAK_ROLES = ['*']
 
-# TODO: Add SAML default config
+# FIXME: Add SAML default config
 
 TOKEN_EXPIRE_DAYS = 14
 API_KEY_EXPIRE_DAYS = 365  # 1 year
-
-# switches
-AUTO_REFRESH_ALLOW = 'ON'  # set to 'OFF' to reduce load on API server by forcing clients to manually refresh
-SENDER_API_ALLOW = 'ON'    # set to 'OFF' to block clients from sending new alerts to API server
 
 CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
 CORS_ORIGINS = [
@@ -73,7 +78,12 @@ SEVERITY_MAP = {
     'trace': 8,
     'unknown': 9
 }
-DEFAULT_SEVERITY = 'indeterminate'
+DEFAULT_NORMAL_SEVERITY = 'normal'  # 'normal', 'ok', 'cleared'
+DEFAULT_PREVIOUS_SEVERITY = 'indeterminate'
+
+DEFAULT_TIMEOUT = 86400
+DEFAULT_ALERT_TIMEOUT = DEFAULT_TIMEOUT
+DEFAULT_HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
 
 BLACKOUT_DURATION = 3600  # default period = 1 hour
 
@@ -84,7 +94,7 @@ MAIL_FROM = 'your@gmail.com'  # replace with valid sender address
 SMTP_PASSWORD = ''  # password for MAIL_FROM account, Gmail uses application-specific passwords
 
 # Plug-ins
-PLUGINS = ['reject']
+PLUGINS = ['reject', 'blackout']
 
 ORIGIN_BLACKLIST = []
 #ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux

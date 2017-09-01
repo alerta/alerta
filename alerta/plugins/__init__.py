@@ -6,7 +6,6 @@ from collections import OrderedDict
 from six import add_metaclass
 from pkg_resources import iter_entry_points, load_entry_point, DistributionNotFound
 
-from alerta.app import app
 
 LOG = logging.getLogger('alerta.plugins')
 
@@ -39,9 +38,7 @@ class Plugins(object):
         self.plugins = OrderedDict()
         self.rules = None
 
-        self.register()
-
-    def register(self):
+    def register(self, app):
 
         entry_points = {}
         for ep in iter_entry_points('alerta.plugins'):

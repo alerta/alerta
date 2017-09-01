@@ -1,6 +1,6 @@
 
-BUILD_NUMBER = 'DEV'
-BUILD_DATE = 'unknown'
-BUILD_VCS_NUMBER = 'unknown'
-BUILT_BY = 'unknown'
-HOSTNAME = 'unknown'
+BUILD_NUMBER = 'PROD'
+BUILD_DATE = '2017-09-01'
+BUILD_VCS_NUMBER = '54911f28e0ce4cfcb528de4616f92829c1f19b0b'
+BUILT_BY = 'nsatterl'
+HOSTNAME = 'fdaa33ca.home'

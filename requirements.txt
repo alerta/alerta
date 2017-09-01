@@ -1,9 +1,14 @@
-Flask>=0.10.1
+Flask
 Flask-Cors>=3.0.2
+Flask-Compress
 pymongo>=3.0
-argparse
+elasticsearch
+psycopg2
 requests
 python-dateutil
 pytz
 PyJWT
 bcrypt
+cryptography
+raven
+blinker

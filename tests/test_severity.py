@@ -6,16 +6,19 @@ try:
 except ImportError:
     import json
 
-from alerta.app import app, db
+from alerta.app import create_app, db
 
 
 class SeverityTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        app.config['TESTING'] = True
-        app.config['AUTH_REQUIRED'] = False
-        self.app = app.test_client()
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': False
+        }
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
 
         correlate = ['node_down', 'node_marginal', 'node_up', 'node_pwned', 'node_trace']
 
@@ -104,52 +107,53 @@ class SeverityTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        db.destroy_db()
+        with self.app.app_context():
+            db.destroy()
 
     def test_inactive(self):
 
-        # prevSev=(DEFAULT_SEVERITY=indeterminate), sev=ok, status=closed, trend=noChange
-        response = self.app.post('/alert', data=json.dumps(self.ok_alert), headers=self.headers)
+        # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=ok, status=closed, trend=noChange
+        response = self.client.post('/alert', data=json.dumps(self.ok_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['repeat'], False)
-        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
+        self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'ok')
         self.assertEqual(data['alert']['status'], 'closed')
         self.assertEqual(data['alert']['trendIndication'], 'noChange')
 
-        # prevSev=(DEFAULT_SEVERITY=indeterminate), sev=informational, status=open, trend=lessSevere
-        response = self.app.post('/alert', data=json.dumps(self.inform_alert), headers=self.headers)
+        # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=informational, status=open, trend=lessSevere
+        response = self.client.post('/alert', data=json.dumps(self.inform_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['repeat'], False)
-        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
+        self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'informational')
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
-        # prevSev=(DEFAULT_SEVERITY=indeterminate), sev=debug, status=open, trend=lessSevere
-        response = self.app.post('/alert', data=json.dumps(self.debug_alert), headers=self.headers)
+        # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=debug, status=open, trend=lessSevere
+        response = self.client.post('/alert', data=json.dumps(self.debug_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['repeat'], False)
-        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
+        self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'debug')
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
     def test_active(self):
 
-        # prevSev=(DEFAULT_SEVERITY=indeterminate), sev=major, status=open, trend=moreSevere
-        response = self.app.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
+        # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=major, status=open, trend=moreSevere
+        response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['repeat'], False)
-        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
+        self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'major')
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
@@ -157,26 +161,26 @@ class SeverityTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # ack alert
-        response = self.app.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
-        response = self.app.get('/alert/' + alert_id)
+        response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'ack')
 
-        # prevSev=(DEFAULT_SEVERITY=indeterminate), sev=major, status=(current=ack), trend=moreSevere
-        response = self.app.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
+        # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=major, status=(current=ack), trend=moreSevere
+        response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 1)
         self.assertEqual(data['alert']['repeat'], True)
-        self.assertEqual(data['alert']['previousSeverity'], app.config['DEFAULT_SEVERITY'])
+        self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'major')
         self.assertEqual(data['alert']['status'], 'ack')
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
         # prevSev=major, sev=critical, status=open, trend=moreSevere
-        response = self.app.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
@@ -187,7 +191,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
         # prevSev=major, sev=critical, status=(current=open), trend=noChange
-        response = self.app.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 1)
@@ -198,15 +202,15 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
         # ack alert
-        response = self.app.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
-        response = self.app.get('/alert/' + alert_id)
+        response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'ack')
 
         # prevSev=critical, sev=warning, status=(current=ack), trend=lessSevere
-        response = self.app.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
@@ -217,7 +221,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
         # prevSev=warning, sev=normal, status=closed, trend=lessSevere
-        response = self.app.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
@@ -228,7 +232,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
         # prevSev=warning, sev=normal, status=closed, trend=noChange
-        response = self.app.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 1)
@@ -239,7 +243,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
         # prevSev=normal, sev=trace, status=open, trend=lessSevere
-        response = self.app.post('/alert', data=json.dumps(self.trace_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.trace_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
@@ -250,7 +254,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
         # prevSev=trace, sev=security, status=open, trend=moreSevere
-        response = self.app.post('/alert', data=json.dumps(self.auth_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.auth_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)

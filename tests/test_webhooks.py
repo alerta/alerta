@@ -8,17 +8,19 @@ try:
 except ImportError:
     import json
 
-from alerta.app import app, db
+from alerta.app import create_app, db
 
 
 class WebhooksTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        app.config['TESTING'] = True
-        app.config['AUTH_REQUIRED'] = False
-        self.app = app.test_client()
-
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': False
+        }
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
 
         self.trigger_alert = {
             'event': 'node_down',
@@ -413,12 +415,13 @@ class WebhooksTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        db.destroy_db()
+        with self.app.app_context():
+            db.destroy()
 
     def test_pingdom_webhook(self):
 
         # http down
-        response = self.app.post('/webhooks/pingdom', data=self.pingdom_down, headers=self.headers)
+        response = self.client.post('/webhooks/pingdom', data=self.pingdom_down, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'Alerta API on OpenShift')
@@ -428,7 +431,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['value'], 'HTTP Error 503')
 
         # http up
-        response = self.app.post('/webhooks/pingdom', data=self.pingdom_up, headers=self.headers)
+        response = self.client.post('/webhooks/pingdom', data=self.pingdom_up, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'Alerta API on OpenShift')
@@ -440,26 +443,38 @@ class WebhooksTestCase(unittest.TestCase):
     def test_pagerduty_webhook(self):
 
         # trigger alert
-        response = self.app.post('/alert', data=json.dumps(self.trigger_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.trigger_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         trigger_alert_id = data['id']
 
         # resolve alert
-        response = self.app.post('/alert', data=json.dumps(self.resolve_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.resolve_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         resolve_alert_id = data['id']
 
-        response = self.app.post('/webhooks/pagerduty', data=self.pagerduty_alert % (trigger_alert_id, resolve_alert_id), headers=self.headers)
+        response = self.client.post('/webhooks/pagerduty', data=self.pagerduty_alert % (trigger_alert_id, resolve_alert_id), headers=self.headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(db.get_alert(trigger_alert_id).status, "ack")
-        self.assertEqual(db.get_alert(resolve_alert_id).status, "closed")
+
+        # get alert
+        response = self.client.get('/alert/' + trigger_alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn(trigger_alert_id, data['alert']['id'])
+        self.assertEqual(data['alert']['status'], 'ack')
+
+        # get alert
+        response = self.client.get('/alert/' + resolve_alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn(resolve_alert_id, data['alert']['id'])
+        self.assertEqual(data['alert']['status'], 'closed')
 
     def test_prometheus_webhook(self):
 
         # create v3 alert
-        response = self.app.post('/webhooks/prometheus', data=self.prometheus_v3_alert, headers=self.headers)
+        response = self.client.post('/webhooks/prometheus', data=self.prometheus_v3_alert, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], "host2")
@@ -471,7 +486,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
 
         # create v4 alert
-        response = self.app.post('/webhooks/prometheus', data=self.prometheus_v4_alert, headers=self.headers)
+        response = self.client.post('/webhooks/prometheus', data=self.prometheus_v4_alert, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], "n/a")
@@ -485,7 +500,7 @@ class WebhooksTestCase(unittest.TestCase):
     def test_riemann_webhook(self):
 
         # create alert
-        response = self.app.post('/webhooks/riemann', data=self.riemann_alert, headers=self.headers)
+        response = self.client.post('/webhooks/riemann', data=self.riemann_alert, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'hostbob-servicejane')
@@ -497,7 +512,7 @@ class WebhooksTestCase(unittest.TestCase):
     def test_stackdriver_webhook(self):
 
         # open alert
-        response = self.app.post('/webhooks/stackdriver', data=self.stackdriver_open, headers=self.headers)
+        response = self.client.post('/webhooks/stackdriver', data=self.stackdriver_open, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'webserver-85')
@@ -507,7 +522,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['text'], 'CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%')
 
         # closed alert
-        response = self.app.post('/webhooks/stackdriver', data=self.stackdriver_closed, headers=self.headers)
+        response = self.client.post('/webhooks/stackdriver', data=self.stackdriver_closed, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'webserver-85')
@@ -519,36 +534,36 @@ class WebhooksTestCase(unittest.TestCase):
     def test_grafana_webhook(self):
 
         # state=alerting
-        response = self.app.post('/webhooks/grafana', data=self.grafana_alert_alerting, headers=self.headers)
+        response = self.client.post('/webhooks/grafana', data=self.grafana_alert_alerting, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], "ok")
 
-        alert_id = data['ids'][0]
+        alert_ids = data['ids']
 
         # state=ok
-        response = self.app.post('/webhooks/grafana', data=self.grafana_alert_ok, headers=self.headers)
+        response = self.client.post('/webhooks/grafana', data=self.grafana_alert_ok, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['status'], "ok")
+        self.assertEqual(data['ids'], alert_ids)
 
         # get alert
-        response = self.app.get('/alert/' + alert_id)
+        response = self.client.get('/alert/' + alert_ids[0])
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertIn(alert_id, data['alert']['id'])
+        self.assertIn(alert_ids[0], data['alert']['id'])
         self.assertEqual(data['alert']['status'], 'closed')
 
     def test_telegram_webhook(self):
 
         # telegram alert
-        response = self.app.post('/alert', data=json.dumps(self.telegram_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.telegram_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         telegram_alert_id = data['id']
 
         # command=/ack
-        response = self.app.post('/webhooks/telegram', data=self.telegram_ack % telegram_alert_id, headers=self.headers)
+        response = self.client.post('/webhooks/telegram', data=self.telegram_ack % telegram_alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], "ok")

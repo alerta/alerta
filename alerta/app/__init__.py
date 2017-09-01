@@ -1,122 +1,60 @@
-
-import os
-import sys
-import logging
-
 from flask import Flask
+from flask_compress import Compress
 from flask_cors import CORS
+from raven.contrib.flask import Sentry
 
-from alerta.app.alert import DateEncoder
+from alerta.app.config import Config
+from alerta.app.utils.key import ApiKeyHelper
+from alerta.app.models.severity_code import Severity
+from alerta.app.database.base import Database
+from alerta.app.exceptions import ExceptionHandlers
+from alerta.plugins import Plugins
 
-LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
+config = Config()
+severity = Severity()
 
-app = Flask(__name__, static_url_path='')
+cors = CORS()
+compress = Compress()
+handlers = ExceptionHandlers()
+key_helper = ApiKeyHelper()
 
-app.json_encoder = DateEncoder
+db = Database()
+sentry = Sentry()
+plugins = Plugins()
 
-app.config.from_object('alerta.settings')
-app.config.from_pyfile('/etc/alertad.conf', silent=True)
-app.config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
 
-if 'DEBUG' in os.environ:
-    app.debug = True
+def create_app(config_override=None, environment=None):
+    app = Flask(__name__)
+    app.config['ENVIRONMENT'] = environment
+    config.init_app(app)
+    app.config.update(config_override or {})
 
-if 'BASE_URL' in os.environ:
-    app.config['BASE_URL'] = os.environ['BASE_URL']
+    severity.init_app(app)
+    key_helper.init_app(app)
 
-if 'SECRET_KEY' in os.environ:
-    app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
+    cors.init_app(app)
+    compress.init_app(app)
+    handlers.register(app)
 
-if 'AUTH_REQUIRED' in os.environ:
-    app.config['AUTH_REQUIRED'] = True if os.environ['AUTH_REQUIRED'] == 'True' else False
+    db.init_db(app)
+    sentry.init_app(app)
 
-if 'ADMIN_USERS' in os.environ:
-    app.config['ADMIN_USERS'] = os.environ['ADMIN_USERS'].split(',')
+    from alerta.app.utils.format import DateEncoder
+    app.json_encoder = DateEncoder
 
-if 'CUSTOMER_VIEWS' in os.environ:
-    app.config['CUSTOMER_VIEWS'] = True if os.environ['CUSTOMER_VIEWS'] == 'True' else False
+    from alerta.app.views import api
+    app.register_blueprint(api)
 
-if 'OAUTH2_CLIENT_ID' in os.environ:
-    app.config['OAUTH2_CLIENT_ID'] = os.environ['OAUTH2_CLIENT_ID']
+    from alerta.app.webhooks import webhooks
+    app.register_blueprint(webhooks)
 
-if 'OAUTH2_CLIENT_SECRET' in os.environ:
-    app.config['OAUTH2_CLIENT_SECRET'] = os.environ['OAUTH2_CLIENT_SECRET']
+    from alerta.app.auth import auth
+    app.register_blueprint(auth)
 
-if 'ALLOWED_EMAIL_DOMAINS' in os.environ:
-    app.config['ALLOWED_EMAIL_DOMAINS'] = os.environ['ALLOWED_EMAIL_DOMAINS'].split(',')
+    from alerta.app.management import mgmt
+    app.register_blueprint(mgmt)
 
-if 'GITHUB_URL' in os.environ:
-    app.config['GITHUB_URL'] = os.environ['GITHUB_URL']
+    from alerta.app import plugins
+    plugins.register(app)
 
-if 'ALLOWED_GITHUB_ORGS' in os.environ:
-    app.config['ALLOWED_GITHUB_ORGS'] = os.environ['ALLOWED_GITHUB_ORGS'].split(',')
-
-if 'GITLAB_URL' in os.environ:
-    app.config['GITLAB_URL'] = os.environ['GITLAB_URL']
-
-if 'ALLOWED_GITLAB_GROUPS' in os.environ:
-    app.config['ALLOWED_GITLAB_GROUPS'] = os.environ['ALLOWED_GITLAB_GROUPS'].split(',')
-
-if 'KEYCLOAK_URL' in os.environ:
-    app.config['KEYCLOAK_URL'] = os.environ['KEYCLOAK_URL']
-
-if 'KEYCLOAK_REALM' in os.environ:
-    app.config['KEYCLOAK_REALM'] = os.environ['KEYCLOAK_REALM']
-
-if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
-    app.config['ALLOWED_KEYCLOAK_ROLES'] = os.environ['ALLOWED_KEYCLOAK_ROLES'].split(',')
-
-if 'CORS_ORIGINS' in os.environ:
-    app.config['CORS_ORIGINS'] = os.environ['CORS_ORIGINS'].split(',')
-
-if 'MAIL_FROM' in os.environ:
-    app.config['MAIL_FROM'] = os.environ['MAIL_FROM']
-
-if 'SMTP_PASSWORD' in os.environ:
-    app.config['SMTP_PASSWORD'] = os.environ['SMTP_PASSWORD']
-
-if 'PLUGINS' in os.environ:
-    app.config['PLUGINS'] = os.environ['PLUGINS'].split(',')
-
-# Setup logging
-from logging import getLogger
-loggers = [app.logger, getLogger('werkzeug'), getLogger('requests'), getLogger('flask_cors')]
-
-if app.debug:
-    for logger in loggers:
-        logger.setLevel(logging.DEBUG)
-
-if app.config['LOG_FILE']:
-    from logging.handlers import RotatingFileHandler
-    del app.logger.handlers[:]
-    logfile_handler = RotatingFileHandler(app.config['LOG_FILE'], maxBytes=100000, backupCount=2)
-    logfile_handler.setLevel(logging.DEBUG)
-    logfile_handler.setFormatter(logging.Formatter(LOG_FORMAT))
-    for logger in loggers:
-        logger.addHandler(logfile_handler)
-
-# Runtime config check
-if app.config['CUSTOMER_VIEWS'] and not app.config['AUTH_REQUIRED']:
-    raise RuntimeError('Must enable authentication to use customer views')
-
-if app.config['CUSTOMER_VIEWS'] and not app.config['ADMIN_USERS']:
-    raise RuntimeError('Customer views is enabled but there are no admin users')
-
-cors = CORS(app)
-
-from alerta.app.database.utils import Connection
-conn = Connection()
-db = conn.connect()
-
-if sys.version_info[0] == 2:
-    import views
-    import webhooks.views
-    import oembed.views
-    import management.views
-    import auth
-else:
-    from .views import *
-    from .webhooks.views import *
-    from .oembed.views import *
-    from .management.views import *
-    from .auth import *
+    return app

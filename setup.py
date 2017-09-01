@@ -1,12 +1,36 @@
 #!/usr/bin/env python
 
+import os
+import platform
+import subprocess
 import setuptools
+
+from datetime import datetime
 
 with open('VERSION') as f:
     version = f.read().strip()
 
 with open('README.md') as f:
     readme = f.read()
+
+try:
+    with open('alerta/build.py', 'w') as f:
+        build = """
+        BUILD_NUMBER = '{build_number}'
+        BUILD_DATE = '{date}'
+        BUILD_VCS_NUMBER = '{revision}'
+        BUILT_BY = '{user}'
+        HOSTNAME = '{host}'
+        """.format(
+            build_number=os.environ.get('BUILD_NUMBER', 'PROD'),
+            date=datetime.today().strftime('%Y-%m-%d'),
+            revision=subprocess.check_output(["git", "rev-parse", "HEAD"]).decode('utf-8').strip(),
+            user=os.environ.get('USER', 'unknown'),
+            host=platform.node()
+        ).replace('    ', '')
+        f.write(build)
+except Exception:
+    pass
 
 setuptools.setup(
     name='alerta-server',
@@ -33,10 +57,11 @@ setuptools.setup(
     zip_safe=False,
     entry_points={
         'console_scripts': [
-            'alertad = alerta.app.shell:main'
+            'alertad = alerta.app.commands:cli'
         ],
         'alerta.plugins': [
-            'reject = alerta.plugins.reject:RejectPolicy'
+            'reject = alerta.plugins.reject:RejectPolicy',
+            'blackout = alerta.plugins.blackout:BlackoutHandler'
         ]
     },
     keywords='alert monitoring system wsgi application api',

@@ -8,16 +8,19 @@ try:
 except ImportError:
     import json
 
-from alerta.app import app, db
+from alerta.app import create_app, db
 
 
 class AlertTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        app.config['TESTING'] = True
-        app.config['AUTH_REQUIRED'] = False
-        self.app = app.test_client()
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': False
+        }
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
 
         self.headers = {
             'Content-type': 'application/json'
@@ -38,14 +41,15 @@ class AlertTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        db.destroy_db()
+        with self.app.app_context():
+            db.destroy()
 
     def test_alert(self):
 
         # create alert
-        response = self.app.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
+        response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
-        response = self.app.get('/management/status', headers=self.headers)
+        response = self.client.get('/management/status', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         for metric in data['metrics']:
