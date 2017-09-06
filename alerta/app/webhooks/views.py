@@ -800,3 +800,100 @@ def riemann():
         return jsonify(status="ok", id=alert.id, alert=body), 201, {'Location': body['href']}
     else:
         return jsonify(status="error", message="insert or update of Riemann alert failed"), 500
+
+
+def parse_slack(data):
+    payload = json.loads(data['payload'])
+
+    user = payload.get('user', {}).get('name')
+    alert_key = payload.get('callback_id')
+    action = payload.get('actions', [{}])[0].get('value')
+
+    try:
+        alert = db.get_alert(id=alert_key)
+    except Exception as e:
+        LOG.error(u'User {} is doing a non existent action {}'.format(user, action))
+
+    if not alert:
+        raise ValueError(u'Alert {} not match'.format(alert_key))
+    elif not user:
+        raise ValueError(u'User {} not exist'.format(user))
+    elif not action:
+        raise ValueError(u'Non existent action {}'.format(action))
+
+    return alert, user, action
+
+
+def build_slack_response(alert, action, user, data):
+    response = json.loads(data['payload']).get('original_message', {})
+
+    actions = ['watch', 'unwatch']
+    message = (
+        u"User {user} is {action}ing alert {alert}" if action in actions else
+        u"The status of alert {alert} is {status} now!").format(
+        alert=alert.get_id(short=True), status=alert.status.capitalize(),
+        action=action, user=user
+    )
+
+    attachment_response = {
+        "fallback": message, "pretext": "Action done!", "color": "#808080",
+        "title": message, "title_link": absolute_url('/alert/' + alert.id)
+    }
+
+    # clear interactive buttons and add new attachment as response of action
+    if action not in actions:
+        attachments = response.get('attachments', [])
+        for attachment in attachments:
+            attachment.pop('actions', None)
+        attachments.append(attachment_response)
+        response['attachments'] = attachments
+        return response
+
+    # update the interactive button of all actions
+    next_action = actions[(actions.index(action) + 1) % len(actions)]
+    for attachment in response.get('attachments', []):
+        for attached_action in attachment.get('actions', []):
+            if action == attached_action.get('value'):
+                attached_action.update({
+                    'name': next_action, 'value': next_action,
+                    'text': next_action.capitalize()
+                })
+
+    return response
+
+
+@app.route('/webhooks/slack', methods=['OPTIONS', 'POST'])
+@cross_origin()
+@permission('write:webhooks')
+def slack():
+    hook_started = webhook_timer.start_timer()
+    try:
+        alert, user, action = parse_slack(request.form)
+    except ValueError as e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(stats="error", message="not found"), 404
+    except Exception as e:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=str(e)), 500
+
+    if action in ['open', 'ack', 'close']:
+        try:
+            alert = db.set_status(alert.id, action, u"status change via Slack by {}".format(user))
+        except RejectException as e:
+            webhook_timer.stop_timer(hook_started)
+            return jsonify(status="error", message=str(e)), 403
+        except Exception as e:
+            webhook_timer.stop_timer(hook_started)
+            return jsonify(status="error", message=str(e)), 500
+
+    elif action in ['watch', 'unwatch']:
+        db.untag_alert(alert.id, ["{}:{}".format(action, user), ])
+
+    else:
+        webhook_timer.stop_timer(hook_started)
+        return jsonify(status="error", message=u'Unsuported action'), 403
+
+    response = build_slack_response(alert, action, user, request.form)
+
+    webhook_timer.stop_timer(hook_started)
+    return jsonify(**response), 201
