@@ -51,7 +51,9 @@ class Alert(object):
         self.status = kwargs.get('status', None) or "unknown"
         self.service = kwargs.get('service', None) or list()
         self.group = kwargs.get('group', None) or "Misc"
-        self.value = kwargs.get('value', None) or "n/a"
+        self.value = kwargs.get('value', None) 
+        if self.value == None:
+            self.value = "n/a"
         self.text = kwargs.get('text', None) or ""
         self.tags = kwargs.get('tags', None) or list()
         self.attributes = kwargs.get('attributes', None) or dict()
