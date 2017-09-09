@@ -2,11 +2,11 @@
 from flask import jsonify, request, g
 from flask_cors import cross_origin
 
+from alerta.app import qb
 from alerta.app.auth.utils import permission
+from alerta.app.exceptions import ApiError
 from alerta.app.models.heartbeat import Heartbeat
 from alerta.app.utils.api import jsonp
-from alerta.app.exceptions import ApiError
-
 from . import api
 
 
@@ -53,8 +53,7 @@ def get_heartbeat(heartbeat_id):
 @permission('read:heartbeats')
 @jsonp
 def list_heartbeats():
-    customer = g.get('customer', None)
-    query = {'customer': customer}
+    query = qb.from_params(request.args)
     heartbeats = Heartbeat.find_all(query)
 
     if heartbeats:

@@ -2,10 +2,9 @@
 from flask import request, g, jsonify
 from flask_cors import cross_origin
 
-from alerta.app.models.alert import Alert
 from alerta.app.auth.utils import permission
 from alerta.app.exceptions import ApiError
-
+from alerta.app.models.alert import Alert
 from . import webhooks
 
 

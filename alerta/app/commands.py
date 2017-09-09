@@ -1,6 +1,5 @@
 
 import click
-
 from flask.cli import FlaskGroup
 
 from alerta.app import create_app

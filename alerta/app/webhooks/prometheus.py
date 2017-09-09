@@ -1,17 +1,15 @@
 
 from copy import copy
+
 import pytz
-
 from dateutil.parser import parse as parse_date
-
 from flask import request, g, jsonify
 from flask_cors import cross_origin
 
 from alerta.app.auth.utils import permission
+from alerta.app.exceptions import RejectException, ApiError
 from alerta.app.models.alert import Alert
 from alerta.app.utils.api import process_alert, add_remote_ip
-from alerta.app.exceptions import RejectException, ApiError
-
 from . import webhooks
 
 

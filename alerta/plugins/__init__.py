@@ -1,10 +1,10 @@
 
 import abc
 import logging
-
 from collections import OrderedDict
-from six import add_metaclass
+
 from pkg_resources import iter_entry_points, load_entry_point, DistributionNotFound
+from six import add_metaclass
 
 
 LOG = logging.getLogger('alerta.plugins')
@@ -38,6 +38,8 @@ class Plugins(object):
         self.plugins = OrderedDict()
         self.rules = None
 
+        app.init_app()  # fake app for plugin config
+
     def register(self, app):
 
         entry_points = {}
@@ -53,7 +55,7 @@ class Plugins(object):
                     LOG.info("Server plugin '%s' enabled.", name)
             except Exception as e:
                 LOG.error("Server plugin '%s' could not be loaded: %s", name, e)
-        LOG.info("All server plugins enabled: %s" % ', '.join(self.plugins.keys()))
+        LOG.info("All server plugins enabled: %s", ', '.join(self.plugins.keys()))
         try:
             self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')
         except (DistributionNotFound, ImportError):
@@ -64,6 +66,15 @@ class Plugins(object):
             if self.plugins and self.rules:
                 return self.rules(alert, self.plugins)
         except Exception as e:
-            LOG.warning("Plugin routing rules failed: %s" % str(e))
+            LOG.warning("Plugin routing rules failed: %s", str(e))
 
         return self.plugins.values()
+
+
+class FakeApp(object):
+
+    def init_app(self):
+        from alerta.app import config
+        self.config = config.get_user_config()
+
+app = FakeApp()  # used for plugin config only

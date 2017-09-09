@@ -5,7 +5,6 @@ from flask_cors import cross_origin
 from alerta.app.auth.utils import permission
 from alerta.app.models.alert import Alert
 from alerta.app.models.blackout import Blackout
-
 from . import webhooks
 
 

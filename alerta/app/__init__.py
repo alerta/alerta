@@ -1,3 +1,4 @@
+
 from flask import Flask
 from flask_compress import Compress
 from flask_cors import CORS
@@ -6,7 +7,7 @@ from raven.contrib.flask import Sentry
 from alerta.app.config import Config
 from alerta.app.utils.key import ApiKeyHelper
 from alerta.app.models.severity_code import Severity
-from alerta.app.database.base import Database
+from alerta.app.database.base import Database, QueryBuilder
 from alerta.app.exceptions import ExceptionHandlers
 from alerta.plugins import Plugins
 
@@ -19,6 +20,7 @@ handlers = ExceptionHandlers()
 key_helper = ApiKeyHelper()
 
 db = Database()
+qb = QueryBuilder()
 sentry = Sentry()
 plugins = Plugins()
 
@@ -37,6 +39,7 @@ def create_app(config_override=None, environment=None):
     handlers.register(app)
 
     db.init_db(app)
+    qb.init_app(app)
     sentry.init_app(app)
 
     from alerta.app.utils.format import DateEncoder

@@ -18,22 +18,10 @@ Related projects can be found on the Alerta Org Repo at <https://github.com/aler
 Requirements
 ------------
 
-The only mandatory dependency is MongoDB. Everything else is optional.
+The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 
 - MongoDB version 3.x
-
-Optional
---------
-
-A messaging transport that supports AMQP is required *if* it is wanted to send notifications
-to alert subscribers. It is recommended to use RabbitMQ, but Redis and even MongoDB have been
-tested and shown to work.
-
-- RabbitMQ
-- Redis
-- MongoDB
-
-Note: The default settings use MongoDB so that no additional configuration is required.
+- Postgres version 9.5 or better
 
 Installation
 ------------
@@ -70,6 +58,16 @@ Documentation
 -------------
 
 More information on configuration and other aspects of alerta can be found at <http://docs.alerta.io>
+
+Development
+-----------
+
+To run in development mode and report errors to [Sentry](https://sentry.io):
+
+    $ export FLASK_APP=alerta/api.py
+    $ export DATABASE_URL=postgres://localhost:5432/alerta5  # => OR mongodb://localhost:27017/alerta5
+    $ export SENTRY_DSN=https://8b56098250544fb78b9578d8af2a7e13:fa9d628da9c4459c922293db72a3203f@sentry.io/153768
+    $ flask run --debugger --port 8080 --with-threads --reload
 
 Tests
 -----

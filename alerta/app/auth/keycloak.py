@@ -1,14 +1,11 @@
 
 import requests
-
 from flask import current_app, request, jsonify
 from flask_cors import cross_origin
 
+from alerta.app.auth.utils import is_authorized, create_token
 from alerta.app.exceptions import ApiError, NoCustomerMatch
 from alerta.app.models.customer import Customer
-
-from alerta.app.auth.utils import is_authorized, create_token
-
 from . import auth
 
 

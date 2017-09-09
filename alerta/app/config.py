@@ -1,6 +1,6 @@
 
-import os
 import logging
+import os
 
 
 class Config(object):
@@ -32,6 +32,16 @@ class Config(object):
 
         if 'SECRET_KEY' in os.environ:
             config['SECRET_KEY'] = os.environ['SECRET_KEY']
+
+        if 'DATABASE_URL' in os.environ:
+            config['DATABASE_URL'] = (
+                os.environ.get('DATABASE_URL', None) or
+                # The following database settings are deprecated.
+                os.environ.get('MONGO_URI', None) or
+                os.environ.get('MONGODB_URI', None) or
+                os.environ.get('MONGOHQ_URL', None) or
+                os.environ.get('MONGOLAB_URI', None)
+            )
 
         if 'AUTH_REQUIRED' in os.environ:
             config['AUTH_REQUIRED'] = True if os.environ['AUTH_REQUIRED'] == 'True' else False

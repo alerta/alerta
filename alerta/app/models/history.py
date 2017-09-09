@@ -1,18 +1,7 @@
 
-import os
-import sys
-import platform
-
 from datetime import datetime
-from uuid import uuid4
 
-from flask import current_app
-from werkzeug.datastructures import MultiDict
-
-from alerta.app import db, severity
-from alerta.app.models import status_code
 from alerta.app.utils.api import absolute_url
-from alerta.app.utils.format import DateTime
 
 
 class History(object):

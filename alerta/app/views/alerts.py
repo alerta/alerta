@@ -1,14 +1,18 @@
 
+from datetime import datetime
+
 from flask import jsonify, request, g
 from flask_cors import cross_origin
 
+from alerta.app import qb
 from alerta.app.auth.utils import permission
+from alerta.app.exceptions import ApiError
 from alerta.app.exceptions import RejectException, RateLimit, BlackoutPeriod
 from alerta.app.models.alert import Alert
 from alerta.app.models.metrics import Timer, timer
+from alerta.app.models.switch import Switch
 from alerta.app.utils.api import jsonp, process_alert, process_status, add_remote_ip
-from alerta.app.exceptions import ApiError
-
+from alerta.app.utils.paging import Page
 from . import api
 
 receive_timer = Timer('alerts', 'received', 'Received alerts', 'Total time and number of received alerts')
@@ -192,43 +196,44 @@ def delete_alert(alert_id):
 @timer(gets_timer)
 @jsonp
 def search_alerts():
-    query, sort, group, page, page_size, query_time = Alert.build_query(request.args)
+    query_time = datetime.utcnow()
+    query = qb.from_params(request.args, query_time)
     severity_count = Alert.get_counts_by_severity(query)
     status_count = Alert.get_counts_by_status(query)
 
     total = sum(severity_count.values())
-    pages = ((total - 1) // page_size) + 1
-    if total and page > pages or page < 0:
-        raise ApiError("page out of range: 1-%s" % pages, 416)
+    paging = Page.from_params(request.args, total)
 
-    alerts = Alert.find_all(query, sort, page, page_size)
+    alerts = Alert.find_all(query, paging.page, paging.page_size)
 
     if alerts:
         return jsonify(
             status="ok",
-            page=page,
-            pageSize=page_size,
-            pages=pages,
-            more=page < pages,
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             alerts=[alert.serialize for alert in alerts],
             total=total,
             statusCounts=status_count,
             severityCounts=severity_count,
-            lastTime=max([alert.last_receive_time for alert in alerts])
+            lastTime=max([alert.last_receive_time for alert in alerts]),
+            autoRefresh=Switch.get('auto-refresh-allow').is_on
         )
     else:
         return jsonify(
             status="ok",
             message="not found",
-            page=page,
-            pageSize=page_size,
-            pages=pages,
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=0,
             more=False,
             alerts=[],
             total=0,
             severityCounts=severity_count,
             statusCounts=status_count,
-            lastTime=query_time
+            lastTime=query_time,
+            autoRefresh=Switch.get('auto-refresh-allow').is_on
         )
 
 
@@ -238,7 +243,7 @@ def search_alerts():
 @timer(gets_timer)
 @jsonp
 def history():
-    query, _, _, _, _, _ = Alert.build_query(request.args)
+    query = qb.from_params(request.args)
     history = Alert.get_history(query)
 
     if history:
@@ -264,7 +269,7 @@ def history():
 @timer(count_timer)
 @jsonp
 def get_counts():
-    query, _, _, _, _, _ = Alert.build_query(request.args)
+    query = qb.from_params(request.args)
     severity_count = Alert.get_counts_by_severity(query)
     status_count = Alert.get_counts_by_status(query)
 
@@ -283,7 +288,7 @@ def get_counts():
 @timer(count_timer)
 @jsonp
 def get_top10_count():
-    query, _, _, _, _, _ = Alert.build_query(request.args)
+    query = qb.from_params(request.args)
     top10 = Alert.get_top10_count(query)
 
     if top10:
@@ -308,7 +313,7 @@ def get_top10_count():
 @timer(count_timer)
 @jsonp
 def get_top10_flapping():
-    query, _, _, _, _, _ = Alert.build_query(request.args)
+    query = qb.from_params(request.args)
     top10 = Alert.get_top10_flapping(query)
 
     if top10:
@@ -325,6 +330,7 @@ def get_top10_flapping():
             total=0
         )
 
+
 # get alert environments
 @api.route('/environments', methods=['OPTIONS', 'GET'])
 @cross_origin()
@@ -332,7 +338,7 @@ def get_top10_flapping():
 @timer(gets_timer)
 @jsonp
 def get_environments():
-    query, _, _, _, _, _ = Alert.build_query(request.args)
+    query = qb.from_params(request.args)
     environments = Alert.get_environments(query)
 
     if environments:
@@ -357,7 +363,7 @@ def get_environments():
 @timer(gets_timer)
 @jsonp
 def get_services():
-    query, _, _, _, _, _ = Alert.build_query(request.args)
+    query = qb.from_params(request.args)
     services = Alert.get_services(query)
 
     if services:

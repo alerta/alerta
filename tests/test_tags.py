@@ -1,12 +1,8 @@
 
+import json
 import unittest
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
 from uuid import uuid4
+
 from alerta.app import create_app, db
 
 
@@ -50,10 +46,7 @@ class TagTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
-
-        with self.app.app_context():
-            db.destroy()
-
+        db.destroy()
     def test_tag_alert(self):
 
         # create alert
@@ -73,7 +66,7 @@ class TagTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
-        self.assertEqual(data['alert']['tags'], ['foo', 'bar', 'baz'])
+        self.assertEqual(sorted(data['alert']['tags']), sorted(['foo', 'bar', 'baz']))
         self.assertEqual(data['alert']['duplicateCount'], 1)
 
         # tag alert
@@ -85,7 +78,7 @@ class TagTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
-        self.assertEqual(data['alert']['tags'], ['foo', 'bar', 'baz', 'quux'])
+        self.assertEqual(sorted(data['alert']['tags']), sorted(['foo', 'bar', 'baz', 'quux']))
 
         # untag alert
         response = self.client.put('/alert/%s/untag' % alert_id, data=json.dumps({'tags': ['quux']}), headers=self.headers)
@@ -96,4 +89,4 @@ class TagTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
-        self.assertEqual(data['alert']['tags'], ['foo', 'bar', 'baz'])
+        self.assertEqual(sorted(data['alert']['tags']), sorted(['foo', 'bar', 'baz']))

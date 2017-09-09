@@ -1,36 +1,31 @@
-import json
-import re
 
 from datetime import datetime, timedelta
 
-import pytz
-
 from flask import current_app, g
-
 from pymongo import MongoClient, ASCENDING, TEXT, ReturnDocument
 from pymongo.errors import ConnectionFailure
 
-from alerta.app.models import status_code
-from alerta.app.utils.format import DateTime
-from alerta.app import severity
+from alerta.app.database.base import Database
 from alerta.app.exceptions import NoCustomerMatch
+from .utils import Query
+
 
 # See https://github.com/MongoEngine/flask-mongoengine/blob/master/flask_mongoengine/__init__.py
 # See https://github.com/dcrosta/flask-pymongo/blob/master/flask_pymongo/__init__.py
 
 
-class Backend:
+class Backend(Database):
 
-    def create_engine(self, dsn, dbname=None):
-        self.dsn = dsn
+    def create_engine(self, app, uri, dbname=None):
+        self.uri = uri
         self.dbname = dbname
 
     def connect(self):
-        self.client = MongoClient(self.dsn)
+        self.client = MongoClient(self.uri)
         if self.dbname:
             db = self.client[self.dbname]
         else:
-            db = self.client.get_database()
+            db = self.client.get_default_database()
 
         # create unique indexes
         db.alerts.create_index(
@@ -42,6 +37,10 @@ class Backend:
         db.metrics.create_index([('group', ASCENDING), ('name', ASCENDING)], unique=True)
 
         return db
+
+    @property
+    def name(self):
+        return g.db.name
 
     @property
     def version(self):
@@ -58,111 +57,9 @@ class Backend:
     def close(self):
         self.client.close()
 
-    def destroy(self, name=None):
-        # FIXME
-        pass
-
-    @staticmethod
-    def build_query(params):
-
-        query_time = datetime.utcnow()
-
-        # q
-        if params.get('q', None):
-            query = json.loads(params.pop('q'))
-        else:
-            query = dict()
-
-        # customer
-        if g.get('customer', None):
-            query['customer'] = g.get('customer')
-
-        # from-date, to-date
-        from_date = params.get('from-date', default=None, type=DateTime.parse)
-        to_date = params.get('to-date', default=query_time, type=DateTime.parse)
-
-        if from_date and to_date:
-            query['lastReceiveTime'] = {'$gt': from_date.replace(tzinfo=pytz.utc), '$lte': to_date.replace(tzinfo=pytz.utc)}
-        elif to_date:
-            query['lastReceiveTime'] = {'$lte': to_date.replace(tzinfo=pytz.utc)}
-
-        # duplicateCount, repeat
-        if params.get('duplicateCount', None):
-            query['duplicateCount'] = params.get('duplicateCount', int)
-        if params.get('repeat', None):
-            query['repeat'] = params.get('repeat', default=True, type=lambda x: x == 'true')
-
-        # sort-by
-        sort = list()
-        direction = 1
-        if params.get('reverse', None):
-            direction = -1
-        if params.get('sort-by', None):
-            for sort_by in params.getlist('sort-by'):
-                if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
-                    sort.append((sort_by, -direction))  # reverse chronological
-                else:
-                    sort.append((sort_by, direction))
-        else:
-            sort.append(('lastReceiveTime', -direction))
-
-        # group-by
-        group = params.getlist('group-by')
-
-        # page, page-size, limit (deprecated)
-        page = params.get('page', 1, int)
-        limit = params.get('limit', current_app.config['DEFAULT_PAGE_SIZE'], int)
-        page_size = params.get('page-size', limit, int)
-
-        # id
-        ids = params.getlist('id')
-        if len(ids) == 1:
-            query['$or'] = [{'_id': {'$regex': '^' + ids[0]}}, {'lastReceiveId': {'$regex': '^' + ids[0]}}]
-        elif ids:
-            query['$or'] = [{'_id': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}},
-                            {'lastReceiveId': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}]
-
-        EXCLUDE_QUERY = ['q', 'id', 'from-date', 'to-date', 'repeat', 'sort-by', 'reverse', 'group-by', 'page', 'page-size', 'limit']
-
-        # fields
-        for field in params:
-            if field in EXCLUDE_QUERY:
-                continue
-            value = params.getlist(field)
-            if len(value) == 1:
-                value = value[0]
-                if field.endswith('!'):
-                    if value.startswith('~'):
-                        query[field[:-1]] = dict()
-                        query[field[:-1]]['$not'] = re.compile(value[1:], re.IGNORECASE)
-                    else:
-                        query[field[:-1]] = dict()
-                        query[field[:-1]]['$ne'] = value
-                else:
-                    if value.startswith('~'):
-                        query[field] = dict()
-                        query[field]['$regex'] = re.compile(value[1:], re.IGNORECASE)
-                    else:
-                        query[field] = value
-            else:
-                if field.endswith('!'):
-                    if '~' in [v[0] for v in value]:
-                        value = '|'.join([v.lstrip('~') for v in value])
-                        query[field[:-1]] = dict()
-                        query[field[:-1]]['$not'] = re.compile(value, re.IGNORECASE)
-                    else:
-                        query[field[:-1]] = dict()
-                        query[field[:-1]]['$nin'] = value
-                else:
-                    if '~' in [v[0] for v in value]:
-                        value = '|'.join([v.lstrip('~') for v in value])
-                        query[field] = dict()
-                        query[field]['$regex'] = re.compile(value, re.IGNORECASE)
-                    else:
-                        query[field] = dict()
-                        query[field]['$in'] = value
-
-        return query, sort, group, page, page_size, query_time
+    def destroy(self):
+        db = self.connect()
+        self.client.drop_database(db.name)
 
     #### ALERTS
 
@@ -302,7 +199,6 @@ class Backend:
         Update alert key attributes, reset duplicate count and set repeat=False, keep track of last
         receive id and time, appending all to history. Append to history again if status changes.
         """
-
         query = {
             "environment": alert.environment,
             "resource": alert.resource,
@@ -357,6 +253,7 @@ class Backend:
         attributes = {'attributes.'+k: v for k, v in alert.attributes.items()}
         update['$set'].update(attributes)
 
+        # FIXME
         # if status != previous_status:
         #     update['$push']['history']['$each'].append({
         #         "event": alert.event,
@@ -477,28 +374,28 @@ class Backend:
 
     #### SEARCH & HISTORY
 
-    def get_alerts(self, query=None, sort=None, page=1, page_size=0):
-        return g.db.alerts.find(query, sort=sort).skip((page-1)*page_size).limit(page_size)
+    def get_alerts(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        return g.db.alerts.find(query.where, sort=query.sort).skip((page-1)*page_size).limit(page_size)
 
-    def get_history(self, query=None, fields=None):
-
-        if not fields:
-            fields = {
-                "resource": 1,
-                "event": 1,
-                "environment": 1,
-                "customer": 1,
-                "service": 1,
-                "group": 1,
-                "tags": 1,
-                "attributes": 1,
-                "origin": 1,
-                "type": 1,
-                "history": 1
-            }
+    def get_history(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        fields = {
+            "resource": 1,
+            "event": 1,
+            "environment": 1,
+            "customer": 1,
+            "service": 1,
+            "group": 1,
+            "tags": 1,
+            "attributes": 1,
+            "origin": 1,
+            "type": 1,
+            "history": 1
+        }
 
         pipeline = [
-            {'$match': query},
+            {'$match': query.where},
             {'$unwind': '$history'},
             {'$project': fields},
             {'$limit': current_app.config['HISTORY_LIMIT']},
@@ -556,12 +453,16 @@ class Backend:
         """
         Return total number of alerts that meet the query filter.
         """
-        return g.db.alerts.find(query).count()
+        query = query or Query()
+        return g.db.alerts.find(query.where).count()
 
-    def get_counts(self, query=None, fields=None, group=None):
+    def get_counts(self, query=None, group=None):
+        query = query or Query()
+        if group is None:
+            raise ValueError('Must define a group')
         pipeline = [
-            {'$match': query},
-            {'$project': fields or {}},
+            {'$match': query.where},
+            {'$project': {group: 1}},
             {'$group': {"_id": "$" + group, "count": {'$sum': 1}}}
         ]
         responses = g.db.alerts.aggregate(pipeline)
@@ -572,15 +473,17 @@ class Backend:
         return counts
 
     def get_counts_by_severity(self, query=None):
-        return self.get_counts(query, fields={"severity": 1}, group="severity")
+        query = query or Query()
+        return self.get_counts(query, group="severity")
 
     def get_counts_by_status(self, query=None):
-        return self.get_counts(query, fields={"status": 1}, group="status")
+        query = query or Query()
+        return self.get_counts(query, group="status")
 
     def get_topn_count(self, query=None, group="event", topn=10):
-
+        query = query or Query()
         pipeline = [
-            {'$match': query},
+            {'$match': query.where},
             {'$unwind': '$service'},
             {
                 '$group': {
@@ -613,8 +516,9 @@ class Backend:
         return top
 
     def get_topn_flapping(self, query=None, group="event", topn=10):
+        query = query or Query()
         pipeline = [
-            {'$match': query},
+            {'$match': query.where},
             {'$unwind': '$service'},
             {'$unwind': '$history'},
             {'$match': {"history.type": "severity"}},
@@ -651,8 +555,9 @@ class Backend:
     #### ENVIRONMENTS
 
     def get_environments(self, query=None, topn=100):
+        query = query or Query()
         pipeline = [
-            {'$match': query},
+            {'$match': query.where},
             {'$project': {"environment": 1}},
             {'$limit': topn},
             {'$group': {"_id": "$environment", "count": {'$sum': 1}}}
@@ -672,9 +577,10 @@ class Backend:
     #### SERVICES
 
     def get_services(self, query=None, topn=100):
+        query = query or Query()
         pipeline = [
             {'$unwind': '$service'},
-            {'$match': query},
+            {'$match': query.where},
             {'$project': {"environment": 1, "service": 1}},
             {'$limit': topn},
             {'$group': {"_id": {"environment": "$environment", "service": "$service"}, "count": {'$sum': 1}}}
@@ -725,8 +631,9 @@ class Backend:
             query['customer'] = customer
         return g.db.blackouts.find_one(query)
 
-    def get_blackouts(self, query=None, page=1, page_size=0):
-        return g.db.blackouts.find(query).skip((page - 1) * page_size).limit(page_size)
+    def get_blackouts(self, query=None):
+        query = query or Query()
+        return g.db.blackouts.find(query.where)
 
     def is_blackout_period(self, alert):
         now = datetime.utcnow()
@@ -837,8 +744,9 @@ class Backend:
 
         return g.db.heartbeats.find_one(query)
 
-    def get_heartbeats(self, query, page, page_size):
-        return g.db.heartbeats.find(query).skip((page - 1) * page_size).limit(page_size)
+    def get_heartbeats(self, query=None):
+        query = query or Query()
+        return g.db.heartbeats.find(query.where)
 
     def delete_heartbeat(self, id):
         response = g.db.heartbeats.delete_one({'_id': {'$regex': '^' + id}})
@@ -871,8 +779,9 @@ class Backend:
         return g.db.keys.find_one(query)
 
     # list
-    def get_keys(self, query=None, page=1, page_size=0):
-        return g.db.keys.find(query).skip((page - 1) * page_size).limit(page_size)
+    def get_keys(self, query=None):
+        query = query or Query()
+        return g.db.keys.find(query.where)
 
     # update
     def update_key_last_used(self, key):
@@ -912,8 +821,9 @@ class Backend:
         return g.db.users.find_one(query)
 
     # list
-    def get_users(self, query=None, page=1, page_size=0):
-        return g.db.users.find(query).skip((page - 1) * page_size).limit(page_size)
+    def get_users(self, query=None):
+        query = query or Query()
+        return g.db.users.find(query.where)
 
     def get_user_by_email(self, email):
         query = {"email": email}
@@ -946,7 +856,6 @@ class Backend:
         response = g.db.users.delete_one({"_id": id})
         return True if response.deleted_count == 1 else False
 
-
     #### PERMISSIONS
 
     def create_perm(self, perm):
@@ -962,8 +871,9 @@ class Backend:
         query = {'_id': id}
         return g.db.perms.find_one(query)
 
-    def get_perms(self, query=None, page=1, page_size=0):
-        return g.db.perms.find(query).skip((page - 1) * page_size).limit(page_size)
+    def get_perms(self, query=None):
+        query = query or Query()
+        return g.db.perms.find(query.where)
 
     def delete_perm(self, id):
         response = g.db.perms.delete_one({"_id": id})
@@ -995,8 +905,9 @@ class Backend:
         query = {'_id': id}
         return g.db.customers.find_one(query)
 
-    def get_customers(self, query=None, page=1, page_size=0):
-        return g.db.customers.find(query).skip((page - 1) * page_size).limit(page_size)
+    def get_customers(self, query=None):
+        query = query or Query()
+        return g.db.customers.find(query.where)
 
     def delete_customer(self, id):
         response = g.db.customers.delete_one({"_id": id})
@@ -1039,18 +950,6 @@ class Backend:
             return_document=ReturnDocument.AFTER
         )['value']
 
-    def get_gauges(self):
-        from alerta.app.models.metrics import Gauge
-        return [
-            Gauge(
-                group=m.get('group'),
-                name=m.get('name'),
-                title=m.get('title', ''),
-                description=m.get('description', ''),
-                value=m.get('value', 0)
-            ) for m in g.db.metrics.find({"type": "gauge"}, {"_id": 0})
-        ]
-
     def inc_counter(self, counter):
 
         return g.db.metrics.find_one_and_update(
@@ -1072,18 +971,6 @@ class Backend:
             return_document=ReturnDocument.AFTER
         )['count']
 
-    def get_counters(self):
-        from alerta.app.models.metrics import Counter
-        return [
-            Counter(
-                group=c.get('group'),
-                name=c.get('name'),
-                title=c.get('title', ''),
-                description=c.get('description', ''),
-                count=c.get('count', 0)
-            ) for c in g.db.metrics.find({"type": "counter"}, {"_id": 0})
-        ]
-
     def update_timer(self, timer):
         return g.db.metrics.find_one_and_update(
             {
@@ -1103,16 +990,3 @@ class Backend:
             upsert=True,
             return_document=ReturnDocument.AFTER
         )
-
-    def get_timers(self):
-        from alerta.app.models.metrics import Timer
-        return [
-            Timer(
-                group=t.get('group'),
-                name=t.get('name'),
-                title=t.get('title', ''),
-                description=t.get('description', ''),
-                count=t.get('count', 0),
-                total_time=t.get('totalTime', 0)
-            ) for t in g.db.metrics.find({"type": "timer"}, {"_id": 0})
-        ]

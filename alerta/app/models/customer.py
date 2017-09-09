@@ -66,8 +66,8 @@ class Customer(object):
         return Customer.from_db(db.get_customer(id))
 
     @staticmethod
-    def find_all(query=None, page=1, page_size=100):
-        return [Customer.from_db(customer) for customer in db.get_customers(query, page, page_size)]
+    def find_all(query=None):
+        return [Customer.from_db(customer) for customer in db.get_customers(query)]
 
     def delete(self):
         return db.delete_customer(self.id)

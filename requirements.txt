@@ -12,3 +12,4 @@ bcrypt
 cryptography
 raven
 blinker
+PyYaml

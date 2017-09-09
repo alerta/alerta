@@ -7,15 +7,13 @@ try:
 except ImportError:
     from urlparse import urlparse
 
-from alerta.app import db
-from alerta.app.models.alert import Alert
+from alerta.app import db, qb
 from alerta.app.auth.utils import permission
 from alerta.app.utils.api import jsonp
 
 
 from . import api
 
-#LOG = app.logger
 
 @api.route('/oembed', defaults={'format':'json'}, methods=['OPTIONS', 'GET'])
 @api.route('/oembed.<format>', methods=['OPTIONS', 'GET'])
@@ -41,13 +39,13 @@ def oembed(format):
 
     try:
         o = urlparse(url)
-        query, _, _, _, _, _ = Alert.build_query(request.args)
+        query = qb.from_params(request.args)
     except Exception as e:
         return jsonify(status="error", message=str(e)), 500
 
     if o.path.endswith('/alerts/count'):
         try:
-            severity_count = db.get_counts_by_severity(query=query)
+            severity_count = db.get_counts_by_severity(query)
         except Exception as e:
             return jsonify(status="error", message=str(e)), 500
 

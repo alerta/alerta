@@ -1,6 +1,6 @@
 
-from os.path import join as path_join
 from functools import wraps
+from os.path import join as path_join
 
 from flask import current_app, request
 

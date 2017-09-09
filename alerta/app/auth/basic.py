@@ -5,13 +5,11 @@ from uuid import uuid4
 from flask import current_app, request, jsonify, render_template
 from flask_cors import cross_origin
 
-from alerta.app.utils.api import absolute_url
-from alerta.app.exceptions import ApiError, NoCustomerMatch
-from alerta.app.models.user import User
-from alerta.app.models.customer import Customer
-
 from alerta.app.auth.utils import is_authorized, create_token
-
+from alerta.app.exceptions import ApiError, NoCustomerMatch
+from alerta.app.models.customer import Customer
+from alerta.app.models.user import User
+from alerta.app.utils.api import absolute_url
 from . import auth
 
 

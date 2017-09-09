@@ -1,12 +1,8 @@
 
+import json
 import unittest
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
 from uuid import uuid4
+
 from alerta.app import create_app, db
 
 
@@ -72,9 +68,7 @@ class AlertTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
-
-        with self.app.app_context():
-            db.destroy()
+        db.destroy()
 
     def test_alert(self):
 
@@ -351,7 +345,7 @@ class AlertTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['attributes'], {'foo': 'abc def', 'bar': 1234, 'baz': False, 'ip': '10.0.0.1'})
+        self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'bar': 1234, 'baz': False, 'ip': '10.0.0.1'}))
 
         alert_id = data['id']
 
@@ -361,13 +355,13 @@ class AlertTestCase(unittest.TestCase):
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['attributes'], {'foo': 'abc def', 'baz': False, 'quux': ['q', 'u', 'u', 'x'], 'ip': '10.0.0.1'})
+        self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'baz': False, 'quux': ['q', 'u', 'u', 'x'], 'ip': '10.0.0.1'}))
 
         # re-send duplicate alert with custom attributes ('quux' should not change)
         response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['attributes'], {'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': ['q', 'u', 'u', 'x'], 'ip': '10.0.0.1'})
+        self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': ['q', 'u', 'u', 'x'], 'ip': '10.0.0.1'}))
 
         # update custom attribute again (only 'quux' should change)
         response = self.client.put('/alert/' + alert_id + '/attributes', data=json.dumps({'attributes': {'quux': [1, 'u', 'u', 4]}}), headers=self.headers)
@@ -375,7 +369,7 @@ class AlertTestCase(unittest.TestCase):
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['attributes'], {'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': '10.0.0.1'})
+        self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': '10.0.0.1'}))
 
         # send correlated alert with custom attributes (nothing should change)
         response = self.client.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
@@ -383,7 +377,7 @@ class AlertTestCase(unittest.TestCase):
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['attributes'], {'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': '10.0.0.1'})
+        self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': '10.0.0.1'}))
 
     def test_aggregations(self):
 

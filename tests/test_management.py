@@ -1,12 +1,7 @@
 
+import json
 import unittest
-
 from uuid import uuid4
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
 
 from alerta.app import create_app, db
 
@@ -40,9 +35,7 @@ class AlertTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
-
-        with self.app.app_context():
-            db.destroy()
+        db.destroy()
 
     def test_alert(self):
 
@@ -54,5 +47,5 @@ class AlertTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         for metric in data['metrics']:
             if metric['name'] == 'total':
-                self.assertEqual(metric['value'], 1)
+                self.assertGreaterEqual(metric['value'], 1)
 

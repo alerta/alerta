@@ -1,18 +1,15 @@
 
 import os
-import sys
 import platform
-
+import sys
 from datetime import datetime
 from uuid import uuid4
 
 from flask import current_app
-from werkzeug.datastructures import MultiDict
 
 from alerta.app import db, severity
-from alerta.app.models.history import History
-from alerta.app.exceptions import ApiError
 from alerta.app.models import status_code
+from alerta.app.models.history import History
 from alerta.app.utils.api import absolute_url
 from alerta.app.utils.format import DateTime
 
@@ -40,15 +37,15 @@ class Alert(object):
         self.status = kwargs.get('status', None) or "unknown"
         self.service = kwargs.get('service', None) or list()
         self.group = kwargs.get('group', None) or "Misc"
-        self.value = kwargs.get('value', None) or "n/a"
+        self.value = str(kwargs.get('value', "n/a"))
         self.text = kwargs.get('text', None) or ""
         self.tags = kwargs.get('tags', None) or list()
         self.attributes = kwargs.get('attributes', None) or dict()
         self.origin = kwargs.get('origin', None) or '%s/%s' % (os.path.basename(sys.argv[0]), platform.uname()[1])
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or "exceptionAlert"
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
-        self.timeout = kwargs.get('timeout', None) or current_app.config['DEFAULT_ALERT_TIMEOUT']
-        self.raw_data = kwargs.get('raw_data', kwargs.get('rawData', None)) or ""
+        self.timeout = kwargs.get('timeout', None) or current_app.config['ALERT_TIMEOUT']
+        self.raw_data = str(kwargs.get('raw_data', kwargs.get('rawData', "")))
         self.customer = kwargs.get('customer', None)
 
         self.duplicate_count = kwargs.get('duplicate_count', None)
@@ -132,9 +129,6 @@ class Alert(object):
         return 'Alert(id=%r, environment=%r, resource=%r, event=%r, severity=%r, status=%r, customer=%r)' % (
             self.id, self.environment, self.resource, self.event, self.severity, self.status, self.customer)
 
-    # def __str__(self):
-    #     return doc.dumps(self.serialize, cls=DateEncoder)
-
     @classmethod
     def from_document(cls, doc):
         return Alert(
@@ -206,21 +200,6 @@ class Alert(object):
         elif isinstance(r, tuple):
             return cls.from_record(r)
 
-    PARAMS_EXCLUDE = [
-        '_',
-        'callback',
-        'token',
-        'api-key',
-        'fields'  # deprecated query param
-    ]
-
-    @classmethod
-    def build_query(cls, params):
-        try:
-            return db.build_query(MultiDict([(k, v) for k, v in params.copy().items(multi=True) if k not in cls.PARAMS_EXCLUDE]))
-        except NotImplementedError as e:
-            raise ApiError(str(e), 400)
-
     def is_duplicate(self):
         return db.is_duplicate(self)
 
@@ -232,18 +211,24 @@ class Alert(object):
 
     # de-duplicate an alert
     def deduplicate(self):
+        now = datetime.utcnow()
+
         previous_status = db.get_status(self)
         if self.status == status_code.UNKNOWN or self.status == previous_status:
             self.status = status_code.status_from_severity(self.severity, self.severity, previous_status)
+
+        self.repeat = True
+        self.last_receive_id = self.id
+        self.last_receive_time = now
 
         if self.status != previous_status:
             history = History(
                 id=self.id,
                 event=self.event,
                 status=self.status,
-                text='test',
+                text="duplicate alert status change",
                 change_type="status",
-                update_time=datetime.utcnow()
+                update_time=now
             )
         else:
             history = None
@@ -251,13 +236,42 @@ class Alert(object):
 
     # correlate an alert
     def update(self):
+        now = datetime.utcnow()
+
         self.previous_severity = db.get_severity(self)
         previous_status = db.get_status(self)
         self.trend_indication = severity.trend(self.previous_severity, self.severity)
-        self.receive_time = datetime.utcnow()
+
         if self.status == status_code.UNKNOWN:
             self.status = status_code.status_from_severity(self.previous_severity, self.severity, previous_status)
-        return Alert.from_db(db.correlate_alert(self))
+
+        self.duplicate_count = 0
+        self.repeat = False
+        self.receive_time = now
+        self.last_receive_id = self.id
+        self.last_receive_time = now
+
+        history = [History(
+            id=self.id,
+            event=self.event,
+            severity=self.severity,
+            value=self.value,
+            text=self.text,
+            change_type="severity",
+            update_time=now
+        )]
+
+        if self.status != previous_status:
+            history.append(History(
+                id=self.id,
+                event=self.event,
+                status=self.status,
+                text="correlated alert status change",
+                change_type="status",
+                update_time=now
+            ))
+
+        return Alert.from_db(db.correlate_alert(self, history))
 
     # create an alert
     def create(self):
@@ -314,7 +328,7 @@ class Alert(object):
             id=self.id,
             event=self.event,
             status=status,
-            text='test',
+            text=text,
             change_type="status",
             update_time=datetime.utcnow()
         )
@@ -338,8 +352,8 @@ class Alert(object):
 
     # search alerts
     @staticmethod
-    def find_all(query=None, sort=None, page=1, page_size=100):
-        return [Alert.from_db(alert) for alert in db.get_alerts(query, sort, page, page_size)]
+    def find_all(query=None, page=1, page_size=100):
+        return [Alert.from_db(alert) for alert in db.get_alerts(query, page, page_size)]
 
     # list alert history
     @staticmethod
@@ -349,7 +363,7 @@ class Alert(object):
     # get total count
     @staticmethod
     def get_count(query=None):
-        return int(db.get_count(query).count)
+        return db.get_count(query)
 
     # get severity counts
     @staticmethod

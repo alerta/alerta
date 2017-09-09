@@ -1,6 +1,6 @@
 
-from alerta.app.models import severity_code
 from alerta.app import severity
+from alerta.app.models import severity_code
 
 """
 Possible alert status codes.

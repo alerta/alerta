@@ -1,7 +1,7 @@
 import logging
 
 try:
-    from alerta.plugins.config import app  # alerta >= 5.0
+    from alerta.plugins import app  # alerta >= 5.0
 except ImportError:
     from alerta.app import app  # alerta < 5.0
 
@@ -17,8 +17,8 @@ class BlackoutHandler(PluginBase):
     returns a 202 Accept status code.
 
     If "NOTIFICATION_BLACKOUT=True" is set then the alert is processed as normal but
-    an attribute "notify=False" is added to the alert which should be honoured
-    by downstream notification plugins.
+    an attribute "notify=False" is added to the alert. It is up to downstream
+    notification integrations (plugins) to check for this notification suppression.
     """
     def pre_receive(self, alert):
         if alert.is_blackout():

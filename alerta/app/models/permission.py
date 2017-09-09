@@ -69,8 +69,8 @@ class Permission(object):
         return Permission.from_db(db.get_perm(id))
 
     @staticmethod
-    def find_all(query=None, page=1, page_size=100):
-        return [Permission.from_db(perm) for perm in db.get_perms(query, page, page_size)]
+    def find_all(query=None):
+        return [Permission.from_db(perm) for perm in db.get_perms(query)]
 
     def delete(self):
         return db.delete_perm(self.id)

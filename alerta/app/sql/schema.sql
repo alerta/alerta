@@ -1,22 +1,23 @@
---
--- PostgreSQL database dump
---
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'history') THEN
+    CREATE TYPE history AS (
+        id text,
+        event text,
+        severity text,
+        status text,
+        value text,
+        text text,
+        type text,
+        update_time timestamp without time zone
+    );
+    END IF;
+END$$;
 
 
-CREATE TYPE history AS (
-	id text,
-	event text,
-	severity text,
-	status text,
-	value text,
-	text text,
-	type text,
-	update_time timestamp without time zone
-);
-
-
-CREATE TABLE alerts (
-    id text NOT NULL,
+CREATE TABLE IF NOT EXISTS alerts (
+    id text PRIMARY KEY,
     resource text NOT NULL,
     event text NOT NULL,
     environment text,
@@ -28,7 +29,7 @@ CREATE TABLE alerts (
     value text,
     text text,
     tags text[],
-    attributes text[],
+    attributes jsonb,
     origin text,
     type text,
     create_time timestamp without time zone,
@@ -46,8 +47,8 @@ CREATE TABLE alerts (
 );
 
 
-CREATE TABLE blackouts (
-    id text NOT NULL,
+CREATE TABLE IF NOT EXISTS blackouts (
+    id text PRIMARY KEY,
     priority integer NOT NULL,
     environment text NOT NULL,
     service text,
@@ -62,15 +63,15 @@ CREATE TABLE blackouts (
 );
 
 
-CREATE TABLE customers (
-    id text NOT NULL,
+CREATE TABLE IF NOT EXISTS customers (
+    id text PRIMARY KEY,
     match text NOT NULL,
     customer text
 );
 
 
-CREATE TABLE heartbeats (
-    id text NOT NULL,
+CREATE TABLE IF NOT EXISTS heartbeats (
+    id text PRIMARY KEY,
     origin text NOT NULL,
     tags text[],
     type text,
@@ -81,9 +82,9 @@ CREATE TABLE heartbeats (
 );
 
 
-CREATE TABLE keys (
-    id text NOT NULL,
-    key text NOT NULL,
+CREATE TABLE IF NOT EXISTS keys (
+    id text PRIMARY KEY,
+    key text UNIQUE NOT NULL,
     "user" text NOT NULL,
     scopes text[],
     text text,
@@ -94,29 +95,30 @@ CREATE TABLE keys (
 );
 
 
-CREATE TABLE metrics (
+CREATE TABLE IF NOT EXISTS metrics (
     "group" text NOT NULL,
     name text NOT NULL,
     title text,
     description text,
-    value text,
+    value integer,
     count integer,
     total_time integer,
-    type text NOT NULL
+    type text NOT NULL,
+    CONSTRAINT metrics_pkey PRIMARY KEY ("group", name, type)
 );
 
 
-CREATE TABLE perms (
-    id text NOT NULL,
+CREATE TABLE IF NOT EXISTS perms (
+    id text PRIMARY KEY,
     match text NOT NULL,
     scopes text[]
 );
 
 
-CREATE TABLE users (
-    id text NOT NULL,
+CREATE TABLE IF NOT EXISTS users (
+    id text PRIMARY KEY,
     name text,
-    email text NOT NULL,
+    email text UNIQUE NOT NULL,
     password text NOT NULL,
     role text,
     create_time timestamp without time zone NOT NULL,
@@ -127,48 +129,8 @@ CREATE TABLE users (
 );
 
 
-ALTER TABLE ONLY alerts
-    ADD CONSTRAINT alerts_pkey PRIMARY KEY (id);
+CREATE UNIQUE INDEX IF NOT EXISTS env_res_evt_cust_key ON alerts USING btree (environment, resource, event, (COALESCE(customer, ''::text)));
 
 
-ALTER TABLE ONLY blackouts
-    ADD CONSTRAINT blackouts_pkey PRIMARY KEY (id);
-
-
-ALTER TABLE ONLY customers
-    ADD CONSTRAINT customers_pkey PRIMARY KEY (id);
-
-
-ALTER TABLE ONLY heartbeats
-    ADD CONSTRAINT heartbeats_pkey PRIMARY KEY (id);
-
-
-ALTER TABLE ONLY keys
-    ADD CONSTRAINT keys_key_key UNIQUE (key);
-
-
-ALTER TABLE ONLY keys
-    ADD CONSTRAINT keys_pkey PRIMARY KEY (id);
-
-
-ALTER TABLE ONLY metrics
-    ADD CONSTRAINT metrics_pkey PRIMARY KEY ("group", name, type);
-
-
-ALTER TABLE ONLY perms
-    ADD CONSTRAINT perms_pkey PRIMARY KEY (id);
-
-
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_email_key UNIQUE (email);
-
-
-ALTER TABLE ONLY users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
-
-
-CREATE UNIQUE INDEX env_res_evt_cust_key ON alerts USING btree (environment, resource, event, (COALESCE(customer, ''::text)));
-
-
-CREATE UNIQUE INDEX org_cust_key ON heartbeats USING btree (origin, (COALESCE(customer, ''::text)));
+CREATE UNIQUE INDEX IF NOT EXISTS org_cust_key ON heartbeats USING btree (origin, (COALESCE(customer, ''::text)));
 

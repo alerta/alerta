@@ -4,7 +4,6 @@ from flask_cors import cross_origin
 
 from alerta.app.auth.utils import permission
 from alerta.app.models.token import Jwt
-
 from . import auth
 
 

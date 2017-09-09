@@ -2,7 +2,7 @@ import re
 import logging
 
 try:
-    from alerta.plugins.config import app  # alerta >= 5.0
+    from alerta.plugins import app  # alerta >= 5.0
 except ImportError:
     from alerta.app import app  # alerta < 5.0
 
@@ -19,11 +19,11 @@ class RejectPolicy(PluginBase):
 
     def pre_receive(self, alert):
         if any(regex.match(alert.origin) for regex in ORIGIN_BLACKLIST_REGEX):
-            LOG.warning("[POLICY] Alert origin '%s' has been blacklisted" % alert.origin)
+            LOG.warning("[POLICY] Alert origin '%s' has been blacklisted", alert.origin)
             raise RejectException("[POLICY] Alert origin '%s' has been blacklisted" % alert.origin)
 
         if alert.environment not in ALLOWED_ENVIRONMENTS:
-            LOG.warning("[POLICY] Alert environment must be one of %s" % ', '.join(ALLOWED_ENVIRONMENTS))
+            LOG.warning("[POLICY] Alert environment must be one of %s", ', '.join(ALLOWED_ENVIRONMENTS))
             raise RejectException("[POLICY] Alert environment must be one of %s" % ', '.join(ALLOWED_ENVIRONMENTS))
 
         if not alert.service:

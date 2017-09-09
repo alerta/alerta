@@ -4,12 +4,10 @@ import json
 from flask import current_app, request, jsonify, make_response
 from flask_cors import cross_origin
 
+from alerta.app.auth.utils import is_authorized, create_token
 from alerta.app.exceptions import NoCustomerMatch
 from alerta.app.models.customer import Customer
-
-from alerta.app.auth.utils import is_authorized, create_token
 from alerta.app.utils.api import absolute_url, deepmerge
-
 from . import auth
 
 try:

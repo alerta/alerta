@@ -1,10 +1,6 @@
 
+import json
 import unittest
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
 
 from alerta.app import create_app, db
 from alerta.app.models.key import ApiKey
@@ -32,26 +28,22 @@ class AuthTestCase(unittest.TestCase):
             'service': ['Quux']
         }
 
-        with self.app.app_context():
-            self.api_key = db.create_key(
-                ApiKey.parse(
-                    {
-                        "user": "admin@alerta.io",
-                        "type": "read-write",
-                        "text": "demo-key"
-                    }
-                )
-            )['_id']
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=['admin', 'read', 'write'],
+                text='demo-key'
+            )
+            self.api_key.create()
 
         self.headers = {
-            'Authorization': 'Key %s' % self.api_key,
+            'Authorization': 'Key %s' % self.api_key.key,
             'Content-type': 'application/json'
         }
 
     def tearDown(self):
-
-        with self.app.app_context():
-            db.destroy()
+        db.destroy()
 
     def test_401_error(self):
 

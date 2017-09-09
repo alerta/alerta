@@ -1,8 +1,8 @@
 
-from uuid import uuid4
 from datetime import datetime, timedelta
+from uuid import uuid4
 
-from alerta.app import db, key_helper
+from alerta.app import db, qb, key_helper
 from alerta.app.utils.api import absolute_url
 from alerta.app.utils.format import DateTime
 
@@ -113,18 +113,18 @@ class ApiKey(object):
         return ApiKey.from_db(db.get_key(key, customer))
 
     @staticmethod
-    def find_all(query=None, page=1, page_size=100):
+    def find_all(query=None):
         """
         List all API keys.
         """
-        return [ApiKey.from_db(key) for key in db.get_keys(query, page, page_size)]
+        return [ApiKey.from_db(key) for key in db.get_keys(query)]
 
     @staticmethod
-    def find_by_user(user, page=1, page_size=100):
+    def find_by_user(user):
         """
         List API keys for a user.
         """
-        return [ApiKey.from_db(key) for key in db.get_keys({"user": user}, page, page_size)]
+        return [ApiKey.from_db(key) for key in db.get_keys(qb.from_dict({"user": user}))]
 
     def delete(self):
         """

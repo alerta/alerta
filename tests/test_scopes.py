@@ -1,14 +1,9 @@
 
+import json
 import unittest
 
-from datetime import datetime, timedelta
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
 from alerta.app import create_app, db, key_helper
+from alerta.app.models.key import ApiKey
 
 
 class ScopeTestCase(unittest.TestCase):
@@ -22,7 +17,6 @@ class ScopeTestCase(unittest.TestCase):
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
-        self.mongo = db
 
         """legacy keys admin, read-only, read-write
         1. insert directly into db
@@ -33,23 +27,16 @@ class ScopeTestCase(unittest.TestCase):
         """
 
         def make_key(user, scopes=None, type=None, text=''):
-            data = {
-                "_id": key_helper.generate(),
-                "user": user,
-                "text": text,
-                "expireTime": datetime.utcnow() + timedelta(days=1),
-                "count": 0,
-                "lastUsedTime": None
-            }
-            if scopes:
-                data['scopes'] = scopes
-            if type:
-                data['type'] = type
+            api_key = ApiKey(
+                user=user,
+                scopes=scopes,
+                type=type,
+                text=text
+            )
+            return api_key.create().key
 
-            self.mongo.db.keys.insert_one(data)
-            return data['_id']
-
-        with self.app.app_context():
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
             self.api_keys_scopes = dict()
             self.api_keys_scopes['read-only'] = make_key('user@alerta.io', scopes=['read'], type=None, text='read-only')
             self.api_keys_scopes['read-write'] = make_key('user@alerta.io', scopes=['read', 'write'], type=None, text='read-write')
@@ -61,8 +48,7 @@ class ScopeTestCase(unittest.TestCase):
             # self.api_keys_types['admin'] = make_key('admin@alerta.io', scopes=None, type='read-write', text='admin')
 
     def tearDown(self):
-        with self.app.app_context():
-            db.destroy()
+        db.destroy()
 
     def test_scopes(self):
 
@@ -78,7 +64,7 @@ class ScopeTestCase(unittest.TestCase):
             self.assertEqual(sorted(key_helper.type_to_scopes(key['user'], key['text'])), sorted(key['scopes']))
 
     # def test_types(self):
-    #
+    #     FIXME
     #     response = self.client.get('/keys')
     #     self.assertEqual(response.status_code, 200)
     #     data = json.loads(response.data.decode('utf-8'))

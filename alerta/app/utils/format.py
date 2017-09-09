@@ -1,9 +1,8 @@
 
 import datetime
+
 import six
-
 from flask import json
-
 
 
 class DateEncoder(json.JSONEncoder):

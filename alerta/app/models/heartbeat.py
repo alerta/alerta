@@ -1,8 +1,7 @@
 
 import os
-import sys
 import platform
-
+import sys
 from datetime import datetime
 from uuid import uuid4
 
@@ -22,7 +21,7 @@ class Heartbeat(object):
         self.tags = tags or list()
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'Heartbeat'
         self.create_time = create_time or datetime.utcnow()
-        self.timeout = timeout or current_app.config['DEFAULT_HEARTBEAT_TIMEOUT']
+        self.timeout = timeout or current_app.config['HEARTBEAT_TIMEOUT']
         self.receive_time = kwargs.get('receive_time', None) or datetime.utcnow()
         self.customer = customer
 
@@ -105,8 +104,8 @@ class Heartbeat(object):
 
     # search heartbeats
     @staticmethod
-    def find_all(query=None, page=1, page_size=100):
-        return [Heartbeat.from_db(heartbeat) for heartbeat in db.get_heartbeats(query, page, page_size)]
+    def find_all(query=None):
+        return [Heartbeat.from_db(heartbeat) for heartbeat in db.get_heartbeats(query)]
 
     # delete a heartbeat
     def delete(self):

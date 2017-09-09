@@ -1,11 +1,6 @@
 
 import unittest
 
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
 from flask_cors import CORS
 from flask_cors.extension import ACL_ORIGIN, ACL_ALLOW_HEADERS
 
@@ -29,8 +24,7 @@ class AlertTestCase(unittest.TestCase):
 
     def tearDown(self):
 
-        with self.app.app_context():
-            db.destroy()
+        db.destroy()
 
     def test_cors_headers(self):
 

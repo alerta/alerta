@@ -1,13 +1,14 @@
 
-from flask import jsonify, request, g, current_app
+from flask import jsonify, request, current_app
 from flask_cors import cross_origin
 
-from alerta.app.models.user import User
+from alerta.app import qb
 from alerta.app.auth.utils import permission
-from alerta.app.utils.api import jsonp, absolute_url
 from alerta.app.exceptions import ApiError
-
+from alerta.app.models.user import User
+from alerta.app.utils.api import jsonp
 from . import api
+
 
 # NOTE: "user create" method is basic auth "sign up" method
 
@@ -33,15 +34,11 @@ def update_user(user_id):
 
 @api.route('/users', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:users')
+@permission('admin:users')
 @jsonp
 def list_users():
-    if 'admin' in g.scopes or 'admin:users' in g.scopes:
-        users = User.find_all()
-    else:
-        print('get users not admin')
-        users = User.find_all()
-        # users = User.get(g.user)  # FIXME
+    query = qb.from_params(request.args)
+    users = User.find_all(query)
 
     if users:
         return jsonify(

@@ -1,10 +1,6 @@
 
+import json
 import unittest
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
 
 from alerta.app import create_app, db
 from alerta.app.models.key import ApiKey
@@ -31,32 +27,29 @@ class BlackoutsTestCase(unittest.TestCase):
             'correlate': ['node_down', 'node_marginal', 'node_up']
         }
 
-        with self.app.app_context():
-            self.admin_api_key = db.create_key(
-                ApiKey(
-                    user='admin',
-                    scopes=['admin', 'read', 'write'],
-                    text='demo-key'
-                )
-            )['_id']
-            self.customer_api_key = db.create_key(
-                ApiKey(
-                    user='admin',
-                    scopes=['admin', 'read', 'write'],
-                    text='demo-key',
-                    customer='Foo'
-                )
-            )['_id']
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.admin_api_key = ApiKey(
+                user='admin',
+                scopes=['admin', 'read', 'write'],
+                text='demo-key'
+            )
+            self.customer_api_key = ApiKey(
+                user='admin',
+                scopes=['admin', 'read', 'write'],
+                text='demo-key',
+                customer='Foo'
+            )
+            self.admin_api_key.create()
+            self.customer_api_key.create()
 
     def tearDown(self):
-
-        with self.app.app_context():
-            db.destroy()
+        db.destroy()
 
     def test_suppress_alerts(self):
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key,
+            'Authorization': 'Key %s' % self.admin_api_key.key,
             'Content-type': 'application/json'
         }
 
@@ -76,7 +69,7 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 202)
 
         self.headers = {
-            'Authorization': 'Key %s' % self.customer_api_key,
+            'Authorization': 'Key %s' % self.customer_api_key.key,
             'Content-type': 'application/json'
         }
 
@@ -86,7 +79,7 @@ class BlackoutsTestCase(unittest.TestCase):
 
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key,
+            'Authorization': 'Key %s' % self.admin_api_key.key,
             'Content-type': 'application/json'
         }
 

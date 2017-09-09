@@ -1,6 +1,6 @@
 
-from uuid import uuid4
 from datetime import datetime
+from uuid import uuid4
 
 from flask import current_app
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -114,7 +114,7 @@ class User(object):
 
     @staticmethod
     def find_all(query=None):
-        return [User.from_db(user) for user in db.get_users(query, page=1, page_size=100)]
+        return [User.from_db(user) for user in db.get_users(query)]
 
     def update_last_login(self):
         return db.update_last_login(self.id)

@@ -2,12 +2,11 @@
 from flask import request, g, jsonify
 from flask_cors import cross_origin
 
+from alerta.app import qb
 from alerta.app.auth.utils import permission
-from alerta.app.utils.api import process_alert, add_remote_ip
-from alerta.app.models.alert import Alert
 from alerta.app.exceptions import RejectException, ApiError
-
-
+from alerta.app.models.alert import Alert
+from alerta.app.utils.api import process_alert, add_remote_ip
 from . import webhooks
 
 
@@ -21,7 +20,7 @@ def parse_grafana(alert, match):
         severity = 'indeterminate'
 
     attributes = {
-        'ruleId': alert['ruleId']
+        'ruleId': str(alert['ruleId'])  # FIXME - can't search attribute numeric values
     }
     if 'ruleUrl' in alert:
         attributes['ruleUrl'] = '<a href="%s" target="_blank">Rule</a>' % alert['ruleUrl']
@@ -75,7 +74,8 @@ def grafana():
 
     elif data and data['state'] == 'ok' and data.get('ruleId', None):
         try:
-            existingAlerts = Alert.find_all({'attributes.ruleId': data['ruleId'], 'customer': g.get('customer', None)})
+            query = qb.from_dict({'attributes': {'ruleId': str(data['ruleId'])}})
+            existingAlerts = Alert.find_all(query)
         except Exception as e:
             raise ApiError(str(e), 500)
 

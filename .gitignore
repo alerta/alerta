@@ -12,3 +12,4 @@ build
 dist
 rpmbuild
 *.log*
+build.py

@@ -2,8 +2,6 @@
 import time
 from functools import wraps
 
-from datetime import datetime
-
 from alerta.app import db
 
 
@@ -18,14 +16,15 @@ class Gauge(object):
         self.type = 'gauge'
         self.value = value
 
-    @property
     def serialize(self, format='json'):
-        if format=='prometheus':
-            return ('# HELP alerta_{group}_{name} {description}\n'
-                    '# TYPE alerta_{group}_{name} gauge\n'
-                    'alerta_{group}_{name} {value}\n'.format(
-                        group=self.group, name=self.name, description=self.description, value=self.value
-                    ))
+        if format == 'prometheus':
+            return (
+                '# HELP alerta_{group}_{name} {description}\n'
+                '# TYPE alerta_{group}_{name} gauge\n'
+                'alerta_{group}_{name} {value}\n'.format(
+                    group=self.group, name=self.name, description=self.description, value=self.value
+                )
+            )
         else:
             return {
                 'group': self.group,
@@ -90,15 +89,15 @@ class Counter(object):
         self.type = 'counter'
         self.count = count
 
-    @property
     def serialize(self, format='json'):
-        if format=='prometheus':
+        if format == 'prometheus':
             return (
-                    '# HELP alerta_{group}_{name} {description}\n'
-                    '# TYPE alerta_{group}_{name} counter\n'
-                    'alerta_{group}_{name}_total {count}\n'.format(
-                        group=self.group, name=self.name, description=self.description, count=self.count
-                    ))
+                '# HELP alerta_{group}_{name} {description}\n'
+                '# TYPE alerta_{group}_{name} counter\n'
+                'alerta_{group}_{name}_total {count}\n'.format(
+                    group=self.group, name=self.name, description=self.description, count=self.count
+                )
+            )
         else:
             return {
                 'group': self.group,
@@ -172,17 +171,16 @@ class Timer(object):
         self.count = count
         self.total_time = total_time
 
-    @property
     def serialize(self, format='json'):
-        if format=='prometheus':
+        if format == 'prometheus':
             return (
-                    '# HELP alerta_{group}_{name} {description}\n'
-                    '# TYPE alerta_{group}_{name} summary\n'
-                    'alerta_{group}_{name}_count {count}\n'
-                    'alerta_{group}_{name}_sum {total_time}\n'.format(
-                        group=self.group, name=self.name, description=self.description,
-                        count=self.count, total_time=self.total_time
-                    ))
+                '# HELP alerta_{group}_{name} {description}\n'
+                '# TYPE alerta_{group}_{name} summary\n'
+                'alerta_{group}_{name}_count {count}\n'
+                'alerta_{group}_{name}_sum {total_time}\n'.format(
+                    group=self.group, name=self.name, description=self.description, count=self.count, total_time=self.total_time
+                )
+            )
         else:
             return {
                 'group': self.group,

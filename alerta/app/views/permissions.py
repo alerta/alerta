@@ -3,10 +3,9 @@ from flask import jsonify, request, g
 from flask_cors import cross_origin
 
 from alerta.app.auth.utils import permission
+from alerta.app.exceptions import ApiError
 from alerta.app.models.permission import Permission
 from alerta.app.utils.api import jsonp
-from alerta.app.exceptions import ApiError
-
 from . import api
 
 

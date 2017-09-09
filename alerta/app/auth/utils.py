@@ -1,17 +1,16 @@
 
 import re
-
-from uuid import uuid4
 from datetime import datetime, timedelta
 from functools import wraps
-from jwt import DecodeError, ExpiredSignature, InvalidAudience
+from uuid import uuid4
 
 from flask import request, g, current_app
+from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
-from alerta.app.models.key import ApiKey
-from alerta.app.models.token import Jwt
-from alerta.app.models.permission import Permission
 from alerta.app.exceptions import ApiError
+from alerta.app.models.key import ApiKey
+from alerta.app.models.permission import Permission
+from alerta.app.models.token import Jwt
 
 
 def is_authorized(allowed_setting, groups):

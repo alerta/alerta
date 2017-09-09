@@ -1,10 +1,6 @@
 
+import json
 import unittest
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
 
 from alerta.app import create_app, db
 
@@ -106,9 +102,7 @@ class SeverityTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
-
-        with self.app.app_context():
-            db.destroy()
+        db.destroy()
 
     def test_inactive(self):
 

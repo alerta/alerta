@@ -180,8 +180,8 @@ class Blackout(object):
         return Blackout.from_db(db.get_blackout(id, customer))
 
     @staticmethod
-    def find_all(query=None, page=1, page_size=100):
-        return [Blackout.from_db(blackout) for blackout in db.get_blackouts(query, page, page_size)]
+    def find_all(query=None):
+        return [Blackout.from_db(blackout) for blackout in db.get_blackouts(query)]
 
     def delete(self):
         return db.delete_blackout(self.id)

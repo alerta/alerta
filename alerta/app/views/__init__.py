@@ -1,9 +1,8 @@
 
-from flask import Blueprint, request, jsonify, current_app, g
+from flask import Blueprint, request, jsonify, current_app
 
-from alerta.app import db
-from alerta.app.utils.api import absolute_url
 from alerta.app.exceptions import ApiError
+from alerta.app.utils.api import absolute_url
 
 api = Blueprint('api', __name__)
 
@@ -30,7 +29,4 @@ def index():
 
 @api.route('/_', methods=['GET'])
 def debug():
-    return jsonify(db=db.version)
-
-
-
+    return 'OK'

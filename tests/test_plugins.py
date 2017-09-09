@@ -1,16 +1,11 @@
 
+import json
 import unittest
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
-
 from uuid import uuid4
 
 from alerta.app import create_app, db
-from alerta.plugins import PluginBase
 from alerta.app import plugins
+from alerta.plugins import PluginBase
 
 
 class PluginsTestCase(unittest.TestCase):
@@ -61,8 +56,7 @@ class PluginsTestCase(unittest.TestCase):
         del plugins.plugins['test2']
         del plugins.plugins['test3']
 
-        with self.app.app_context():
-            db.destroy()
+        db.destroy()
 
     def test_reject_alert(self):
 
@@ -102,7 +96,7 @@ class PluginsTestCase(unittest.TestCase):
 
         # alert status, tags, attributes and history text modified by plugin1 & plugin2
         self.assertEqual(data['alert']['status'], 'owned')
-        self.assertListEqual(data['alert']['tags'], ['three', 'four', 'this', 'that', 'the', 'other', 'more'])
+        self.assertEqual(sorted(data['alert']['tags']), sorted(['three', 'four', 'this', 'that', 'the', 'other', 'more']))
         self.assertEqual(data['alert']['attributes']['foo'], 'bar')
         self.assertEqual(data['alert']['attributes']['baz'], 'quux')
         self.assertNotIn('abc', data['alert']['attributes'])

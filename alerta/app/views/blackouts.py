@@ -2,11 +2,11 @@
 from flask import jsonify, request, g
 from flask_cors import cross_origin
 
-from alerta.app.models.blackout import Blackout
+from alerta.app import qb
 from alerta.app.auth.utils import permission
-from alerta.app.utils.api import jsonp, absolute_url
 from alerta.app.exceptions import ApiError
-
+from alerta.app.models.blackout import Blackout
+from alerta.app.utils.api import jsonp, absolute_url
 from . import api
 
 
@@ -39,10 +39,7 @@ def create_blackout():
 @permission('read:blackouts')
 @jsonp
 def list_blackouts():
-    query = dict()
-    if g.get('customer', None):
-        query['customer'] = g.get('customer')
-
+    query = qb.from_params(request.args)
     blackouts = Blackout.find_all(query)
 
     if blackouts:

@@ -1,12 +1,7 @@
 
+import json
 import unittest
-
 from uuid import uuid4
-
-try:
-    import simplejson as json
-except ImportError:
-    import json
 
 from alerta.app import create_app, db
 
@@ -414,9 +409,7 @@ class WebhooksTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
-
-        with self.app.app_context():
-            db.destroy()
+        db.destroy()
 
     def test_pingdom_webhook(self):
 
@@ -507,7 +500,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['event'], 'servicejane')
         self.assertEqual(data['alert']['severity'], 'ok')
         self.assertEqual(data['alert']['text'], 'This is a description')
-        self.assertEqual(data['alert']['value'], 1)
+        self.assertEqual(data['alert']['value'], '1')
 
     def test_stackdriver_webhook(self):
 
@@ -545,7 +538,7 @@ class WebhooksTestCase(unittest.TestCase):
         response = self.client.post('/webhooks/grafana', data=self.grafana_alert_ok, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['ids'], alert_ids)
+        self.assertEqual(sorted(data['ids']), sorted(alert_ids))
 
         # get alert
         response = self.client.get('/alert/' + alert_ids[0])

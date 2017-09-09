@@ -1,9 +1,7 @@
 
 import jwt
-
-from jwt import DecodeError, ExpiredSignature, InvalidAudience
-
 from flask import current_app, request
+from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
 
 class Jwt(object):

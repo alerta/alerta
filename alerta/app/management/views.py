@@ -14,19 +14,16 @@ from alerta.app.models.heartbeat import Heartbeat
 from alerta.app.models.alert import Alert
 from alerta.app.models.switch import Switch, SwitchState
 from alerta.app.auth.utils import permission
-from alerta.app.models.metrics import Gauge, Counter, Timer, timer
+from alerta.app.models.metrics import Gauge, Counter, Timer
 from alerta.version import __version__
 
 from . import mgmt
 
 switches = [
-    Switch('auto-refresh-allow', 'Allow consoles to auto-refresh alerts', SwitchState.ON),
-    Switch('sender-api-allow', 'Allow alerts to be submitted via the API', SwitchState.ON)
+    Switch('auto-refresh-allow', 'Alerta console auto-refresh', 'Allow consoles to auto-refresh alerts', SwitchState.ON),
+    Switch('sender-api-allow', 'API alert submission', 'Allow alerts to be submitted via the API', SwitchState.ON)
 ]
 total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of alerts in the database')
-# FIXME
-test_counter = Counter('alerts', 'count', 'Total counts', 'Total number of alerts in the database')
-test_timer = Timer('alerts', 'status', 'Total counts', 'Total number of alerts in the database')
 
 started = time.time() * 1000
 
@@ -136,10 +133,7 @@ def health_check():
 @mgmt.route('/management/status', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission('read:management')
-@timer(test_timer) # FIXME
 def status():
-
-    test_counter.inc(5)
 
     now = int(time.time() * 1000)
     total_alert_gauge.set(Alert.get_count())
@@ -147,20 +141,10 @@ def status():
     metrics = Gauge.find_all()
     metrics.extend(Counter.find_all())
     metrics.extend(Timer.find_all())
-
-    # FIXME
-    # auto_refresh_allow = {
-    #     "group": "switch",
-    #     "name": "auto_refresh_allow",
-    #     "type": "text",
-    #     "title": "Alert console auto-refresh",
-    #     "description": "Allows auto-refresh of alert consoles to be turned off remotely",
-    #     "value": "ON" if Switch.get('auto-refresh-allow').is_on() else "OFF",
-    # }
-    # metrics.append(auto_refresh_allow)
+    metrics.extend(Switch.find_all())
 
     return jsonify(application="alerta", version=__version__, time=now, uptime=int(now - started),
-                   metrics=[metric.serialize for metric in metrics])
+                   metrics=[metric.serialize() for metric in metrics])
 
 
 @mgmt.route('/management/metrics', methods=['OPTIONS', 'GET'])
@@ -170,8 +154,11 @@ def prometheus_metrics():
 
     total_alert_gauge.set(Alert.get_count())
 
-    output = Gauge.get_gauges(format='prometheus')
-    output += Counter.get_counters(format='prometheus')
-    output += Timer.get_timers(format='prometheus')
+    output = Gauge.find_all()
+    output += Counter.find_all()
+    output += Timer.find_all()
 
-    return Response(output, content_type='text/plain; version=0.0.4; charset=utf-8')
+    return Response(
+        [o.serialize(format='prometheus') for o in output],
+        content_type='text/plain; version=0.0.4; charset=utf-8'
+    )

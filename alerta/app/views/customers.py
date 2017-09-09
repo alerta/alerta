@@ -1,12 +1,12 @@
 
-from flask import jsonify, request, g
+from flask import jsonify, request
 from flask_cors import cross_origin
 
+from alerta.app import qb
 from alerta.app.auth.utils import permission
+from alerta.app.exceptions import ApiError
 from alerta.app.models.customer import Customer
 from alerta.app.utils.api import jsonp
-from alerta.app.exceptions import ApiError
-
 from . import api
 
 
@@ -36,7 +36,8 @@ def create_customer():
 @permission('read:customers')
 @jsonp
 def list_customers():
-    customers = Customer.find_all()
+    query = qb.from_params(request.args)
+    customers = Customer.find_all(query)
 
     if customers:
         return jsonify(

@@ -23,20 +23,19 @@ HISTORY_LIMIT = 100  # cap the number of alert history entries
 MONGO_URI = 'mongodb://localhost:27017/monitoring'
 MONGO_DATABASE = None  # can be used to override default database, above
 
-# Postgres
-# DATABASE_DSN = 'postgresql://localhost:5432/monitoring'
+# PostgreSQL
+POSTGRES_URI = 'postgres://localhost:5432/monitoring'  # not used (use DATABASE_URL)
+POSTGRES_DB = None
 
-# Database backend (default: mongodb)
-DATABASE_ENGINE = 'mongodb'
-DATABASE_DSN = MONGO_URI
-DATABASE_NAME = MONGO_DATABASE
+DATABASE_URL = MONGO_URI  # default: MongoDB
+DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
 
 AUTH_REQUIRED = False
 ADMIN_USERS = []
 USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includes 'read'
 CUSTOMER_VIEWS = False
 
-OAUTH2_CLIENT_ID = None  # Google or GitHub OAuth2 client ID and secret
+OAUTH2_CLIENT_ID = None  # Google, GitHub or GitLab OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = None
 ALLOWED_EMAIL_DOMAINS = ['*']
 
@@ -82,8 +81,8 @@ DEFAULT_NORMAL_SEVERITY = 'normal'  # 'normal', 'ok', 'cleared'
 DEFAULT_PREVIOUS_SEVERITY = 'indeterminate'
 
 DEFAULT_TIMEOUT = 86400
-DEFAULT_ALERT_TIMEOUT = DEFAULT_TIMEOUT
-DEFAULT_HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
+ALERT_TIMEOUT = DEFAULT_TIMEOUT
+HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
 
 BLACKOUT_DURATION = 3600  # default period = 1 hour
 
@@ -96,6 +95,10 @@ SMTP_PASSWORD = ''  # password for MAIL_FROM account, Gmail uses application-spe
 # Plug-ins
 PLUGINS = ['reject', 'blackout']
 
+# reject plugin settings
 ORIGIN_BLACKLIST = []
 #ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
 ALLOWED_ENVIRONMENTS = ['Production', 'Development']  # reject alerts without allowed environments
+
+# blackout plugin settings
+NOTIFICATION_BLACKOUT = False
