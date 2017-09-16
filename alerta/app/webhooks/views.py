@@ -727,11 +727,11 @@ def grafana():
         return jsonify(status="ok", ids=[alert.id for alert in alerts]), 201
 
 
-def send_message_replay(alert_id, action, user, data):
+def send_message_reply(alert_id, action, user, data):
     try:
         import telepot
     except ImportError as e:
-        LOG.warning("You have configured Telegram but 'telepot' client is not installed", exec_info=True)
+        LOG.warning("You have configured Telegram but 'telepot' client is not installed", exc_info=True)
         return
 
     try:
@@ -770,7 +770,7 @@ def send_message_replay(alert_id, action, user, data):
             parse_mode='Markdown', reply_markup={'inline_keyboard': inline_keyboard}
         )
     except Exception as e:
-        LOG.warning("Error sending reply message", exec_info=True)
+        LOG.warning("Error sending reply message", exc_info=True)
 
 
 @app.route('/webhooks/telegram', methods=['OPTIONS', 'POST'])
@@ -792,7 +792,7 @@ def telegram():
             environment, resource, event = alert.split('|', 2)
             db.create_blackout(environment, resource=resource, event=event)
 
-        send_message_replay(alert, action, user, data)
+        send_message_reply(alert, action, user, data)
         return jsonify(status="ok")
     else:
         return jsonify(status="error", message="no callback_query in Telegram message"), 400
