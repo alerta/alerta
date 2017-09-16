@@ -18,6 +18,7 @@ addons:
 # command to install dependencies
 install:
   - "pip install ."
+  - "pip install telepot"
   - "pip install -r requirements.txt"
 
 # command to run tests
