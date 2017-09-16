@@ -197,7 +197,7 @@ class Database(Base):
     def create_key(self, key):
         raise NotImplementedError
 
-    def get_key(self, key, customer=None):
+    def get_key(self, key):
         raise NotImplementedError
 
     def get_keys(self, query=None):

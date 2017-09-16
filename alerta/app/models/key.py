@@ -13,7 +13,7 @@ class ApiKey(object):
 
         self.id = kwargs.get('id', None) or str(uuid4())
         self.key = kwargs.get('key', key_helper.generate())
-        self.user = user
+        self.user = user  # jwt=>login
         self.scopes = scopes or key_helper.user_default_scopes
         self.text = text
         self.expire_time = expire_time or datetime.utcnow() + timedelta(days=key_helper.api_key_expire_days)
@@ -106,11 +106,11 @@ class ApiKey(object):
         return ApiKey.from_db(db.create_key(self))
 
     @staticmethod
-    def get(key, customer=None):
+    def get(key):
         """
         Get API key details.
         """
-        return ApiKey.from_db(db.get_key(key, customer))
+        return ApiKey.from_db(db.get_key(key))
 
     @staticmethod
     def find_all(query=None):

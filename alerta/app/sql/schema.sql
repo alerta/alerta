@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS blackouts (
 
 CREATE TABLE IF NOT EXISTS customers (
     id text PRIMARY KEY,
-    match text NOT NULL,
+    match text UNIQUE NOT NULL,
     customer text
 );
 
@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS metrics (
 
 CREATE TABLE IF NOT EXISTS perms (
     id text PRIMARY KEY,
-    match text NOT NULL,
+    match text UNIQUE NOT NULL,
     scopes text[]
 );
 
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS users (
     name text,
     email text UNIQUE NOT NULL,
     password text NOT NULL,
-    role text,
+    roles text[],
     create_time timestamp without time zone NOT NULL,
     last_login timestamp without time zone,
     text text,

@@ -1,4 +1,4 @@
-
+from collections import namedtuple
 from datetime import datetime, timedelta
 
 import psycopg2
@@ -98,19 +98,17 @@ class Backend(Database):
              WHERE environment=%(environment)s AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s)
                 OR (event!=%(event)s AND %(event)s=ANY(correlate)))
+               AND customer IS NOT DISTINCT FROM %(customer)s
             """
-        if alert.customer:
-            select += "AND CUSTOMER=%(customer)s"
         return self._fetchone(select, vars(alert)).severity
 
     def get_status(self, alert):
         select = """
             SELECT status FROM alerts
              WHERE environment=%(environment)s AND resource=%(resource)s
-               AND (event=%(event)s OR %(event)s=ANY(correlate))
+              AND (event=%(event)s OR %(event)s=ANY(correlate))
+              AND customer IS NOT DISTINCT FROM %(customer)s
             """
-        if alert.customer:
-            select += "AND CUSTOMER=%(customer)s"
         return self._fetchone(select, vars(alert)).status
 
     def is_duplicate(self, alert):
@@ -120,9 +118,8 @@ class Backend(Database):
                AND resource=%(resource)s
                AND event=%(event)s
                AND severity=%(severity)s
+               AND customer IS NOT DISTINCT FROM %(customer)s
             """
-        if alert.customer:
-            select += "AND CUSTOMER=%(customer)s"
         return bool(self._fetchone(select, vars(alert)))
 
     def is_correlated(self, alert):
@@ -131,9 +128,8 @@ class Backend(Database):
              WHERE environment=%(environment)s AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s)
                 OR (event!=%(event)s AND %(event)s=ANY(correlate)))
+               AND customer IS NOT DISTINCT FROM %(customer)s
         """
-        if alert.customer:
-            select += "AND CUSTOMER=%(customer)s"
         return bool(self._fetchone(select, vars(alert)))
 
     def is_flapping(self, alert, window=1800, count=2):
@@ -145,6 +141,7 @@ class Backend(Database):
                AND event=%(event)s
                AND h.update_time > {window}
                AND h.type="severity"
+               AND customer IS NOT DISTINCT FROM %(customer)s
         """.format(window=(datetime.utcnow() - timedelta(seconds=window)))
         return self._fetchone(select, vars(alert)).count > count
 
@@ -163,7 +160,7 @@ class Backend(Database):
                AND resource=%(resource)s
                AND event=%(event)s
                AND severity=%(severity)s
-               AND (customer IS NULL OR customer=%(customer)s)
+               AND customer IS NOT DISTINCT FROM %(customer)s
          RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
         return self._update(update, vars(alert), returning=True)
@@ -181,7 +178,7 @@ class Backend(Database):
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
-               AND (customer IS NULL OR customer=%(customer)s)
+               AND customer IS NOT DISTINCT FROM %(customer)s
          RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
         return self._update(update, vars(alert), returning=True)
@@ -205,9 +202,8 @@ class Backend(Database):
         select = """
             SELECT * FROM alerts
              WHERE id ~* (%(id)s) OR last_receive_id ~* (%(id)s)
+               AND customer IS NOT DISTINCT FROM %(customer)s
         """
-        if customer:
-            select += " AND CUSTOMER=%(customer)s"
         return self._fetchone(select, {'id': '^'+id, 'customer': customer})
 
     #### STATUS, TAGS, ATTRIBUTES
@@ -277,7 +273,26 @@ class Backend(Database):
                 receive_time, last_receive_id, last_receive_time, history, h.* from alerts, unnest(history) h
              WHERE {where}
         """.format(where=query.where)
-        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+        Record = namedtuple("Record", [])
+        return [
+            Record(
+                id=h.id,
+                resource=h.resource,
+                event=h.event,
+                environment=h.environment,
+                severity=h.severity,
+                service=h.service,
+                group=h.group,
+                value=h.value,
+                text=h.text,
+                tags=h.tags,
+                attributes=h.attributes,
+                origin=h.origin,
+                update_time=h.update_time,
+                type=h.change_type,
+                customer=h.customer
+            ) for h in self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+        ]
 
     #### COUNTS
 
@@ -396,9 +411,8 @@ class Backend(Database):
         select = """
             SELECT * FROM blackouts
             WHERE id=%(id)s
+              AND customer IS NOT DISTINCT FROM %(customer)s
         """
-        if customer:
-            select += " AND CUSTOMER=%(customer)s"
         return self._fetchone(select, {'id': id, 'customer': customer})
 
     def get_blackouts(self, query=None):
@@ -431,7 +445,7 @@ class Backend(Database):
         if self._fetchone(select, data):
             return True
         if current_app.config['CUSTOMER_VIEWS']:
-            select += " AND CUSTOMER=%(customer)s"
+            select += " AND customer IS NOT DISTINCT FROM %(customer)s"
             if self._fetchone(select, data):
                 return True
         return False
@@ -459,10 +473,9 @@ class Backend(Database):
     def get_heartbeat(self, id, customer=None):
         select = """
             SELECT * FROM heartbeats
-            WHERE id=%(id)s OR id LIKE %(like_id)s
+             WHERE id=%(id)s OR id LIKE %(like_id)s
+               AND customer IS NOT DISTINCT FROM %(customer)s
         """
-        if customer:
-            select += "AND CUSTOMER=%(customer)s"
         return self._fetchone(select, {'id': id, 'like_id': id+'%', 'customer': customer})
 
     def get_heartbeats(self, query=None):
@@ -491,11 +504,12 @@ class Backend(Database):
         """
         return self._insert(insert, vars(key))
 
-    def get_key(self, key, customer=None):
-        select = """SELECT * FROM keys WHERE key=%(key)s"""
-        if customer:
-            select += " AND CUSTOMER=%(customer)s"
-        return self._fetchone(select, {'key': key, 'customer': customer})
+    def get_key(self, key):
+        select = """
+            SELECT * FROM keys
+             WHERE key=%s
+        """
+        return self._fetchone(select, (key,))
 
     def get_keys(self, query=None):
         query = query or Query()
@@ -578,8 +592,8 @@ class Backend(Database):
             update += "email=%(email)s, "
         if 'password' in kwargs:
             update += "password=%(password)s, "
-        if 'role' in kwargs:
-            update += "role=%(role)s, "
+        if 'roles' in kwargs:
+            update += "roles=%(roles)s, "
         if 'text' in kwargs:
             update += "text=%(text)s, "
         if 'email_verified' in kwargs:

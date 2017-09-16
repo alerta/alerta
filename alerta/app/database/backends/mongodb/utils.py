@@ -25,8 +25,8 @@ class QueryBuilderImpl(QueryBuilder):
             query = dict()
 
         # customer
-        if current_app.config['CUSTOMER_VIEWS']:
-            query['customer'] = g.get('customer', None)
+        if g.get('customer', None):
+            query['customer'] = g.get('customer')
 
         # from-date, to-date
         from_date = params.get('from-date', default=None, type=DateTime.parse)
@@ -68,11 +68,7 @@ class QueryBuilderImpl(QueryBuilder):
             query['$or'] = [{'_id': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}},
                             {'lastReceiveId': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}]
 
-        for attr in params.getlist('attributes'):
-            for k, v in attr.items():
-                params['attributes.' + k] = v
-
-        EXCLUDE_QUERY = ['q', 'id', 'from-date', 'to-date', 'attributes', 'duplicateCount', 'repeat',
+        EXCLUDE_QUERY = ['q', 'id', 'from-date', 'to-date', 'duplicateCount', 'repeat',
                          'sort-by', 'reverse', 'group-by', 'page', 'page-size', 'limit']
         # fields
         for field in params:

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from uuid import uuid4
 
+import bcrypt
 from flask import request, g, current_app
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
@@ -11,6 +12,14 @@ from alerta.app.exceptions import ApiError
 from alerta.app.models.key import ApiKey
 from alerta.app.models.permission import Permission
 from alerta.app.models.token import Jwt
+
+
+def generate_password_hash(password):
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
+
+
+def check_password_hash(pwhash, password):
+    return bcrypt.checkpw(password.encode('utf-8'), pwhash.encode('utf-8'))
 
 
 def is_authorized(allowed_setting, groups):
@@ -31,13 +40,13 @@ def create_token(user_id, name, login, provider, customer, orgs=None, groups=Non
         iat=now,
         jti=str(uuid4()),
         name=name,
-        login=login,
-        email=email,
+        preferred_username=login,
         orgs=orgs,
         roles=roles,
         groups=groups,
         provider=provider,
         scopes=scopes,
+        email=email,
         email_verified=email_verified,
         customer=customer
     )
@@ -78,7 +87,7 @@ def permission(scope):
                     raise ApiError('Token has expired', 401)
                 except InvalidAudience:
                     raise ApiError('Invalid audience', 401)
-                g.user = jwt.login
+                g.user = jwt.preferred_username
                 g.customer = jwt.customer
                 g.scopes = jwt.scopes
 

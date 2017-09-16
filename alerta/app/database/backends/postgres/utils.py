@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 import pytz
-from flask import g
+from flask import current_app, g
 from werkzeug.datastructures import MultiDict
 
 from alerta.app.database.base import QueryBuilder
@@ -26,7 +26,7 @@ class QueryBuilderImpl(QueryBuilder):
         # customer
         if g.get('customer', None):
             query.append('AND customer=%(customer)s')
-            qvars['customer'] = g['customer']
+            qvars['customer'] = g.get('customer')
 
         # from-date, to-date
         from_date = params.get('from-date', default=None, type=DateTime.parse)
@@ -93,9 +93,10 @@ class QueryBuilderImpl(QueryBuilder):
             if field in ['service', 'tags']:
                 query.append('AND {0} && %({0})s'.format(field))
                 qvars[field] = value
-            elif field == 'attributes':
-                query.append('AND attributes @> %(attributes)s')
-                qvars[field] = value[0]
+            elif field.startswith('attributes.'):
+                field = field.replace('attributes.', '')
+                query.append('AND attributes @> %(attr_{0})s'.format(field))
+                qvars['attr_'+field] = {field: value[0]}
             elif len(value) == 1:
                 value = value[0]
                 if field.endswith('!'):

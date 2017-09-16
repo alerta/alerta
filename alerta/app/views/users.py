@@ -45,9 +45,6 @@ def list_users():
             status="ok",
             users=[user.serialize for user in users],
             domains=current_app.config['ALLOWED_EMAIL_DOMAINS'],
-            orgs=current_app.config['ALLOWED_GITHUB_ORGS'],
-            groups=current_app.config['ALLOWED_GITLAB_GROUPS'],
-            roles=current_app.config['ALLOWED_KEYCLOAK_ROLES'],
             total=len(users)
         )
     else:
@@ -56,9 +53,6 @@ def list_users():
             message="not found",
             users=[],
             domains=current_app.config['ALLOWED_EMAIL_DOMAINS'],
-            orgs=current_app.config['ALLOWED_GITHUB_ORGS'],
-            groups=current_app.config['ALLOWED_GITLAB_GROUPS'],
-            roles=current_app.config['ALLOWED_KEYCLOAK_ROLES'],
             total=0
         )
 

@@ -85,7 +85,7 @@ def properties():
 def switchboard():
 
     if request.method == 'POST':
-        for switch in Switch.get_all():
+        for switch in Switch.find_all():
             try:
                 value = request.form[switch.name]
                 switch.set_state(value)

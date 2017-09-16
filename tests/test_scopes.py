@@ -18,14 +18,6 @@ class ScopeTestCase(unittest.TestCase):
         self.app = create_app(test_config)
         self.client = self.app.test_client()
 
-        """legacy keys admin, read-only, read-write
-        1. insert directly into db
-        2. create via API
-        3. output and check both
-
-        # new scoped keys admin, read-only, read-write
-        """
-
         def make_key(user, scopes=None, type=None, text=''):
             api_key = ApiKey(
                 user=user,
@@ -64,7 +56,7 @@ class ScopeTestCase(unittest.TestCase):
             self.assertEqual(sorted(key_helper.type_to_scopes(key['user'], key['text'])), sorted(key['scopes']))
 
     # def test_types(self):
-    #     FIXME
+    #     #FIXME
     #     response = self.client.get('/keys')
     #     self.assertEqual(response.status_code, 200)
     #     data = json.loads(response.data.decode('utf-8'))

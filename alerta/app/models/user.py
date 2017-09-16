@@ -3,9 +3,9 @@ from datetime import datetime
 from uuid import uuid4
 
 from flask import current_app
-from werkzeug.security import generate_password_hash, check_password_hash
 
 from alerta.app import db
+from alerta.app.auth.utils import generate_password_hash, check_password_hash
 from alerta.app.utils.api import absolute_url
 
 
@@ -14,13 +14,13 @@ class User(object):
     User model for BasicAuth only.
     """
 
-    def __init__(self, name, email, password, role, text, **kwargs):
+    def __init__(self, name, email, password, roles, text, **kwargs):
 
         self.id = kwargs.get('id', None) or str(uuid4())
         self.name = name
-        self.email = email
+        self.email = email  # => g.user
         self.password = password  # NB: hashed password
-        self.role = 'admin' if self.email in current_app.config['ADMIN_USERS'] else (role or 'user')
+        self.roles = ['admin'] if self.email in current_app.config['ADMIN_USERS'] else (roles or ['user'])
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
         self.last_login = kwargs.get('last_login', None)
         self.text = text or ""
@@ -36,7 +36,7 @@ class User(object):
             name=json.get('name'),
             email=json.get('email'),
             password=generate_password_hash(json.get('password', None)),
-            role=json.get('role', None),
+            roles=json.get('roles', list()),
             text=json.get('text', None),
             email_verified=json.get('email_verified', None)
         )
@@ -52,16 +52,17 @@ class User(object):
             'name': self.name,
             'email': self.email,
             'domain': self.domain,
-            'role': self.role,
+            'provider': 'basic',
+            'roles': self.roles,
             'createTime': self.create_time,
             'lastLogin': self.last_login,
             'text': self.text,
-            'email_verified': self.email_verified
+            'email_verified': self.email_verified or False
         }
 
     def __repr__(self):
-        return 'User(id=%r, name=%r, email=%r, role=%r, email_verified=%r)' % (
-            self.id, self.name, self.email, self.role, self.email_verified
+        return 'User(id=%r, name=%r, email=%r, roles=%r, email_verified=%r)' % (
+            self.id, self.name, self.email, ','.join(self.roles), self.email_verified
         )
 
     @classmethod
@@ -71,7 +72,7 @@ class User(object):
             name=doc.get('name', None),
             email=doc.get('email', None) or doc.get('login', None),
             password=doc.get('password', None),
-            role=doc.get('role', None),  # FIXME how does role relate to roles/scopes
+            roles=doc.get('roles', list()),
             create_time=doc.get('createTime', None),
             last_login=doc.get('lastLogin', None),
             text=doc.get('text', None),
@@ -85,7 +86,7 @@ class User(object):
             name=rec.name,
             email=rec.email,
             password=rec.password,
-            role=rec.role,
+            roles=rec.roles,
             create_time=rec.create_time,
             last_login=rec.last_login,
             text=rec.text,
@@ -138,7 +139,9 @@ class User(object):
         if 'password' in kwargs:
             update['password'] = generate_password_hash(kwargs['password'])
         if 'role' in kwargs:
-            update['role'] = kwargs['role']
+            update['roles'] = [kwargs['role']]
+        elif 'roles' in kwargs:
+            update['roles'] = kwargs['roles']
         if 'text' in kwargs:
             update['text'] = kwargs['text']
         if 'email_verified' in kwargs:

@@ -37,9 +37,9 @@ def build_slack_response(alert, action, user, data):
     message = (
         u"User {user} is {action}ing alert {alert}" if action in actions else
         u"The status of alert {alert} is {status} now!").format(
-        alert=alert.get_id(short=True), status=alert.status.capitalize(),
-        action=action, user=user
-    )
+            alert=alert.get_id(short=True), status=alert.status.capitalize(),
+            action=action, user=user
+        )
 
     attachment_response = {
         "fallback": message, "pretext": "Action done!", "color": "#808080",

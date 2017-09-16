@@ -1,4 +1,4 @@
-
+from alerta.app.models.permission import Permission
 from flask import jsonify, request, g
 from flask_cors import cross_origin
 
@@ -18,18 +18,17 @@ def create_key():
         key = ApiKey.parse(request.json)
     except ValueError as e:
         raise ApiError(str(e), 400)
-    print(key)
 
-    # if 'admin' not in g.scopes and 'admin:keys' not in g.scopes:
-    #     key.user = g.user
-    #     key.customer = g.get('customer', None)
+    if 'admin' not in g.scopes and 'admin:keys' not in g.scopes:
+        key.user = g.user
+        key.customer = g.get('customer', None)
 
-    # if not key.user:
-    #     raise ApiError("Must set 'user' to create API key", 400)
-    #
-    # for want_scope in key.scopes:
-    #     if not Permission.is_in_scope(want_scope, g.scopes):
-    #         raise ApiError("Requested scope '%s' not in existing scopes: %s" % (want_scope, ','.join(g.scopes)), 403)
+    if not key.user:
+        raise ApiError("Must set 'user' to create API key", 400)
+
+    for want_scope in key.scopes:
+        if not Permission.is_in_scope(want_scope, g.scopes):
+            raise ApiError("Requested scope '%s' not in existing scopes: %s" % (want_scope, ','.join(g.scopes)), 403)
 
     try:
         key = key.create()
@@ -73,8 +72,7 @@ def list_keys():
 @permission('admin:keys')
 @jsonp
 def delete_key(key):
-    customer = g.get('customer', None)
-    key = ApiKey.get(key, customer)
+    key = ApiKey.get(key)
 
     if not key:
         raise ApiError("not found", 404)

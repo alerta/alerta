@@ -19,7 +19,7 @@ class Jwt(object):
         self.jwt_id = jti
 
         self.name = kwargs.get('name', None)
-        self.login = kwargs.get('login', None)
+        self.preferred_username = kwargs.get('preferred_username', None)
         self.email = kwargs.get('email', None)
         self.provider = kwargs.get('provider', None)
         self.orgs = kwargs.get('orgs', list())
@@ -51,7 +51,7 @@ class Jwt(object):
             iat=json.get('iat', None),
             jti=json.get('jti', None),
             name=json.get('name', None),
-            login=json.get('login', None),
+            preferred_username=json.get('preferred_username', None),
             email=json.get('email', None),
             provider=json.get('provider', None),
             orgs=json.get('orgs', list()),
@@ -75,8 +75,8 @@ class Jwt(object):
         }
         if self.name:
             data['name'] = self.name
-        if self.login:
-            data['login'] = self.login
+        if self.preferred_username:
+            data['preferred_username'] = self.preferred_username
         if self.email:
             data['email'] = self.email
         if self.provider:
@@ -102,6 +102,6 @@ class Jwt(object):
         return token.decode('unicode_escape')
 
     def __repr__(self):
-        return 'Jwt(iss=%r, sub=%r, aud=%r, exp=%r, name=%r, login=%r, customer=%r)' % (
-            self.issuer, self.subject, self.audience, self.expiration, self.name, self.login, self.customer
+        return 'Jwt(iss=%r, sub=%r, aud=%r, exp=%r, name=%r, preferred_username=%r, customer=%r)' % (
+            self.issuer, self.subject, self.audience, self.expiration, self.name, self.preferred_username, self.customer
         )

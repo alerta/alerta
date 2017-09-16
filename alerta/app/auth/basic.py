@@ -53,7 +53,7 @@ def signup():
 
     # generate token
     token = create_token(user.id, user.name, user.email, provider='basic', customer=customer,
-                         roles=[user.role], email=user.email, email_verified=user.email_verified)
+                         roles=user.roles, email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)
 
 
@@ -69,10 +69,10 @@ def login():
 
     user = User.get_by_email(email)
     if not user:
-        raise ApiError("invalid user", 401)
+        raise ApiError("invalid user or password", 401)
 
     if not user.verify_password(password):
-        raise ApiError("invalid password", 401)
+        raise ApiError("invalid user or password", 401)
 
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
         hash = str(uuid4())
@@ -96,7 +96,7 @@ def login():
 
     # generate token
     token = create_token(user.id, user.name, user.email, provider='basic', customer=customer,
-                         roles=[user.role], email=user.email, email_verified=user.email_verified)
+                         roles=user.roles, email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)
 
 

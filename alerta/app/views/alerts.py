@@ -249,7 +249,7 @@ def history():
     if history:
         return jsonify(
             status="ok",
-            history=history,
+            history=[h.serialize for h in history],
             total=len(history)
         )
     else:

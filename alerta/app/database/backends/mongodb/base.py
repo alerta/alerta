@@ -224,26 +224,18 @@ class Backend(Database):
                 "text": alert.text,
                 "createTime": alert.create_time,
                 "rawData": alert.raw_data,
-                "duplicateCount": 0,
-                "repeat": False,
+                "duplicateCount": alert.duplicate_count,
+                "repeat": alert.repeat,
                 "previousSeverity": alert.previous_severity,
                 "trendIndication": alert.trend_indication,
-                "receiveTime": now,
-                "lastReceiveId": alert.id,
-                "lastReceiveTime": now
+                "receiveTime": alert.receive_time,
+                "lastReceiveId": alert.last_receive_id,
+                "lastReceiveTime": alert.last_receive_time
             },
             '$addToSet': {"tags": {'$each': alert.tags}},
             '$push': {
                 "history": {
-                    '$each': [{
-                        "event": alert.event,
-                        "severity": alert.severity,
-                        "value": alert.value,
-                        "type": "severity",
-                        "text": alert.text,
-                        "id": alert.id,
-                        "updateTime": now
-                    }],
+                    '$each': [h.serialize for h in history],
                     '$slice': -abs(current_app.config['HISTORY_LIMIT'])
                 }
             }
@@ -252,17 +244,6 @@ class Backend(Database):
         # only update those attributes that are specifically defined
         attributes = {'attributes.'+k: v for k, v in alert.attributes.items()}
         update['$set'].update(attributes)
-
-        # FIXME
-        # if status != previous_status:
-        #     update['$push']['history']['$each'].append({
-        #         "event": alert.event,
-        #         "status": status,
-        #         "type": "status",
-        #         "text": "correlated alert status change",
-        #         "id": alert.id,
-        #         "updateTime": now
-        #     })
 
         return g.db.alerts.find_one_and_update(
             query,
@@ -772,10 +753,8 @@ class Backend(Database):
             return data
 
     # get
-    def get_key(self, key, customer=None):
+    def get_key(self, key):
         query = {'$or': [{'key': key}, {'_id': key}]}
-        if customer:
-            query['customer'] = customer
         return g.db.keys.find_one(query)
 
     # list
@@ -826,7 +805,7 @@ class Backend(Database):
         return g.db.users.find(query.where)
 
     def get_user_by_email(self, email):
-        query = {"email": email}
+        query = {'$or': [{"email": email}, {"login": email}]}
         return g.db.users.find_one(query)
 
     def get_user_by_hash(self, hash):

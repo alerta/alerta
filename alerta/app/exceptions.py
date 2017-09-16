@@ -1,4 +1,6 @@
 
+import traceback
+
 from flask import jsonify
 
 
@@ -29,11 +31,12 @@ class NoCustomerMatch(AlertaException):
 class ApiError(Exception):
     code = 500
 
-    def __init__(self, message, code=None):
+    def __init__(self, message, code=None, errors=None):
         super(ApiError, self).__init__(message)
         self.message = message
         if code is not None:
             self.code = code
+        self.errors = errors
 
 
 class ExceptionHandlers(object):
@@ -50,15 +53,19 @@ def handle_api_error(error):
     return jsonify({
         'status': 'error',
         'message': error.message,
-        'code':  error.code
+        'code':  error.code,
+        'errors': error.errors
     }), error.code
 
 
 def handle_http_error(error):
     return jsonify({
         'status': 'error',
-        'message': '%s: %s' % (error.name, error.description),
-        'code': error.code
+        'message': error.name,
+        'code': error.code,
+        'errors': [
+            error.description
+        ]
     }), error.code
 
 
@@ -66,5 +73,8 @@ def handle_exception(error):
     return jsonify({
         'status': 'error',
         'message': str(error),
-        'code': 500
+        'code': 500,
+        'errors': [
+            traceback.format_exc()
+        ]
     }), 500

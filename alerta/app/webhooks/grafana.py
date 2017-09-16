@@ -20,7 +20,7 @@ def parse_grafana(alert, match):
         severity = 'indeterminate'
 
     attributes = {
-        'ruleId': str(alert['ruleId'])  # FIXME - can't search attribute numeric values
+        'ruleId': str(alert['ruleId'])
     }
     if 'ruleUrl' in alert:
         attributes['ruleUrl'] = '<a href="%s" target="_blank">Rule</a>' % alert['ruleUrl']
@@ -74,7 +74,7 @@ def grafana():
 
     elif data and data['state'] == 'ok' and data.get('ruleId', None):
         try:
-            query = qb.from_dict({'attributes': {'ruleId': str(data['ruleId'])}})
+            query = qb.from_dict({'attributes.ruleId': str(data['ruleId'])})
             existingAlerts = Alert.find_all(query)
         except Exception as e:
             raise ApiError(str(e), 500)

@@ -9,7 +9,7 @@ from flask import current_app
 
 from alerta.app import db, severity
 from alerta.app.models import status_code
-from alerta.app.models.history import History
+from alerta.app.models.history import History, RichHistory
 from alerta.app.utils.api import absolute_url
 from alerta.app.utils.format import DateTime
 
@@ -358,7 +358,7 @@ class Alert(object):
     # list alert history
     @staticmethod
     def get_history(query=None, page=1, page_size=100):
-        return [History.from_db(hist) for hist in db.get_history(query, page, page_size)]
+        return [RichHistory.from_db(hist) for hist in db.get_history(query, page, page_size)]
 
     # get total count
     @staticmethod
