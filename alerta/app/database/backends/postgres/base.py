@@ -268,12 +268,13 @@ class Backend(Database):
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """
-            SELECT resource, environment, correlate, service, "group", tags, attributes, origin, create_time,
-                timeout, raw_data, customer, duplicate_count, repeat, previous_severity, trend_indication,
-                receive_time, last_receive_id, last_receive_time, history, h.* from alerts, unnest(history) h
+            SELECT resource, environment, service, "group", tags, attributes, origin, customer,
+                   history, h.* from alerts, unnest(history) h
              WHERE {where}
         """.format(where=query.where)
-        Record = namedtuple("Record", [])
+        Record = namedtuple("Record", ['id', 'resource', 'event', 'environment', 'severity', 'status', 'service',
+                                       'group', 'value', 'text', 'tags', 'attributes', 'origin', 'update_time',
+                                       'type', 'customer'])
         return [
             Record(
                 id=h.id,
@@ -281,6 +282,7 @@ class Backend(Database):
                 event=h.event,
                 environment=h.environment,
                 severity=h.severity,
+                status=h.status,
                 service=h.service,
                 group=h.group,
                 value=h.value,
@@ -289,7 +291,7 @@ class Backend(Database):
                 attributes=h.attributes,
                 origin=h.origin,
                 update_time=h.update_time,
-                type=h.change_type,
+                type=h.type,
                 customer=h.customer
             ) for h in self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
         ]

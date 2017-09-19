@@ -5,7 +5,7 @@ from uuid import uuid4
 from flask import current_app, request, jsonify, render_template
 from flask_cors import cross_origin
 
-from alerta.app.auth.utils import is_authorized, create_token
+from alerta.app.auth.utils import is_authorized, create_token, get_customer
 from alerta.app.exceptions import ApiError, NoCustomerMatch
 from alerta.app.models.customer import Customer
 from alerta.app.models.user import User
@@ -83,16 +83,7 @@ def login():
     if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
-    # assign customer
-    if current_app.config['CUSTOMER_VIEWS']:
-        try:
-            customer = Customer.lookup(user.email, groups=[user.domain])
-        except NoCustomerMatch as e:
-            raise ApiError(str(e), 403)
-    else:
-        customer = None
-
-    user.update_last_login()
+    customer = get_customer(user.email, groups=[user.domain])
 
     # generate token
     token = create_token(user.id, user.name, user.email, provider='basic', customer=customer,

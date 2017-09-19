@@ -5,10 +5,11 @@ from functools import wraps
 from uuid import uuid4
 
 import bcrypt
+from alerta.app.models.customer import Customer
 from flask import request, g, current_app
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
-from alerta.app.exceptions import ApiError
+from alerta.app.exceptions import ApiError, NoCustomerMatch
 from alerta.app.models.key import ApiKey
 from alerta.app.models.permission import Permission
 from alerta.app.models.token import Jwt
@@ -26,6 +27,16 @@ def is_authorized(allowed_setting, groups):
     return (current_app.config['AUTH_REQUIRED']
             and not ('*' in current_app.config[allowed_setting]
                      or set(current_app.config[allowed_setting]).intersection(set(groups))))
+
+
+def get_customer(login, groups):
+    if current_app.config['CUSTOMER_VIEWS']:
+        try:
+            return Customer.lookup(login, groups)
+        except NoCustomerMatch as e:
+            raise ApiError(str(e), 403)
+    else:
+        return
 
 
 def create_token(user_id, name, login, provider, customer, orgs=None, groups=None, roles=None, email=None, email_verified=None):

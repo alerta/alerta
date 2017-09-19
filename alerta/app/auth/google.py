@@ -3,7 +3,7 @@ import requests
 from flask import current_app, request, jsonify
 from flask_cors import cross_origin
 
-from alerta.app.auth.utils import is_authorized, create_token
+from alerta.app.auth.utils import is_authorized, create_token, get_customer
 from alerta.app.exceptions import ApiError, NoCustomerMatch
 from alerta.app.models.customer import Customer
 from alerta.app.models.token import Jwt
@@ -46,13 +46,7 @@ def google():
     if not profile:
         raise ApiError("Google+ API is not enabled for this Client ID", 400)
 
-    if current_app.config['CUSTOMER_VIEWS']:
-        try:
-            customer = Customer.lookup(id_token.email, groups=[domain])
-        except NoCustomerMatch as e:
-            raise ApiError(str(e), 403)
-    else:
-        customer = None
+    customer = get_customer(id_token.email, groups=[domain])
 
     token = create_token(id_token.subject, profile['name'], id_token.email, provider='google', customer=customer,
                          orgs=[domain], email=id_token.email, email_verified=id_token.email_verified)

@@ -45,7 +45,10 @@ setuptools.setup(
     install_requires=[
         'Flask>=0.10.1',
         'Flask-Cors>=3.0.2',
+        'Flask-Compress',
+        'raven[flask]',
         'pymongo>=3.0',
+        'psycopg2',
         'argparse',
         'requests',
         'python-dateutil',

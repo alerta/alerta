@@ -2,4 +2,4 @@
 
 import sys ; sys.path.insert(0, '/api')
 
-from alerta.app import app as application
+from alerta.api import app as application

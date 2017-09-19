@@ -1,8 +1,8 @@
 Flask
 Flask-Cors>=3.0.2
 Flask-Compress
+raven[flask]
 pymongo>=3.0
-elasticsearch
 psycopg2
 requests
 python-dateutil
@@ -10,6 +10,5 @@ pytz
 PyJWT
 bcrypt
 cryptography
-raven
 blinker
 PyYaml

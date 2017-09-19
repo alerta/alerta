@@ -1,5 +1,5 @@
 from alerta.app.models.permission import Permission
-from flask import jsonify, request, g
+from flask import jsonify, request, g, current_app
 from flask_cors import cross_origin
 
 from alerta.app.auth.utils import permission
@@ -46,11 +46,14 @@ def create_key():
 @permission('read:keys')
 @jsonp
 def list_keys():
-    if 'admin' in g.scopes or 'admin:keys' in g.scopes:
+    if not current_app.config['AUTH_REQUIRED']:
         keys = ApiKey.find_all()
+    elif 'admin' in g.scopes or 'admin:keys' in g.scopes:
+        keys = ApiKey.find_all()
+    elif not g.get('user', None):
+            raise ApiError("Must define 'user' to list user keys", 400)
     else:
-        user = g.get('user')
-        keys = ApiKey.find_by_user(user)
+        keys = ApiKey.find_by_user(g.user)
 
     if keys:
         return jsonify(

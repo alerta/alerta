@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS blackouts (
     id text PRIMARY KEY,
     priority integer NOT NULL,
     environment text NOT NULL,
-    service text,
+    service text[],
     resource text,
     event text,
     "group" text,

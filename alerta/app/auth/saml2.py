@@ -4,7 +4,7 @@ import json
 from flask import current_app, request, jsonify, make_response
 from flask_cors import cross_origin
 
-from alerta.app.auth.utils import is_authorized, create_token
+from alerta.app.auth.utils import is_authorized, create_token, get_customer
 from alerta.app.exceptions import NoCustomerMatch
 from alerta.app.models.customer import Customer
 from alerta.app.utils.api import absolute_url, deepmerge
@@ -87,22 +87,14 @@ def saml_response_from_idp():
     )
     identity = authn_response.get_identity()
     email = identity['emailAddress'][0]
+    domain = email.split('@')[1]
     name = (current_app.config.get('SAML2_USER_NAME_FORMAT', '{givenName} {surname}')).format(**dict(map(lambda x: (x[0], x[1][0]), identity.items())))
 
     groups = identity.get('groups', [])
     if is_authorized('ALLOWED_SAML2_GROUPS', groups):
         return _make_response({'status': 'error', 'message': 'User {} is not authorized'.format(email)}, 403)
 
-    if current_app.config['CUSTOMER_VIEWS']:
-        try:
-            customer = Customer.lookup(email, groups=[email.split('@')[1]])
-        except NoCustomerMatch:
-            return _make_response(
-                {'status': 'error', 'message': 'No customer lookup defined for user %s' % email},
-                403
-            )
-    else:
-        customer = None
+    customer = get_customer(email, groups=[domain])
 
     token = create_token(email, name, email, provider='saml2', customer=customer, groups=groups)
     return _make_response({'status': 'ok', 'token': token.tokenize}, 200)
