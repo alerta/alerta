@@ -37,4 +37,3 @@
 
   window.Alerta = Alerta;
 }(jQuery, window));
-
