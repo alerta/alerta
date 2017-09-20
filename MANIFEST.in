@@ -5,5 +5,6 @@ include README.md
 exclude .gitignore
 global-exclude *.pyc
 include alerta/app/app.wsgi
+include alerta/app/sql/schema.sql
 recursive-include alerta/app/templates *
 recursive-include alerta/app/static *
