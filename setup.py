@@ -19,14 +19,10 @@ try:
         BUILD_NUMBER = '{build_number}'
         BUILD_DATE = '{date}'
         BUILD_VCS_NUMBER = '{revision}'
-        BUILT_BY = '{user}'
-        HOSTNAME = '{host}'
         """.format(
             build_number=os.environ.get('BUILD_NUMBER', 'PROD'),
-            date=datetime.today().strftime('%Y-%m-%d'),
-            revision=subprocess.check_output(["git", "rev-parse", "HEAD"]).decode('utf-8').strip(),
-            user=os.environ.get('USER', 'unknown'),
-            host=platform.node()
+            date=datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+            revision=subprocess.check_output(["git", "rev-parse", "HEAD"]).decode('utf-8').strip()
         ).replace('    ', '')
         f.write(build)
 except Exception:
@@ -45,8 +41,8 @@ setuptools.setup(
     install_requires=[
         'Flask>=0.10.1',
         'Flask-Cors>=3.0.2',
-        'Flask-Compress',
-        'raven[flask]',
+        'Flask-Compress>=1.4.0',
+        'raven[flask]>=6.1.0',
         'pymongo>=3.0',
         'psycopg2',
         'argparse',
@@ -60,7 +56,7 @@ setuptools.setup(
     zip_safe=False,
     entry_points={
         'console_scripts': [
-            'alertad = alerta.app.commands:cli'
+            'alertad = alerta.commands:cli'
         ],
         'alerta.plugins': [
             'reject = alerta.plugins.reject:RejectPolicy',
@@ -77,7 +73,6 @@ setuptools.setup(
         'Intended Audience :: Telecommunications Industry',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 2.7',
         'Topic :: System :: Monitoring',
     ],

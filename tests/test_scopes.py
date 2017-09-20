@@ -3,7 +3,7 @@ import json
 import unittest
 
 from alerta.app import create_app, db, key_helper
-from alerta.app.models.key import ApiKey
+from alerta.models.key import ApiKey
 
 
 class ScopeTestCase(unittest.TestCase):

@@ -57,16 +57,25 @@ or using ``ALERTA_SVR_CONF_FILE`` environment variable::
 Documentation
 -------------
 
-More information on configuration and other aspects of alerta can be found at <http://docs.alerta.io>
+More information on configuration and other aspects of alerta can be found
+at <http://docs.alerta.io>
 
 Development
 -----------
 
-To run in development mode and report errors to [Sentry](https://sentry.io):
+To run in development mode, listening on port 5000:
 
-    $ export FLASK_APP=alerta/api.py
-    $ export DATABASE_URL=postgres://localhost:5432/alerta5  # => OR mongodb://localhost:27017/alerta5
+    $ export FLASK_APP=alerta
+    $ pip install -e .
+    $ flask run
+
+To run in development mode, listening on port 8080, using Postgres and
+reporting errors to [Sentry](https://sentry.io)
+
+    $ export FLASK_APP=alerta
+    $ export DATABASE_URL=postgres://localhost:5432/alerta5
     $ export SENTRY_DSN=https://8b56098250544fb78b9578d8af2a7e13:fa9d628da9c4459c922293db72a3203f@sentry.io/153768
+    $ pip install -e .
     $ flask run --debugger --port 8080 --with-threads --reload
 
 Tests

@@ -6,7 +6,7 @@ try:
 except ImportError:
     from alerta.app import app  # alerta < 5.0
 
-from alerta.app.exceptions import RejectException
+from alerta.exceptions import RejectException
 from alerta.plugins import PluginBase
 
 LOG = logging.getLogger('alerta.plugins.reject')
