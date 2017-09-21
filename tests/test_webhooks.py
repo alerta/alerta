@@ -316,38 +316,39 @@ class WebhooksTestCase(unittest.TestCase):
         """
 
         self.grafana_alert_alerting = """
-        {  
-           "evalMatches":[  
-              {  
-                 "value":100,
-                 "metric":"High value",
-                 "tags":null
-              },
-              {  
-                 "value":200,
-                 "metric":"Higher Value",
-                 "tags":null
-              }
-           ],
-           "message": "Test notification from grafana",
-           "ruleId":1,
-           "ruleName":"Test notification",
-           "ruleUrl":"http://localhost:3000/",
-           "imageUrl":"http://grafana.org/assets/img/blog/mixed_styles.png",
-           "state":"alerting",
-           "title":"[Alerting] Test notification"
+        {
+            "evalMatches": [
+                {
+                    "value": 97.007606,
+                    "metric": "user",
+                    "tags": {
+                        "__name__": "netdata_cpu_cpu_percentage_average",
+                        "chart": "cpu.cpu0",
+                        "dimension": "user",
+                        "family": "utilization",
+                        "instance": "zeta.domain",
+                        "job": "monitoring"
+                    }
+                }
+            ],
+            "message": "boom!",
+            "ruleId": 7,
+            "ruleName": "Zeta CPU alert",
+            "ruleUrl": "https://grafana.domain.tld/dashboard/db/alarms?fullscreen&edit&tab=alert&panelId=1&orgId=1",
+            "state": "alerting",
+            "title": "[Alerting] CPU alert"
         }
         """
 
         self.grafana_alert_ok = """
         {
-           "evalMatches":[],
-           "message": "Test notification from grafana",
-           "ruleId":1,
-           "ruleName":"Test notification",
-           "ruleUrl":"http://localhost:3000/",
-           "state":"ok",
-           "title":"[OK] Test notification"
+            "evalMatches": [],
+            "message": "boom!",
+            "ruleId": 7,
+            "ruleName": "Zeta CPU alert",
+            "ruleUrl": "https://grafana.domain.tld/dashboard/db/alarms?fullscreen&edit&tab=alert&panelId=1&orgId=1",
+            "state": "ok",
+            "title": "[OK] CPU alert"
         }
         """
 
@@ -524,6 +525,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['service'], ['Webserver Health'])
         self.assertEqual(data['alert']['text'], 'CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%')
 
+
     def test_grafana_webhook(self):
 
         # state=alerting
@@ -532,19 +534,19 @@ class WebhooksTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], "ok")
 
-        alert_ids = data['ids']
+        alert_id = data['id']
 
         # state=ok
         response = self.client.post('/webhooks/grafana', data=self.grafana_alert_ok, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(sorted(data['ids']), sorted(alert_ids))
+        self.assertEqual(data['status'], "ok")
 
         # get alert
-        response = self.client.get('/alert/' + alert_ids[0])
+        response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertIn(alert_ids[0], data['alert']['id'])
+        self.assertIn(alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['status'], 'closed')
 
     def test_telegram_webhook(self):
