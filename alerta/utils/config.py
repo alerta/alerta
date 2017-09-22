@@ -33,7 +33,7 @@ class Config(object):
         if 'SECRET_KEY' in os.environ:
             config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
-        database_url = config['DATABASE_URL'] = (
+        database_url = (
                 os.environ.get('DATABASE_URL', None) or
                 # The following database settings are deprecated.
                 os.environ.get('MONGO_URI', None) or
