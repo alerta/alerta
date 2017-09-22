@@ -2,6 +2,7 @@
 import datetime
 
 import six
+from bson import ObjectId
 from flask import json
 
 
@@ -12,6 +13,8 @@ class DateEncoder(json.JSONEncoder):
             return o.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (o.microsecond // 1000)
         elif isinstance(o, (Alert, History)):
             return o.serialize
+        elif isinstance(o, ObjectId):
+            return str(o)
         else:
             return json.JSONEncoder.default(self, o)
 
