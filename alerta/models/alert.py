@@ -394,3 +394,16 @@ class Alert(object):
     @staticmethod
     def get_services(query=None):
         return db.get_services(query)
+
+    @staticmethod
+    def housekeeping():
+        for (id, event, last_receive_id) in db.housekeeping():
+            history = History(
+                id=last_receive_id,
+                event=event,
+                status="expired",
+                text="alert timeout status change",
+                change_type="status",
+                update_time=datetime.utcnow()
+            )
+            db.set_status(id, "expired", history)

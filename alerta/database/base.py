@@ -286,6 +286,11 @@ class Database(Base):
     def update_timer(self, timer):
         raise NotImplementedError
 
+    #### HOUSEKEEPING
+
+    def housekeeping(self):
+        raise NotImplementedError
+
 
 class QueryBuilder(Base):
 

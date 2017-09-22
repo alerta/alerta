@@ -38,6 +38,7 @@ def management():
         url_for('mgmt.switchboard'),
         url_for('mgmt.good_to_go'),
         url_for('mgmt.health_check'),
+        url_for('mgmt.housekeeping'),
         url_for('mgmt.status'),
         url_for('mgmt.prometheus_metrics')
     ]
@@ -124,6 +125,18 @@ def health_check():
         return 'HEALTH_CHECK_FAILED: %s' % e, 503
 
     return 'OK'
+
+
+@mgmt.route('/management/housekeeping', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission('admin:management')
+def housekeeping():
+
+    try:
+        Alert.housekeeping()
+        return 'OK'
+    except Exception as e:
+        return 'HOUSEKEEPING FAILED: %s' % e, 503
 
 
 @mgmt.route('/management/status', methods=['OPTIONS', 'GET'])
