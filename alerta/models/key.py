@@ -13,7 +13,7 @@ class ApiKey(object):
 
         self.id = kwargs.get('id', None) or str(uuid4())
         self.key = kwargs.get('key', key_helper.generate())
-        self.user = user  # jwt=>login
+        self.user = user
         self.scopes = scopes or key_helper.user_default_scopes
         self.text = text
         self.expire_time = expire_time or datetime.utcnow() + timedelta(days=key_helper.api_key_expire_days)
@@ -45,7 +45,7 @@ class ApiKey(object):
     @property
     def serialize(self):
         return {
-            'id': self.key,  # NOTE: not self.id for backward compatibility with v4 mongodb
+            'id': self.id,
             'key': self.key,
             'href': absolute_url('/key/' + self.key),
             'user': self.user,

@@ -33,8 +33,7 @@ class Config(object):
         if 'SECRET_KEY' in os.environ:
             config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
-        if 'DATABASE_URL' in os.environ:
-            config['DATABASE_URL'] = (
+        database_url = config['DATABASE_URL'] = (
                 os.environ.get('DATABASE_URL', None) or
                 # The following database settings are deprecated.
                 os.environ.get('MONGO_URI', None) or
@@ -42,6 +41,8 @@ class Config(object):
                 os.environ.get('MONGOHQ_URL', None) or
                 os.environ.get('MONGOLAB_URI', None)
             )
+        # Use app config for DATABASE_URL if no env var from above override it
+        config['DATABASE_URL'] = database_url or config['DATABASE_URL']
 
         if 'AUTH_REQUIRED' in os.environ:
             config['AUTH_REQUIRED'] = True if os.environ['AUTH_REQUIRED'] == 'True' else False
