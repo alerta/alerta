@@ -42,7 +42,7 @@ setuptools.setup(
         'Flask>=0.10.1',
         'Flask-Cors>=3.0.2',
         'Flask-Compress>=1.4.0',
-        'raven[flask]>=6.1.0',
+        'raven[flask]==6.1.0',
         'pymongo>=3.0',
         'psycopg2',
         'argparse',

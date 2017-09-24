@@ -1,7 +1,7 @@
 
 import os
-
 from importlib import import_module
+
 try:
     from urllib.parse import urlparse
 except ImportError:
@@ -31,7 +31,7 @@ class Database(Base):
             self.init_db(app)
 
     def init_db(self, app):
-        db_uri = os.environ.get('DATABASE_URL', None) or app.config['DATABASE_URL']
+        db_uri = app.config['DATABASE_URL']
         backend = urlparse(db_uri).scheme
 
         cls = load_backend(backend)
@@ -284,6 +284,11 @@ class Database(Base):
         raise NotImplementedError
 
     def update_timer(self, timer):
+        raise NotImplementedError
+
+    #### HOUSEKEEPING
+
+    def housekeeping(self):
         raise NotImplementedError
 
 

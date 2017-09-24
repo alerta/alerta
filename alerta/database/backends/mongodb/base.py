@@ -969,3 +969,22 @@ class Backend(Database):
             upsert=True,
             return_document=ReturnDocument.AFTER
         )
+
+    #### HOUSEKEEPING
+
+    def housekeeping(self):
+        # delete 'closed' or 'expired' alerts older than 2hrs and 'informational' alerts older than 12hrs
+        two_hours_ago = datetime.utcnow() - timedelta(hours=2)
+        g.db.alerts.remove({"status": {'$in': ["closed", "expired"]}, "lastReceiveTime": {'$lt': two_hours_ago}})
+
+        twelve_hours_ago = datetime.utcnow() - timedelta(hours=12)
+        g.db.alerts.remove({"severity": "informational", "lastReceiveTime": {'$lt': twelve_hours_ago}})
+
+        pipeline = [
+            {'$project': {
+                "event": 1, "status": 1, "lastReceiveId": 1, "timeout": 1,
+                "expireTime": { '$add': ["$lastReceiveTime", { '$multiply': ["$timeout", 1]}]}}
+            },
+            {'$match': {"status": { '$ne': 'expired'}, "expireTime": { '$lt': datetime.utcnow()}, "timeout": { '$ne': 0}}}
+        ]
+        return [(r['_id'], r['event'], r['lastReceiveId']) for r in g.db.alerts.aggregate(pipeline)]

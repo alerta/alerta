@@ -737,7 +737,28 @@ class Backend(Database):
         """
         return self._upsert(upsert, vars(timer))
 
-    # #### SQL HELPERS
+    #### HOUSEKEEPING
+
+    def housekeeping(self):
+        # delete 'closed' or 'expired' alerts older than 2hrs and 'informational' alerts older than 12hrs
+        delete = """
+            DELETE FROM alerts
+             WHERE (status IN ('closed', 'expired')
+                    AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '2 hours'))
+                OR (severity='informational'
+                    AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '12 hours'))
+        """
+        self._delete(delete, {})
+
+        update = """
+            SELECT id, event, last_receive_id
+              FROM alerts
+             WHERE status!='expired' AND timeout!=0
+               AND (last_receive_time + INTERVAL '1 second' * timeout) < (NOW() at time zone 'utc')
+        """
+        return self._fetchall(update, {})
+
+    #### SQL HELPERS
 
     def _insert(self, query, vars):
         """

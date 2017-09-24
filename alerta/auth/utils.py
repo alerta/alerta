@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from functools import wraps
 from uuid import uuid4
 
-import bcrypt
 from flask import request, g, current_app
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
@@ -15,12 +14,17 @@ from alerta.models.permission import Permission
 from alerta.models.token import Jwt
 
 
-def generate_password_hash(password):
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
+try:
+    import bcrypt
 
+    def generate_password_hash(password):
+        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
 
-def check_password_hash(pwhash, password):
-    return bcrypt.checkpw(password.encode('utf-8'), pwhash.encode('utf-8'))
+    def check_password_hash(pwhash, password):
+        return bcrypt.checkpw(password.encode('utf-8'), pwhash.encode('utf-8'))
+
+except ImportError:  # Google App Engine
+    from werkzeug.security import generate_password_hash, check_password_hash
 
 
 def is_authorized(allowed_setting, groups):
@@ -111,6 +115,10 @@ def permission(scope):
                 g.user = None
                 g.customer = None
                 g.scopes = []
+                return f(*args, **kwargs)
+
+            # Google App Engine Cron Service
+            if request.headers.get('X-Appengine-Cron', False) and request.headers.get('X-Forwarded-For', '') == '0.1.0.1':
                 return f(*args, **kwargs)
 
             raise ApiError('Missing authorization API Key or Bearer Token', 401)
