@@ -856,15 +856,12 @@ def update_user(user):
         name = request.json.get('name', None)
         login = request.json.get('login', None)
         password = request.json.get('password', None)
-        provider = request.json.get('provider', None)
+        provider = 'basic'
         role = request.json.get('role', None)
         text = request.json.get('text', None)
         email_verified = request.json.get('email_verified', None)
     else:
         return jsonify(status="error", message="Nothing to update, request was empty"), 400
-
-    if password and provider!='basic':
-        return jsonify(status="error", message="Can only change the password for Basic Auth users."), 400
 
     try:
         user = db.update_user(user, name, login, password, provider, role, text, email_verified)
