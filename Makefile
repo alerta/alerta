@@ -39,4 +39,4 @@ tag:
 	git tag -a v$(VERSION) -m "version $(VERSION)"
 
 upload:
-	$(PYTHON) setup.py sdist upload
+	$(PYTHON) setup.py sdist bdist_wheel upload
