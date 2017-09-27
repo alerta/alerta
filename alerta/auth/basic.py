@@ -22,7 +22,7 @@ def signup():
         raise ApiError(str(e), 400)
 
     if User.get_by_email(user.email):
-        raise ApiError("user already exists", 409)
+        raise ApiError("username already exists", 409)
 
     try:
         user = user.create()
@@ -60,19 +60,19 @@ def signup():
 @auth.route('/auth/login', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def login():
-    # lookup user from login/email
+    # lookup user from username/email
     try:
-        email = request.json['email']
+        username = request.json.get('username', None) or request.json['email']
         password = request.json['password']
     except KeyError:
-        raise ApiError("must supply 'email' and 'password'", 401)
+        raise ApiError("must supply 'username' and 'password'", 401)
 
-    user = User.get_by_email(email)
+    user = User.get_by_email(username)
     if not user:
-        raise ApiError("invalid user or password", 401)
+        raise ApiError("invalid username or password", 401)
 
     if not user.verify_password(password):
-        raise ApiError("invalid user or password", 401)
+        raise ApiError("invalid username or password", 401)
 
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
         hash = str(uuid4())

@@ -59,7 +59,7 @@ class Backend(Database):
 
     @staticmethod
     def _adapt_datetime(dt):
-        return AsIs("%s" % adapt(DateTime.to_string(dt)))
+        return AsIs("%s" % adapt(DateTime.iso8601(dt)))
 
     @property
     def name(self):

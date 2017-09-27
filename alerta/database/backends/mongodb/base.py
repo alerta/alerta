@@ -738,7 +738,8 @@ class Backend(Database):
     # save
     def create_key(self, key):
         data = {
-            "_id": key.key,
+            "_id": key.id,
+            "key": key.key,
             "user": key.user,
             "scopes": key.scopes,
             "text": key.text,
@@ -749,7 +750,7 @@ class Backend(Database):
         if key.customer:
             data['customer'] = key.customer
 
-        if g.db.keys.insert_one(data).inserted_id == key.key:
+        if g.db.keys.insert_one(data).inserted_id == key.id:
             return data
 
     # get

@@ -30,5 +30,5 @@ class DateTime(object):
             raise ValueError('dates must be ISO 8601 date format YYYY-MM-DDThh:mm:ss.sssZ')
 
     @staticmethod
-    def to_string(dt):
+    def iso8601(dt):
         return dt.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (dt.microsecond // 1000)
