@@ -211,8 +211,7 @@ class Backend(Database):
     def set_status(self, id, status, history=None):
         update = """
             UPDATE alerts
-               SET status=%(status)s,
-                   history=(history || %(change)s)[1:{limit}]
+            SET status=%(status)s, history=(history || %(change)s)[1:{limit}]
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
@@ -241,7 +240,8 @@ class Backend(Database):
         attrs = dict([k, v] for k, v in old_attrs.items() if v is not None)
         update = """
             UPDATE alerts
-               SET attributes=%(attrs)s
+            SET attributes=%(attrs)s
+            WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """
         return self._update(update, {'id': id, 'like_id': id+'%', 'attrs': attrs}, returning=True)
@@ -541,8 +541,10 @@ class Backend(Database):
 
     def create_user(self, user):
         insert = """
-            INSERT INTO users (id, name, password, email, create_time, last_login, text, email_verified)
-            VALUES (%(id)s, %(name)s, %(password)s, %(email)s, %(create_time)s, %(last_login)s, %(text)s, %(email_verified)s)
+            INSERT INTO users (id, name, email, password, status, roles, attributes,
+                create_time, last_login, text, update_time, email_verified)
+            VALUES (%(id)s, %(name)s, %(email)s, %(password)s, %(status)s, %(roles)s, %(attributes)s, %(create_time)s,
+                %(last_login)s, %(text)s, %(update_time)s, %(email_verified)s)
             RETURNING *
         """
         return self._insert(insert, vars(user))
@@ -584,6 +586,7 @@ class Backend(Database):
         return self._update(update, (hash, id))
 
     def update_user(self, id, **kwargs):
+        kwargs['update_time'] = datetime.utcnow()
         update = """
             UPDATE users
             SET
@@ -594,6 +597,8 @@ class Backend(Database):
             update += "email=%(email)s, "
         if 'password' in kwargs:
             update += "password=%(password)s, "
+        if 'status' in kwargs:
+            update += "status=%(status)s, "
         if 'roles' in kwargs:
             update += "roles=%(roles)s, "
         if 'text' in kwargs:
@@ -601,12 +606,23 @@ class Backend(Database):
         if 'email_verified' in kwargs:
             update += "email_verified=%(email_verified)s, "
         update += """
-            id=%(id)s
+            update_time=%(update_time)s
             WHERE id=%(id)s
             RETURNING *
         """
         kwargs['id'] = id
         return self._update(update, kwargs, returning=True)
+
+    def update_user_attributes(self, id, old_attrs, new_attrs):
+        old_attrs.update(new_attrs)
+        attrs = dict([k, v] for k, v in old_attrs.items() if v is not None)
+        update = """
+            UPDATE users
+               SET attributes=%(attrs)s
+             WHERE id=%(id)s
+            RETURNING *
+        """
+        return self._update(update, {'id': id, 'attrs': attrs}, returning=True)
 
     def delete_user(self, id):
         delete = """

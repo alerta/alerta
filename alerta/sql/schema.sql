@@ -120,10 +120,13 @@ CREATE TABLE IF NOT EXISTS users (
     name text,
     email text UNIQUE NOT NULL,
     password text NOT NULL,
+    status text,
     roles text[],
+    attributes jsonb,
     create_time timestamp without time zone NOT NULL,
     last_login timestamp without time zone,
     text text,
+    update_time timestamp without time zone,
     email_verified boolean,
     hash text
 );

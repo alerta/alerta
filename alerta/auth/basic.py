@@ -40,15 +40,8 @@ def signup():
     if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
-    # assign customer
-    if current_app.config['CUSTOMER_VIEWS']:
-        try:
-            customer = Customer.lookup(user.email, groups=[user.domain])
-        except NoCustomerMatch as e:
-            raise ApiError(str(e), 403)
-    else:
-        customer = None
-
+    # assign customer & update last login time
+    customer = get_customer(user.email, groups=[user.domain])
     user.update_last_login()
 
     # generate token
@@ -83,7 +76,9 @@ def login():
     if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
+    # assign customer & update last login time
     customer = get_customer(user.email, groups=[user.domain])
+    user.update_last_login()
 
     # generate token
     token = create_token(user.id, user.name, user.email, provider='basic', customer=customer,

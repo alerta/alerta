@@ -31,12 +31,11 @@ def update_user(user_id):
     else:
         raise ApiError("failed to update user", 500)
 
-
 @api.route('/users', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission('admin:users')
 @jsonp
-def list_users():
+def search_users():
     query = qb.from_params(request.args)
     users = User.find_all(query)
 

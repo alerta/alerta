@@ -832,6 +832,21 @@ class Backend(Database):
             return_document=ReturnDocument.AFTER
         )
 
+    def update_user_attributes(self, id, old_attrs, new_attrs):
+        """
+        Set all attributes (including private attributes) and unset attributes by using a value of 'null'.
+        """
+        update = dict()
+        set_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is not None}
+        if set_value:
+            update['$set'] = set_value
+        unset_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is None}
+        if unset_value:
+            update['$unset'] = unset_value
+
+        response = g.db.users.update_one({'_id': {'$regex': '^' + id}}, update=update)
+        return response.matched_count > 0
+
     def delete_user(self, id):
         response = g.db.users.delete_one({"_id": id})
         return True if response.deleted_count == 1 else False
