@@ -509,9 +509,9 @@ class Backend(Database):
     def get_key(self, key):
         select = """
             SELECT * FROM keys
-             WHERE key=%s
+             WHERE id=%s OR key=%s
         """
-        return self._fetchone(select, (key,))
+        return self._fetchone(select, (key, key))
 
     def get_keys(self, query=None):
         query = query or Query()
@@ -525,17 +525,17 @@ class Backend(Database):
         update = """
             UPDATE keys
             SET last_used_time=%s, count=count+1
-            WHERE key=%s
+            WHERE id=%s OR key=%s
         """
-        return self._update(update, (datetime.utcnow(), key))
+        return self._update(update, (datetime.utcnow(), key, key))
 
     def delete_key(self, key):
         delete = """
             DELETE FROM keys
-            WHERE key=%s
+            WHERE id=%s OR key=%s
             RETURNING key
         """
-        return self._delete(delete, (key,), returning=True)
+        return self._delete(delete, (key, key), returning=True)
 
     #### USERS
 
