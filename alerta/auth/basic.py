@@ -36,6 +36,10 @@ def signup():
         user.set_email_hash(hash)
         raise ApiError('email not verified', 401)
 
+    # check user is active
+    if user.status != 'active':
+        raise ApiError('user not active', 403)
+
     # check allowed domain
     if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
@@ -67,12 +71,18 @@ def login():
     if not user.verify_password(password):
         raise ApiError("invalid username or password", 401)
 
+    # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
         hash = str(uuid4())
         send_confirmation(user, hash)
         user.set_email_hash(hash)
         raise ApiError('email not verified', 401)
 
+    # check user is active
+    if user.status != 'active':
+        raise ApiError('user not active', 403)
+
+    # check allowed domain
     if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 

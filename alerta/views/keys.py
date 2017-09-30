@@ -19,7 +19,10 @@ def create_key():
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    if 'admin' not in g.scopes and 'admin:keys' not in g.scopes:
+    if 'admin' in g.scopes or 'admin:keys' in g.scopes:
+        key.user = key.user or g.user
+        key.customer = key.customer or g.get('customer', None)
+    else:
         key.user = g.user
         key.customer = g.get('customer', None)
 
