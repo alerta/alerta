@@ -26,10 +26,14 @@ def update_user(user_id):
     if not user:
         raise ApiError("not found", 404)
 
+    if 'email' in request.json and User.get_by_email(request.json['email']):
+        raise ApiError("user with email already exists", 409)
+
     if user.update(**request.json):
         return jsonify(status="ok")
     else:
         raise ApiError("failed to update user", 500)
+
 
 @api.route('/users', methods=['OPTIONS', 'GET'])
 @cross_origin()

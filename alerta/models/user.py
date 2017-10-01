@@ -145,25 +145,27 @@ class User(object):
 
     def update(self, **kwargs):
         update = dict()
-        if 'name' in kwargs:
+        if kwargs.get('name', None) is not None:
             update['name'] = kwargs['name']
-        if 'email' in kwargs:
+        if kwargs.get('email', None) is not None:
             update['email'] = kwargs['email']
-        if 'password' in kwargs:
+        if kwargs.get('password', None) is not None:
             update['password'] = generate_password_hash(kwargs['password'])
-        if 'status' in kwargs:
+        if kwargs.get('status', None) is not None:
             update['status'] = kwargs['status']
-        if 'role' in kwargs:
+        if kwargs.get('role', None) is not None:
             update['roles'] = [kwargs['role']]
-        elif 'roles' in kwargs:
+        elif kwargs.get('roles', None) is not None:
             update['roles'] = kwargs['roles']
-        if 'text' in kwargs:
+        if kwargs.get('text', None) is not None:
             update['text'] = kwargs['text']
-        if 'email_verified' in kwargs:
+        if kwargs.get('email_verified', None) is not None:
             update['email_verified'] = kwargs['email_verified']
+        elif 'email' in kwargs:
+            update['email_verified'] = False
         return User.from_db(db.update_user(self.id, **update))
 
-    # update alert attributes
+    # update user attributes
     def update_attributes(self, attributes):
         return db.update_user_attributes(self.id, self.attributes, attributes)
 

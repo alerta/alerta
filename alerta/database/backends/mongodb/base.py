@@ -826,6 +826,7 @@ class Backend(Database):
         ).matched_count == 1
 
     def update_user(self, id, **kwargs):
+        kwargs['updateTime'] = datetime.utcnow()
         return g.db.users.find_one_and_update(
             {"_id": id},
             update={'$set': kwargs},
