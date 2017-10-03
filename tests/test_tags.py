@@ -47,6 +47,7 @@ class TagTestCase(unittest.TestCase):
 
     def tearDown(self):
         db.destroy()
+
     def test_tag_alert(self):
 
         # create alert

@@ -1,4 +1,6 @@
 
+import re
+
 from flask import request, jsonify
 from flask_cors import cross_origin
 
@@ -12,7 +14,10 @@ from . import auth
 @cross_origin()
 @permission('read:userinfo')
 def userinfo():
-    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    auth_header = request.headers.get('Authorization', '')
+    m = re.match(r'Bearer (\S+)', auth_header)
+    token = m.group(1) if m else None
+
     if token:
         return jsonify(Jwt.parse(token).serialize)
     else:
