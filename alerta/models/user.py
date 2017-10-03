@@ -20,10 +20,13 @@ class User(object):
         self.name = name
         self.email = email  # => g.user
         self.password = password  # NB: hashed password
+        self.status = kwargs.get('status', None) or 'active'  # 'active', 'inactive', 'unknown'
         self.roles = ['admin'] if self.email in current_app.config['ADMIN_USERS'] else (roles or ['user'])
+        self.attributes = kwargs.get('attributes', None) or dict()
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
         self.last_login = kwargs.get('last_login', None)
         self.text = text or ""
+        self.update_time = kwargs.get('update_time', None) or datetime.utcnow()
         self.email_verified = kwargs.get('email_verified', False)
 
     @property
@@ -37,6 +40,7 @@ class User(object):
             email=json.get('email'),
             password=generate_password_hash(json.get('password', None)),
             roles=json.get('roles', list()),
+            attributes=json.get('attributes', dict()),
             text=json.get('text', None),
             email_verified=json.get('email_verified', None)
         )
@@ -53,16 +57,19 @@ class User(object):
             'email': self.email,
             'domain': self.domain,
             'provider': 'basic',
+            'status': self.status,
             'roles': self.roles,
+            'attributes': self.attributes,
             'createTime': self.create_time,
             'lastLogin': self.last_login,
             'text': self.text,
+            'updateTime': self.update_time,
             'email_verified': self.email_verified or False
         }
 
     def __repr__(self):
-        return 'User(id=%r, name=%r, email=%r, roles=%r, email_verified=%r)' % (
-            self.id, self.name, self.email, ','.join(self.roles), self.email_verified
+        return 'User(id=%r, name=%r, email=%r, status=%r, roles=%r, email_verified=%r)' % (
+            self.id, self.name, self.email, self.status, ','.join(self.roles), self.email_verified
         )
 
     @classmethod
@@ -72,10 +79,13 @@ class User(object):
             name=doc.get('name', None),
             email=doc.get('email', None) or doc.get('login', None),
             password=doc.get('password', None),
+            status=doc.get('status', None),
             roles=doc.get('roles', list()),
+            attributes=doc.get('attributes', dict()),
             create_time=doc.get('createTime', None),
             last_login=doc.get('lastLogin', None),
             text=doc.get('text', None),
+            update_time=doc.get('updateTime', None),
             email_verified=doc.get('email_verified', None)
         )
 
@@ -86,10 +96,13 @@ class User(object):
             name=rec.name,
             email=rec.email,
             password=rec.password,
+            status=rec.status,
             roles=rec.roles,
+            attributes=dict(rec.attributes),
             create_time=rec.create_time,
             last_login=rec.last_login,
             text=rec.text,
+            update_time=rec.update_time,
             email_verified=rec.email_verified
         )
 
@@ -132,21 +145,29 @@ class User(object):
 
     def update(self, **kwargs):
         update = dict()
-        if 'name' in kwargs:
+        if kwargs.get('name', None) is not None:
             update['name'] = kwargs['name']
-        if 'email' in kwargs:
+        if kwargs.get('email', None) is not None:
             update['email'] = kwargs['email']
-        if 'password' in kwargs:
+        if kwargs.get('password', None) is not None:
             update['password'] = generate_password_hash(kwargs['password'])
-        if 'role' in kwargs:
+        if kwargs.get('status', None) is not None:
+            update['status'] = kwargs['status']
+        if kwargs.get('role', None) is not None:
             update['roles'] = [kwargs['role']]
-        elif 'roles' in kwargs:
+        elif kwargs.get('roles', None) is not None:
             update['roles'] = kwargs['roles']
-        if 'text' in kwargs:
+        if kwargs.get('text', None) is not None:
             update['text'] = kwargs['text']
-        if 'email_verified' in kwargs:
+        if kwargs.get('email_verified', None) is not None:
             update['email_verified'] = kwargs['email_verified']
+        elif 'email' in kwargs:
+            update['email_verified'] = False
         return User.from_db(db.update_user(self.id, **update))
+
+    # update user attributes
+    def update_attributes(self, attributes):
+        return db.update_user_attributes(self.id, self.attributes, attributes)
 
     def delete(self):
         return db.delete_user(self.id)

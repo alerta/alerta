@@ -26,6 +26,9 @@ def update_user(user_id):
     if not user:
         raise ApiError("not found", 404)
 
+    if 'email' in request.json and User.get_by_email(request.json['email']):
+        raise ApiError("user with email already exists", 409)
+
     if user.update(**request.json):
         return jsonify(status="ok")
     else:
@@ -36,7 +39,7 @@ def update_user(user_id):
 @cross_origin()
 @permission('admin:users')
 @jsonp
-def list_users():
+def search_users():
     query = qb.from_params(request.args)
     users = User.find_all(query)
 

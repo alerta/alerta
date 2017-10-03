@@ -11,6 +11,8 @@ class DateEncoder(json.JSONEncoder):
         from alerta.models.alert import Alert, History
         if isinstance(o, (datetime.date, datetime.datetime)):
             return o.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (o.microsecond // 1000)
+        elif isinstance(o, datetime.timedelta):
+            return int(o.total_seconds())
         elif isinstance(o, (Alert, History)):
             return o.serialize
         elif isinstance(o, ObjectId):
@@ -30,5 +32,5 @@ class DateTime(object):
             raise ValueError('dates must be ISO 8601 date format YYYY-MM-DDThh:mm:ss.sssZ')
 
     @staticmethod
-    def to_string(dt):
+    def iso8601(dt):
         return dt.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (dt.microsecond // 1000)

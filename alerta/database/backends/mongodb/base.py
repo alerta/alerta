@@ -738,7 +738,8 @@ class Backend(Database):
     # save
     def create_key(self, key):
         data = {
-            "_id": key.key,
+            "_id": key.id,
+            "key": key.key,
             "user": key.user,
             "scopes": key.scopes,
             "text": key.text,
@@ -749,7 +750,7 @@ class Backend(Database):
         if key.customer:
             data['customer'] = key.customer
 
-        if g.db.keys.insert_one(data).inserted_id == key.key:
+        if g.db.keys.insert_one(data).inserted_id == key.id:
             return data
 
     # get
@@ -825,11 +826,27 @@ class Backend(Database):
         ).matched_count == 1
 
     def update_user(self, id, **kwargs):
+        kwargs['updateTime'] = datetime.utcnow()
         return g.db.users.find_one_and_update(
             {"_id": id},
             update={'$set': kwargs},
             return_document=ReturnDocument.AFTER
         )
+
+    def update_user_attributes(self, id, old_attrs, new_attrs):
+        """
+        Set all attributes (including private attributes) and unset attributes by using a value of 'null'.
+        """
+        update = dict()
+        set_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is not None}
+        if set_value:
+            update['$set'] = set_value
+        unset_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is None}
+        if unset_value:
+            update['$unset'] = unset_value
+
+        response = g.db.users.update_one({'_id': {'$regex': '^' + id}}, update=update)
+        return response.matched_count > 0
 
     def delete_user(self, id):
         response = g.db.users.delete_one({"_id": id})

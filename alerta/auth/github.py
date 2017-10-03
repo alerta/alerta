@@ -3,7 +3,7 @@ import requests
 from flask import current_app, request, jsonify
 from flask_cors import cross_origin
 
-from alerta.auth.utils import is_authorized, create_token
+from alerta.auth.utils import is_authorized, create_token, get_customer
 from alerta.exceptions import ApiError, NoCustomerMatch
 from alerta.models.customer import Customer
 from . import auth
@@ -41,13 +41,7 @@ def github():
     if is_authorized('ALLOWED_GITHUB_ORGS', organizations):
         raise ApiError("User %s is not authorized" % login, 403)
 
-    if current_app.config['CUSTOMER_VIEWS']:
-        try:
-            customer = Customer.lookup(login, organizations)
-        except NoCustomerMatch as e:
-            raise ApiError(str(e), 403)
-    else:
-        customer = None
+    customer = get_customer(login, organizations)
 
     token = create_token(profile['id'], profile.get('name', '@'+login), login, provider='github', customer=customer,
                          orgs=organizations, email=profile.get('email', None), email_verified=True if 'email' in profile else False)

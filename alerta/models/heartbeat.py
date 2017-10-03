@@ -2,7 +2,7 @@
 import os
 import platform
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import uuid4
 
 from flask import current_app
@@ -11,11 +11,12 @@ from alerta.app import db
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 
+MAX_LATENCY = 2000  # ms
+
 
 class Heartbeat(object):
 
     def __init__(self, origin=None, tags=None, create_time=None, timeout=None, customer=None, **kwargs):
-
         self.id = kwargs.get('id', str(uuid4()))
         self.origin = origin or '%s/%s' % (os.path.basename(sys.argv[0]), platform.uname()[1])
         self.tags = tags or list()
@@ -25,11 +26,29 @@ class Heartbeat(object):
         self.receive_time = kwargs.get('receive_time', None) or datetime.utcnow()
         self.customer = customer
 
+    @property
+    def latency(self):
+        return (self.receive_time - self.create_time).microseconds / 1000
+
+    @property
+    def since(self):
+        since = datetime.utcnow() - self.receive_time
+        return since - timedelta(microseconds=since.microseconds)
+
+    @property
+    def status(self):
+        if self.latency > MAX_LATENCY:
+            return 'slow'
+        elif self.since.seconds > self.timeout:
+            return 'expired'  # aka 'stale'
+        else:
+            return 'ok'
+
     @classmethod
     def parse(cls, json):
         if not isinstance(json.get('tags', []), list):
             raise ValueError('tags must be a list')
-        if not isinstance(json.get('timeout', 0), int):
+        if not isinstance(json.get('timeout') if json.get('timeout', None) is not None else 0, int):
             raise ValueError('timeout must be an integer')
 
         return Heartbeat(
@@ -51,7 +70,10 @@ class Heartbeat(object):
             'createTime': self.create_time,
             'timeout': self.timeout,
             'receiveTime': self.receive_time,
-            'customer': self.customer
+            'customer': self.customer,
+            'latency': self.latency,
+            'since': self.since,
+            'status': self.status
         }
 
     def __repr__(self):

@@ -22,7 +22,7 @@ def signup():
         raise ApiError(str(e), 400)
 
     if User.get_by_email(user.email):
-        raise ApiError("user already exists", 409)
+        raise ApiError("username already exists", 409)
 
     try:
         user = user.create()
@@ -36,19 +36,16 @@ def signup():
         user.set_email_hash(hash)
         raise ApiError('email not verified', 401)
 
+    # check user is active
+    if user.status != 'active':
+        raise ApiError('user not active', 403)
+
     # check allowed domain
     if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
-    # assign customer
-    if current_app.config['CUSTOMER_VIEWS']:
-        try:
-            customer = Customer.lookup(user.email, groups=[user.domain])
-        except NoCustomerMatch as e:
-            raise ApiError(str(e), 403)
-    else:
-        customer = None
-
+    # assign customer & update last login time
+    customer = get_customer(user.email, groups=[user.domain])
     user.update_last_login()
 
     # generate token
@@ -60,30 +57,38 @@ def signup():
 @auth.route('/auth/login', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def login():
-    # lookup user from login/email
+    # lookup user from username/email
     try:
-        email = request.json['email']
+        username = request.json.get('username', None) or request.json['email']
         password = request.json['password']
     except KeyError:
-        raise ApiError("must supply 'email' and 'password'", 401)
+        raise ApiError("must supply 'username' and 'password'", 401)
 
-    user = User.get_by_email(email)
+    user = User.get_by_email(username)
     if not user:
-        raise ApiError("invalid user or password", 401)
+        raise ApiError("invalid username or password", 401)
 
     if not user.verify_password(password):
-        raise ApiError("invalid user or password", 401)
+        raise ApiError("invalid username or password", 401)
 
+    # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
         hash = str(uuid4())
         send_confirmation(user, hash)
         user.set_email_hash(hash)
         raise ApiError('email not verified', 401)
 
+    # check user is active
+    if user.status != 'active':
+        raise ApiError('user not active', 403)
+
+    # check allowed domain
     if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
+    # assign customer & update last login time
     customer = get_customer(user.email, groups=[user.domain])
+    user.update_last_login()
 
     # generate token
     token = create_token(user.id, user.name, user.email, provider='basic', customer=customer,

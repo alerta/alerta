@@ -235,6 +235,9 @@ class Database(Base):
     def update_user(self, id, **kwargs):
         raise NotImplementedError
 
+    def update_user_attributes(self, id, old_attrs, new_attrs):
+        raise NotImplementedError
+
     def delete_user(self, id):
         raise NotImplementedError
 
