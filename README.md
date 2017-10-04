@@ -63,14 +63,14 @@ at <http://docs.alerta.io>
 Development
 -----------
 
-To run in development mode, listening on port 5000:
+To run in development mode, listening on port 5000::
 
     $ export FLASK_APP=alerta
     $ pip install -e .
     $ flask run
 
 To run in development mode, listening on port 8080, using Postgres and
-reporting errors to [Sentry](https://sentry.io)
+reporting errors to [Sentry](https://sentry.io)::
 
     $ export FLASK_APP=alerta
     $ export DATABASE_URL=postgres://localhost:5432/alerta5
@@ -89,8 +89,8 @@ Cloud Deployment
 ----------------
 
 Alerta can be deployed to the cloud easily using Heroku <https://github.com/alerta/heroku-api-alerta>,
-AWS EC2 <https://github.com/alerta/alerta-cloudformation>, or RedHat OpenShift
-<https://github.com/alerta/openshift-api-alerta>
+AWS EC2 <https://github.com/alerta/alerta-cloudformation>, or Google Cloud Platform
+<https://github.com/alerta/gcloud-api-alerta>
 
 License
 -------
