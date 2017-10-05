@@ -163,7 +163,7 @@ class Alert(object):
                 if not isinstance(alert[k], dict):
                     raise ValueError('Attribute must be name/value pairs: attributes')
             elif k == 'timeout':
-                if not isinstance(alert[k], int):
+                if not isinstance(alert[k] if alert[k] is not None else 0, int):
                     raise ValueError('Timeout must be an integer')
 
         return Alert(

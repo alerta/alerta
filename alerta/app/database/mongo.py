@@ -1237,7 +1237,7 @@ class Database(object):
                 "name": user['name'],
                 "login": login,
                 "createTime": user['createTime'],
-                "provider": user['provider'],
+                "provider": user.get('provider', 'basic'),
                 "role": 'admin' if login in app.config.get('ADMIN_USERS') else user.get('role', 'user'),
                 "text": user.get('text', ""),
                 "email_verified": user.get('email_verified', False)

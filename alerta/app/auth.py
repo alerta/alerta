@@ -144,7 +144,7 @@ def permission(scope):
                     return authenticate('Token has expired')
                 except InvalidAudience:
                     return authenticate('Invalid audience')
-                g.user = payload['login']
+                g.user = payload.get('login', None) or payload['preferred_username']
                 g.customer = payload.get('customer', None)
                 g.scopes = payload.get('scope', '').split(' ')
 
