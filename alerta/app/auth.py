@@ -187,7 +187,7 @@ def customer_match(user, groups):
 @cross_origin(supports_credentials=True)
 def login():
     try:
-        email = request.json['email']
+        email = request.json.get('email', None) or request.json['username']
         domain = email.split('@')[1]
         password = request.json['password']
     except KeyError:
