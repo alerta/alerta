@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
 import os
-import platform
 import subprocess
-import setuptools
-
 from datetime import datetime
+
+import setuptools
 
 with open('VERSION') as f:
     version = f.read().strip()
@@ -37,7 +36,7 @@ setuptools.setup(
     license='Apache License 2.0',
     author='Nick Satterly',
     author_email='nick.satterly@theguardian.com',
-    packages=setuptools.find_packages(exclude=['bin', 'tests']),
+    packages=setuptools.find_packages(exclude=['tests']),
     install_requires=[
         'Flask>=0.10.1',
         'Flask-Cors>=3.0.2',
@@ -73,6 +72,7 @@ setuptools.setup(
         'Intended Audience :: Telecommunications Industry',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 2.7',
         'Topic :: System :: Monitoring',
     ],
