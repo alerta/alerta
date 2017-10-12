@@ -78,6 +78,23 @@ reporting errors to [Sentry](https://sentry.io)::
     $ pip install -e .
     $ flask run --debugger --port 8080 --with-threads --reload
 
+Troubleshooting
+---------------
+
+Problems following a direct upgrade from versions 4.x to 5.x could be
+related to the flattening of the directory structure for the app. An
+example `app.wsgi` file which works for both release 4 and 5 is as
+follows:
+
+```
+#!/usr/bin/env python
+
+try:
+    from alerta import app  # alerta >= 5.0
+except Exception:
+    from alerta.app import app  # alerta < 5.0
+```
+
 Tests
 -----
 
