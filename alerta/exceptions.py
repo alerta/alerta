@@ -61,7 +61,7 @@ def handle_api_error(error):
 def handle_http_error(error):
     return jsonify({
         'status': 'error',
-        'message': error.name,
+        'message': str(error),
         'code': error.code,
         'errors': [
             error.description

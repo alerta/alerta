@@ -10,11 +10,12 @@ except Exception:
     from alerta import dev as build
 
 from alerta.app import db
-from alerta.models.heartbeat import Heartbeat
-from alerta.models.alert import Alert
-from alerta.models.switch import Switch, SwitchState
 from alerta.auth.utils import permission
+from alerta.exceptions import ApiError
+from alerta.models.alert import Alert
+from alerta.models.heartbeat import Heartbeat
 from alerta.models.metrics import Gauge, Counter, Timer
+from alerta.models.switch import Switch, SwitchState
 from alerta.version import __version__
 
 from . import mgmt
@@ -131,9 +132,17 @@ def health_check():
 @cross_origin()
 @permission('admin:management')
 def housekeeping():
+    DEFAULT_EXPIRED_DELETE_HRS = 2  # hours
+    DEFAULT_INFO_DELETE_HRS = 12  # hours
 
     try:
-        Alert.housekeeping()
+        expired_threshold=int(request.args.get('expired', DEFAULT_EXPIRED_DELETE_HRS))
+        info_threshold=int(request.args.get('info', DEFAULT_INFO_DELETE_HRS))
+    except Exception as e:
+        raise ApiError(str(e), 400)
+
+    try:
+        Alert.housekeeping(expired_threshold, info_threshold)
         return 'OK'
     except Exception as e:
         return 'HOUSEKEEPING FAILED: %s' % e, 503
