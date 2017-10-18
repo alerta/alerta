@@ -161,6 +161,11 @@ class Database(Base):
     def get_services(self, query=None, topn=100):
         raise NotImplementedError
 
+    #### TAGS
+
+    def get_tags(self, query=None, topn=100):
+        raise NotImplementedError
+
     #### BLACKOUTS
 
     def create_blackout(self, blackout):

@@ -397,6 +397,11 @@ class Alert(object):
     def get_services(query=None):
         return db.get_services(query)
 
+    # get tags
+    @staticmethod
+    def get_tags(query=None):
+        return db.get_tags(query)
+
     @staticmethod
     def housekeeping(expired_threshold=2, info_threshold=12):
         print('delete expired after {} hrs, delete info after {} hrs'.format(expired_threshold, info_threshold))
