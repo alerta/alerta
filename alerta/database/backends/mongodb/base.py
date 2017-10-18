@@ -579,6 +579,31 @@ class Backend(Database):
             )
         return services
 
+    #### TAGS
+
+    def get_tags(self, query=None, topn=100):
+        query = query or Query()
+        pipeline = [
+            {'$unwind': '$tags'},
+            {'$match': query.where},
+            {'$project': {"environment": 1, "tags": 1}},
+            {'$limit': topn},
+            {'$group': {"_id": {"environment": "$environment", "tag": "$tags"}, "count": {'$sum': 1}}}
+        ]
+        responses = g.db.alerts.aggregate(pipeline)
+
+        tags = list()
+        for response in responses:
+            print(response)
+            tags.append(
+                {
+                    "environment": response['_id']['environment'],
+                    "tag": response['_id']['tag'],
+                    "count": response['count']
+                }
+            )
+        return tags
+
     #### BLACKOUTS
 
     def create_blackout(self, blackout):

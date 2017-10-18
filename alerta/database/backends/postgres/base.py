@@ -399,6 +399,17 @@ class Backend(Database):
         """.format(where=query.where)
         return [{"environment": s.environment, "service": s.svc, "count": s.count} for s in self._fetchall(select, query.vars, limit=topn)]
 
+    #### SERVICES
+
+    def get_tags(self, query=None, topn=100):
+        query = query or Query()
+        select = """
+            SELECT environment, tag, count(1) FROM alerts, UNNEST(tags) tag
+            WHERE {where}
+            GROUP BY environment, tag
+        """.format(where=query.where)
+        return [{"environment": t.environment, "tag": t.tag, "count": t.count} for t in self._fetchall(select, query.vars, limit=topn)]
+
     #### BLACKOUTS
 
     def create_blackout(self, blackout):

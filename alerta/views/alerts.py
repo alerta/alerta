@@ -378,3 +378,28 @@ def get_services():
             services=[],
             total=0
         )
+
+
+# get alert tags
+@api.route('/tags', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission('read:alerts')
+@timer(gets_timer)
+@jsonp
+def get_tags():
+    query = qb.from_params(request.args)
+    tags = Alert.get_tags(query)
+
+    if tags:
+        return jsonify(
+            status="ok",
+            tags=tags,
+            total=len(tags)
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            tags=[],
+            total=0
+        )
