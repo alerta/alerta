@@ -991,14 +991,16 @@ class Backend(Database):
 
     #### HOUSEKEEPING
 
-    def housekeeping(self):
-        # delete 'closed' or 'expired' alerts older than 2hrs and 'informational' alerts older than 12hrs
-        two_hours_ago = datetime.utcnow() - timedelta(hours=2)
-        g.db.alerts.remove({"status": {'$in': ["closed", "expired"]}, "lastReceiveTime": {'$lt': two_hours_ago}})
+    def housekeeping(self, expired_threshold, info_threshold):
+        # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
+        # and 'informational' alerts older than "info_threshold" hours
+        expired_hours_ago = datetime.utcnow() - timedelta(hours=expired_threshold)
+        g.db.alerts.remove({"status": {'$in': ["closed", "expired"]}, "lastReceiveTime": {'$lt': expired_hours_ago}})
 
-        twelve_hours_ago = datetime.utcnow() - timedelta(hours=12)
-        g.db.alerts.remove({"severity": "informational", "lastReceiveTime": {'$lt': twelve_hours_ago}})
+        info_hours_ago = datetime.utcnow() - timedelta(hours=info_threshold)
+        g.db.alerts.remove({"severity": "informational", "lastReceiveTime": {'$lt': info_hours_ago}})
 
+        # return list of alerts to be newly expired
         pipeline = [
             {'$project': {
                 "event": 1, "status": 1, "lastReceiveId": 1, "timeout": 1,

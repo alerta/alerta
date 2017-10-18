@@ -398,8 +398,9 @@ class Alert(object):
         return db.get_services(query)
 
     @staticmethod
-    def housekeeping():
-        for (id, event, last_receive_id) in db.housekeeping():
+    def housekeeping(expired_threshold=2, info_threshold=12):
+        print('delete expired after {} hrs, delete info after {} hrs'.format(expired_threshold, info_threshold))
+        for (id, event, last_receive_id) in db.housekeeping(expired_threshold, info_threshold):
             history = History(
                 id=last_receive_id,
                 event=event,
