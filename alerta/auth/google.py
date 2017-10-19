@@ -47,6 +47,6 @@ def google():
 
     customer = get_customer(id_token.email, groups=[domain])
 
-    token = create_token(id_token.subject, profile['name'], id_token.email, provider='google', customer=customer,
+    token = create_token(id_token.subject, 'name' in profile and profile['name'] or id_token.email, id_token.email, provider='google', customer=customer,
                          orgs=[domain], email=id_token.email, email_verified=id_token.email_verified)
     return jsonify(token=token.tokenize)
