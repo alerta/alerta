@@ -612,6 +612,8 @@ class Backend(Database):
             update += "status=%(status)s, "
         if 'roles' in kwargs:
             update += "roles=%(roles)s, "
+        if 'attributes' in kwargs:
+            update += "attributes=attributes || %(attributes)s, "
         if 'text' in kwargs:
             update += "text=%(text)s, "
         if 'email_verified' in kwargs:
