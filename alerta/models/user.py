@@ -39,6 +39,7 @@ class User(object):
             name=json.get('name'),
             email=json.get('email'),
             password=generate_password_hash(json.get('password', None)),
+            status=json.get('status'),
             roles=json.get('roles', list()),
             attributes=json.get('attributes', dict()),
             text=json.get('text', None),
@@ -157,6 +158,8 @@ class User(object):
             update['roles'] = [kwargs['role']]
         elif kwargs.get('roles', None) is not None:
             update['roles'] = kwargs['roles']
+        if kwargs.get('attributes', None) is not None:
+            update['attributes'] = kwargs['attributes']
         if kwargs.get('text', None) is not None:
             update['text'] = kwargs['text']
         if kwargs.get('email_verified', None) is not None:

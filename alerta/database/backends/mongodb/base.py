@@ -214,7 +214,6 @@ class Backend(Database):
             "customer": alert.customer
         }
 
-        now = datetime.utcnow()
         update = {
             '$set': {
                 "event": alert.event,
@@ -861,9 +860,6 @@ class Backend(Database):
         )
 
     def update_user_attributes(self, id, old_attrs, new_attrs):
-        """
-        Set all attributes (including private attributes) and unset attributes by using a value of 'null'.
-        """
         update = dict()
         set_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is not None}
         if set_value:

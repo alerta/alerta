@@ -35,6 +35,25 @@ def update_user(user_id):
         raise ApiError("failed to update user", 500)
 
 
+@api.route('/user/<user_id>/attributes', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@permission('write:users')
+@jsonp
+def update_user_attributes(user_id):
+    if not request.json.get('attributes', None):
+        raise ApiError("must supply 'attributes' as json data", 400)
+
+    user = User.get(user_id)
+
+    if not user:
+        raise ApiError("not found", 404)
+
+    if user.update_attributes(request.json['attributes']):
+        return jsonify(status="ok")
+    else:
+        raise ApiError("failed to update attributes", 500)
+
+
 @api.route('/users', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission('admin:users')
