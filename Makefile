@@ -37,6 +37,7 @@ run:
 
 tag:
 	git tag -a v$(VERSION) -m "version $(VERSION)"
+	git push --tags
 
 upload:
 	$(PYTHON) setup.py sdist bdist_wheel upload
