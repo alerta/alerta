@@ -796,7 +796,7 @@ class Backend(Database):
         Insert, with return.
         """
         cursor = g.db.cursor()
-        print(cursor.mogrify(query, vars))
+        self._log(cursor, query, vars)
         cursor.execute(query, vars)
         g.db.commit()
         return cursor.fetchone()
@@ -806,7 +806,7 @@ class Backend(Database):
         Return none or one row.
         """
         cursor = g.db.cursor()
-        print(cursor.mogrify(query, vars))
+        self._log(cursor, query, vars)
         cursor.execute(query, vars)
         return cursor.fetchone()
 
@@ -818,7 +818,7 @@ class Backend(Database):
             limit = current_app.config['DEFAULT_PAGE_SIZE']
         query += " LIMIT %s OFFSET %s""" % (limit, offset)
         cursor = g.db.cursor()
-        print(cursor.mogrify(query, vars))
+        self._log(cursor, query, vars)
         cursor.execute(query, vars)
         return cursor.fetchall()
 
@@ -827,7 +827,7 @@ class Backend(Database):
         Update, with optional return.
         """
         cursor = g.db.cursor()
-        print(cursor.mogrify(query, vars))
+        self._log(cursor, query, vars)
         cursor.execute(query, vars)
         g.db.commit()
         return cursor.fetchone() if returning else None
@@ -843,7 +843,11 @@ class Backend(Database):
         Delete, with optional return.
         """
         cursor = g.db.cursor()
-        print(cursor.mogrify(query, vars))
+        self._log(cursor, query, vars)
         cursor.execute(query, vars)
         g.db.commit()
         return cursor.fetchone() if returning else None
+
+    def _log(self, cursor, query, vars):
+        LOG = current_app.logger
+        LOG.debug(cursor.mogrify(query, vars))
