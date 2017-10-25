@@ -28,7 +28,7 @@ class Heartbeat(object):
 
     @property
     def latency(self):
-        return (self.receive_time - self.create_time).microseconds / 1000
+        return int((self.receive_time - self.create_time).total_seconds() * 1000)
 
     @property
     def since(self):
@@ -39,7 +39,7 @@ class Heartbeat(object):
     def status(self):
         if self.latency > MAX_LATENCY:
             return 'slow'
-        elif self.since.seconds > self.timeout:
+        elif self.since.total_seconds() > self.timeout:
             return 'expired'  # aka 'stale'
         else:
             return 'ok'
