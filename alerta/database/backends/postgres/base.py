@@ -478,7 +478,7 @@ class Backend(Database):
             INSERT INTO heartbeats (id, origin, tags, type, create_time, timeout, receive_time, customer)
             VALUES (%(id)s, %(origin)s, %(tags)s, %(event_type)s, %(create_time)s, %(timeout)s, %(receive_time)s, %(customer)s)
             ON CONFLICT (origin, COALESCE(customer, '')) DO UPDATE
-                SET tags=%(tags)s, timeout=%(timeout)s, receive_time=%(receive_time)s
+                SET tags=%(tags)s, create_time=%(create_time)s, timeout=%(timeout)s, receive_time=%(receive_time)s
             RETURNING *
         """
         return self._upsert(upsert, vars(heartbeat))
