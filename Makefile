@@ -19,7 +19,8 @@ help:
 	@echo ""
 
 init:
-	pip install -r requirements.txt
+	pip install -r requirements.txt --upgrade
+	pip install -e .
 
 pylint:
 	@pip -q install pylint

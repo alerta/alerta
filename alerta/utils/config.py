@@ -106,9 +106,7 @@ class Config(object):
 
     @staticmethod
     def setup_logging(app):
-        root = logging.getLogger()
         loggers = [
-            root,
             app.logger,
             logging.getLogger('requests'),  # ??
             logging.getLogger('urllib3'),  # ok
