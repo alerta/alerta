@@ -21,9 +21,9 @@ def send_message_reply(alert, action, user, data):
         return
 
     try:
-        bot_id = os.environ.get('TELEGRAM_TOKEN') or current_app.config.get('TELEGRAM_TOKEN')
+        bot_id = current_app.config.get('TELEGRAM_TOKEN')
+        chat_id = current_app.config.get('TELEGRAM_CHAT_ID')
         dashboard_url = os.environ.get('DASHBOARD_URL') or current_app.config.get('DASHBOARD_URL')
-        chat_id = os.environ.get('TELEGRAM_CHAT_ID') or current_app.config.get('TELEGRAM_CHAT_ID')
         bot = telepot.Bot(bot_id)
 
         # message info
