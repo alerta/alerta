@@ -31,13 +31,11 @@ class Database(Base):
             self.init_db(app)
 
     def init_db(self, app):
-        db_uri = app.config['DATABASE_URL']
-        backend = urlparse(db_uri).scheme
-
+        backend = get_backend(app)
         cls = load_backend(backend)
         self.__class__ = type('DatabaseImpl', (cls.Backend, Database), {})
 
-        self.create_engine(app, uri=db_uri, dbname=app.config['DATABASE_NAME'])
+        self.create_engine(app, uri=app.config['DATABASE_URL'], dbname=app.config['DATABASE_NAME'])
 
         app.before_request(self.before_request)
         app.teardown_request(self.teardown_request)
@@ -308,9 +306,7 @@ class QueryBuilder(Base):
             self.init_app(app)
 
     def init_app(self, app):
-        db_uri = os.environ.get('DATABASE_URL', None) or app.config['DATABASE_URL']
-        backend = urlparse(db_uri).scheme
-
+        backend = get_backend(app)
         cls = load_backend(backend)
         self.__class__ = type('QueryBuilderImpl', (cls.QueryBuilderImpl, QueryBuilder), {})
 
@@ -321,3 +317,12 @@ class QueryBuilder(Base):
     @staticmethod
     def from_dict(d, query_time=None):
         raise NotImplementedError('QueryBuilder has no from_dict() method')
+
+
+def get_backend(app):
+    db_uri = app.config['DATABASE_URL']
+    backend = urlparse(db_uri).scheme
+
+    if backend == 'postgresql':
+        backend = 'postgres'
+    return backend
