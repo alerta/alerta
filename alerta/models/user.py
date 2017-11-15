@@ -150,6 +150,7 @@ class User(object):
             update['name'] = kwargs['name']
         if kwargs.get('email', None) is not None:
             update['email'] = kwargs['email']
+            update['email_verified'] = False
         if kwargs.get('password', None) is not None:
             update['password'] = generate_password_hash(kwargs['password'])
         if kwargs.get('status', None) is not None:
@@ -164,8 +165,6 @@ class User(object):
             update['text'] = kwargs['text']
         if kwargs.get('email_verified', None) is not None:
             update['email_verified'] = kwargs['email_verified']
-        elif 'email' in kwargs:
-            update['email_verified'] = False
         return User.from_db(db.update_user(self.id, **update))
 
     # update user attributes
