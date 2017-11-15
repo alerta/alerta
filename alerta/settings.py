@@ -58,9 +58,10 @@ API_KEY_EXPIRE_DAYS = 365  # 1 year
 
 CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
 CORS_ORIGINS = [
-    'http://try.alerta.io',
-    'http://explorer.alerta.io',
-    'http://localhost'
+    # 'http://try.alerta.io',
+    # 'http://explorer.alerta.io',
+    'http://localhost',
+    'http://localhost:8000'
 ]
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
