@@ -44,6 +44,9 @@ class Config(object):
         # Use app config for DATABASE_URL if no env var from above override it
         config['DATABASE_URL'] = database_url or config['DATABASE_URL']
 
+        if 'DATABASE_NAME' in os.environ:
+            config['DATABASE_NAME'] = os.environ['DATABASE_NAME']
+
         if 'AUTH_REQUIRED' in os.environ:
             config['AUTH_REQUIRED'] = True if os.environ['AUTH_REQUIRED'] == 'True' else False
 
