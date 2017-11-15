@@ -91,9 +91,6 @@ class Alert(object):
             customer=json.get('customer', None)
         )
 
-    def get_id(self, short=False):
-        return self.id[:8] if short else self.id
-
     @property
     def serialize(self):
         return {
@@ -126,6 +123,18 @@ class Alert(object):
             'lastReceiveTime': self.last_receive_time,
             'history': [h.serialize for h in self.history]
         }
+
+    def get_id(self, short=False):
+        return self.id[:8] if short else self.id
+
+    def get_body(self, history=True):
+        body = self.serialize
+        body.update({
+            key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime']
+        })
+        if not history:
+            body['history'] = []
+        return body
 
     def __repr__(self):
         return 'Alert(id=%r, environment=%r, resource=%r, event=%r, severity=%r, status=%r, customer=%r)' % (
@@ -404,7 +413,6 @@ class Alert(object):
 
     @staticmethod
     def housekeeping(expired_threshold=2, info_threshold=12):
-        print('delete expired after {} hrs, delete info after {} hrs'.format(expired_threshold, info_threshold))
         for (id, event, last_receive_id) in db.housekeeping(expired_threshold, info_threshold):
             history = History(
                 id=last_receive_id,
