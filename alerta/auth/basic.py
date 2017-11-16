@@ -100,7 +100,7 @@ def login():
 def verify_email(hash):
 
     user = User.verify_hash(hash)
-    if not user.email_verified:
+    if user and not user.email_verified:
         user.set_email_verified()
         return render_template('auth/verify_success.html', email=user.email)
     else:
@@ -118,9 +118,19 @@ except ImportError:
 
 def send_confirmation(user, hash):
 
+    smtp_host = current_app.config['SMTP_HOST']
+    smtp_port = current_app.config['SMTP_PORT']
+    mail_localhost = current_app.config['MAIL_LOCALHOST']
+    ssl_key_file = current_app.config['SSL_KEY_FILE']
+    ssl_cert_file = current_app.config['SSL_CERT_FILE']
+
+    mail_from = current_app.config['MAIL_FROM']
+    smtp_username = current_app.config.get('SMTP_USERNAME', mail_from)
+    smtp_password = current_app.config['SMTP_PASSWORD']
+
     msg = MIMEMultipart('related')
     msg['Subject'] = "[Alerta] Please verify your email '%s'" % user.email
-    msg['From'] = current_app.config['MAIL_FROM']
+    msg['From'] = mail_from
     msg['To'] = user.email
     msg.preamble = "[Alerta] Please verify your email '%s'" % user.email
 
@@ -129,19 +139,30 @@ def send_confirmation(user, hash):
            '{url}\n\n' \
            'You\'re receiving this email because you recently created a new Alerta account.' \
            ' If this wasn\'t you, please ignore this email.'.format(
-               name=user.name, email=user.email, url=absolute_url('/auth/confirm/' + hash))
+               name=user.name, email=user.email, url=absolute_url('/auth/confirm/' + hash)
+           )
 
     msg_text = MIMEText(text, 'plain', 'utf-8')
     msg.attach(msg_text)
 
     try:
-        mx = smtplib.SMTP(current_app.config['SMTP_HOST'], current_app.config['SMTP_PORT'])
+        if current_app.config['SMTP_USE_SSL']:
+            mx = smtplib.SMTP_SSL(smtp_host, smtp_port, local_hostname=mail_localhost, keyfile=ssl_key_file, certfile=ssl_cert_file)
+        else:
+            mx = smtplib.SMTP(smtp_host, smtp_port, local_hostname=mail_localhost)
+
         if current_app.config['DEBUG']:
             mx.set_debuglevel(True)
+
         mx.ehlo()
-        mx.starttls()
-        mx.login(current_app.config['MAIL_FROM'], current_app.config['SMTP_PASSWORD'])
-        mx.sendmail(current_app.config['MAIL_FROM'], [user.email], msg.as_string())
+
+        if current_app.config['SMTP_STARTTLS']:
+            mx.starttls()
+
+        if smtp_password:
+            mx.login(smtp_username, smtp_password)
+
+        mx.sendmail(mail_from, [user.email], msg.as_string())
         mx.close()
     except smtplib.SMTPException as e:
         logging.error('Failed to send email : %s', str(e))
