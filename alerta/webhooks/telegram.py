@@ -1,5 +1,6 @@
 
 import logging
+import os
 
 from flask import current_app, request, jsonify
 from flask_cors import cross_origin
@@ -20,8 +21,10 @@ def send_message_reply(alert, action, user, data):
         return
 
     try:
-        bot = telepot.Bot(current_app.config.get('TELEGRAM_TOKEN'))
-        dashboard_url = current_app.config.get('DASHBOARD_URL')
+        bot_id = current_app.config.get('TELEGRAM_TOKEN')
+        chat_id = current_app.config.get('TELEGRAM_CHAT_ID')
+        dashboard_url = os.environ.get('DASHBOARD_URL') or current_app.config.get('DASHBOARD_URL')
+        bot = telepot.Bot(bot_id)
 
         # message info
         message_id = data['callback_query']['message']['message_id']
@@ -50,7 +53,7 @@ def send_message_reply(alert, action, user, data):
 
         # send message
         bot.editMessageText(
-            msg_identifier=(current_app.config.get('TELEGRAM_CHAT_ID'), message_id), text=message,
+            msg_identifier=(chat_id, message_id), text=message,
             parse_mode='Markdown', reply_markup={'inline_keyboard': inline_keyboard}
         )
     except Exception as e:

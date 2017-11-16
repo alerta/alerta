@@ -98,6 +98,12 @@ class Config(object):
         if 'PLUGINS' in os.environ:
             config['PLUGINS'] = os.environ['PLUGINS'].split(',')
 
+        if 'TELEGRAM_TOKEN' in os.environ:
+            config['TELEGRAM_TOKEN'] = os.environ['TELEGRAM_TOKEN']
+
+        if 'TELEGRAM_CHAT_ID' in os.environ:
+            config['TELEGRAM_CHAT_ID'] = os.environ['TELEGRAM_CHAT_ID']
+
         # Runtime config check
         if config['CUSTOMER_VIEWS'] and not config['AUTH_REQUIRED']:
             raise RuntimeError('Must enable authentication to use customer views')
