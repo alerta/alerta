@@ -89,11 +89,18 @@ HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
 
 BLACKOUT_DURATION = 3600  # default period = 1 hour
 
+# Send verification emails to new BasicAuth users
 EMAIL_VERIFICATION = False
 SMTP_HOST = 'smtp.gmail.com'
 SMTP_PORT = 587
+MAIL_LOCALHOST = 'localhost'  # mail server to use in HELO/EHLO command
+SMTP_STARTTLS = True
+SMTP_USE_SSL = False
+SSL_KEY_FILE = None
+SSL_CERT_FILE = None
 MAIL_FROM = 'your@gmail.com'  # replace with valid sender address
-SMTP_PASSWORD = ''  # password for MAIL_FROM account, Gmail uses application-specific passwords
+SMTP_USERNAME = ''  # application-specific username if different to MAIL_FROM user
+SMTP_PASSWORD = ''  # password for MAIL_FROM (or SMTP_USERNAME if used)
 
 # Plug-ins
 PLUGINS = ['reject', 'blackout']
