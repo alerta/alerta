@@ -6,8 +6,7 @@ from flask import current_app, request, jsonify, render_template
 from flask_cors import cross_origin
 
 from alerta.auth.utils import is_authorized, create_token, get_customer
-from alerta.exceptions import ApiError, NoCustomerMatch
-from alerta.models.customer import Customer
+from alerta.exceptions import ApiError
 from alerta.models.user import User
 from alerta.utils.api import absolute_url
 from . import auth

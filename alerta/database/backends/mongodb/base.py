@@ -593,7 +593,6 @@ class Backend(Database):
 
         tags = list()
         for response in responses:
-            print(response)
             tags.append(
                 {
                     "environment": response['_id']['environment'],
@@ -1025,8 +1024,8 @@ class Backend(Database):
         pipeline = [
             {'$project': {
                 "event": 1, "status": 1, "lastReceiveId": 1, "timeout": 1,
-                "expireTime": { '$add': ["$lastReceiveTime", { '$multiply': ["$timeout", 1]}]}}
+                "expireTime": {'$add': ["$lastReceiveTime", {'$multiply': ["$timeout", 1]}]}}
             },
-            {'$match': {"status": { '$ne': 'expired'}, "expireTime": { '$lt': datetime.utcnow()}, "timeout": { '$ne': 0}}}
+            {'$match': {"status": {'$ne': 'expired'}, "expireTime": {'$lt': datetime.utcnow()}, "timeout": {'$ne': 0}}}
         ]
         return [(r['_id'], r['event'], r['lastReceiveId']) for r in g.db.alerts.aggregate(pipeline)]
