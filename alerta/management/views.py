@@ -136,8 +136,8 @@ def housekeeping():
     DEFAULT_INFO_DELETE_HRS = 12  # hours
 
     try:
-        expired_threshold=int(request.args.get('expired', DEFAULT_EXPIRED_DELETE_HRS))
-        info_threshold=int(request.args.get('info', DEFAULT_INFO_DELETE_HRS))
+        expired_threshold = int(request.args.get('expired', DEFAULT_EXPIRED_DELETE_HRS))
+        info_threshold = int(request.args.get('info', DEFAULT_INFO_DELETE_HRS))
     except Exception as e:
         raise ApiError(str(e), 400)
 

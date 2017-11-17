@@ -34,13 +34,13 @@ class Config(object):
             config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
         database_url = (
-                os.environ.get('DATABASE_URL', None) or
-                # The following database settings are deprecated.
-                os.environ.get('MONGO_URI', None) or
-                os.environ.get('MONGODB_URI', None) or
-                os.environ.get('MONGOHQ_URL', None) or
-                os.environ.get('MONGOLAB_URI', None)
-            )
+            os.environ.get('DATABASE_URL', None) or
+            # The following database settings are deprecated.
+            os.environ.get('MONGO_URI', None) or
+            os.environ.get('MONGODB_URI', None) or
+            os.environ.get('MONGOHQ_URL', None) or
+            os.environ.get('MONGOLAB_URI', None)
+        )
         # Use app config for DATABASE_URL if no env var from above override it
         config['DATABASE_URL'] = database_url or config['DATABASE_URL']
 
