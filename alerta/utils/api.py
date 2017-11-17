@@ -1,4 +1,6 @@
 
+import logging
+
 from functools import wraps
 from os.path import join as path_join
 
@@ -54,7 +56,10 @@ def process_alert(alert):
         except (RejectException, BlackoutPeriod, RateLimit):
             raise
         except Exception as e:
-            raise RuntimeError("Error while running pre-receive plug-in '%s': %s" % (plugin.name, str(e)))
+            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                raise RuntimeError("Error while running pre-receive plug-in '%s': %s" % (plugin.name, str(e)))
+            else:
+                logging.error("Error while running pre-receive plug-in '%s': %s" % (plugin.name, str(e)))
         if not alert:
             raise SyntaxError("Plug-in '%s' pre-receive hook did not return modified alert" % plugin.name)
 
@@ -73,7 +78,10 @@ def process_alert(alert):
         try:
             updated = plugin.post_receive(alert)
         except Exception as e:
-            raise ApiError("Error while running post-receive plug-in '%s': %s" % (plugin.name, str(e)))
+            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                raise ApiError("Error while running post-receive plug-in '%s': %s" % (plugin.name, str(e)))
+            else:
+                logging.error("Error while running post-receive plug-in '%s': %s" % (plugin.name, str(e)))
         if updated:
             alert = updated
 
@@ -93,7 +101,10 @@ def process_status(alert, status, text):
         except RejectException:
             raise
         except Exception as e:
-            raise ApiError("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
+            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                raise ApiError("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
+            else:
+                logging.error("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
         if updated:
             try:
                 alert, status, text = updated
