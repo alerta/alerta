@@ -104,6 +104,7 @@ SMTP_PASSWORD = ''  # password for MAIL_FROM (or SMTP_USERNAME if used)
 
 # Plug-ins
 PLUGINS = ['reject', 'blackout']
+PLUGINS_RAISE_ON_ERROR = True  # raise RuntimeError exception on first failure
 
 # reject plugin settings
 ORIGIN_BLACKLIST = []
