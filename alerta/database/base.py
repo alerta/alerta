@@ -8,18 +8,27 @@ except ImportError:
 
 from flask import g
 
+# http://stackoverflow.com/questions/8544983/dynamically-mixin-a-base-class-to-an-instance-in-python
+
+
+class Base(object):
+    pass
+
+
+def get_backend(app):
+    db_uri = app.config['DATABASE_URL']
+    backend = urlparse(db_uri).scheme
+
+    if backend == 'postgresql':
+        backend = 'postgres'
+    return backend
+
 
 def load_backend(backend):
     try:
         return import_module('alerta.database.backends.%s' % backend)
     except:
         raise ImportError('Failed to load %s database backend' % backend)
-
-
-class Base(object):
-    pass
-
-# http://stackoverflow.com/questions/8544983/dynamically-mixin-a-base-class-to-an-instance-in-python
 
 
 class Database(Base):
@@ -316,12 +325,3 @@ class QueryBuilder(Base):
     @staticmethod
     def from_dict(d, query_time=None):
         raise NotImplementedError('QueryBuilder has no from_dict() method')
-
-
-def get_backend(app):
-    db_uri = app.config['DATABASE_URL']
-    backend = urlparse(db_uri).scheme
-
-    if backend == 'postgresql':
-        backend = 'postgres'
-    return backend
