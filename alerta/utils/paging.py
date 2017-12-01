@@ -20,7 +20,7 @@ class Page(object):
         # page, page-size, limit (deprecated)
         page = params.get('page', 1, int)
         limit = params.get('limit', 0, int)
-        page_size = params.get('pageSize', limit, int)
+        page_size = params.get('page-size', limit, int)
 
         return Page(page, page_size, items)
 
