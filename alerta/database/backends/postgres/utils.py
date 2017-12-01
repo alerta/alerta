@@ -82,8 +82,9 @@ class QueryBuilderImpl(QueryBuilder):
             query.append('AND (id ~* (%(regex_id)s) OR last_receive_id ~* (%(regex_id)s))')
             qvars['regex_id'] = '|'.join(['^'+i for i in ids])
 
-        EXCLUDE_QUERY = ['q', 'id', 'from-date', 'to-date', 'duplicateCount', 'repeat',
-                         'sort-by', 'reverse', 'group-by', 'page', 'page-size', 'limit']
+        EXCLUDE_QUERY = ['_', 'callback', 'token', 'api-key', 'q', 'id', 'from-date',
+                         'to-date', 'duplicateCount', 'repeat', 'sort-by', 'reverse',
+                         'group-by', 'page', 'page-size', 'limit']
 
         # fields
         for field in params:
