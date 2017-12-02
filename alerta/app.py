@@ -42,8 +42,8 @@ def create_app(config_override=None, environment=None):
     qb.init_app(app)
     sentry.init_app(app)
 
-    from alerta.utils.format import DateEncoder
-    app.json_encoder = DateEncoder
+    from alerta.utils.format import CustomJSONEncoder
+    app.json_encoder = CustomJSONEncoder
 
     from alerta.views import api
     app.register_blueprint(api)

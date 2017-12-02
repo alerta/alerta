@@ -25,6 +25,8 @@ class Alert(object):
         if any(['.' in key for key in kwargs.get('attributes', dict()).keys()]) \
                 or any(['$' in key for key in kwargs.get('attributes', dict()).keys()]):
             raise ValueError('Attribute keys must not contain "." or "$"')
+        if isinstance(kwargs.get('value', None), int):
+            kwargs['value'] = str(kwargs['value'])
 
         self.id = kwargs.get('id', str(uuid4()))
         self.resource = resource
@@ -37,7 +39,7 @@ class Alert(object):
         self.status = kwargs.get('status', None) or "unknown"
         self.service = kwargs.get('service', None) or list()
         self.group = kwargs.get('group', None) or "Misc"
-        self.value = str(kwargs['value']) if kwargs.get('value', None) is not None else None
+        self.value = kwargs.get('value', None)
         self.text = kwargs.get('text', None) or ""
         self.tags = kwargs.get('tags', None) or list()
         self.attributes = kwargs.get('attributes', None) or dict()
@@ -45,7 +47,7 @@ class Alert(object):
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or "exceptionAlert"
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
         self.timeout = kwargs.get('timeout', None) or current_app.config['ALERT_TIMEOUT']
-        self.raw_data = str(kwargs['raw_data']) if kwargs.get('raw_data', None) is not None else None
+        self.raw_data = kwargs.get('raw_data', None)
         self.customer = kwargs.get('customer', None)
 
         self.duplicate_count = kwargs.get('duplicate_count', None)
