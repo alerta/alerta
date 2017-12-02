@@ -80,7 +80,7 @@ class RichHistory(object):
         self.status = kwargs.get('status', None)
         self.service = kwargs.get('service', None) or list()
         self.group = kwargs.get('group', None)
-        self.value = str(kwargs.get('value', None))
+        self.value = kwargs.get('value', None)
         self.text = kwargs.get('text', None)
         self.tags = kwargs.get('tags', None) or list()
         self.attributes = kwargs.get('attributes', None) or dict()
