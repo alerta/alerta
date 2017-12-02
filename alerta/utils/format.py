@@ -6,7 +6,7 @@ from bson import ObjectId
 from flask import json
 
 
-class DateEncoder(json.JSONEncoder):
+class CustomJSONEncoder(json.JSONEncoder):
     def default(self, o):
         from alerta.models.alert import Alert, History
         if isinstance(o, (datetime.date, datetime.datetime)):
