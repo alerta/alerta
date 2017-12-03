@@ -219,8 +219,8 @@ class Alert(object):
     def is_correlated(self):
         return db.is_correlated(self)
 
-    def is_flapping(self, count=2, window=1800):
-        return db.is_flapping(self, count, window)
+    def is_flapping(self, window=1800, count=2):
+        return db.is_flapping(self, window, count)
 
     # de-duplicate an alert
     def deduplicate(self):
