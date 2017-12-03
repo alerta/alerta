@@ -133,6 +133,9 @@ class Backend(Database):
         return bool(self._fetchone(select, vars(alert)))
 
     def is_flapping(self, alert, window=1800, count=2):
+        """
+        Return true if alert severity has changed more than X times in Y seconds
+        """
         select = """
             SELECT COUNT(*)
               FROM alerts, unnest(history) h
