@@ -133,16 +133,19 @@ class Backend(Database):
         return bool(self._fetchone(select, vars(alert)))
 
     def is_flapping(self, alert, window=1800, count=2):
+        """
+        Return true if alert severity has changed more than X times in Y seconds
+        """
         select = """
             SELECT COUNT(*)
               FROM alerts, unnest(history) h
              WHERE environment=%(environment)s
                AND resource=%(resource)s
-               AND event=%(event)s
-               AND h.update_time > {window}
-               AND h.type="severity"
+               AND h.event=%(event)s
+               AND h.update_time > (NOW() at time zone 'utc' - INTERVAL '{window} seconds')
+               AND h.type='severity'
                AND customer IS NOT DISTINCT FROM %(customer)s
-        """.format(window=(datetime.utcnow() - timedelta(seconds=window)))
+        """.format(window=window)
         return self._fetchone(select, vars(alert)).count > count
 
     def dedup_alert(self, alert, history):
