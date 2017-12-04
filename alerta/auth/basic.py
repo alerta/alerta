@@ -20,7 +20,7 @@ def signup():
     except Exception as e:
         raise ApiError(str(e), 400)
 
-    if User.get_by_email(email=user.email):
+    if User.find_by_email(email=user.email):
         raise ApiError("username already exists", 409)
 
     try:
@@ -63,7 +63,7 @@ def login():
     except KeyError:
         raise ApiError("must supply 'username' and 'password'", 401)
 
-    user = User.get_by_email(email=username)
+    user = User.find_by_email(email=username)
     if not user:
         raise ApiError("invalid username or password", 401)
 

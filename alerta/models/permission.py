@@ -65,7 +65,7 @@ class Permission(object):
         return Permission.from_db(db.create_perm(self))
 
     @staticmethod
-    def get(id):
+    def find_by_id(id):
         return Permission.from_db(db.get_perm(id))
 
     @staticmethod

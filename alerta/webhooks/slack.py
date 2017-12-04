@@ -74,7 +74,7 @@ def build_slack_response(alert, action, user, data):
 def slack():
     alert_id, user, action = parse_slack(request.form)
 
-    alert = Alert.get(alert_id)
+    alert = Alert.find_by_id(alert_id)
     if not alert:
         jsonify(status="error", message="alert not found for #slack message")
 

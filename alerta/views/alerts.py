@@ -64,7 +64,7 @@ def receive():
 @jsonp
 def get_alert(alert_id):
     customer = g.get('customer', None)
-    alert = Alert.get(alert_id, customer)
+    alert = Alert.find_by_id(alert_id, customer)
 
     if alert:
         return jsonify(status="ok", total=1, alert=alert.serialize)
@@ -86,7 +86,7 @@ def set_status(alert_id):
         raise ApiError("must supply 'status' as json data")
 
     customer = g.get('customer', None)
-    alert = Alert.get(alert_id, customer)
+    alert = Alert.find_by_id(alert_id, customer)
 
     if not alert:
         raise ApiError("not found", 404)
@@ -115,7 +115,7 @@ def tag_alert(alert_id):
         raise ApiError("must supply 'tags' as json list")
 
     customer = g.get('customer', None)
-    alert = Alert.get(alert_id, customer)
+    alert = Alert.find_by_id(alert_id, customer)
 
     if not alert:
         raise ApiError("not found", 404)
@@ -137,7 +137,7 @@ def untag_alert(alert_id):
         raise ApiError("must supply 'tags' as json list")
 
     customer = g.get('customer', None)
-    alert = Alert.get(alert_id, customer)
+    alert = Alert.find_by_id(alert_id, customer)
 
     if not alert:
         raise ApiError("not found", 404)
@@ -159,7 +159,7 @@ def update_attributes(alert_id):
         raise ApiError("must supply 'attributes' as json data", 400)
 
     customer = g.get('customer', None)
-    alert = Alert.get(alert_id, customer)
+    alert = Alert.find_by_id(alert_id, customer)
 
     if not alert:
         raise ApiError("not found", 404)
@@ -178,7 +178,7 @@ def update_attributes(alert_id):
 @jsonp
 def delete_alert(alert_id):
     customer = g.get('customer', None)
-    alert = Alert.get(alert_id, customer)
+    alert = Alert.find_by_id(alert_id, customer)
 
     if not alert:
         raise ApiError("not found", 404)
@@ -217,7 +217,7 @@ def search_alerts():
             statusCounts=status_count,
             severityCounts=severity_count,
             lastTime=max([alert.last_receive_time for alert in alerts]),
-            autoRefresh=Switch.get('auto-refresh-allow').is_on
+            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
         )
     else:
         return jsonify(
@@ -232,7 +232,7 @@ def search_alerts():
             severityCounts=severity_count,
             statusCounts=status_count,
             lastTime=query_time,
-            autoRefresh=Switch.get('auto-refresh-allow').is_on
+            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
         )
 
 

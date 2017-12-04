@@ -40,7 +40,7 @@ def create_heartbeat():
 @jsonp
 def get_heartbeat(heartbeat_id):
     customer = g.get('customer', None)
-    heartbeat = Heartbeat.get(heartbeat_id, customer)
+    heartbeat = Heartbeat.find_by_id(heartbeat_id, customer)
 
     if heartbeat:
         return jsonify(status="ok", total=1, heartbeat=heartbeat.serialize)
@@ -77,7 +77,7 @@ def list_heartbeats():
 @jsonp
 def delete_heartbeat(heartbeat_id):
     customer = g.get('customer', None)
-    heartbeat = Heartbeat.get(heartbeat_id, customer)
+    heartbeat = Heartbeat.find_by_id(heartbeat_id, customer)
 
     if not heartbeat:
         raise ApiError("not found", 404)

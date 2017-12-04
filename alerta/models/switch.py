@@ -42,7 +42,7 @@ class Switch(object):
         )
 
     @classmethod
-    def get(cls, name):
+    def find_by_name(cls, name):
         for s in Switch.switches:
             if s.name == name:
                 return s

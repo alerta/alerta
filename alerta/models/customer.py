@@ -62,7 +62,7 @@ class Customer(object):
         return Customer.from_db(db.create_customer(self))
 
     @staticmethod
-    def get(id):
+    def find_by_id(id):
         return Customer.from_db(db.get_customer(id))
 
     @staticmethod
