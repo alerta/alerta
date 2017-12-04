@@ -21,12 +21,12 @@ def update_user(user_id):
     if not request.json:
         raise ApiError("nothing to change", 400)
 
-    user = User.get(user_id)
+    user = User.find_by_id(user_id)
 
     if not user:
         raise ApiError("not found", 404)
 
-    if 'email' in request.json and User.get_by_email(request.json['email']):
+    if 'email' in request.json and User.find_by_email(request.json['email']):
         raise ApiError("user with email already exists", 409)
 
     if user.update(**request.json):
@@ -43,7 +43,7 @@ def update_user_attributes(user_id):
     if not request.json.get('attributes', None):
         raise ApiError("must supply 'attributes' as json data", 400)
 
-    user = User.get(user_id)
+    user = User.find_by_id(user_id)
 
     if not user:
         raise ApiError("not found", 404)
@@ -84,7 +84,7 @@ def search_users():
 @permission('write:users')
 @jsonp
 def delete_user(user_id):
-    user = User.get(user_id)
+    user = User.find_by_id(user_id)
 
     if not user:
         raise ApiError("not found", 404)

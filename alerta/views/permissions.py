@@ -61,7 +61,7 @@ def list_perms():
 @permission('admin:perms')
 @jsonp
 def delete_perm(perm_id):
-    perm = Permission.get(perm_id)
+    perm = Permission.find_by_id(perm_id)
 
     if not perm:
         raise ApiError("not found", 404)

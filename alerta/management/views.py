@@ -95,7 +95,7 @@ def switchboard():
         switch = request.args.get('switch', None)
         if switch:
             return render_template('management/switchboard.html',
-                                   switches=[Switch.get(switch)])
+                                   switches=[Switch.find_by_name(switch)])
         else:
             return render_template('management/switchboard.html', switches=switches)
 

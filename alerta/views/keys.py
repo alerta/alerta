@@ -78,7 +78,7 @@ def list_keys():
 @permission('admin:keys')
 @jsonp
 def delete_key(key):
-    key = ApiKey.get(key)
+    key = ApiKey.find_by_id(key)
 
     if not key:
         raise ApiError("not found", 404)

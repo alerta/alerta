@@ -74,7 +74,7 @@ def pagerduty():
 
             customer = g.get('customer', None)
             try:
-                alert = Alert.get(id=incident_key, customer=customer)
+                alert = Alert.find_by_id(id=incident_key, customer=customer)
             except Exception as e:
                 raise ApiError(str(e), 500)
 
