@@ -63,7 +63,7 @@ def list_blackouts():
 @jsonp
 def delete_blackout(blackout_id):
     customer = g.get('customer', None)
-    blackout = Blackout.get(blackout_id, customer)
+    blackout = Blackout.find_by_id(blackout_id, customer)
 
     if not blackout:
         raise ApiError("not found", 404)

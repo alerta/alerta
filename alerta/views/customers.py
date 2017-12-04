@@ -59,7 +59,7 @@ def list_customers():
 @permission('admin:customers')
 @jsonp
 def delete_customer(customer_id):
-    customer = Customer.get(customer_id)
+    customer = Customer.find_by_id(customer_id)
 
     if not customer:
         raise ApiError("not found", 404)

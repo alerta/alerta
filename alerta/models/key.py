@@ -106,7 +106,7 @@ class ApiKey(object):
         return ApiKey.from_db(db.create_key(self))
 
     @staticmethod
-    def get(key):
+    def find_by_id(key):
         """
         Get API key details.
         """

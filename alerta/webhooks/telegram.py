@@ -71,7 +71,7 @@ def telegram():
         user = "{} {}".format(author.get('first_name'), author.get('last_name'))
         command, alert_id = data['callback_query']['data'].split(' ', 1)
 
-        alert = Alert.get(alert_id)
+        alert = Alert.find_by_id(alert_id)
         if not alert:
             jsonify(status="error", message="alert not found for Telegram message")
 

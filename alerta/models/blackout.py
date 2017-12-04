@@ -176,7 +176,7 @@ class Blackout(object):
 
     # get a blackout
     @staticmethod
-    def get(id, customer=None):
+    def find_by_id(id, customer=None):
         return Blackout.from_db(db.get_blackout(id, customer))
 
     @staticmethod

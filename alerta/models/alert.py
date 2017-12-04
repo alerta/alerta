@@ -327,7 +327,7 @@ class Alert(object):
 
     # retrieve an alert
     @staticmethod
-    def get(id, customer=None):
+    def find_by_id(id, customer=None):
         return Alert.from_db(db.get_alert(id, customer))
 
     def is_blackout(self):

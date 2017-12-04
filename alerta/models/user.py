@@ -120,11 +120,11 @@ class User(object):
         return User.from_db(db.create_user(self))
 
     @staticmethod
-    def get(id):
+    def find_by_id(id):
         return User.from_db(db.get_user(id))
 
     @staticmethod
-    def get_by_email(email):
+    def find_by_email(email):
         return User.from_db(db.get_user_by_email(email))
 
     @staticmethod
