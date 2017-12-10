@@ -110,9 +110,11 @@ def parse_graylog(alert):
 
     return Alert(
         resource=alert['stream']['title'],
-        environment='Production',
-        service=[],
-        value=alert['check_result']['result_description'],
+        event="Alert",
+        environment='Development',
+        service=["test"],
+        severity="critical",
+        value="n/a",
         text=alert['check_result']['result_description'],
         attributes={'checkId': alert['check_result']['triggered_condition']['id']},
         origin='Graylog',
@@ -130,8 +132,13 @@ def graylog():
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    if g.get('customer', None):
-        incomingAlert.customer = g.get('customer')
+    if request.args.get('event', None):
+        incomingAlert.event = request.args.get('event')
+    if request.args.get('environment', None):
+        incomingAlert.environment = request.args.get('environment')
+    if request.args.get('service', None):
+        incomingAlert.service = request.args.get('service').split(",")
+
 
     add_remote_ip(request, incomingAlert)
 
