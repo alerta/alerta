@@ -134,10 +134,14 @@ def graylog():
 
     if request.args.get('event', None):
         incomingAlert.event = request.args.get('event')
+    if request.args.get('event_type', None):
+        incomingAlert.event_type = request.args.get('event_type')
     if request.args.get('environment', None):
         incomingAlert.environment = request.args.get('environment')
     if request.args.get('service', None):
         incomingAlert.service = request.args.get('service').split(",")
+    if request.args.get('severity', None):
+        incomingAlert.severity = request.args.get('severity')
 
 
     add_remote_ip(request, incomingAlert)
