@@ -187,6 +187,7 @@ class WebhooksTestCase(unittest.TestCase):
           {
             "host": "hostbob",
             "service": "servicejane",
+            "state": "ok",
             "description": "This is a description",
             "metric": 1
           }
@@ -662,5 +663,5 @@ class WebhooksTestCase(unittest.TestCase):
 
     def test_graylog_webhook(self):
         # graylog alert
-        response = self.client.post('/webhooks/graylog', data=json.dumps(self.graylog_notification), headers=self.headers)
+        response = self.client.post('/webhooks/graylog', data=self.graylog_notification, headers=self.headers)
         self.assertEqual(response.status_code, 201)
