@@ -21,11 +21,16 @@ class BlackoutHandler(PluginBase):
     notification integrations (plugins) to check for this notification suppression.
     """
     def pre_receive(self, alert):
-        if alert.is_blackout():
-            if app.config.get('NOTIFICATION_BLACKOUT', False):
-                alert.attributes['notify'] = False
-            else:
-                raise BlackoutPeriod("Suppressed alert during blackout period")
+
+        is_blackout = alert.is_blackout()
+        do_not_notify = app.config.get('NOTIFICATION_BLACKOUT', False)
+
+        if do_not_notify and is_blackout:
+            alert.attributes['notify'] = False
+        elif do_not_notify and not is_blackout:
+            alert.attributes['notify'] = True
+        elif not do_not_notify and is_blackout:
+            raise BlackoutPeriod("Suppressed alert during blackout period")
         return alert
 
     def post_receive(self, alert):
