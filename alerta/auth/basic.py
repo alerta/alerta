@@ -7,7 +7,7 @@ from flask_cors import cross_origin
 
 from alerta.auth.utils import is_authorized, create_token, get_customer
 from alerta.exceptions import ApiError
-from alerta.models.user import User
+from alerta.models import User
 from alerta.utils.api import absolute_url
 from . import auth
 

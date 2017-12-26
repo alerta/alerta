@@ -6,8 +6,7 @@ from flask import current_app, request, jsonify
 from flask_cors import cross_origin
 
 from alerta.auth.utils import permission
-from alerta.models.alert import Alert
-from alerta.models.blackout import Blackout
+from alerta.models import Alert, Blackout
 from . import webhooks
 
 LOG = logging.getLogger(__name__)

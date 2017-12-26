@@ -6,7 +6,7 @@ from flask_cors import cross_origin
 
 from alerta.auth.utils import permission
 from alerta.exceptions import ApiError, RejectException
-from alerta.models.alert import Alert
+from alerta.models import Alert
 from alerta.utils.api import process_alert, add_remote_ip
 from . import webhooks
 

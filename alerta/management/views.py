@@ -12,10 +12,7 @@ except Exception:
 from alerta.app import db
 from alerta.auth.utils import permission
 from alerta.exceptions import ApiError
-from alerta.models.alert import Alert
-from alerta.models.heartbeat import Heartbeat
-from alerta.models.metrics import Gauge, Counter, Timer
-from alerta.models.switch import Switch, SwitchState
+from alerta.models import Alert, Counter, Gauge, Heartbeat, Switch, SwitchState, Timer
 from alerta.version import __version__
 
 from . import mgmt

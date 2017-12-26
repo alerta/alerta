@@ -3,8 +3,7 @@ import json
 import unittest
 
 from alerta.app import create_app, db
-from alerta.models.key import ApiKey
-from alerta.models.token import Jwt
+from alerta.models import ApiKey, Jwt
 
 
 class AuthTestCase(unittest.TestCase):

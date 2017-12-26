@@ -9,7 +9,7 @@ from flask import current_app
 
 from alerta.app import db, severity
 from alerta.models import status_code
-from alerta.models.history import History, RichHistory
+from alerta.models import History, RichHistory
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 

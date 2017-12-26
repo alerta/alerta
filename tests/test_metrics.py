@@ -3,7 +3,7 @@ import time
 import unittest
 
 from alerta.app import create_app, db
-from alerta.models.metrics import Gauge, Timer
+from alerta.models import Gauge, Timer
 
 
 class MetricsTestCase(unittest.TestCase):

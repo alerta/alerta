@@ -3,7 +3,7 @@ import json
 import unittest
 
 from alerta.app import create_app, db
-from alerta.models.key import ApiKey
+from alerta.models import ApiKey
 
 
 class BlackoutsTestCase(unittest.TestCase):

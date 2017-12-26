@@ -3,8 +3,7 @@ from flask_cors import cross_origin
 
 from alerta.auth.utils import permission
 from alerta.exceptions import ApiError
-from alerta.models.key import ApiKey
-from alerta.models.permission import Permission
+from alerta.models import ApiKey, Permission
 from alerta.utils.api import jsonp
 from . import api
 

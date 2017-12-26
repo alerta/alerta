@@ -5,7 +5,7 @@ from flask_cors import cross_origin
 
 from alerta.auth.utils import is_authorized, create_token, get_customer
 from alerta.exceptions import ApiError
-from alerta.models.token import Jwt
+from alerta.models import Jwt
 from . import auth
 
 

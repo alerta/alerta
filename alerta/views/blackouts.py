@@ -5,7 +5,7 @@ from flask_cors import cross_origin
 from alerta.app import qb
 from alerta.auth.utils import permission
 from alerta.exceptions import ApiError
-from alerta.models.blackout import Blackout
+from alerta.models import Blackout
 from alerta.utils.api import jsonp, absolute_url
 from . import api
 
