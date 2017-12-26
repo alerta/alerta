@@ -109,32 +109,32 @@ class Config(object):
 
     @staticmethod
     def setup_logging(app):
-        loggers = [
-            app.logger,
-            logging.getLogger('requests'),  # ??
-            logging.getLogger('urllib3'),  # ok
-            logging.getLogger('flask_cors'),  # very noisy
-            logging.getLogger('flask_compress'),  # ??
-            logging.getLogger('pymongo'),  # ??
-            logging.getLogger('raven'),  # ok
-            logging.getLogger('sentry')  # ??
-        ]
+        del app.logger.handlers[:]
 
         # for key in logging.Logger.manager.loggerDict:
         #     print(key)
+
+        loggers = [
+            app.logger,
+            logging.getLogger('alerta'),  # ??
+            logging.getLogger('flask'),  # ??
+            logging.getLogger('flask_compress'),  # ??
+            logging.getLogger('flask_cors'),  # ??
+            logging.getLogger('pymongo'),  # ??
+            logging.getLogger('raven'),  # ??
+            logging.getLogger('requests'),  # ??
+            logging.getLogger('sentry'),  # ??
+            logging.getLogger('urllib3'),  # ??
+            logging.getLogger('werkzeug'),  # ??
+        ]
 
         if app.debug:
             log_level = logging.DEBUG
         else:
             log_level = logging.INFO
 
-        for logger in loggers:
-            logger.setLevel(log_level)
-            logger.propagate = True
-
         if app.config['LOG_FILE']:
             from logging.handlers import RotatingFileHandler
-            del app.logger.handlers[:]
             handler = RotatingFileHandler(app.config['LOG_FILE'], maxBytes=100000, backupCount=2)
             handler.setLevel(log_level)
             handler.setFormatter(logging.Formatter(app.config['LOG_FORMAT']))
@@ -145,3 +145,5 @@ class Config(object):
 
         for logger in loggers:
             logger.addHandler(handler)
+            logger.setLevel(log_level)
+            logger.propagate = True

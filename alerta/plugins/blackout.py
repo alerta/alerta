@@ -26,10 +26,12 @@ class BlackoutHandler(PluginBase):
         do_not_notify = app.config.get('NOTIFICATION_BLACKOUT', False)
 
         if do_not_notify and is_blackout:
+            LOG.debug('Suppressed notifications during blackout period (id=%s)' % alert.id)
             alert.attributes['notify'] = False
         elif do_not_notify and not is_blackout:
             alert.attributes['notify'] = True
         elif not do_not_notify and is_blackout:
+            LOG.debug('Suppressed alert during blackout period (id=%s)' % alert.id)
             raise BlackoutPeriod("Suppressed alert during blackout period")
         return alert
 
