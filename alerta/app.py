@@ -6,7 +6,7 @@ from raven.contrib.flask import Sentry
 
 from alerta.database.base import Database, QueryBuilder
 from alerta.exceptions import ExceptionHandlers
-from alerta.models.severity_code import Severity
+from alerta.models import Severity
 from alerta.plugins import Plugins
 from alerta.utils.config import Config
 from alerta.utils.key import ApiKeyHelper

@@ -8,10 +8,7 @@ from flask import request, g, current_app
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
 from alerta.exceptions import ApiError, NoCustomerMatch
-from alerta.models.customer import Customer
-from alerta.models.key import ApiKey
-from alerta.models.permission import Permission
-from alerta.models.token import Jwt
+from alerta.models import ApiKey, Customer, Jwt, Permission
 
 
 try:

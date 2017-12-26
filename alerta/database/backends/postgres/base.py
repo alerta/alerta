@@ -44,7 +44,7 @@ class Backend(Database):
             conn,
             globally=True
         )
-        from alerta.models.alert import History
+        from alerta.models import History
         register_adapter(History, adapt_history)
 
     def connect(self):

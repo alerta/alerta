@@ -5,7 +5,7 @@ from flask_cors import cross_origin
 from alerta.app import qb
 from alerta.auth.utils import permission
 from alerta.exceptions import ApiError
-from alerta.models.heartbeat import Heartbeat
+from alerta.models import Heartbeat
 from alerta.utils.api import jsonp
 from . import api
 

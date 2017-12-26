@@ -8,7 +8,7 @@ from flask import json
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, o):
-        from alerta.models.alert import Alert, History
+        from alerta.models import Alert, History
         if isinstance(o, (datetime.date, datetime.datetime)):
             return o.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + ".%03dZ" % (o.microsecond // 1000)
         elif isinstance(o, datetime.timedelta):
