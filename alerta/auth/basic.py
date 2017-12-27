@@ -20,6 +20,10 @@ def signup():
     except Exception as e:
         raise ApiError(str(e), 400)
 
+    # check allowed domain
+    if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
+        raise ApiError("unauthorized domain", 403)
+
     if User.find_by_email(email=user.email):
         raise ApiError("username already exists", 409)
 
@@ -38,10 +42,6 @@ def signup():
     # check user is active
     if user.status != 'active':
         raise ApiError('user not active', 403)
-
-    # check allowed domain
-    if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
-        raise ApiError("unauthorized domain", 403)
 
     # assign customer & update last login time
     customer = get_customer(user.email, groups=[user.domain])
