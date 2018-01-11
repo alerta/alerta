@@ -16,8 +16,13 @@ class User(object):
 
     def __init__(self, name, email, password, roles, text, **kwargs):
 
+        if not email:
+            raise ValueError('Missing mandatory value for "email"')
+        if '@' not in email:
+            raise ValueError('Value for "email" not valid: %s' % email)
+
         self.id = kwargs.get('id', None) or str(uuid4())
-        self.name = name
+        self.name = name or ""
         self.email = email  # => g.user
         self.password = password  # NB: hashed password
         self.status = kwargs.get('status', None) or 'active'  # 'active', 'inactive', 'unknown'
@@ -38,8 +43,8 @@ class User(object):
         return User(
             name=json.get('name'),
             email=json.get('email'),
-            password=generate_password_hash(json.get('password', None)),
-            status=json.get('status'),
+            password=generate_password_hash(json.get('password', '')),
+            status=json.get('status', None),
             roles=json.get('roles', list()),
             attributes=json.get('attributes', dict()),
             text=json.get('text', None),
