@@ -1024,7 +1024,7 @@ class Backend(Database):
         pipeline = [
             {'$project': {
                 "event": 1, "status": 1, "lastReceiveId": 1, "timeout": 1,
-                "expireTime": {'$add': ["$lastReceiveTime", {'$multiply': ["$timeout", 1]}]}}
+                "expireTime": {'$add': ["$lastReceiveTime", {'$multiply': ["$timeout", 1000]}]}}
             },
             {'$match': {"status": {'$ne': 'expired'}, "expireTime": {'$lt': datetime.utcnow()}, "timeout": {'$ne': 0}}}
         ]
