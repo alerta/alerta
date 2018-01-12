@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from flask import request, g, current_app
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
+from six import text_type
 
 from alerta.exceptions import ApiError, NoCustomerMatch
 from alerta.models.customer import Customer
@@ -18,7 +19,9 @@ try:
     import bcrypt
 
     def generate_password_hash(password):
-        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
+        if isinstance(password, text_type):
+            password = password.encode('utf-8')
+        return bcrypt.hashpw(password, bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
 
     def check_password_hash(pwhash, password):
         return bcrypt.checkpw(password.encode('utf-8'), pwhash.encode('utf-8'))
