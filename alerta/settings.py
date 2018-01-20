@@ -9,8 +9,11 @@
 DEBUG = False
 
 BASE_URL = ''
+
 LOGGER_NAME = 'alerta'
 LOG_FILE = None
+LOG_MAX_BYTES = 100000
+LOG_BACKUP_COUNT = 2
 LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
 
 SECRET_KEY = 'changeme'

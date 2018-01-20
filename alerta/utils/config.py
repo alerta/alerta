@@ -135,7 +135,11 @@ class Config(object):
 
         if app.config['LOG_FILE']:
             from logging.handlers import RotatingFileHandler
-            handler = RotatingFileHandler(app.config['LOG_FILE'], maxBytes=100000, backupCount=2)
+            handler = RotatingFileHandler(
+                filename=app.config['LOG_FILE'],
+                maxBytes=app.config['LOG_MAX_BYTES'],
+                backupCount=app.config['LOG_BACKUP_COUNT']
+            )
             handler.setLevel(log_level)
             handler.setFormatter(logging.Formatter(app.config['LOG_FORMAT']))
         else:
