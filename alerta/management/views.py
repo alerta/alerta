@@ -128,7 +128,7 @@ def health_check():
     return 'OK'
 
 
-@mgmt.route('/management/housekeeping', methods=['OPTIONS', 'GET'])
+@mgmt.route('/management/housekeeping', methods=['OPTIONS', 'GET', 'POST'])
 @cross_origin()
 @permission('admin:management')
 def housekeeping():
@@ -143,9 +143,9 @@ def housekeeping():
 
     try:
         Alert.housekeeping(expired_threshold, info_threshold)
-        return 'OK'
+        return jsonify(status='ok')
     except Exception as e:
-        return 'HOUSEKEEPING FAILED: %s' % e, 503
+        raise ApiError('HOUSEKEEPING FAILED: %s' % e, 503)
 
 
 @mgmt.route('/management/status', methods=['OPTIONS', 'GET'])
