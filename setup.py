@@ -6,11 +6,10 @@ from datetime import datetime
 
 import setuptools
 
-with open('VERSION') as f:
-    version = f.read().strip()
 
-with open('README.md') as f:
-    readme = f.read()
+def read(filename):
+    return open(os.path.join(os.path.dirname(__file__), filename)).read()
+
 
 try:
     with open('alerta/build.py', 'w') as f:
@@ -29,9 +28,9 @@ except Exception:
 
 setuptools.setup(
     name='alerta-server',
-    version=version,
+    version=read('VERSION'),
     description='Alerta server WSGI application',
-    long_description=readme,
+    long_description=read('README.md'),
     url='https://github.com/guardian/alerta',
     license='Apache License 2.0',
     author='Nick Satterly',
