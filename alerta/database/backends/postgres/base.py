@@ -98,8 +98,8 @@ class Backend(Database):
              WHERE environment=%(environment)s AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s)
                 OR (event!=%(event)s AND %(event)s=ANY(correlate)))
-               AND customer IS NOT DISTINCT FROM %(customer)s
-            """
+               AND {customer}
+            """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
         return self._fetchone(select, vars(alert)).severity
 
     def get_status(self, alert):
@@ -107,8 +107,8 @@ class Backend(Database):
             SELECT status FROM alerts
              WHERE environment=%(environment)s AND resource=%(resource)s
               AND (event=%(event)s OR %(event)s=ANY(correlate))
-              AND (%(customer)s IS NULL OR customer=%(customer)s)
-            """
+              AND {customer}
+            """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
         return self._fetchone(select, vars(alert)).status
 
     def is_duplicate(self, alert):
@@ -118,8 +118,8 @@ class Backend(Database):
                AND resource=%(resource)s
                AND event=%(event)s
                AND severity=%(severity)s
-               AND (%(customer)s IS NULL OR customer=%(customer)s)
-            """
+               AND {customer}
+            """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
         return bool(self._fetchone(select, vars(alert)))
 
     def is_correlated(self, alert):
@@ -128,8 +128,8 @@ class Backend(Database):
              WHERE environment=%(environment)s AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s)
                 OR (event!=%(event)s AND %(event)s=ANY(correlate)))
-               AND (%(customer)s IS NULL OR customer=%(customer)s)
-        """
+               AND {customer}
+        """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
         return bool(self._fetchone(select, vars(alert)))
 
     def is_flapping(self, alert, window=1800, count=2):
@@ -144,8 +144,8 @@ class Backend(Database):
                AND h.event=%(event)s
                AND h.update_time > (NOW() at time zone 'utc' - INTERVAL '{window} seconds')
                AND h.type='severity'
-               AND (%(customer)s IS NULL OR customer=%(customer)s)
-        """.format(window=window)
+               AND {customer}
+        """.format(window=window, customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
         return self._fetchone(select, vars(alert)).count > count
 
     def dedup_alert(self, alert, history):
@@ -163,9 +163,9 @@ class Backend(Database):
                AND resource=%(resource)s
                AND event=%(event)s
                AND severity=%(severity)s
-               AND (%(customer)s IS NULL OR customer=%(customer)s)
+               AND {customer}
          RETURNING *
-        """.format(limit=current_app.config['HISTORY_LIMIT'])
+        """.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
         return self._update(update, vars(alert), returning=True)
 
     def correlate_alert(self, alert, history):
@@ -181,9 +181,9 @@ class Backend(Database):
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
-               AND (%(customer)s IS NULL OR customer=%(customer)s)
+               AND {customer}
          RETURNING *
-        """.format(limit=current_app.config['HISTORY_LIMIT'])
+        """.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
         return self._update(update, vars(alert), returning=True)
 
     def create_alert(self, alert):
@@ -205,8 +205,8 @@ class Backend(Database):
         select = """
             SELECT * FROM alerts
              WHERE (id ~* (%(id)s) OR last_receive_id ~* (%(id)s))
-               AND (%(customer)s IS NULL OR customer=%(customer)s)
-        """
+               AND {customer}
+        """.format(customer="customer=%(customer)s" if customer else "1=1")
         return self._fetchone(select, {'id': '^'+id, 'customer': customer})
 
     #### STATUS, TAGS, ATTRIBUTES
@@ -427,8 +427,8 @@ class Backend(Database):
         select = """
             SELECT * FROM blackouts
             WHERE id=%(id)s
-              AND (%(customer)s IS NULL OR customer=%(customer)s)
-        """
+              AND {customer}
+        """.format(customer="customer=%(customer)s" if customer else "1=1")
         return self._fetchone(select, {'id': id, 'customer': customer})
 
     def get_blackouts(self, query=None):
@@ -461,7 +461,7 @@ class Backend(Database):
         if self._fetchone(select, data):
             return True
         if current_app.config['CUSTOMER_VIEWS']:
-            select += " AND (%(customer)s IS NULL OR customer=%(customer)s)"
+            select += " AND customer=%(customer)s"
             if self._fetchone(select, data):
                 return True
         return False
@@ -489,9 +489,9 @@ class Backend(Database):
     def get_heartbeat(self, id, customer=None):
         select = """
             SELECT * FROM heartbeats
-             WHERE id=%(id)s OR id LIKE %(like_id)s
-               AND (%(customer)s IS NULL OR customer=%(customer)s)
-        """
+             WHERE (id=%(id)s OR id LIKE %(like_id)s)
+               AND {customer}
+        """.format(customer="customer=%(customer)s" if customer else "1=1")
         return self._fetchone(select, {'id': id, 'like_id': id+'%', 'customer': customer})
 
     def get_heartbeats(self, query=None):
