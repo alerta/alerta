@@ -98,9 +98,12 @@ except Exception:
 Tests
 -----
 
-To run the tests use::
+To run the tests using a local Postgres database run::
 
-    $ ALERTA_SVR_CONF_FILE= nosetests
+    $ pip install -r requirements.txt
+    $ pip install -e .
+    $ createdb test5
+    $ ALERTA_SVR_CONF_FILE= DATABASE_URL=postgres:///test5 nosetests
 
 Cloud Deployment
 ----------------
