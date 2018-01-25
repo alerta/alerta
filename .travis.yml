@@ -23,10 +23,8 @@ before_script:
   - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'DROP DATABASE IF EXISTS alerta5;' -U postgres; fi"
   - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'CREATE DATABASE alerta5;' -U postgres; fi"
 
-# command to install dependencies
 install:
   - "pip install ."
   - "pip install -r requirements.txt"
 
-# command to run tests
 script: nosetests tests/*
