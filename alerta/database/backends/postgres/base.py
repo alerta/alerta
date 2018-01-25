@@ -107,7 +107,7 @@ class Backend(Database):
             SELECT status FROM alerts
              WHERE environment=%(environment)s AND resource=%(resource)s
               AND (event=%(event)s OR %(event)s=ANY(correlate))
-              AND customer IS NOT DISTINCT FROM %(customer)s
+              AND (%(customer)s IS NULL OR customer=%(customer)s)
             """
         return self._fetchone(select, vars(alert)).status
 
@@ -118,7 +118,7 @@ class Backend(Database):
                AND resource=%(resource)s
                AND event=%(event)s
                AND severity=%(severity)s
-               AND customer IS NOT DISTINCT FROM %(customer)s
+               AND (%(customer)s IS NULL OR customer=%(customer)s)
             """
         return bool(self._fetchone(select, vars(alert)))
 
@@ -128,7 +128,7 @@ class Backend(Database):
              WHERE environment=%(environment)s AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s)
                 OR (event!=%(event)s AND %(event)s=ANY(correlate)))
-               AND customer IS NOT DISTINCT FROM %(customer)s
+               AND (%(customer)s IS NULL OR customer=%(customer)s)
         """
         return bool(self._fetchone(select, vars(alert)))
 
@@ -144,7 +144,7 @@ class Backend(Database):
                AND h.event=%(event)s
                AND h.update_time > (NOW() at time zone 'utc' - INTERVAL '{window} seconds')
                AND h.type='severity'
-               AND customer IS NOT DISTINCT FROM %(customer)s
+               AND (%(customer)s IS NULL OR customer=%(customer)s)
         """.format(window=window)
         return self._fetchone(select, vars(alert)).count > count
 
@@ -163,7 +163,7 @@ class Backend(Database):
                AND resource=%(resource)s
                AND event=%(event)s
                AND severity=%(severity)s
-               AND customer IS NOT DISTINCT FROM %(customer)s
+               AND (%(customer)s IS NULL OR customer=%(customer)s)
          RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
         return self._update(update, vars(alert), returning=True)
@@ -181,7 +181,7 @@ class Backend(Database):
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
-               AND customer IS NOT DISTINCT FROM %(customer)s
+               AND (%(customer)s IS NULL OR customer=%(customer)s)
          RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
         return self._update(update, vars(alert), returning=True)
@@ -204,8 +204,8 @@ class Backend(Database):
     def get_alert(self, id, customer=None):
         select = """
             SELECT * FROM alerts
-             WHERE id ~* (%(id)s) OR last_receive_id ~* (%(id)s)
-               AND customer IS NOT DISTINCT FROM %(customer)s
+             WHERE (id ~* (%(id)s) OR last_receive_id ~* (%(id)s))
+               AND (%(customer)s IS NULL OR customer=%(customer)s)
         """
         return self._fetchone(select, {'id': '^'+id, 'customer': customer})
 
@@ -427,7 +427,7 @@ class Backend(Database):
         select = """
             SELECT * FROM blackouts
             WHERE id=%(id)s
-              AND customer IS NOT DISTINCT FROM %(customer)s
+              AND (%(customer)s IS NULL OR customer=%(customer)s)
         """
         return self._fetchone(select, {'id': id, 'customer': customer})
 
@@ -461,7 +461,7 @@ class Backend(Database):
         if self._fetchone(select, data):
             return True
         if current_app.config['CUSTOMER_VIEWS']:
-            select += " AND customer IS NOT DISTINCT FROM %(customer)s"
+            select += " AND (%(customer)s IS NULL OR customer=%(customer)s)"
             if self._fetchone(select, data):
                 return True
         return False
@@ -490,7 +490,7 @@ class Backend(Database):
         select = """
             SELECT * FROM heartbeats
              WHERE id=%(id)s OR id LIKE %(like_id)s
-               AND customer IS NOT DISTINCT FROM %(customer)s
+               AND (%(customer)s IS NULL OR customer=%(customer)s)
         """
         return self._fetchone(select, {'id': id, 'like_id': id+'%', 'customer': customer})
 
