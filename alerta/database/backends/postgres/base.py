@@ -853,4 +853,4 @@ class Backend(Database):
 
     def _log(self, cursor, query, vars):
         LOG = current_app.logger
-        LOG.debug(cursor.mogrify(query, vars))
+        LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*'*40, query=cursor.mogrify(query, vars).decode('utf-8')))
