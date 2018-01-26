@@ -117,9 +117,9 @@ class Config(object):
         loggers = [
             app.logger,
             logging.getLogger('alerta'),  # ??
-            logging.getLogger('flask'),  # ??
+            # logging.getLogger('flask'),  # ??
             logging.getLogger('flask_compress'),  # ??
-            logging.getLogger('flask_cors'),  # ??
+            # logging.getLogger('flask_cors'),  # ??
             logging.getLogger('pymongo'),  # ??
             logging.getLogger('raven'),  # ??
             logging.getLogger('requests'),  # ??
