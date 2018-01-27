@@ -1,7 +1,7 @@
 
 import traceback
 
-from flask import jsonify
+from flask import current_app, jsonify
 
 
 class AlertaException(IOError):
@@ -49,15 +49,6 @@ class ExceptionHandlers(object):
         app.register_error_handler(Exception, handle_exception)
 
 
-def handle_api_error(error):
-    return jsonify({
-        'status': 'error',
-        'message': error.message,
-        'code':  error.code,
-        'errors': error.errors
-    }), error.code
-
-
 def handle_http_error(error):
     return jsonify({
         'status': 'error',
@@ -69,7 +60,17 @@ def handle_http_error(error):
     }), error.code
 
 
+def handle_api_error(error):
+    return jsonify({
+        'status': 'error',
+        'message': error.message,
+        'code':  error.code,
+        'errors': error.errors
+    }), error.code
+
+
 def handle_exception(error):
+    current_app.logger.exception(error)
     return jsonify({
         'status': 'error',
         'message': str(error),
