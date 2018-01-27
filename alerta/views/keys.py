@@ -27,7 +27,7 @@ def create_key():
         key.customer = g.get('customer', None)
 
     if not key.user:
-        raise ApiError("Must set 'user' to create API key", 400)
+        raise ApiError("An API key must be associated with a 'user'. Retry with user credentials.", 400)
 
     for want_scope in key.scopes:
         if not Permission.is_in_scope(want_scope, g.scopes):
