@@ -33,7 +33,11 @@ class Backend(Database):
             unique=True
         )
         db.alerts.create_index([('$**', TEXT)])
+        db.customers.create_index([('match', ASCENDING)], unique=True)
         db.heartbeats.create_index([('origin', ASCENDING), ('customer', ASCENDING)], unique=True)
+        db.keys.create_index([('key', ASCENDING)], unique=True)
+        db.perms.create_index([('match', ASCENDING)], unique=True)
+        db.users.create_index([('email', ASCENDING)], unique=True)
         db.metrics.create_index([('group', ASCENDING), ('name', ASCENDING)], unique=True)
 
         return db
