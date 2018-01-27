@@ -19,6 +19,7 @@ def cli():
 @cli.command('key', short_help='Create admin API keys')
 @with_appcontext
 def key():
+    """Create admin APi keys."""
     db.get_db()  # init db on global app context
     for admin in current_app.config['ADMIN_USERS']:
         key = ApiKey(
@@ -39,6 +40,7 @@ def key():
 @click.password_option()
 @with_appcontext
 def user(password):
+    """Create admin users."""
     db.get_db()  # init db on global app context
     for admin in current_app.config['ADMIN_USERS']:
         user = User(
