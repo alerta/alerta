@@ -20,7 +20,6 @@ def cli():
 @with_appcontext
 def key():
     """Create admin APi keys."""
-    db.get_db()  # init db on global app context
     for admin in current_app.config['ADMIN_USERS']:
         key = ApiKey(
             user=admin,
@@ -29,11 +28,12 @@ def key():
             expire_time=None
         )
         try:
+            db.get_db()  # init db on global app context
             key = key.create()
         except Exception as e:
             click.echo('ERROR: {}'.format(e))
-            sys.exit(1)
-        click.echo('{} {}'.format(key.key, key.user))
+        else:
+            click.echo('{} {}'.format(key.key, key.user))
 
 
 @cli.command('user', short_help='Create admin users')
@@ -41,7 +41,6 @@ def key():
 @with_appcontext
 def user(password):
     """Create admin users."""
-    db.get_db()  # init db on global app context
     for admin in current_app.config['ADMIN_USERS']:
         user = User(
             name=admin,
@@ -52,11 +51,12 @@ def user(password):
             email_verified=True
         )
         try:
+            db.get_db()  # init db on global app context
             user = user.create()
         except Exception as e:
             click.echo('ERROR: {}'.format(e))
-            sys.exit(1)
-        click.echo('{} {}'.format(user.id, user.name))
+        else:
+            click.echo('{} {}'.format(user.id, user.name))
 
 
 if __name__ == '__main__':
