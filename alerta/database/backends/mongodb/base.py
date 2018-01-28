@@ -818,11 +818,15 @@ class Backend(Database):
         data = {
             "_id": user.id,
             "name": user.name,
-            "password": user.password,
             "email": user.email,
+            "password": user.password,
+            "status": user.status,
+            "roles": user.roles,
+            "attributes": user.attributes,
             "createTime": user.create_time,
             "lastLogin": user.last_login,
             "text": user.text,
+            "updateTime": user.update_time,
             "email_verified": user.email_verified
         }
         if g.db.users.insert_one(data).inserted_id == user.id:
