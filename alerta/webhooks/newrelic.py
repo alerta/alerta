@@ -22,8 +22,12 @@ def parse_newrelic(alert):
         status = 'ack'
     elif status == 'closed':
         severity = 'ok'
+    elif alert['severity'].lower() == 'info':
+        severity = 'informational'
+        status='open'
     else:
         severity = alert['severity'].lower()
+        status='open'
 
     return Alert(
         resource=alert['targets'][0]['name'],
