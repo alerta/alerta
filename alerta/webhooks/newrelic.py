@@ -29,6 +29,12 @@ def parse_newrelic(alert):
         severity = alert['severity'].lower()
         status='open'
 
+    attributes = dict()
+    if 'incident_url' in alert:
+        attributes['moreInfo'] = '<a href="%s" target="_blank">Incident URL</a>' % alert['incident_url']
+    if 'runbook_url' in alert:
+        attributes['runBook'] = '<a href="%s" target="_blank">Runbook URL</a>' % alert['runbook_url']
+
     return Alert(
         resource=alert['targets'][0]['name'],
         event=alert['condition_name'],
@@ -39,10 +45,7 @@ def parse_newrelic(alert):
         group=alert['targets'][0]['type'],
         text=alert['details'],
         tags=['%s:%s' % (key, value) for (key, value) in alert['targets'][0]['labels'].items()],
-        attributes={
-            'moreInfo': '<a href="%s" target="_blank">Incident URL</a>' % alert['incident_url'],
-            'runBook': '<a href="%s" target="_blank">Runbook URL</a>' % alert['runbook_url']
-        },
+        attributes=attributes,
         origin='New Relic/v%s' % alert['version'],
         event_type=alert['event_type'].lower(),
         raw_data=alert
