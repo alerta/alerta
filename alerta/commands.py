@@ -1,6 +1,4 @@
 
-import sys
-
 import click
 from flask import current_app
 from flask.cli import FlaskGroup, with_appcontext
@@ -16,11 +14,16 @@ def cli():
     pass
 
 
-@cli.command('key', short_help='Create admin API keys')
+@cli.command('key', short_help='Create an admin API key')
+@click.option('--username', '-u', help='Admin user')
+@click.option('--all', is_flag=True, help='Create API keys for all admins')
 @with_appcontext
-def key():
-    """Create admin APi keys."""
-    for admin in current_app.config['ADMIN_USERS']:
+def key(username, all):
+    """Create an admin APi key."""
+    if username and username not in current_app.config['ADMIN_USERS']:
+        raise click.UsageError('User {} not an admin'.format(username))
+
+    def create_key(admin):
         key = ApiKey(
             user=admin,
             scopes=['admin', 'write', 'read'],
@@ -35,13 +38,39 @@ def key():
         else:
             click.echo('{} {}'.format(key.key, key.user))
 
+    if all:
+        for admin in current_app.config['ADMIN_USERS']:
+            create_key(admin)
+    else:
+        create_key(username)
 
-@cli.command('user', short_help='Create admin users')
-@click.password_option()
+
+@cli.command('keys', short_help='List admin API keys')
 @with_appcontext
-def user(password):
-    """Create admin users."""
+def keys():
+    """List admin APi keys."""
     for admin in current_app.config['ADMIN_USERS']:
+        try:
+            db.get_db()  # init db on global app context
+            keys = ApiKey.find_by_user(admin)
+        except Exception as e:
+            click.echo('ERROR: {}'.format(e))
+        else:
+            for key in keys:
+                click.echo('{:40} {}'.format(key.key, key.user))
+
+
+@cli.command('user', short_help='Create admin user')
+@click.option('--username', '-u', help='Admin user')
+@click.password_option()
+@click.option('--all', is_flag=True, help='Create users for all admins')
+@with_appcontext
+def user(username, password, all):
+    """Create admin users."""
+    if username and username not in current_app.config['ADMIN_USERS']:
+        raise click.UsageError('User {} not an admin'.format(username))
+
+    def create_user(admin):
         user = User(
             name=admin,
             email=admin,
@@ -57,6 +86,28 @@ def user(password):
             click.echo('ERROR: {}'.format(e))
         else:
             click.echo('{} {}'.format(user.id, user.name))
+
+    if all:
+        for admin in current_app.config['ADMIN_USERS']:
+            create_user(admin)
+    else:
+        create_user(username)
+
+
+@cli.command('users', short_help='List admin users')
+@with_appcontext
+def users():
+    """List admin users."""
+    for admin in current_app.config['ADMIN_USERS']:
+        try:
+            db.get_db()  # init db on global app context
+            user = User.find_by_email(admin)
+        except Exception as e:
+            click.echo('ERROR: {}'.format(e))
+        else:
+            if user:
+                click.echo('{} {}'.format(user.id, user.name))
+
 
 
 if __name__ == '__main__':
