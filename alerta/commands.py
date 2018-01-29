@@ -19,7 +19,7 @@ def cli():
 @click.option('--all', is_flag=True, help='Create API keys for all admins')
 @with_appcontext
 def key(username, all):
-    """Create an admin APi key."""
+    """Create an admin API key."""
     if username and username not in current_app.config['ADMIN_USERS']:
         raise click.UsageError('User {} not an admin'.format(username))
 
@@ -48,7 +48,7 @@ def key(username, all):
 @cli.command('keys', short_help='List admin API keys')
 @with_appcontext
 def keys():
-    """List admin APi keys."""
+    """List admin API keys."""
     for admin in current_app.config['ADMIN_USERS']:
         try:
             db.get_db()  # init db on global app context
@@ -69,6 +69,8 @@ def user(username, password, all):
     """Create admin users."""
     if username and username not in current_app.config['ADMIN_USERS']:
         raise click.UsageError('User {} not an admin'.format(username))
+    if not username and not all:
+        raise click.UsageError('Missing option "--username".')
 
     def create_user(admin):
         user = User(
