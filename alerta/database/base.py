@@ -45,8 +45,8 @@ class Database(Base):
 
         self.create_engine(app, uri=app.config['DATABASE_URL'], dbname=app.config['DATABASE_NAME'])
 
-        app.before_request(self.before_request)
-        app.teardown_request(self.teardown_request)
+        app.before_request(self.get_db)
+        app.teardown_request(self.teardown_db)
 
     def create_engine(self, app, uri, dbname=None):
         raise NotImplementedError('Database engine has no create_engine() method')
@@ -72,13 +72,10 @@ class Database(Base):
     def destroy(self):
         raise NotImplementedError('Database engine has no destroy() method')
 
-    def before_request(self):
+    def get_db(self):
         g.db = self.connect()
 
-    def after_request(self):
-        pass
-
-    def teardown_request(self, exc):
+    def teardown_db(self, exc):
         db = getattr(g, 'db', None)
         if db is not None:
             self.close()
