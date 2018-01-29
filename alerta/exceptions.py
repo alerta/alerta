@@ -50,6 +50,8 @@ class ExceptionHandlers(object):
 
 
 def handle_http_error(error):
+    if error.code >= 500:
+        current_app.logger.exception(error)
     return jsonify({
         'status': 'error',
         'message': str(error),
@@ -61,6 +63,8 @@ def handle_http_error(error):
 
 
 def handle_api_error(error):
+    if error.code >= 500:
+        current_app.logger.exception(error)
     return jsonify({
         'status': 'error',
         'message': error.message,
