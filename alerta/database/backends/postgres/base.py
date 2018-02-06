@@ -1,5 +1,6 @@
+import time
 from collections import namedtuple
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import psycopg2
 from flask import current_app, g
@@ -11,6 +12,8 @@ from alerta.exceptions import NoCustomerMatch
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 from .utils import Query
+
+MAX_RETRIES = 5
 
 
 def adapt_history(h):
@@ -48,14 +51,31 @@ class Backend(Database):
         register_adapter(History, adapt_history)
 
     def connect(self):
-        # > createdb alerta
-        conn = psycopg2.connect(
-            dsn=self.uri,
-            dbname=self.dbname,
-            cursor_factory=NamedTupleCursor
-        )
-        conn.set_client_encoding('UTF8')
-        return conn
+        retry = 0
+        while True:
+            try:
+                conn = psycopg2.connect(
+                    dsn=self.uri,
+                    dbname=self.dbname,
+                    cursor_factory=NamedTupleCursor
+                )
+                conn.set_client_encoding('UTF8')
+                break
+            except Exception as e:
+                print(e)  # FIXME - should log this error instead of printing, but current_app is unavailable here
+                retry += 1
+                if retry > MAX_RETRIES:
+                    conn = None
+                    break
+                else:
+                    backoff = 2 ** retry
+                    print('Retry attempt {}/{} (wait={}s)...'.format(retry, MAX_RETRIES, backoff))
+                    time.sleep(backoff)
+
+        if conn:
+            return conn
+        else:
+            raise RuntimeError('Database connect error. Failed to connect after {} retries.'.format(MAX_RETRIES))
 
     @staticmethod
     def _adapt_datetime(dt):
