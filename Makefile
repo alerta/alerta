@@ -34,7 +34,7 @@ test:
 	ALERTA_SVR_CONF_FILE= nosetests tests
 
 run:
-	alertad run --with-threads
+	alertad run --port 8080 --with-threads --reload
 
 tag:
 	git tag -a v$(VERSION) -m "version $(VERSION)"
