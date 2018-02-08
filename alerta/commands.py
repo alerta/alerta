@@ -3,13 +3,18 @@ import click
 from flask import current_app
 from flask.cli import FlaskGroup, with_appcontext
 
-from alerta.app import create_app, db
+from alerta.app import db
 from alerta.auth.utils import generate_password_hash
 from alerta.models.key import ApiKey
 from alerta.models.user import User
 
 
-@click.group(cls=FlaskGroup, create_app=create_app)
+def _create_app(info):
+    from alerta.app import create_app
+    return create_app()
+
+
+@click.group(cls=FlaskGroup, create_app=_create_app)
 def cli():
     pass
 
