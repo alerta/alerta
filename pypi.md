@@ -15,7 +15,7 @@ Create new release (use a python3 virt env)
 
 3. Update git tags
 
-    $ make tags
+    $ make tag
 
 4. Push wheel to PyPi
 
