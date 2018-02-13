@@ -549,8 +549,8 @@ class Backend(Database):
         pipeline = [
             {'$match': query.where},
             {'$project': {"environment": 1}},
-            {'$limit': topn},
-            {'$group': {"_id": "$environment", "count": {'$sum': 1}}}
+            {'$group': {"_id": "$environment", "count": {'$sum': 1}}},
+            {'$limit': topn}
         ]
         responses = g.db.alerts.aggregate(pipeline)
 
@@ -572,8 +572,8 @@ class Backend(Database):
             {'$unwind': '$service'},
             {'$match': query.where},
             {'$project': {"environment": 1, "service": 1}},
-            {'$limit': topn},
-            {'$group': {"_id": {"environment": "$environment", "service": "$service"}, "count": {'$sum': 1}}}
+            {'$group': {"_id": {"environment": "$environment", "service": "$service"}, "count": {'$sum': 1}}},
+            {'$limit': topn}
         ]
         responses = g.db.alerts.aggregate(pipeline)
 
