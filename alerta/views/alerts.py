@@ -94,7 +94,7 @@ def set_status(alert_id):
     try:
         alert, status, text = process_status(alert, status, text)
     except RejectException as e:
-        raise ApiError(str(e), 403)
+        raise ApiError(str(e), 400)
     except Exception as e:
         raise ApiError(str(e), 500)
 
