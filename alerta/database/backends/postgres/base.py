@@ -478,12 +478,10 @@ class Backend(Database):
         """
         data = vars(alert)
         data['now'] = now
+        if current_app.config['CUSTOMER_VIEWS']:
+            select += " AND (customer IS NULL OR customer=%(customer)s)"
         if self._fetchone(select, data):
             return True
-        if current_app.config['CUSTOMER_VIEWS']:
-            select += " AND customer=%(customer)s"
-            if self._fetchone(select, data):
-                return True
         return False
 
     def delete_blackout(self, id):

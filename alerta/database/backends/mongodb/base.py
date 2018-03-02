@@ -657,7 +657,7 @@ class Backend(Database):
         query['endTime'] = {'$gt': now}
 
         query['environment'] = alert.environment
-        query['$or'] = [
+        query['$and'] = [ { '$or': [
             {
                 "resource": {'$exists': False},
                 "service": {'$exists': False},
@@ -707,14 +707,12 @@ class Backend(Database):
                 "group": {'$exists': False},
                 "tags": {"$not": {"$elemMatch": {"$nin": alert.tags}}}
             }
-        ]
+        ] } ]
 
+        if current_app.config['CUSTOMER_VIEWS']:
+            query['$and'].append({ '$or': [ { "customer": None }, { "customer": alert.customer } ] })
         if g.db.blackouts.find_one(query):
             return True
-        if current_app.config['CUSTOMER_VIEWS']:
-            query['customer'] = alert.customer
-            if g.db.blackouts.find_one(query):
-                return True
         return False
 
     def delete_blackout(self, id):
