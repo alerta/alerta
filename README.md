@@ -116,7 +116,7 @@ License
 -------
 
     Alerta monitoring system and console
-    Copyright 2012-2017 Guardian News & Media
+    Copyright 2012-2018 Nick Satterly
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
