@@ -9,12 +9,15 @@ from alerta.utils.api import process_alert, add_remote_ip
 from . import webhooks
 
 
-@webhooks.route('/webhooks/<webhook>', methods=['OPTIONS', 'POST'])
+@webhooks.route('/webhooks/<webhook>', methods=['OPTIONS', 'GET', 'POST'])
 @cross_origin()
 @permission('write:webhooks')
 def custom(webhook):
     try:
-        incomingAlert = custom_webhooks.webhooks[webhook].incoming(request.json)
+        incomingAlert = custom_webhooks.webhooks[webhook].incoming(
+            query_string=request.args,
+            payload=request.get_json() or request.get_data(as_text=True)
+        )
     except ValueError as e:
         raise ApiError(str(e), 400)
 

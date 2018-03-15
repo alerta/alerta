@@ -26,6 +26,6 @@ class WebhookBase(object):
         self.name = name or self.__module__
 
     @abc.abstractmethod
-    def incoming(self, payload):
-        """Parse webhook payload and return an alert."""
+    def incoming(self, query_string, payload):
+        """Parse webhook query string and/or payload in JSON or plain text and return an alert."""
         return
