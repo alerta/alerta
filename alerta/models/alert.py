@@ -308,8 +308,8 @@ class Alert(object):
             event=self.event,
             severity=self.severity,
             value=self.value,
-            change_type='severity',
             text=self.text,
+            change_type='severity',
             update_time=self.create_time
         )]
 
@@ -318,8 +318,8 @@ class Alert(object):
                 id=self.id,
                 event=self.event,
                 status=status,
-                change_type='status',
                 text="new alert status change",
+                change_type='status',
                 update_time=self.last_receive_time
             ))
 
