@@ -16,17 +16,34 @@ from .utils import Query
 MAX_RETRIES = 5
 
 
-def adapt_history(h):
-    return AsIs("(%s, %s, %s, %s, %s, %s, %s, %s)::history" % (
-        adapt(h.id).getquoted().decode('utf-8'),
-        adapt(h.event).getquoted().decode('utf-8'),
-        adapt(h.severity).getquoted().decode('utf-8'),
-        adapt(h.status).getquoted().decode('utf-8'),
-        adapt(h.value).getquoted().decode('utf-8'),
-        adapt(h.text).getquoted().decode('utf-8'),
-        adapt(h.change_type).getquoted().decode('utf-8'),
-        adapt(h.update_time).getquoted().decode('utf-8')
-    ))
+class HistoryAdapter(object):
+    def __init__(self, history):
+        self.history = history
+        self.conn = None
+
+    def prepare(self, conn):
+        self.conn = conn
+
+    def getquoted(self):
+        def quoted(o):
+            a = adapt(o)
+            if hasattr(a, 'prepare'):
+                a.prepare(self.conn)
+            return a.getquoted().decode('utf-8')
+
+        return "(%s, %s, %s, %s, %s, %s, %s, %s::timestamp)::history" % (
+            quoted(self.history.id),
+            quoted(self.history.event),
+            quoted(self.history.severity),
+            quoted(self.history.status),
+            quoted(self.history.value),
+            quoted(self.history.text),
+            quoted(self.history.change_type),
+            quoted(self.history.update_time)
+        )
+
+    def __str__(self):
+        return str(self.getquoted())
 
 
 class Backend(Database):
@@ -48,7 +65,7 @@ class Backend(Database):
             globally=True
         )
         from alerta.models.alert import History
-        register_adapter(History, adapt_history)
+        register_adapter(History, HistoryAdapter)
 
     def connect(self):
         retry = 0

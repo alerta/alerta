@@ -12,8 +12,8 @@ class History(object):
         self.severity = kwargs.get('severity', None)
         self.status = kwargs.get('status', None)
         self.value = kwargs.get('value', None)
-        self.change_type = kwargs.get('change_type', kwargs.get('type', None)) or ""
         self.text = kwargs.get('text', None)
+        self.change_type = kwargs.get('change_type', kwargs.get('type', None)) or ""
         self.update_time = kwargs.get('update_time', None) or datetime.utcnow()
 
     @property
@@ -25,8 +25,8 @@ class History(object):
             'severity': self.severity,
             'status': self.status,
             'value': self.value,
-            'type': self.change_type,
             'text': self.text,
+            'type': self.change_type,
             'updateTime': self.update_time
         }
 
@@ -42,8 +42,8 @@ class History(object):
             severity=doc.get('severity', None),
             status=doc.get('status', None),
             value=doc.get('value', None),
-            change_type=doc.get('type', None),
             text=doc.get('text', None),
+            change_type=doc.get('type', None),
             update_time=doc.get('updateTime', None)
         )
 
@@ -55,8 +55,8 @@ class History(object):
             severity=rec.severity,
             status=rec.status,
             value=rec.value,
-            change_type=rec.type,
             text=rec.text,
+            change_type=rec.type,
             update_time=rec.update_time
         )
 
