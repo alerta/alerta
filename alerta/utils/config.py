@@ -85,7 +85,25 @@ class Config(object):
 
         if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
             config['ALLOWED_KEYCLOAK_ROLES'] = os.environ['ALLOWED_KEYCLOAK_ROLES'].split(',')
+            
+        if 'PINGFEDERATE_OPENID_ACCESS_TOKEN_URL' in os.environ:
+            config['PINGFEDERATE_OPENID_ACCESS_TOKEN_URL'] = os.environ['PINGFEDERATE_OPENID_ACCESS_TOKEN_URL'].split(',')
 
+        if 'PINGFEDERATE_OPENID_PAYLOAD_USERNAME' in os.environ:
+            config['PINGFEDERATE_OPENID_PAYLOAD_USERNAME'] = os.environ['PINGFEDERATE_OPENID_PAYLOAD_USERNAME'].split(',')
+
+        if 'PINGFEDERATE_OPENID_PAYLOAD_EMAIL' in os.environ:
+            config['PINGFEDERATE_OPENID_PAYLOAD_EMAIL'] = os.environ['PINGFEDERATE_OPENID_PAYLOAD_EMAIL'].split(',')
+
+        if 'PINGFEDERATE_OPENID_PAYLOAD_GROUP' in os.environ:
+            config['PINGFEDERATE_OPENID_PAYLOAD_GROUP'] = os.environ['PINGFEDERATE_OPENID_PAYLOAD_GROUP'].split(',')
+
+        if 'PINGFEDERATE_PUBKEY_LOCATION' in os.environ:
+            config['PINGFEDERATE_PUBKEY_LOCATION'] = os.environ['PINGFEDERATE_PUBKEY_LOCATION'].split(',')
+
+        if 'PINGFEDERATE_TOKEN_ALGORITHM' in os.environ:
+            config['PINGFEDERATE_TOKEN_ALGORITHM'] = os.environ['PINGFEDERATE_TOKEN_ALGORITHM'].split(',')
+            
         if 'CORS_ORIGINS' in os.environ:
             config['CORS_ORIGINS'] = os.environ['CORS_ORIGINS'].split(',')
 

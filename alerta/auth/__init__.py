@@ -5,7 +5,7 @@ from alerta.exceptions import ApiError
 
 auth = Blueprint('auth', __name__)
 
-from . import basic, github, gitlab, google, keycloak, saml2, userinfo
+from . import basic, github, gitlab, google, keycloak, pingfederate, saml2, userinfo
 
 
 @auth.before_request
