@@ -88,6 +88,9 @@ class Database(Base):
     def get_status(self, alert):
         raise NotImplementedError
 
+    def get_status_and_value(self, alert):
+        raise NotImplementedError
+
     def is_duplicate(self, alert):
         raise NotImplementedError
 

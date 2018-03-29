@@ -226,7 +226,7 @@ class Alert(object):
     def deduplicate(self):
         now = datetime.utcnow()
 
-        previous_status = db.get_status(self)
+        previous_status, previous_value = db.get_status_and_value(self)
         if self.status == status_code.UNKNOWN or self.status == previous_status:
             self.status = status_code.status_from_severity(self.severity, self.severity, previous_status)
 
@@ -239,8 +239,17 @@ class Alert(object):
                 id=self.id,
                 event=self.event,
                 status=self.status,
-                text="duplicate alert status change",
+                text="duplicate alert with status change",
                 change_type="status",
+                update_time=now
+            )
+        elif self.value != previous_value:
+            history = History(
+                id=self.id,
+                event=self.event,
+                value=self.value,
+                text="duplicate alert with value change",
+                change_type="value",
                 update_time=now
             )
         else:
