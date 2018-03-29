@@ -106,6 +106,26 @@ class Backend(Database):
         }
         return g.db.alerts.find_one(query, projection={"status": 1, "_id": 0})['status']
 
+    def get_status_and_value(self, alert):
+        """
+        Get status and value of correlated or duplicate alert. Used to determine if any have changed.
+        """
+        query = {
+            "environment": alert.environment,
+            "resource": alert.resource,
+            '$or': [
+                {
+                    "event": alert.event
+                },
+                {
+                    "correlate": alert.event,
+                }
+            ],
+            "customer": alert.customer
+        }
+        r = g.db.alerts.find_one(query, projection={"status": 1, "value": 1, "_id": 0})
+        return r['status'], r['value']
+
     def is_duplicate(self, alert):
         query = {
             "environment": alert.environment,

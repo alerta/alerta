@@ -148,6 +148,16 @@ class Backend(Database):
             """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
         return self._fetchone(select, vars(alert)).status
 
+    def get_status_and_value(self, alert):
+        select = """
+            SELECT status, value FROM alerts
+             WHERE environment=%(environment)s AND resource=%(resource)s
+              AND (event=%(event)s OR %(event)s=ANY(correlate))
+              AND {customer}
+            """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
+        r = self._fetchone(select, vars(alert))
+        return r.status, r.value
+
     def is_duplicate(self, alert):
         select = """
             SELECT id FROM alerts
@@ -190,6 +200,7 @@ class Backend(Database):
         Update alert value, text and rawData, increment duplicate count and set repeat=True, and
         keep track of last receive id and time but don't append to history unless status changes.
         """
+        alert.history = history
         update = """
             UPDATE alerts
                SET status=%(status)s, value=%(value)s, text=%(text)s, raw_data=%(raw_data)s, repeat=%(repeat)s,
