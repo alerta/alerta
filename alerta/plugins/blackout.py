@@ -13,26 +13,22 @@ LOG = logging.getLogger('alerta.plugins.blackout')
 
 class BlackoutHandler(PluginBase):
     """
-    Default blackout handler suppresses alerts that match a blackout period and
-    returns a 202 Accept status code.
+    Default suppression blackout handler will drop alerts that match a blackout
+    period and will return a 202 Accept HTTP status code.
 
-    If "NOTIFICATION_BLACKOUT=True" is set then the alert is processed as normal but
-    an attribute "notify=False" is added to the alert. It is up to downstream
-    notification integrations (plugins) to check for this notification suppression.
+    If "NOTIFICATION_BLACKOUT" is set to ``True`` then the alert is processed
+    but alert status is set to "blackout" and the alert will not be passed to
+    any plugins for further notification.
     """
     def pre_receive(self, alert):
 
-        is_blackout = alert.is_blackout()
-        do_not_notify = app.config.get('NOTIFICATION_BLACKOUT', False)
-
-        if do_not_notify and is_blackout:
-            LOG.debug('Suppressed notifications during blackout period (id=%s)' % alert.id)
-            alert.attributes['notify'] = False
-        elif do_not_notify and not is_blackout:
-            alert.attributes['notify'] = True
-        elif not do_not_notify and is_blackout:
-            LOG.debug('Suppressed alert during blackout period (id=%s)' % alert.id)
-            raise BlackoutPeriod("Suppressed alert during blackout period")
+        if alert.is_blackout():
+            if app.config.get('NOTIFICATION_BLACKOUT', True):
+                LOG.debug('Set status to "blackout" during blackout period (id=%s)' % alert.id)
+                alert.status = 'blackout'
+            else:
+                LOG.debug('Suppressed alert during blackout period (id=%s)' % alert.id)
+                raise BlackoutPeriod("Suppressed alert during blackout period")
         return alert
 
     def post_receive(self, alert):
