@@ -36,7 +36,7 @@ class Alert(object):
         self.correlate = kwargs.get('correlate', None) or list()
         if self.correlate and event not in self.correlate:
             self.correlate.append(event)
-        self.status = kwargs.get('status', None) or "unknown"
+        self.status = kwargs.get('status', None) or status_code.UNKNOWN
         self.service = kwargs.get('service', None) or list()
         self.group = kwargs.get('group', None) or "Misc"
         self.value = kwargs.get('value', None)
@@ -227,8 +227,12 @@ class Alert(object):
         now = datetime.utcnow()
 
         previous_status, previous_value = db.get_status_and_value(self)
-        if self.status == status_code.UNKNOWN or self.status == previous_status:
-            self.status = status_code.status_from_severity(self.severity, self.severity, previous_status)
+        if self.status == status_code.UNKNOWN:
+            self.status = status_code.status_from_severity(
+                previous_severity=self.severity,
+                current_severity=self.severity,
+                current_status=previous_status
+            )
 
         self.repeat = True
         self.last_receive_id = self.id
@@ -265,7 +269,11 @@ class Alert(object):
         self.trend_indication = severity.trend(self.previous_severity, self.severity)
 
         if self.status == status_code.UNKNOWN:
-            self.status = status_code.status_from_severity(self.previous_severity, self.severity, previous_status)
+            self.status = status_code.status_from_severity(
+                previous_severity=self.previous_severity,
+                current_severity=self.severity,
+                current_status=previous_status
+            )
 
         self.duplicate_count = 0
         self.repeat = False
@@ -298,7 +306,10 @@ class Alert(object):
     # create an alert
     def create(self):
         if self.status == status_code.UNKNOWN:
-            status = status_code.status_from_severity(current_app.config['DEFAULT_PREVIOUS_SEVERITY'], self.severity)
+            status = status_code.status_from_severity(
+                previous_severity=current_app.config['DEFAULT_PREVIOUS_SEVERITY'],
+                current_severity=self.severity
+            )
         else:
             status = self.status
         trend_indication = severity.trend(current_app.config['DEFAULT_PREVIOUS_SEVERITY'], self.severity)

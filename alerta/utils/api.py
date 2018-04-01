@@ -9,6 +9,7 @@ from flask import current_app, request
 from alerta.app import plugins
 from alerta.exceptions import ApiError
 from alerta.exceptions import RejectException, RateLimit, BlackoutPeriod
+from alerta.models import status_code
 
 try:
     from urllib.parse import urljoin, urlparse, urlunparse
@@ -51,6 +52,8 @@ def add_remote_ip(req, alert):
 def process_alert(alert):
 
     for plugin in plugins.routing(alert):
+        if alert.status == status_code.BLACKOUT:
+            break
         try:
             alert = plugin.pre_receive(alert)
         except (RejectException, BlackoutPeriod, RateLimit):
@@ -75,6 +78,8 @@ def process_alert(alert):
 
     updated = None
     for plugin in plugins.routing(alert):
+        if alert.status == status_code.BLACKOUT:
+            break
         try:
             updated = plugin.post_receive(alert)
         except Exception as e:
@@ -96,6 +101,8 @@ def process_status(alert, status, text):
 
     updated = None
     for plugin in plugins.routing(alert):
+        if alert.status == status_code.BLACKOUT:
+            break
         try:
             updated = plugin.status_change(alert, status, text)
         except RejectException:
