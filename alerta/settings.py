@@ -115,4 +115,4 @@ ORIGIN_BLACKLIST = []
 ALLOWED_ENVIRONMENTS = ['Production', 'Development']  # reject alerts without allowed environments
 
 # blackout plugin settings
-NOTIFICATION_BLACKOUT = False
+NOTIFICATION_BLACKOUT = False  # True - set alert status=blackout, False - do not process alert (default)
