@@ -410,12 +410,13 @@ class Backend(Database):
     def get_topn_flapping(self, query=None, group="event", topn=10):
         query = query or Query()
         select = """
-            SELECT alerts.event, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
+            WITH topn AS (SELECT * FROM alerts WHERE {where})
+            SELECT topn.event, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
                    array_agg(DISTINCT environment) AS environments, array_agg(DISTINCT svc) AS services,
-                   array_agg(DISTINCT ARRAY[alerts.id, resource]) AS resources
-              FROM alerts, UNNEST (service) svc, UNNEST (history) hist
-             WHERE hist.type='severity' AND {where}
-          GROUP BY alerts.event
+                   array_agg(DISTINCT ARRAY[topn.id, resource]) AS resources
+              FROM topn, UNNEST (service) svc, UNNEST (history) hist
+             WHERE hist.type='severity'
+          GROUP BY topn.event
           ORDER BY count DESC
         """.format(where=query.where)
         return [
