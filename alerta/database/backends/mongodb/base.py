@@ -729,12 +729,15 @@ class Backend(Database):
             }
         ]
 
-        if g.db.blackouts.find_one(query):
-            return True
+        
         if current_app.config['CUSTOMER_VIEWS']:
             query['customer'] = alert.customer
             if g.db.blackouts.find_one(query):
                 return True
+        
+        elif g.db.blackouts.find_one(query):
+            return True
+
         return False
 
     def delete_blackout(self, id):
