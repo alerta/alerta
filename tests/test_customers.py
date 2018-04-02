@@ -119,6 +119,25 @@ class AuthTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(self.bar_alert), headers=bar_user_headers)
         self.assertEqual(response.status_code, 201)
 
-        # delete user customer by admin
+        # delete blackout by id
+        response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # create global blackout by admin user
+        response = self.client.post('/blackout', data=json.dumps({"environment": "Production"}), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        blackout_id = data['id']
+
+        # new alert by foo user should be suppressed
+        response = self.client.post('/alert', data=json.dumps(self.foo_alert), headers=foo_user_headers)
+        self.assertEqual(response.status_code, 202)
+
+        # new alert by bar user should be suppressed
+        response = self.client.post('/alert', data=json.dumps(self.bar_alert), headers=bar_user_headers)
+        self.assertEqual(response.status_code, 202)
+
+        # delete blackout by id
         response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
