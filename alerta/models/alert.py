@@ -227,12 +227,11 @@ class Alert(object):
         now = datetime.utcnow()
 
         previous_status, previous_value = db.get_status_and_value(self)
-        if self.status == status_code.UNKNOWN:
-            self.status = status_code.status_from_severity(
-                previous_severity=self.severity,
-                current_severity=self.severity,
-                current_status=previous_status
-            )
+        self.status = status_code.status_from_severity(
+            previous_severity=self.severity,
+            current_severity=self.severity,
+            current_status=previous_status
+        )
 
         self.repeat = True
         self.last_receive_id = self.id
@@ -268,12 +267,11 @@ class Alert(object):
         previous_status = db.get_status(self)
         self.trend_indication = severity.trend(self.previous_severity, self.severity)
 
-        if self.status == status_code.UNKNOWN:
-            self.status = status_code.status_from_severity(
-                previous_severity=self.previous_severity,
-                current_severity=self.severity,
-                current_status=previous_status
-            )
+        self.status = status_code.status_from_severity(
+            previous_severity=self.previous_severity,
+            current_severity=self.severity,
+            current_status=previous_status
+        )
 
         self.duplicate_count = 0
         self.repeat = False
@@ -306,15 +304,12 @@ class Alert(object):
     # create an alert
     def create(self):
         if self.status == status_code.UNKNOWN:
-            status = status_code.status_from_severity(
+            self.status = status_code.status_from_severity(
                 previous_severity=current_app.config['DEFAULT_PREVIOUS_SEVERITY'],
                 current_severity=self.severity
             )
-        else:
-            status = self.status
         trend_indication = severity.trend(current_app.config['DEFAULT_PREVIOUS_SEVERITY'], self.severity)
 
-        self.status = status
         self.duplicate_count = 0
         self.repeat = False
         self.previous_severity = current_app.config['DEFAULT_PREVIOUS_SEVERITY']
@@ -333,15 +328,14 @@ class Alert(object):
             update_time=self.create_time
         )]
 
-        if status != self.status:
-            self.history.append(History(
-                id=self.id,
-                event=self.event,
-                status=status,
-                text="new alert status change",
-                change_type='status',
-                update_time=self.last_receive_time
-            ))
+        self.history.append(History(
+            id=self.id,
+            event=self.event,
+            status=self.status,
+            text="new alert status change",
+            change_type='status',
+            update_time=self.last_receive_time
+        ))
 
         return Alert.from_db(db.create_alert(self))
 
@@ -351,8 +345,9 @@ class Alert(object):
         return Alert.from_db(db.get_alert(id, customer))
 
     def is_blackout(self):
-        if self.severity in current_app.config.get('BLACKOUT_ACCEPT', []):
-            return False
+        if not current_app.config['NOTIFICATION_BLACKOUT']:
+            if self.severity in current_app.config['BLACKOUT_ACCEPT']:
+                return False
         return db.is_blackout_period(self)
 
     # set alert status
