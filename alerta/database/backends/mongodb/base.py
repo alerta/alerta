@@ -220,7 +220,6 @@ class Backend(Database):
         return g.db.alerts.find_one_and_update(
             query,
             update=update,
-            projection={"history": 0},
             return_document=ReturnDocument.AFTER
         )
 
@@ -277,7 +276,6 @@ class Backend(Database):
         return g.db.alerts.find_one_and_update(
             query,
             update=update,
-            projection={"history": 0},
             return_document=ReturnDocument.AFTER
         )
 
