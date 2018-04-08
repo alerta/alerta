@@ -81,6 +81,7 @@ def get_alert(alert_id):
 def set_status(alert_id):
     status = request.json.get('status', None)
     text = request.json.get('text', '')
+    timeout = request.json.get('timeout', None)
 
     if not status:
         raise ApiError("must supply 'status' as json data")
@@ -98,7 +99,7 @@ def set_status(alert_id):
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    if alert.set_status(status, text):
+    if alert.set_status(status, text, timeout):
         return jsonify(status="ok")
     else:
         raise ApiError("failed to set alert status", 500)
