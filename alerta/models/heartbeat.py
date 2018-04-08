@@ -121,8 +121,8 @@ class Heartbeat(object):
 
     # retrieve an heartbeat
     @staticmethod
-    def find_by_id(id, customer=None):
-        return Heartbeat.from_db(db.get_heartbeat(id, customer))
+    def find_by_id(id, customers=None):
+        return Heartbeat.from_db(db.get_heartbeat(id, customers))
 
     # search heartbeats
     @staticmethod

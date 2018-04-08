@@ -249,13 +249,13 @@ class Backend(Database):
         """
         return self._insert(insert, vars(alert))
 
-    def get_alert(self, id, customer=None):
+    def get_alert(self, id, customers=None):
         select = """
             SELECT * FROM alerts
              WHERE (id ~* (%(id)s) OR last_receive_id ~* (%(id)s))
                AND {customer}
-        """.format(customer="customer=%(customer)s" if customer else "1=1")
-        return self._fetchone(select, {'id': '^'+id, 'customer': customer})
+        """.format(customer="customer=ANY(%(customers)s)" if customers else "1=1")
+        return self._fetchone(select, {'id': '^'+id, 'customers': customers})
 
     #### STATUS, TAGS, ATTRIBUTES
 
@@ -533,13 +533,13 @@ class Backend(Database):
         """
         return self._upsert(upsert, vars(heartbeat))
 
-    def get_heartbeat(self, id, customer=None):
+    def get_heartbeat(self, id, customers=None):
         select = """
             SELECT * FROM heartbeats
              WHERE (id=%(id)s OR id LIKE %(like_id)s)
                AND {customer}
-        """.format(customer="customer=%(customer)s" if customer else "1=1")
-        return self._fetchone(select, {'id': id, 'like_id': id+'%', 'customer': customer})
+        """.format(customer="customer=%(customers)s" if customers else "1=1")
+        return self._fetchone(select, {'id': id, 'like_id': id+'%', 'customers': customers})
 
     def get_heartbeats(self, query=None):
         query = query or Query()
@@ -771,11 +771,14 @@ class Backend(Database):
         if login in current_app.config['ADMIN_USERS']:
             return '*'  # all customers
 
+        customers = []
         for match in [login] + matches:
             select = """SELECT customer FROM customers WHERE match=%s"""
             response = self._fetchone(select, (match,))
             if response:
-                return response.customer
+                customers.append(response.customer)
+        if customers:
+            return customers
         raise NoCustomerMatch("No customer lookup configured for user '%s' or '%s'" % (login, ','.join(matches)))
 
     #### METRICS

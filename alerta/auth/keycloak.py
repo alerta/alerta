@@ -3,7 +3,7 @@ import requests
 from flask import current_app, request, jsonify
 from flask_cors import cross_origin
 
-from alerta.auth.utils import is_authorized, create_token, get_customer
+from alerta.auth.utils import is_authorized, create_token, get_customers
 from alerta.exceptions import ApiError
 from . import auth
 
@@ -41,7 +41,7 @@ def keycloak():
     if is_authorized('ALLOWED_KEYCLOAK_ROLES', roles):
         raise ApiError("User %s is not authorized" % login, 403)
 
-    customer = get_customer(login, groups=roles)
+    customers = get_customers(login, groups=roles)
 
-    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customer=customer, roles=roles)
+    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customers=customers, roles=roles)
     return jsonify(token=token.tokenize)

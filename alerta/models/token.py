@@ -27,7 +27,7 @@ class Jwt(object):
         self.roles = kwargs.get('roles', list())
         self.scopes = kwargs.get('scopes', list())
         self.email_verified = kwargs.get('email_verified', None)
-        self.customer = kwargs.get('customer', None)
+        self.customers = kwargs.get('customers', None)
 
     @classmethod
     def parse(cls, token, key=None, verify=True, algorithm='HS256'):
@@ -59,7 +59,7 @@ class Jwt(object):
             roles=json.get('roles', list()),
             scopes=json.get('scope', '').split(' '),  # eg. scope='read write' => scopes=['read', 'write']
             email_verified=json.get('email_verified', None),
-            customer=json.get('customer', None)
+            customers=[json['customer']] if 'customer' in json else json.get('customers', list())
         )
 
     @property
@@ -93,7 +93,7 @@ class Jwt(object):
         if current_app.config['EMAIL_VERIFICATION']:
             data['email_verified'] = self.email_verified
         if current_app.config['CUSTOMER_VIEWS']:
-            data['customer'] = self.customer
+            data['customers'] = self.customers
         return data
 
     @property
@@ -102,6 +102,6 @@ class Jwt(object):
         return token.decode('unicode_escape')
 
     def __repr__(self):
-        return 'Jwt(iss=%r, sub=%r, aud=%r, exp=%r, name=%r, preferred_username=%r, customer=%r)' % (
-            self.issuer, self.subject, self.audience, self.expiration, self.name, self.preferred_username, self.customer
+        return 'Jwt(iss=%r, sub=%r, aud=%r, exp=%r, name=%r, preferred_username=%r, customers=%r)' % (
+            self.issuer, self.subject, self.audience, self.expiration, self.name, self.preferred_username, self.customers
         )

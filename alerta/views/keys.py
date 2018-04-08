@@ -5,7 +5,7 @@ from alerta.auth.utils import permission
 from alerta.exceptions import ApiError
 from alerta.models.key import ApiKey
 from alerta.models.permission import Permission
-from alerta.utils.api import jsonp
+from alerta.utils.api import jsonp, assign_customer
 from . import api
 
 
@@ -24,7 +24,7 @@ def create_key():
         key.customer = key.customer or g.get('customer', None)
     else:
         key.user = g.user
-        key.customer = g.get('customer', None)
+        key.customer = assign_customer(wanted=key.customer)
 
     if not key.user:
         raise ApiError("An API key must be associated with a 'user'. Retry with user credentials.", 400)
