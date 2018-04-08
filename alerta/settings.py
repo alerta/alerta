@@ -90,8 +90,6 @@ DEFAULT_TIMEOUT = 86400
 ALERT_TIMEOUT = DEFAULT_TIMEOUT
 HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
 
-BLACKOUT_DURATION = 3600  # default period = 1 hour
-
 # Send verification emails to new BasicAuth users
 EMAIL_VERIFICATION = False
 SMTP_HOST = 'smtp.gmail.com'
@@ -114,5 +112,7 @@ ORIGIN_BLACKLIST = []
 #ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
 ALLOWED_ENVIRONMENTS = ['Production', 'Development']  # reject alerts without allowed environments
 
-# blackout plugin settings
+# blackout settings
+BLACKOUT_DURATION = 3600  # default period = 1 hour
 NOTIFICATION_BLACKOUT = False  # True - set alert status=blackout, False - do not process alert (default)
+BLACKOUT_ACCEPT = []  # list of severities accepted during blackout period eg. ['normal', 'ok', 'cleared']
