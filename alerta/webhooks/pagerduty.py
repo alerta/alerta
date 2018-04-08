@@ -75,9 +75,9 @@ def pagerduty():
             if not incident_key:
                 raise ApiError('no incident key in PagerDuty data payload', 400)
 
-            customer = g.get('customer', None)
+            customers = g.get('customers', None)
             try:
-                alert = Alert.find_by_id(id=incident_key, customer=customer)
+                alert = Alert.find_by_id(id=incident_key, customers=customers)
             except Exception as e:
                 raise ApiError(str(e), 500)
 

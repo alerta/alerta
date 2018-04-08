@@ -6,7 +6,7 @@ from alerta.app import qb
 from alerta.auth.utils import permission
 from alerta.exceptions import ApiError
 from alerta.models.heartbeat import Heartbeat
-from alerta.utils.api import jsonp
+from alerta.utils.api import jsonp, assign_customer
 from . import api
 
 
@@ -20,8 +20,7 @@ def create_heartbeat():
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    if g.get('customer', None):
-        heartbeat.customer = g.get('customer')
+    heartbeat.customer = assign_customer(wanted=heartbeat.customer)
 
     try:
         heartbeat = heartbeat.create()

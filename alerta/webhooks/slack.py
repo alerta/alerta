@@ -1,7 +1,7 @@
 import json
 import logging
 
-from flask import request, jsonify
+from flask import request, g, jsonify
 from flask_cors import cross_origin
 
 from alerta.auth.utils import permission
@@ -74,7 +74,8 @@ def build_slack_response(alert, action, user, data):
 def slack():
     alert_id, user, action = parse_slack(request.form)
 
-    alert = Alert.find_by_id(alert_id)
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers=customers)
     if not alert:
         jsonify(status="error", message="alert not found for #slack message")
 

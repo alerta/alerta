@@ -10,7 +10,7 @@ from alerta.exceptions import ApiError, RejectException, RateLimit, BlackoutPeri
 from alerta.models.alert import Alert
 from alerta.models.metrics import Timer, timer
 from alerta.models.switch import Switch
-from alerta.utils.api import jsonp, process_alert, process_status, add_remote_ip
+from alerta.utils.api import jsonp, process_alert, process_status, assign_customer, add_remote_ip
 from alerta.utils.paging import Page
 from . import api
 
@@ -35,9 +35,7 @@ def receive():
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    if g.get('customer', None):
-        incomingAlert.customer = g.get('customer')
-
+    incomingAlert.customer = assign_customer(wanted=incomingAlert.customer)
     add_remote_ip(request, incomingAlert)
 
     try:
@@ -63,8 +61,8 @@ def receive():
 @timer(gets_timer)
 @jsonp
 def get_alert(alert_id):
-    customer = g.get('customer', None)
-    alert = Alert.find_by_id(alert_id, customer)
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
 
     if alert:
         return jsonify(status="ok", total=1, alert=alert.serialize)
@@ -86,8 +84,8 @@ def set_status(alert_id):
     if not status:
         raise ApiError("must supply 'status' as json data")
 
-    customer = g.get('customer', None)
-    alert = Alert.find_by_id(alert_id, customer)
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
         raise ApiError("not found", 404)
@@ -115,8 +113,8 @@ def tag_alert(alert_id):
     if not request.json.get('tags', None):
         raise ApiError("must supply 'tags' as json list")
 
-    customer = g.get('customer', None)
-    alert = Alert.find_by_id(alert_id, customer)
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
         raise ApiError("not found", 404)
@@ -137,8 +135,8 @@ def untag_alert(alert_id):
     if not request.json.get('tags', None):
         raise ApiError("must supply 'tags' as json list")
 
-    customer = g.get('customer', None)
-    alert = Alert.find_by_id(alert_id, customer)
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
         raise ApiError("not found", 404)
@@ -159,8 +157,8 @@ def update_attributes(alert_id):
     if not request.json.get('attributes', None):
         raise ApiError("must supply 'attributes' as json data", 400)
 
-    customer = g.get('customer', None)
-    alert = Alert.find_by_id(alert_id, customer)
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
         raise ApiError("not found", 404)
@@ -178,8 +176,8 @@ def update_attributes(alert_id):
 @timer(delete_timer)
 @jsonp
 def delete_alert(alert_id):
-    customer = g.get('customer', None)
-    alert = Alert.find_by_id(alert_id, customer)
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
         raise ApiError("not found", 404)

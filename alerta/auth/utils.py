@@ -36,7 +36,7 @@ def is_authorized(allowed_setting, groups):
                      or set(current_app.config[allowed_setting]).intersection(set(groups))))
 
 
-def get_customer(login, groups):
+def get_customers(login, groups):
     if current_app.config['CUSTOMER_VIEWS']:
         try:
             return Customer.lookup(login, groups)
@@ -46,7 +46,7 @@ def get_customer(login, groups):
         return
 
 
-def create_token(user_id, name, login, provider, customer, orgs=None, groups=None, roles=None, email=None, email_verified=None):
+def create_token(user_id, name, login, provider, customers, orgs=None, groups=None, roles=None, email=None, email_verified=None):
     now = datetime.utcnow()
     scopes = Permission.lookup(login, groups=(roles or []) + (groups or []) + (orgs or []))
     return Jwt(
@@ -66,7 +66,7 @@ def create_token(user_id, name, login, provider, customer, orgs=None, groups=Non
         scopes=scopes,
         email=email,
         email_verified=email_verified,
-        customer=customer
+        customers=customers
     )
 
 
@@ -84,7 +84,7 @@ def permission(scope):
                 if not key:
                     raise ApiError("API key parameter '%s' is invalid" % param, 401)
                 g.user = key.user
-                g.customer = key.customer
+                g.customers = [key.customer] if key.customer else []
                 g.scopes = key.scopes
 
                 if not Permission.is_in_scope(scope, g.scopes):
@@ -106,7 +106,7 @@ def permission(scope):
                 except InvalidAudience:
                     raise ApiError('Invalid audience', 401)
                 g.user = jwt.preferred_username
-                g.customer = jwt.customer
+                g.customers = jwt.customers
                 g.scopes = jwt.scopes
 
                 if not Permission.is_in_scope(scope, g.scopes):
@@ -116,7 +116,7 @@ def permission(scope):
 
             if not current_app.config['AUTH_REQUIRED']:
                 g.user = None
-                g.customer = None
+                g.customers = []
                 g.scopes = []
                 return f(*args, **kwargs)
 

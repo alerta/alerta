@@ -2,7 +2,7 @@
 import logging
 import os
 
-from flask import current_app, request, jsonify
+from flask import current_app, g, request, jsonify
 from flask_cors import cross_origin
 
 from alerta.auth.utils import permission
@@ -71,7 +71,8 @@ def telegram():
         user = "{} {}".format(author.get('first_name'), author.get('last_name'))
         command, alert_id = data['callback_query']['data'].split(' ', 1)
 
-        alert = Alert.find_by_id(alert_id)
+        customers = g.get('customers', None)
+        alert = Alert.find_by_id(alert_id, customers=customers)
         if not alert:
             jsonify(status="error", message="alert not found for Telegram message")
 
