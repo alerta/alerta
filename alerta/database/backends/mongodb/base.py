@@ -327,14 +327,14 @@ class Backend(Database):
 
     #### STATUS, TAGS, ATTRIBUTES
 
-    def set_status(self, id, status, history=None):
+    def set_status(self, id, status, timeout, history=None):
         """
         Set status and update history.
         """
         query = {'_id': {'$regex': '^' + id}}
 
         update = {
-            '$set': {"status": status},
+            '$set': {"status": status, "timeout": timeout},
             '$push': {
                 "history": {
                     '$each': [history.serialize],

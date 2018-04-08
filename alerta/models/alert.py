@@ -351,7 +351,8 @@ class Alert(object):
         return db.is_blackout_period(self)
 
     # set alert status
-    def set_status(self, status, text=''):
+    def set_status(self, status, text='', timeout=None):
+        self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
         history = History(
             id=self.id,
             event=self.event,
@@ -360,7 +361,7 @@ class Alert(object):
             change_type="status",
             update_time=datetime.utcnow()
         )
-        return db.set_status(self.id, status, history)
+        return db.set_status(self.id, status, timeout, history)
 
     # tag an alert
     def tag(self, tags):
@@ -439,4 +440,4 @@ class Alert(object):
                 change_type="status",
                 update_time=datetime.utcnow()
             )
-            db.set_status(id, "expired", history)
+            db.set_status(id, "expired", history=history)

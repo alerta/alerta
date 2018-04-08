@@ -259,14 +259,14 @@ class Backend(Database):
 
     #### STATUS, TAGS, ATTRIBUTES
 
-    def set_status(self, id, status, history=None):
+    def set_status(self, id, status, timeout, history=None):
         update = """
             UPDATE alerts
-            SET status=%(status)s, history=(history || %(change)s)[1:{limit}]
+            SET status=%(status)s, timeout=%(timeout)s, history=(history || %(change)s)[1:{limit}]
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
-        return self._update(update, {'id': id, 'like_id': id + '%', 'status': status, 'change': history}, returning=True)
+        return self._update(update, {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout, 'change': history}, returning=True)
 
     def tag_alert(self, id, tags):
         update = """

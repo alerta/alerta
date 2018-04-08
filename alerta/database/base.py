@@ -114,7 +114,7 @@ class Database(Base):
 
     #### STATUS, TAGS, ATTRIBUTES
 
-    def set_status(self, id, status, history=None):
+    def set_status(self, id, status, timeout, history=None):
         raise NotImplementedError
 
     def tag_alert(self, id, tags):
