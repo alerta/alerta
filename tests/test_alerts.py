@@ -305,6 +305,31 @@ class AlertTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'open')
 
+    def test_duplicate_value(self):
+
+        # create alert (value=100)
+        self.fatal_alert['value'] = '100'
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['duplicateCount'], 0)
+
+        alert_id = data['id']
+
+        # duplicate alert (value=101)
+        self.fatal_alert['value'] = '101'
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'open')
+
+        # duplicate alert (value=102)
+        self.fatal_alert['value'] = '102'
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual([h['value'] for h in data['alert']['history']], ['100', None, '101', '102'])
+
     def test_alert_tagging(self):
 
         # create alert
