@@ -312,14 +312,14 @@ class Backend(Database):
         if g.db.alerts.insert_one(data).inserted_id == alert.id:
             return data
 
-    def get_alert(self, id, customer=None):
+    def get_alert(self, id, customers=None):
         if len(id) == 8:
             query = {'$or': [{'_id': {'$regex': '^' + id}}, {'lastReceiveId': {'$regex': '^' + id}}]}
         else:
             query = {'$or': [{'_id': id}, {'lastReceiveId': id}]}
 
-        if customer:
-            query['customer'] = customer
+        if customers:
+            query['customer'] = {'$in': customers}
 
         return g.db.alerts.find_one(query)
 
@@ -763,14 +763,14 @@ class Backend(Database):
             return_document=ReturnDocument.AFTER
         )
 
-    def get_heartbeat(self, id, customer=None):
+    def get_heartbeat(self, id, customers=None):
         if len(id) == 8:
             query = {'_id': {'$regex': '^' + id}}
         else:
             query = {'_id': id}
 
-        if customer:
-            query['customer'] = customer
+        if customers:
+            query['customer'] = {'$in': customers}
 
         return g.db.heartbeats.find_one(query)
 
@@ -965,10 +965,13 @@ class Backend(Database):
         if login in current_app.config['ADMIN_USERS']:
             return '*'  # all customers
 
+        customers = []
         for match in [login] + matches:
             response = g.db.customers.find_one({"match": match}, projection={"customer": 1, "_id": 0})
             if response:
-                return response['customer']
+                customers.append(response['customer'])
+        if customers:
+            return customers
         raise NoCustomerMatch("No customer lookup configured for user '%s' or '%s'" % (login, ','.join(matches)))
 
     #### METRICS

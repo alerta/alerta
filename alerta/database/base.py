@@ -109,7 +109,7 @@ class Database(Base):
     def create_alert(self, alert):
         raise NotImplementedError
 
-    def get_alert(self, id, customer=None):
+    def get_alert(self, id, customers=None):
         raise NotImplementedError
 
     #### STATUS, TAGS, ATTRIBUTES
@@ -177,7 +177,7 @@ class Database(Base):
     def create_blackout(self, blackout):
         raise NotImplementedError
 
-    def get_blackout(self, id, customer=None):
+    def get_blackout(self, id, customers=None):
         raise NotImplementedError
 
     def get_blackouts(self, query=None):
@@ -194,7 +194,7 @@ class Database(Base):
     def upsert_heartbeat(self, heartbeat):
         raise NotImplementedError
 
-    def get_heartbeat(self, id, customer=None):
+    def get_heartbeat(self, id, customers=None):
         raise NotImplementedError
 
     def get_heartbeats(self, query=None):

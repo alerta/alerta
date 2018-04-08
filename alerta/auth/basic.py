@@ -5,7 +5,7 @@ from uuid import uuid4
 from flask import current_app, request, jsonify, render_template
 from flask_cors import cross_origin
 
-from alerta.auth.utils import is_authorized, create_token, get_customer
+from alerta.auth.utils import is_authorized, create_token, get_customers
 from alerta.exceptions import ApiError
 from alerta.models.user import User
 from alerta.utils.api import absolute_url
@@ -43,12 +43,12 @@ def signup():
     if user.status != 'active':
         raise ApiError('user not active', 403)
 
-    # assign customer & update last login time
-    customer = get_customer(user.email, groups=[user.domain])
+    # assign customers & update last login time
+    customers = get_customers(user.email, groups=[user.domain])
     user.update_last_login()
 
     # generate token
-    token = create_token(user.id, user.name, user.email, provider='basic', customer=customer,
+    token = create_token(user.id, user.name, user.email, provider='basic', customers=customers,
                          roles=user.roles, email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)
 
@@ -85,12 +85,12 @@ def login():
     if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
-    # assign customer & update last login time
-    customer = get_customer(user.email, groups=[user.domain])
+    # assign customers & update last login time
+    customers = get_customers(user.email, groups=[user.domain])
     user.update_last_login()
 
     # generate token
-    token = create_token(user.id, user.name, user.email, provider='basic', customer=customer,
+    token = create_token(user.id, user.name, user.email, provider='basic', customers=customers,
                          roles=user.roles, email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)
 

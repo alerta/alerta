@@ -24,9 +24,9 @@ class QueryBuilderImpl(QueryBuilder):
         else:
             query = dict()
 
-        # customer
-        if g.get('customer', None):
-            query['customer'] = g.get('customer')
+        # customers
+        if g.get('customers', None):
+            query['customers'] = g.get('customers')
 
         # from-date, to-date
         from_date = params.get('from-date', default=None, type=DateTime.parse)

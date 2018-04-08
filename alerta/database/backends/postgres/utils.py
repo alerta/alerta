@@ -24,9 +24,9 @@ class QueryBuilderImpl(QueryBuilder):
             qvars = dict()
 
         # customer
-        if g.get('customer', None):
-            query.append('AND customer=%(customer)s')
-            qvars['customer'] = g.get('customer')
+        if g.get('customers', None):
+            query.append('AND customer=ANY(%(customers)s)')
+            qvars['customers'] = g.get('customers')
 
         # from-date, to-date
         from_date = params.get('from-date', default=None, type=DateTime.parse)

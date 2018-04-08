@@ -4,7 +4,7 @@ import logging
 from functools import wraps
 from os.path import join as path_join
 
-from flask import current_app, request
+from flask import current_app, g, request
 
 from alerta.app import plugins
 from alerta.exceptions import ApiError
@@ -40,6 +40,20 @@ def absolute_url(path=''):
     except RuntimeError:  # Working outside of request context
         base_url = conf_base_url
     return urljoin(base_url, path.lstrip('/'))
+
+
+def assign_customer(wanted):
+    customers = g.get('customers', [])
+    if wanted:
+        if wanted not in customers:
+            raise ApiError("not allowed to set customer to '%s'" % wanted, 400)
+        else:
+            return wanted
+    if customers:
+        if len(customers) > 1:
+            raise ApiError("must define customer as more than one possibility", 400)
+        else:
+            return customers[0]
 
 
 def add_remote_ip(req, alert):

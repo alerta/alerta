@@ -4,7 +4,7 @@ import json
 from flask import current_app, request, jsonify, make_response
 from flask_cors import cross_origin
 
-from alerta.auth.utils import is_authorized, create_token, get_customer
+from alerta.auth.utils import is_authorized, create_token, get_customers
 from alerta.utils.api import absolute_url, deepmerge
 from . import auth
 
@@ -92,9 +92,9 @@ def saml_response_from_idp():
     if is_authorized('ALLOWED_SAML2_GROUPS', groups):
         return _make_response({'status': 'error', 'message': 'User {} is not authorized'.format(email)}, 403)
 
-    customer = get_customer(email, groups=[domain])
+    customers = get_customers(email, groups=[domain])
 
-    token = create_token(email, name, email, provider='saml2', customer=customer, groups=groups)
+    token = create_token(email, name, email, provider='saml2', customers=customers, groups=groups)
     return _make_response({'status': 'ok', 'token': token.tokenize}, 200)
 
 

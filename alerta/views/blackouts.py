@@ -6,7 +6,7 @@ from alerta.app import qb
 from alerta.auth.utils import permission
 from alerta.exceptions import ApiError
 from alerta.models.blackout import Blackout
-from alerta.utils.api import jsonp, absolute_url
+from alerta.utils.api import jsonp, absolute_url, assign_customer
 from . import api
 
 
@@ -20,8 +20,7 @@ def create_blackout():
     except Exception as e:
         raise ApiError(str(e), 400)
 
-    if g.get('customer', None):
-        blackout.customer = g.get('customer')
+    blackout.customer = assign_customer(wanted=blackout.customer)
 
     try:
         blackout = blackout.create()

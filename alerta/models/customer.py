@@ -74,5 +74,5 @@ class Customer(object):
 
     @classmethod
     def lookup(cls, login, groups):
-        customer = db.get_customers_by_match(login, matches=groups)
-        return customer if customer != '*' else None
+        customers = db.get_customers_by_match(login, matches=groups)
+        return customers if customers != '*' else None
