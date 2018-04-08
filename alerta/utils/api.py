@@ -51,8 +51,10 @@ def add_remote_ip(req, alert):
 
 def process_alert(alert):
 
+    skip_plugins = False
     for plugin in plugins.routing(alert):
         if alert.status == status_code.BLACKOUT:
+            skip_plugins = True
             break
         try:
             alert = plugin.pre_receive(alert)
@@ -78,7 +80,7 @@ def process_alert(alert):
 
     updated = None
     for plugin in plugins.routing(alert):
-        if alert.status == status_code.BLACKOUT:
+        if skip_plugins:
             break
         try:
             updated = plugin.post_receive(alert)
