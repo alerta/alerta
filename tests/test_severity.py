@@ -115,7 +115,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'ok')
         self.assertEqual(data['alert']['status'], 'closed')
-        self.assertEqual(data['alert']['trendIndication'], 'noChange')
+        self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
         # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=informational, status=open, trend=lessSevere
         response = self.client.post('/alert', data=json.dumps(self.inform_alert), headers=self.headers)
@@ -126,7 +126,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'informational')
         self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
+        self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
         # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=debug, status=open, trend=lessSevere
         response = self.client.post('/alert', data=json.dumps(self.debug_alert), headers=self.headers)
@@ -137,7 +137,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'debug')
         self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
+        self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
     def test_active(self):
 
@@ -245,7 +245,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['previousSeverity'], 'normal')
         self.assertEqual(data['alert']['severity'], 'trace')
         self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
+        self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
         # prevSev=trace, sev=security, status=open, trend=moreSevere
         response = self.client.post('/alert', data=json.dumps(self.auth_alert), headers=self.headers)

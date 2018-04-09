@@ -230,6 +230,7 @@ class Alert(object):
         self.status = status_code.status_from_severity(
             previous_severity=self.severity,
             current_severity=self.severity,
+            previous_status=previous_status,
             current_status=previous_status
         )
 
@@ -270,7 +271,8 @@ class Alert(object):
         self.status = status_code.status_from_severity(
             previous_severity=self.previous_severity,
             current_severity=self.severity,
-            current_status=previous_status
+            previous_status=previous_status,
+            current_status=self.status
         )
 
         self.duplicate_count = 0
