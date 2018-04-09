@@ -55,7 +55,7 @@ def parse_status(name):
     return NOT_VALID
 
 
-def status_from_severity(previous_severity, current_severity, current_status=OPEN):
+def status_from_severity(previous_severity, current_severity, previous_status=OPEN, current_status=UNKNOWN):
     if current_severity in [severity_code.NORMAL, severity_code.CLEARED, severity_code.OK]:
         return CLOSED
     if current_status == BLACKOUT:
@@ -66,4 +66,4 @@ def status_from_severity(previous_severity, current_severity, current_status=OPE
         return OPEN
     if severity.trend(previous_severity, current_severity) == severity_code.MORE_SEVERE:
         return OPEN
-    return current_status
+    return previous_status

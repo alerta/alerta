@@ -43,14 +43,14 @@ SEVERITY_MAP = {
     'major': 2,
     'minor': 3,
     'warning': 4,
-    'indeterminate': 5,
-    'cleared': 5,
-    'normal': 5,
-    'ok': 5,
-    'informational': 6,
-    'debug': 7,
-    'trace': 8,
-    'unknown': 9
+    'informational': 5,
+    'debug': 6,
+    'trace': 7,
+    'indeterminate': 8,
+    'cleared': 9,
+    'normal': 9,
+    'ok': 9,
+    'unknown': 10
 }
 
 _ABBREV_SEVERITY_MAP = {
@@ -90,22 +90,6 @@ ENDC = '\033[0m'
 
 class Severity(object):
 
-    SEVERITY_MAP = {
-        'security': 0,
-        'critical': 1,
-        'major': 2,
-        'minor': 3,
-        'warning': 4,
-        'indeterminate': 5,
-        'cleared': 5,
-        'normal': 5,
-        'ok': 5,
-        'informational': 6,
-        'debug': 7,
-        'trace': 8,
-        'unknown': 9
-    }
-
     def __init__(self, app=None):
         self.app = None
         if app:
@@ -117,16 +101,16 @@ class Severity(object):
 
     @staticmethod
     def is_valid(name):
-        return name in Severity.SEVERITY_MAP
+        return name in SEVERITY_MAP
 
     @staticmethod
     def name_to_code(name):
-        return Severity.SEVERITY_MAP.get(name, Severity.SEVERITY_MAP.get(UNKNOWN))
+        return SEVERITY_MAP.get(name, SEVERITY_MAP.get(UNKNOWN))
 
     @staticmethod
     def parse_severity(name):
         if name:
-            for severity in Severity.SEVERITY_MAP:
+            for severity in SEVERITY_MAP:
                 if name.lower() == severity.lower():
                     return severity
         return NOT_VALID

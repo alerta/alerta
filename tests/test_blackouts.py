@@ -165,11 +165,26 @@ class BlackoutsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'closed')
 
+        # non-normal severity alert should be status=blackout (again)
+        self.alert['severity'] = 'major'
+        response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'blackout')
+
+        # decrease severity alert should be status=blackout
+        self.alert['severity'] = 'minor'
+        response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'blackout')
+
         # remove blackout
         response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
         # normal severity alert should be status=closed
+        self.alert['severity'] = 'ok'
         response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
