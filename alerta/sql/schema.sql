@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS metrics (
     type text NOT NULL,
     CONSTRAINT metrics_pkey PRIMARY KEY ("group", name, type)
 );
+ALTER TABLE metrics ALTER COLUMN total_time TYPE BIGINT;
 
 
 CREATE TABLE IF NOT EXISTS perms (
