@@ -44,13 +44,164 @@ class AuthTestCase(unittest.TestCase):
             )
             self.api_key.create()
 
-        self.headers = {
+        self.admin_headers = {
             'Authorization': 'Key %s' % self.api_key.key,
             'Content-type': 'application/json'
         }
 
     def tearDown(self):
         db.destroy()
+
+    def test_customers(self):
+
+        # add customer mappings
+        payload = {
+            'customer': 'Bar Corp',
+            'match': 'bar.com'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        self.assertEqual(response.status_code, 201)
+
+        payload = {
+            'customer': 'Foo Bar Corp',
+            'match': 'foo@bar.com'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.get('/customers', headers=self.admin_headers)
+        self.assertEqual(response.status_code, 200)
+
+        # create users
+        payload = {
+            'name': 'Bar User',
+            'email': 'user@bar.com',
+            'password': 'b8rb8r',
+            'text': ''
+        }
+
+        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        self.assertEqual(response.status_code, 200, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIsNotNone(data, 'Failed to create user')
+
+        self.bar_bearer_headers = {
+            'Authorization': 'Bearer %s' % data['token'],
+            'Content-type': 'application/json'
+        }
+
+        payload = {
+            'name': 'Foo Bar User',
+            'email': 'foo@bar.com',
+            'password': 'f00b8r',
+            'text': ''
+        }
+
+        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIsNotNone(data, 'Failed to create user')
+
+        self.foobar_bearer_headers = {
+            'Authorization': 'Bearer %s' % data['token'],
+            'Content-type': 'application/json'
+        }
+
+        # create API key for user@bar.com
+        payload = {
+            'user': 'user@bar.com',
+            'scopes': ['read', 'write'],
+            'text': ''
+        }
+
+        response = self.client.post('/key', data=json.dumps(payload), content_type='application/json', headers=self.bar_bearer_headers)
+        self.assertEqual(response.status_code, 201, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIsNotNone(data['key'], 'Failed to create read-write key')
+
+        self.bar_api_key_headers = {
+            'Authorization': 'Key %s' % data['key'],
+            'Content-type': 'application/json'
+        }
+
+        # create API keys for foo@bar.com
+        payload = {
+            'user': 'foo@bar.com',
+            'scopes': ['read', 'write'],
+            'text': '',
+            'customer': 'Foo Bar Corp'
+        }
+
+        response = self.client.post('/key', data=json.dumps(payload), content_type='application/json', headers=self.foobar_bearer_headers)
+        self.assertEqual(response.status_code, 201, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIsNotNone(data['key'], 'Failed to create read-write key')
+
+        self.foobar_api_key_headers = {
+            'Authorization': 'Key %s' % data['key'],
+            'Content-type': 'application/json'
+        }
+
+        payload = {
+            'user': 'foo@bar.com',
+            'scopes': ['read', 'write'],
+            'text': '',
+            'customer': 'Bar Corp'
+        }
+
+        response = self.client.post('/key', data=json.dumps(payload), content_type='application/json', headers=self.foobar_bearer_headers)
+        self.assertEqual(response.status_code, 201, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIsNotNone(data['key'], 'Failed to create read-write key')
+
+        self.foobar_bar_only_api_key_headers = {
+            'Authorization': 'Key %s' % data['key'],
+            'Content-type': 'application/json'
+        }
+
+        # get list of customers for users
+        response = self.client.get('/customers', headers=self.bar_api_key_headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual([c['customer'] for c in data['customers']], ['Bar Corp'])
+
+        response = self.client.get('/customers', headers=self.foobar_api_key_headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual([c['customer'] for c in data['customers']], ['Foo Bar Corp'])
+
+        # create alerts using API keys
+        response = self.client.post('/alert', data=json.dumps(self.foo_alert), headers=self.bar_api_key_headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['customer'], 'Bar Corp')
+
+        response = self.client.post('/alert', data=json.dumps(self.foo_alert), headers=self.foobar_api_key_headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['customer'], 'Foo Bar Corp')
+
+        response = self.client.post('/alert', data=json.dumps(self.foo_alert), headers=self.foobar_bar_only_api_key_headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['customer'], 'Bar Corp')
+
+        response = self.client.post('/alert', data=json.dumps(self.foo_alert), headers=self.foobar_bar_only_api_key_headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['customer'], 'Bar Corp')
+
+        # create alerts using Bearer tokens
+        response = self.client.post('/alert', data=json.dumps(self.foo_alert), headers=self.bar_bearer_headers)
+        self.assertEqual(response.status_code, 201, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['customer'], 'Bar Corp')
+
+        self.foo_alert['customer'] = 'Foo Bar Corp'
+        response = self.client.post('/alert', data=json.dumps(self.foo_alert), headers=self.foobar_bearer_headers)
+        self.assertEqual(response.status_code, 201, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['customer'], 'Foo Bar Corp')
 
     def test_blackouts(self):
 
@@ -59,14 +210,14 @@ class AuthTestCase(unittest.TestCase):
             'customer': 'Foo Corp',
             'match': 'foo.com'
         }
-        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 201)
 
         payload = {
             'customer': 'Bar Corp',
             'match': 'bar.com'
         }
-        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 201)
 
         # create users
@@ -77,7 +228,7 @@ class AuthTestCase(unittest.TestCase):
             'text': ''
         }
 
-        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data, 'Failed to create user')
@@ -94,7 +245,7 @@ class AuthTestCase(unittest.TestCase):
             'text': ''
         }
 
-        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data, 'Failed to create user')
@@ -120,11 +271,11 @@ class AuthTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
 
         # delete blackout by id
-        response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
+        response = self.client.delete('/blackout/' + blackout_id, headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
 
         # create global blackout by admin user
-        response = self.client.post('/blackout', data=json.dumps({"environment": "Production"}), headers=self.headers)
+        response = self.client.post('/blackout', data=json.dumps({"environment": "Production"}), headers=self.admin_headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
@@ -139,5 +290,5 @@ class AuthTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 202)
 
         # delete blackout by id
-        response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
+        response = self.client.delete('/blackout/' + blackout_id, headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
