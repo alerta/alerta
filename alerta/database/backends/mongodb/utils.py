@@ -26,7 +26,7 @@ class QueryBuilderImpl(QueryBuilder):
 
         # customers
         if g.get('customers', None):
-            query['customers'] = g.get('customers')
+            query['customer'] = {'$in': g.get('customers')}
 
         # from-date, to-date
         from_date = params.get('from-date', default=None, type=DateTime.parse)
