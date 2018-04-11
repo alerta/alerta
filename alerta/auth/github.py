@@ -19,10 +19,15 @@ def github():
         access_token_url = 'https://github.com/login/oauth/access_token'
         github_api_url = 'https://api.github.com'
 
+    client_lookup = dict(zip(
+        current_app.config['OAUTH2_CLIENT_ID'].split(','),
+        current_app.config['OAUTH2_CLIENT_SECRET'].split(',')
+    ))
+    client_secret = client_lookup.get(request.json['clientId'], None)
     params = {
         'client_id': request.json['clientId'],
         'redirect_uri': request.json['redirectUri'],
-        'client_secret': current_app.config['OAUTH2_CLIENT_SECRET'],
+        'client_secret': client_secret,
         'code': request.json['code']
     }
 
