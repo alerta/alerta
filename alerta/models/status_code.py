@@ -58,11 +58,9 @@ def parse_status(name):
 def status_from_severity(previous_severity, current_severity, previous_status=OPEN, current_status=UNKNOWN):
     if current_severity in [severity_code.NORMAL, severity_code.CLEARED, severity_code.OK]:
         return CLOSED
-    if current_status == BLACKOUT:
-        return BLACKOUT
-    if current_status == SHELVED:
-        return SHELVED
-    if current_status in [CLOSED, EXPIRED]:
+    if current_status in [BLACKOUT, SHELVED]:
+        return current_status
+    if previous_status in [CLOSED, EXPIRED]:
         return OPEN
     if severity.trend(previous_severity, current_severity) == severity_code.MORE_SEVERE:
         return OPEN
