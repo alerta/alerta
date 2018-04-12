@@ -20,7 +20,7 @@ def create_blackout():
     except Exception as e:
         raise ApiError(str(e), 400)
 
-    blackout.customer = assign_customer(wanted=blackout.customer)
+    blackout.customer = assign_customer(wanted=blackout.customer, permission='admin:blackouts')
 
     try:
         blackout = blackout.create()

@@ -21,10 +21,10 @@ def create_key():
 
     if 'admin' in g.scopes or 'admin:keys' in g.scopes:
         key.user = key.user or g.user
-        key.customer = key.customer or g.get('customer', None)
     else:
         key.user = g.user
-        key.customer = assign_customer(wanted=key.customer)
+
+    key.customer = assign_customer(wanted=key.customer, permission='admin:keys')
 
     if not key.user:
         raise ApiError("An API key must be associated with a 'user'. Retry with user credentials.", 400)
