@@ -231,7 +231,7 @@ class Alert(object):
             previous_severity=self.severity,
             current_severity=self.severity,
             previous_status=previous_status,
-            current_status=previous_status
+            current_status=self.status
         )
 
         self.repeat = True
