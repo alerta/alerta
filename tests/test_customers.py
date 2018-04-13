@@ -2,9 +2,13 @@
 import json
 import unittest
 
+
 from alerta.app import create_app, db
 from alerta.models.key import ApiKey
-from alerta.models.token import Jwt
+from alerta.utils.api import assign_customer
+from alerta.exceptions import ApiError
+
+from flask import g
 
 
 class AuthTestCase(unittest.TestCase):
@@ -292,3 +296,66 @@ class AuthTestCase(unittest.TestCase):
         # delete blackout by id
         response = self.client.delete('/blackout/' + blackout_id, headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
+
+    def test_assign_customer(self):
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+
+            # nothing wanted, assign one
+            g.customers = ['Customer1']
+            g.scopes = []
+            self.assertEqual(assign_customer(wanted=None), 'Customer1')
+
+            # nothing wanted, but too many, throw error
+            g.customers = ['Customer1', 'Customer2']
+            g.scopes = []
+            with self.assertRaises(ApiError) as e:
+                assign_customer(wanted=None)
+            exc = e.exception
+            self.assertEqual(str(exc), 'must define customer as more than one possibility')
+
+            # customer wanted, matches so allow
+            g.customers = ['Customer1']
+            g.scopes = []
+            self.assertEqual(assign_customer(wanted='Customer1'), 'Customer1')
+
+            # customer wanted, in list so allow
+            g.customers = ['Customer1', 'Customer2']
+            g.scopes = []
+            self.assertEqual(assign_customer(wanted='Customer2'), 'Customer2')
+
+            # customer wanted not in list, throw exception
+            g.customers = ['Customer1', 'Customer2']
+            g.scopes = []
+            with self.assertRaises(ApiError) as e:
+                assign_customer(wanted='Customer3')
+            exc = e.exception
+            self.assertEqual(str(exc), "not allowed to set customer to 'Customer3'")
+
+            # no customers, admin scope so allow
+            g.customers = []
+            g.scopes = ['admin']
+            self.assertEqual(assign_customer(wanted=None), None)
+            self.assertEqual(assign_customer(wanted='Customer1'), 'Customer1')
+
+            g.customers = ['Customer1', 'Customer2']
+            g.scopes = ['admin']
+            with self.assertRaises(ApiError) as e:
+                assign_customer(wanted=None)
+            exc = e.exception
+            self.assertEqual(str(exc), 'must define customer as more than one possibility')
+            self.assertEqual(assign_customer(wanted='Customer3'), 'Customer3')
+
+            # wrong scope
+            g.customers = ['Customer1']
+            g.scopes = ['read:keys', 'write:keys']
+            with self.assertRaises(ApiError) as e:
+                assign_customer(wanted='Customer2', permission='admin:keys')
+            exc = e.exception
+            self.assertEqual(str(exc), "not allowed to set customer to 'Customer2'")
+
+            # right scope
+            g.customers = ['Customer1']
+            g.scopes = ['admin:keys', 'read:keys', 'write:keys']
+            self.assertEqual(assign_customer(wanted='Customer2', permission='admin:keys'), 'Customer2')

@@ -42,9 +42,11 @@ def absolute_url(path=''):
     return urljoin(base_url, path.lstrip('/'))
 
 
-def assign_customer(wanted):
+def assign_customer(wanted, permission='admin:alerts'):
     customers = g.get('customers', [])
     if wanted:
+        if 'admin' in g.scopes or permission in g.scopes:
+            return wanted
         if wanted not in customers:
             raise ApiError("not allowed to set customer to '%s'" % wanted, 400)
         else:
