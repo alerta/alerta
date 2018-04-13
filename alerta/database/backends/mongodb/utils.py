@@ -26,7 +26,9 @@ class QueryBuilderImpl(QueryBuilder):
 
         # customers
         if g.get('customers', None):
-            query['customer'] = {'$in': g.get('customers')}
+            customer_query = {'customer': {'$in': g.get('customers')}}
+        else:
+            customer_query = None
 
         # from-date, to-date
         from_date = params.get('from-date', default=None, type=DateTime.parse)
@@ -108,6 +110,9 @@ class QueryBuilderImpl(QueryBuilder):
                     else:
                         query[field] = dict()
                         query[field]['$in'] = value
+
+        if customer_query:
+            query = {'$and': [customer_query, query]}
 
         return Query(where=query, sort=sort, group=group)
 
