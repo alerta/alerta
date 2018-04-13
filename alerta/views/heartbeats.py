@@ -20,7 +20,7 @@ def create_heartbeat():
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    heartbeat.customer = assign_customer(wanted=heartbeat.customer)
+    heartbeat.customer = assign_customer(wanted=heartbeat.customer, permission='admin:heartbeats')
 
     try:
         heartbeat = heartbeat.create()
