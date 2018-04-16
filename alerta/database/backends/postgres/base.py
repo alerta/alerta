@@ -394,15 +394,16 @@ class Backend(Database):
                    array_agg(DISTINCT ARRAY[id, resource]) AS resources
               FROM alerts, UNNEST (service) svc
              WHERE {where}
-          GROUP BY event
+          GROUP BY {group}
           ORDER BY count DESC
-        """.format(where=query.where)
+        """.format(where=query.where, group=group)
         return [
             {
                 "count": t.count,
                 "duplicateCount": t.duplicate_count,
                 "environments": t.environments,
-                "event": t.event,
+                "services": t.services,
+                "%s" % group: t.event,
                 "resources": [{"id": r[0], "resource": r[1], "href": absolute_url('/alert/%s' % r[0])} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
@@ -416,14 +417,39 @@ class Backend(Database):
                    array_agg(DISTINCT ARRAY[topn.id, resource]) AS resources
               FROM topn, UNNEST (service) svc, UNNEST (history) hist
              WHERE hist.type='severity'
-          GROUP BY topn.event
+          GROUP BY topn.{group}
           ORDER BY count DESC
-        """.format(where=query.where)
+        """.format(where=query.where, group=group)
         return [
             {
                 "count": t.count,
                 "duplicateCount": t.duplicate_count,
                 "environments": t.environments,
+                "services": t.services,
+                "event": t.event,
+                "resources": [{"id": r[0], "resource": r[1], "href": absolute_url('/alert/%s' % r[0])} for r in t.resources]
+            } for t in self._fetchall(select, query.vars, limit=topn)
+        ]
+
+    def get_topn_standing(self, query=None, group="event", topn=10):
+        query = query or Query()
+        select = """
+            WITH topn AS (SELECT * FROM alerts WHERE {where})
+            SELECT topn.event, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
+                   SUM(last_receive_time - create_time) as life_time,
+                   array_agg(DISTINCT environment) AS environments, array_agg(DISTINCT svc) AS services,
+                   array_agg(DISTINCT ARRAY[topn.id, resource]) AS resources
+              FROM topn, UNNEST (service) svc, UNNEST (history) hist
+             WHERE hist.type='severity'
+          GROUP BY topn.{group}
+          ORDER BY life_time DESC
+        """.format(where=query.where, group=group)
+        return [
+            {
+                "count": t.count,
+                "duplicateCount": t.duplicate_count,
+                "environments": t.environments,
+                "services": t.services,
                 "event": t.event,
                 "resources": [{"id": r[0], "resource": r[1], "href": absolute_url('/alert/%s' % r[0])} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)

@@ -416,6 +416,11 @@ class Alert(object):
     def get_top10_flapping(query=None):
         return db.get_topn_flapping(query)
 
+    # top 10 standing
+    @staticmethod
+    def get_top10_standing(query=None):
+        return db.get_topn_standing(query)
+
     # get environments
     @staticmethod
     def get_environments(query=None):
