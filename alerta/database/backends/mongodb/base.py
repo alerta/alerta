@@ -560,6 +560,41 @@ class Backend(Database):
             )
         return top
 
+    def get_topn_standing(self, query=None, group="event", topn=10):
+        query = query or Query()
+        pipeline = [
+            {'$match': query.where},
+            {'$unwind': '$service'},
+            {
+                '$group': {
+                    "_id": "$%s" % group,
+                    "count": {'$sum': 1},
+                    "duplicateCount": {'$sum': "$duplicateCount"},
+                    "lifeTime": {'$sum': {'$subtract': [ "$lastReceiveTime", "$createTime"]}},
+                    "environments": {'$addToSet': "$environment"},
+                    "services": {'$addToSet': "$service"},
+                    "resources": {'$addToSet': {"id": "$_id", "resource": "$resource"}}
+                }
+            },
+            {'$sort': {"lifeTime": -1, "duplicateCount": -1}},
+            {'$limit': topn}
+        ]
+
+        responses = g.db.alerts.aggregate(pipeline)
+        top = list()
+        for response in responses:
+            top.append(
+                {
+                    "%s" % group: response['_id'],
+                    "environments": response['environments'],
+                    "services": response['services'],
+                    "resources": response['resources'],
+                    "count": response['count'],
+                    "duplicateCount": response['duplicateCount']
+                }
+            )
+        return top
+
     #### ENVIRONMENTS
 
     def get_environments(self, query=None, topn=100):
