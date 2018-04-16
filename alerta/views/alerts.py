@@ -329,6 +329,31 @@ def get_top10_flapping():
         )
 
 
+# top 10 standing
+@api.route('/alerts/top10/standing', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission('read:alerts')
+@timer(count_timer)
+@jsonp
+def get_top10_standing():
+    query = qb.from_params(request.args)
+    top10 = Alert.get_top10_standing(query)
+
+    if top10:
+        return jsonify(
+            status="ok",
+            top10=top10,
+            total=len(top10)
+        )
+    else:
+        return jsonify(
+            status="ok",
+            message="not found",
+            top10=[],
+            total=0
+        )
+
+
 # get alert environments
 @api.route('/environments', methods=['OPTIONS', 'GET'])
 @cross_origin()
