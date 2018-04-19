@@ -68,6 +68,8 @@ CORS_ORIGINS = [
 ]
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
+ALARM_MODEL = 'DEFAULT'  # ISA_18.2
+
 SEVERITY_MAP = {
     'security': 0,
     'critical': 1,

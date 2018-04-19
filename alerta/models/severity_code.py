@@ -23,19 +23,22 @@ CRITICAL = 'critical'
 MAJOR = 'major'
 MINOR = 'minor'
 WARNING = 'warning'
-INDETERMINATE = 'indeterminate'
-CLEARED = 'cleared'
-NORMAL = 'normal'
-OK = 'ok'
 INFORM = 'informational'
 DEBUG = 'debug'
 TRACE = 'trace'
+INDETERMINATE = 'indeterminate'
+NORMAL = 'normal'
+OK = 'ok'
+CLEARED = 'cleared'
 UNKNOWN = 'unknown'
 NOT_VALID = 'notValid'
 
 MORE_SEVERE = 'moreSevere'
 NO_CHANGE = 'noChange'
 LESS_SEVERE = 'lessSevere'
+
+NOT_OK = [AUTH, CRITICAL, MAJOR, MINOR, WARNING, INFORM, DEBUG, TRACE]
+ALL_OK = [NORMAL, OK, CLEARED]
 
 SEVERITY_MAP = {
     'security': 0,
