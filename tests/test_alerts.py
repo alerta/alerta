@@ -295,6 +295,7 @@ class AlertTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'normal')
         self.assertEqual(data['alert']['status'], 'closed')
 
         # severity == warning -> status=open
@@ -302,14 +303,16 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['severity'], 'warning')
         self.assertEqual(data['alert']['duplicateCount'], 0)
 
         # operator=closed -> status=closed
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'closed', 'text': 'operator action'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/action', data=json.dumps({'action': 'close', 'text': 'operator action'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'normal')
         self.assertEqual(data['alert']['status'], 'closed')
 
         # severity == warning -> status=open
@@ -317,7 +320,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['severity'], self.app.config['DEFAULT_NORMAL_SEVERITY'])
+        self.assertEqual(data['alert']['severity'], 'warning')
         self.assertEqual(data['alert']['duplicateCount'], 0)
 
     def test_duplicate_status(self):
