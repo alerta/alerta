@@ -347,6 +347,28 @@ class Backend(Database):
             return_document=ReturnDocument.AFTER
         )
 
+    def set_severity_and_status(self, id, severity, status, timeout, history=None):
+        """
+        Set severity and status and update history.
+        """
+        query = {'_id': {'$regex': '^' + id}}
+
+        update = {
+            '$set': {"severity": severity, "status": status, "timeout": timeout},
+            '$push': {
+                "history": {
+                    '$each': [history.serialize],
+                    '$slice': -abs(current_app.config['HISTORY_LIMIT'])
+                }
+            }
+        }
+        return g.db.alerts.find_one_and_update(
+            query,
+            update=update,
+            projection={"history": 0},
+            return_document=ReturnDocument.AFTER
+        )
+
     def tag_alert(self, id, tags):
         """
         Append tags to tag list. Don't add same tag more than once.

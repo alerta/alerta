@@ -117,6 +117,9 @@ class Database(Base):
     def set_status(self, id, status, timeout, history=None):
         raise NotImplementedError
 
+    def set_severity_and_status(self, id, severity, status, timeout, history=None):
+        raise NotImplementedError
+
     def tag_alert(self, id, tags):
         raise NotImplementedError
 
