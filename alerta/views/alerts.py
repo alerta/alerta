@@ -10,7 +10,7 @@ from alerta.exceptions import ApiError, RejectException, RateLimit, BlackoutPeri
 from alerta.models.alert import Alert
 from alerta.models.metrics import Timer, timer
 from alerta.models.switch import Switch
-from alerta.utils.api import jsonp, process_alert, process_status, assign_customer, add_remote_ip
+from alerta.utils.api import jsonp, process_alert, process_status, process_action, assign_customer, add_remote_ip
 from alerta.utils.paging import Page
 from . import api
 
@@ -101,6 +101,39 @@ def set_status(alert_id):
         return jsonify(status="ok")
     else:
         raise ApiError("failed to set alert status", 500)
+
+
+# action alert
+@api.route('/alert/<alert_id>/action', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@permission('write:alerts')
+@timer(status_timer)
+@jsonp
+def action_alert(alert_id):
+    action = request.json.get('action', None)
+    text = request.json.get('text', '%s operator action' % action)
+    timeout = request.json.get('timeout', None)
+
+    if not action:
+        raise ApiError("must supply 'action' as json data")
+
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
+
+    if not alert:
+        raise ApiError("not found", 404)
+
+    try:
+        alert = process_action(alert, action, text, timeout)
+    except RejectException as e:
+        raise ApiError(str(e), 400)
+    except Exception as e:
+        raise ApiError(str(e), 500)
+
+    if alert:
+        return jsonify(status="ok")
+    else:
+        raise ApiError("failed to perform action", 500)
 
 
 # tag

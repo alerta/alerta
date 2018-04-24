@@ -137,10 +137,15 @@ def process_status(alert, status, text):
                 alert = updated
 
     if updated:
+        alert.status = status
         alert.tag(alert.tags)
         alert.update_attributes(alert.attributes)
 
     return alert, status, text
+
+
+def process_action(alert, action, text='', timeout=None):
+    return alert.from_action(action, text, timeout)
 
 
 def deepmerge(first, second):
