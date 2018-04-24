@@ -2,6 +2,8 @@
 import logging
 import os
 
+from alerta.settings import ALERTA, ISA_18_2
+
 
 class Config(object):
 
@@ -122,6 +124,9 @@ class Config(object):
 
         if config['CUSTOMER_VIEWS'] and not config['ADMIN_USERS']:
             raise RuntimeError('Customer views is enabled but there are no admin users')
+
+        if config['ALARM_MODEL'] not in [ALERTA, ISA_18_2]:
+            raise RuntimeError('Alarm model must be one of ALERTA or ISA_18.2')
 
         return config
 

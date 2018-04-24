@@ -12,6 +12,7 @@ from alerta.models import actions
 from alerta.models import alarm_states
 from alerta.models import status_code
 from alerta.models.history import History, RichHistory
+from alerta.settings import ALERTA, ISA_18_2
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 
@@ -229,15 +230,14 @@ class Alert(object):
         now = datetime.utcnow()
 
         previous_status, previous_value = db.get_status_and_value(self)
-        if current_app.config['ALARM_MODEL'] != 'ISA_18.2':
+        if current_app.config['ALARM_MODEL'] == ALERTA:
             self.status = status_code.status_from_severity(
                 previous_severity=self.severity,
                 current_severity=self.severity,
                 previous_status=previous_status,
                 current_status=self.status
             )
-        else:
-            # ISA 18.2
+        elif current_app.config['ALARM_MODEL'] == ISA_18_2:
             self.status = alarm_states.transition(
                 previous_severity=self.severity,
                 current_severity=self.severity,
@@ -279,15 +279,14 @@ class Alert(object):
         previous_status = db.get_status(self)
         self.trend_indication = severity.trend(self.previous_severity, self.severity)
 
-        if current_app.config['ALARM_MODEL'] != 'ISA_18.2':
+        if current_app.config['ALARM_MODEL'] == ALERTA:
             self.status = status_code.status_from_severity(
                 previous_severity=self.previous_severity,
                 current_severity=self.severity,
                 previous_status=previous_status,
                 current_status=self.status
             )
-        else:
-            # ISA 18.2
+        elif current_app.config['ALARM_MODEL'] == ISA_18_2:
             self.status = alarm_states.transition(
                 previous_severity=self.previous_severity,
                 current_severity=self.severity,
@@ -326,13 +325,12 @@ class Alert(object):
     # create an alert
     def create(self):
         if self.status == status_code.UNKNOWN:
-            if current_app.config['ALARM_MODEL'] != 'ISA_18.2':
+            if current_app.config['ALARM_MODEL'] == ALERTA:
                 self.status = status_code.status_from_severity(
                     previous_severity=current_app.config['DEFAULT_PREVIOUS_SEVERITY'],
                     current_severity=self.severity
                 )
-            else:
-                # ISA 18.2
+            elif current_app.config['ALARM_MODEL'] == ISA_18_2:
                 self.status = alarm_states.transition(
                     previous_severity=current_app.config['DEFAULT_PREVIOUS_SEVERITY'],
                     current_severity=self.severity,
@@ -400,7 +398,7 @@ class Alert(object):
     def from_action(self, action, text='', timeout=None):
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
 
-        if current_app.config['ALARM_MODEL'] != 'ISA_18.2':
+        if current_app.config['ALARM_MODEL'] == ALERTA:
             if action == actions.ACTION_UNACK:
                 self.status = status_code.OPEN
 
@@ -427,7 +425,8 @@ class Alert(object):
                 update_time=datetime.utcnow()
             )
             return db.set_severity_and_status(self.id, self.severity, self.status, self.timeout, history)
-        else:
+
+        elif current_app.config['ALARM_MODEL'] == ISA_18_2:
             previous_status = db.get_status(self)
             status = alarm_states.transition(
                 previous_severity=self.previous_severity,
