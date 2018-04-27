@@ -19,13 +19,10 @@ except ImportError:
     pass  # saml2 authentication will not work
 
 
-def spConfig():
-    return saml2.config.Config()
+def get_saml2_config():
+    config = saml2.config.Config()
 
-
-def saml_client():
-
-    saml2_config_default = {
+    default_config = {
         'entityid': absolute_url(),
         'service': {
             'sp': {
@@ -37,8 +34,16 @@ def saml_client():
             }
         }
     }
-    spConfig().load(deepmerge(saml2_config_default, current_app.config['SAML2_CONFIG']))
-    return saml2.client.Saml2Client(config=spConfig())
+
+    config.load(deepmerge(default_config, current_app.config['SAML2_CONFIG']))
+
+    return config
+
+
+def saml_client():
+    return saml2.client.Saml2Client(
+        config=get_saml2_config()
+    )
 
 
 @auth.route('/auth/saml', methods=['GET'])
@@ -100,7 +105,7 @@ def saml_response_from_idp():
 
 @auth.route('/auth/saml/metadata.xml', methods=['GET'])
 def saml_metadata():
-    edesc = saml2.metadata.entity_descriptor(spConfig())
-    response = make_response(str(edesc))
+    descriptor = saml2.metadata.entity_descriptor(get_saml2_config())
+    response = make_response(str(descriptor))
     response.headers['Content-Type'] = 'text/xml; charset=utf-8'
     return response
