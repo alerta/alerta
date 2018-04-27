@@ -154,6 +154,8 @@ class User(object):
         if kwargs.get('name', None) is not None:
             update['name'] = kwargs['name']
         if kwargs.get('email', None) is not None:
+            if '@' not in kwargs.get('email'):
+                raise ValueError('Value for "email" not valid: %s' % kwargs['email'])
             update['email'] = kwargs['email']
             update['email_verified'] = False
         if kwargs.get('password', None) is not None:
