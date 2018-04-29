@@ -879,10 +879,17 @@ class Backend(Database):
 
         # get list of alerts to be unshelved
         update = """
-            SELECT id, event, last_receive_id
-              FROM alerts
-             WHERE status='shelved'
-               AND (last_receive_time + INTERVAL '1 second' * timeout) < (NOW() at time zone 'utc')
+        WITH shelved AS (
+            SELECT DISTINCT ON (a.id) a.id, a.event, a.last_receive_id, h.update_time, a.timeout
+              FROM alerts a, UNNEST(history) h
+             WHERE a.status='shelved'
+               AND h.type='action'
+               AND h.status='shelved'
+          ORDER BY a.id, h.update_time DESC
+        )
+        SELECT id, event, last_receive_id
+          FROM shelved
+         WHERE (update_time + INTERVAL '1 second' * timeout) < (NOW() at time zone 'utc')
         """
         unshelved = self._fetchall(update, {})
 
