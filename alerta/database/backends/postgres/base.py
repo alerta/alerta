@@ -869,16 +869,16 @@ class Backend(Database):
         self._delete(delete, {"expired_threshold": expired_threshold, "info_threshold": info_threshold})
 
         # get list of alerts to be newly expired
-        update = """
+        select = """
             SELECT id, event, last_receive_id
               FROM alerts
              WHERE status NOT IN ('expired','shelved') AND timeout!=0
                AND (last_receive_time + INTERVAL '1 second' * timeout) < (NOW() at time zone 'utc')
         """
-        expired = self._fetchall(update, {})
+        expired = self._fetchall(select, {})
 
         # get list of alerts to be unshelved
-        update = """
+        select = """
         WITH shelved AS (
             SELECT DISTINCT ON (a.id) a.id, a.event, a.last_receive_id, h.update_time, a.timeout
               FROM alerts a, UNNEST(history) h
@@ -891,7 +891,7 @@ class Backend(Database):
           FROM shelved
          WHERE (update_time + INTERVAL '1 second' * timeout) < (NOW() at time zone 'utc')
         """
-        unshelved = self._fetchall(update, {})
+        unshelved = self._fetchall(select, {})
 
         return (expired, unshelved)
 
