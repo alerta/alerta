@@ -1122,11 +1122,26 @@ class Backend(Database):
 
         # get list of alerts to be unshelved
         pipeline = [
+            {'$match': {"status": "shelved"}},
+            {'$unwind': '$history'},
+            {'$match': {
+                "history.type": "action",
+                "history.status": "shelved"
+            }},
+            {'$sort': {'history.updateTime': -1}},
+            {'$group': {
+                '_id': '$_id',
+                'event': {'$first': '$event'},
+                'lastReceiveId': {'$first': '$lastReceiveId'},
+                'updateTime': {'$first': '$history.updateTime'},
+                'timeout': {'$first': '$timeout'}
+            }},
             {'$project': {
-                "event": 1, "status": 1, "lastReceiveId": 1, "timeout": 1,
-                "expireTime": {'$add': ["$lastReceiveTime", {'$multiply': ["$timeout", 1000]}]}}
-            },
-            {'$match': {"status": 'shelved', "expireTime": {'$lt': datetime.utcnow()}, "timeout": {'$ne': 0}}}
+                "event": 1,
+                "lastReceiveId": 1,
+                "expireTime": {'$add': ["$updateTime", {'$multiply': ["$timeout", 1000]}]}
+            }},
+            {'$match': {"expireTime": {'$lt': datetime.utcnow()}, "timeout": {'$ne': 0}}}
         ]
         unshelved = [(r['_id'], r['event'], r['lastReceiveId']) for r in g.db.alerts.aggregate(pipeline)]
 
