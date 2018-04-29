@@ -870,7 +870,7 @@ class Backend(Database):
 
         # get list of alerts to be newly expired
         update = """
-            SELECT id, event, 'expired', last_receive_id
+            SELECT id, event, last_receive_id
               FROM alerts
              WHERE status NOT IN ('expired','shelved') AND timeout!=0
                AND (last_receive_time + INTERVAL '1 second' * timeout) < (NOW() at time zone 'utc')
@@ -879,14 +879,14 @@ class Backend(Database):
 
         # get list of alerts to be unshelved
         update = """
-            SELECT id, event, 'open', last_receive_id
+            SELECT id, event, last_receive_id
               FROM alerts
              WHERE status='shelved'
                AND (last_receive_time + INTERVAL '1 second' * timeout) < (NOW() at time zone 'utc')
         """
         unshelved = self._fetchall(update, {})
 
-        return expired + unshelved
+        return (expired, unshelved)
 
     #### SQL HELPERS
 

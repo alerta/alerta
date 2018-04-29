@@ -1118,7 +1118,7 @@ class Backend(Database):
             },
             {'$match': {"status": {'$nin': ['expired', 'shelved']}, "expireTime": {'$lt': datetime.utcnow()}, "timeout": {'$ne': 0}}}
         ]
-        expired = [(r['_id'], r['event'], 'expired', r['lastReceiveId']) for r in g.db.alerts.aggregate(pipeline)]
+        expired = [(r['_id'], r['event'], r['lastReceiveId']) for r in g.db.alerts.aggregate(pipeline)]
 
         # get list of alerts to be unshelved
         pipeline = [
@@ -1128,6 +1128,6 @@ class Backend(Database):
             },
             {'$match': {"status": 'shelved', "expireTime": {'$lt': datetime.utcnow()}, "timeout": {'$ne': 0}}}
         ]
-        unshelved = [(r['_id'], r['event'], 'open', r['lastReceiveId']) for r in g.db.alerts.aggregate(pipeline)]
+        unshelved = [(r['_id'], r['event'], r['lastReceiveId']) for r in g.db.alerts.aggregate(pipeline)]
 
-        return expired + unshelved
+        return (expired, unshelved)
