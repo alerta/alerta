@@ -1,4 +1,4 @@
-Flask
+Flask>=0.10.1
 Flask-Cors>=3.0.2
 Flask-Compress>=1.4.0
 raven[flask]>=6.2.1
@@ -9,6 +9,3 @@ python-dateutil
 pytz
 PyJWT
 bcrypt
-cryptography
-blinker
-PyYaml
