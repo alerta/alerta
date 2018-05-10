@@ -8,6 +8,7 @@ ve
 dist
 build
 .idea
+env
 .DS_Store
 dist
 rpmbuild
