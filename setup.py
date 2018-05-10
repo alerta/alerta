@@ -37,17 +37,8 @@ setuptools.setup(
     author_email='nick.satterly@theguardian.com',
     packages=setuptools.find_packages(exclude=['tests']),
     install_requires=[
-        'Flask>=0.10.1',
-        'Flask-Cors>=3.0.2',
-        'Flask-Compress>=1.4.0',
-        'raven[flask]>=6.2.1',
-        'pymongo>=3.0',
-        'psycopg2',
-        'requests',
-        'python-dateutil',
-        'pytz',
-        'PyJWT',
-        'bcrypt'
+        i for i in read('requirements.txt').split('\n')
+        if not i.startswith('--')
     ],
     include_package_data=True,
     zip_safe=False,
