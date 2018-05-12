@@ -48,6 +48,9 @@ ALLOWED_GITHUB_ORGS = ['*']
 GITLAB_URL = 'https://gitlab.com'
 ALLOWED_GITLAB_GROUPS = ['*']
 
+LDAP_URL = ''  # eg. ldap://localhost:389
+LDAP_DOMAINS = {}
+
 KEYCLOAK_URL = None
 KEYCLOAK_REALM = None
 ALLOWED_KEYCLOAK_ROLES = ['*']

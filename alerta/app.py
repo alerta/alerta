@@ -11,7 +11,6 @@ from alerta.utils.plugin import Plugins
 from alerta.utils.config import Config
 from alerta.utils.key import ApiKeyHelper
 from alerta.utils.webhook import CustomWebhooks
-from alerta import auth
 
 config = Config()
 severity = Severity()
@@ -45,8 +44,6 @@ def create_app(config_override=None, environment=None):
     qb.init_app(app)
     sentry.init_app(app)
 
-    auth.init_app(app)
-
     from alerta.utils.format import CustomJSONEncoder
     app.json_encoder = CustomJSONEncoder
 
@@ -56,8 +53,8 @@ def create_app(config_override=None, environment=None):
     from alerta.webhooks import webhooks
     app.register_blueprint(webhooks)
 
-    from alerta.auth import auth as auth_blueprint
-    app.register_blueprint(auth_blueprint)
+    from alerta.auth import auth
+    app.register_blueprint(auth)
 
     from alerta.management import mgmt
     app.register_blueprint(mgmt)

@@ -1,22 +1,14 @@
 
-import logging
-from uuid import uuid4
-
-from flask import current_app, request, jsonify, render_template
-from flask_cors import cross_origin
-
-from alerta.auth.utils import is_authorized, create_token, get_customers
-from alerta.exceptions import ApiError
-from alerta.models.user import User
-from alerta.utils.api import absolute_url
-from . import auth
-
 import ldap
 
-@auth.route('/auth/signup', methods=['OPTIONS', 'POST'])
-@cross_origin(supports_credentials=True)
-def signup():
-    raise NotImplementedError
+from flask import current_app, request, jsonify
+from flask_cors import cross_origin
+
+from alerta.auth.utils import create_token, get_customers
+from alerta.exceptions import ApiError
+from alerta.models.user import User
+from . import auth
+
 
 @auth.route('/auth/login', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
@@ -32,9 +24,6 @@ def login():
     domain = email.split("@")[1]
 
     # Validate LDAP domain
-    if not 'LDAP_DOMAINS' in current_app.config:
-        raise ApiError("LDAP_DOMAINS not configured", 500)
-
     if domain not in current_app.config["LDAP_DOMAINS"]:
         raise ApiError("unauthorized domain", 403)
 
@@ -42,21 +31,19 @@ def login():
 
     # Attempt LDAP AUTH
     try:
-        ldap_connection = ldap.initialize(current_app.config['LDAP_SERVER'])
+        trace_level = 2 if current_app.debug else 0
+        ldap_connection = ldap.initialize(current_app.config['LDAP_URL'], trace_level=trace_level)
         ldap_connection.simple_bind_s(userdn, password)
-
     except ldap.INVALID_CREDENTIALS:
         raise ApiError("invalid username or password", 401)
-
-    except:
-        raise ApiError("logon failed", 500)
+    except Exception as e:
+        raise ApiError(str(e), 500)
 
     # Create user if not yet there
     user = User.find_by_email(email=email)
     if not user:
-        user = User(username, email, "", ["user"], "LDAP user")
+        user = User(username, email, "", ["user"], "LDAP user", email_verified=True)
         user.create()
-        user.set_email_verified()
 
     # Check user is active
     if user.status != 'active':
@@ -67,6 +54,6 @@ def login():
     user.update_last_login()
 
     # Generate token
-    token = create_token(user.id, user.name, user.email, provider='basic', customers=customers,
+    token = create_token(user.id, user.name, user.email, provider='basic_ldap', customers=customers,
                          roles=user.roles, email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)
