@@ -29,7 +29,7 @@ class Alert(object):
         if isinstance(kwargs.get('value', None), int):
             kwargs['value'] = str(kwargs['value'])
 
-        self.id = kwargs.get('id', str(uuid4()))
+        self.id = kwargs.get('id', None) or str(uuid4())
         self.resource = resource
         self.event = event
         self.environment = kwargs.get('environment', None) or ""
@@ -74,6 +74,7 @@ class Alert(object):
             raise ValueError('timeout must be an integer')
 
         return Alert(
+            id=json.get('id', None),
             resource=json.get('resource', None),
             event=json.get('event', None),
             environment=json.get('environment', None),
