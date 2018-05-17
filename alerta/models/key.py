@@ -12,7 +12,7 @@ class ApiKey(object):
     def __init__(self, user, scopes, text='', expire_time=None, customer=None, **kwargs):
 
         self.id = kwargs.get('id', None) or str(uuid4())
-        self.key = kwargs.get('key', key_helper.generate())
+        self.key = kwargs.get('key', None) or key_helper.generate()
         self.user = user
         self.scopes = scopes or key_helper.user_default_scopes
         self.text = text
