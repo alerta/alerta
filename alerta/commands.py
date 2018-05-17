@@ -21,16 +21,18 @@ def cli():
 
 @cli.command('key', short_help='Create an admin API key')
 @click.option('--username', '-u', help='Admin user')
+@click.option('--key', '-K', help='API key (default=random UUID)')
 @click.option('--all', is_flag=True, help='Create API keys for all admins')
 @with_appcontext
-def key(username, all):
+def key(username, key, all):
     """Create an admin API key."""
     if username and username not in current_app.config['ADMIN_USERS']:
         raise click.UsageError('User {} not an admin'.format(username))
 
-    def create_key(admin):
+    def create_key(admin, key):
         key = ApiKey(
             user=admin,
+            key=key,
             scopes=['admin', 'write', 'read'],
             text='Admin key created by alertad script',
             expire_time=None
@@ -45,9 +47,11 @@ def key(username, all):
 
     if all:
         for admin in current_app.config['ADMIN_USERS']:
-            create_key(admin)
+            create_key(admin, key)
+    elif username:
+        create_key(username, key)
     else:
-        create_key(username)
+        raise click.UsageError("Must set '--username' or use '--all'")
 
 
 @cli.command('keys', short_help='List admin API keys')
