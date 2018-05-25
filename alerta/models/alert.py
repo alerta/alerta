@@ -9,8 +9,10 @@ from flask import current_app
 
 from alerta.app import db, severity
 from alerta.models import actions
+from alerta.models import alarm_states
 from alerta.models import status_code
 from alerta.models.history import History, RichHistory
+from alerta.settings import ALERTA, ISA_18_2
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 
@@ -229,12 +231,20 @@ class Alert(object):
         now = datetime.utcnow()
 
         previous_status, previous_value = db.get_status_and_value(self)
-        self.status = status_code.status_from_severity(
-            previous_severity=self.severity,
-            current_severity=self.severity,
-            previous_status=previous_status,
-            current_status=self.status
-        )
+        if current_app.config['ALARM_MODEL'] == ALERTA:
+            self.status = status_code.status_from_severity(
+                previous_severity=self.severity,
+                current_severity=self.severity,
+                previous_status=previous_status,
+                current_status=self.status
+            )
+        elif current_app.config['ALARM_MODEL'] == ISA_18_2:
+            self.status = alarm_states.transition(
+                previous_severity=self.severity,
+                current_severity=self.severity,
+                state=previous_status,
+                latched=self.is_latched()
+            )
 
         self.repeat = True
         self.last_receive_id = self.id
@@ -270,12 +280,20 @@ class Alert(object):
         previous_status = db.get_status(self)
         self.trend_indication = severity.trend(self.previous_severity, self.severity)
 
-        self.status = status_code.status_from_severity(
-            previous_severity=self.previous_severity,
-            current_severity=self.severity,
-            previous_status=previous_status,
-            current_status=self.status
-        )
+        if current_app.config['ALARM_MODEL'] == ALERTA:
+            self.status = status_code.status_from_severity(
+                previous_severity=self.previous_severity,
+                current_severity=self.severity,
+                previous_status=previous_status,
+                current_status=self.status
+            )
+        elif current_app.config['ALARM_MODEL'] == ISA_18_2:
+            self.status = alarm_states.transition(
+                previous_severity=self.previous_severity,
+                current_severity=self.severity,
+                state=previous_status,
+                latched=self.is_latched()
+            )
 
         self.duplicate_count = 0
         self.repeat = False
@@ -308,10 +326,18 @@ class Alert(object):
     # create an alert
     def create(self):
         if self.status == status_code.UNKNOWN:
-            self.status = status_code.status_from_severity(
-                previous_severity=current_app.config['DEFAULT_PREVIOUS_SEVERITY'],
-                current_severity=self.severity
-            )
+            if current_app.config['ALARM_MODEL'] == ALERTA:
+                self.status = status_code.status_from_severity(
+                    previous_severity=current_app.config['DEFAULT_PREVIOUS_SEVERITY'],
+                    current_severity=self.severity
+                )
+            elif current_app.config['ALARM_MODEL'] == ISA_18_2:
+                self.status = alarm_states.transition(
+                    previous_severity=current_app.config['DEFAULT_PREVIOUS_SEVERITY'],
+                    current_severity=self.severity,
+                    latched=self.is_latched()
+                )
+
         trend_indication = severity.trend(current_app.config['DEFAULT_PREVIOUS_SEVERITY'], self.severity)
 
         self.duplicate_count = 0
@@ -354,6 +380,9 @@ class Alert(object):
                 return False
         return db.is_blackout_period(self)
 
+    def is_latched(self):
+        return True if 'latched' in self.event_type.lower() else False
+
     # set alert status
     def set_status(self, status, text='', timeout=None):
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
@@ -368,33 +397,55 @@ class Alert(object):
         return db.set_status(self.id, status, timeout, history)
 
     def from_action(self, action, text='', timeout=None):
-        if action == actions.ACTION_UNACK:
-            self.status = status_code.OPEN
-
-        if action == actions.ACTION_SHELVE:
-            self.status = status_code.SHELVED
-
-        if action == actions.ACTION_UNSHELVE:
-            self.status = status_code.OPEN
-
-        if action == actions.ACTION_ACK:
-            self.status = status_code.ACK
-
-        if action == actions.ACTION_CLOSE:
-            self.severity = current_app.config['DEFAULT_NORMAL_SEVERITY']
-            self.status = status_code.CLOSED
-
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
-        history = History(
-            id=self.id,
-            event=self.event,
-            severity=self.severity,
-            status=self.status,
-            text=text,
-            change_type="action",
-            update_time=datetime.utcnow()
-        )
-        return db.set_severity_and_status(self.id, self.severity, self.status, self.timeout, history)
+
+        if current_app.config['ALARM_MODEL'] == ALERTA:
+            if action == actions.ACTION_UNACK:
+                self.status = status_code.OPEN
+
+            if action == actions.ACTION_SHELVE:
+                self.status = status_code.SHELVED
+
+            if action == actions.ACTION_UNSHELVE:
+                self.status = status_code.OPEN
+
+            if action == actions.ACTION_ACK:
+                self.status = status_code.ACK
+
+            if action == actions.ACTION_CLOSE:
+                self.severity = current_app.config['DEFAULT_NORMAL_SEVERITY']
+                self.status = status_code.CLOSED
+
+            history = History(
+                id=self.id,
+                event=self.event,
+                severity=self.severity,
+                status=self.status,
+                text=text,
+                change_type="action",
+                update_time=datetime.utcnow()
+            )
+            return db.set_severity_and_status(self.id, self.severity, self.status, self.timeout, history)
+
+        elif current_app.config['ALARM_MODEL'] == ISA_18_2:
+            previous_status = db.get_status(self)
+            status = alarm_states.transition(
+                previous_severity=self.previous_severity,
+                current_severity=self.severity,
+                state=previous_status,
+                action=action
+            )
+
+            history = History(
+                id=self.id,
+                event=self.event,
+                severity=self.severity,
+                status=self.status,
+                text=text,
+                change_type="action",
+                update_time=datetime.utcnow()
+            )
+            return db.set_status(self.id, status, self.timeout, history)
 
     # tag an alert
     def tag(self, tags):
