@@ -145,7 +145,30 @@ def process_status(alert, status, text):
 
 
 def process_action(alert, action, text='', timeout=None):
-    return alert.from_action(action, text, timeout)
+    alert.from_action(action, text, timeout)
+
+    for plugin in plugins.routing(alert):
+        try:
+            updated = plugin.status_change(alert, alert.status, text)
+        except RejectException:
+            raise
+        except Exception as e:
+            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                raise ApiError("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
+            else:
+                logging.error("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
+        if updated:
+            try:
+                alert, status, text = updated
+            except Exception:
+                alert = updated
+
+    if updated:
+        alert.status = status
+        alert.tag(alert.tags)
+        alert.update_attributes(alert.attributes)
+
+    return alert
 
 
 def deepmerge(first, second):
