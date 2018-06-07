@@ -812,8 +812,13 @@ class Backend(Database):
             response = self._fetchone(select, (match,))
             if response:
                 customers.append(response.customer)
+
         if customers:
+            if '*' in customers:
+                return '*'  # all customers
+
             return customers
+
         raise NoCustomerMatch("No customer lookup configured for user '%s' or '%s'" % (login, ','.join(matches)))
 
     #### METRICS
