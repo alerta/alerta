@@ -124,16 +124,17 @@ def action_alert(alert_id):
         raise ApiError("not found", 404)
 
     try:
-        alert = process_action(alert, action, text, timeout)
+        severity, status = process_action(alert, action)
+        alert, status, text = process_status(alert, status, text)
     except RejectException as e:
         raise ApiError(str(e), 400)
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    if alert:
+    if alert.set_severity_and_status(severity, status, text, timeout):
         return jsonify(status="ok")
     else:
-        raise ApiError("failed to perform action", 500)
+        raise ApiError("failed to perform alert action", 500)
 
 
 # tag
