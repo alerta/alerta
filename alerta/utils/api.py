@@ -9,6 +9,7 @@ from flask import current_app, g, request
 from alerta.app import plugins
 from alerta.exceptions import ApiError
 from alerta.exceptions import RejectException, RateLimit, BlackoutPeriod
+from alerta.models import actions
 from alerta.models import status_code
 
 try:
@@ -115,6 +116,29 @@ def process_alert(alert):
     return alert
 
 
+def process_action(alert, action):
+    severity = alert.severity
+    status = alert.status
+
+    if action == actions.ACTION_UNACK:
+        status = status_code.OPEN
+
+    if action == actions.ACTION_SHELVE:
+        status = status_code.SHELVED
+
+    if action == actions.ACTION_UNSHELVE:
+        status = status_code.OPEN
+
+    if action == actions.ACTION_ACK:
+        status = status_code.ACK
+
+    if action == actions.ACTION_CLOSE:
+        severity = current_app.config['DEFAULT_NORMAL_SEVERITY']
+        status = status_code.CLOSED
+
+    return severity, status
+
+
 def process_status(alert, status, text):
 
     updated = None
@@ -142,10 +166,6 @@ def process_status(alert, status, text):
         alert.update_attributes(alert.attributes)
 
     return alert, status, text
-
-
-def process_action(alert, action, text='', timeout=None):
-    return alert.from_action(action, text, timeout)
 
 
 def deepmerge(first, second):
