@@ -6,18 +6,29 @@ from alerta.app import qb
 from alerta.auth.utils import permission
 from alerta.exceptions import RejectException, ApiError
 from alerta.models.alert import Alert
+from alerta.models.severity_code import Severity
 from alerta.utils.api import process_alert, add_remote_ip, assign_customer
 from . import webhooks
 
 
-def parse_grafana(alert, match):
+def parse_grafana(alert, match, args):
+    alerting_severity = args.get('severity', 'major')
+    if alerting_severity not in Severity.SEVERITY_MAP:
+        raise ValueError('Invalid severity parameter, expected one of %s' % ", ".join(
+            sorted(Severity.SEVERITY_MAP)))
 
     if alert['state'] == 'alerting':
-        severity = 'major'
+        severity = alerting_severity
     elif alert['state'] == 'ok':
         severity = 'normal'
     else:
         severity = 'indeterminate'
+
+    environment = args.get('environment', 'Production')  # TODO: verify at create?
+    event_type = args.get('event_type', 'performanceAlert')
+    group = args.get('group', 'Performance')
+    origin = args.get('origin', 'Grafana')
+    service = args.get('service', 'Grafana')
 
     attributes = match.get('tags', None) or dict()
     attributes['ruleId'] = str(alert['ruleId'])
@@ -29,16 +40,16 @@ def parse_grafana(alert, match):
     return Alert(
         resource=match['metric'],
         event=alert['ruleName'],
-        environment='Production',
+        environment=environment,
         severity=severity,
-        service=['Grafana'],
-        group='Performance',
+        service=[service],
+        group=group,
         value='%s' % match['value'],
         text=alert.get('message', None) or alert.get('title', alert['state']),
         tags=list(),
         attributes=attributes,
-        origin='Grafana',
-        event_type='performanceAlert',
+        origin=origin,
+        event_type=event_type,
         timeout=300,
         raw_data=alert
     )
@@ -54,7 +65,7 @@ def grafana():
     if data and data['state'] == 'alerting':
         for match in data.get('evalMatches', []):
             try:
-                incomingAlert = parse_grafana(data, match)
+                incomingAlert = parse_grafana(data, match, request.args)
             except ValueError as e:
                 return jsonify(status="error", message=str(e)), 400
 
