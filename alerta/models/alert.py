@@ -8,7 +8,6 @@ from uuid import uuid4
 from flask import current_app
 
 from alerta.app import db, severity
-from alerta.models import actions
 from alerta.models import status_code
 from alerta.models.history import History, RichHistory
 from alerta.utils.api import absolute_url
@@ -367,34 +366,18 @@ class Alert(object):
         )
         return db.set_status(self.id, status, timeout, history)
 
-    def from_action(self, action, text='', timeout=None):
-        if action == actions.ACTION_UNACK:
-            self.status = status_code.OPEN
-
-        if action == actions.ACTION_SHELVE:
-            self.status = status_code.SHELVED
-
-        if action == actions.ACTION_UNSHELVE:
-            self.status = status_code.OPEN
-
-        if action == actions.ACTION_ACK:
-            self.status = status_code.ACK
-
-        if action == actions.ACTION_CLOSE:
-            self.severity = current_app.config['DEFAULT_NORMAL_SEVERITY']
-            self.status = status_code.CLOSED
-
-        self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
+    def set_severity_and_status(self, severity, status, text='', timeout=None):
+        timeout = timeout or current_app.config['ALERT_TIMEOUT']
         history = History(
             id=self.id,
             event=self.event,
-            severity=self.severity,
-            status=self.status,
+            severity=severity,
+            status=status,
             text=text,
             change_type="action",
             update_time=datetime.utcnow()
         )
-        return db.set_severity_and_status(self.id, self.severity, self.status, self.timeout, history)
+        return db.set_severity_and_status(self.id, severity, status, timeout, history)
 
     # tag an alert
     def tag(self, tags):
