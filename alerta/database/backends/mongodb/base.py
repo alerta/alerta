@@ -1027,8 +1027,13 @@ class Backend(Database):
             response = g.db.customers.find_one({"match": match}, projection={"customer": 1, "_id": 0})
             if response:
                 customers.append(response['customer'])
+
         if customers:
+            if '*' in customers:
+                return '*' # all customers
+
             return customers
+
         raise NoCustomerMatch("No customer lookup configured for user '%s' or '%s'" % (login, ','.join(matches)))
 
     #### METRICS
