@@ -62,6 +62,24 @@ class AlertTestCase(unittest.TestCase):
             'correlate': ['node_down', 'node_marginal', 'node_up']
         }
 
+        self.ok_alert = {
+            'event': 'node_up',
+            'resource': self.resource,
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'ok',
+            'correlate': ['node_down', 'node_marginal', 'node_up']
+        }
+
+        self.cleared_alert = {
+            'event': 'node_up',
+            'resource': self.resource,
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'cleared',
+            'correlate': ['node_down', 'node_marginal', 'node_up']
+        }
+
         self.headers = {
             'Content-type': 'application/json',
             'X-Forwarded-For': '10.0.0.1'
@@ -236,6 +254,40 @@ class AlertTestCase(unittest.TestCase):
         # delete alert
         response = self.client.delete('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
+
+    def test_closed_alerts(self):
+
+        # create normal alert (status=closed)
+        response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'closed')
+        self.assertEqual(data['alert']['severity'], 'normal')
+        self.assertEqual(data['alert']['duplicateCount'], 0)
+
+        # update ok alert (status=closed)
+        response = self.client.post('/alert', data=json.dumps(self.ok_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'closed')
+        self.assertEqual(data['alert']['severity'], 'ok')
+        self.assertEqual(data['alert']['duplicateCount'], 0)
+
+        # update cleared alert (status=closed)
+        response = self.client.post('/alert', data=json.dumps(self.cleared_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'closed')
+        self.assertEqual(data['alert']['severity'], 'cleared')
+        self.assertEqual(data['alert']['duplicateCount'], 0)
+
+        # de-duplicate cleared alert (status=closed)
+        response = self.client.post('/alert', data=json.dumps(self.cleared_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'closed')
+        self.assertEqual(data['alert']['severity'], 'cleared')
+        self.assertEqual(data['alert']['duplicateCount'], 1)
 
     def test_expired_alerts(self):
 
