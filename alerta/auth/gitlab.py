@@ -13,7 +13,7 @@ from . import auth
 def gitlab():
 
     access_token_url = current_app.config['GITLAB_URL'] + '/oauth/token'
-    gitlab_api_url = current_app.config['GITLAB_URL'] + '/api/v3'
+    gitlab_api_url = current_app.config['GITLAB_URL'] + '/api/v4'
 
     payload = {
         'client_id': request.json['clientId'],
