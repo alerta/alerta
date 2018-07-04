@@ -60,7 +60,7 @@ def status_from_severity(previous_severity, current_severity, previous_status=OP
         return CLOSED
     if current_status in [BLACKOUT, SHELVED]:
         return current_status
-    if previous_status in [CLOSED, EXPIRED]:
+    if previous_status in [BLACKOUT, CLOSED, EXPIRED]:
         return OPEN
     if severity.trend(previous_severity, current_severity) == severity_code.MORE_SEVERE:
         return OPEN
