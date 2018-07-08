@@ -36,6 +36,21 @@ class WebhooksTestCase(unittest.TestCase):
             'correlate': ['node_down', 'node_marginal', 'node_up']
         }
 
+        self.cloudwatch_subscription_confirmation = r"""
+            {
+              "Type" : "SubscriptionConfirmation",
+              "MessageId" : "8a14e4f3-f3ab-4be0-a12f-681ee8fe214f",
+              "Token" : "2336412f37fb687f5d51e6e241da92fd72d769c5b4ca6fd6cd6d30949d5a51abf7e21aae199b52813b6f2ea51b41e3119b599532d25df4e6aea368b3a6d8272d38688f73c116b04204e9afb2f5b1d8c4bdb823103299a9f1da7409f1dcf4096ba20a0b0222cc493586e76450e3be6715",
+              "TopicArn" : "arn:aws:sns:eu-west-1:1234567890:alerta-test",
+              "Message" : "You have chosen to subscribe to the topic arn:aws:sns:eu-west-1:1234567890:alerta-test.\nTo confirm the subscriptionDataBuilder, visit the SubscribeURL included in this message.",
+              "SubscribeURL" : "https://sns.eu-west-1.amazonaws.com/?Action=ConfirmSubscription&TopicArn=arn:aws:sns:eu-west-1:1234567890:alerta-test&Token=2336412f37fb687f5d51e6e241da92fd72d769c5b4ca6fd6cd6d30949d5a51abf7e21aae199b52813b6f2ea51b41e3119b599532d25df4e6aea368b3a6d8272d38688f73c116b04204e9afb2f5b1d8c4bdb823103299a9f1da7409f1dcf4096ba20a0b0222cc493586e76450e3be6715",
+              "Timestamp" : "2018-07-08T21:33:44.782Z",
+              "SignatureVersion" : "1",
+              "Signature" : "os7PC+SYxz+6Ms92k5T6QDEHOJ8SIgKYL2vR987rSgTk91qqVoY1wTa0kl4SD4Abwb8oAdeL5bXAeoWjwOe8wD88GTEmYRwgGALC2tgrMZP9fBg/5WlHpbUPkcI8Ch8OMxAS8Lmn3ZUq814Vmvse8jqCNyNPquBIxT8KUaka0wFivaVTMKa43OWEWoHKlEfriFD1dtkmI2kKpsJpH7x2Az/izJMpWX9hJpA6aeiuzeeO2LOlLAzH2qD1PmUguPZCUVwbcEiySOD2tL+uwDDiN22h3QxYd9Je8ZfNSwimSbdpQzyumOtoogP9dAHcua8sSo3glPuakNzdFhrWywBVFQ==",
+              "SigningCertURL" : "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-eaea6120e66ea12e88dcd8bcbddca752.pem"
+            }
+        """
+
         self.pingdom_down = """
             {
                 "second_probe": {
@@ -509,6 +524,14 @@ class WebhooksTestCase(unittest.TestCase):
 
     def tearDown(self):
         db.destroy()
+
+    def test_cloudwatch_webhook(self):
+
+        # subscription confirmation
+        response = self.client.post('/webhooks/cloudwatch', data=self.cloudwatch_subscription_confirmation, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'arn:aws:sns:eu-west-1:1234567890:alerta-test')
 
     def test_pingdom_webhook(self):
 

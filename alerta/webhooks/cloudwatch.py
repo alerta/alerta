@@ -26,8 +26,6 @@ def cw_state_to_severity(state):
 
 def parse_notification(notification):
 
-    notification = json.loads(notification)
-
     if notification['Type'] == 'SubscriptionConfirmation':
 
         return Alert(
@@ -78,7 +76,7 @@ def parse_notification(notification):
 def cloudwatch():
 
     try:
-        incomingAlert = parse_notification(request.data)
+        incomingAlert = parse_notification(request.json)
     except ValueError as e:
         raise ApiError(str(e), 400)
 
