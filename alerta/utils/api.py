@@ -6,10 +6,11 @@ from os.path import join as path_join
 
 from flask import current_app, g, request
 
+from alerta.app import actions
 from alerta.app import plugins
 from alerta.exceptions import ApiError
 from alerta.exceptions import RejectException, RateLimit, BlackoutPeriod
-from alerta.models import actions
+from alerta.models import actions as action_code
 from alerta.models import status_code
 
 try:
@@ -116,44 +117,42 @@ def process_alert(alert):
     return alert
 
 
-def process_action(alert, action):
-    severity = alert.severity
-    status = alert.status
+def process_action(alert, action, text):
 
-    if action == actions.ACTION_UNACK:
-        status = status_code.OPEN
+    updated = None
+    for enabled_action in actions.actions.values():
+        try:
+            updated = enabled_action.take_action(alert, action, text)
+        except Exception as e:
+            raise ApiError("Error while running action '%s': %s" % (enabled_action.name, str(e)))
+        if updated:
+            try:
+                alert, text = updated
+            except Exception:
+                alert = updated
 
-    if action == actions.ACTION_SHELVE:
-        status = status_code.SHELVED
+    if updated:
+        alert.tag(alert.tags)
+        alert.update_attributes(alert.attributes)
 
-    if action == actions.ACTION_UNSHELVE:
-        status = status_code.OPEN
-
-    if action == actions.ACTION_ACK:
-        status = status_code.ACK
-
-    if action == actions.ACTION_CLOSE:
-        severity = current_app.config['DEFAULT_NORMAL_SEVERITY']
-        status = status_code.CLOSED
-
-    return severity, status
+    return alert, text
 
 
 def process_status(alert, status, text):
 
     updated = None
-    for plugin in plugins.routing(alert):
+    for enabled_plugin in plugins.routing(alert):
         if alert.status == status_code.BLACKOUT:
             break
         try:
-            updated = plugin.status_change(alert, status, text)
+            updated = enabled_plugin.status_change(alert, status, text)
         except RejectException:
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
+                raise ApiError("Error while running status plug-in '%s': %s" % (enabled_plugin.name, str(e)))
             else:
-                logging.error("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
+                logging.error("Error while running status plug-in '%s': %s" % (enabled_plugin.name, str(e)))
         if updated:
             try:
                 alert, status, text = updated

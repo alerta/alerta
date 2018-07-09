@@ -106,6 +106,9 @@ MAIL_FROM = 'your@gmail.com'  # replace with valid sender address
 SMTP_USERNAME = ''  # application-specific username if different to MAIL_FROM user
 SMTP_PASSWORD = ''  # password for MAIL_FROM (or SMTP_USERNAME if used)
 
+# Actions
+ACTIONS = ['default', 'gitlab']
+
 # Plug-ins
 PLUGINS = ['reject', 'blackout']
 PLUGINS_RAISE_ON_ERROR = True  # raise RuntimeError exception on first failure

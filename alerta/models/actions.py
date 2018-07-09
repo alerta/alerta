@@ -7,3 +7,5 @@ ACTION_UNSHELVE = 'unshelve'
 
 ACTION_OPEN = 'open'
 ACTION_CLOSE = 'close'
+
+ACTION_CREATE_ISSUE = 'issue'
