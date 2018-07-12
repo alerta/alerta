@@ -20,7 +20,7 @@ class QueryBuilderImpl(QueryBuilder):
 
         # q
         if params.get('q', None):
-            query = json.loads(params.pop('q'))
+            query = json.loads(params['q'])
         else:
             query = dict()
 
