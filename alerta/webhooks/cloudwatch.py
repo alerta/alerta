@@ -76,7 +76,7 @@ def parse_notification(notification):
 def cloudwatch():
 
     try:
-        incomingAlert = parse_notification(request.json)
+        incomingAlert = parse_notification(request.get_json(force=True))
     except ValueError as e:
         raise ApiError(str(e), 400)
 
