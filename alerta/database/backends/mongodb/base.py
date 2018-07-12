@@ -28,6 +28,17 @@ class Backend(Database):
             db = self.client.get_default_database()
 
         # create unique indexes
+        try:
+            self._create_indexes(db)
+        except Exception as e:
+            if current_app.config['MONGO_RAISE_ON_ERROR']:
+                raise
+            current_app.logger.warning(e)
+
+        return db
+
+    @staticmethod
+    def _create_indexes(db):
         db.alerts.create_index(
             [('environment', ASCENDING), ('customer', ASCENDING), ('resource', ASCENDING), ('event', ASCENDING)],
             unique=True
@@ -39,8 +50,6 @@ class Backend(Database):
         db.perms.create_index([('match', ASCENDING)], unique=True)
         db.users.create_index([('email', ASCENDING)], unique=True)
         db.metrics.create_index([('group', ASCENDING), ('name', ASCENDING)], unique=True)
-
-        return db
 
     @property
     def name(self):
