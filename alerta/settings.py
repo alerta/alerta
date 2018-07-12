@@ -25,6 +25,7 @@ HISTORY_LIMIT = 100  # cap the number of alert history entries
 # MongoDB
 MONGO_URI = 'mongodb://localhost:27017/monitoring'
 MONGO_DATABASE = None  # can be used to override default database, above
+MONGO_RAISE_ON_ERROR = True
 
 # PostgreSQL
 POSTGRES_URI = 'postgres://localhost:5432/monitoring'  # not used (use DATABASE_URL)
