@@ -23,16 +23,16 @@ DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single
 HISTORY_LIMIT = 100  # cap the number of alert history entries
 
 # MongoDB
-#MONGO_URI = ''
-#MONGO_DATABASE = None  # can be used to override default database, above
-#MONGO_RAISE_ON_ERROR = True
+MONGO_URI = 'mongodb://localhost:27017/monitoring'
+MONGO_DATABASE = None  # can be used to override default database, above
+MONGO_RAISE_ON_ERROR = True
 
 # PostgreSQL
-#POSTGRES_URI = 'postgres://localhost:5432/monitoring'  # not used (use DATABASE_URL)
-#POSTGRES_DB = None
+POSTGRES_URI = 'postgres://localhost:5432/monitoring'  # not used (use DATABASE_URL)
+POSTGRES_DB = None
 
-DATABASE_URL = ''    # 'mysql://username:password@host:port/db'  # default: MongoDB
-DATABASE_NAME = 'test'
+DATABASE_URL = MONGO_URI  # default: MongoDB
+DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
 
 AUTH_REQUIRED = False
 ADMIN_USERS = []
@@ -119,4 +119,4 @@ ALLOWED_ENVIRONMENTS = ['Production', 'Development']  # reject alerts without al
 # blackout settings
 BLACKOUT_DURATION = 3600  # default period = 1 hour
 NOTIFICATION_BLACKOUT = False  # True - set alert status=blackout, False - do not process alert (default)
-BLACKOUT_ACCEPT = []  # list of severities accepted during blackout period eg. ['normal', 'ok', 'cleared']
+BLACKOUT_ACCEPT = [] # list of severities accepted during blackout period eg. ['normal', 'ok', 'cleared']
