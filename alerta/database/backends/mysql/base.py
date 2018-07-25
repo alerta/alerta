@@ -5,6 +5,7 @@ from datetime import datetime
 import mysql.connector
 import json
 import re
+import pprint
 
 from flask import current_app, g
 
@@ -262,10 +263,15 @@ class Backend(Database):
     def get_alert(self, id, customers=None):
         select = """
             SELECT * FROM alerts
-             WHERE (id ~* (%(id)s) OR last_receive_id ~* (%(id)s))
+             WHERE (id LIKE '%%%s%%' OR last_receive_id LIKE '%%%s%%')
                AND {customer}
         """.format(customer="customer=ANY(%(customers)s)" if customers else "1=1")
-        return self._fetchone(select, {'id': '^'+id, 'customers': customers})
+        #return self._fetchone(select, {'id': id, 'customers': customers})
+        if customers:
+            select = select % (id,id,customers)
+        else:
+            select = select % (id,id)
+        return self._fetchone(select)
 
     #### STATUS, TAGS, ATTRIBUTES
 
@@ -541,16 +547,20 @@ class Backend(Database):
             WHERE start_time <= %(now)s AND end_time > %(now)s
               AND environment=%(environment)s
               AND (
-                 (resource IS NULL AND service='{}' AND event IS NULL AND "group" IS NULL AND tags='{}')
-              OR (resource=%(resource)s AND service='{}' AND event IS NULL AND "group" IS NULL AND tags='{}') 
-              OR (resource IS NULL AND service::text[] && %(service)s AND event IS NULL AND "group" IS NULL AND tags='{}')
-              OR (resource IS NULL AND service='{}' AND event=%(event)s AND "group" IS NULL AND tags='{}')
-              OR (resource IS NULL AND service='{}' AND event IS NULL AND "group"=%(group)s AND tags='{}')
-              OR (resource=%(resource)s AND service='{}' AND event=%(event)s AND "group" IS NULL AND tags='{}')
-              OR (resource IS NULL AND service='{}' AND event IS NULL AND "group" IS NULL AND tags <@ %(tags)s)
+                 (resource IS NULL AND service='{}' AND event IS NULL AND `group` IS NULL AND tags='{}')
+              OR (resource=%(resource)s AND service='{}' AND event IS NULL AND `group` IS NULL AND tags='{}') 
+              OR (resource IS NULL AND JSON_CONTAINS(service, %(service)s) AND event IS NULL AND `group` IS NULL AND tags='{}')
+              OR (resource IS NULL AND service='{}' AND event=%(event)s AND `group` IS NULL AND tags='{}')
+              OR (resource IS NULL AND service='{}' AND event IS NULL AND `group`=%(group)s AND tags='{}')
+              OR (resource=%(resource)s AND service='{}' AND event=%(event)s AND `group` IS NULL AND tags='{}')
+              OR (resource IS NULL AND service='{}' AND event IS NULL AND `group` IS NULL AND JSON_CONTAINS(tags,%(tags)s))
                 )
         """
         data = vars(alert)
+
+        #print("QueryData: %s" % pprint.pformat(data))
+        data['service'] = json.dumps(data['service'])
+        data['tags'] = json.dumps(data['tags'])
         data['now'] = now
         if current_app.config['CUSTOMER_VIEWS']:
             select += " AND (customer IS NULL OR customer=%(customer)s)"
@@ -922,13 +932,16 @@ class Backend(Database):
         g.db.commit()
         return cursor.fetchone()
 
-    def _fetchone(self, query, vars):
+    def _fetchone(self, query, vars=None):
         """
         Return none or one row.
         """
         cursor = g.db.cursor()
         self._log(cursor, query, vars)
-        cursor.execute(query, vars)
+        if vars:
+            cursor.execute(query, vars)
+        else:
+            cursor.execute(query)
         return cursor.fetchone()
 
     def _fetchall(self, query, vars, limit=None, offset=0):
@@ -971,4 +984,7 @@ class Backend(Database):
 
     def _log(self, cursor, query, vars):
         LOG = current_app.logger
-        LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*'*40, query=(query % vars)))
+        if vars:
+            LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*'*40, query=(query % vars)))
+        else:
+            LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*'*40, query=query))
