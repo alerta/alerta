@@ -15,5 +15,5 @@ from . import github, gitlab, google, keycloak, pingfederate, saml2, userinfo
 
 @auth.before_request
 def only_json():
-    if request.method in ['POST', 'PUT'] and not request.is_json:
+    if request.method in ['POST', 'PUT'] and not request.is_json and not request.path == '/auth/saml':
         raise ApiError("POST and PUT requests must set 'Content-type' to 'application/json'", 415)
