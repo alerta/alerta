@@ -16,125 +16,131 @@ BEGIN
 END$$;
 
 
-CREATE TABLE IF NOT EXISTS alerts (
-    id text PRIMARY KEY,
-    resource text NOT NULL,
-    event text NOT NULL,
-    environment text,
-    severity text,
+CREATE TABLE alerts (
+    id TINYTEXT,
+    resource LONGTEXT NOT NULL,
+    event LONGTEXT NOT NULL,
+    environment LONGTEXT,
+    severity LONGTEXT,
     correlate text[],
-    status text,
+    status LONGTEXT,
     service text[],
-    "group" text,
-    value text,
-    text text,
+    group LONGTEXT,
+    value LONGTEXT,
+    text LONGTEXT,
     tags text[],
-    attributes jsonb,
-    origin text,
-    type text,
-    create_time timestamp without time zone,
-    timeout integer,
-    raw_data text,
-    customer text,
-    duplicate_count integer,
-    repeat boolean,
-    previous_severity text,
-    trend_indication text,
-    receive_time timestamp without time zone,
-    last_receive_id text,
-    last_receive_time timestamp without time zone,
-    history history[]
+    attributes json,
+    origin LONGTEXT,
+    type LONGTEXT,
+    create_time timestamp,
+    timeout int,
+    raw_data LONGTEXT,
+    customer LONGTEXT,
+    duplicate_count int,
+    repeat BOOLEAN,
+    previous_severity LONGTEXT,
+    trend_indication LONGTEXT,
+    receive_time timestamp,
+    last_receive_id LONGTEXT,
+    last_receive_time timestamp,
+    history history[],
+    PRIMARY KEY (id)
 );
 
 
-CREATE TABLE IF NOT EXISTS blackouts (
-    id text PRIMARY KEY,
-    priority integer NOT NULL,
-    environment text NOT NULL,
+CREATE TABLE blackouts (
+    id TINYTEXT,
+    priority TEXT NOT NULL,
+    environment TINYTEXT NOT NULL,
     service text[],
-    resource text,
-    event text,
-    "group" text,
+    resource TEXT,
+    event TEXT,
+    group LONGTEXT,
     tags text[],
-    customer text,
-    start_time timestamp without time zone NOT NULL,
-    end_time timestamp without time zone NOT NULL,
-    duration integer
+    customer LONGTEXT,
+    start_time timestamp NOT NULL,
+    end_time timestamp NOT NULL,
+    duration int,
+    PRIMARY KEY (id)
 );
 
 
-CREATE TABLE IF NOT EXISTS customers (
-    id text PRIMARY KEY,
-    match text UNIQUE NOT NULL,
-    customer text
+CREATE TABLE customers (
+    id TINYTEXT,
+    match TEXT NOT NULL UNIQUE,
+    customer TEXT,
+    PRIMARY KEY (id)
 );
 
 
-CREATE TABLE IF NOT EXISTS heartbeats (
-    id text PRIMARY KEY,
-    origin text NOT NULL,
+CREATE TABLE heartbeats (
+    id TINYTEXT,
+    origin TEXT NOT NULL,
     tags text[],
-    type text,
-    create_time timestamp without time zone,
-    timeout integer,
-    receive_time timestamp without time zone,
-    customer text
+    type TEXT,
+    create_time timestamp,
+    timeout int,
+    receive_time timestamp,
+    customer TEXT,
+    PRIMARY KEY (id)
 );
 
 
-CREATE TABLE IF NOT EXISTS keys (
-    id text PRIMARY KEY,
-    key text UNIQUE NOT NULL,
-    "user" text NOT NULL,
+CREATE TABLE keys (
+    id TINYTEXT,
+    key TINYTEXT NOT NULL UNIQUE,
+    user TEXT NOT NULL,
     scopes text[],
-    text text,
-    expire_time timestamp without time zone,
-    count integer,
-    last_used_time timestamp without time zone,
-    customer text
+    "text" MEDIUMTEXT,
+    expire_time timestamp,
+    count int,
+    last_used_time timestamp,
+    customer TEXT,
+    PRIMARY KEY (id)
 );
 
-
-CREATE TABLE IF NOT EXISTS metrics (
-    "group" text NOT NULL,
-    name text NOT NULL,
-    title text,
-    description text,
-    value integer,
-    count integer,
-    total_time integer,
-    type text NOT NULL,
-    CONSTRAINT metrics_pkey PRIMARY KEY ("group", name, type)
+CREATE TABLE metrics (
+    group TEXT NOT NULL,
+    name TEXT NOT NULL,
+    title TEXT,
+    description MEDIUMTEXT,
+    value int,
+    count int,
+    total_time int,
+    type LONGTEXT NOT NULL,
+    CONSTRAINT metrics_pkey PRIMARY KEY (group, name, type)
 );
 ALTER TABLE metrics ALTER COLUMN total_time TYPE BIGINT;
 
 
-CREATE TABLE IF NOT EXISTS perms (
-    id text PRIMARY KEY,
-    match text UNIQUE NOT NULL,
-    scopes text[]
+CREATE TABLE perms (
+    id TINYTEXT,
+    match TEXT NOT NULL UNIQUE,
+    scopes text[],
+    PRIMARY KEY (id)
 );
 
 
-CREATE TABLE IF NOT EXISTS users (
-    id text PRIMARY KEY,
-    name text,
-    email text UNIQUE NOT NULL,
-    password text NOT NULL,
-    status text,
+CREATE TABLE users (
+    id TINYTEXT,
+    name TEXT,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    status TEXT,
     roles text[],
-    attributes jsonb,
-    create_time timestamp without time zone NOT NULL,
-    last_login timestamp without time zone,
-    text text,
-    update_time timestamp without time zone,
-    email_verified boolean,
-    hash text
+    attributes json,
+    create_time timestamp NOT NULL,
+    last_login timestamp,
+    "text" TEXT,
+    update_time timestamp,
+    email_verified BOOLEAN,
+    hash TEXT,
+    PRIMARY KEY (id)
 );
 
 
-CREATE UNIQUE INDEX IF NOT EXISTS env_res_evt_cust_key ON alerts USING btree (environment, resource, event, (COALESCE(customer, ''::text)));
+CREATE UNIQUE INDEX IF NOT EXISTS env_res_evt_cust_key ON alerts USING BTREE (environment, resource, event, (COALESCE(customer, ''::text)));
 
 
-CREATE UNIQUE INDEX IF NOT EXISTS org_cust_key ON heartbeats USING btree (origin, (COALESCE(customer, ''::text)));
+CREATE UNIQUE INDEX IF NOT EXISTS org_cust_key ON heartbeats USING BTREE (origin, (COALESCE(customer, ''::text)));
 
