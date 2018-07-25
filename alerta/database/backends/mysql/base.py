@@ -56,11 +56,12 @@ class Backend(Database):
         self.host = pattern.group(4)
         self.username = pattern.group(2)
         self.password = pattern.group(3)
-        self.dbname = dbname
-    
+        self.dbname = pattern.group(6)
+
+        #print("Database: %s" % self.dbname)
         conn = self.connect()
-        with app.open_resource('sql/schema.sql') as f:
-            conn.cursor().execute(f.read())
+        with app.open_resource('sql/mysql-schema.sql') as f:
+            conn.cursor().execute(f.read(),multi=True)
             conn.commit()
 
 #        register_adapter(dict, Json)
@@ -71,7 +72,7 @@ class Backend(Database):
 #            globally=True
 #        )
         from alerta.models.alert import History
-        register_adapter(History, HistoryAdapter)
+        #register_adapter(History, HistoryAdapter)
 
 
     def connect(self):
@@ -605,7 +606,7 @@ class Backend(Database):
 
     def create_key(self, key):
         insert = """
-            INSERT INTO keys (id, key, "user", scopes, text, expire_time, "count", last_used_time, customer)
+            INSERT INTO `keys` (id, key, "user", scopes, text, expire_time, "count", last_used_time, customer)
             VALUES (%(id)s, %(key)s, %(user)s, %(scopes)s, %(text)s, %(expire_time)s, %(count)s, %(last_used_time)s, %(customer)s)
             RETURNING *
         """
@@ -613,7 +614,7 @@ class Backend(Database):
 
     def get_key(self, key):
         select = """
-            SELECT * FROM keys
+            SELECT * FROM `keys`
              WHERE id=%s OR key=%s
         """
         return self._fetchone(select, (key, key))
@@ -621,14 +622,14 @@ class Backend(Database):
     def get_keys(self, query=None):
         query = query or Query()
         select = """
-            SELECT * FROM keys
+            SELECT * FROM `keys`
             WHERE {where}
         """.format(where=query.where)
         return self._fetchall(select, query.vars)
 
     def update_key_last_used(self, key):
         update = """
-            UPDATE keys
+            UPDATE `keys`
             SET last_used_time=%s, count=count+1
             WHERE id=%s OR key=%s
         """
@@ -636,7 +637,7 @@ class Backend(Database):
 
     def delete_key(self, key):
         delete = """
-            DELETE FROM keys
+            DELETE FROM `keys`
             WHERE id=%s OR key=%s
             RETURNING key
         """
@@ -970,4 +971,4 @@ class Backend(Database):
 
     def _log(self, cursor, query, vars):
         LOG = current_app.logger
-        LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*'*40, query=cursor.mogrify(query, vars).decode('utf-8')))
+        LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*'*40, query=(query % vars)))
