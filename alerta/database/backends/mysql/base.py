@@ -80,7 +80,7 @@ class Backend(Database):
 #            globally=True
 #        )
         from alerta.models.alert import History
-        #register_adapter(History, HistoryAdapter)
+#        register_adapter(History, HistoryAdapter)
 
 
     def connect(self):
@@ -563,7 +563,6 @@ class Backend(Database):
         """
         data = vars(alert)
 
-        #print("SARAZA: %s" + select.format(data))
         #print("QueryData: %s" % pprint.pformat(data))
         data['service'] = json.dumps(data['service'])
         data['last_receive_time'] = json.dumps(data['last_receive_time'])
