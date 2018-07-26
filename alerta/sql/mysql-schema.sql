@@ -1,4 +1,3 @@
-
 CREATE TABLE IF NOT EXISTS alerts (
     id VARCHAR(255),
     resource VARCHAR(255) NOT NULL,

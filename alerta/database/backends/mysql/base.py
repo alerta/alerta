@@ -3,6 +3,8 @@ from collections import namedtuple
 from datetime import datetime
 
 import mysql.connector
+from mysql.connector import errorcode
+
 import json
 import re
 import pprint
@@ -16,7 +18,6 @@ from alerta.utils.format import DateTime
 from .utils import Query
 
 MAX_RETRIES = 5
-
 
 class HistoryAdapter(object):
     def __init__(self, history):
@@ -49,7 +50,7 @@ class HistoryAdapter(object):
 
 class Backend(Database):
 
-    def create_engine(self, app, uri, dbname=None): 
+    def create_engine(self, app, uri, dbname=None):
         mysql_regex = re.compile("([^:]+)://([^:]+):([^@]+)@([^:]+):([^/]+)/([^/]+)")
         pattern = mysql_regex.match(uri)
         self.uri = uri
@@ -59,11 +60,15 @@ class Backend(Database):
         self.password = pattern.group(3)
         self.dbname = pattern.group(6)
 
-        #print("Database: %s" % self.dbname)
-        conn = self.connect()
-        with app.open_resource('sql/mysql-schema.sql') as f:
-            conn.cursor().execute(f.read(),multi=True)
-            conn.commit()
+        try:
+            conn = self.connect()
+            cursor = conn.cursor()
+            with app.open_resource('sql/mysql-schema.sql') as f:
+                cursor.execute(f.read(),multi=True)
+                conn.commit()
+        except mysql.connector.Error as err:
+            print("Failed creating databases: {}".format(err))
+            exit(1)
 
 #        register_adapter(dict, Json)
 #        register_adapter(datetime, self._adapt_datetime)
@@ -82,23 +87,21 @@ class Backend(Database):
             try:
                 conn = mysql.connector.connect(
                     host=self.host,
-                 #   port=self.port,
+                    port=self.port,
                     user=self.username,
                     password=self.password,
                     database=self.dbname
                 )
-                #conn.set_client_encoding('UTF8')
                 break
-            except Exception as e:
-                print(e)  # FIXME - should log this error instead of printing, but current_app is unavailable here
-                retry += 1
-                if retry > MAX_RETRIES:
-                    conn = None
-                    break
+            except mysql.connector.Error as err:
+                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                    print("Something is wrong with credentials")
+                elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                    print("Database does not exist")
                 else:
-                    backoff = 2 ** retry
-                    print('Retry attempt {}/{} (wait={}s)...'.format(retry, MAX_RETRIES, backoff))
-                    time.sleep(backoff)
+                    print(err)
+            else:
+                conn.close()
 
         if conn:
             return conn
@@ -558,8 +561,12 @@ class Backend(Database):
         """
         data = vars(alert)
 
+        #print("SARAZA: %s" + select.format(data))
         #print("QueryData: %s" % pprint.pformat(data))
         data['service'] = json.dumps(data['service'])
+        data['last_receive_time'] = json.dumps(data['last_receive_time'])
+        data['history'] = json.dumps(data['history'])
+        data['correlate'] = json.dumps(data['correlate'])
         data['tags'] = json.dumps(data['tags'])
         data['now'] = now
         if current_app.config['CUSTOMER_VIEWS']:

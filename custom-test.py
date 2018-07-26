@@ -31,7 +31,7 @@ MONGO_RAISE_ON_ERROR = True
 POSTGRES_URI = 'postgres://localhost:5432/monitoring'  # not used (use DATABASE_URL)
 POSTGRES_DB = None
 
-MYSQL_URI = 'mysql://root:toor@localhost:3306/alerting'
+MYSQL_URI = 'mysql://root:test@172.18.0.3:3306/alerting'
 MYSQL_DB = 'alerting'
 
 

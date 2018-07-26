@@ -110,3 +110,6 @@ venv.bak/
 *.swp
 *.BAK
 *.log*
+
+# Custom config
+custom-test.py
