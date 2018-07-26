@@ -119,9 +119,3 @@ CREATE TABLE IF NOT EXISTS users (
     PRIMARY KEY (id)
 );
 
-
-CREATE UNIQUE INDEX env_res_evt_cust_key ON alerts (environment, resource, event, customer) USING BTREE;
-
-
-CREATE UNIQUE INDEX org_cust_key ON heartbeats (origin, customer) USING BTREE;
-

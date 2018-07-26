@@ -64,11 +64,13 @@ class Backend(Database):
             conn = self.connect()
             cursor = conn.cursor()
             with app.open_resource('sql/mysql-schema.sql') as f:
-                cursor.execute(f.read(),multi=True)
+                for result in cursor.execute(f.read(),multi=True):
+                    print "Rows produced by statement '{}':".format(result.statement)
+                cursor.execute("CREATE UNIQUE INDEX env_res_evt_cust_key ON alerts (environment, resource, event, customer) USING BTREE;")
+                cursor.execute("CREATE UNIQUE INDEX org_cust_key ON heartbeats (origin, customer) USING BTREE;")
                 conn.commit()
         except mysql.connector.Error as err:
-            print("Failed creating databases: {}".format(err))
-            exit(1)
+            print(err.msg)
 
 #        register_adapter(dict, Json)
 #        register_adapter(datetime, self._adapt_datetime)
@@ -136,7 +138,7 @@ class Backend(Database):
     def destroy(self):
         conn = self.connect()
         cursor = conn.cursor()
-        for table in ['alerts', 'blackouts', 'customers', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
+        for table in ['alerts', 'blackouts', 'customers', 'heartbeats', '`keys`', 'metrics', 'perms', 'users']:
             cursor.execute("DROP TABLE IF EXISTS %s" % table)
         conn.commit()
         conn.close()
@@ -347,7 +349,7 @@ class Backend(Database):
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """
-            SELECT resource, environment, service, "group", tags, attributes, origin, customer,
+            SELECT resource, environment, service, `group`, tags, attributes, origin, customer,
                    history, h.* from alerts, unnest(history) h
              WHERE {where}
         """.format(where=query.where)
@@ -858,31 +860,28 @@ class Backend(Database):
 
     def set_gauge(self, gauge):
         upsert = """
-            INSERT INTO metrics ("group", name, title, description, value, type)
-            VALUES (%(group)s, %(name)s, %(title)s, %(description)s, %(value)s, %(type)s)
-            ON CONFLICT ("group", name, type) DO UPDATE
-                SET value=%(value)s
-            RETURNING *
+            INSERT INTO metrics (`group`, name, title, description, value, type)
+            VALUES (`%(group)s`, %(name)s, %(title)s, %(description)s, %(value)s, %(type)s)
+            ON DUPLICATE KEY
+            UPDATE value=%(value)s;
         """
         return self._upsert(upsert, vars(gauge))
 
     def inc_counter(self, counter):
         upsert = """
-            INSERT INTO metrics ("group", name, title, description, count, type)
-            VALUES (%(group)s, %(name)s, %(title)s, %(description)s, %(count)s, %(type)s)
-            ON CONFLICT ("group", name, type) DO UPDATE
-                SET count=metrics.count+%(count)s
-            RETURNING *
+            INSERT INTO metrics (`group`, name, title, description, count, type)
+            VALUES (`%(group)s`, %(name)s, %(title)s, %(description)s, %(count)s, %(type)s)
+            ON DUPLICATE KEY
+            UPDATE count=metrics.count+%(count)s;
         """
         return self._upsert(upsert, vars(counter))
 
     def update_timer(self, timer):
         upsert = """
-            INSERT INTO metrics ("group", name, title, description, count, total_time, type)
-            VALUES (%(group)s, %(name)s, %(title)s, %(description)s, %(count)s, %(total_time)s, %(type)s)
-            ON CONFLICT ("group", name, type) DO UPDATE
-                SET count=metrics.count+%(count)s, total_time=metrics.total_time+%(total_time)s
-            RETURNING *
+            INSERT INTO metrics (`group`, name, title, description, count, total_time, type)
+            VALUES (`%(group)s`, %(name)s, %(title)s, %(description)s, %(count)s, %(total_time)s, %(type)s)
+            ON DUPLICATE KEY
+            UPDATE count=metrics.count+%(count)s, total_time=metrics.total_time+%(total_time)s;
         """
         return self._upsert(upsert, vars(timer))
 
