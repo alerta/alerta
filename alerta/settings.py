@@ -31,8 +31,12 @@ MONGO_RAISE_ON_ERROR = True
 POSTGRES_URI = 'postgres://localhost:5432/monitoring'  # not used (use DATABASE_URL)
 POSTGRES_DB = None
 
+# MySQL
+MYSQL_URI = 'mysql://root:root@localhost:3306/monitoring' # not used (use DATABASE_URL)
+MYSQL_DB = None
+
 DATABASE_URL = MONGO_URI  # default: MongoDB
-DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
+DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB or MYSQL_DB
 
 AUTH_REQUIRED = False
 ADMIN_USERS = []
