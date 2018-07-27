@@ -47,8 +47,8 @@ setuptools.setup(
         'python-dateutil',
         'pytz',
         'PyJWT',
-        'bcrypt',
-        'mysql-connector-python'
+        'mysql-connector-python',
+        'bcrypt'
     ],
     include_package_data=True,
     zip_safe=False,
