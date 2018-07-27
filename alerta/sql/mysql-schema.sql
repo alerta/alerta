@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS alerts (
-    id VARCHAR(255),
-    resource VARCHAR(255) NOT NULL,
-    event VARCHAR(255) NOT NULL,
-    environment VARCHAR(255),
+    id VARCHAR(3072),
+    resource LONGTEXT NOT NULL,
+    event LONGTEXT NOT NULL,
+    environment LONGTEXT,
     severity LONGTEXT,
     correlate json,
     status LONGTEXT,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS alerts (
     create_time timestamp DEFAULT CURRENT_TIMESTAMP,
     timeout int,
     raw_data LONGTEXT,
-    customer VARCHAR(255),
+    customer LONGTEXT,
     duplicate_count int,
     `repeat` BOOLEAN,
     previous_severity LONGTEXT,
@@ -31,12 +31,12 @@ CREATE TABLE IF NOT EXISTS alerts (
 
 
 CREATE TABLE IF NOT EXISTS blackouts (
-    id varchar(255),
-    priority TEXT NOT NULL,
-    environment TINYTEXT NOT NULL,
+    id VARCHAR(3072),
+    priority LONGTEXT NOT NULL,
+    environment LONGTEXT NOT NULL,
     service json,
-    resource TEXT,
-    event TEXT,
+    resource LONGTEXT,
+    event LONGTEXT,
     `group` LONGTEXT,
     tags json,
     customer LONGTEXT,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS blackouts (
 
 
 CREATE TABLE IF NOT EXISTS customers (
-    id varchar(255),
+    id VARCHAR(3072),
     `match` VARCHAR(255) NOT NULL UNIQUE,
     customer TEXT,
     PRIMARY KEY (id)
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS customers (
 
 
 CREATE TABLE IF NOT EXISTS heartbeats (
-    id varchar(255),
+    id VARCHAR(3072),
     origin varchar(255) NOT NULL,
     tags json,
     type TEXT,
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS heartbeats (
 
 
 CREATE TABLE IF NOT EXISTS `keys` (
-    id varchar(255),
+    id VARCHAR(3072),
     `key` VARCHAR(255) NOT NULL UNIQUE,
     user TEXT NOT NULL,
     scopes json,
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS metrics (
 
 
 CREATE TABLE IF NOT EXISTS perms (
-    id varchar(255),
+    id VARCHAR(3072),
     `match` varchar(255) NOT NULL UNIQUE,
     scopes json,
     PRIMARY KEY (id)
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS perms (
 
 
 CREATE TABLE IF NOT EXISTS users (
-    id varchar(255),
+    id VARCHAR(3072),
     name TEXT,
     email varchar(255) NOT NULL UNIQUE,
     password varchar(255) NOT NULL,
