@@ -3,8 +3,11 @@ from collections import namedtuple
 from datetime import datetime
 
 import mysql.connector
+from mysql.connector import errorcode
+
 import json
 import re
+import pprint
 
 from flask import current_app, g
 
@@ -15,7 +18,6 @@ from alerta.utils.format import DateTime
 from .utils import Query
 
 MAX_RETRIES = 5
-
 
 class HistoryAdapter(object):
     def __init__(self, history):
@@ -48,6 +50,7 @@ class HistoryAdapter(object):
 
 class Backend(Database):
 
+<<<<<<< HEAD
     def execute_first_command(self, conn, commands, delimiter):
         position = commands.find(delimiter)
         if position < 0:
@@ -61,6 +64,9 @@ class Backend(Database):
         return commands[position+len(delimiter):].lstrip()
 
     def create_engine(self, app, uri, dbname=None): 
+=======
+    def create_engine(self, app, uri, dbname=None):
+>>>>>>> 99d801e7302164b7bc2c453bb0fa8d8295e771a1
         mysql_regex = re.compile("([^:]+)://([^:]+):([^@]+)@([^:]+):([^/]+)/([^/]+)")
         pattern = mysql_regex.match(uri)
         self.uri = uri
@@ -68,6 +74,7 @@ class Backend(Database):
         self.host = pattern.group(4)
         self.username = pattern.group(2)
         self.password = pattern.group(3)
+<<<<<<< HEAD
         self.dbname = dbname
     
         print(uri)
@@ -125,6 +132,22 @@ class Backend(Database):
                     conn.commit()
                     cursor.close()
         '''
+=======
+        self.dbname = pattern.group(6)
+
+        try:
+            conn = self.connect()
+            cursor = conn.cursor()
+            with app.open_resource('sql/mysql-schema.sql') as f:
+                for result in cursor.execute(f.read(),multi=True):
+                    print "Rows produced by statement '{}':".format(result.statement)
+                cursor.execute("CREATE UNIQUE INDEX env_res_evt_cust_key ON alerts (environment, resource, event, customer) USING BTREE;")
+                cursor.execute("CREATE UNIQUE INDEX org_cust_key ON heartbeats (origin, customer) USING BTREE;")
+                conn.commit()
+        except mysql.connector.Error as err:
+            print(err.msg)
+
+>>>>>>> 99d801e7302164b7bc2c453bb0fa8d8295e771a1
 #        register_adapter(dict, Json)
 #        register_adapter(datetime, self._adapt_datetime)
 #        register_composite(
@@ -132,8 +155,13 @@ class Backend(Database):
 #            conn,
 #            globally=True
 #        )
+<<<<<<< HEAD
         #from alerta.models.alert import History
         #register_adapter(History, HistoryAdapter)
+=======
+        from alerta.models.alert import History
+#        register_adapter(History, HistoryAdapter)
+>>>>>>> 99d801e7302164b7bc2c453bb0fa8d8295e771a1
 
 
     def connect(self):
@@ -147,18 +175,16 @@ class Backend(Database):
                     password=self.password,
                     database=self.dbname
                 )
-                #conn.set_client_encoding('UTF8')
                 break
-            except Exception as e:
-                print(e)  # FIXME - should log this error instead of printing, but current_app is unavailable here
-                retry += 1
-                if retry > MAX_RETRIES:
-                    conn = None
-                    break
+            except mysql.connector.Error as err:
+                if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+                    print("Something is wrong with credentials")
+                elif err.errno == errorcode.ER_BAD_DB_ERROR:
+                    print("Database does not exist")
                 else:
-                    backoff = 2 ** retry
-                    print('Retry attempt {}/{} (wait={}s)...'.format(retry, MAX_RETRIES, backoff))
-                    time.sleep(backoff)
+                    print(err)
+            else:
+                conn.close()
 
         if conn:
             return conn
@@ -193,7 +219,11 @@ class Backend(Database):
     def destroy(self):
         conn = self.connect()
         cursor = conn.cursor()
+<<<<<<< HEAD
         for table in ['alerts', 'blackouts', 'customers', 'heartbeats', '`keys`', '`metrics`', '`perms`', '`users`']:
+=======
+        for table in ['alerts', 'blackouts', 'customers', 'heartbeats', '`keys`', 'metrics', 'perms', 'users']:
+>>>>>>> 99d801e7302164b7bc2c453bb0fa8d8295e771a1
             cursor.execute("DROP TABLE IF EXISTS %s" % table)
         cursor.execute('DROP PROCEDURE IF EXISTS test_index')
         conn.commit()
@@ -324,10 +354,15 @@ class Backend(Database):
     def get_alert(self, id, customers=None):
         select = """
             SELECT * FROM alerts
-             WHERE (id ~* (%(id)s) OR last_receive_id ~* (%(id)s))
+             WHERE (id LIKE '%%%s%%' OR last_receive_id LIKE '%%%s%%')
                AND {customer}
         """.format(customer="customer=ANY(%(customers)s)" if customers else "1=1")
-        return self._fetchone(select, {'id': '^'+id, 'customers': customers})
+        #return self._fetchone(select, {'id': id, 'customers': customers})
+        if customers:
+            select = select % (id,id,customers)
+        else:
+            select = select % (id,id)
+        return self._fetchone(select)
 
     #### STATUS, TAGS, ATTRIBUTES
 
@@ -400,7 +435,7 @@ class Backend(Database):
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """
-            SELECT resource, environment, service, "group", tags, attributes, origin, customer,
+            SELECT resource, environment, service, `group`, tags, attributes, origin, customer,
                    history, h.* from alerts, unnest(history) h
              WHERE {where}
         """.format(where=query.where)
@@ -603,16 +638,23 @@ class Backend(Database):
             WHERE start_time <= %(now)s AND end_time > %(now)s
               AND environment=%(environment)s
               AND (
-                 (resource IS NULL AND service='{}' AND event IS NULL AND "group" IS NULL AND tags='{}')
-              OR (resource=%(resource)s AND service='{}' AND event IS NULL AND "group" IS NULL AND tags='{}') 
-              OR (resource IS NULL AND service::text[] && %(service)s AND event IS NULL AND "group" IS NULL AND tags='{}')
-              OR (resource IS NULL AND service='{}' AND event=%(event)s AND "group" IS NULL AND tags='{}')
-              OR (resource IS NULL AND service='{}' AND event IS NULL AND "group"=%(group)s AND tags='{}')
-              OR (resource=%(resource)s AND service='{}' AND event=%(event)s AND "group" IS NULL AND tags='{}')
-              OR (resource IS NULL AND service='{}' AND event IS NULL AND "group" IS NULL AND tags <@ %(tags)s)
+                 (resource IS NULL AND service='{}' AND event IS NULL AND `group` IS NULL AND tags='{}')
+              OR (resource=%(resource)s AND service='{}' AND event IS NULL AND `group` IS NULL AND tags='{}') 
+              OR (resource IS NULL AND JSON_CONTAINS(service, %(service)s) AND event IS NULL AND `group` IS NULL AND tags='{}')
+              OR (resource IS NULL AND service='{}' AND event=%(event)s AND `group` IS NULL AND tags='{}')
+              OR (resource IS NULL AND service='{}' AND event IS NULL AND `group`=%(group)s AND tags='{}')
+              OR (resource=%(resource)s AND service='{}' AND event=%(event)s AND `group` IS NULL AND tags='{}')
+              OR (resource IS NULL AND service='{}' AND event IS NULL AND `group` IS NULL AND JSON_CONTAINS(tags,%(tags)s))
                 )
         """
         data = vars(alert)
+
+        #print("QueryData: %s" % pprint.pformat(data))
+        data['service'] = json.dumps(data['service'])
+        data['last_receive_time'] = json.dumps(data['last_receive_time'])
+        data['history'] = json.dumps(data['history'])
+        data['correlate'] = json.dumps(data['correlate'])
+        data['tags'] = json.dumps(data['tags'])
         data['now'] = now
         if current_app.config['CUSTOMER_VIEWS']:
             select += " AND (customer IS NULL OR customer=%(customer)s)"
@@ -668,7 +710,7 @@ class Backend(Database):
 
     def create_key(self, key):
         insert = """
-            INSERT INTO keys (id, key, "user", scopes, text, expire_time, "count", last_used_time, customer)
+            INSERT INTO `keys` (id, key, "user", scopes, text, expire_time, "count", last_used_time, customer)
             VALUES (%(id)s, %(key)s, %(user)s, %(scopes)s, %(text)s, %(expire_time)s, %(count)s, %(last_used_time)s, %(customer)s)
             RETURNING *
         """
@@ -676,7 +718,7 @@ class Backend(Database):
 
     def get_key(self, key):
         select = """
-            SELECT * FROM keys
+            SELECT * FROM `keys`
              WHERE id=%s OR key=%s
         """
         return self._fetchone(select, (key, key))
@@ -684,14 +726,14 @@ class Backend(Database):
     def get_keys(self, query=None):
         query = query or Query()
         select = """
-            SELECT * FROM keys
+            SELECT * FROM `keys`
             WHERE {where}
         """.format(where=query.where)
         return self._fetchall(select, query.vars)
 
     def update_key_last_used(self, key):
         update = """
-            UPDATE keys
+            UPDATE `keys`
             SET last_used_time=%s, count=count+1
             WHERE id=%s OR key=%s
         """
@@ -699,7 +741,7 @@ class Backend(Database):
 
     def delete_key(self, key):
         delete = """
-            DELETE FROM keys
+            DELETE FROM `keys`
             WHERE id=%s OR key=%s
             RETURNING key
         """
@@ -903,31 +945,28 @@ class Backend(Database):
 
     def set_gauge(self, gauge):
         upsert = """
-            INSERT INTO metrics ("group", name, title, description, value, type)
-            VALUES (%(group)s, %(name)s, %(title)s, %(description)s, %(value)s, %(type)s)
-            ON CONFLICT ("group", name, type) DO UPDATE
-                SET value=%(value)s
-            RETURNING *
+            INSERT INTO metrics (`group`, name, title, description, value, type)
+            VALUES (`%(group)s`, %(name)s, %(title)s, %(description)s, %(value)s, %(type)s)
+            ON DUPLICATE KEY
+            UPDATE value=%(value)s;
         """
         return self._upsert(upsert, vars(gauge))
 
     def inc_counter(self, counter):
         upsert = """
-            INSERT INTO metrics ("group", name, title, description, count, type)
-            VALUES (%(group)s, %(name)s, %(title)s, %(description)s, %(count)s, %(type)s)
-            ON CONFLICT ("group", name, type) DO UPDATE
-                SET count=metrics.count+%(count)s
-            RETURNING *
+            INSERT INTO metrics (`group`, name, title, description, count, type)
+            VALUES (`%(group)s`, %(name)s, %(title)s, %(description)s, %(count)s, %(type)s)
+            ON DUPLICATE KEY
+            UPDATE count=metrics.count+%(count)s;
         """
         return self._upsert(upsert, vars(counter))
 
     def update_timer(self, timer):
         upsert = """
-            INSERT INTO metrics ("group", name, title, description, count, total_time, type)
-            VALUES (%(group)s, %(name)s, %(title)s, %(description)s, %(count)s, %(total_time)s, %(type)s)
-            ON CONFLICT ("group", name, type) DO UPDATE
-                SET count=metrics.count+%(count)s, total_time=metrics.total_time+%(total_time)s
-            RETURNING *
+            INSERT INTO metrics (`group`, name, title, description, count, total_time, type)
+            VALUES (`%(group)s`, %(name)s, %(title)s, %(description)s, %(count)s, %(total_time)s, %(type)s)
+            ON DUPLICATE KEY
+            UPDATE count=metrics.count+%(count)s, total_time=metrics.total_time+%(total_time)s;
         """
         return self._upsert(upsert, vars(timer))
 
@@ -984,13 +1023,16 @@ class Backend(Database):
         g.db.commit()
         return cursor.fetchone()
 
-    def _fetchone(self, query, vars):
+    def _fetchone(self, query, vars=None):
         """
         Return none or one row.
         """
         cursor = g.db.cursor()
         self._log(cursor, query, vars)
-        cursor.execute(query, vars)
+        if vars:
+            cursor.execute(query, vars)
+        else:
+            cursor.execute(query)
         return cursor.fetchone()
 
     def _fetchall(self, query, vars, limit=None, offset=0):
@@ -1033,4 +1075,11 @@ class Backend(Database):
 
     def _log(self, cursor, query, vars):
         LOG = current_app.logger
+<<<<<<< HEAD
         LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*'*40, query=(query % vars)))
+=======
+        if vars:
+            LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*'*40, query=(query % vars)))
+        else:
+            LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*'*40, query=query))
+>>>>>>> 99d801e7302164b7bc2c453bb0fa8d8295e771a1
