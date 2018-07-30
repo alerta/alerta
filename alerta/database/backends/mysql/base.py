@@ -48,6 +48,18 @@ class HistoryAdapter(object):
 
 class Backend(Database):
 
+    def execute_first_command(self, conn, commands, delimiter):
+        position = commands.find(delimiter)
+        if position < 0:
+            return ''
+        command = commands[:position]
+        #print(command)
+        cursor = conn.cursor()
+        cursor.execute(command)
+        conn.commit()
+        cursor.close()
+        return commands[position+len(delimiter):].lstrip()
+
     def create_engine(self, app, uri, dbname=None): 
         mysql_regex = re.compile("([^:]+)://([^:]+):([^@]+)@([^:]+):([^/]+)/([^/]+)")
         pattern = mysql_regex.match(uri)
@@ -58,11 +70,61 @@ class Backend(Database):
         self.password = pattern.group(3)
         self.dbname = dbname
     
+        print(uri)
         conn = self.connect()
-        with app.open_resource('sql/schema.sql') as f:
-            conn.cursor().execute(f.read())
-            conn.commit()
+        print('connected ok')
+        with app.open_resource('sql/mysql-schema.sql') as f:
+            #conn.cursor().execute(f.read())
+            file_content = f.read()
+            #conn.commit()
 
+
+        print('creating schema')
+
+        hay_comandos = True
+        comandos_restantes = file_content.lstrip()
+        delimiter = ';'
+        delimiter_match = re.compile("[\s]*[Dd][Ee][Ll][Ii][Mm][Ii][Tt][Ee][Rr][\s]+([\S]*)")
+        while hay_comandos:
+            pattern = delimiter_match.match(comandos_restantes.lstrip())
+            if pattern:
+                delimiter = pattern.group(1)
+                position = comandos_restantes.find(delimiter)
+                comandos_restantes = comandos_restantes[position+len(delimiter)+1:].lstrip()
+
+            comandos_restantes = self.execute_first_command(conn, comandos_restantes, delimiter)
+            if len(comandos_restantes) == 0:
+                hay_comandos = False
+
+        '''
+        delimiter_command = False
+        for command in file_content.split(';'):
+            if len(command) > 0:
+                if 'DELIMITER ;' in command:
+                    delimiter_command = False
+                elif delimiter_command == False and 'DELIMITER' in command:
+                    delimiter = re.match('DELIMITER ([^\n]*)', command).group(1)
+                    delimiter_command = True
+                    accumulated_command = ""
+                    cursor = conn.cursor()
+                    cursor.execute(command)
+                    conn.commit()
+                    cursor.close()
+                elif delimiter_command == True:
+                    if delimiter in command:
+                        accumulated_command += command
+                        cursor = conn.cursor()
+                        cursor.execute(command + ';')
+                        conn.commit()
+                        cursor.close()
+                    else:
+                        accumulated_command += command + ';'
+                else:
+                    cursor = conn.cursor()
+                    cursor.execute(command + ';')
+                    conn.commit()
+                    cursor.close()
+        '''
 #        register_adapter(dict, Json)
 #        register_adapter(datetime, self._adapt_datetime)
 #        register_composite(
@@ -70,8 +132,8 @@ class Backend(Database):
 #            conn,
 #            globally=True
 #        )
-        from alerta.models.alert import History
-        register_adapter(History, HistoryAdapter)
+        #from alerta.models.alert import History
+        #register_adapter(History, HistoryAdapter)
 
 
     def connect(self):
@@ -80,7 +142,7 @@ class Backend(Database):
             try:
                 conn = mysql.connector.connect(
                     host=self.host,
-                 #   port=self.port,
+                    port=self.port,
                     user=self.username,
                     password=self.password,
                     database=self.dbname
@@ -131,8 +193,9 @@ class Backend(Database):
     def destroy(self):
         conn = self.connect()
         cursor = conn.cursor()
-        for table in ['alerts', 'blackouts', 'customers', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
+        for table in ['alerts', 'blackouts', 'customers', 'heartbeats', '`keys`', '`metrics`', '`perms`', '`users`']:
             cursor.execute("DROP TABLE IF EXISTS %s" % table)
+        cursor.execute('DROP PROCEDURE IF EXISTS test_index')
         conn.commit()
         conn.close()
 
