@@ -46,8 +46,9 @@ def receive():
         return jsonify(status="error", message=str(e), id=incomingAlert.id), 429
     except BlackoutPeriod as e:
         return jsonify(status="ok", message=str(e), id=incomingAlert.id), 202
-    except Exception as e:
-        raise ApiError(str(e), 500)
+    #except Exception as e:
+    #    raise e
+    #    raise ApiError(str(e), 500)
 
     if alert:
         return jsonify(status="ok", id=alert.id, alert=alert.serialize), 201
@@ -93,7 +94,8 @@ def set_status(alert_id):
     try:
         alert, status, text = process_status(alert, status, text)
     except RejectException as e:
-        raise ApiError(str(e), 400)
+        raise e
+        #raise ApiError(str(e), 400)
     except Exception as e:
         raise ApiError(str(e), 500)
 

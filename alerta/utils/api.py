@@ -77,23 +77,26 @@ def process_alert(alert):
             alert = plugin.pre_receive(alert)
         except (RejectException, BlackoutPeriod, RateLimit):
             raise
-        except Exception as e:
-            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise RuntimeError("Error while running pre-receive plug-in '%s': %s" % (plugin.name, str(e)))
-            else:
-                logging.error("Error while running pre-receive plug-in '%s': %s" % (plugin.name, str(e)))
+        #except Exception as e:
+        #    if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+        #        raise RuntimeError("Error while running pre-receive plug-in '%s': %s" % (plugin.name, str(e)))
+         #   else:
+         #       logging.error("Error while running pre-receive plug-in '%s': %s" % (plugin.name, str(e)))
         if not alert:
             raise SyntaxError("Plug-in '%s' pre-receive hook did not return modified alert" % plugin.name)
 
-    try:
+    #try:
         if alert.is_duplicate():
             alert = alert.deduplicate()
         elif alert.is_correlated():
             alert = alert.update()
         else:
             alert = alert.create()
-    except Exception as e:
-        raise ApiError(str(e))
+            import pprint
+            print("Object: %s" % pprint.pformat(alert))
+    #except Exception as e:
+     #   raise e
+        #raise ApiError(str(e))
 
     updated = None
     for plugin in plugins.routing(alert):

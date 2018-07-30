@@ -86,7 +86,8 @@ class AlertTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
-        db.destroy()
+        #db.destroy()
+        pass
 
     def test_alert(self):
 
