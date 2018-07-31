@@ -32,6 +32,7 @@ def login():
     # Attempt LDAP AUTH
     try:
         trace_level = 2 if current_app.debug else 0
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
         ldap_connection = ldap.initialize(current_app.config['LDAP_URL'], trace_level=trace_level)
         ldap_connection.simple_bind_s(userdn, password)
     except ldap.INVALID_CREDENTIALS:
