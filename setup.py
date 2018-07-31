@@ -48,7 +48,8 @@ setuptools.setup(
         'pytz',
         'PyJWT',
         'mysql-connector-python',
-        'bcrypt'
+        'bcrypt',
+        'telepot'
     ],
     include_package_data=True,
     zip_safe=False,
