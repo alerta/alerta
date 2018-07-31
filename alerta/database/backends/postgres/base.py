@@ -203,8 +203,8 @@ class Backend(Database):
         alert.history = history
         update = """
             UPDATE alerts
-               SET status=%(status)s, value=%(value)s, text=%(text)s, raw_data=%(raw_data)s, repeat=%(repeat)s,
-                   last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
+               SET status=%(status)s, value=%(value)s, text=%(text)s, timeout=%(timeout)s, raw_data=%(raw_data)s,
+                   repeat=%(repeat)s, last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
                    tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)), attributes=attributes || %(attributes)s,
                    duplicate_count=duplicate_count+1, history=(history || %(history)s)[1:{limit}]
              WHERE environment=%(environment)s
@@ -221,7 +221,7 @@ class Backend(Database):
         update = """
             UPDATE alerts
                SET event=%(event)s, severity=%(severity)s, status=%(status)s, value=%(value)s, text=%(text)s,
-                   create_time=%(create_time)s, raw_data=%(raw_data)s, duplicate_count=%(duplicate_count)s,
+                   create_time=%(create_time)s, timeout=%(timeout)s, raw_data=%(raw_data)s, duplicate_count=%(duplicate_count)s,
                    repeat=%(repeat)s, previous_severity=%(previous_severity)s, trend_indication=%(trend_indication)s,
                    receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
                    last_receive_time=%(last_receive_time)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
