@@ -223,6 +223,28 @@ class Backend(Database):
 
     #### ALERTS
 
+    def pre_process_alert(self,alert_object):
+        alert_object['id'] = alert_object['id'].encode('ascii','ignore')
+        alert_object['group'] = alert_object['group'].encode('ascii','ignore')
+        alert_object['origin'] = alert_object['origin'].encode('ascii','ignore')
+        alert_object['previousSeverity'] = alert_object['previous_severity'].encode('ascii','ignore')
+        alert_object['trendIndication'] = alert_object['trend_indication'].encode('ascii','ignore')
+        alert_object['receiveTime'] = alert_object['receive_time']
+        alert_object['lastReceiveId'] = alert_object['last_receive_id']
+        alert_object['lastReceiveTime'] = alert_object['last_receive_time']
+
+        alert_object['rawData'] = alert_object['raw_data'].encode('ascii','ignore') if alert_object['raw_data'] else alert_object['raw_data']
+        alert_object['status'] = alert_object['status'].encode('ascii','ignore')
+        alert_object['duplicateCount'] = alert_object['duplicate_count']
+
+        #alert_object['event_type'] = alert_object['event_type'].encode('ascii','ignore')
+        alert_object['attributes'] = json.loads(alert_object['attributes'])
+        alert_object['history'] = json.loads(alert_object['history'])
+        alert_object['tags'] = json.loads(alert_object['tags'])
+        alert_object['correlate'] = json.loads(alert_object['correlate'])
+        alert_object['service'] = json.loads(alert_object['service'])
+        alert_object['repeat'] = True if alert_object['repeat'] == 1 else False
+
     def get_severity(self, alert):
         select = """
             SELECT severity FROM alerts
@@ -301,16 +323,16 @@ class Backend(Database):
             UPDATE alerts
                SET status='%(status)s', value={value}, text='%(text)s', raw_data={raw_data}, `repeat`=%(repeat)s,
                    last_receive_id='%(last_receive_id)s', last_receive_time='%(last_receive_time)s',
-                   tags=JSON_ARRAY_APPEND(tags,'$',%(tags)s), attributes=JSON_MERGE(attributes ,'%(attributes)s'),
-                   duplicate_count=duplicate_count+1, history=JSON_ARRAY_APPEND(history,'$',{history})
+                   tags=JSON_ARRAY_APPEND(tags,'$','%(tags)s'), attributes=JSON_MERGE(attributes ,'%(attributes)s'),
+                   duplicate_count=duplicate_count+1 {history}
              WHERE environment='%(environment)s'
                AND resource='%(resource)s'
                AND event='%(event)s'
                AND severity='%(severity)s'
                AND {customer}
         """.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer='%(customer)s'" if alert.customer else "customer IS NULL",
-                    value="'%(value)s" if alert.value else "NULL",raw_data="'%(raw_data)s" if alert.raw_data else "NULL",
-                    history="'%(history)s'" if alert.history else "'[]'")
+                    value="'%(value)s" if alert.value else "NULL",raw_data="'%(raw_data)s'" if alert.raw_data else "NULL",
+                    history=", history=JSON_ARRAY_APPEND(history,'$','%(history)s')" if alert.history else "")
 
         data = vars(alert)
         data['repeat'] = 1 if json.dumps(data['repeat'], cls=HistoryEncoder) == 'false' else 0 
@@ -323,14 +345,14 @@ class Backend(Database):
         alert_object = self._fetchone(get_query,data)
 
         alert_object = alert_object._asdict()
-        print("Object: %s" % pprint.pformat(alert_object))
-        print("Attributes: %s" % alert_object['attributes'])
-        alert_object['attributes'] = json.loads(alert_object['attributes'])
-        #alert_object['value'] = json.loads(alert_object['value'])
-        #alert_object['status'] = json.loads(alert_object['status'])
+        
+        self.pre_process_alert(alert_object)
+
         return alert_object
 
     def correlate_alert(self, alert, history):
+
+        print("CORRRELATTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
         alert.history = history
         update = """
             UPDATE alerts
@@ -356,13 +378,15 @@ class Backend(Database):
                 last_receive_time, history)
             VALUES ('%(id)s', '%(resource)s', '%(event)s', '%(environment)s', '%(severity)s', '%(correlate)s', '%(status)s',
                 '%(service)s', '%(group)s', {value}, '%(text)s', '%(tags)s', '%(attributes)s', '%(origin)s',
-                '%(event_type)s', '%(create_time)s', '%(timeout)s', '%(raw_data)s', {customer}, '%(duplicate_count)s',
+                '%(event_type)s', '%(create_time)s', '%(timeout)s', {raw_data}, {customer}, '%(duplicate_count)s',
                 '%(repeat)s', '%(previous_severity)s', '%(trend_indication)s', '%(receive_time)s', '%(last_receive_id)s',
                 '%(last_receive_time)s', '%(history)s')
         """.format(customer="customer='%(customer)s'" if alert.customer else "NULL",
-            value="'%(value)s" if alert.value else "NULL")
+            value="'%(value)s" if alert.value else "NULL",
+            raw_data="'%(raw_data)s'" if alert.raw_data else "NULL")
+
         data = vars(alert)
-        data['origin'] = json.dumps(data['origin'], cls=HistoryEncoder)
+        #data['origin'] = json.dumps(data['origin'], cls=HistoryEncoder)
         data['repeat'] = 1 if json.dumps(data['repeat'], cls=HistoryEncoder) == 'false' else 0 
         data['attributes'] = json.dumps(data['attributes'], cls=HistoryEncoder)
         data['service'] = json.dumps(data['service'], cls=HistoryEncoder)
@@ -376,8 +400,13 @@ class Backend(Database):
         print("Object: %s" % pprint.pformat(alert_object))
         alert_object = alert_object._asdict()
         print("Attributes: %s" % alert_object['attributes'])
-        alert_object['attributes'] = json.loads(alert_object['attributes'])
         #raise Exception('a')
+
+        self.pre_process_alert(alert_object)
+
+        print('PreParse Object: %s' % pprint.pformat(alert_object))
+
+        #print("Object: %s" % pprint.pformat(alert))
         return alert_object
 
     def get_alert(self, id, customers=None):
@@ -680,10 +709,10 @@ class Backend(Database):
 
         print("QueryData: %s" % pprint.pformat(data))
         data['service'] = json.dumps(data['service'])
-        data['last_receive_time'] = json.dumps(data['last_receive_time'])
-        data['history'] = json.dumps(data['history'])
-        data['correlate'] = json.dumps(data['correlate'])
-        data['tags'] = json.dumps(data['tags'])
+        data['last_receive_time'] = json.dumps(data['last_receive_time'], cls=HistoryEncoder)
+        data['history'] = json.dumps(data['history'], cls=HistoryEncoder)
+        data['correlate'] = json.dumps(data['correlate'], cls=HistoryEncoder)
+        data['tags'] = json.dumps(data['tags'], cls=HistoryEncoder)
         data['now'] = now
         if current_app.config['CUSTOMER_VIEWS']:
             select += " AND (customer IS NULL OR customer=%(customer)s)"
@@ -977,16 +1006,16 @@ class Backend(Database):
     def set_gauge(self, gauge):
         upsert = """
             INSERT INTO metrics (`group`, name, title, description, value, type)
-            VALUES (`%(group)s`, %(name)s, %(title)s, %(description)s, %(value)s, %(type)s)
+            VALUES ('%(group)s', '%(name)s', '%(title)s', '%(description)s', '%(value)s', '%(type)s')
             ON DUPLICATE KEY
-            UPDATE value=%(value)s;
+            UPDATE value='%(value)s';
         """
         return self._upsert(upsert, vars(gauge))
 
     def inc_counter(self, counter):
         upsert = """
             INSERT INTO metrics (`group`, name, title, description, count, type)
-            VALUES (`%(group)s`, %(name)s, %(title)s, %(description)s, %(count)s, %(type)s)
+            VALUES ('%(group)s', '%(name)s', '%(title)s', '%(description)s', '%(count)s', '%(type)s')
             ON DUPLICATE KEY
             UPDATE count=metrics.count+%(count)s;
         """
@@ -995,11 +1024,28 @@ class Backend(Database):
     def update_timer(self, timer):
         upsert = """
             INSERT INTO metrics (`group`, name, title, description, count, total_time, type)
-            VALUES (`%(group)s`, %(name)s, %(title)s, %(description)s, %(count)s, %(total_time)s, %(type)s)
+            VALUES ('%(group)s', '%(name)s', '%(title)s', '%(description)s', '%(count)s', '%(total_time)s', '%(type)s')
             ON DUPLICATE KEY
             UPDATE count=metrics.count+%(count)s, total_time=metrics.total_time+%(total_time)s;
         """
-        return self._upsert(upsert, vars(timer))
+        data = vars(timer)
+        self._upsert(upsert, data)
+
+        get_query = "SELECT * from metrics where `group` = '%(group)s' AND name = '%(name)s' AND `type` = '%(type)s'" 
+        
+        metric_object = self._fetchone(get_query,data)
+        print("Object: %s" % pprint.pformat(metric_object))
+        metric = {}
+        metric['group'] = metric_object[0]
+        metric['name'] = metric_object[1]
+        metric['title'] = metric_object[2]
+        metric['description'] = metric_object[3]
+        metric['value'] = metric_object[4]
+        metric['count'] = metric_object[5]
+        metric['total_time'] = metric_object[6]
+        metric['type'] = metric_object[7]
+
+        return metric_object
 
     #### HOUSEKEEPING
 
