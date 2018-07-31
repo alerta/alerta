@@ -12,7 +12,8 @@ class AlertTestCase(unittest.TestCase):
 
         test_config = {
             'TESTING': True,
-            'AUTH_REQUIRED': False
+            'AUTH_REQUIRED': False,
+            'ALERT_TIMEOUT': 120
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -27,7 +28,7 @@ class AlertTestCase(unittest.TestCase):
             'severity': 'critical',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
             'tags': ['foo'],
-            'attributes': {'foo': 'abc def', 'bar': 1234, 'baz': False}
+            'attributes': {'foo': 'abc def', 'bar': 1234, 'baz': False},
         }
         self.critical_alert = {
             'event': 'node_marginal',
@@ -35,7 +36,8 @@ class AlertTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': ['Network'],
             'severity': 'critical',
-            'correlate': ['node_down', 'node_marginal', 'node_up']
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 30
         }
         self.major_alert = {
             'event': 'node_marginal',
@@ -43,7 +45,8 @@ class AlertTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': ['Network'],
             'severity': 'major',
-            'correlate': ['node_down', 'node_marginal', 'node_up']
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 40
         }
         self.warn_alert = {
             'event': 'node_marginal',
@@ -51,7 +54,8 @@ class AlertTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': ['Network'],
             'severity': 'warning',
-            'correlate': ['node_down', 'node_marginal', 'node_up']
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 50
         }
         self.normal_alert = {
             'event': 'node_up',
@@ -59,7 +63,8 @@ class AlertTestCase(unittest.TestCase):
             'environment': 'Production',
             'service': ['Network'],
             'severity': 'normal',
-            'correlate': ['node_down', 'node_marginal', 'node_up']
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 100
         }
 
         self.ok_alert = {
@@ -497,6 +502,46 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': '10.0.0.1'}))
+
+    def test_timeout(self):
+
+        # create alert with default timeout
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['timeout'], 120)
+
+        # resend alert with different timeout
+        self.fatal_alert['timeout'] = 20
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['timeout'], 20)
+
+        # send correlated with different timeout
+        response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['timeout'], 40)
+
+        # send different correlated alert with different timeout
+        response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['timeout'], 50)
+
+        # send same correlated alert with different timeout
+        self.warn_alert['timeout'] = 60
+        response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['timeout'], 60)
+
+        # send ok alert with default timeout
+        response = self.client.post('/alert', data=json.dumps(self.ok_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['timeout'], 120)
 
     def test_aggregations(self):
 
