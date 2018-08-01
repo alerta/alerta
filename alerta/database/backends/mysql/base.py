@@ -15,6 +15,7 @@ from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
+from alerta.models.history import History, RichHistory
 from .utils import Query
 
 MAX_RETRIES = 5
@@ -76,7 +77,7 @@ class Backend(Database):
         if position < 0:
             return ''
         command = commands[:position]
-        #print(command)
+        print(command)
         cursor = conn.cursor()
         cursor.execute(command)
         conn.commit()
@@ -244,13 +245,39 @@ class Backend(Database):
         alert_object['correlate'] = json.loads(alert_object['correlate'])
         alert_object['service'] = json.loads(alert_object['service'])
         alert_object['repeat'] = True if alert_object['repeat'] == 1 else False
+        if 'tags' in alert_object:
+            print(alert_object['tags'])
+            for i in range(len(alert_object['tags'])):
+                alert_object['tags'][i] = alert_object['tags'][i].encode('ascii','ignore')
+            #alert_object['tags'] = json.loads(alert_object['tags'])
+
+        #alert_object['history'] = [History.from_document(x) for x in alert_object['history'] if x]
+        for i in range(len(alert_object['history'])):
+            if type(alert_object['history'][i]) == unicode:
+                alert_object['history'][i] = json.loads(alert_object['history'][i])
+        #alert_object['history'] = [x for x in alert_object['history'] if x]
+        for x in alert_object['history']:
+            print ("History (%s): %s" % (type(x),x))
+
+    def serialize_for_json_append(self,history_list, string=",'$','%s'"):
+        if history_list is None:
+            return None
+        hstr = ""
+        if type(history_list) == list:
+            for h in history_list:
+                hjson = json.dumps(h, cls=HistoryEncoder)
+                hstr += string % hjson
+        else:
+            hjson = json.dumps(history_list, cls=HistoryEncoder)
+            hstr += ",'$','%s'" % hjson
+        return hstr
 
     def get_severity(self, alert):
         select = """
             SELECT severity FROM alerts
              WHERE environment='%(environment)s' AND resource='%(resource)s'
                AND ((event='%(event)s' AND severity!='%(severity)s')
-                OR (event!='%(event)s' AND '%(event)s' IN (correlate)))
+                OR (event!='%(event)s' AND JSON_SEARCH(correlate,'one','%(event)s') > 0))
                AND {customer}
             """.format(customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
         return self._fetchone(select, vars(alert)).severity
@@ -259,7 +286,7 @@ class Backend(Database):
         select = """
             SELECT status FROM alerts
              WHERE environment='%(environment)s' AND resource='%(resource)s'
-              AND (event='%(event)s' OR '%(event)s' IN (correlate))
+              AND (event='%(event)s' OR JSON_SEARCH(correlate,'one','%(event)s') > 0)
               AND {customer}
             """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
         return self._fetchone(select, vars(alert)).status
@@ -270,7 +297,7 @@ class Backend(Database):
         select = """
             SELECT status, value FROM alerts
              WHERE environment='%(environment)s' AND resource='%(resource)s'
-              AND (event='%(event)s' OR '%(event)s' IN (correlate))
+              AND (event='%(event)s' OR JSON_SEARCH(correlate,'one','%(event)s') > 0)
               AND {customer}
             """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
         r = self._fetchone(select, vars(alert))
@@ -292,7 +319,7 @@ class Backend(Database):
             SELECT id FROM alerts
              WHERE environment='%(environment)s' AND resource='%(resource)s'
                AND ((event='%(event)s' AND severity!='%(severity)s')
-                OR (event!='%(event)s' AND '%(event)s' IN (correlate)))
+                OR (event!='%(event)s' AND JSON_SEARCH(correlate,'one','%(event)s') > 0))
                AND {customer}
         """.format(customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
         return bool(self._fetchone(select, vars(alert)))
@@ -319,11 +346,17 @@ class Backend(Database):
         keep track of last receive id and time but don't append to history unless status changes.
         """
         alert.history = history
+        print("History Type: %s" % type(alert.history))
+        history_update = self.serialize_for_json_append(alert.history)
+        history_update_string = ", history=JSON_ARRAY_APPEND(history {histories})".format(histories=history_update)
+
+        tag_update = self.serialize_for_json_append(alert.tags,",'$',%s")
+        tags_update_string = """, tags=JSON_ARRAY_APPEND(tags {tags})""".format(tags=tag_update)
+
         update = """
             UPDATE alerts
                SET status='%(status)s', value={value}, text='%(text)s', timeout=%(timeout)s, raw_data={raw_data}, `repeat`=%(repeat)s,
-                   last_receive_id='%(last_receive_id)s', last_receive_time='%(last_receive_time)s',
-                   tags=JSON_ARRAY_APPEND(tags,'$','%(tags)s'), attributes=JSON_MERGE(attributes ,'%(attributes)s'),
+                   last_receive_id='%(last_receive_id)s', last_receive_time='%(last_receive_time)s' {tags}, attributes=JSON_MERGE(attributes ,'%(attributes)s'),
                    duplicate_count=duplicate_count+1 {history}
              WHERE environment='%(environment)s'
                AND resource='%(resource)s'
@@ -331,15 +364,23 @@ class Backend(Database):
                AND severity='%(severity)s'
                AND {customer}
         """.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer='%(customer)s'" if alert.customer else "customer IS NULL",
-                    value="'%(value)s" if alert.value else "NULL",raw_data="'%(raw_data)s'" if alert.raw_data else "NULL",
-                    history=", history=JSON_ARRAY_APPEND(history,'$','%(history)s')" if alert.history else "")
+                    value="'%(value)s'" if alert.value else "NULL",raw_data="'%(raw_data)s'" if alert.raw_data else "NULL",
+                    history=history_update_string if alert.history and (isinstance(alert.history,History) or len(alert.history)) > 0 else "",
+                    tags=tags_update_string if alert.tags and len(alert.tags) > 0 else "")
 
+        #print("History Type: %s" % type(alert.history))
         data = vars(alert)
         data['repeat'] = 1 if json.dumps(data['repeat'], cls=HistoryEncoder) == 'false' else 0 
         data['attributes'] = json.dumps(data['attributes'], cls=HistoryEncoder)
         data['history'] = json.dumps(data['history'], cls=HistoryEncoder)
 
-        get_query = "select * from alerts where id = '%(id)s'"
+        get_query = '''SELECT * FROM alerts WHERE environment='%(environment)s'
+               AND resource='%(resource)s'
+               AND event='%(event)s'
+               AND severity='%(severity)s'
+               AND {customer}'''.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer='%(customer)s'" if alert.customer else "customer IS NULL",
+                    value="'%(value)s'" if alert.value else "NULL",raw_data="'%(raw_data)s'" if alert.raw_data else "NULL",
+                    history=", history=JSON_ARRAY_APPEND(history,'$','%(history)s')" if alert.history else "")
 
         self._update(update, data)
         alert_object = self._fetchone(get_query,data)
@@ -352,23 +393,52 @@ class Backend(Database):
 
     def correlate_alert(self, alert, history):
 
-        print("CORRRELATTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
         alert.history = history
+
+        #print("History Type: %s" % type(alert.history))
+        history_update = self.serialize_for_json_append(alert.history)
+        history_update_string = ", history=JSON_ARRAY_APPEND(history {histories})".format(histories=history_update)
+
+        tag_update = self.serialize_for_json_append(alert.tags, ",'$',%s")
+        tags_update_string = """, tags=JSON_ARRAY_APPEND(tags {tags})""".format(tags=tag_update)
+
         update = """
             UPDATE alerts
-               SET event='%(event)s', severity='%(severity)s', status='%(status)s', value='%(value)s', text='%(text)s',
-                   create_time='%(create_time)s', timeout='%(timeout)s', raw_data='%(raw_data)s', duplicate_count='%(duplicate_count)s',
-                   repeat='%(repeat)s', previous_severity='%(previous_severity)s', trend_indication='%(trend_indication)s',
+               SET event='%(event)s', severity='%(severity)s', status='%(status)s', value={value}, text='%(text)s',
+                   create_time='%(create_time)s', timeout='%(timeout)s', raw_data={raw_data}, duplicate_count=%(duplicate_count)s,
+                   `repeat`=%(repeat)s, previous_severity='%(previous_severity)s', trend_indication='%(trend_indication)s',
                    receive_time='%(receive_time)s', last_receive_id='%(last_receive_id)s',
-                   last_receive_time='%(last_receive_time)s', tags=ARRAY(SELECT DISTINCT UNNEST(tags || '%(tags)s')),
-                   attributes=attributes || '%(attributes)s', history=(history || '%(history)s')
-             WHERE environment='%(environment)s'
-               AND resource='%(resource)s'
-               AND ((event='%(event)s' AND severity!='%(severity)s') OR (event!='%(event)s' AND '%(event)s' IN (correlate)))
+                   last_receive_time='%(last_receive_time)s' {tags},
+                   attributes=JSON_MERGE(attributes ,'%(attributes)s') {history}
+             WHERE environment='%(environment)s' AND resource='%(resource)s'
+               AND ((event='%(event)s' AND severity!='%(severity)s') OR (event!='%(event)s' AND JSON_SEARCH(correlate,'one','%(event)s') > 0) )
                AND {customer}
-         RETURNING *
-        """.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
-        return self._update(update, vars(alert), returning=True)
+        """.format(limit=current_app.config['HISTORY_LIMIT'], 
+                customer="customer='%(customer)s'" if alert.customer else "customer IS NULL",
+                value="'%(value)s'" if alert.value else "NULL",
+                raw_data="'%(raw_data)s'" if alert.raw_data else "NULL",
+                history=history_update_string if alert.history and (isinstance(alert.history,History) or len(alert.history)) > 0 else "",
+                tags=tags_update_string if alert.tags and len(alert.tags) > 0 else "")
+        
+        data = vars(alert)
+        data['repeat'] = 1 if json.dumps(data['repeat'], cls=HistoryEncoder) == 'false' else 0 
+        data['attributes'] = json.dumps(data['attributes'], cls=HistoryEncoder)
+        #data['history'] = json.dumps(data['history'], cls=HistoryEncoder)
+        data['tags'] = json.dumps(data['tags'], cls=HistoryEncoder)
+
+        get_query = '''SELECT * FROM alerts WHERE environment='%(environment)s'
+               AND resource='%(resource)s'
+               AND event='%(event)s' AND severity='%(severity)s' AND {customer}
+        '''.format(limit=current_app.config['HISTORY_LIMIT'], 
+                customer="customer='%(customer)s'" if alert.customer else "customer IS NULL",
+                value="'%(value)s'" if alert.value else "NULL",
+                raw_data="'%(raw_data)s'" if alert.raw_data else "NULL")
+
+        self._update(update, data)
+        alert_object = self._fetchone(get_query,data)
+        alert_object = alert_object._asdict()      
+        self.pre_process_alert(alert_object)
+        return alert_object
 
     def create_alert(self, alert):
         insert = """
@@ -382,9 +452,10 @@ class Backend(Database):
                 '%(repeat)s', '%(previous_severity)s', '%(trend_indication)s', '%(receive_time)s', '%(last_receive_id)s',
                 '%(last_receive_time)s', '%(history)s')
         """.format(customer="customer='%(customer)s'" if alert.customer else "NULL",
-            value="'%(value)s" if alert.value else "NULL",
+            value="'%(value)s'" if alert.value else "NULL",
             raw_data="'%(raw_data)s'" if alert.raw_data else "NULL")
 
+        print("Tags Type: %s" % alert.tags)
         data = vars(alert)
         #data['origin'] = json.dumps(data['origin'], cls=HistoryEncoder)
         data['repeat'] = 1 if json.dumps(data['repeat'], cls=HistoryEncoder) == 'false' else 0 
@@ -392,6 +463,7 @@ class Backend(Database):
         data['service'] = json.dumps(data['service'], cls=HistoryEncoder)
         data['correlate'] = json.dumps(data['correlate'], cls=HistoryEncoder)
         data['history'] = json.dumps(data['history'], cls=HistoryEncoder)
+        data['tags'] = json.dumps(data['tags'], cls=HistoryEncoder)
 
         print("Alert DATA: %s" % pprint.pformat(data))
         get_query = "select * from alerts where id = '%(id)s'" 
@@ -412,45 +484,85 @@ class Backend(Database):
     def get_alert(self, id, customers=None):
         select = """
             SELECT * FROM alerts
-             WHERE (id LIKE '%%%s%%' OR last_receive_id LIKE '%%%s%%')
+             WHERE (id REGEXP ('%(id)s') OR last_receive_id REGEXP ('%(id)s'))
                AND {customer}
         """.format(customer="customer IN ('%(customers)s')" if customers else "1=1")
         #return self._fetchone(select, {'id': id, 'customers': customers})
-        if customers:
-            select = select % (id,id,customers)
-        else:
-            select = select % (id,id)
-        return self._fetchone(select)
+        select = select % {"id":id,"customers":customers}
+        alert_object = self._fetchone(select)
+        if alert_object:
+            alert_object = alert_object._asdict()      
+            self.pre_process_alert(alert_object)
+        return alert_object
 
     #### STATUS, TAGS, ATTRIBUTES
 
     def set_status(self, id, status, timeout, history=None):
+
+        history_update = self.serialize_for_json_append(history)
+        history_update_string = ", history=JSON_ARRAY_APPEND(history {histories})".format(histories=history_update)
+
         update = """
             UPDATE alerts
-            SET status=%(status)s, timeout=%(timeout)s, history=(history || %(change)s)[1:{limit}]
-            WHERE id=%(id)s OR id LIKE %(like_id)s
-            RETURNING *
-        """.format(limit=current_app.config['HISTORY_LIMIT'])
-        return self._update(update, {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout, 'change': history}, returning=True)
+            SET status='%(status)s' {timeout} {history}
+            WHERE id REGEXP '%(id)s'
+        """.format(limit=current_app.config['HISTORY_LIMIT'],
+            history=history_update_string if history and (isinstance(history,History) or len(history)) else "",
+            timeout=', timeout=%(timeout)s' if timeout else "")
+        data = {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout}
+        #return self._update(update, data, returning=True)
+        get_query = "select * from alerts where id = '%(id)s'" 
+        self._update(update, data, returning=True)
+        alert_object = self._fetchone(get_query,data)
+        alert_object = alert_object._asdict()      
+        self.pre_process_alert(alert_object)
+        return alert_object
 
     def set_severity_and_status(self, id, severity, status, timeout, history=None):
+
+        history_update = self.serialize_for_json_append(history)
+        history_update_string = ", history=JSON_ARRAY_APPEND(history {histories})".format(histories=history_update)
+
         update = """
             UPDATE alerts
-            SET severity=%(severity)s, status=%(status)s, timeout=%(timeout)s, history=(history || %(change)s)[1:{limit}]
-            WHERE id=%(id)s OR id LIKE %(like_id)s
-            RETURNING *
-        """.format(limit=current_app.config['HISTORY_LIMIT'])
-        return self._update(update, {'id': id, 'like_id': id + '%', 'severity': severity, 'status': status, 'timeout': timeout, 'change': history}, returning=True)
+            SET severity='%(severity)s', status='%(status)s' {timeout} {history}
+            WHERE id REGEXP '%(id)s' 
+        """.format(limit=current_app.config['HISTORY_LIMIT'],
+            history=history_update_string if history and (isinstance(history,History) or len(history)) else "",
+            timeout=', timeout=%(timeout)s' if timeout else "")
+
+        data = {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout, 'severity':severity}
+        #return self._update(update, data, returning=True)
+        get_query = "select * from alerts where id = '%(id)s'" 
+        self._update(update, data, returning=True)
+        alert_object = self._fetchone(get_query,data)
+        alert_object = alert_object._asdict()      
+        self.pre_process_alert(alert_object)
+        return alert_object
 
     def tag_alert(self, id, tags):
+
+        tag_update = self.serialize_for_json_append(tags,",'$',%s")
+        tags_update_string = """tags=JSON_ARRAY_APPEND(tags {tags})""".format(tags=tag_update)
+        tags_not_search = ''
+        for tag in tags:
+            #tags_not_search += " AND NOT JSON_SEARCH(tags,'one','%s') > 0 " % tag
+            tags_not_search += " AND json_string_check('%(id)s','%(tag)s') < 1" % {"id":id,"tag":tag}
+
         update = """
             UPDATE alerts
-            SET tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s))
-            WHERE id=%(id)s OR id LIKE %(like_id)s
-            RETURNING *
-        """
-        return self._update(update, {'id': id, 'like_id': id + '%', 'tags': tags}, returning=True)
+            SET {tags}
+            WHERE id REGEXP '%(id)s' {tags_not_search}
+        """.format(tags=tags_update_string,tags_not_search=tags_not_search)
+        data = {'id': id, 'like_id': id + '%', 'tags': tags}
+        self._update(update, data, returning=True)
+        select = """SELECT * FROM alerts WHERE id REGEXP '%(id)s'"""
+        alert_object = self._fetchone(select,data)
+        alert_object = alert_object._asdict() 
+        self.pre_process_alert(alert_object)
+        return alert_object
 
+    # TODO REMOVER TAG
     def untag_alert(self, id, tags):
         update = """
             UPDATE alerts
@@ -474,10 +586,18 @@ class Backend(Database):
     def delete_alert(self, id):
         delete = """
             DELETE FROM alerts
-            WHERE id=%(id)s OR id LIKE %(like_id)s
-            RETURNING id
+            WHERE id REGEXP '%(id)s' 
         """
-        return self._delete(delete, {'id': id, 'like_id': id+'%'}, returning=True)
+        data = {'id': id, 'like_id': id+'%'}
+        select = """SELECT id FROM alerts WHERE id REGEXP '%(id)s'"""
+        alert_object = self._fetchone(select,data)
+        alert_object = alert_object._asdict()  
+        alert = {}
+        alert['id'] = alert_object['id']
+
+
+        self._delete(delete, data)
+        return alert
 
     #### SEARCH & HISTORY
 
@@ -488,7 +608,19 @@ class Backend(Database):
             WHERE {where}
             ORDER BY {order}
         """.format(where=query.where, order=query.sort or 'last_receive_time')
-        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+        #raise Exception(str(select % query.vars))
+        alerts = self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+        #print("FetchAll Len: %d" % len(alerts))
+        for i in range(len(alerts)):
+            alerts[i] = alerts[i]._asdict()
+            self.pre_process_alert(alerts[i])
+        #for x in alerts:
+        #   print("Pre alert: %s" % pprint.pformat(x))
+        #for alert in alerts:
+        #    alert = alert._asdict()
+        #    self.pre_process_alert(alert)
+        #print('GetAlerts Object: %s' % pprint.pformat(alerts[0]))
+        return alerts
 
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()
@@ -545,7 +677,7 @@ class Backend(Database):
     def get_counts_by_severity(self, query=None):
         query = query or Query()
         select = """
-            SELECT severity, COUNT(*) FROM alerts
+            SELECT severity, COUNT(severity) as count FROM alerts
              WHERE {where}
             GROUP BY severity
         """.format(where=query.where)
@@ -554,7 +686,7 @@ class Backend(Database):
     def get_counts_by_status(self, query=None):
         query = query or Query()
         select = """
-            SELECT status, COUNT(*) FROM alerts
+            SELECT status, COUNT(status) as count FROM alerts
             WHERE {where}
             GROUP BY status
         """.format(where=query.where)
@@ -1121,9 +1253,10 @@ class Backend(Database):
         if limit is None:
             limit = current_app.config['DEFAULT_PAGE_SIZE']
         query += " LIMIT %s OFFSET %s""" % (limit, offset)
-        cursor = g.db.cursor()
-        self._log(cursor, query, vars)
-        cursor.execute(query, vars)
+        cursor = g.db.cursor(named_tuple=True)
+        #self._log(cursor, query, vars)
+        print("Fetch all Query: %s" % (query % vars))
+        cursor.execute(query % vars)
         return cursor.fetchall()
 
     def _update(self, query, vars, returning=False):
@@ -1148,8 +1281,9 @@ class Backend(Database):
         Delete, with optional return.
         """
         cursor = g.db.cursor()
-        self._log(cursor, query, vars)
-        cursor.execute(query, vars)
+        #self._log(cursor, query, vars)
+        print("Query: %s" % (query % vars))
+        cursor.execute(query % vars)
         g.db.commit()
         return cursor.fetchone() if returning else None
 

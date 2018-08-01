@@ -33,10 +33,10 @@ class QueryBuilderImpl(QueryBuilder):
         to_date = params.get('to-date', default=query_time, type=DateTime.parse)
 
         if from_date:
-            query.append('AND last_receive_time > %(from_date)s')
+            query.append('AND last_receive_time > \'%(from_date)s\'')
             qvars['from_date'] = from_date.replace(tzinfo=pytz.utc)
         if to_date:
-            query.append('AND last_receive_time <= %(to_date)s')
+            query.append('AND last_receive_time <= \'%(to_date)s\'')
             qvars['to_date'] = to_date.replace(tzinfo=pytz.utc)
 
         # duplicateCount, repeat

@@ -108,6 +108,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 DROP PROCEDURE IF EXISTS test_index;
+DROP function IF EXISTS json_string_check;
+
 
 DELIMITER $$
 CREATE PROCEDURE test_index ()
@@ -123,4 +125,14 @@ END $$
 DELIMITER ;
 
 CALL test_index();
+
+
+DELIMITER $$
+CREATE FUNCTION json_string_check(parameter_id varchar(255), parameter_tag varchar(255)) RETURNS INT 
+BEGIN 
+IF EXISTS (SELECT * FROM alerts WHERE id REGEXP parameter_id AND JSON_SEARCH(tags,'one',parameter_tag) > 0) THEN 
+    RETURN 1; 
+END IF; 
+RETURN 0; 
+END$$
 
