@@ -1,24 +1,24 @@
 
 CREATE TABLE IF NOT EXISTS alerts (
-    `id` varchar(255) PRIMARY KEY,
-    `resource` varchar(255) NOT NULL,
-    `event` varchar(255) NOT NULL,
-    `environment` varchar(255),
+    `id` varchar(50) PRIMARY KEY,
+    `resource` varchar(500) NOT NULL,
+    `event` varchar(500) NOT NULL,
+    `environment` varchar(500),
     `severity` varchar(255),
     `correlate` json,
     `status` varchar(255),
     `service` json,
     `group` varchar(255),
     `value` varchar(255),
-    `text` varchar(255),
+    `text` varchar(10000),
     `tags` json,
     `attributes` json,
     `origin` varchar(255),
     `type` varchar(255),
     `create_time` timestamp DEFAULT CURRENT_TIMESTAMP,
     `timeout` integer,
-    `raw_data` varchar(255),
-    `customer` varchar(255),
+    `raw_data` varchar(10000),
+    `customer` varchar(500),
     `duplicate_count` integer,
     `repeat` boolean,
     `previous_severity` varchar(255),
@@ -30,39 +30,39 @@ CREATE TABLE IF NOT EXISTS alerts (
 );
 
 CREATE TABLE IF NOT EXISTS blackouts (
-    `id` varchar(3072) PRIMARY KEY,
+    `id` varchar(50) PRIMARY KEY,
     `priority` integer NOT NULL,
-    `environment` varchar(255) NOT NULL,
+    `environment` varchar(500) NOT NULL,
     `service` json,
-    `resource` varchar(255),
-    `event` varchar(255),
+    `resource` varchar(500),
+    `event` varchar(500),
     `group` varchar(255),
     `tags` json,
-    `customer` varchar(255),
+    `customer` varchar(500),
     `start_time` timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
     `end_time` timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
     `duration` integer
 );
 
 CREATE TABLE IF NOT EXISTS customers (
-    `id` varchar(3072) PRIMARY KEY,
+    `id` varchar(50) PRIMARY KEY,
     `match` varchar(255) UNIQUE NOT NULL,
-    `customer` varchar(255)
+    `customer` varchar(500)
 );
 
 CREATE TABLE IF NOT EXISTS heartbeats (
-    `id` varchar(3072) PRIMARY KEY,
+    `id` varchar(50) PRIMARY KEY,
     `origin` varchar(255) NOT NULL,
     `tags` json,
     `type` varchar(255),
     `create_time` timestamp DEFAULT CURRENT_TIMESTAMP,
     `timeout` integer,
     `receive_time` timestamp DEFAULT CURRENT_TIMESTAMP,
-    `customer` varchar(255)
+    `customer` varchar(500)
 );
 
 CREATE TABLE IF NOT EXISTS `keys` (
-    `id` varchar(3072) PRIMARY KEY,
+    `id` varchar(50) PRIMARY KEY,
     `key` varchar(255) UNIQUE NOT NULL,
     `user` varchar(255) NOT NULL,
     `scopes` json,
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS `keys` (
     `expire_time` timestamp DEFAULT CURRENT_TIMESTAMP,
     `count` integer,
     `last_used_time` timestamp DEFAULT CURRENT_TIMESTAMP,
-    `customer` varchar(255)
+    `customer` varchar(500)
 );
 
 CREATE TABLE IF NOT EXISTS metrics (
@@ -86,13 +86,13 @@ CREATE TABLE IF NOT EXISTS metrics (
 );
 
 CREATE TABLE IF NOT EXISTS perms (
-    `id` varchar(3072) PRIMARY KEY,
+    `id` varchar(50) PRIMARY KEY,
     `match` varchar(255) UNIQUE NOT NULL,
     `scopes` json
 );
 
 CREATE TABLE IF NOT EXISTS users (
-    `id` varchar(3072) PRIMARY KEY,
+    `id` varchar(50) PRIMARY KEY,
     `name` varchar(255),
     `email` varchar(255) UNIQUE NOT NULL,
     `password` varchar(255) NOT NULL,
