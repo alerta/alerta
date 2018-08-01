@@ -39,6 +39,8 @@ ADMIN_USERS = []
 USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includes 'read'
 CUSTOMER_VIEWS = False
 
+BASIC_AUTH_REALM = 'Alerta'
+
 OAUTH2_CLIENT_ID = None  # Google, GitHub or GitLab OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = None
 ALLOWED_EMAIL_DOMAINS = ['*']

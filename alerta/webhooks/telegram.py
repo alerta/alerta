@@ -5,7 +5,7 @@ import os
 from flask import current_app, g, request, jsonify
 from flask_cors import cross_origin
 
-from alerta.auth.utils import permission
+from alerta.auth.decorators import permission
 from alerta.models.alert import Alert
 from alerta.models.blackout import Blackout
 from . import webhooks

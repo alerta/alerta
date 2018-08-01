@@ -5,7 +5,7 @@ from flask import request, jsonify
 from flask_cors import cross_origin
 
 from alerta.exceptions import ApiError
-from alerta.auth.utils import permission
+from alerta.auth.decorators import permission
 from alerta.models.token import Jwt
 from . import auth
 

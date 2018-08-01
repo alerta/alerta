@@ -224,3 +224,7 @@ class AuthTestCase(unittest.TestCase):
         # delete customer mapping
         response = self.client.delete('/customer/' + customer_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
+
+    def test_basic_auth(self):
+
+        pass

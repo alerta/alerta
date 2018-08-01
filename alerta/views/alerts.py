@@ -5,7 +5,7 @@ from flask import jsonify, request, g
 from flask_cors import cross_origin
 
 from alerta.app import qb
-from alerta.auth.utils import permission
+from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException, RateLimit, BlackoutPeriod
 from alerta.models.alert import Alert
 from alerta.models.metrics import Timer, timer
