@@ -562,26 +562,39 @@ class Backend(Database):
         self.pre_process_alert(alert_object)
         return alert_object
 
-    # TODO REMOVER TAG
     def untag_alert(self, id, tags):
+
+        print("Tags: %s" %tags)
         update = """
-            UPDATE alerts
-            SET tags=(select array_agg(t) FROM unnest(tags) AS t WHERE NOT t IN (%(tags)s) )
-            WHERE id=%(id)s OR id LIKE %(like_id)s
-            RETURNING *
+        UPDATE alerts 
+        SET tags = JSON_REMOVE(tags,replace(json_search(tags,'one','%(tags)s'),'"','')) 
+        WHERE json_search(tags,'one','bar') IS NOT NULL AND id REGEXP '%(id)s'
         """
-        return self._update(update, {'id': id, 'like_id': id+'%', 'tags': tags}, returning=True)
+        #self._update(update, {'id': id, 'like_id': id+'%', 'tags': tags[0]}, returning=True)
+        data = {'id': id, 'like_id': id + '%', 'tags': tags[0]}
+        self._update(update, data, returning=True)
+        select = """SELECT * FROM alerts WHERE id REGEXP '%(id)s'"""
+        alert_object = self._fetchone(select,data)
+        alert_object = alert_object._asdict() 
+        self.pre_process_alert(alert_object)
+        return alert_object
 
     def update_attributes(self, id, old_attrs, new_attrs):
         old_attrs.update(new_attrs)
         attrs = dict([k, v] for k, v in old_attrs.items() if v is not None)
         update = """
             UPDATE alerts
-            SET attributes=%(attrs)s
-            WHERE id=%(id)s OR id LIKE %(like_id)s
-            RETURNING *
+            SET attributes='%(attrs)s'
+            WHERE id REGEXP '%(id)s' 
         """
-        return self._update(update, {'id': id, 'like_id': id+'%', 'attrs': attrs}, returning=True)
+        data = {'id': id, 'like_id': id+'%', 'attrs': attrs}
+        data['attrs'] = json.dumps(data['attrs'], cls=HistoryEncoder)
+        self._update(update, data, returning=True)
+        select = """SELECT * FROM alerts WHERE id REGEXP '%(id)s'"""
+        alert_object = self._fetchone(select,data)
+        alert_object = alert_object._asdict() 
+        self.pre_process_alert(alert_object)
+        return alert_object
 
     def delete_alert(self, id):
         delete = """
@@ -696,9 +709,8 @@ class Backend(Database):
         query = query or Query()
         select = """
             SELECT event, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
-                   array_agg(DISTINCT environment) AS environments, array_agg(DISTINCT svc) AS services,
-                   array_agg(DISTINCT ARRAY[id, resource]) AS resources
-              FROM alerts, UNNEST (service) svc
+                   environment AS environments, service, resource
+              FROM alerts
              WHERE {where}
           GROUP BY {group}
           ORDER BY count DESC

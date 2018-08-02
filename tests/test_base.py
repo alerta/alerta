@@ -427,7 +427,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual([h['value'] for h in data['alert']['history']], ['100', None, '101', '102'])
-'''
+
     def test_alert_tagging(self):
 
         # create alert
@@ -461,7 +461,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['tags'], ['bar'])
-'''
+
     def test_alert_attributes(self):
 
         # create alert with custom attributes
@@ -501,7 +501,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': '10.0.0.1'}))
-
+'''
     def test_aggregations(self):
 
         # create alert
@@ -538,7 +538,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn('services', data)
-
+'''
     def test_mongo_query(self):
         # create alert
         response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
