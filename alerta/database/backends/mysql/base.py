@@ -720,9 +720,9 @@ class Backend(Database):
                 "count": t.count,
                 "duplicateCount": t.duplicate_count,
                 "environments": t.environments,
-                "services": t.services,
+                "services": t.service,
                 "%s" % group: t.event,
-                "resources": [{"id": r[0], "resource": r[1], "href": absolute_url('/alert/%s' % r[0])} for r in t.resources]
+                "resources": [{"id": r[0], "resource": r[1], "href": absolute_url('/alert/%s' % r[0])} for r in t.resource]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
