@@ -709,7 +709,7 @@ class Backend(Database):
         query = query or Query()
         select = """
             SELECT event, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
-                   environment AS environments, service, resource
+                   environment AS environments, service AS services, resource AS resources
               FROM alerts
              WHERE {where}
           GROUP BY {group}
@@ -720,9 +720,9 @@ class Backend(Database):
                 "count": t.count,
                 "duplicateCount": t.duplicate_count,
                 "environments": t.environments,
-                "services": t.service,
+                "services": t.services,
                 "%s" % group: t.event,
-                "resources": [{"id": r[0], "resource": r[1], "href": absolute_url('/alert/%s' % r[0])} for r in t.resource]
+                "resources": [{"id": r[0], "resource": r[1], "href": absolute_url('/alert/%s' % r[0])} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
