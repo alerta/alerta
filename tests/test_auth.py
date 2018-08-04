@@ -1,4 +1,4 @@
-
+import base64
 import json
 import unittest
 
@@ -227,4 +227,36 @@ class AuthTestCase(unittest.TestCase):
 
     def test_basic_auth(self):
 
-        pass
+        # add customer mapping
+        payload = {
+            'customer': 'Bonaparte Industries',
+            'match': 'bonaparte.fr'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        payload = {
+            'name': 'Napoleon Bonaparte',
+            'email': 'napoleon@bonaparte.fr',
+            'password': 'blackforest',
+            'text': 'added to circle of trust'
+        }
+
+        # create user
+        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # authenticate using basic auth
+        headers = {
+            'Authorization': 'Basic ' + base64.b64encode('napoleon@bonaparte.fr:blackforest'.encode('utf-8')).decode(),
+            'Content-type': 'application/json'
+        }
+
+        response = self.client.get('/users', headers=headers)
+        self.assertEqual(response.status_code, 403)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], 'Missing required scope: admin:users')
+
+        response = self.client.get('/alerts', headers=headers)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok', response.data)
