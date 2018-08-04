@@ -35,6 +35,18 @@ def parse_prometheus(alert, external_url):
         severity = 'unknown'
         create_time = ends_at or starts_at
 
+    # get labels
+    resource = labels.pop('exported_instance', None) or labels.pop('instance', 'n/a')
+    event = labels.pop('alertname')
+    environment = labels.pop('environment', 'Production')
+
+    # get annotations
+    correlate = annotations.pop('correlate').split(',') if 'correlate' in annotations else None
+    service = annotations.pop('service', '').split(',')
+    group = annotations.pop('job', 'Prometheus')
+    value = annotations.pop('value', None)
+
+    # build alert text
     summary = annotations.pop('summary', None)
     description = annotations.pop('description', None)
     text = description or summary or '%s: %s on %s' % (labels['job'], labels['alertname'], labels['instance'])
@@ -50,14 +62,14 @@ def parse_prometheus(alert, external_url):
         annotations['moreInfo'] = '<a href="%s" target="_blank">Prometheus Graph</a>' % alert['generatorURL']
 
     return Alert(
-        resource=labels.pop('exported_instance', None) or labels.pop('instance', 'n/a'),
-        event=labels.pop('alertname'),
-        environment=labels.pop('environment', 'Production'),
+        resource=resource,
+        event=event,
+        environment=environment,
         severity=severity,
-        correlate=labels.pop('correlate').split(',') if 'correlate' in labels else None,
-        service=labels.pop('service', '').split(','),
-        group=labels.pop('job', 'Prometheus'),
-        value=labels.pop('value', None),
+        correlate=correlate,
+        service=service,
+        group=group,
+        value=value,
         text=text,
         attributes=annotations,
         origin='prometheus/' + labels.pop('monitor', '-'),
