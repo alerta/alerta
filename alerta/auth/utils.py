@@ -25,7 +25,7 @@ except ImportError:  # Google App Engine
     from werkzeug.security import generate_password_hash, check_password_hash
 
 
-def is_authorized(allowed_setting, groups):
+def not_authorized(allowed_setting, groups):
     return (current_app.config['AUTH_REQUIRED']
             and not ('*' in current_app.config[allowed_setting]
                      or set(current_app.config[allowed_setting]).intersection(set(groups))))

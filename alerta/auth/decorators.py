@@ -4,7 +4,7 @@ from flask import request, g, current_app
 from functools import wraps
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
-from alerta.auth.utils import is_authorized, get_customers
+from alerta.auth.utils import not_authorized, get_customers
 from alerta.exceptions import ApiError, BasicAuthError
 from alerta.models.key import ApiKey
 from alerta.models.permission import Permission
@@ -73,9 +73,10 @@ def permission(scope):
                     raise BasicAuthError("Authorization required", 401)
 
                 if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
-                    raise BasicAuthError('email not verified', 403)
-                if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
-                    raise BasicAuthError("unauthorized domain", 403)
+                    raise BasicAuthError('email not verified', 401)
+
+                if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
+                    raise BasicAuthError("Unauthorized domain", 403)
 
                 g.user = user.email
                 g.customers = get_customers(user.email, groups=[user.domain])

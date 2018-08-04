@@ -4,7 +4,7 @@ from uuid import uuid4
 from flask import current_app, request, jsonify, render_template
 from flask_cors import cross_origin
 
-from alerta.auth.utils import is_authorized, create_token, get_customers, send_confirmation
+from alerta.auth.utils import not_authorized, create_token, get_customers, send_confirmation
 from alerta.exceptions import ApiError
 from alerta.models.user import User
 from . import auth
@@ -23,7 +23,7 @@ def signup():
     user.email_verified = False
 
     # check allowed domain
-    if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
+    if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
     if User.find_by_email(email=user.email):
@@ -77,7 +77,7 @@ def login():
         raise ApiError('email not verified', 401)
 
     # check allowed domain
-    if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
+    if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
     # assign customers

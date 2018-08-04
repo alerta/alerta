@@ -1,12 +1,11 @@
 
+import jwt
 import requests
 from flask import current_app, request, jsonify
 from flask_cors import cross_origin
 
-from alerta.auth.utils import is_authorized, create_token, get_customers
-from alerta.exceptions import ApiError
+from alerta.auth.utils import create_token, get_customers
 from . import auth
-import jwt
 
 
 @auth.route('/auth/pingfederate', methods=['OPTIONS', 'POST'])
