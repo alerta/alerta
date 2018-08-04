@@ -8,7 +8,7 @@ except ImportError:
     from urlparse import urlparse
 
 from alerta.app import db, qb
-from alerta.auth.utils import permission
+from alerta.auth.decorators import permission
 from alerta.utils.api import jsonp
 from . import api
 

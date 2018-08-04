@@ -4,7 +4,7 @@ import logging
 from flask import request, g, jsonify
 from flask_cors import cross_origin
 
-from alerta.auth.utils import permission
+from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
 from alerta.utils.api import absolute_url

@@ -180,3 +180,10 @@ class User(object):
 
     def delete(self):
         return db.delete_user(self.id)
+
+    @staticmethod
+    def check_credentials(username, password):
+        user = User.find_by_email(email=username)
+        if user and user.verify_password(password) and user.status == 'active':
+            user.update_last_login()
+            return user

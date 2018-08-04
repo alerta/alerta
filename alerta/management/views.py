@@ -10,7 +10,7 @@ except Exception:
     from alerta import dev as build
 
 from alerta.app import db
-from alerta.auth.utils import permission
+from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
 from alerta.models.heartbeat import Heartbeat

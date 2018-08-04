@@ -5,8 +5,8 @@ from flask import jsonify, request, g, current_app
 from flask_cors import cross_origin
 
 from alerta.app import qb
-from alerta.auth.utils import is_authorized, create_token, get_customers, send_confirmation
-from alerta.auth.utils import permission
+from alerta.auth.utils import not_authorized, create_token, get_customers, send_confirmation
+from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.user import User
 from alerta.utils.api import jsonp
@@ -24,7 +24,7 @@ def create_user():
         raise ApiError(str(e), 400)
 
     # check allowed domain
-    if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
+    if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
     if User.find_by_email(email=user.email):
