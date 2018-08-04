@@ -3,7 +3,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 
 from alerta.app import qb
-from alerta.auth.utils import permission
+from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.customer import Customer
 from alerta.utils.api import jsonp

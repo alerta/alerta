@@ -3,7 +3,7 @@ import requests
 from flask import current_app, request, jsonify
 from flask_cors import cross_origin
 
-from alerta.auth.utils import is_authorized, create_token, get_customers
+from alerta.auth.utils import not_authorized, create_token, get_customers
 from alerta.exceptions import ApiError
 from . import auth
 
@@ -36,7 +36,7 @@ def gitlab():
     groups = [g['path'] for g in r.json()]
     login = profile['username']
 
-    if is_authorized('ALLOWED_GITLAB_GROUPS', groups):
+    if not_authorized('ALLOWED_GITLAB_GROUPS', groups):
         raise ApiError("User %s is not authorized" % login, 403)
 
     customers = get_customers(login, groups)

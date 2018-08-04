@@ -3,7 +3,7 @@ import requests
 from flask import current_app, request, jsonify
 from flask_cors import cross_origin
 
-from alerta.auth.utils import is_authorized, create_token, get_customers
+from alerta.auth.utils import not_authorized, create_token, get_customers
 from alerta.exceptions import ApiError
 from alerta.models.token import Jwt
 from . import auth
@@ -34,7 +34,7 @@ def google():
 
     domain = id_token.email.split('@')[1]
 
-    if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[domain]):
+    if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[domain]):
         raise ApiError("User %s is not authorized" % id_token.email, 403)
 
     # Get Google+ profile for Full name

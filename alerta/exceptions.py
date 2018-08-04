@@ -1,7 +1,7 @@
 
 import traceback
 
-from flask import current_app, jsonify
+from flask import current_app, jsonify, Response
 
 
 class AlertaException(IOError):
@@ -28,15 +28,23 @@ class NoCustomerMatch(AlertaException):
     pass
 
 
-class ApiError(Exception):
+class BaseError(Exception):
     code = 500
 
     def __init__(self, message, code=None, errors=None):
-        super(ApiError, self).__init__(message)
+        super(BaseError, self).__init__(message)
         self.message = message
         if code is not None:
             self.code = code
         self.errors = errors
+
+
+class ApiError(BaseError):
+    pass
+
+
+class BasicAuthError(BaseError):
+    pass
 
 
 class ExceptionHandlers(object):
@@ -46,6 +54,7 @@ class ExceptionHandlers(object):
         for code in default_exceptions.keys():
             app.register_error_handler(code, handle_http_error)
         app.register_error_handler(ApiError, handle_api_error)
+        app.register_error_handler(BasicAuthError, handle_basic_auth_error)
         app.register_error_handler(Exception, handle_exception)
 
 
@@ -71,6 +80,15 @@ def handle_api_error(error):
         'code':  error.code,
         'errors': error.errors
     }), error.code
+
+
+def handle_basic_auth_error(error):
+    return jsonify({
+        'status': 'error',
+        'message': error.message,
+        'code':  error.code,
+        'errors': error.errors
+    }), error.code, {'WWW-Authenticate': 'Basic realm=%s' % current_app.config['BASIC_AUTH_REALM']}
 
 
 def handle_exception(error):

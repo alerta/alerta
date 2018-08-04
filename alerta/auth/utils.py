@@ -1,18 +1,11 @@
-
-import re
 import logging
-
 from datetime import datetime, timedelta
-from functools import wraps
-from uuid import uuid4
-
-from flask import request, g, current_app
-from jwt import DecodeError, ExpiredSignature, InvalidAudience
+from flask import request, current_app
 from six import text_type
+from uuid import uuid4
 
 from alerta.exceptions import ApiError, NoCustomerMatch
 from alerta.models.customer import Customer
-from alerta.models.key import ApiKey
 from alerta.models.permission import Permission
 from alerta.models.token import Jwt
 from alerta.utils.api import absolute_url
@@ -32,7 +25,7 @@ except ImportError:  # Google App Engine
     from werkzeug.security import generate_password_hash, check_password_hash
 
 
-def is_authorized(allowed_setting, groups):
+def not_authorized(allowed_setting, groups):
     return (current_app.config['AUTH_REQUIRED']
             and not ('*' in current_app.config[allowed_setting]
                      or set(current_app.config[allowed_setting]).intersection(set(groups))))
@@ -71,65 +64,6 @@ def create_token(user_id, name, login, provider, customers, orgs=None, groups=No
         customers=customers
     )
 
-
-def permission(scope):
-    def decorated(f):
-        @wraps(f)
-        def wrapped(*args, **kwargs):
-
-            auth_header = request.headers.get('Authorization', '')
-            m = re.match(r'Key (\S+)', auth_header)
-            param = m.group(1) if m else request.args.get('api-key', None)
-
-            if param:
-                key = ApiKey.verify_key(param)
-                if not key:
-                    raise ApiError("API key parameter '%s' is invalid" % param, 401)
-                g.user = key.user
-                g.customers = [key.customer] if key.customer else []
-                g.scopes = key.scopes
-
-                if not Permission.is_in_scope(scope, g.scopes):
-                    raise ApiError('Missing required scope: %s' % scope, 403)
-                else:
-                    return f(*args, **kwargs)
-
-            auth_header = request.headers.get('Authorization', '')
-            m = re.match(r'Bearer (\S+)', auth_header)
-            token = m.group(1) if m else None
-
-            if token:
-                try:
-                    jwt = Jwt.parse(token)
-                except DecodeError:
-                    raise ApiError('Token is invalid', 401)
-                except ExpiredSignature:
-                    raise ApiError('Token has expired', 401)
-                except InvalidAudience:
-                    raise ApiError('Invalid audience', 401)
-                g.user = jwt.preferred_username
-                g.customers = jwt.customers
-                g.scopes = jwt.scopes
-
-                if not Permission.is_in_scope(scope, g.scopes):
-                    raise ApiError("Missing required scope: %s" % scope, 403)
-                else:
-                    return f(*args, **kwargs)
-
-            if not current_app.config['AUTH_REQUIRED']:
-                g.user = None
-                g.customers = []
-                g.scopes = []
-                return f(*args, **kwargs)
-
-            # Google App Engine Cron Service
-            if request.headers.get('X-Appengine-Cron', False) and request.headers.get('X-Forwarded-For', '') == '0.1.0.1':
-                return f(*args, **kwargs)
-
-            raise ApiError('Missing authorization API Key or Bearer Token', 401)
-
-        return wrapped
-    return decorated
 
 
 try:

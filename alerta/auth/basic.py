@@ -4,7 +4,7 @@ from uuid import uuid4
 from flask import current_app, request, jsonify, render_template
 from flask_cors import cross_origin
 
-from alerta.auth.utils import is_authorized, create_token, get_customers, send_confirmation
+from alerta.auth.utils import not_authorized, create_token, get_customers, send_confirmation
 from alerta.exceptions import ApiError
 from alerta.models.user import User
 from . import auth
@@ -23,7 +23,7 @@ def signup():
     user.email_verified = False
 
     # check allowed domain
-    if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
+    if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
     if User.find_by_email(email=user.email):
@@ -41,13 +41,13 @@ def signup():
         user.set_email_hash(hash)
         raise ApiError('email not verified', 401)
 
-    # check user is active
+    # check user is active & update last login
     if user.status != 'active':
         raise ApiError('user not active', 403)
-
-    # assign customers & update last login time
-    customers = get_customers(user.email, groups=[user.domain])
     user.update_last_login()
+
+    # assign customers
+    customers = get_customers(user.email, groups=[user.domain])
 
     # generate token
     token = create_token(user.id, user.name, user.email, provider='basic', customers=customers,
@@ -65,12 +65,9 @@ def login():
     except KeyError:
         raise ApiError("must supply 'username' and 'password'", 401)
 
-    user = User.find_by_email(email=username)
+    user = User.check_credentials(username, password)
     if not user:
-        raise ApiError("invalid username or password", 401)
-
-    if not user.verify_password(password):
-        raise ApiError("invalid username or password", 401)
+        raise ApiError("Invalid username or password", 401)
 
     # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
@@ -79,17 +76,12 @@ def login():
         user.set_email_hash(hash)
         raise ApiError('email not verified', 401)
 
-    # check user is active
-    if user.status != 'active':
-        raise ApiError('user not active', 403)
-
     # check allowed domain
-    if is_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
+    if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError("unauthorized domain", 403)
 
-    # assign customers & update last login time
+    # assign customers
     customers = get_customers(user.email, groups=[user.domain])
-    user.update_last_login()
 
     # generate token
     token = create_token(user.id, user.name, user.email, provider='basic', customers=customers,
