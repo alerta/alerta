@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS alerts (
     `severity` varchar(255),
     `correlate` json,
     `status` varchar(255),
-    `service` json,
     `group` varchar(255),
     `value` varchar(255),
     `text` varchar(10000),
@@ -25,8 +24,17 @@ CREATE TABLE IF NOT EXISTS alerts (
     `trend_indication` varchar(255),
     `receive_time` timestamp DEFAULT CURRENT_TIMESTAMP,
     `last_receive_id` varchar(255),
-    `last_receive_time` timestamp DEFAULT CURRENT_TIMESTAMP,
+    `last_receive_time` timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS history (
+    `id` varchar(50),
     `history` json
+);
+
+CREATE TABLE IF NOT EXISTS service (
+    `id` varchar(50),
+    `service` json
 );
 
 CREATE TABLE IF NOT EXISTS blackouts (
