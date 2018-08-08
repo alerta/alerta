@@ -110,7 +110,7 @@ class Backend(Database):
         print('connected ok')
         with app.open_resource('sql/mysql-schema.sql') as f:
             #conn.cursor().execute(f.read())
-            file_content = f.read()
+            file_content = f.read().decode('utf-8')
             #conn.commit()
 
 
@@ -237,17 +237,17 @@ class Backend(Database):
 
     def pre_process_alert(self, alert_tuple, histories, services, tags, correlates):
         alert_dict = alert_tuple._asdict()
-        alert_dict['id'] = alert_dict['id'].encode('ascii','ignore')
-        alert_dict['group'] = alert_dict['group'].encode('ascii','ignore')
-        alert_dict['origin'] = alert_dict['origin'].encode('ascii','ignore')
-        alert_dict['previousSeverity'] = alert_dict['previous_severity'].encode('ascii','ignore')
-        alert_dict['trendIndication'] = alert_dict['trend_indication'].encode('ascii','ignore')
+        alert_dict['id'] = alert_dict['id']
+        alert_dict['group'] = alert_dict['group']
+        alert_dict['origin'] = alert_dict['origin']
+        alert_dict['previousSeverity'] = alert_dict['previous_severity']
+        alert_dict['trendIndication'] = alert_dict['trend_indication']
         alert_dict['receiveTime'] = alert_dict['receive_time']
         alert_dict['lastReceiveId'] = alert_dict['last_receive_id']
         alert_dict['lastReceiveTime'] = alert_dict['last_receive_time']
 
-        alert_dict['rawData'] = alert_dict['raw_data'].encode('ascii','ignore') if alert_dict['raw_data'] else alert_dict['raw_data']
-        alert_dict['status'] = alert_dict['status'].encode('ascii','ignore')
+        alert_dict['rawData'] = alert_dict['raw_data'] 
+        alert_dict['status'] = alert_dict['status']
         alert_dict['duplicateCount'] = alert_dict['duplicate_count']
         alert_dict['attributes'] = json.loads(alert_dict['attributes'])
         alert_dict['repeat'] = True if alert_dict['repeat'] == 1 else False
@@ -292,7 +292,7 @@ class Backend(Database):
                AND ((event='%(event)s' AND severity!='%(severity)s')
                 OR (event!='%(event)s' AND EXISTS (SELECT * FROM alert_correlate WHERE correlate = '%(event)s' AND alert_correlate.id = alerts.id)))
                AND {customer}
-            """.format(customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
+            """.format(customer="customer='%(customer)s'" if alert.customer and alert.customer != 'None' else "customer IS NULL")
         return self._fetchone(select, vars(alert)).severity
 
     def get_status(self, alert):
@@ -302,7 +302,7 @@ class Backend(Database):
              WHERE environment='%(environment)s' AND resource='%(resource)s'
               AND (event='%(event)s' OR EXISTS (SELECT * FROM alert_correlate WHERE correlate = '%(event)s' AND alert_correlate.id = alerts.id))
               AND {customer}
-            """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
+            """.format(customer="customer=%(customer)s" if alert.customer and alert.customer != 'None' else "customer IS NULL")
         return self._fetchone(select, vars(alert)).status
 
     def get_status_and_value(self, alert):
@@ -314,7 +314,7 @@ class Backend(Database):
              WHERE environment='%(environment)s' AND resource='%(resource)s'
               AND (event='%(event)s' OR EXISTS (SELECT * FROM alert_correlate WHERE correlate = '%(event)s' AND alert_correlate.id = alerts.id))
               AND {customer}
-            """.format(customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
+            """.format(customer="customer='%(customer)s'" if alert.customer and alert.customer != 'None' else "customer IS NULL")
         r = self._fetchone(select, vars(alert))
         return r.status, r.value
 
@@ -327,7 +327,7 @@ class Backend(Database):
                AND event='%(event)s'
                AND severity='%(severity)s'
                AND {customer}
-            """.format(customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
+            """.format(customer="customer='%(customer)s'" if alert.customer and alert.customer != 'None' else "customer IS NULL")
         return bool(self._fetchone(select, vars(alert)))
 
     def is_correlated(self, alert):
@@ -338,7 +338,7 @@ class Backend(Database):
                AND ((event='%(event)s' AND severity!='%(severity)s')
                 OR (event!='%(event)s' AND EXISTS (SELECT * FROM alert_correlate WHERE correlate = '%(event)s' AND alert_correlate.id = alerts.id)))
                AND {customer}
-        """.format(customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
+        """.format(customer="customer='%(customer)s'" if alert.customer and alert.customer != 'None' else "customer IS NULL")
         return bool(self._fetchone(select, vars(alert)))
 
     def is_flapping(self, alert, window=1800, count=2):
@@ -355,7 +355,7 @@ class Backend(Database):
                AND h.update_time > (NOW() at time zone 'utc' - INTERVAL '{window} seconds')
                AND h.type='severity'
                AND {customer}
-        """.format(window=window, customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
+        """.format(window=window, customer="customer='%(customer)s'" if alert.customer and alert.customer != 'None' else "customer IS NULL")
         return self._fetchone(select, vars(alert)).count > count
 
     def get_alert_aux(self, id, table, limit = None, orderby=None):
@@ -383,13 +383,13 @@ class Backend(Database):
                     for d in data:
                         if type(d) == History:
                             insert += "('%s','%s')," % (id, json.dumps(d, cls=HistoryEncoder))
-                        if type(d) == str or type(d) == unicode:
+                        if type(d) == str or type(d) == bytes:
                             insert += "('%s','%s')," % (id, d)
                     self._insert((insert.rstrip(',') + ";").replace("''","'"))
             elif type(data) == History:
                 insert = insert_history % (table, column, id, json.dumps(data, cls=HistoryEncoder))
                 self._insert(insert_history ,(table, column, id, json.dumps(data, cls=HistoryEncoder)))
-            elif type(data) == str or type(data) == unicode:
+            elif type(data) == str or type(data) == bytes:
                 insert = insert_history % (table, column, id, data.replace("'",""))
                 self._insert(insert_history, (table, column, id, data.replace("'","")))
             else:
@@ -423,7 +423,7 @@ class Backend(Database):
                AND resource='%(resource)s'
                AND event='%(event)s'
                AND severity='%(severity)s'
-               AND {customer}'''.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer='%(customer)s'" if alert.customer and not alert.customer == 'None'  else "customer IS NULL",
+               AND {customer}'''.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer='%(customer)s'" if alert.customer and alert.customer != 'None'  else "customer IS NULL",
                     value="'%(value)s'" if alert.value else "NULL",raw_data="'%(raw_data)s'" if alert.raw_data else "NULL",
                     history=", history=JSON_ARRAY_APPEND(history,'$','%(history)s')" if alert.history else "")
 
@@ -474,7 +474,7 @@ class Backend(Database):
                AND (event='%(event)s' AND severity='%(severity)s')
                AND {customer}
         '''.format(limit=current_app.config['HISTORY_LIMIT'], 
-                customer="customer='%(customer)s'" if alert.customer else "customer IS NULL",
+                customer="customer='%(customer)s'" if alert.customer and alert.customer != 'None'  else "customer IS NULL",
                 value="'%(value)s'" if alert.value else "NULL",
                 raw_data="'%(raw_data)s'" if alert.raw_data else "NULL")
 
@@ -510,7 +510,7 @@ class Backend(Database):
                 '%(event_type)s', '%(create_time)s', '%(timeout)s', {raw_data}, {customer}, '%(duplicate_count)s',
                 '%(repeat)s', '%(previous_severity)s', '%(trend_indication)s', '%(receive_time)s', '%(last_receive_id)s',
                 '%(last_receive_time)s') ;
-        """.format(customer="customer='%(customer)s'" if alert.customer and not alert.customer == 'None' else "NULL",
+        """.format(customer="customer='%(customer)s'" if alert.customer and alert.customer != 'None' else "NULL",
             value="'%(value)s'" if alert.value else "NULL",
             raw_data="'%(raw_data)s'" if alert.raw_data else "NULL")
         
@@ -551,7 +551,12 @@ class Backend(Database):
                AND {customer}
         """.format(customer="customer IN ('%(customers)s')" if customers else "1=1")
         #return self._fetchone(select, {'id': id, 'customers': customers})
-        select = select % {"id":id,"customers":customers}
+        customers_str = ''
+        if type(customers) == list:
+            for customer in customers:
+                customers_str += "'%s'," % customer
+        customer_str = customer_str.rstrip(',')
+        select = select % {"id":id, "customers":customer_str}
         alert_tuple= self._fetchone(select)
 
         histories = self.get_alert_aux(id, 'alert_history')  
@@ -615,6 +620,8 @@ class Backend(Database):
 
     def tag_alert(self, id, tags):
         print("--> tag_alert")
+        if type(id) == bytes:
+            id = id.decode()
 
         self.insert_alert_aux(id, 'alert_tag', 'tag', tags)
 
@@ -658,6 +665,9 @@ class Backend(Database):
         return alert_dict
 
     def update_attributes(self, id, old_attrs, new_attrs):
+        if type(id) == bytes:
+            id = id.decode()
+
         old_attrs.update(new_attrs)
         attrs = dict([k, v] for k, v in old_attrs.items() if v is not None)
         update = """
@@ -796,8 +806,8 @@ class Backend(Database):
         select = """
             SELECT event, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
                    environment AS environments, service AS services, JSON_OBJECTAGG(alerts.id,resource) as resources
-              FROM alerts, service
-             WHERE service.id = alerts.id AND {where}
+              FROM alerts, alert_service 
+             WHERE alert_service.id = alerts.id AND {where}
           GROUP BY {group}
           ORDER BY count DESC
         """.format(where=query.where, group=group)
@@ -820,7 +830,7 @@ class Backend(Database):
                 res ={}
                 res['id'] = t
                 res['resources'] = r['resources'][t]
-                res['href'] = absolute_url('/alerts/%s' % t)
+                res['href'] = absolute_url('/alerts/%s' % t.decode())
                 elem["resources"].append(res)
                 #print(res)
 
@@ -941,7 +951,7 @@ class Backend(Database):
 
     def pre_process_blackout(self, blackout_tuple, services, tags):
         blackout_dict = blackout_tuple._asdict()
-        blackout_dict['id'] = blackout_dict['id'].encode('ascii','ignore')
+        blackout_dict['id'] = blackout_dict['id']
         #blackout_dict['group'] = blackout_dict['group'].encode('ascii','ignore') if 
   
         service_list = []
@@ -985,13 +995,13 @@ class Backend(Database):
                     for d in data:
                         if type(d) == History:
                             insert += "('%s','%s')," % (id, json.dumps(d, cls=HistoryEncoder))
-                        if type(d) == str or type(d) == unicode:
+                        if type(d) == str or type(d) == bytes:
                             insert += "('%s','%s')," % (id, d)
                     self._insert(insert.rstrip(',') + ";")
             elif type(data) == History:
                 insert = insert_history % (table, column, id, json.dumps(data, cls=HistoryEncoder))
                 self._insert(insert_history ,(table, column, id, json.dumps(data, cls=HistoryEncoder)))
-            elif type(data) == str or type(data) == unicode:
+            elif type(data) == str or type(data) == bytes:
                 insert = insert_history % (table, column, id, data)
                 self._insert(insert_history, (table, column, id, data))
             else:
@@ -1004,12 +1014,11 @@ class Backend(Database):
             VALUES ('%(id)s', '%(priority)s', '%(environment)s', %(resource)s, %(event)s, %(group)s, %(customer)s, '%(start_time)s', '%(end_time)s', '%(duration)s')
         """
         data = vars(blackout)
-        #data['service'] = data['service'] if data['service'] else 'NULL';
-        data['resource'] = data['resource'] if data['resource'] and not data['resource'] == 'None' else 'NULL';
-        data['event'] = data['event'] if data['event'] and not data['event'] == 'None' else 'NULL';
-        data['group'] = data['group'] if data['group'] and not data['group'] == 'None' else 'NULL';
-        #print("%s %s" % (data['customer'], type(data['customer'])))
-        data['customer'] = data['customer'] if data['customer'] and not data['customer'] == 'None' else 'NULL';
+
+        data['resource'] = "'%s'" % data['resource'] if data['resource'] and not data['resource'] == 'None' else 'NULL';
+        data['event'] = "'%s'" % data['event'] if data['event'] and not data['event'] == 'None' else 'NULL';
+        data['group'] = "'%s'" % data['group'] if data['group'] and not data['group'] == 'None' else 'NULL';
+        data['customer'] = "'%s'" % data['customer'] if data['customer'] and not data['customer'] == 'None' else 'NULL';
         
         self._insert(insert, data)
         get_query = "select * from `blackouts` where id = '%(id)s'"
@@ -1029,10 +1038,12 @@ class Backend(Database):
     def get_blackout(self, id, customer=None):
         select = """
             SELECT * FROM blackouts
-            WHERE id=%(id)s
+            WHERE id='%(id)s'
               AND {customer}
         """.format(customer="customer='%(customer)s'" if customer else "1=1")
+
         blackout_tuple = self._fetchone(select, {'id': id, 'customer': customer})
+
         services = self.get_blackout_aux(blackout_tuple.id, 'blackout_service')
         tags = self.get_blackout_aux(blackout_tuple.id, 'blackout_tag')
 
@@ -1144,10 +1155,17 @@ class Backend(Database):
     def delete_blackout(self, id):
         delete = """
             DELETE FROM blackouts
-            WHERE id=%s
-            RETURNING id
+            WHERE id='%s'
         """
-        return self._delete(delete, (id,), returning=True)
+
+        select = """SELECT id FROM `blackouts` WHERE id= '%s'"""
+        key_object = self._fetchone(select,(id,))
+
+        self._delete(delete, (id,))
+        if not key_object:
+            return None
+        return key_object.id
+
 
     #### HEARTBEATS
 
@@ -1608,7 +1626,7 @@ class Backend(Database):
             print("Insert: %s" % (query % vars))
             cursor.execute(query % vars, multi=True)
         else:
-           # print("Insert: %s" % (query))
+            print("Insert: %s" % (query))
             cursor.execute(query, multi=True)
         g.db.commit()
         ret = cursor.fetchone()
