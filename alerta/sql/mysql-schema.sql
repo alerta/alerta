@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS alerts (
     `group` varchar(255),
     `value` varchar(255),
     `text` varchar(10000),
-    `tags` json,
     `attributes` json,
     `origin` varchar(255),
     `type` varchar(255),
@@ -27,29 +26,56 @@ CREATE TABLE IF NOT EXISTS alerts (
     `last_receive_time` timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS history (
+CREATE TABLE IF NOT EXISTS alert_history (
     `id` varchar(50),
     `history` json
 );
 
-CREATE TABLE IF NOT EXISTS service (
+CREATE TABLE IF NOT EXISTS alert_tag (
+    `alert_tag_id` int  AUTO_INCREMENT DEFAULT NULL ,
     `id` varchar(50),
-    `service` json
+    `tag` varchar(50),
+    CONSTRAINT alert_tag_id UNIQUE (`alert_tag_id`),
+    CONSTRAINT tag_pkey PRIMARY KEY (`id`, `tag`)
+);
+
+CREATE TABLE IF NOT EXISTS alert_correlate (
+    `id` varchar(50),
+    `correlate` varchar(50),
+    CONSTRAINT correlate_pkey PRIMARY KEY (`id`, `correlate`)
+);
+
+CREATE TABLE IF NOT EXISTS alert_service (
+    `id` varchar(50),
+    `service` varchar(50),
+    CONSTRAINT service_pkey PRIMARY KEY (`id`, `service`)
 );
 
 CREATE TABLE IF NOT EXISTS blackouts (
     `id` varchar(50) PRIMARY KEY,
     `priority` integer NOT NULL,
     `environment` varchar(500) NOT NULL,
-    `service` json,
     `resource` varchar(500),
     `event` varchar(500),
     `group` varchar(255),
-    `tags` json,
     `customer` varchar(500),
     `start_time` timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
     `end_time` timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
     `duration` integer
+);
+
+CREATE TABLE IF NOT EXISTS blackout_tag (
+    `blackout_tag_id` int  AUTO_INCREMENT DEFAULT NULL ,
+    `id` varchar(50),
+    `tag` varchar(50),
+    CONSTRAINT blackout_tag_id UNIQUE (`blackout_tag_id`),
+    CONSTRAINT btag_pkey PRIMARY KEY (`id`, `tag`)
+);
+
+CREATE TABLE IF NOT EXISTS blackout_service (
+    `id` varchar(50),
+    `service` varchar(50),
+    CONSTRAINT bservice_pkey PRIMARY KEY (`id`, `service`)
 );
 
 CREATE TABLE IF NOT EXISTS customers (
@@ -144,3 +170,19 @@ END IF;
 RETURN 0; 
 END$$
 
+DELIMITER ;
+
+delete from `alerts`; 
+delete from `metrics`; 
+delete from `users`; 
+delete from `customers`; 
+delete from `metrics`;
+delete from `users`;
+delete from `heartbeats`;
+delete from `blackouts`;
+delete from `blackout_tag`;
+delete from `blackout_service`;
+delete from `alert_history`;
+delete from `alert_tag`;
+delete from `alert_correlate`;
+delete from `alert_service`;

@@ -88,7 +88,7 @@ class Backend(Database):
         if position < 0:
             return ''
         command = commands[:position]
-        print(command)
+        #print(command)
         cursor = conn.cursor()
         cursor.execute(command)
         conn.commit()
@@ -235,101 +235,91 @@ class Backend(Database):
 
     #### ALERTS
 
-    def pre_process_alert(self,alert_object, history, services):
-        alert_object['id'] = alert_object['id'].encode('ascii','ignore')
-        alert_object['group'] = alert_object['group'].encode('ascii','ignore')
-        alert_object['origin'] = alert_object['origin'].encode('ascii','ignore')
-        alert_object['previousSeverity'] = alert_object['previous_severity'].encode('ascii','ignore')
-        alert_object['trendIndication'] = alert_object['trend_indication'].encode('ascii','ignore')
-        alert_object['receiveTime'] = alert_object['receive_time']
-        alert_object['lastReceiveId'] = alert_object['last_receive_id']
-        alert_object['lastReceiveTime'] = alert_object['last_receive_time']
+    def pre_process_alert(self, alert_tuple, histories, services, tags, correlates):
+        alert_dict = alert_tuple._asdict()
+        alert_dict['id'] = alert_dict['id'].encode('ascii','ignore')
+        alert_dict['group'] = alert_dict['group'].encode('ascii','ignore')
+        alert_dict['origin'] = alert_dict['origin'].encode('ascii','ignore')
+        alert_dict['previousSeverity'] = alert_dict['previous_severity'].encode('ascii','ignore')
+        alert_dict['trendIndication'] = alert_dict['trend_indication'].encode('ascii','ignore')
+        alert_dict['receiveTime'] = alert_dict['receive_time']
+        alert_dict['lastReceiveId'] = alert_dict['last_receive_id']
+        alert_dict['lastReceiveTime'] = alert_dict['last_receive_time']
 
-        alert_object['rawData'] = alert_object['raw_data'].encode('ascii','ignore') if alert_object['raw_data'] else alert_object['raw_data']
-        alert_object['status'] = alert_object['status'].encode('ascii','ignore')
-        alert_object['duplicateCount'] = alert_object['duplicate_count']
+        alert_dict['rawData'] = alert_dict['raw_data'].encode('ascii','ignore') if alert_dict['raw_data'] else alert_dict['raw_data']
+        alert_dict['status'] = alert_dict['status'].encode('ascii','ignore')
+        alert_dict['duplicateCount'] = alert_dict['duplicate_count']
+        alert_dict['attributes'] = json.loads(alert_dict['attributes'])
+        alert_dict['repeat'] = True if alert_dict['repeat'] == 1 else False
 
-        #alert_object['event_type'] = alert_object['event_type'].encode('ascii','ignore')
-        alert_object['attributes'] = json.loads(alert_object['attributes'])
-        #alert_object['history'] = json.loads(alert_object['history'])
-        alert_object['tags'] = json.loads(alert_object['tags'])
-        alert_object['correlate'] = json.loads(alert_object['correlate'])
-        #alert_object['service'] = json.loads(services)
-        alert_object['repeat'] = True if alert_object['repeat'] == 1 else False
-        if 'tags' in alert_object:
-            print(alert_object['tags'])
-            for i in range(len(alert_object['tags'])):
-                alert_object['tags'][i] = alert_object['tags'][i].encode('ascii','ignore')
-            #alert_object['tags'] = json.loads(alert_object['tags'])
+        history_list = []
+        for history in histories:
+            hist_json = history._asdict()['history']
+            #print("History: %s" % str(hist_json))
+            history_list.append(json.loads(hist_json))
+        alert_dict['history'] = history_list
 
-        #alert_object['history'] = [History.from_document(x) for x in alert_object['history'] if x]
-        alert_object['history'] = []
-        for i in range(len(history)):
-            if type(history[i]) == unicode:
-                history[i] = json.loads(history[i])
-            hist = history[i]._asdict()
-            hist_dic = hist['history']
-            alert_object['history'].append(json.loads(hist_dic))
+        service_list = []
+        for service in services:
+            service_str = service._asdict()['service']
+            #print("Service: %s" % str(service_str))
+            service_list.append(service_str)
+        alert_dict['service'] = service_list
 
-        alert_object['service'] = []
-        for i in range(len(services)):
-            print(services[i])
-            if type(services[i]) == unicode:
-                services[i] = json.loads(services[i])
-            else:
-                hist = services[i]._asdict()
-                hist_dic = hist['service']
-                alert_object['service'].append(json.loads(hist_dic))
+        correlate_list = []
+        for correlate in correlates:
+            correlate_str = correlate._asdict()['correlate']
+            #print("Correlate: %s" % str(correlate_str))
+            correlate_list.append(correlate)
+        alert_dict['correlate'] = correlate_list
 
-        #alert_object['history'] = history
-        for x in alert_object['history']:
-            print ("History (%s): %s" % (type(x),x))
+        tag_list = []
+        for tag in tags:
+            tag_str = tag._asdict()['tag']
+            #print("Tag: %s" % str(tag_str))
+            tag_list.append(tag_str)
+        alert_dict['tags'] = tag_list
 
-    def serialize_for_json_append(self,history_list, string=",'$','%s'"):
-        if history_list is None:
-            return None
-        hstr = ""
-        if type(history_list) == list:
-            for h in history_list:
-                hjson = json.dumps(h, cls=HistoryEncoder)
-                hstr += string % hjson
-        else:
-            hjson = json.dumps(history_list, cls=HistoryEncoder)
-            hstr += ",'$','%s'" % hjson
-        return hstr
+        return alert_dict
+
+   
 
     def get_severity(self, alert):
+        print("--> get_severity")
         select = """
             SELECT severity FROM alerts
              WHERE environment='%(environment)s' AND resource='%(resource)s'
                AND ((event='%(event)s' AND severity!='%(severity)s')
-                OR (event!='%(event)s' AND JSON_SEARCH(correlate,'one','%(event)s') > 0))
+                OR (event!='%(event)s' AND EXISTS (SELECT * FROM alert_correlate WHERE correlate = '%(event)s' AND alert_correlate.id = alerts.id)))
                AND {customer}
             """.format(customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
         return self._fetchone(select, vars(alert)).severity
 
     def get_status(self, alert):
+        print("--> get_status")
         select = """
             SELECT status FROM alerts
              WHERE environment='%(environment)s' AND resource='%(resource)s'
-              AND (event='%(event)s' OR JSON_SEARCH(correlate,'one','%(event)s') > 0)
+              AND (event='%(event)s' OR EXISTS (SELECT * FROM alert_correlate WHERE correlate = '%(event)s' AND alert_correlate.id = alerts.id))
               AND {customer}
             """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
         return self._fetchone(select, vars(alert)).status
 
     def get_status_and_value(self, alert):
+        print("--> get_status_and_value")
 
         print("Alert customer: %s" % type(alert.customer))
         select = """
             SELECT status, value FROM alerts
              WHERE environment='%(environment)s' AND resource='%(resource)s'
-              AND (event='%(event)s' OR JSON_SEARCH(correlate,'one','%(event)s') > 0)
+              AND (event='%(event)s' OR EXISTS (SELECT * FROM alert_correlate WHERE correlate = '%(event)s' AND alert_correlate.id = alerts.id))
               AND {customer}
-            """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
+            """.format(customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
         r = self._fetchone(select, vars(alert))
         return r.status, r.value
 
     def is_duplicate(self, alert):
+        print("--> is_duplicate")
         select = """
             SELECT id FROM alerts
              WHERE environment='%(environment)s'
@@ -341,16 +331,18 @@ class Backend(Database):
         return bool(self._fetchone(select, vars(alert)))
 
     def is_correlated(self, alert):
+        print("--> is_correlated")
         select = """
             SELECT id FROM alerts
              WHERE environment='%(environment)s' AND resource='%(resource)s'
                AND ((event='%(event)s' AND severity!='%(severity)s')
-                OR (event!='%(event)s' AND JSON_SEARCH(correlate,'one','%(event)s') > 0))
+                OR (event!='%(event)s' AND EXISTS (SELECT * FROM alert_correlate WHERE correlate = '%(event)s' AND alert_correlate.id = alerts.id)))
                AND {customer}
         """.format(customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
         return bool(self._fetchone(select, vars(alert)))
 
     def is_flapping(self, alert, window=1800, count=2):
+        print("--> is_flapping")
         """
         Return true if alert severity has changed more than X times in Y seconds
         """
@@ -366,184 +358,161 @@ class Backend(Database):
         """.format(window=window, customer="customer='%(customer)s'" if alert.customer else "customer IS NULL")
         return self._fetchone(select, vars(alert)).count > count
 
-    def get_alert_history(self, id, limit = None):
-        data = {"id":id}
+    def get_alert_aux(self, id, table, limit = None, orderby=None):
+        data = {"id":id, "table":table}
         if limit:
-            get_history = """SELECT * FROM history WHERE id = '%(id)s' LIMIT %d""" % limit    
+            get_history = """SELECT * FROM `%(table)s` WHERE id = '%(id)s' LIMIT %d""" % limit    
         else:
-            get_history = """SELECT * FROM history WHERE id = '%(id)s'"""
+            get_history = """SELECT * FROM `%(table)s` WHERE id = '%(id)s'"""
+
+        if orderby:
+            get_history += " %s" % orderby
 
         history = self._fetchall(get_history,data)
 
         return history
 
-    def insert_alert_history(self, id, history):
-        insert_history = """
-            INSERT INTO history (id, history) VALUES ('%s', '%s');
-        """
+    def insert_alert_aux(self, id, table, column, data):
+        insert_history = "INSERT IGNORE INTO `%s` (id, %s) VALUES ('%s', '%s');"
 
-        if history:
-            if type(history) == list and len(history) > 0:
-                insert = ""
-                for hist in history:
-                    insert += insert_history % (id, json.dumps(hist, cls=HistoryEncoder))
-                    self._insert(insert_history ,(id, json.dumps(hist, cls=HistoryEncoder)))
-            if type(history) == History:
-                insert = insert_history % (id, json.dumps(history, cls=HistoryEncoder))
-                self._insert(insert_history ,(id, json.dumps(history, cls=HistoryEncoder)))
-
-    def get_alert_service(self, id, limit = None):
-        data = {"id":id}
-        if limit:
-            get_history = """SELECT * FROM service WHERE id = '%(id)s' LIMIT %d""" % limit    
-        else:
-            get_history = """SELECT * FROM service WHERE id = '%(id)s'"""
-
-        services = self._fetchall(get_history,data)
-
-        return services
-
-    def insert_alert_service(self, id, service):
-        insert_history = """
-            INSERT INTO service (id, service) VALUES ('%s', '%s');
-        """
-
-        if service:
-            if type(service) == list and len(service) > 0:
-                insert = ""
-                for hist in service:
-                    insert += insert_history % (id, json.dumps(hist, cls=HistoryEncoder))
-                    self._insert(insert_history ,(id, json.dumps(hist, cls=HistoryEncoder)))
-            if type(service) == str:
-                insert = insert_history % (id, json.dumps(service, cls=HistoryEncoder))
-                self._insert(insert_history ,(id, json.dumps(service, cls=HistoryEncoder)))
+        if data:
+            if type(data) == list:
+                if len(data) > 0:
+                    insert = None
+                    insert = "INSERT IGNORE INTO `%s` (id, %s) VALUES " % (table,column)
+                    for d in data:
+                        if type(d) == History:
+                            insert += "('%s','%s')," % (id, json.dumps(d, cls=HistoryEncoder))
+                        if type(d) == str or type(d) == unicode:
+                            insert += "('%s','%s')," % (id, d)
+                    self._insert((insert.rstrip(',') + ";").replace("''","'"))
+            elif type(data) == History:
+                insert = insert_history % (table, column, id, json.dumps(data, cls=HistoryEncoder))
+                self._insert(insert_history ,(table, column, id, json.dumps(data, cls=HistoryEncoder)))
+            elif type(data) == str or type(data) == unicode:
+                insert = insert_history % (table, column, id, data.replace("'",""))
+                self._insert(insert_history, (table, column, id, data.replace("'","")))
+            else:
+                print("Wrong object")
+                raise(Exception("Wrong object type %s" % str(type(data))))
 
     def dedup_alert(self, alert, history):
-        print("DUPLICATE dedup_alert")
+        print("--> dedup_alert")
         """
         Update alert value, text and rawData, increment duplicate count and set repeat=True, and
         keep track of last receive id and time but don't append to history unless status changes.
         """
-        alert.history = history
-        print("History Type: %s" % type(alert.history))
-   
-        tag_update = self.serialize_for_json_append(alert.tags,",'$',%s")
-        tags_update_string = """, tags=JSON_ARRAY_APPEND(tags {tags})""".format(tags=tag_update)
-
-        update = """
-            UPDATE alerts
+        update = """UPDATE alerts
                SET status='%(status)s', value={value}, text='%(text)s', timeout=%(timeout)s, raw_data={raw_data}, `repeat`=%(repeat)s,
-                   last_receive_id='%(last_receive_id)s', last_receive_time='%(last_receive_time)s' {tags}, attributes=JSON_MERGE(attributes ,'%(attributes)s'),
+                   last_receive_id='%(last_receive_id)s', last_receive_time='%(last_receive_time)s', attributes=JSON_MERGE(attributes ,'%(attributes)s'),
                    duplicate_count=duplicate_count+1 
-             WHERE environment='%(environment)s'
-               AND resource='%(resource)s'
-               AND event='%(event)s'
-               AND severity='%(severity)s'
-               AND {customer}
-        """.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer='%(customer)s'" if alert.customer else "customer IS NULL",
-                    value="'%(value)s'" if alert.value else "NULL",raw_data="'%(raw_data)s'" if alert.raw_data else "NULL",
-                    tags=tags_update_string if alert.tags and len(alert.tags) > 0 else "")
+             WHERE environment='%(environment)s' AND resource='%(resource)s'
+               AND event='%(event)s' AND severity='%(severity)s'
+               AND {customer} ;
+        """.format(limit=current_app.config['HISTORY_LIMIT'], 
+                customer="customer='%(customer)s'" if alert.customer and alert.customer != 'None' else "customer IS NULL",
+                value="'%(value)s'" if alert.value else "NULL",
+                raw_data="'%(raw_data)s'" if alert.raw_data else "NULL")
 
         #print("History Type: %s" % type(alert.history))
         data = vars(alert)
         data['repeat'] = 1 if json.dumps(data['repeat'], cls=HistoryEncoder) == 'false' else 0 
         data['attributes'] = json.dumps(data['attributes'], cls=HistoryEncoder)
-        data['history'] = json.dumps(data['history'], cls=HistoryEncoder)
 
         get_query = '''SELECT * FROM alerts WHERE environment='%(environment)s'
                AND resource='%(resource)s'
                AND event='%(event)s'
                AND severity='%(severity)s'
-               AND {customer}'''.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer='%(customer)s'" if alert.customer else "customer IS NULL",
+               AND {customer}'''.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer='%(customer)s'" if alert.customer and not alert.customer == 'None'  else "customer IS NULL",
                     value="'%(value)s'" if alert.value else "NULL",raw_data="'%(raw_data)s'" if alert.raw_data else "NULL",
                     history=", history=JSON_ARRAY_APPEND(history,'$','%(history)s')" if alert.history else "")
 
         self._update(update, data)
         
-        alert_object = self._fetchone(get_query,data)
+        alert_tuple = self._fetchone(get_query,data)
+        alert_dict = None
+        if alert_tuple:
+            self.insert_alert_aux(alert_tuple.id, 'alert_history', 'history', history)
+            #self.insert_alert_aux(alert_tuple.id, 'alert_service', 'service', data['service'])
+            self.insert_alert_aux(alert_tuple.id, 'alert_tag', 'tag', data['tags'])
+            #self.insert_alert_aux(alert_tuple.id, 'alert_correlate', 'correlate', data['correlate']) 
+            
+            histories = self.get_alert_aux(alert_tuple.id, 'alert_history')  
+            services = self.get_alert_aux(alert_tuple.id, 'alert_service')
+            tags = self.get_alert_aux(alert_tuple.id, 'alert_tag')
+            correlates = self.get_alert_aux(alert_tuple.id, 'alert_correlate')
 
-        alert_object = alert_object._asdict()
+            alert_dict = self.pre_process_alert(alert_tuple, histories, services, tags, correlates)
 
-        self.insert_alert_history(alert_object['id'], history)
-        histories = self.get_alert_history(alert_object['id'])
-        
-        self.insert_alert_service(data['id'],data['service'])
-        services = self.get_alert_service(alert_object['id'])
-
-        self.pre_process_alert(alert_object, histories, services)
-
-        return alert_object
+        return alert_dict
 
     def correlate_alert(self, alert, history):
-        print("DUPLICATE correlate_alert")
-
-
-        tag_update = self.serialize_for_json_append(alert.tags, ",'$',%s")
-        tags_update_string = """, tags=JSON_ARRAY_APPEND(tags {tags})""".format(tags=tag_update)
-
-        update = """
-            UPDATE alerts
+        print("--> correlate_alert")
+        update = """UPDATE alerts
                SET event='%(event)s', severity='%(severity)s', status='%(status)s', value={value}, text='%(text)s',
                    create_time='%(create_time)s', timeout='%(timeout)s', raw_data={raw_data}, duplicate_count=%(duplicate_count)s,
                    `repeat`=%(repeat)s, previous_severity='%(previous_severity)s', trend_indication='%(trend_indication)s',
                    receive_time='%(receive_time)s', last_receive_id='%(last_receive_id)s',
-                   last_receive_time='%(last_receive_time)s' {tags},
+                   last_receive_time='%(last_receive_time)s',
                    attributes=JSON_MERGE(attributes ,'%(attributes)s') 
              WHERE environment='%(environment)s' AND resource='%(resource)s'
-               AND ((event='%(event)s' AND severity!='%(severity)s') OR (event!='%(event)s' AND JSON_SEARCH(correlate,'one','%(event)s') > 0) )
-               AND {customer}
+               AND ((event='%(event)s' AND severity!='%(severity)s')
+                    OR (event!='%(event)s' AND EXISTS (SELECT * FROM alert_correlate WHERE correlate = '%(event)s' AND alert_correlate.id = alerts.id)) 
+                    )
+               AND {customer} ;
         """.format(limit=current_app.config['HISTORY_LIMIT'], 
-                customer="customer='%(customer)s'" if alert.customer else "customer IS NULL",
+                customer="customer='%(customer)s'" if alert.customer and alert.customer != 'None' else "customer IS NULL",
                 value="'%(value)s'" if alert.value else "NULL",
-                raw_data="'%(raw_data)s'" if alert.raw_data else "NULL",
-                tags=tags_update_string if alert.tags and len(alert.tags) > 0 else "")
+                raw_data="'%(raw_data)s'" if alert.raw_data else "NULL")
         
         data = vars(alert)
         data['repeat'] = 1 if json.dumps(data['repeat'], cls=HistoryEncoder) == 'false' else 0 
         data['attributes'] = json.dumps(data['attributes'], cls=HistoryEncoder)
-        #data['history'] = json.dumps(data['history'], cls=HistoryEncoder)
-        data['tags'] = json.dumps(data['tags'], cls=HistoryEncoder)
 
-        get_query = '''SELECT * FROM alerts WHERE environment='%(environment)s'
-               AND resource='%(resource)s'
-               AND event='%(event)s' AND severity='%(severity)s' AND {customer}
+        get_query = '''SELECT * FROM alerts 
+            WHERE environment='%(environment)s' AND resource='%(resource)s'
+               AND (event='%(event)s' AND severity='%(severity)s')
+               AND {customer}
         '''.format(limit=current_app.config['HISTORY_LIMIT'], 
                 customer="customer='%(customer)s'" if alert.customer else "customer IS NULL",
                 value="'%(value)s'" if alert.value else "NULL",
                 raw_data="'%(raw_data)s'" if alert.raw_data else "NULL")
 
-        
-
         self._update(update, data)
-        alert_object = self._fetchone(get_query,data)
-        alert_object = alert_object._asdict()
 
-        self.insert_alert_history(alert_object['id'], history)
-        histories = self.get_alert_history(alert_object['id'])
-
-        self.insert_alert_service(data['id'],data['service'])
-        services = self.get_alert_service(alert_object['id'])
-
-        self.pre_process_alert(alert_object, histories, services)
-        return alert_object
+        alert_tuple = self._fetchone(get_query, data)
+        alert_dict = None
+        if alert_tuple:
+            self.insert_alert_aux(alert_tuple.id, 'alert_history', 'history', history)
+            #self.insert_alert_aux(alert_tuple.id, 'alert_service', 'service', data['service'])
+            self.insert_alert_aux(alert_tuple.id, 'alert_tag', 'tag', data['tags'])
+            #self.insert_alert_aux(alert_tuple.id, 'alert_correlate', 'correlate', data['correlate']) 
+            
+            histories = self.get_alert_aux(alert_tuple.id, 'alert_history')  
+            services = self.get_alert_aux(alert_tuple.id, 'alert_service')
+            tags = self.get_alert_aux(alert_tuple.id, 'alert_tag')
+            correlates = self.get_alert_aux(alert_tuple.id, 'alert_correlate')
+            alert_dict = self.pre_process_alert(alert_tuple, histories, services, tags, correlates)
+        
+        return alert_dict
 
 
     def create_alert(self, alert):
-        print("DUPLICATE create_alert")
+        print("--> create_alert")
+
         insert = """
-            INSERT INTO alerts (id, resource, event, environment, severity, correlate, status, `group`,
-                value, `text`, `tags`, attributes, origin, type, create_time, timeout, raw_data, customer,
+            INSERT INTO alerts (id, resource, event, environment, severity, status, `group`,
+                value, `text`, attributes, origin, type, create_time, timeout, raw_data, customer,
                 duplicate_count, `repeat`, previous_severity, trend_indication, receive_time, last_receive_id,
                 last_receive_time)
-            VALUES ('%(id)s', '%(resource)s', '%(event)s', '%(environment)s', '%(severity)s', '%(correlate)s', '%(status)s',
-                '%(group)s', {value}, '%(text)s', '%(tags)s', '%(attributes)s', '%(origin)s',
+            VALUES ('%(id)s', '%(resource)s', '%(event)s', '%(environment)s', '%(severity)s', '%(status)s',
+                '%(group)s', {value}, '%(text)s', '%(attributes)s', '%(origin)s',
                 '%(event_type)s', '%(create_time)s', '%(timeout)s', {raw_data}, {customer}, '%(duplicate_count)s',
                 '%(repeat)s', '%(previous_severity)s', '%(trend_indication)s', '%(receive_time)s', '%(last_receive_id)s',
-                '%(last_receive_time)s')
-        """.format(customer="customer='%(customer)s'" if alert.customer else "NULL",
+                '%(last_receive_time)s') ;
+        """.format(customer="customer='%(customer)s'" if alert.customer and not alert.customer == 'None' else "NULL",
             value="'%(value)s'" if alert.value else "NULL",
             raw_data="'%(raw_data)s'" if alert.raw_data else "NULL")
-
         
         print("Tags Type: %s" % alert.tags)
         data = vars(alert)
@@ -551,33 +520,31 @@ class Backend(Database):
         data['repeat'] = 1 if json.dumps(data['repeat'], cls=HistoryEncoder) == 'false' else 0 
         data['attributes'] = json.dumps(data['attributes'], cls=HistoryEncoder)
         #data['service'] = json.dumps(data['service'], cls=HistoryEncoder)
-        data['correlate'] = json.dumps(data['correlate'], cls=HistoryEncoder)
+        #data['correlate'] = json.dumps(data['correlate'], cls=HistoryEncoder)
         #data['history'] = json.dumps(data['history'], cls=HistoryEncoder)
-        data['tags'] = json.dumps(data['tags'], cls=HistoryEncoder)
+        #print(data['tags'])
+        #data['tags'] = json.dumps(data['tags'], cls=HistoryEncoder)
 
         #print("Alert DATA: %s" % pprint.pformat(data))
         get_query = "select * from alerts where id = '%(id)s'" 
         self._insert(insert, data)
-        alert_object = self._fetchone(get_query,data)
-        #print("Object: %s" % pprint.pformat(alert_object))
-        alert_object = alert_object._asdict()
 
-        #print("Attributes: %s" % alert_object['attributes'])
-        #raise Exception('a')
+        alert_tuple = self._fetchone(get_query,data)
 
-        self.insert_alert_history(data['id'], data['history'])
-        histories = self.get_alert_history(data['id'])
-        self.insert_alert_service(data['id'],data['service'])
-        services = self.get_alert_service(data['id'])
+        self.insert_alert_aux(alert_tuple.id, 'alert_history', 'history', data['history'])
+        self.insert_alert_aux(alert_tuple.id, 'alert_service', 'service', data['service'])
+        self.insert_alert_aux(alert_tuple.id, 'alert_tag', 'tag', data['tags'])
+        self.insert_alert_aux(alert_tuple.id, 'alert_correlate', 'correlate', data['correlate']) 
 
-        self.pre_process_alert(alert_object, histories, services)
+        histories = self.get_alert_aux(alert_tuple.id, 'alert_history')  
+        services = self.get_alert_aux(alert_tuple.id, 'alert_service')
+        tags = self.get_alert_aux(alert_tuple.id, 'alert_tag')
+        correlates = self.get_alert_aux(alert_tuple.id, 'alert_correlate')
 
-        print('PreParse Object: %s' % pprint.pformat(alert_object))
-
-        #print("Object: %s" % pprint.pformat(alert))
-        return alert_object
+        return self.pre_process_alert(alert_tuple, histories, services, tags, correlates)
 
     def get_alert(self, id, customers=None):
+        print("--> get_alert")
         select = """
             SELECT * FROM alerts
              WHERE (id REGEXP ('%(id)s') OR last_receive_id REGEXP ('%(id)s'))
@@ -585,18 +552,22 @@ class Backend(Database):
         """.format(customer="customer IN ('%(customers)s')" if customers else "1=1")
         #return self._fetchone(select, {'id': id, 'customers': customers})
         select = select % {"id":id,"customers":customers}
-        alert_object = self._fetchone(select)
-        histories = self.get_alert_history(id)
-        services = self.get_alert_service(id)
+        alert_tuple= self._fetchone(select)
 
-        if alert_object:
-            alert_object = alert_object._asdict()      
-            self.pre_process_alert(alert_object, histories, services)
-        return alert_object
+        histories = self.get_alert_aux(id, 'alert_history')  
+        services = self.get_alert_aux(id, 'alert_service')
+        tags = self.get_alert_aux(id, 'alert_tag', orderby='ORDER BY `alert_tag_id` ASC')
+        correlates = self.get_alert_aux(id, 'alert_correlate')
+
+        alert_dict = None
+        if alert_tuple:   
+            alert_dict = self.pre_process_alert(alert_tuple, histories, services, tags, correlates)
+        return alert_dict
 
     #### STATUS, TAGS, ATTRIBUTES
 
     def set_status(self, id, status, timeout, history=None):
+        print("--> set_status")
 
         update = """
             UPDATE alerts
@@ -608,15 +579,18 @@ class Backend(Database):
         #return self._update(update, data, returning=True)
         get_query = "select * from alerts where id = '%(id)s'" 
         self._update(update, data, returning=True)
-        alert_object = self._fetchone(get_query,data)
-        alert_object = alert_object._asdict()      
-        self.insert_alert_history(data['id'], history)
-        histories = self.get_alert_history(data['id'])
-        services = self.get_alert_service(id)
-        self.pre_process_alert(alert_object, histories, services)
-        return alert_object
+        alert_tuple = self._fetchone(get_query,data)
+
+        histories = self.get_alert_aux(id, 'alert_history')  
+        services = self.get_alert_aux(id, 'alert_service')
+        tags = self.get_alert_aux(id, 'alert_tag')
+        correlates = self.get_alert_aux(id, 'alert_correlate')
+
+        alert_dict = self.pre_process_alert(alert_tuple, histories, services, tags, correlates)
+        return alert_dict
 
     def set_severity_and_status(self, id, severity, status, timeout, history=None):
+        print("--> set_severity_and_status")
 
         update = """
             UPDATE alerts
@@ -629,62 +603,59 @@ class Backend(Database):
         #return self._update(update, data, returning=True)
         get_query = "select * from alerts where id = '%(id)s'" 
         self._update(update, data, returning=True)
+        alert_tuple = self._fetchone(get_query,data)
 
-        self.insert_alert_history(data['id'], history)
-        histories = self.get_alert_history(id)
-        services = self.get_alert_service(id)
-
-        alert_object = self._fetchone(get_query,data)
-        alert_object = alert_object._asdict()      
-        self.pre_process_alert(alert_object, histories,services)
-        return alert_object
+        histories = self.get_alert_aux(id, 'alert_history')  
+        services = self.get_alert_aux(id, 'alert_service')
+        tags = self.get_alert_aux(id, 'alert_tag')
+        correlates = self.get_alert_aux(id, 'alert_correlate')
+   
+        alert_dict = self.pre_process_alert(alert_tuple, histories,services, tags, correlates)
+        return alert_dict 
 
     def tag_alert(self, id, tags):
+        print("--> tag_alert")
 
-        tag_update = self.serialize_for_json_append(tags,",'$',%s")
-        tags_update_string = """tags=JSON_ARRAY_APPEND(tags {tags})""".format(tags=tag_update)
-        tags_not_search = ''
-        for tag in tags:
-            #tags_not_search += " AND NOT JSON_SEARCH(tags,'one','%s') > 0 " % tag
-            tags_not_search += " AND json_string_check('%(id)s','%(tag)s') < 1" % {"id":id,"tag":tag}
+        self.insert_alert_aux(id, 'alert_tag', 'tag', tags)
 
-        update = """
-            UPDATE alerts
-            SET {tags}
-            WHERE id REGEXP '%(id)s' {tags_not_search}
-        """.format(tags=tags_update_string,tags_not_search=tags_not_search)
-        data = {'id': id, 'like_id': id + '%', 'tags': tags}
-        self._update(update, data, returning=True)
         select = """SELECT * FROM alerts WHERE id REGEXP '%(id)s'"""
-        alert_object = self._fetchone(select,data)
-        alert_object = alert_object._asdict()
+        alert_tuple = self._fetchone(select,{"id":id})
 
-        histories = self.get_alert_history(data['id'])
-        services = self.get_alert_service(id)
+        histories = self.get_alert_aux(id, 'alert_history')  
+        services = self.get_alert_aux(id, 'alert_service')
+        tags = self.get_alert_aux(id, 'alert_tag', orderby='ORDER BY `alert_tag_id` ASC')
+        correlates = self.get_alert_aux(id, 'alert_correlate')
 
-
-        self.pre_process_alert(alert_object, histories, services)
-        return alert_object
+        alert_dict = self.pre_process_alert(alert_tuple, histories, services, tags, correlates)
+        return alert_dict
 
     def untag_alert(self, id, tags):
+        print("--> untag_alert")
 
-        print("Tags: %s" %tags)
-        update = """
-        UPDATE alerts 
-        SET tags = JSON_REMOVE(tags,replace(json_search(tags,'one','%(tags)s'),'"','')) 
-        WHERE json_search(tags,'one','bar') IS NOT NULL AND id REGEXP '%(id)s'
-        """
-        #self._update(update, {'id': id, 'like_id': id+'%', 'tags': tags[0]}, returning=True)
-        data = {'id': id, 'like_id': id + '%', 'tags': tags[0]}
-        self._update(update, data, returning=True)
+        delete = """DELETE FROM alert_tag WHERE (id = '%(id)s' OR id REGEXP '%(like_id)s') AND (0=1 %(tags)s)"""
+
+        tags_str = ''
+        if type(tags) == list:
+            for tag in tags:
+                tags_str +=  " OR tag = '%s'" % tag
+        else:
+            tags_str +=  "OR tag = '%s'" % tags
+
+        data = {'id': id, 'like_id': id, 'tags': tags_str}
+
         select = """SELECT * FROM alerts WHERE id REGEXP '%(id)s'"""
-        alert_object = self._fetchone(select,data)
-        alert_object = alert_object._asdict() 
-        histories = self.get_alert_history(id)
-        services = self.get_alert_service(id)
 
-        self.pre_process_alert(alert_object, histories, services)
-        return alert_object
+        alert_tuple = self._fetchone(select,data)
+
+        histories = self.get_alert_aux(id, 'alert_history')  
+        services = self.get_alert_aux(id, 'alert_service')
+        tags = self.get_alert_aux(id, 'alert_tag', orderby='ORDER BY `alert_tag_id` ASC')
+        correlates = self.get_alert_aux(id, 'alert_correlate')
+
+        self._delete(delete, data)
+
+        alert_dict = self.pre_process_alert(alert_tuple, histories, services, tags, correlates)
+        return alert_dict
 
     def update_attributes(self, id, old_attrs, new_attrs):
         old_attrs.update(new_attrs)
@@ -698,12 +669,16 @@ class Backend(Database):
         data['attrs'] = json.dumps(data['attrs'], cls=HistoryEncoder)
         self._update(update, data, returning=True)
         select = """SELECT * FROM alerts WHERE id REGEXP '%(id)s'"""
-        alert_object = self._fetchone(select,data)
-        alert_object = alert_object._asdict() 
-        histories = self.get_alert_history(id)
-        services = self.get_alert_service(id)
-        self.pre_process_alert(alert_object,histories,services)
-        return alert_object
+
+        alert_tuple = self._fetchone(select,data)
+
+        histories = self.get_alert_aux(id, 'alert_history')  
+        services = self.get_alert_aux(id, 'alert_service')
+        tags = self.get_alert_aux(id, 'alert_tag')
+        correlates = self.get_alert_aux(id, 'alert_correlate')
+
+        alert_dict = self.pre_process_alert(alert_tuple,histories,services,tags,correlates)
+        return alert_dict
 
     def delete_alert(self, id):
         delete = """
@@ -714,12 +689,9 @@ class Backend(Database):
         select = """SELECT id FROM alerts WHERE id REGEXP '%(id)s'"""
         alert_object = self._fetchone(select,data)
         alert_object = alert_object._asdict()  
-        alert = {}
-        alert['id'] = alert_object['id']
-
 
         self._delete(delete, data)
-        return alert
+        return alert_object['id']
 
     #### SEARCH & HISTORY
 
@@ -731,20 +703,23 @@ class Backend(Database):
             ORDER BY {order}
         """.format(where=query.where, order=query.sort or 'last_receive_time')
         #raise Exception(str(select % query.vars))
-        alerts = self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+        alerts_tuple = self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
         #print("FetchAll Len: %d" % len(alerts))
-        for i in range(len(alerts)):
-            alerts[i] = alerts[i]._asdict()
-            histories = self.get_alert_history(id)
-            services = self.get_alert_service(id)
-            self.pre_process_alert(alerts[i], histories, services)
+        alerts_dict = []
+        for alert_tuple in alerts_tuple:
+            histories = self.get_alert_aux(alert_tuple.id, 'alert_history')  
+            services = self.get_alert_aux(alert_tuple.id, 'alert_service')
+            tags = self.get_alert_aux(alert_tuple.id, 'alert_tag')
+            correlates = self.get_alert_aux(alert_tuple.id, 'alert_correlate')
+            alert_dict = self.pre_process_alert(alert_tuple, histories, services, tags, correlates)
+            alerts_dict.append(alert_dict)
         #for x in alerts:
         #   print("Pre alert: %s" % pprint.pformat(x))
         #for alert in alerts:
         #    alert = alert._asdict()
         #    self.pre_process_alert(alert)
         #print('GetAlerts Object: %s' % pprint.pformat(alerts[0]))
-        return alerts
+        return alerts_dict
 
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()
@@ -964,21 +939,106 @@ class Backend(Database):
 
     #### BLACKOUTS
 
+    def pre_process_blackout(self, blackout_tuple, services, tags):
+        blackout_dict = blackout_tuple._asdict()
+        blackout_dict['id'] = blackout_dict['id'].encode('ascii','ignore')
+        #blackout_dict['group'] = blackout_dict['group'].encode('ascii','ignore') if 
+  
+        service_list = []
+        for service in services:
+            service_str = service._asdict()['service']
+            #print("Service: %s" % str(service_str))
+            service_list.append(service_str)
+        blackout_dict['service'] = service_list
+
+        tag_list = []
+        for tag in tags:
+            tag_str = tag._asdict()['tag']
+            #print("Tag: %s" % str(tag_str))
+            tag_list.append(tag_str)
+        blackout_dict['tags'] = tag_list
+
+        return blackout_dict
+
+    def get_blackout_aux(self, id, table, limit = None, orderby=None):
+        data = {"id":id, "table":table}
+        if limit:
+            get_history = """SELECT * FROM `%(table)s` WHERE id = '%(id)s' LIMIT %d""" % limit    
+        else:
+            get_history = """SELECT * FROM `%(table)s` WHERE id = '%(id)s'"""
+
+        if orderby:
+            get_history += " %s" % orderby
+
+        history = self._fetchall(get_history,data)
+
+        return history
+
+    def insert_blackout_aux(self, id, table, column, data):
+        insert_history = "INSERT IGNORE INTO `%s` (id, %s) VALUES ('%s', '%s');"
+
+        if data:
+            if type(data) == list:
+                if len(data) > 0:
+                    insert = None
+                    insert = "INSERT IGNORE INTO `%s` (id, %s) VALUES " % (table,column)
+                    for d in data:
+                        if type(d) == History:
+                            insert += "('%s','%s')," % (id, json.dumps(d, cls=HistoryEncoder))
+                        if type(d) == str or type(d) == unicode:
+                            insert += "('%s','%s')," % (id, d)
+                    self._insert(insert.rstrip(',') + ";")
+            elif type(data) == History:
+                insert = insert_history % (table, column, id, json.dumps(data, cls=HistoryEncoder))
+                self._insert(insert_history ,(table, column, id, json.dumps(data, cls=HistoryEncoder)))
+            elif type(data) == str or type(data) == unicode:
+                insert = insert_history % (table, column, id, data)
+                self._insert(insert_history, (table, column, id, data))
+            else:
+                print("Wrong object")
+                raise(Exception("Wrong object type %s" % str(type(data))))
+
     def create_blackout(self, blackout):
         insert = """
-            INSERT INTO blackouts (id, priority, environment, service, resource, event, `group`, tags, customer, start_time, end_time, duration)
-            VALUES (%(id)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s, %(customer)s, %(start_time)s, %(end_time)s, %(duration)s)
-            RETURNING *
+            INSERT INTO blackouts (id, priority, environment, resource, event, `group`, customer, start_time, end_time, duration)
+            VALUES ('%(id)s', '%(priority)s', '%(environment)s', %(resource)s, %(event)s, %(group)s, %(customer)s, '%(start_time)s', '%(end_time)s', '%(duration)s')
         """
-        return self._insert(insert, vars(blackout))
+        data = vars(blackout)
+        #data['service'] = data['service'] if data['service'] else 'NULL';
+        data['resource'] = data['resource'] if data['resource'] and not data['resource'] == 'None' else 'NULL';
+        data['event'] = data['event'] if data['event'] and not data['event'] == 'None' else 'NULL';
+        data['group'] = data['group'] if data['group'] and not data['group'] == 'None' else 'NULL';
+        #print("%s %s" % (data['customer'], type(data['customer'])))
+        data['customer'] = data['customer'] if data['customer'] and not data['customer'] == 'None' else 'NULL';
+        
+        self._insert(insert, data)
+        get_query = "select * from `blackouts` where id = '%(id)s'"
+        blackout_tuple = self._fetchone(get_query, data)
+
+        self.insert_blackout_aux(blackout_tuple.id, 'blackout_service', 'service', data['service'])
+        self.insert_blackout_aux(blackout_tuple.id, 'blackout_tag', 'tag', data['tags'])
+  
+        services = self.get_blackout_aux(blackout_tuple.id, 'blackout_service')
+        tags = self.get_blackout_aux(blackout_tuple.id, 'blackout_tag')
+
+        blackout_dict = self.pre_process_blackout(blackout_tuple,services,tags)
+
+        return blackout_dict
+
 
     def get_blackout(self, id, customer=None):
         select = """
             SELECT * FROM blackouts
             WHERE id=%(id)s
               AND {customer}
-        """.format(customer="customer=%(customer)s" if customer else "1=1")
-        return self._fetchone(select, {'id': id, 'customer': customer})
+        """.format(customer="customer='%(customer)s'" if customer else "1=1")
+        blackout_tuple = self._fetchone(select, {'id': id, 'customer': customer})
+        services = self.get_blackout_aux(blackout_tuple.id, 'blackout_service')
+        tags = self.get_blackout_aux(blackout_tuple.id, 'blackout_tag')
+
+        blackout_dict = self.pre_process_blackout(blackout_tuple,services,tags)
+
+        return blackout_dict
 
     def get_blackouts(self, query=None):
         query = query or Query()
@@ -986,37 +1046,95 @@ class Backend(Database):
             SELECT * FROM blackouts
             WHERE {where}
         """.format(where=query.where)
-        return self._fetchall(select, query.vars)
+        #return self._fetchall(select, query.vars)
+
+        blackouts_tuple = self._fetchall(select, query.vars)
+        #print("FetchAll Len: %d" % len(alerts))
+        blackout_dict = []
+        for blackout_tuple in alerts_tuple:
+            services = self.get_alert_aux(blackout_tuple.id, 'blackout_service')
+            tags = self.get_alert_aux(blackout_tuple.id, 'blackout_tag')
+            blackout_dict = self.pre_process_blackout(blackout_tuple, services, tags)
+            blackout_dict.append(blackout_dict)
+        #for x in alerts:
+        #   print("Pre alert: %s" % pprint.pformat(x))
+        #for alert in alerts:
+        #    alert = alert._asdict()
+        #    self.pre_process_alert(alert)
+        #print('GetAlerts Object: %s' % pprint.pformat(alerts[0]))
+        return blackout_dict
 
     def is_blackout_period(self, alert):
         now = datetime.utcnow()
-        select = """
-            SELECT *
+
+        data = vars(alert)
+        tags_str = ''
+        for tag in data['tags']:
+            tags_str += "'%s'," % tag
+        tags_str = tags_str.rstrip(',')
+        data['tags'] = tags_str
+
+        services_str = ''
+        for service in data['service']:
+            services_str += "'%s'," % service
+        services_str = services_str.rstrip(',')
+        data['service'] = services_str
+        #time.sleep(1)
+
+        select = """SELECT * FROM blackouts WHERE start_time<='%(now)s' AND end_time>'%(now)s'
+        AND environment='%(environment)s' AND (
+            (resource IS NULL 
+                AND NOT EXISTS (SELECT * FROM blackout_service WHERE blackout_service.id = blackouts.id) 
+                AND event IS NULL 
+                AND `group` IS NULL 
+                AND NOT EXISTS (SELECT * FROM blackout_tag WHERE blackout_tag.id = blackouts.id)
+            ) OR (resource='%(resource)s' 
+                AND NOT EXISTS (SELECT * FROM blackout_service WHERE blackout_service.id = blackouts.id) 
+                AND event IS NULL 
+                AND `group` IS NULL 
+                AND NOT EXISTS (SELECT * FROM blackout_tag WHERE blackout_tag.id = blackouts.id)
+            ) OR (resource IS NULL 
+                AND EXISTS (SELECT * FROM blackout_service WHERE blackout_service.id = blackouts.id 
+                AND service in (%(service)s)) 
+                AND event IS NULL 
+                AND `group` IS NULL 
+                AND NOT EXISTS (SELECT * FROM blackout_tag WHERE blackout_tag.id = blackouts.id)
+            )
+                
+                
+        )
+        """.format(service_existence="AND EXISTS (SELECT * FROM blackout_service WHERE blackout_service.id = blackouts.id AND service in (%(service)s))" if len(services_str) > 0 else '')
+
+        '''
+        select = """SELECT *
             FROM blackouts
             WHERE start_time<='%(now)s' AND end_time>'%(now)s'
                 AND environment='%(environment)s'
                 AND (
-                (resource IS NULL AND service='{}' AND event IS NULL AND `group` IS NULL AND tags='{}')
-                OR (resource='%(resource)s' AND service='{}' AND event IS NULL AND `group` IS NULL AND tags='{}') 
-                OR (resource IS NULL AND JSON_CONTAINS(service, '%(service)s') AND event IS NULL AND `group` IS NULL AND tags='{}')
-                OR (resource IS NULL AND service='{}' AND event='%(event)s' AND `group` IS NULL AND tags='{}')
-                OR (resource IS NULL AND service='{}' AND event IS NULL AND `group`='%(group)s' AND tags='{}')
-                OR (resource='%(resource)s' AND service='{}' AND event='%(event)s' AND `group` IS NULL AND tags='{}')
-                OR (resource IS NULL AND service='{}' AND event IS NULL AND `group` IS NULL AND JSON_CONTAINS(tags,'%(tags)s'))
+                (resource IS NULL AND NOT EXISTS (SELECT * FROM blackout_service WHERE blackout_service.id = blackouts.id) AND event IS NULL AND `group` IS NULL AND NOT EXISTS (SELECT * FROM blackout_tag WHERE blackout_tag.id = blackouts.id))
+                OR (resource='%(resource)s' AND NOT EXISTS (SELECT * FROM blackout_service WHERE blackout_service.id = blackouts.id) AND event IS NULL AND `group` IS NULL AND NOT EXISTS (SELECT * FROM blackout_tag WHERE blackout_tag.id = blackouts.id)) 
+                
+                OR (resource IS NULL AND EXISTS (SELECT * FROM blackout_service WHERE blackout_service.id = blackouts.id AND service in (%(service)s)) AND event IS NULL AND `group` IS NULL AND NOT EXISTS (SELECT * FROM blackout_tag WHERE blackout_tag.id = blackouts.id))
+                OR (resource IS NULL AND NOT EXISTS (SELECT * FROM blackout_service WHERE blackout_service.id = blackouts.id) AND event='%(event)s' AND `group` IS NULL AND NOT EXISTS (SELECT * FROM blackout_tag WHERE blackout_tag.id = blackouts.id))
+                OR (resource IS NULL AND NOT EXISTS (SELECT * FROM blackout_service WHERE blackout_service.id = blackouts.id) AND event IS NULL AND `group`='%(group)s' AND NOT EXISTS (SELECT * FROM blackout_tag WHERE blackout_tag.id = blackouts.id))
+                OR (resource='%(resource)s' AND NOT EXISTS (SELECT * FROM blackout_service WHERE blackout_service.id = blackouts.id) AND event='%(event)s' AND `group` IS NULL AND NOT EXISTS (SELECT * FROM blackout_tag WHERE blackout_tag.id = blackouts.id))
+                OR (resource IS NULL AND NOT EXISTS (SELECT * FROM blackout_service WHERE blackout_service.id = blackouts.id) AND event IS NULL AND `group` IS NULL AND EXISTS (SELECT * FROM blackout_tag WHERE blackout_tag.id = blackouts.id AND tag in (%(tags)s)))
                 )
         """
+        '''
 
-        data = vars(alert)
-
-        print("QueryData: %s" % pprint.pformat(data))
-        data['service'] = json.dumps(data['service'])
+        #print("QueryData: %s" % pprint.pformat(data))
+        #data['service'] = json.dumps(data['service'])
         data['last_receive_time'] = json.dumps(data['last_receive_time'], cls=HistoryEncoder)
         data['history'] = json.dumps(data['history'], cls=HistoryEncoder)
         data['correlate'] = json.dumps(data['correlate'], cls=HistoryEncoder)
-        data['tags'] = json.dumps(data['tags'], cls=HistoryEncoder)
+        #data['tags'] = json.dumps(data['tags'], cls=HistoryEncoder)
         data['now'] = now
-        if current_app.config['CUSTOMER_VIEWS']:
-            select += " AND (customer IS NULL OR customer=%(customer)s)"
+
+
+
+        #if current_app.config['CUSTOMER_VIEWS']:
+        #    select += " AND (customer IS NULL OR {customer})".format(customer="customer='%(customer)s'" if data['customer'] and data['customer'] != 'None' else ' 0=1')
 
         select = select % data
         if self._fetchone(select):
@@ -1128,7 +1246,7 @@ class Backend(Database):
             VALUES ('%(id)s', '%(name)s', '%(email)s', '%(password)s', '%(status)s', '%(roles)s', '%(attributes)s', '%(create_time)s',
                 %(last_login)s, '%(text)s', '%(update_time)s', %(email_verified)s)
         """
-        get_query = "SELECT * from user where id = '%(id)s'"
+        get_query = "SELECT * from users where id = '%(id)s'"
         data = vars(user)
         data['roles'] = json.dumps(data['roles'])
         data['attributes'] = json.dumps(data['attributes'])
@@ -1136,7 +1254,10 @@ class Backend(Database):
             data['last_login'] = 'NULL'
         self._insert(insert, data)
         user = self._fetchone(get_query, data)
-
+        if user:
+            user = user._asdict()
+            user['roles'] = json.loads(user['roles'])
+            user['attributes'] = json.loads(user['attributes'])
         return user
 
         return self._insert(insert, vars(user))
@@ -1144,9 +1265,10 @@ class Backend(Database):
     def get_user(self, id):
         select = """SELECT * FROM users WHERE id='%s'"""
         user = self._fetchone(select, (id,))
-        user = user._asdict()
-        user['roles'] = json.loads(user['roles'])
-        user['attributes'] = json.loads(user['attributes'])
+        if user:
+            user = user._asdict()
+            user['roles'] = json.loads(user['roles'])
+            user['attributes'] = json.loads(user['attributes'])
         return user
 
     def get_users(self, query=None):
@@ -1155,14 +1277,22 @@ class Backend(Database):
             SELECT * FROM users
             WHERE {where}
         """.format(where=query.where)
-        return self._fetchall(select, query.vars)
+        users = self._fetchall(select, query.vars)
+        if users:
+            for i in range(len(users)): 
+                if users[i]:
+                    users[i] = users[i]._asdict()
+                    users[i]['roles'] = json.loads(users[i]['roles'])
+                    users[i]['attributes'] = json.loads(users[i]['attributes'])
+        return users
 
     def get_user_by_email(self, email):
         select = """SELECT * FROM users WHERE email='%s'"""
         user = self._fetchone(select, (email,))
-        user = user._asdict()
-        user['roles'] = json.loads(user['roles'])
-        user['attributes'] = json.loads(user['attributes'])
+        if user:
+            user = user._asdict()
+            user['roles'] = json.loads(user['roles'])
+            user['attributes'] = json.loads(user['attributes'])
         return user
 
     def get_user_by_hash(self, hash):
@@ -1229,10 +1359,17 @@ class Backend(Database):
     def delete_user(self, id):
         delete = """
             DELETE FROM users
-            WHERE id=%s
-            RETURNING id
+            WHERE id='%s'
         """
-        return self._delete(delete, (id,), returning=True)
+
+        select = """SELECT id FROM `users` WHERE id REGEXP '%s'"""
+        key_object = self._fetchone(select,(id,))
+        key_object = key_object._asdict()  
+
+        self._delete(delete, (id,))
+        return key_object['id']
+
+        #return self._delete(delete, (id,), returning=True)
 
     #### PERMISSIONS
 
@@ -1267,10 +1404,16 @@ class Backend(Database):
     def delete_perm(self, id):
         delete = """
             DELETE FROM perms
-            WHERE id=%s
-            RETURNING id
+            WHERE id='%s'
         """
-        return self._delete(delete, (id,), returning=True)
+        select = """SELECT id FROM `perms` WHERE id = '%s'"""
+        key_object = self._fetchone(select,(id,))
+        key_object = key_object._asdict()  
+
+        self._delete(delete, (id,))
+        return key_object['id']
+
+        #return self._delete(delete, (id,), returning=True)
 
     def get_scopes_by_match(self, login, matches):
         if login in current_app.config['ADMIN_USERS']:
@@ -1299,7 +1442,7 @@ class Backend(Database):
         return cust
 
     def get_customer(self, id):
-        select = """SELECT * FROM customers WHERE id=%s"""
+        select = """SELECT * FROM customers WHERE id='%s'"""
         return self._fetchone(select, (id,))
 
     def get_customers(self, query=None):
@@ -1313,10 +1456,16 @@ class Backend(Database):
     def delete_customer(self, id):
         delete = """
             DELETE FROM customers
-            WHERE id=%s
-            RETURNING id
+            WHERE id='%s'
         """
-        return self._delete(delete, (id,), returning=True)
+        select = """SELECT id FROM `customers` WHERE id = '%s'"""
+        key_object = self._fetchone(select,(id,))
+        key_object = key_object._asdict()  
+
+        self._delete(delete, (id,))
+        return key_object['id']
+
+        #return self._delete(delete, (id,), returning=True)
 
     def get_customers_by_match(self, login, matches):
         if login in current_app.config['ADMIN_USERS']:
@@ -1432,14 +1581,18 @@ class Backend(Database):
 
     #### SQL HELPERS
 
-    def _insert(self, query, vars):
+    def _insert(self, query, vars= None):
         """
         Insert, with return.
         """
         cursor = g.db.cursor()
-        self._log(cursor, query, vars)
-        print("Insert: %s" % (query % vars))
-        cursor.execute(query % vars)
+        #self._log(cursor, query, vars)
+        if vars:
+            print("Insert: %s" % (query % vars))
+            cursor.execute(query % vars)
+        else:
+            print("Insert: %s" % query)
+            cursor.execute(query)
         g.db.commit()
         ret = cursor.fetchone()
         cursor.close()
@@ -1455,7 +1608,7 @@ class Backend(Database):
             print("Insert: %s" % (query % vars))
             cursor.execute(query % vars, multi=True)
         else:
-            print("Insert: %s" % (query))
+           # print("Insert: %s" % (query))
             cursor.execute(query, multi=True)
         g.db.commit()
         ret = cursor.fetchone()
@@ -1466,7 +1619,7 @@ class Backend(Database):
         """
         Return none or one row.
         """
-        cursor = g.db.cursor(named_tuple=True)
+        cursor = g.db.cursor(named_tuple=True, buffered=True)
         if vars:
             print("Query: %s" % (query % vars))
             cursor.execute(query % vars)
@@ -1481,9 +1634,9 @@ class Backend(Database):
         """
         if limit is None:
             limit = current_app.config['DEFAULT_PAGE_SIZE']
-        print("Fetchall query: %s " % (query % vars))
+        #print("Fetchall query: %s " % (query % vars))
         query += " LIMIT %s OFFSET %s""" % (limit, offset)
-        cursor = g.db.cursor(named_tuple=True)
+        cursor = g.db.cursor(named_tuple=True,buffered=True)
         #self._log(cursor, query, vars)
         print("Fetch all Query: %s" % (query % vars))
         cursor.execute(query % vars)
