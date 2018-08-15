@@ -13,7 +13,8 @@ class AlertTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': False,
-            'ALERT_TIMEOUT': 120
+            'ALERT_TIMEOUT': 120,
+            'HISTORY_LIMIT': 5
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -502,6 +503,49 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': '10.0.0.1'}))
+
+    def test_history_limit(self):
+
+        # create alert (history change is dropped because length > limit)
+        self.fatal_alert['value'] = '100'
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        alert_id = data['id']
+
+        # duplicate alert, value change (history change is dropped because length > limit)
+        self.fatal_alert['value'] = '101'
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        # ack alert, status change
+        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # duplicate alert, value change
+        self.fatal_alert['value'] = '102'
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        # correlated alert, severity change
+        self.fatal_alert['value'] = '99'
+        response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        # correlated alert, severity change
+        self.fatal_alert['value'] = '104'
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        # duplicate alert, value change
+        self.fatal_alert['value'] = '105'
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        self.assertListEqual([h['value'] for h in data['alert']['history']],['102', None, '104', None, '105'])
+        self.assertListEqual([h['type'] for h in data['alert']['history']], ['value', 'severity', 'severity', 'status', 'value'])
 
     def test_timeout(self):
 
