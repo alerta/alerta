@@ -246,7 +246,7 @@ class Alert(object):
                 status=self.status,
                 text="duplicate alert with status change",
                 change_type="status",
-                update_time=now
+                update_time=self.create_time
             )
         elif self.value != previous_value:
             history = History(
@@ -255,7 +255,7 @@ class Alert(object):
                 value=self.value,
                 text="duplicate alert with value change",
                 change_type="value",
-                update_time=now
+                update_time=self.create_time
             )
         else:
             history = None
@@ -289,7 +289,7 @@ class Alert(object):
             value=self.value,
             text=self.text,
             change_type="severity",
-            update_time=now
+            update_time=self.create_time
         )]
 
         if self.status != previous_status:
@@ -299,7 +299,7 @@ class Alert(object):
                 status=self.status,
                 text="correlated alert status change",
                 change_type="status",
-                update_time=now
+                update_time=self.create_time
             ))
 
         return Alert.from_db(db.correlate_alert(self, history))
@@ -337,7 +337,7 @@ class Alert(object):
             status=self.status,
             text="new alert status change",
             change_type='status',
-            update_time=self.last_receive_time
+            update_time=self.create_time
         ))
 
         return Alert.from_db(db.create_alert(self))
