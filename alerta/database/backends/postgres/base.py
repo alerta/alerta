@@ -206,7 +206,7 @@ class Backend(Database):
                SET status=%(status)s, value=%(value)s, text=%(text)s, timeout=%(timeout)s, raw_data=%(raw_data)s,
                    repeat=%(repeat)s, last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
                    tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)), attributes=attributes || %(attributes)s,
-                   duplicate_count=duplicate_count+1, history=(history || %(history)s)[1:{limit}]
+                   duplicate_count=duplicate_count+1, history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND event=%(event)s
@@ -225,7 +225,7 @@ class Backend(Database):
                    repeat=%(repeat)s, previous_severity=%(previous_severity)s, trend_indication=%(trend_indication)s,
                    receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
                    last_receive_time=%(last_receive_time)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
-                   attributes=attributes || %(attributes)s, history=(history || %(history)s)[1:{limit}]
+                   attributes=attributes || %(attributes)s, history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
@@ -262,7 +262,7 @@ class Backend(Database):
     def set_status(self, id, status, timeout, history=None):
         update = """
             UPDATE alerts
-            SET status=%(status)s, timeout=%(timeout)s, history=(history || %(change)s)[1:{limit}]
+            SET status=%(status)s, timeout=%(timeout)s, history=(%(change)s || history)[1:{limit}]
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
@@ -271,7 +271,7 @@ class Backend(Database):
     def set_severity_and_status(self, id, severity, status, timeout, history=None):
         update = """
             UPDATE alerts
-            SET severity=%(severity)s, status=%(status)s, timeout=%(timeout)s, history=(history || %(change)s)[1:{limit}]
+            SET severity=%(severity)s, status=%(status)s, timeout=%(timeout)s, history=(%(change)s || history)[1:{limit}]
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
@@ -329,9 +329,9 @@ class Backend(Database):
         query = query or Query()
         select = """
             SELECT resource, environment, service, "group", tags, attributes, origin, customer,
-                   history, h.* from alerts, unnest(history) h
+                   history, h.* from alerts, unnest(history[1:{limit}]) h
              WHERE {where}
-        """.format(where=query.where)
+        """.format(where=query.where, limit=current_app.config['HISTORY_LIMIT'])
         Record = namedtuple("Record", ['id', 'resource', 'event', 'environment', 'severity', 'status', 'service',
                                        'group', 'value', 'text', 'tags', 'attributes', 'origin', 'update_time',
                                        'type', 'customer'])

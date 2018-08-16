@@ -124,7 +124,7 @@ class Alert(object):
             'receiveTime': self.receive_time,
             'lastReceiveId': self.last_receive_id,
             'lastReceiveTime': self.last_receive_time,
-            'history': [h.serialize for h in self.history]
+            'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)]
         }
 
     def get_id(self, short=False):
