@@ -94,7 +94,8 @@ class Backend(Database):
                 }],
             "customer": alert.customer
         }
-        return g.db.alerts.find_one(query, projection={"severity": 1, "_id": 0})['severity']
+        r = g.db.alerts.find_one(query, projection={"severity": 1, "_id": 0})
+        return r['severity'] if r else None
 
     def get_status(self, alert):
         """
@@ -113,7 +114,8 @@ class Backend(Database):
             ],
             "customer": alert.customer
         }
-        return g.db.alerts.find_one(query, projection={"status": 1, "_id": 0})['status']
+        r = g.db.alerts.find_one(query, projection={"status": 1, "_id": 0})
+        return r['status'] if r else None
 
     def get_status_and_value(self, alert):
         """
@@ -133,7 +135,7 @@ class Backend(Database):
             "customer": alert.customer
         }
         r = g.db.alerts.find_one(query, projection={"status": 1, "value": 1, "_id": 0})
-        return r['status'], r['value']
+        return (r['status'], r['value']) if r else (None, None)
 
     def is_duplicate(self, alert):
         query = {
