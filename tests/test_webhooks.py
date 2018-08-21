@@ -342,7 +342,8 @@ class WebhooksTestCase(unittest.TestCase):
                         "dimension": "user",
                         "family": "utilization",
                         "instance": "zeta.domain",
-                        "job": "monitoring"
+                        "job": "monitoring",
+                        "info.host_id": "i-0d0721c7f97545d43"
                     }
                 }
             ],
@@ -646,7 +647,6 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['service'], ['Webserver Health'])
         self.assertEqual(data['alert']['text'], 'CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%')
 
-
     def test_grafana_webhook(self):
 
         # state=alerting
@@ -654,6 +654,9 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], "ok")
+
+        # check tags with dots are replaced with underscores ie. 'info.host_id' => 'info_host_id'
+        self.assertEqual(data['alert']['attributes']['info_host_id'], 'i-0d0721c7f97545d43')
 
         alert_id = data['id']
 

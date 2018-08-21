@@ -1,3 +1,4 @@
+import json
 
 from flask import request, g, jsonify
 from flask_cors import cross_origin
@@ -31,6 +32,8 @@ def parse_grafana(alert, match, args):
     service = args.get('service', 'Grafana')
 
     attributes = match.get('tags', None) or dict()
+    attributes = {k.replace('.', '_'):v for (k, v) in attributes.items()}
+
     attributes['ruleId'] = str(alert['ruleId'])
     if 'ruleUrl' in alert:
         attributes['ruleUrl'] = '<a href="%s" target="_blank">Rule</a>' % alert['ruleUrl']
@@ -51,7 +54,7 @@ def parse_grafana(alert, match, args):
         origin=origin,
         event_type=event_type,
         timeout=300,
-        raw_data=alert
+        raw_data=json.dumps(alert)
     )
 
 
