@@ -11,7 +11,7 @@ from alerta.models.token import Jwt
 from alerta.utils.api import absolute_url
 
 try:
-    import bcrypt
+    import bcrypt  # type: ignore
 
     def generate_password_hash(password):
         if isinstance(password, text_type):

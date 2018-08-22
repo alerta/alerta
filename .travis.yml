@@ -1,6 +1,9 @@
+if: tag IS present OR type = pull_request OR (branch = master AND type = push)   # we only CI the master, tags and PRs
+
 language: python
+cache: pip
+dist: xenial
 python:
-  - "2.7"
   - "3.5"
   - "3.6"
 
@@ -25,7 +28,10 @@ before_script:
   - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'CREATE DATABASE alerta5;' -U postgres; fi"
 
 install:
-  - "pip install ."
-  - "pip install -r requirements.txt"
+  - pip install .
+  - pip install -r requirements.txt
+  - pip install mypy==0.620
 
-script: nosetests --verbosity=3 tests/*
+script:
+  - python -m mypy alerta/
+  - nosetests --verbosity=3 tests/*

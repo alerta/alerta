@@ -1,4 +1,7 @@
 
+from typing import List
+
+
 class SwitchState(object):
     ON = True
     OFF = False
@@ -14,7 +17,7 @@ class SwitchState(object):
 
 class Switch(object):
 
-    switches = []
+    switches = []  # type: List[Switch]
 
     def __init__(self, name, title=None, description=None, state=SwitchState.ON):
 

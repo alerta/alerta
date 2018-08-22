@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 
 def send_message_reply(alert, action, user, data):
     try:
-        import telepot
+        import telepot  # type: ignore
     except ImportError as e:
         LOG.warning("You have configured Telegram but 'telepot' client is not installed", exc_info=True)
         return

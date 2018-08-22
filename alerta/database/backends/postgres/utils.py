@@ -8,7 +8,7 @@ from alerta.database.base import QueryBuilder
 from alerta.utils.format import DateTime
 
 Query = namedtuple('Query', ['where', 'vars', 'sort', 'group'])
-Query.__new__.__defaults__ = ('1=1', {}, 'last_receive_time', 'status')
+Query.__new__.__defaults__ = ('1=1', {}, 'last_receive_time', 'status')  # type: ignore
 
 
 class QueryBuilderImpl(QueryBuilder):

@@ -1,4 +1,4 @@
-Alerta Release 5.0
+Alerta Release 6.0
 ==================
 
 [![Build Status](https://travis-ci.org/alerta/alerta.png)](https://travis-ci.org/alerta/alerta) [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
@@ -18,10 +18,13 @@ Related projects can be found on the Alerta Org Repo at <https://github.com/aler
 Requirements
 ------------
 
+Starting with Release 6.0 only Python 3.5+ is supported. Release 5.2 was the
+last to support Python 2.7. Only critical bug fixes will be backported to Release 5.2.
+
 The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 
+- Postgres version 9.6 or better
 - MongoDB version 3.x
-- Postgres version 9.5 or better
 
 Installation
 ------------
