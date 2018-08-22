@@ -16,7 +16,7 @@ def custom(webhook):
     try:
         incomingAlert = custom_webhooks.webhooks[webhook].incoming(
             query_string=request.args,
-            payload=request.get_json() or request.get_data(as_text=True) or request.values
+            payload=request.get_json() or request.get_data(as_text=True) or request.form
         )
     except ValueError as e:
         raise ApiError(str(e), 400)
