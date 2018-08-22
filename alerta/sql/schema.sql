@@ -62,6 +62,33 @@ CREATE TABLE IF NOT EXISTS blackouts (
     duration integer
 );
 
+-- Support for "IF NOT EXISTS" added to "ADD COLUMN" in Postgres 9.6
+-- ALTER TABLE blackouts
+-- ADD COLUMN IF NOT EXISTS "user" text,
+-- ADD COLUMN IF NOT EXISTS create_time timestamp without time zone,
+-- ADD COLUMN IF NOT EXISTS text text;
+
+DO $$
+BEGIN
+    ALTER TABLE blackouts ADD COLUMN "user" text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "user" already exists in blackouts.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE blackouts ADD COLUMN create_time timestamp without time zone;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column create_time already exists in blackouts.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE blackouts ADD COLUMN text text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column text already exists in blackouts.';
+END$$;
+
 
 CREATE TABLE IF NOT EXISTS customers (
     id text PRIMARY KEY,

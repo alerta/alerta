@@ -20,22 +20,15 @@ class Backend(Database):
         self.uri = uri
         self.dbname = dbname
 
+        db = self.connect()
+        self._create_indexes(db)
+
     def connect(self):
         self.client = MongoClient(self.uri)
         if self.dbname:
-            db = self.client[self.dbname]
+            return self.client[self.dbname]
         else:
-            db = self.client.get_default_database()
-
-        # create unique indexes
-        try:
-            self._create_indexes(db)
-        except Exception as e:
-            if current_app.config['MONGO_RAISE_ON_ERROR']:
-                raise
-            current_app.logger.warning(e)
-
-        return db
+            return self.client.get_default_database()
 
     @staticmethod
     def _create_indexes(db):
@@ -709,7 +702,10 @@ class Backend(Database):
             "environment": blackout.environment,
             "startTime": blackout.start_time,
             "endTime": blackout.end_time,
-            "duration": blackout.duration
+            "duration": blackout.duration,
+            "user": blackout.user,
+            "createTime": blackout.create_time,
+            "text": blackout.text,
         }
         if blackout.service:
             data["service"] = blackout.service
