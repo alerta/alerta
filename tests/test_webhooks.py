@@ -1,9 +1,12 @@
 
 import json
 import unittest
+from io import BytesIO
 from uuid import uuid4
 
-from alerta.app import create_app, db
+from alerta.app import create_app, db, custom_webhooks
+from alerta.models.alert import Alert
+from alerta.webhooks import WebhookBase
 
 
 class WebhooksTestCase(unittest.TestCase):
@@ -17,6 +20,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.app = create_app(test_config)
         self.client = self.app.test_client()
 
+        # alert templates
         self.trigger_alert = {
             'event': 'node_down',
             'resource': str(uuid4()).upper()[:8],
@@ -691,3 +695,87 @@ class WebhooksTestCase(unittest.TestCase):
         # graylog alert
         response = self.client.post('/webhooks/graylog', data=self.graylog_notification, headers=self.headers)
         self.assertEqual(response.status_code, 201)
+
+    def test_custom_webhook(self):
+
+        # setup custom webhook
+        custom_webhooks.webhooks['json'] = TestJsonWebhook()
+        custom_webhooks.webhooks['text'] = TestTextWebhook()
+        custom_webhooks.webhooks['form'] = TestFormWebhook()
+        custom_webhooks.webhooks['multipart'] = TestMultiPartFormWebhook()
+
+        # test json payload
+        response = self.client.post('/webhooks/json?foo=bar', json={'baz': 'quux'}, content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'bar')
+        self.assertEqual(data['alert']['event'], 'quux')
+
+        # test text data
+        response = self.client.post('/webhooks/text?foo', data='this is raw data', content_type='text/plain')
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'nofoo')
+        self.assertEqual(data['alert']['event'], 'this is raw data')
+
+        # test form data
+        response = self.client.post('/webhooks/form?foo=1', data='say=Hi&to=Mom', content_type='application/x-www-form-urlencoded')
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], '1')
+        self.assertEqual(data['alert']['event'], 'Say Hi to Mom', response.data)
+
+        # test multipart form data
+        form_data1 = dict(
+            field1='value1',
+            file1=(BytesIO(b'my file contents'), "file1.txt"),
+        )
+        response = self.client.post('/webhooks/multipart?foo=1', data=form_data1, content_type='multipart/form-data;boundary="boundary"')
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], '1')
+        self.assertEqual(data['alert']['event'], 'value1')
+
+
+class TestJsonWebhook(WebhookBase):
+
+    def incoming(self, query_string, payload):
+        return Alert(
+            resource=query_string['foo'],
+            event=payload['baz'],
+            environment='Production',
+            service=['Foo']
+        )
+
+
+class TestTextWebhook(WebhookBase):
+
+    def incoming(self, query_string, payload):
+        return Alert(
+            resource=query_string.get('foo') or 'nofoo',
+            event=payload,
+            environment='Production',
+            service=['Foo']
+        )
+
+
+class TestFormWebhook(WebhookBase):
+
+    def incoming(self, query_string, payload):
+        return Alert(
+            resource=query_string['foo'],
+            event='Say {} to {}'.format(payload['say'], payload['to']),
+            environment='Production',
+            service=['Foo']
+        )
+
+
+class TestMultiPartFormWebhook(WebhookBase):
+
+    def incoming(self, query_string, payload):
+        return Alert(
+            resource=query_string['foo'],
+            event=payload['field1'],
+            environment='Production',
+            service=['Foo']
+        )
