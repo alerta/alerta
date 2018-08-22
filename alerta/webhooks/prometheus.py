@@ -49,7 +49,7 @@ def parse_prometheus(alert, external_url):
     # build alert text
     summary = annotations.pop('summary', None)
     description = annotations.pop('description', None)
-    text = description or summary or '%s: %s on %s' % (labels['job'], labels['alertname'], labels['instance'])
+    text = description or summary or '{}: {} is {}'.format(severity.upper(), resource, event)
 
     try:
         timeout = int(labels.pop('timeout', 0)) or None
