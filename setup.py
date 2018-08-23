@@ -47,7 +47,9 @@ setuptools.setup(
         'python-dateutil',
         'pytz',
         'PyJWT',
-        'bcrypt'
+        'mysql-connector-python',
+        'bcrypt',
+        'telepot'
     ],
     include_package_data=True,
     zip_safe=False,

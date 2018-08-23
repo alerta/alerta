@@ -23,6 +23,9 @@ def get_backend(app):
         backend = 'postgres'
     return backend
 
+    if backend == 'mysql':
+        backend = 'mysql'
+    return backend
 
 def load_backend(backend):
     try:
