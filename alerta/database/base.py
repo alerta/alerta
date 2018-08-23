@@ -4,7 +4,7 @@ from importlib import import_module
 try:
     from urllib.parse import urlparse
 except ImportError:
-    from urlparse import urlparse
+    from urlparse import urlparse  # type: ignore
 
 from flask import g
 

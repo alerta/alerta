@@ -4,6 +4,7 @@ import platform
 import sys
 from datetime import datetime, timedelta
 from uuid import uuid4
+from typing import List, Dict, Any, Union, Tuple, Optional
 
 from flask import current_app
 
@@ -13,10 +14,12 @@ from alerta.utils.format import DateTime
 
 MAX_LATENCY = 2000  # ms
 
+JSON = Dict[str, Any]
+
 
 class Heartbeat(object):
 
-    def __init__(self, origin=None, tags=None, create_time=None, timeout=None, customer=None, **kwargs):
+    def __init__(self, origin: str=None, tags: List[str]=None, create_time: datetime=None, timeout: int=None, customer: str=None, **kwargs) -> None:
         self.id = kwargs.get('id', str(uuid4()))
         self.origin = origin or '%s/%s' % (os.path.basename(sys.argv[0]), platform.uname()[1])
         self.tags = tags or list()
@@ -27,16 +30,16 @@ class Heartbeat(object):
         self.customer = customer
 
     @property
-    def latency(self):
+    def latency(self) -> int:
         return int((self.receive_time - self.create_time).total_seconds() * 1000)
 
     @property
-    def since(self):
+    def since(self) -> timedelta:
         since = datetime.utcnow() - self.receive_time
         return since - timedelta(microseconds=since.microseconds)
 
     @property
-    def status(self):
+    def status(self) -> str:
         if self.latency > MAX_LATENCY:
             return 'slow'
         elif self.since.total_seconds() > self.timeout:
@@ -45,7 +48,7 @@ class Heartbeat(object):
             return 'ok'
 
     @classmethod
-    def parse(cls, json):
+    def parse(cls, json: JSON) -> 'Heartbeat':
         if not isinstance(json.get('tags', []), list):
             raise ValueError('tags must be a list')
         if not isinstance(json.get('timeout') if json.get('timeout', None) is not None else 0, int):
@@ -60,7 +63,7 @@ class Heartbeat(object):
         )
 
     @property
-    def serialize(self):
+    def serialize(self) -> Dict[str, Any]:
         return {
             'id': self.id,
             'href': absolute_url('/heartbeat/' + self.id),
@@ -76,12 +79,12 @@ class Heartbeat(object):
             'status': self.status
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Heartbeat(id=%r, origin=%r, create_time=%r, timeout=%r, customer=%r)' % (
             self.id, self.origin, self.create_time, self.timeout, self.customer)
 
     @classmethod
-    def from_document(cls, doc):
+    def from_document(cls, doc: Dict[str, Any]) -> 'Heartbeat':
         return Heartbeat(
             id=doc.get('id', None) or doc.get('_id'),
             origin=doc.get('origin', None),
@@ -94,7 +97,7 @@ class Heartbeat(object):
         )
 
     @classmethod
-    def from_record(cls, rec):
+    def from_record(cls, rec) -> 'Heartbeat':
         return Heartbeat(
             id=rec.id,
             origin=rec.origin,
@@ -107,28 +110,26 @@ class Heartbeat(object):
         )
 
     @classmethod
-    def from_db(cls, r):
+    def from_db(cls, r: Union[Dict, Tuple]) -> 'Heartbeat':
         if isinstance(r, dict):
             return cls.from_document(r)
         elif isinstance(r, tuple):
             return cls.from_record(r)
-        else:
-            return
 
     # create/update a heartbeat
-    def create(self):
+    def create(self) -> 'Heartbeat':
         return Heartbeat.from_db(db.upsert_heartbeat(self))
 
     # retrieve an heartbeat
     @staticmethod
-    def find_by_id(id, customers=None):
+    def find_by_id(id: str, customers: List[str]=None) -> Optional['Heartbeat']:
         return Heartbeat.from_db(db.get_heartbeat(id, customers))
 
     # search heartbeats
     @staticmethod
-    def find_all(query=None):
+    def find_all(query=None) -> List['Heartbeat']:
         return [Heartbeat.from_db(heartbeat) for heartbeat in db.get_heartbeats(query)]
 
     # delete a heartbeat
-    def delete(self):
+    def delete(self) -> bool:
         return db.delete_heartbeat(self.id)

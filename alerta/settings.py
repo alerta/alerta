@@ -6,6 +6,8 @@
 #
 # Further information on settings can be found at http://docs.alerta.io
 
+from typing import List, Dict
+
 DEBUG = False
 
 BASE_URL = ''
@@ -35,7 +37,7 @@ DATABASE_URL = MONGO_URI  # default: MongoDB
 DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
 
 AUTH_REQUIRED = False
-ADMIN_USERS = []
+ADMIN_USERS = []  # type: List[str]
 USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includes 'read'
 CUSTOMER_VIEWS = False
 
@@ -52,7 +54,7 @@ GITLAB_URL = 'https://gitlab.com'
 ALLOWED_GITLAB_GROUPS = ['*']
 
 LDAP_URL = ''  # eg. ldap://localhost:389
-LDAP_DOMAINS = {}
+LDAP_DOMAINS = {}  # type: Dict[str, str]
 
 KEYCLOAK_URL = None
 KEYCLOAK_REALM = None
@@ -114,11 +116,12 @@ PLUGINS = ['reject', 'blackout']
 PLUGINS_RAISE_ON_ERROR = True  # raise RuntimeError exception on first failure
 
 # reject plugin settings
-ORIGIN_BLACKLIST = []
-#ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
+ORIGIN_BLACKLIST = []  # type: List[str]
+# ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
 ALLOWED_ENVIRONMENTS = ['Production', 'Development']  # reject alerts without allowed environments
 
 # blackout settings
 BLACKOUT_DURATION = 3600  # default period = 1 hour
 NOTIFICATION_BLACKOUT = False  # True - set alert status=blackout, False - do not process alert (default)
-BLACKOUT_ACCEPT = []  # list of severities accepted during blackout period eg. ['normal', 'ok', 'cleared']
+BLACKOUT_ACCEPT = []  # type: List[str]
+# BLACKOUT_ACCEPT = ['normal', 'ok', 'cleared']  # list of severities accepted during blackout period

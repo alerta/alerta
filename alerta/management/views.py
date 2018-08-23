@@ -5,9 +5,9 @@ from flask import request, Response, url_for, jsonify, render_template, current_
 from flask_cors import cross_origin
 
 try:
-    from alerta import build
+    from alerta import build  # type: ignore
 except Exception:
-    from alerta import dev as build
+    from alerta import dev as build  # type: ignore
 
 from alerta.app import db
 from alerta.auth.decorators import permission

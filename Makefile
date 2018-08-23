@@ -11,6 +11,7 @@ help:
 	@echo "Commands:"
 	@echo "   init    Initialise environment"
 	@echo "   pylint  Lint source code"
+	@echo "   mypy    Type checking
 	@echo "   clean   Clean source"
 	@echo "   test    Run tests"
 	@echo "   run     Run application"
@@ -25,6 +26,10 @@ init:
 pylint:
 	@pip -q install pylint
 	pylint --rcfile pylintrc alerta
+
+mypy:
+	@pip -q install mypy==0.620
+	mypy alerta/
 
 clean:
 	find . -name "*.pyc" -exec rm {} \;

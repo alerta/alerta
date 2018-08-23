@@ -5,7 +5,7 @@ from flask_cors import cross_origin
 try:
     from urllib.parse import urlparse
 except ImportError:
-    from urlparse import urlparse
+    from urlparse import urlparse  # type: ignore
 
 from alerta.app import db, qb
 from alerta.auth.decorators import permission
