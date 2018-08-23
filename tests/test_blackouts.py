@@ -1,11 +1,13 @@
 
 import json
 import unittest
+from datetime import datetime
 
 from alerta.app import create_app, db, plugins
 from alerta.exceptions import BlackoutPeriod
 from alerta.models.key import ApiKey
 from alerta.plugins import PluginBase
+from alerta.utils.format import DateTime
 
 
 class BlackoutsTestCase(unittest.TestCase):
@@ -32,12 +34,12 @@ class BlackoutsTestCase(unittest.TestCase):
         with self.app.test_request_context('/'):
             self.app.preprocess_request()
             self.admin_api_key = ApiKey(
-                user='admin',
+                user='admin@alerta.io',
                 scopes=['admin', 'read', 'write'],
                 text='demo-key'
             )
             self.customer_api_key = ApiKey(
-                user='admin',
+                user='admin@alerta.io',
                 scopes=['admin', 'read', 'write'],
                 text='demo-key',
                 customer='Foo'
@@ -196,6 +198,21 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'closed')
+
+    def test_user_info(self):
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # create new blackout
+        response = self.client.post('/blackout', data=json.dumps({"environment": "Production", "service": ["Network"], "text": "administratively down"}), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['blackout']['user'], 'admin@alerta.io')
+        self.assertIsInstance(DateTime.parse(data['blackout']['createTime']), datetime)
+        self.assertEqual(data['blackout']['text'], 'administratively down')
 
 
 class SuppressionBlackout(PluginBase):

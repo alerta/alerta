@@ -35,6 +35,10 @@ class Blackout(object):
         self.end_time = end_time
         self.duration = duration
 
+        self.user = kwargs.get('user', None)
+        self.create_time = kwargs['create_time'] if 'create_time' in kwargs else datetime.utcnow()
+        self.text = kwargs.get('text', None)
+
         if self.environment:
             self.priority = 1
         if self.resource and not self.event:
@@ -78,7 +82,9 @@ class Blackout(object):
             customer=json.get('customer', None),
             start_time=DateTime.parse(json.get('startTime')),
             end_time=DateTime.parse(json.get('endTime')),
-            duration=json.get('duration', None)
+            duration=json.get('duration', None),
+            user=json.get('user', None),
+            text=json.get('text', None)
         )
 
     @property
@@ -98,7 +104,10 @@ class Blackout(object):
             'endTime': self.end_time,
             'duration': self.duration,
             'status': self.status,
-            'remaining': self.remaining
+            'remaining': self.remaining,
+            'user': self.user,
+            'createTime': self.create_time,
+            'text': self.text
         }
 
     def __repr__(self):
@@ -141,7 +150,10 @@ class Blackout(object):
             customer=doc.get('customer', None),
             start_time=doc.get('startTime', None),
             end_time=doc.get('endTime', None),
-            duration=doc.get('duration', None)
+            duration=doc.get('duration', None),
+            user=doc.get('user', None),
+            create_time=doc.get('createTime', None),
+            text=doc.get('text', None)
         )
 
     @classmethod
@@ -158,7 +170,10 @@ class Blackout(object):
             customer=rec.customer,
             start_time=rec.start_time,
             end_time=rec.end_time,
-            duration=rec.duration
+            duration=rec.duration,
+            user=rec.user,
+            create_time=rec.create_time,
+            text=rec.text
         )
 
     @classmethod

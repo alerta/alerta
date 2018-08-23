@@ -23,7 +23,7 @@ last to support Python 2.7. Only critical bug fixes will be backported to Releas
 
 The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 
-- Postgres version 9.6 or better
+- Postgres version 9.5 or better
 - MongoDB version 3.x
 
 Installation
