@@ -35,26 +35,27 @@ def parse_prometheus(alert, external_url):
         severity = 'unknown'
         create_time = ends_at or starts_at
 
-    # get labels
+    # labels
     resource = labels.pop('exported_instance', None) or labels.pop('instance', 'n/a')
     event = labels.pop('alertname')
     environment = labels.pop('environment', 'Production')
-
-    # get annotations
-    correlate = annotations.pop('correlate').split(',') if 'correlate' in annotations else None
-    service = annotations.pop('service', '').split(',')
-    group = annotations.pop('job', 'Prometheus')
-    value = annotations.pop('value', None)
-
-    # build alert text
-    summary = annotations.pop('summary', None)
-    description = annotations.pop('description', None)
-    text = description or summary or '{}: {} is {}'.format(severity.upper(), resource, event)
+    correlate = labels.pop('correlate').split(',') if 'correlate' in labels else None
+    service = labels.pop('service', '').split(',')
+    group = labels.pop('job', 'Prometheus')
+    origin = 'prometheus/' + labels.pop('monitor', '-')
+    tags = ["%s=%s" % t for t in labels.items()]  # any labels left over are used for tags
 
     try:
         timeout = int(labels.pop('timeout', 0)) or None
     except ValueError:
         timeout = None
+
+    # annotations
+    value = annotations.pop('value', None)
+    summary = annotations.pop('summary', None)
+    description = annotations.pop('description', None)
+    text = description or summary or '{}: {} is {}'.format(severity.upper(), resource, event)
+    attributes = annotations  # any annotations left over are used for attributes
 
     if external_url:
         annotations['externalUrl'] = external_url
@@ -71,13 +72,13 @@ def parse_prometheus(alert, external_url):
         group=group,
         value=value,
         text=text,
-        attributes=annotations,
-        origin='prometheus/' + labels.pop('monitor', '-'),
+        attributes=attributes,
+        origin=origin,
         event_type='prometheusAlert',
         create_time=create_time.astimezone(tz=pytz.UTC).replace(tzinfo=None),
         timeout=timeout,
         raw_data=alert,
-        tags=["%s=%s" % t for t in labels.items()]  # any labels left are used for tags
+        tags=tags
     )
 
 
