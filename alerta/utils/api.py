@@ -15,7 +15,7 @@ from alerta.models import status_code
 try:
     from urllib.parse import urljoin, urlparse, urlunparse
 except ImportError:
-    from urlparse import urljoin, urlparse, urlunparse
+    from urlparse import urljoin, urlparse, urlunparse  # type: ignore
 
 
 def jsonp(func):
