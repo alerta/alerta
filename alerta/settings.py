@@ -35,6 +35,7 @@ POSTGRES_DB = None
 
 DATABASE_URL = MONGO_URI  # default: MongoDB
 DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
+DATABASE_RAISE_ON_ERROR = MONGO_RAISE_ON_ERROR  # True - terminate, False - ignore and continue
 
 AUTH_REQUIRED = False
 ADMIN_USERS = []  # type: List[str]

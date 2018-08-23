@@ -20,6 +20,11 @@ def create_blackout():
     except Exception as e:
         raise ApiError(str(e), 400)
 
+    if 'admin' in g.scopes or 'admin:blackouts' in g.scopes:
+        blackout.user = blackout.user or g.user
+    else:
+        blackout.user = g.user
+
     blackout.customer = assign_customer(wanted=blackout.customer, permission='admin:blackouts')
 
     try:

@@ -43,7 +43,12 @@ class Database(Base):
         cls = load_backend(backend)
         self.__class__ = type('DatabaseImpl', (cls.Backend, Database), {})
 
-        self.create_engine(app, uri=app.config['DATABASE_URL'], dbname=app.config['DATABASE_NAME'])
+        try:
+            self.create_engine(app, uri=app.config['DATABASE_URL'], dbname=app.config['DATABASE_NAME'])
+        except Exception as e:
+            if app.config['DATABASE_RAISE_ON_ERROR']:
+                raise
+            app.logger.warning(e)
 
         app.before_request(self.get_db)
         app.teardown_request(self.teardown_db)
