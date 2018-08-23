@@ -167,7 +167,7 @@ def status():
 
 @mgmt.route('/management/metrics', methods=['OPTIONS', 'GET'])
 @cross_origin()
-# @permission('read:management')  # FIXME - prometheus only supports Authorization header with "Bearer" token
+@permission('read:management')
 def prometheus_metrics():
 
     total_alert_gauge.set(Alert.get_count())
