@@ -1,6 +1,6 @@
 import json
 
-from flask import request, g, jsonify
+from flask import request, jsonify, current_app
 from flask_cors import cross_origin
 
 from alerta.app import qb
@@ -30,6 +30,8 @@ def parse_grafana(alert, match, args):
     group = args.get('group', 'Performance')
     origin = args.get('origin', 'Grafana')
     service = args.get('service', 'Grafana')
+    timeout = args.get('timeout', current_app.config['ALERT_TIMEOUT'])
+
 
     attributes = match.get('tags', None) or dict()
     attributes = {k.replace('.', '_'):v for (k, v) in attributes.items()}
@@ -53,7 +55,7 @@ def parse_grafana(alert, match, args):
         attributes=attributes,
         origin=origin,
         event_type=event_type,
-        timeout=300,
+        timeout=timeout,
         raw_data=json.dumps(alert)
     )
 
