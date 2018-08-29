@@ -359,3 +359,12 @@ class AuthTestCase(unittest.TestCase):
             g.customers = ['Customer1']
             g.scopes = ['admin:keys', 'read:keys', 'write:keys']
             self.assertEqual(assign_customer(wanted='Customer2', permission='admin:keys'), 'Customer2')
+
+    def test_invalid_customer(self):
+
+        self.foo_alert['customer'] = ''
+
+        response = self.client.post('/alert', data=json.dumps(self.foo_alert), headers=self.admin_headers)
+        self.assertEqual(response.status_code, 400)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], 'customer must not be an empty string')
