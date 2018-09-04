@@ -73,4 +73,5 @@ setuptools.setup(
         'Programming Language :: Python :: 3.5',
         'Topic :: System :: Monitoring',
     ],
+    python_requires='>=3.5'
 )
