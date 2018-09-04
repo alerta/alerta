@@ -58,7 +58,7 @@ def parse_prometheus(alert, external_url):
     attributes = annotations  # any annotations left over are used for attributes
 
     if external_url:
-        annotations['externalUrl'] = external_url
+        annotations['externalUrl'] = '<a href="%s" target="_blank">Open in Alertmanager</a>' % external_url
     if 'generatorURL' in alert:
         annotations['moreInfo'] = '<a href="%s" target="_blank">Prometheus Graph</a>' % alert['generatorURL']
 
