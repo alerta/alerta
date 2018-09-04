@@ -1,7 +1,8 @@
 Alerta Release 6.0
 ==================
 
-[![Build Status](https://travis-ci.org/alerta/alerta.png)](https://travis-ci.org/alerta/alerta) [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
+[![Build Status](https://travis-ci.org/alerta/alerta.png)](https://travis-ci.org/alerta/alerta)
+[![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
 
 The Alerta monitoring tool was developed with the following aims in mind:
 
@@ -15,11 +16,15 @@ Related projects can be found on the Alerta Org Repo at <https://github.com/aler
 
 ----
 
-Requirements
-------------
+Python 2.7 support is EOL
+-------------------------
 
 Starting with Release 6.0 only Python 3.5+ is supported. Release 5.2 was the
-last to support Python 2.7. Only critical bug fixes will be backported to Release 5.2.
+last to support Python 2.7 and feature enhancements for this release ended on
+August 31, 2018. Only critical bug fixes will be backported to Release 5.2.
+
+Requirements
+------------
 
 The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 
