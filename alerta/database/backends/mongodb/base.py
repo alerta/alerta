@@ -442,7 +442,6 @@ class Backend(Database):
 
         history = list()
         for response in responses:
-            change_type = 'severity' if response['history'].get('severity', None) else 'status'
             history.append(
                 {
                     "id": response['history']['id'],
@@ -459,7 +458,7 @@ class Backend(Database):
                     "attributes": response['attributes'],
                     "origin": response['origin'],
                     "updateTime": response['history']['updateTime'],
-                    "type": response['history'].get('type', change_type),
+                    "type": response['history'].get('type', 'unknown'),
                     "customer": response.get('customer', None)
                 }
             )
