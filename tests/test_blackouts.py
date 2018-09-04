@@ -23,12 +23,14 @@ class BlackoutsTestCase(unittest.TestCase):
         self.client = self.app.test_client()
 
         self.alert = {
-            'event': 'node_marginal',
             'resource': 'node404',
+            'event': 'node_marginal',
             'environment': 'Production',
-            'service': ['Network'],
             'severity': 'warning',
-            'correlate': ['node_down', 'node_marginal', 'node_up']
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'service': ['Core', 'Web', 'Network'],
+            'group': 'Network',
+            'tags': ['level=20', 'switch:off']
         }
 
         with self.app.test_request_context('/'):
@@ -102,7 +104,11 @@ class BlackoutsTestCase(unittest.TestCase):
         }
 
         # create new blackout
-        response = self.client.post('/blackout', data=json.dumps({"environment": "Production", "service": ["Network"]}), headers=self.headers)
+        blackout = {
+            "environment": "Production",
+            "service": ["Core"]
+        }
+        response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
@@ -198,6 +204,69 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'closed')
+
+    def test_combination_blackout(self):
+
+        plugins.plugins['blackout'] = SuppressionBlackout()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        # create blackout (only for services on a particular host)
+        blackout = {
+            "environment": "Production",
+            "resource": "node404",
+            "service": ["Network", "Web"]
+        }
+        response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        blackout_id = data['id']
+
+        # suppress alert
+        response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
+        self.assertEqual(response.status_code, 202)
+
+        # remove blackout
+        response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        # create blackout (only for groups of alerts with particular tags)
+        blackout = {
+            "environment": "Production",
+            "group": "Network",
+            "tags": ["system:web01", "switch:off"]
+        }
+        response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        blackout_id = data['id']
+
+        # do not suppress alert
+        response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        self.alert['tags'].append("system:web01")
+
+        # suppress alert
+        response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
+        self.assertEqual(response.status_code, 202)
+
+        # remove blackout
+        response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
 
     def test_user_info(self):
 
