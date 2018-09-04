@@ -86,7 +86,7 @@ class RichHistory(object):
         self.attributes = kwargs.get('attributes', None) or dict()
         self.origin = kwargs.get('origin', None)
         self.update_time = kwargs.get('update_time', None)
-        self.event_type = kwargs.get('event_type', kwargs.get('type', None))
+        self.change_type = kwargs.get('change_type', kwargs.get('type', None))
         self.customer = kwargs.get('customer', None)
 
     @property
@@ -104,7 +104,7 @@ class RichHistory(object):
             'attributes': self.attributes,
             'origin': self.origin,
             'updateTime': self.update_time,
-            'type': self.event_type,
+            'type': self.change_type,
             'customer': self.customer
         }
 
@@ -118,8 +118,8 @@ class RichHistory(object):
         return data
 
     def __repr__(self):
-        return 'RichHistory(id=%r, environment=%r, resource=%r, event=%r, severity=%r, status=%r, customer=%r)' % (
-            self.id, self.environment, self.resource, self.event, self.severity, self.status, self.customer)
+        return 'RichHistory(id=%r, environment=%r, resource=%r, event=%r, severity=%r, status=%r, type=%r, customer=%r)' % (
+            self.id, self.environment, self.resource, self.event, self.severity, self.status, self.change_type, self.customer)
 
     @classmethod
     def from_document(cls, doc):
@@ -138,7 +138,7 @@ class RichHistory(object):
             attributes=doc.get('attributes', dict()),
             origin=doc.get('origin', None),
             update_time=doc.get('updateTime', None),
-            event_type=doc.get('type', None),
+            change_type=doc.get('type', None),
             customer=doc.get('customer', None)
         )
 
@@ -159,7 +159,7 @@ class RichHistory(object):
             attributes=dict(rec.attributes),
             origin=rec.origin,
             update_time=rec.update_time,
-            event_type=rec.type,
+            change_type=rec.type,
             customer=rec.customer
         )
 

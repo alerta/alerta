@@ -431,8 +431,8 @@ class Backend(Database):
         }
 
         pipeline = [
-            {'$match': query.where},
             {'$unwind': '$history'},
+            {'$match': query.where},
             {'$project': fields},
             {'$limit': current_app.config['HISTORY_LIMIT']},
             {'$sort': {'history.updateTime': 1}}
@@ -442,45 +442,26 @@ class Backend(Database):
 
         history = list()
         for response in responses:
-            if 'severity' in response['history']:
-                history.append(
-                    {
-                        "id": response['_id'],  # or response['history']['id']
-                        "resource": response['resource'],
-                        "event": response['history']['event'],
-                        "environment": response['environment'],
-                        "severity": response['history']['severity'],
-                        "service": response['service'],
-                        "group": response['group'],
-                        "value": response['history']['value'],
-                        "text": response['history']['text'],
-                        "tags": response['tags'],
-                        "attributes": response['attributes'],
-                        "origin": response['origin'],
-                        "updateTime": response['history']['updateTime'],
-                        "type": response['history'].get('type', 'unknown'),
-                        "customer": response.get('customer', None)
-                    }
-                )
-            elif 'status' in response['history']:
-                history.append(
-                    {
-                        "id": response['_id'],  # or response['history']['id']
-                        "resource": response['resource'],
-                        "event": response['event'],
-                        "environment": response['environment'],
-                        "status": response['history']['status'],
-                        "service": response['service'],
-                        "group": response['group'],
-                        "text": response['history']['text'],
-                        "tags": response['tags'],
-                        "attributes": response['attributes'],
-                        "origin": response['origin'],
-                        "updateTime": response['history']['updateTime'],
-                        "type": response['history'].get('type', 'unknown'),
-                        "customer": response.get('customer', None)
-                    }
-                )
+            history.append(
+                {
+                    "id": response['history']['id'],
+                    "resource": response['resource'],
+                    "event": response['history']['event'],
+                    "environment": response['environment'],
+                    "severity": response['history']['severity'],
+                    "service": response['service'],
+                    "status": response['history']['status'],
+                    "group": response['group'],
+                    "value": response['history']['value'],
+                    "text": response['history']['text'],
+                    "tags": response['tags'],
+                    "attributes": response['attributes'],
+                    "origin": response['origin'],
+                    "updateTime": response['history']['updateTime'],
+                    "type": response['history'].get('type', 'unknown'),
+                    "customer": response.get('customer', None)
+                }
+            )
         return history
 
     #### COUNTS
