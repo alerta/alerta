@@ -43,6 +43,7 @@ USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includ
 CUSTOMER_VIEWS = False
 
 BASIC_AUTH_REALM = 'Alerta'
+SIGNUP_ENABLED = True
 
 OAUTH2_CLIENT_ID = None  # Google, GitHub or GitLab OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = None
