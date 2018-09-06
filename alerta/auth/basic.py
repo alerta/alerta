@@ -13,6 +13,10 @@ from . import auth
 @auth.route('/auth/signup', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def signup():
+
+    if not current_app.config['SIGNUP_ENABLED']:
+        raise ApiError("user signup is disabled", 401)
+
     try:
         user = User.parse(request.json)
     except Exception as e:
