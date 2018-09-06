@@ -250,7 +250,7 @@ class Alert(object):
                 change_type="status",
                 update_time=self.create_time
             )
-        elif self.value != previous_value:
+        elif current_app.config['HISTORY_ON_VALUE_CHANGE'] and self.value != previous_value:
             history = History(
                 id=self.id,
                 event=self.event,

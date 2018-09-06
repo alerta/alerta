@@ -23,6 +23,7 @@ SECRET_KEY = 'changeme'
 QUERY_LIMIT = 1000
 DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single query
 HISTORY_LIMIT = 100  # cap the number of alert history entries
+HISTORY_ON_VALUE_CHANGE = True  # history entry for duplicate alerts if value changes
 
 # MongoDB
 MONGO_URI = 'mongodb://localhost:27017/monitoring'
