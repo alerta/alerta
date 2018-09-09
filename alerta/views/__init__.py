@@ -30,3 +30,24 @@ def index():
 @api.route('/_', methods=['GET'])
 def debug():
     return 'OK'
+
+
+@api.route('/config', methods=['GET'])
+def config():
+    return jsonify(
+        config={
+            "endpoint": current_app.config['BASE_URL'],
+            "provider": current_app.config['AUTH_PROVIDER'],
+            "signup_enabled": current_app.config['SIGNUP_ENABLED'],
+            "client_id": current_app.config['OAUTH2_CLIENT_ID'],
+            "github_url": current_app.config['GITHUB_URL'],
+            "gitlab_url": current_app.config['GITLAB_URL'],
+            "keycloak_url": current_app.config['KEYCLOAK_URL'],
+            "keycloak_realm": current_app.config['KEYCLOAK_REALM'],
+            "pingfederate_url": current_app.config['PINGFEDERATE_URL'],
+            "colors": {},  # not supported yet
+            "severity": current_app.config['SEVERITY_MAP'],
+            "tracking_id": current_app.config['GOOGLE_TRACKING_ID'],
+            "refresh_interval": current_app.config['AUTO_REFRESH_INTERVAL']
+        }
+    )
