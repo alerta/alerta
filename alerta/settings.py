@@ -39,6 +39,7 @@ DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
 DATABASE_RAISE_ON_ERROR = MONGO_RAISE_ON_ERROR  # True - terminate, False - ignore and continue
 
 AUTH_REQUIRED = False
+AUTH_PROVIDER = 'basic'  # basic (default), github, gitlab, google, keycloak, pingfederate, saml2
 ADMIN_USERS = []  # type: List[str]
 USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includes 'read'
 CUSTOMER_VIEWS = False
@@ -62,6 +63,14 @@ LDAP_DOMAINS = {}  # type: Dict[str, str]
 KEYCLOAK_URL = None
 KEYCLOAK_REALM = None
 ALLOWED_KEYCLOAK_ROLES = ['*']
+
+PINGFEDERATE_URL = None
+PINGFEDERATE_OPENID_ACCESS_TOKEN_URL = PINGFEDERATE_URL
+PINGFEDERATE_PUBKEY_LOCATION = None
+PINGFEDERATE_TOKEN_ALGORITHM = None
+PINGFEDERATE_OPENID_PAYLOAD_USERNAME = None
+PINGFEDERATE_OPENID_PAYLOAD_EMAIL = None
+PINGFEDERATE_OPENID_PAYLOAD_GROUP = None
 
 SAML2_CONFIG = None
 ALLOWED_SAML2_GROUPS = ['*']
@@ -113,6 +122,9 @@ SSL_CERT_FILE = None
 MAIL_FROM = 'your@gmail.com'  # replace with valid sender address
 SMTP_USERNAME = ''  # application-specific username if different to MAIL_FROM user
 SMTP_PASSWORD = ''  # password for MAIL_FROM (or SMTP_USERNAME if used)
+
+GOOGLE_TRACKING_ID = None
+AUTO_REFRESH_INTERVAL = 5000  # ms
 
 # Plug-ins
 PLUGINS = ['reject', 'blackout']
