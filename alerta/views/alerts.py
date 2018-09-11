@@ -82,7 +82,7 @@ def set_status(alert_id):
     timeout = request.json.get('timeout', None)
 
     if not status:
-        raise ApiError("must supply 'status' as json data")
+        raise ApiError("must supply 'status' as json data", 400)
 
     customers = g.get('customers', None)
     alert = Alert.find_by_id(alert_id, customers)
@@ -115,7 +115,7 @@ def action_alert(alert_id):
     timeout = request.json.get('timeout', None)
 
     if not action:
-        raise ApiError("must supply 'action' as json data")
+        raise ApiError("must supply 'action' as json data", 400)
 
     customers = g.get('customers', None)
     alert = Alert.find_by_id(alert_id, customers)
