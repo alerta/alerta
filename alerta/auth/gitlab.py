@@ -13,7 +13,8 @@ from . import auth
 def gitlab():
 
     access_token_url = current_app.config['GITLAB_URL'] + '/oauth/token'
-    gitlab_api_url = current_app.config['GITLAB_URL'] + '/api/v4'
+    tokeninfo_url = current_app.config['GITLAB_URL'] + '/oauth/token/info'
+    userinfo_url = current_app.config['GITLAB_URL'] + '/oauth/userinfo'
 
     payload = {
         'client_id': request.json['clientId'],
@@ -27,20 +28,26 @@ def gitlab():
         r = requests.post(access_token_url, data=payload)
     except Exception:
         return jsonify(status="error", message="Failed to call Gitlab API over HTTPS")
-    access_token = r.json()
+    token = r.json()
 
-    r = requests.get(gitlab_api_url+'/user', params=access_token)
+    headers = {'Authorization': 'Bearer ' + token['access_token']}
+    r = requests.get(tokeninfo_url, headers=headers)
+    scopes = r.json().get('scopes', [])
+    if 'openid' not in scopes:
+        raise ApiError("GitLab OAuth2 application scopes must include 'openid'", 403)
+
+    r = requests.post(userinfo_url, headers=headers)
     profile = r.json()
+    current_app.logger.info(profile)
 
-    r = requests.get(gitlab_api_url+'/groups', params=access_token)
-    groups = [g['path'] for g in r.json()]
-    login = profile['username']
+    login = profile['nickname']
+    groups = profile.get('groups', [])
 
     if not_authorized('ALLOWED_GITLAB_GROUPS', groups):
         raise ApiError("User %s is not authorized" % login, 403)
 
     customers = get_customers(login, groups)
 
-    token = create_token(profile['id'], profile.get('name', '@'+login), login, provider='gitlab', customers=customers,
-                         groups=groups, email=profile.get('email', None), email_verified=True if profile.get('email', None) else False)
+    token = create_token(profile['sub'], profile.get('name', '@'+login), login, provider='gitlab', customers=customers,
+                         groups=groups, email=profile.get('email', None), email_verified=profile.get('email_verified', False))
     return jsonify(token=token.tokenize)
