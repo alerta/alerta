@@ -89,4 +89,4 @@ def telegram():
         send_message_reply(alert, action, user, data)
         return jsonify(status="ok")
     else:
-        return jsonify(status="error", message="no callback_query in Telegram message"), 400
+        return jsonify(status="ok", message="no callback_query in Telegram message")
