@@ -94,7 +94,9 @@ def login():
 def verify_email(hash):
 
     user = User.verify_hash(hash, salt='confirm')
-    if user and not user.email_verified:
+    if user:
+        if user.email_verified:
+            raise ApiError("email already verified", 400)
         user.set_email_verified()
         return jsonify(status='ok', message='email address {} confirmed'.format(user.email))
     else:
