@@ -527,11 +527,10 @@ class Backend(Database):
         return self._fetchall(select, query.vars)
 
     def is_blackout_period(self, alert):
-        now = datetime.utcnow()
         select = """
             SELECT *
             FROM blackouts
-            WHERE start_time <= %(now)s AND end_time > %(now)s
+            WHERE start_time <= NOW() AND end_time > NOW()
               AND environment=%(environment)s
               AND (
                  (resource IS NULL AND service='{}' AND event IS NULL AND "group" IS NULL AND tags='{}')
@@ -568,11 +567,9 @@ class Backend(Database):
               OR ( resource=%(resource)s AND service <@ %(service)s AND event=%(event)s AND "group"=%(group)s AND tags <@ %(tags)s )
                 )
         """
-        data = vars(alert)
-        data['now'] = now
         if current_app.config['CUSTOMER_VIEWS']:
             select += " AND (customer IS NULL OR customer=%(customer)s)"
-        if self._fetchone(select, data):
+        if self._fetchone(select, vars(alert)):
             return True
         return False
 
@@ -648,10 +645,10 @@ class Backend(Database):
     def update_key_last_used(self, key):
         update = """
             UPDATE keys
-            SET last_used_time=%s, count=count+1
+            SET last_used_time=NOW(), count=count+1
             WHERE id=%s OR key=%s
         """
-        return self._update(update, (datetime.utcnow(), key, key))
+        return self._update(update, (key, key))
 
     def delete_key(self, key):
         delete = """
@@ -696,10 +693,10 @@ class Backend(Database):
     def update_last_login(self, id):
         update = """
             UPDATE users
-            SET last_login=%s
+            SET last_login=NOW()
             WHERE id=%s
         """
-        return self._update(update, (datetime.utcnow(), id))
+        return self._update(update, (id,))
 
     def set_email_hash(self, id, hash):
         update = """
@@ -710,7 +707,6 @@ class Backend(Database):
         return self._update(update, (hash, id))
 
     def update_user(self, id, **kwargs):
-        kwargs['update_time'] = datetime.utcnow()
         update = """
             UPDATE users
             SET
@@ -732,7 +728,7 @@ class Backend(Database):
         if 'email_verified' in kwargs:
             update += "email_verified=%(email_verified)s, "
         update += """
-            update_time=%(update_time)s
+            update_time=NOW()
             WHERE id=%(id)s
             RETURNING *
         """
