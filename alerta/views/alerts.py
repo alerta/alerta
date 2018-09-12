@@ -276,7 +276,8 @@ def search_alerts():
 @jsonp
 def history():
     query = qb.from_params(request.args)
-    history = Alert.get_history(query)
+    paging = Page.from_params(request.args, items=0)
+    history = Alert.get_history(query, paging.page, paging.page_size)
 
     if history:
         return jsonify(
