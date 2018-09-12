@@ -153,6 +153,7 @@ class User(object):
 
     def set_email_verified(self, verified=True):
         self.update(email_verified=verified)
+        self.set_email_hash(hash=None)
 
     def update(self, **kwargs):
         update = dict()
