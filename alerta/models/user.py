@@ -5,7 +5,7 @@ from uuid import uuid4
 from flask import current_app
 
 from alerta.app import db
-from alerta.auth.utils import generate_password_hash, check_password_hash
+from alerta.auth.utils import generate_password_hash, check_password_hash, confirm_email_token
 from alerta.utils.api import absolute_url
 
 
@@ -37,6 +37,10 @@ class User(object):
     @property
     def domain(self):
         return self.email.split('@')[1] if '@' in self.email else None
+
+    @property
+    def is_active(self):
+        return self.status == 'active'
 
     @classmethod
     def parse(cls, json):
@@ -143,7 +147,8 @@ class User(object):
         return db.set_email_hash(self.id, hash)
 
     @staticmethod
-    def verify_hash(hash):
+    def verify_hash(hash, salt=None):
+        confirm_email_token(hash, salt)
         return User.from_db(db.get_user_by_hash(hash))
 
     def set_email_verified(self, verified=True):
@@ -184,6 +189,10 @@ class User(object):
     @staticmethod
     def check_credentials(username, password):
         user = User.find_by_email(email=username)
-        if user and user.verify_password(password) and user.status == 'active':
+        if user and user.verify_password(password) and user.is_active:
             user.update_last_login()
             return user
+
+    def reset_password(self, password):
+        self.update(password=password)
+        self.set_email_hash(hash=None)

@@ -7,9 +7,10 @@ from raven.contrib.flask import Sentry
 from alerta.database.base import Database, QueryBuilder
 from alerta.exceptions import ExceptionHandlers
 from alerta.models.severity_code import Severity
-from alerta.utils.plugin import Plugins
 from alerta.utils.config import Config
 from alerta.utils.key import ApiKeyHelper
+from alerta.utils.mailer import Mailer
+from alerta.utils.plugin import Plugins
 from alerta.utils.webhook import CustomWebhooks
 
 config = Config()
@@ -25,6 +26,7 @@ qb = QueryBuilder()
 sentry = Sentry()
 plugins = Plugins()
 custom_webhooks = CustomWebhooks()
+mailer = Mailer()
 
 
 def create_app(config_override=None, environment=None):
@@ -61,5 +63,6 @@ def create_app(config_override=None, environment=None):
 
     plugins.register(app)
     custom_webhooks.register(app)
+    mailer.register(app)
 
     return app
