@@ -113,8 +113,8 @@ def confirm_email_token(token, salt, expiration=900):
             max_age=expiration
         )
     except SignatureExpired as e:
-        raise ApiError('confirmation token signature has expired', 401)
+        raise ApiError('confirmation token signature has expired', 401, errors=[str(e)])
     except BadData as e:
-        raise ApiError('confirmation token invalid', 400)
+        raise ApiError('confirmation token invalid', 400, errors=[str(e)])
 
     return email
