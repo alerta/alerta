@@ -1,14 +1,16 @@
-import logging
 from datetime import datetime, timedelta
-from flask import request, current_app
-from six import text_type
 from uuid import uuid4
 
+from flask import request, current_app
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadData
+from six import text_type
+from urllib.parse import urljoin
+
+from alerta.app import mailer
 from alerta.exceptions import ApiError, NoCustomerMatch
 from alerta.models.customer import Customer
 from alerta.models.permission import Permission
 from alerta.models.token import Jwt
-from alerta.utils.api import absolute_url
 
 try:
     import bcrypt  # type: ignore
@@ -65,68 +67,54 @@ def create_token(user_id, name, login, provider, customers, orgs=None, groups=No
     )
 
 
+def send_confirmation(user):
+    token = generate_email_token(email=user.email, salt='confirm')
+    user.set_email_hash(token)
 
-try:
-    import smtplib
-    import socket
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
-except ImportError:
-    pass
+    ui_base_url = request.referrer
+    print(ui_base_url)
 
-
-def send_confirmation(user, hash):
-
-    smtp_host = current_app.config['SMTP_HOST']
-    smtp_port = current_app.config['SMTP_PORT']
-    mail_localhost = current_app.config['MAIL_LOCALHOST']
-    ssl_key_file = current_app.config['SSL_KEY_FILE']
-    ssl_cert_file = current_app.config['SSL_CERT_FILE']
-
-    mail_from = current_app.config['MAIL_FROM']
-    smtp_username = current_app.config.get('SMTP_USERNAME', mail_from)
-    smtp_password = current_app.config['SMTP_PASSWORD']
-
-    msg = MIMEMultipart('related')
-    msg['Subject'] = "[Alerta] Please verify your email '%s'" % user.email
-    msg['From'] = mail_from
-    msg['To'] = user.email
-    msg.preamble = "[Alerta] Please verify your email '%s'" % user.email
-
+    subject = "[Alerta] Please verify your email '%s'" % user.email
     text = 'Hello {name}!\n\n' \
            'Please verify your email address is {email} by clicking on the link below:\n\n' \
            '{url}\n\n' \
            'You\'re receiving this email because you recently created a new Alerta account.' \
            ' If this wasn\'t you, please ignore this email.'.format(
-               name=user.name, email=user.email, url=absolute_url('/auth/confirm/' + hash)
-           )
+        name=user.name, email=user.email, url=urljoin(request.referrer, '/#/confirm/'+token)
+    )
+    mailer.send_email(user.email, subject, body=text)
 
-    msg_text = MIMEText(text, 'plain', 'utf-8')
-    msg.attach(msg_text)
 
+def send_password_reset(user):
+    token = generate_email_token(email=user.email, salt='reset')
+    user.set_email_hash(token)
+
+    subject = "[Alerta] Reset password request"
+    text = 'You forgot your password. Reset it by clicking on the link below:\n\n' \
+           '{url}\n\n' \
+           'You\'re receiving this email because you asked for a password reset of an Alerta account.' \
+           ' If this wasn\'t you, please ignore this email.'.format(
+        name=user.name, email=user.email, url=urljoin(request.referrer, '/#/reset/'+token)
+    )
+    mailer.send_email(user.email, subject, body=text)
+
+
+def generate_email_token(email, salt):
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    return serializer.dumps(email, salt)
+
+
+def confirm_email_token(token, salt, expiration=900):
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
     try:
-        if current_app.config['SMTP_USE_SSL']:
-            mx = smtplib.SMTP_SSL(smtp_host, smtp_port, local_hostname=mail_localhost, keyfile=ssl_key_file, certfile=ssl_cert_file)
-        else:
-            mx = smtplib.SMTP(smtp_host, smtp_port, local_hostname=mail_localhost)
+        email = serializer.loads(
+            token,
+            salt=salt,
+            max_age=expiration
+        )
+    except SignatureExpired as e:
+        raise ApiError('confirmation token signature has expired', 401)
+    except BadData as e:
+        raise ApiError('confirmation token invalid', 400)
 
-        if current_app.config['DEBUG']:
-            mx.set_debuglevel(True)
-
-        mx.ehlo()
-
-        if current_app.config['SMTP_STARTTLS']:
-            mx.starttls()
-
-        if smtp_password:
-            mx.login(smtp_username, smtp_password)
-
-        mx.sendmail(mail_from, [user.email], msg.as_string())
-        mx.close()
-    except smtplib.SMTPException as e:
-        logging.error('Failed to send email : %s', str(e))
-    except (socket.error, socket.herror, socket.gaierror) as e:
-        logging.error('Mail server connection error: %s', str(e))
-        return
-    except Exception as e:
-        logging.error('Unhandled exception: %s', str(e))
+    return email

@@ -1,10 +1,10 @@
 
 from uuid import uuid4
 
-from flask import current_app, request, jsonify, render_template
+from flask import current_app, request, jsonify
 from flask_cors import cross_origin
 
-from alerta.auth.utils import not_authorized, create_token, get_customers, send_confirmation
+from alerta.auth.utils import not_authorized, create_token, get_customers, send_confirmation, send_password_reset
 from alerta.exceptions import ApiError
 from alerta.models.user import User
 from . import auth
@@ -40,9 +40,7 @@ def signup():
 
     # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
-        hash = str(uuid4())
-        send_confirmation(user, hash)
-        user.set_email_hash(hash)
+        send_confirmation(user)
         raise ApiError('email not verified', 401)
 
     # check user is active & update last login
@@ -75,9 +73,7 @@ def login():
 
     # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
-        hash = str(uuid4())
-        send_confirmation(user, hash)
-        user.set_email_hash(hash)
+        send_confirmation(user)
         raise ApiError('email not verified', 401)
 
     # check allowed domain
@@ -93,12 +89,53 @@ def login():
     return jsonify(token=token.tokenize)
 
 
-@auth.route('/auth/confirm/<hash>', methods=['GET'])
+@auth.route('/auth/confirm/<hash>', methods=['OPTIONS', 'POST'])
+@cross_origin(supports_credentials=True)
 def verify_email(hash):
 
-    user = User.verify_hash(hash)
+    user = User.verify_hash(hash, salt='confirm')
     if user and not user.email_verified:
         user.set_email_verified()
-        return render_template('auth/verify_success.html', email=user.email)
+        return jsonify(status='ok', message='email address {} confirmed'.format(user.email))
     else:
-        return render_template('auth/verify_failed.html')
+        raise ApiError("invalid confirmation hash", 400)
+
+
+@auth.route('/auth/forgot', methods=['OPTIONS', 'POST'])
+@cross_origin(supports_credentials=True)
+def forgot():
+    try:
+        email = request.json['email']
+    except KeyError:
+        raise ApiError("must supply 'email'", 401)
+
+    user = User.find_by_email(email)
+    if user:
+        if not user.email_verified:
+            raise ApiError("user email not verified", 401)
+        elif not user.is_active:
+            raise ApiError("user not active", 403)
+        send_password_reset(user)
+
+        return jsonify(status='ok', message='password reset sent')
+    else:
+        raise ApiError("invalid email address", 400)
+
+
+@auth.route('/auth/reset/<hash>', methods=['OPTIONS', 'POST'])
+@cross_origin(supports_credentials=True)
+def reset(hash):
+    try:
+        password = request.json['password']
+    except KeyError:
+        raise ApiError("must supply 'password'", 400)
+
+    user = User.verify_hash(hash, salt='reset')
+    if user:
+        if not user.is_active:
+            raise ApiError("user not active", 403)
+        user.reset_password(password)
+
+        return jsonify(status='ok', message='password reset successful')
+    else:
+        raise ApiError("invalid password reset hash", 400)
