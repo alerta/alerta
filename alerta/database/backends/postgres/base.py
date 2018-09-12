@@ -331,6 +331,7 @@ class Backend(Database):
             SELECT resource, environment, service, "group", tags, attributes, origin, customer,
                    history, h.* from alerts, unnest(history[1:{limit}]) h
              WHERE {where}
+          ORDER BY update_time DESC
         """.format(where=query.where, limit=current_app.config['HISTORY_LIMIT'])
         Record = namedtuple("Record", ['id', 'resource', 'event', 'environment', 'severity', 'status', 'service',
                                        'group', 'value', 'text', 'tags', 'attributes', 'origin', 'update_time',

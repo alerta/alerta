@@ -434,8 +434,9 @@ class Backend(Database):
             {'$unwind': '$history'},
             {'$match': query.where},
             {'$project': fields},
-            {'$limit': current_app.config['HISTORY_LIMIT']},
-            {'$sort': {'history.updateTime': 1}}
+            {'$sort': {'history.updateTime': -1}},
+            {'$skip': (page-1)*page_size},
+            {'$limit': page_size},
         ]
 
         responses = g.db.alerts.aggregate(pipeline)
