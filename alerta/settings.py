@@ -85,7 +85,8 @@ CORS_ORIGINS = [
     # 'http://explorer.alerta.io',
     'http://localhost',
     'http://localhost:8000',
-    'http://localhost.alerta.io:8000'
+    'http://local.alerta.io:8000',
+    'http://*.local.alerta.io:8000'
 ]
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
