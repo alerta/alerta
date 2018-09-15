@@ -420,8 +420,6 @@ class AlertTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['duplicateCount'], 0)
 
-        alert_id = data['id']
-
         # duplicate alert (value=101)
         self.fatal_alert['value'] = '101'
         response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)

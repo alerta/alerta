@@ -329,7 +329,7 @@ class Backend(Database):
 
         return g.db.alerts.find_one(query)
 
-    #### STATUS, TAGS, ATTRIBUTES
+    # STATUS, TAGS, ATTRIBUTES
 
     def set_status(self, id, status, timeout, history=None):
         """
@@ -408,7 +408,7 @@ class Backend(Database):
         response = g.db.alerts.delete_one({'_id': {'$regex': '^' + id}})
         return True if response.deleted_count == 1 else False
 
-    #### SEARCH & HISTORY
+    # SEARCH & HISTORY
 
     def get_alerts(self, query=None, page=None, page_size=None):
         query = query or Query()

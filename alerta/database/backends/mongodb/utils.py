@@ -3,7 +3,7 @@ import re
 from collections import namedtuple
 
 import pytz
-from flask import current_app, g
+from flask import g
 from werkzeug.datastructures import MultiDict
 
 from alerta.database.base import QueryBuilder

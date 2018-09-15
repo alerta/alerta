@@ -61,6 +61,6 @@ def gitlab():
 
     customers = get_customers(login, groups)
 
-    token = create_token(user_id, profile.get('name', '@'+login), login, provider='gitlab', customers=customers,
+    token = create_token(user_id, profile.get('name', '@' + login), login, provider='gitlab', customers=customers,
                          groups=groups, email=profile.get('email', None), email_verified=email_verified)
     return jsonify(token=token.tokenize)

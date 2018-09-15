@@ -1,5 +1,5 @@
 
-from flask import g, jsonify, request
+from flask import jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission

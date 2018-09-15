@@ -24,13 +24,13 @@ try:
         return bcrypt.checkpw(password.encode('utf-8'), pwhash.encode('utf-8'))
 
 except ImportError:  # Google App Engine
-    from werkzeug.security import generate_password_hash, check_password_hash
+    from werkzeug.security import generate_password_hash, check_password_hash  # noqa
 
 
 def not_authorized(allowed_setting, groups):
-    return (current_app.config['AUTH_REQUIRED']
-            and not ('*' in current_app.config[allowed_setting]
-                     or set(current_app.config[allowed_setting]).intersection(set(groups))))
+    return (current_app.config['AUTH_REQUIRED'] and
+            not ('*' in current_app.config[allowed_setting] or
+                 set(current_app.config[allowed_setting]).intersection(set(groups))))
 
 
 def get_customers(login, groups):
@@ -80,7 +80,7 @@ def send_confirmation(user):
            '{url}\n\n' \
            'You\'re receiving this email because you recently created a new Alerta account.' \
            ' If this wasn\'t you, please ignore this email.'.format(
-               name=user.name, email=user.email, url=urljoin(request.referrer, '/#/confirm/'+token)
+               name=user.name, email=user.email, url=urljoin(request.referrer, '/#/confirm/' + token)
            )
     mailer.send_email(user.email, subject, body=text)
 
@@ -94,7 +94,7 @@ def send_password_reset(user):
            '{url}\n\n' \
            'You\'re receiving this email because you asked for a password reset of an Alerta account.' \
            ' If this wasn\'t you, please ignore this email.'.format(
-               name=user.name, email=user.email, url=urljoin(request.referrer, '/#/reset/'+token)
+               name=user.name, email=user.email, url=urljoin(request.referrer, '/#/reset/' + token)
            )
     mailer.send_email(user.email, subject, body=text)
 

@@ -5,8 +5,8 @@ from six import add_metaclass
 
 webhooks = Blueprint('webhooks', __name__)
 
-from . import cloudwatch, grafana, graylog, newrelic, pagerduty, pingdom, prometheus, riemann
-from . import serverdensity, slack, stackdriver, telegram, custom
+from . import cloudwatch, grafana, graylog, newrelic, pagerduty, pingdom, prometheus, riemann  # noqa
+from . import serverdensity, slack, stackdriver, telegram, custom  # noqa
 
 
 @webhooks.before_request

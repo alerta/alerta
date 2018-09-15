@@ -36,10 +36,10 @@ def github():
     r = requests.get(access_token_url, headers=headers, params=params)
     access_token = r.json()
 
-    r = requests.get(github_api_url+'/user', params=access_token)
+    r = requests.get(github_api_url + '/user', params=access_token)
     profile = r.json()
 
-    r = requests.get(github_api_url+'/user/orgs', params=access_token)  # list public and private Github orgs
+    r = requests.get(github_api_url + '/user/orgs', params=access_token)  # list public and private Github orgs
     organizations = [o['login'] for o in r.json()]
     login = profile['login']
 
@@ -48,6 +48,6 @@ def github():
 
     customers = get_customers(login, organizations)
 
-    token = create_token(profile['id'], profile.get('name', '@'+login), login, provider='github', customers=customers,
+    token = create_token(profile['id'], profile.get('name', '@' + login), login, provider='github', customers=customers,
                          orgs=organizations, email=profile.get('email', None), email_verified=True if 'email' in profile else False)
     return jsonify(token=token.tokenize)

@@ -25,5 +25,5 @@ https://github.com/alerta/alerta/wiki/Python-3
 
 """)
 
-from .app import create_app
+from .app import create_app  # noqa
 app = create_app()
