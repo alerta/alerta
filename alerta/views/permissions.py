@@ -31,9 +31,9 @@ def create_perm():
         raise ApiError(str(e), 500)
 
     if perm:
-        return jsonify(status="ok", id=perm.id, permission=perm.serialize), 201
+        return jsonify(status='ok', id=perm.id, permission=perm.serialize), 201
     else:
-        raise ApiError("create API key failed", 500)
+        raise ApiError('create API key failed', 500)
 
 
 @api.route('/perms', methods=['OPTIONS', 'GET'])
@@ -45,14 +45,14 @@ def list_perms():
 
     if perms:
         return jsonify(
-            status="ok",
+            status='ok',
             permissions=[perm.serialize for perm in perms],
             total=len(perms)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             permissions=[],
             total=0
         )
@@ -66,9 +66,9 @@ def delete_perm(perm_id):
     perm = Permission.find_by_id(perm_id)
 
     if not perm:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if perm.delete():
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to delete permission", 500)
+        raise ApiError('failed to delete permission', 500)

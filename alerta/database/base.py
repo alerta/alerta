@@ -160,10 +160,10 @@ class Database(Base):
     def get_counts_by_status(self, query=None):
         raise NotImplementedError
 
-    def get_topn_count(self, query, group="event", topn=10):
+    def get_topn_count(self, query, group='event', topn=10):
         raise NotImplementedError
 
-    def get_topn_flapping(self, query, group="event", topn=10):
+    def get_topn_flapping(self, query, group='event', topn=10):
         raise NotImplementedError
 
     # ENVIRONMENTS

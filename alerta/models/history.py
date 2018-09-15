@@ -13,7 +13,7 @@ class History:
         self.status = kwargs.get('status', None)
         self.value = kwargs.get('value', None)
         self.text = kwargs.get('text', None)
-        self.change_type = kwargs.get('change_type', kwargs.get('type', None)) or ""
+        self.change_type = kwargs.get('change_type', kwargs.get('type', None)) or ''
         self.update_time = kwargs.get('update_time', None) or datetime.utcnow()
 
     @property

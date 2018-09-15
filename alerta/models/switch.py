@@ -8,11 +8,11 @@ class SwitchState:
 
     @staticmethod
     def to_state(string):
-        return SwitchState.ON if string == "ON" else SwitchState.OFF
+        return SwitchState.ON if string == 'ON' else SwitchState.OFF
 
     @staticmethod
     def to_string(state):
-        return "ON" if state else "OFF"
+        return 'ON' if state else 'OFF'
 
 
 class Switch:
@@ -36,7 +36,7 @@ class Switch:
             'type': 'text',
             'title': self.title,
             'description': self.description,
-            'value': "ON" if self.is_on else "OFF",
+            'value': 'ON' if self.is_on else 'OFF',
         }
 
     def __repr__(self):

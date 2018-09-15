@@ -5,7 +5,7 @@ import setuptools
 version = '0.0.1'
 
 setuptools.setup(
-    name="alerta-routing",
+    name='alerta-routing',
     version=version,
     description='Alerta routing rules for plugins',
     url='https://github.com/alerta/alerta-contrib',

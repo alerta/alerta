@@ -29,7 +29,7 @@ def gitlab():
     try:
         r = requests.post(access_token_url, data=payload)
     except Exception:
-        return jsonify(status="error", message="Failed to call Gitlab API over HTTPS")
+        return jsonify(status='error', message='Failed to call Gitlab API over HTTPS')
     token = r.json()
 
     headers = {'Authorization': 'Bearer ' + token['access_token']}
@@ -57,7 +57,7 @@ def gitlab():
         email_verified = True if profile.get('email', None) else False
 
     if not_authorized('ALLOWED_GITLAB_GROUPS', groups):
-        raise ApiError("User %s is not authorized" % login, 403)
+        raise ApiError('User %s is not authorized' % login, 403)
 
     customers = get_customers(login, groups)
 

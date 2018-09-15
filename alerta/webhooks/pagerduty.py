@@ -83,16 +83,16 @@ def pagerduty():
                 raise ApiError(str(e), 500)
 
             if not alert:
-                raise ApiError("not found", 404)
+                raise ApiError('not found', 404)
 
             try:
                 updated = alert.set_status(status, text)
             except Exception as e:
                 raise ApiError(str(e), 500)
     else:
-        raise ApiError("no messages in PagerDuty data payload", 400)
+        raise ApiError('no messages in PagerDuty data payload', 400)
 
     if updated:
-        return jsonify(status="ok"), 200
+        return jsonify(status='ok'), 200
     else:
-        raise ApiError("update PagerDuty incident status failed", 500)
+        raise ApiError('update PagerDuty incident status failed', 500)

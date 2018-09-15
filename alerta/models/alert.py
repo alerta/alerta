@@ -31,20 +31,20 @@ class Alert:
         self.id = kwargs.get('id', None) or str(uuid4())
         self.resource = resource
         self.event = event
-        self.environment = kwargs.get('environment', None) or ""
+        self.environment = kwargs.get('environment', None) or ''
         self.severity = kwargs.get('severity', None) or current_app.config['DEFAULT_NORMAL_SEVERITY']
         self.correlate = kwargs.get('correlate', None) or list()
         if self.correlate and event not in self.correlate:
             self.correlate.append(event)
         self.status = kwargs.get('status', None) or status_code.UNKNOWN
         self.service = kwargs.get('service', None) or list()
-        self.group = kwargs.get('group', None) or "Misc"
+        self.group = kwargs.get('group', None) or 'Misc'
         self.value = kwargs.get('value', None)
-        self.text = kwargs.get('text', None) or ""
+        self.text = kwargs.get('text', None) or ''
         self.tags = kwargs.get('tags', None) or list()
         self.attributes = kwargs.get('attributes', None) or dict()
         self.origin = kwargs.get('origin', None) or '{}/{}'.format(os.path.basename(sys.argv[0]), platform.uname()[1])
-        self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or "exceptionAlert"
+        self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'exceptionAlert'
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
         self.timeout = kwargs.get('timeout', None) or current_app.config['ALERT_TIMEOUT']
         self.raw_data = kwargs.get('raw_data', None)
@@ -246,8 +246,8 @@ class Alert:
                 id=self.id,
                 event=self.event,
                 status=self.status,
-                text="duplicate alert with status change",
-                change_type="status",
+                text='duplicate alert with status change',
+                change_type='status',
                 update_time=self.create_time
             )
         elif current_app.config['HISTORY_ON_VALUE_CHANGE'] and self.value != previous_value:
@@ -255,8 +255,8 @@ class Alert:
                 id=self.id,
                 event=self.event,
                 value=self.value,
-                text="duplicate alert with value change",
-                change_type="value",
+                text='duplicate alert with value change',
+                change_type='value',
                 update_time=self.create_time
             )
         else:
@@ -290,7 +290,7 @@ class Alert:
             severity=self.severity,
             value=self.value,
             text=self.text,
-            change_type="severity",
+            change_type='severity',
             update_time=self.create_time
         )]
 
@@ -299,8 +299,8 @@ class Alert:
                 id=self.id,
                 event=self.event,
                 status=self.status,
-                text="correlated alert status change",
-                change_type="status",
+                text='correlated alert status change',
+                change_type='status',
                 update_time=self.create_time
             ))
 
@@ -337,7 +337,7 @@ class Alert:
             id=self.id,
             event=self.event,
             status=self.status,
-            text="new alert status change",
+            text='new alert status change',
             change_type='status',
             update_time=self.create_time
         ))
@@ -363,7 +363,7 @@ class Alert:
             event=self.event,
             status=status,
             text=text,
-            change_type="status",
+            change_type='status',
             update_time=datetime.utcnow()
         )
         return db.set_status(self.id, status, timeout, history)
@@ -376,7 +376,7 @@ class Alert:
             severity=severity,
             status=status,
             text=text,
-            change_type="action",
+            change_type='action',
             update_time=datetime.utcnow()
         )
         return db.set_severity_and_status(self.id, severity, status, timeout, history)
@@ -462,7 +462,7 @@ class Alert:
                 event=event,
                 status='expired',
                 text='expired after timeout',
-                change_type="status",
+                change_type='status',
                 update_time=datetime.utcnow()
             )
             db.set_status(id, 'expired', timeout=current_app.config['ALERT_TIMEOUT'], history=history)
@@ -473,7 +473,7 @@ class Alert:
                 event=event,
                 status='open',
                 text='unshelved after timeout',
-                change_type="status",
+                change_type='status',
                 update_time=datetime.utcnow()
             )
             db.set_status(id, 'open', timeout=current_app.config['ALERT_TIMEOUT'], history=history)

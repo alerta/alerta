@@ -49,7 +49,7 @@ def parse_notification(notification):
         alarm = json.loads(notification['Message'])
 
         if 'Trigger' not in alarm:
-            raise ValueError("SNS message is not a Cloudwatch notification")
+            raise ValueError('SNS message is not a Cloudwatch notification')
 
         return Alert(
             resource='{}:{}'.format(alarm['Trigger']['Dimensions'][0]['name'],
@@ -94,6 +94,6 @@ def cloudwatch():
         raise ApiError(str(e), 500)
 
     if alert:
-        return jsonify(status="ok", id=alert.id, alert=alert.serialize), 201
+        return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
     else:
-        raise ApiError("insert or update of cloudwatch alarm failed", 500)
+        raise ApiError('insert or update of cloudwatch alarm failed', 500)

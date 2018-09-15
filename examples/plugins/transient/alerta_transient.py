@@ -12,9 +12,9 @@ FLAPPING_COUNT = 2  # threshold
 class TransientAlert(PluginBase):
 
     def pre_receive(self, alert):
-        LOG.info("Detecting transient alerts...")
+        LOG.info('Detecting transient alerts...')
         if alert.is_flapping(window=FLAPPING_WINDOW, count=FLAPPING_COUNT):
-            raise RateLimit("Flapping alert received more than %s times in %s seconds" %
+            raise RateLimit('Flapping alert received more than %s times in %s seconds' %
                             (FLAPPING_COUNT, FLAPPING_WINDOW))
         return alert
 

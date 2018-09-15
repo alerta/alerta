@@ -48,6 +48,6 @@ def riemann():
         raise ApiError(str(e), 500)
 
     if alert:
-        return jsonify(status="ok", id=alert.id, alert=alert.serialize), 201
+        return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
     else:
-        raise ApiError("insert or update of Riemann alarm failed", 500)
+        raise ApiError('insert or update of Riemann alarm failed', 500)

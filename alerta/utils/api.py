@@ -53,14 +53,14 @@ def assign_customer(wanted, permission='admin:alerts'):
             return wanted
     if customers:
         if len(customers) > 1:
-            raise ApiError("must define customer as more than one possibility", 400)
+            raise ApiError('must define customer as more than one possibility', 400)
         else:
             return customers[0]
 
 
 def add_remote_ip(req, alert):
-    if req.headers.getlist("X-Forwarded-For"):
-        alert.attributes.update(ip=req.headers.getlist("X-Forwarded-For")[0])
+    if req.headers.getlist('X-Forwarded-For'):
+        alert.attributes.update(ip=req.headers.getlist('X-Forwarded-For')[0])
     else:
         alert.attributes.update(ip=req.remote_addr)
 

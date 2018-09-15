@@ -34,9 +34,9 @@ def create_blackout():
         raise ApiError(str(e), 500)
 
     if blackout:
-        return jsonify(status="ok", id=blackout.id, blackout=blackout.serialize), 201, {'Location': absolute_url('/blackout/' + blackout.id)}
+        return jsonify(status='ok', id=blackout.id, blackout=blackout.serialize), 201, {'Location': absolute_url('/blackout/' + blackout.id)}
     else:
-        raise ApiError("insert blackout failed", 500)
+        raise ApiError('insert blackout failed', 500)
 
 
 @api.route('/blackouts', methods=['OPTIONS', 'GET'])
@@ -49,14 +49,14 @@ def list_blackouts():
 
     if blackouts:
         return jsonify(
-            status="ok",
+            status='ok',
             blackouts=[blackout.serialize for blackout in blackouts],
             total=len(blackouts)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             blackouts=[],
             total=0
         )
@@ -71,9 +71,9 @@ def delete_blackout(blackout_id):
     blackout = Blackout.find_by_id(blackout_id, customer)
 
     if not blackout:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if blackout.delete():
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to delete blackout", 500)
+        raise ApiError('failed to delete blackout', 500)

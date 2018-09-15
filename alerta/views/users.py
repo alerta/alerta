@@ -27,10 +27,10 @@ def create_user():
 
     # check allowed domain
     if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
-        raise ApiError("unauthorized domain", 403)
+        raise ApiError('unauthorized domain', 403)
 
     if User.find_by_email(email=user.email):
-        raise ApiError("username already exists", 409)
+        raise ApiError('username already exists', 409)
 
     try:
         user = user.create()
@@ -64,20 +64,20 @@ def create_user():
 @jsonp
 def update_user(user_id):
     if not request.json:
-        raise ApiError("nothing to change", 400)
+        raise ApiError('nothing to change', 400)
 
     user = User.find_by_id(user_id)
 
     if not user:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if 'email' in request.json and User.find_by_email(request.json['email']):
-        raise ApiError("user with email already exists", 409)
+        raise ApiError('user with email already exists', 409)
 
     if user.update(**request.json):
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to update user", 500)
+        raise ApiError('failed to update user', 500)
 
 
 @api.route('/user/me', methods=['OPTIONS', 'PUT'])
@@ -86,7 +86,7 @@ def update_user(user_id):
 @jsonp
 def update_me():
     if not request.json:
-        raise ApiError("nothing to change", 400)
+        raise ApiError('nothing to change', 400)
 
     if 'roles' in request.json:
         raise ApiError('not allowed to update roles', 400)
@@ -96,15 +96,15 @@ def update_me():
     user = User.find_by_email(g.user)
 
     if not user:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if 'email' in request.json and User.find_by_email(request.json['email']):
-        raise ApiError("user with email already exists", 409)
+        raise ApiError('user with email already exists', 409)
 
     if user.update(**request.json):
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to update user", 500)
+        raise ApiError('failed to update user', 500)
 
 
 @api.route('/user/<user_id>/attributes', methods=['OPTIONS', 'PUT'])
@@ -118,12 +118,12 @@ def update_user_attributes(user_id):
     user = User.find_by_id(user_id)
 
     if not user:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if user.update_attributes(request.json['attributes']):
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to update attributes", 500)
+        raise ApiError('failed to update attributes', 500)
 
 
 @api.route('/user/me/attributes', methods=['OPTIONS', 'PUT'])
@@ -137,12 +137,12 @@ def update_me_attributes():
     user = User.find_by_email(g.user)
 
     if not user:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if user.update_attributes(request.json['attributes']):
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to update attributes", 500)
+        raise ApiError('failed to update attributes', 500)
 
 
 @api.route('/users', methods=['OPTIONS', 'GET'])
@@ -155,15 +155,15 @@ def search_users():
 
     if users:
         return jsonify(
-            status="ok",
+            status='ok',
             users=[user.serialize for user in users],
             domains=current_app.config['ALLOWED_EMAIL_DOMAINS'],
             total=len(users)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             users=[],
             domains=current_app.config['ALLOWED_EMAIL_DOMAINS'],
             total=0
@@ -178,9 +178,9 @@ def delete_user(user_id):
     user = User.find_by_id(user_id)
 
     if not user:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if user.delete():
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to delete user", 500)
+        raise ApiError('failed to delete user', 500)

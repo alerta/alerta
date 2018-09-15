@@ -13,7 +13,7 @@ from . import webhooks
 def parse_newrelic(alert):
 
     if 'version' not in alert:
-        raise ValueError("New Relic Legacy Alerting is not supported")
+        raise ValueError('New Relic Legacy Alerting is not supported')
 
     status = alert['current_state'].lower()
     if status == 'open':
@@ -74,6 +74,6 @@ def newrelic():
         raise ApiError(str(e), 500)
 
     if alert:
-        return jsonify(status="ok", id=alert.id, alert=alert.serialize), 201
+        return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
     else:
-        raise ApiError("insert or update of New Relic alert failed", 500)
+        raise ApiError('insert or update of New Relic alert failed', 500)
