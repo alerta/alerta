@@ -6,12 +6,12 @@ auth = Blueprint('auth', __name__)
 
 
 try:
-    import ldap
-    from . import basic_ldap
+    import ldap  # noqa
+    from . import basic_ldap  # noqa
 except ImportError:
-    from . import basic
+    from . import basic  # noqa
 
-from . import github, gitlab, google, keycloak, pingfederate, saml2, userinfo
+from . import github, gitlab, google, keycloak, pingfederate, saml2, userinfo  # noqa
 
 
 @auth.before_request

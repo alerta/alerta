@@ -20,7 +20,7 @@ class SearchTestCase(unittest.TestCase):
         search_params = MultiDict([('status', 'open'), ('environment', 'Production')])
 
         with self.app.test_request_context():
-            query = qb.from_params(search_params)
+            query = qb.from_params(search_params)  # noqa # FIXME
 
         # self.assertEqual(query.where, 'foo')
         # self.assertEqual(query.sort, 'foo')

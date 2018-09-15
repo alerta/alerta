@@ -28,7 +28,7 @@ def get_backend(app):
 def load_backend(backend):
     try:
         return import_module('alerta.database.backends.%s' % backend)
-    except:
+    except Exception:
         raise ImportError('Failed to load %s database backend' % backend)
 
 
@@ -118,7 +118,7 @@ class Database(Base):
     def get_alert(self, id, customers=None):
         raise NotImplementedError
 
-    #### STATUS, TAGS, ATTRIBUTES
+    # STATUS, TAGS, ATTRIBUTES
 
     def set_status(self, id, status, timeout, history=None):
         raise NotImplementedError
@@ -138,7 +138,7 @@ class Database(Base):
     def delete_alert(self, id):
         raise NotImplementedError
 
-    #### SEARCH & HISTORY
+    # SEARCH & HISTORY
 
     def get_alerts(self, query=None, page=None, page_size=None):
         raise NotImplementedError

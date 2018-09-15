@@ -1,7 +1,7 @@
 
 import traceback
 
-from flask import Response, current_app, jsonify
+from flask import current_app, jsonify
 
 
 class AlertaException(IOError):
@@ -77,7 +77,7 @@ def handle_api_error(error):
     return jsonify({
         'status': 'error',
         'message': error.message,
-        'code':  error.code,
+        'code': error.code,
         'errors': error.errors
     }), error.code
 
@@ -86,7 +86,7 @@ def handle_basic_auth_error(error):
     return jsonify({
         'status': 'error',
         'message': error.message,
-        'code':  error.code,
+        'code': error.code,
         'errors': error.errors
     }), error.code, {'WWW-Authenticate': 'Basic realm=%s' % current_app.config['BASIC_AUTH_REALM']}
 

@@ -258,7 +258,7 @@ class Backend(Database):
         """.format(customer='customer=ANY(%(customers)s)' if customers else '1=1')
         return self._fetchone(select, {'id': '^'+id, 'customers': customers})
 
-    #### STATUS, TAGS, ATTRIBUTES
+    # STATUS, TAGS, ATTRIBUTES
 
     def set_status(self, id, status, timeout, history=None):
         update = """
@@ -315,7 +315,7 @@ class Backend(Database):
         """
         return self._delete(delete, {'id': id, 'like_id': id+'%'}, returning=True)
 
-    #### SEARCH & HISTORY
+    # SEARCH & HISTORY
 
     def get_alerts(self, query=None, page=None, page_size=None):
         query = query or Query()

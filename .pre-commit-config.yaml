@@ -14,7 +14,7 @@ repos:
     -   id: debug-statements
     -   id: double-quote-string-fixer
     -   id: end-of-file-fixer
-#    -   id: flake8
+    -   id: flake8
     -   id: fix-encoding-pragma
         args: ['--remove']
     -   id: pretty-format-json
