@@ -211,7 +211,7 @@ class Backend(Database):
         }
 
         # only update those attributes that are specifically defined
-        attributes = {'attributes.'+k: v for k, v in alert.attributes.items()}
+        attributes = {'attributes.' + k: v for k, v in alert.attributes.items()}
         update['$set'].update(attributes)
 
         if history:
@@ -276,7 +276,7 @@ class Backend(Database):
         }
 
         # only update those attributes that are specifically defined
-        attributes = {'attributes.'+k: v for k, v in alert.attributes.items()}
+        attributes = {'attributes.' + k: v for k, v in alert.attributes.items()}
         update['$set'].update(attributes)
 
         return g.db.alerts.find_one_and_update(
@@ -412,7 +412,7 @@ class Backend(Database):
 
     def get_alerts(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return g.db.alerts.find(query.where, sort=query.sort).skip((page-1)*page_size).limit(page_size)
+        return g.db.alerts.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
 
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()
@@ -435,7 +435,7 @@ class Backend(Database):
             {'$match': query.where},
             {'$project': fields},
             {'$sort': {'history.updateTime': -1}},
-            {'$skip': (page-1)*page_size},
+            {'$skip': (page - 1) * page_size},
             {'$limit': page_size},
         ]
 

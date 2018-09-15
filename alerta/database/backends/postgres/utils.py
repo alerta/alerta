@@ -78,10 +78,10 @@ class QueryBuilderImpl(QueryBuilder):
         ids = params.getlist('id')
         if len(ids) == 1:
             query.append('AND (id LIKE %(id)s OR last_receive_id LIKE %(id)s)')
-            qvars['id'] = ids[0]+'%'
+            qvars['id'] = ids[0] + '%'
         elif ids:
             query.append('AND (id ~* (%(regex_id)s) OR last_receive_id ~* (%(regex_id)s))')
-            qvars['regex_id'] = '|'.join(['^'+i for i in ids])
+            qvars['regex_id'] = '|'.join(['^' + i for i in ids])
 
         EXCLUDE_QUERY = ['_', 'callback', 'token', 'api-key', 'q', 'id', 'from-date',
                          'to-date', 'duplicateCount', 'repeat', 'sort-by', 'reverse',
@@ -98,20 +98,20 @@ class QueryBuilderImpl(QueryBuilder):
             elif field.startswith('attributes.'):
                 field = field.replace('attributes.', '')
                 query.append('AND attributes @> %(attr_{})s'.format(field))
-                qvars['attr_'+field] = {field: value[0]}
+                qvars['attr_' + field] = {field: value[0]}
             elif len(value) == 1:
                 value = value[0]
                 if field.endswith('!'):
                     if value.startswith('~'):
                         query.append('AND NOT "{0}" ILIKE %(not_{0})s'.format(field[:-1]))
-                        qvars['not_'+field[:-1]] = '%'+value[1:]+'%'
+                        qvars['not_' + field[:-1]] = '%' + value[1:] + '%'
                     else:
                         query.append('AND "{0}"!=%(not_{0})s'.format(field[:-1]))
-                        qvars['not_'+field[:-1]] = value
+                        qvars['not_' + field[:-1]] = value
                 else:
                     if value.startswith('~'):
                         query.append('AND "{0}" ILIKE %({0})s'.format(field))
-                        qvars[field] = '%'+value[1:]+'%'
+                        qvars[field] = '%' + value[1:] + '%'
                     else:
                         query.append('AND "{0}"=%({0})s'.format(field))
                         qvars[field] = value
@@ -119,14 +119,14 @@ class QueryBuilderImpl(QueryBuilder):
                 if field.endswith('!'):
                     if '~' in [v[0] for v in value]:
                         query.append('AND "{0}" !~* (%(not_regex_{0})s)'.format(field[:-1]))
-                        qvars['not_regex_'+field[:-1]] = '|'.join([v.lstrip('~') for v in value])
+                        qvars['not_regex_' + field[:-1]] = '|'.join([v.lstrip('~') for v in value])
                     else:
                         query.append('AND NOT "{0}"=ANY(%(not_{0})s)'.format(field[:-1]))
-                        qvars['not_'+field[:-1]] = value
+                        qvars['not_' + field[:-1]] = value
                 else:
                     if '~' in [v[0] for v in value]:
                         query.append('AND "{0}" ~* (%(regex_{0})s)'.format(field))
-                        qvars['regex_'+field] = '|'.join([v.lstrip('~') for v in value])
+                        qvars['regex_' + field] = '|'.join([v.lstrip('~') for v in value])
                     else:
                         query.append('AND "{0}"=ANY(%({0})s)'.format(field))
                         qvars[field] = value
