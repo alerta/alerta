@@ -74,4 +74,3 @@ angular.module('config', [])
   })
   .constant('colors', {});
 EOF
-
