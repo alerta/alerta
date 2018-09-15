@@ -1,10 +1,9 @@
-
-from alerta.app import severity
-from alerta.models import severity_code
-
 """
 Possible alert status codes.
 """
+
+from alerta.app import severity
+from alerta.models import severity_code
 
 OPEN_STATUS_CODE = 1
 ASSIGN_STATUS_CODE = 2
