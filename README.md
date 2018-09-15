@@ -49,7 +49,7 @@ To install the web console run::
     $ wget -O alerta-web.tgz https://github.com/alerta/angular-alerta-webui/tarball/master
     $ tar zxvf alerta-web.tgz
     $ cd alerta-angular-alerta-webui-*/app
-    $ python -m SimpleHTTPServer 8000
+    $ python -m http.server 8000
 
     >> browse to http://localhost:8000
 
