@@ -19,10 +19,7 @@ class ApiKeyHelper:
         self.api_key_expire_days = app.config['API_KEY_EXPIRE_DAYS']
 
     def generate(self):
-        try:
-            random = str(os.urandom(32)).encode('utf-8')  # python 3
-        except UnicodeDecodeError:
-            random = str(os.urandom(32))  # python 2
+        random = str(os.urandom(32)).encode('utf-8')
         digest = hmac.new(self.secret_key.encode('utf-8'), msg=random, digestmod=hashlib.sha256).digest()
         return base64.urlsafe_b64encode(digest).decode('utf-8')[:40]
 

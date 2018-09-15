@@ -1,13 +1,8 @@
 
 from importlib import import_module
+from urllib.parse import urlparse
 
 from flask import g
-
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse  # type: ignore
-
 
 # http://stackoverflow.com/questions/8544983/dynamically-mixin-a-base-class-to-an-instance-in-python
 

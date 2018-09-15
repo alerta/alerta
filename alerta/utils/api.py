@@ -2,6 +2,7 @@
 import logging
 from functools import wraps
 from os.path import join as path_join
+from urllib.parse import urljoin, urlparse, urlunparse
 
 from flask import current_app, g, request
 
@@ -9,11 +10,6 @@ from alerta.app import plugins
 from alerta.exceptions import (ApiError, BlackoutPeriod, RateLimit,
                                RejectException)
 from alerta.models import actions, status_code
-
-try:
-    from urllib.parse import urljoin, urlparse, urlunparse
-except ImportError:
-    from urlparse import urljoin, urlparse, urlunparse  # type: ignore
 
 
 def jsonp(func):
