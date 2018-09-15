@@ -20,7 +20,7 @@ try:
         """.format(
             build_number=os.environ.get('BUILD_NUMBER', 'PROD'),
             date=datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-            revision=subprocess.check_output(["git", "rev-parse", "HEAD"]).decode('utf-8').strip()
+            revision=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()
         ).replace('    ', '')
         f.write(build)
 except Exception:

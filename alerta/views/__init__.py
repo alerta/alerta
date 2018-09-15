@@ -20,11 +20,11 @@ def index():
     links = []
     for rule in current_app.url_map.iter_rules():
         links.append({
-            "rel": rule.endpoint,
-            "href": absolute_url(rule.rule),
-            "method": ','.join([m for m in rule.methods if m not in ['HEAD', 'OPTIONS']])
+            'rel': rule.endpoint,
+            'href': absolute_url(rule.rule),
+            'method': ','.join([m for m in rule.methods if m not in ['HEAD', 'OPTIONS']])
         })
-    return jsonify(status="ok", uri=absolute_url(), data={'description': 'Alerta API'}, links=sorted(links, key=lambda k: k["href"]))
+    return jsonify(status='ok', uri=absolute_url(), data={'description': 'Alerta API'}, links=sorted(links, key=lambda k: k['href']))
 
 
 @api.route('/_', methods=['GET'])
@@ -36,18 +36,18 @@ def debug():
 def config():
     return jsonify(
         config={
-            "endpoint": current_app.config['BASE_URL'],
-            "provider": current_app.config['AUTH_PROVIDER'],
-            "signup_enabled": current_app.config['SIGNUP_ENABLED'],
-            "client_id": current_app.config['OAUTH2_CLIENT_ID'],
-            "github_url": current_app.config['GITHUB_URL'],
-            "gitlab_url": current_app.config['GITLAB_URL'],
-            "keycloak_url": current_app.config['KEYCLOAK_URL'],
-            "keycloak_realm": current_app.config['KEYCLOAK_REALM'],
-            "pingfederate_url": current_app.config['PINGFEDERATE_URL'],
-            "colors": {},  # not supported yet
-            "severity": current_app.config['SEVERITY_MAP'],
-            "tracking_id": current_app.config['GOOGLE_TRACKING_ID'],
-            "refresh_interval": current_app.config['AUTO_REFRESH_INTERVAL']
+            'endpoint': current_app.config['BASE_URL'],
+            'provider': current_app.config['AUTH_PROVIDER'],
+            'signup_enabled': current_app.config['SIGNUP_ENABLED'],
+            'client_id': current_app.config['OAUTH2_CLIENT_ID'],
+            'github_url': current_app.config['GITHUB_URL'],
+            'gitlab_url': current_app.config['GITLAB_URL'],
+            'keycloak_url': current_app.config['KEYCLOAK_URL'],
+            'keycloak_realm': current_app.config['KEYCLOAK_REALM'],
+            'pingfederate_url': current_app.config['PINGFEDERATE_URL'],
+            'colors': {},  # not supported yet
+            'severity': current_app.config['SEVERITY_MAP'],
+            'tracking_id': current_app.config['GOOGLE_TRACKING_ID'],
+            'refresh_interval': current_app.config['AUTO_REFRESH_INTERVAL']
         }
     )

@@ -72,4 +72,4 @@ class HeartbeatTestCase(unittest.TestCase):
         response = self.client.get('/heartbeats')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertGreater(data['total'], 0, "total heartbeats > 0")
+        self.assertGreater(data['total'], 0, 'total heartbeats > 0')

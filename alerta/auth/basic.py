@@ -17,7 +17,7 @@ from . import auth
 def signup():
 
     if not current_app.config['SIGNUP_ENABLED']:
-        raise ApiError("user signup is disabled", 401)
+        raise ApiError('user signup is disabled', 401)
 
     try:
         user = User.parse(request.json)
@@ -30,10 +30,10 @@ def signup():
 
     # check allowed domain
     if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
-        raise ApiError("unauthorized domain", 403)
+        raise ApiError('unauthorized domain', 403)
 
     if User.find_by_email(email=user.email):
-        raise ApiError("username already exists", 409)
+        raise ApiError('username already exists', 409)
 
     try:
         user = user.create()
@@ -71,7 +71,7 @@ def login():
 
     user = User.check_credentials(username, password)
     if not user:
-        raise ApiError("Invalid username or password", 401)
+        raise ApiError('Invalid username or password', 401)
 
     # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
@@ -80,7 +80,7 @@ def login():
 
     # check allowed domain
     if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
-        raise ApiError("unauthorized domain", 403)
+        raise ApiError('unauthorized domain', 403)
 
     # assign customers
     customers = get_customers(user.email, groups=[user.domain])
@@ -98,11 +98,11 @@ def verify_email(hash):
     user = User.verify_hash(hash, salt='confirm')
     if user:
         if user.email_verified:
-            raise ApiError("email already verified", 400)
+            raise ApiError('email already verified', 400)
         user.set_email_verified()
         return jsonify(status='ok', message='email address {} confirmed'.format(user.email))
     else:
-        raise ApiError("invalid confirmation hash", 400)
+        raise ApiError('invalid confirmation hash', 400)
 
 
 @auth.route('/auth/forgot', methods=['OPTIONS', 'POST'])
@@ -116,14 +116,14 @@ def forgot():
     user = User.find_by_email(email)
     if user:
         if not user.email_verified:
-            raise ApiError("user email not verified", 401)
+            raise ApiError('user email not verified', 401)
         elif not user.is_active:
-            raise ApiError("user not active", 403)
+            raise ApiError('user not active', 403)
         send_password_reset(user)
 
         return jsonify(status='ok', message='password reset sent')
     else:
-        raise ApiError("invalid email address", 400)
+        raise ApiError('invalid email address', 400)
 
 
 @auth.route('/auth/reset/<hash>', methods=['OPTIONS', 'POST'])
@@ -137,9 +137,9 @@ def reset(hash):
     user = User.verify_hash(hash, salt='reset')
     if user:
         if not user.is_active:
-            raise ApiError("user not active", 403)
+            raise ApiError('user not active', 403)
         user.reset_password(password)
 
         return jsonify(status='ok', message='password reset successful')
     else:
-        raise ApiError("invalid password reset hash", 400)
+        raise ApiError('invalid password reset hash', 400)

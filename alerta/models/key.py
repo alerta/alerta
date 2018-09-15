@@ -125,7 +125,7 @@ class ApiKey:
         """
         List API keys for a user.
         """
-        return [ApiKey.from_db(key) for key in db.get_keys(qb.from_dict({"user": user}))]
+        return [ApiKey.from_db(key) for key in db.get_keys(qb.from_dict({'user': user}))]
 
     def delete(self):
         """

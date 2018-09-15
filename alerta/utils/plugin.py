@@ -32,7 +32,7 @@ class Plugins:
                     LOG.info("Server plugin '%s' enabled.", name)
             except Exception as e:
                 LOG.error("Server plugin '%s' could not be loaded: %s", name, e)
-        LOG.info("All server plugins enabled: %s", ', '.join(self.plugins.keys()))
+        LOG.info('All server plugins enabled: %s', ', '.join(self.plugins.keys()))
         try:
             self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')
         except (DistributionNotFound, ImportError):
@@ -43,6 +43,6 @@ class Plugins:
             if self.plugins and self.rules:
                 return self.rules(alert, self.plugins)
         except Exception as e:
-            LOG.warning("Plugin routing rules failed: %s", str(e))
+            LOG.warning('Plugin routing rules failed: %s', str(e))
 
         return self.plugins.values()

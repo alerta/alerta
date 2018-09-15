@@ -56,13 +56,13 @@ class Blackout:
 
         now = datetime.utcnow()
         if self.start_time <= now and self.end_time > now:
-            self.status = "active"
+            self.status = 'active'
             self.remaining = int((self.end_time - now).total_seconds())
         elif self.start_time > now:
-            self.status = "pending"
+            self.status = 'pending'
             self.remaining = self.duration
         elif self.end_time <= now:
-            self.status = "expired"
+            self.status = 'expired'
             self.remaining = 0
 
     @classmethod

@@ -14,11 +14,11 @@ def parse_graylog(alert):
 
     return Alert(
         resource=alert['stream']['title'],
-        event="Alert",
+        event='Alert',
         environment='Development',
-        service=["test"],
-        severity="critical",
-        value="n/a",
+        service=['test'],
+        severity='critical',
+        value='n/a',
         text=alert['check_result']['result_description'],
         attributes={'checkId': alert['check_result']['triggered_condition']['id']},
         origin='Graylog',
@@ -43,7 +43,7 @@ def graylog():
     if request.args.get('environment', None):
         incomingAlert.environment = request.args.get('environment')
     if request.args.get('service', None):
-        incomingAlert.service = request.args.get('service').split(",")
+        incomingAlert.service = request.args.get('service').split(',')
     if request.args.get('severity', None):
         incomingAlert.severity = request.args.get('severity')
 
@@ -58,6 +58,6 @@ def graylog():
         raise ApiError(str(e), 500)
 
     if alert:
-        return jsonify(status="ok", id=alert.id, alert=alert.serialize), 201
+        return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
     else:
-        raise ApiError("insert or update of graylog check failed", 500)
+        raise ApiError('insert or update of graylog check failed', 500)

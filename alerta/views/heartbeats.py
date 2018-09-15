@@ -29,9 +29,9 @@ def create_heartbeat():
         raise ApiError(str(e), 500)
 
     if heartbeat:
-        return jsonify(status="ok", id=heartbeat.id, heartbeat=heartbeat.serialize), 201
+        return jsonify(status='ok', id=heartbeat.id, heartbeat=heartbeat.serialize), 201
     else:
-        raise ApiError("insert or update of received heartbeat failed", 500)
+        raise ApiError('insert or update of received heartbeat failed', 500)
 
 
 @api.route('/heartbeat/<heartbeat_id>', methods=['OPTIONS', 'GET'])
@@ -43,9 +43,9 @@ def get_heartbeat(heartbeat_id):
     heartbeat = Heartbeat.find_by_id(heartbeat_id, customer)
 
     if heartbeat:
-        return jsonify(status="ok", total=1, heartbeat=heartbeat.serialize)
+        return jsonify(status='ok', total=1, heartbeat=heartbeat.serialize)
     else:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
 
 @api.route('/heartbeats', methods=['OPTIONS', 'GET'])
@@ -58,14 +58,14 @@ def list_heartbeats():
 
     if heartbeats:
         return jsonify(
-            status="ok",
+            status='ok',
             heartbeats=[heartbeat.serialize for heartbeat in heartbeats],
             total=len(heartbeats)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             heartbeats=[],
             total=0
         )
@@ -80,9 +80,9 @@ def delete_heartbeat(heartbeat_id):
     heartbeat = Heartbeat.find_by_id(heartbeat_id, customer)
 
     if not heartbeat:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if heartbeat.delete():
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to delete heartbeat", 500)
+        raise ApiError('failed to delete heartbeat', 500)

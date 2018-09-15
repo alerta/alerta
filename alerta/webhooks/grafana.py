@@ -16,7 +16,7 @@ from . import webhooks
 def parse_grafana(alert, match, args):
     alerting_severity = args.get('severity', 'major')
     if alerting_severity not in Severity.SEVERITY_MAP:
-        raise ValueError('Invalid severity parameter, expected one of %s' % ", ".join(
+        raise ValueError('Invalid severity parameter, expected one of %s' % ', '.join(
             sorted(Severity.SEVERITY_MAP)))
 
     if alert['state'] == 'alerting':
@@ -72,7 +72,7 @@ def grafana():
             try:
                 incomingAlert = parse_grafana(data, match, request.args)
             except ValueError as e:
-                return jsonify(status="error", message=str(e)), 400
+                return jsonify(status='error', message=str(e)), 400
 
             incomingAlert.customer = assign_customer(wanted=incomingAlert.customer)
             add_remote_ip(request, incomingAlert)
@@ -80,9 +80,9 @@ def grafana():
             try:
                 alert = process_alert(incomingAlert)
             except RejectException as e:
-                return jsonify(status="error", message=str(e)), 403
+                return jsonify(status='error', message=str(e)), 403
             except Exception as e:
-                return jsonify(status="error", message=str(e)), 500
+                return jsonify(status='error', message=str(e)), 500
             alerts.append(alert)
 
     elif data and data['state'] == 'ok' and data.get('ruleId', None):
@@ -104,9 +104,9 @@ def grafana():
                 raise ApiError(str(e), 500)
             alerts.append(alert)
     else:
-        raise ApiError("no alerts in Grafana notification payload", 400)
+        raise ApiError('no alerts in Grafana notification payload', 400)
 
     if len(alerts) == 1:
-        return jsonify(status="ok", id=alerts[0].id, alert=alerts[0].serialize), 201
+        return jsonify(status='ok', id=alerts[0].id, alert=alerts[0].serialize), 201
     else:
-        return jsonify(status="ok", ids=[alert.id for alert in alerts]), 201
+        return jsonify(status='ok', ids=[alert.id for alert in alerts]), 201

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """Alerta WatchDog script to monitor Alerta service"""
-__author__ = "Mark Bradley (mbrad@github)"
-__version__ = "0.8.1"
+__author__ = 'Mark Bradley (mbrad@github)'
+__version__ = '0.8.1'
 
 import os
 import smtplib
@@ -34,7 +34,7 @@ pushuser = 'this-is-your-pushover-token'
 
 
 class Event:
-    "Event class to construct an event object"
+    'Event class to construct an event object'
 
     def __init__(self):
         self.epoch = int(time.time())
@@ -67,10 +67,10 @@ def _argvchk():
         Usage: %s (-f = foreground)\n" % ((sys.argv[0]).split('/')[-1]))
         sys.exit(0)
     elif '-f' in sys.argv[1]:
-        print("Debug Mode: Staying in foreground...\n")
+        print('Debug Mode: Staying in foreground...\n')
         return False
     else:
-        print >>sys.stderr, "Error: Unknown Option"
+        print >>sys.stderr, 'Error: Unknown Option'
         sys.exit(1)
 
 
@@ -88,7 +88,7 @@ def mailalert(last, cache, typestr):
     else:
         suppnote = ' '
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = "Alerta Service Notification"
+    msg['Subject'] = 'Alerta Service Notification'
     msg['From'] = fromaddr
     msg['To'] = ', '.join(toaddr)
     if typestr == 'WARNING':
@@ -147,9 +147,9 @@ def pushover(last, typestr):
         dprint('Info: PushOver notifications disabled.')
         return
     pushmessage = 'State: {} Response: {} ({})'.format(typestr, last.body, last.code)
-    pushdata = urllib.urlencode({"token": pushtoken, "user": pushuser, "message": pushmessage})
+    pushdata = urllib.urlencode({'token': pushtoken, 'user': pushuser, 'message': pushmessage})
     try:
-        pushrequest = urllib2.Request(pushurl, pushdata, {"Content-type": "application/x-www-form-urlencoded"})
+        pushrequest = urllib2.Request(pushurl, pushdata, {'Content-type': 'application/x-www-form-urlencoded'})
         socket.setdefaulttimeout(httptimeout)
         pushresponse = urllib2.urlopen(pushrequest, timeout=httptimeout)
     except:

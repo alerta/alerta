@@ -403,7 +403,7 @@ class AlertTestCase(unittest.TestCase):
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['status'], "closed")
+        self.assertEqual(data['alert']['status'], 'closed')
 
         # duplicate alert -> status=open
         response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)

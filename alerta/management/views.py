@@ -55,10 +55,10 @@ def management():
 def manifest():
 
     manifest = {
-        "release": __version__,
-        "build": build.BUILD_NUMBER,
-        "date": build.BUILD_DATE,
-        "revision": build.BUILD_VCS_NUMBER
+        'release': __version__,
+        'build': build.BUILD_NUMBER,
+        'date': build.BUILD_DATE,
+        'revision': build.BUILD_VCS_NUMBER
     }
 
     return jsonify(manifest)
@@ -164,7 +164,7 @@ def status():
     metrics.extend(Timer.find_all())
     metrics.extend(Switch.find_all())
 
-    return jsonify(application="alerta", version=__version__, time=now, uptime=int(now - started),
+    return jsonify(application='alerta', version=__version__, time=now, uptime=int(now - started),
                    metrics=[metric.serialize() for metric in metrics])
 
 

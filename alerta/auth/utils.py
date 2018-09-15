@@ -89,7 +89,7 @@ def send_password_reset(user):
     token = generate_email_token(email=user.email, salt='reset')
     user.set_email_hash(token)
 
-    subject = "[Alerta] Reset password request"
+    subject = '[Alerta] Reset password request'
     text = 'You forgot your password. Reset it by clicking on the link below:\n\n' \
            '{url}\n\n' \
            'You\'re receiving this email because you asked for a password reset of an Alerta account.' \

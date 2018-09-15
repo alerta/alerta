@@ -66,7 +66,7 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
 
         # create blackout
-        response = self.client.post('/blackout', data=json.dumps({"environment": "Production"}), headers=self.headers)
+        response = self.client.post('/blackout', data=json.dumps({'environment': 'Production'}), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
@@ -104,8 +104,8 @@ class BlackoutsTestCase(unittest.TestCase):
 
         # create new blackout
         blackout = {
-            "environment": "Production",
-            "service": ["Core"]
+            'environment': 'Production',
+            'service': ['Core']
         }
         response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
         self.assertEqual(response.status_code, 201)
@@ -219,9 +219,9 @@ class BlackoutsTestCase(unittest.TestCase):
 
         # create blackout (only for services on a particular host)
         blackout = {
-            "environment": "Production",
-            "resource": "node404",
-            "service": ["Network", "Web"]
+            'environment': 'Production',
+            'resource': 'node404',
+            'service': ['Network', 'Web']
         }
         response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
         self.assertEqual(response.status_code, 201)
@@ -243,9 +243,9 @@ class BlackoutsTestCase(unittest.TestCase):
 
         # create blackout (only for groups of alerts with particular tags)
         blackout = {
-            "environment": "Production",
-            "group": "Network",
-            "tags": ["system:web01", "switch:off"]
+            'environment': 'Production',
+            'group': 'Network',
+            'tags': ['system:web01', 'switch:off']
         }
         response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
         self.assertEqual(response.status_code, 201)
@@ -257,7 +257,7 @@ class BlackoutsTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
 
-        self.alert['tags'].append("system:web01")
+        self.alert['tags'].append('system:web01')
 
         # suppress alert
         response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
@@ -275,8 +275,8 @@ class BlackoutsTestCase(unittest.TestCase):
         }
 
         # create new blackout
-        response = self.client.post('/blackout', data=json.dumps({"environment": "Production", "service": [
-                                    "Network"], "text": "administratively down"}), headers=self.headers)
+        response = self.client.post('/blackout', data=json.dumps({'environment': 'Production', 'service': [
+                                    'Network'], 'text': 'administratively down'}), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['blackout']['user'], 'admin@alerta.io')
@@ -288,7 +288,7 @@ class SuppressionBlackout(PluginBase):
 
     def pre_receive(self, alert):
         if alert.is_blackout():
-            raise BlackoutPeriod("Suppressed alert during blackout period")
+            raise BlackoutPeriod('Suppressed alert during blackout period')
         return alert
 
     def post_receive(self, alert):
