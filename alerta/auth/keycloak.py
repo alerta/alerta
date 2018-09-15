@@ -14,9 +14,9 @@ from . import auth
 def keycloak():
 
     if not current_app.config['KEYCLOAK_URL']:
-        return jsonify(status="error", message="Must define KEYCLOAK_URL setting in server configuration."), 503
+        return jsonify(status='error', message='Must define KEYCLOAK_URL setting in server configuration.'), 503
 
-    access_token_url = "{}/auth/realms/{}/protocol/openid-connect/token".format(
+    access_token_url = '{}/auth/realms/{}/protocol/openid-connect/token'.format(
         current_app.config['KEYCLOAK_URL'], current_app.config['KEYCLOAK_REALM'])
 
     payload = {
@@ -30,11 +30,11 @@ def keycloak():
     try:
         r = requests.post(access_token_url, data=payload)
     except Exception:
-        return jsonify(status="error", message="Failed to call Keycloak API over HTTPS")
+        return jsonify(status='error', message='Failed to call Keycloak API over HTTPS')
     access_token = r.json()
 
-    headers = {"Authorization": "{} {}".format(access_token['token_type'], access_token['access_token'])}
-    r = requests.get("{}/auth/realms/{}/protocol/openid-connect/userinfo".format(
+    headers = {'Authorization': '{} {}'.format(access_token['token_type'], access_token['access_token'])}
+    r = requests.get('{}/auth/realms/{}/protocol/openid-connect/userinfo'.format(
         current_app.config['KEYCLOAK_URL'], current_app.config['KEYCLOAK_REALM']), headers=headers)
     profile = r.json()
 
@@ -42,7 +42,7 @@ def keycloak():
     login = profile['preferred_username']
 
     if not_authorized('ALLOWED_KEYCLOAK_ROLES', roles):
-        raise ApiError("User %s is not authorized" % login, 403)
+        raise ApiError('User %s is not authorized' % login, 403)
 
     customers = get_customers(login, groups=roles)
 

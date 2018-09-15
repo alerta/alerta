@@ -598,24 +598,24 @@ class WebhooksTestCase(unittest.TestCase):
         response = self.client.post('/webhooks/prometheus', data=self.prometheus_v3_alert, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['resource'], "host2")
-        self.assertEqual(data['alert']['event'], "failedConnect")
+        self.assertEqual(data['alert']['resource'], 'host2')
+        self.assertEqual(data['alert']['event'], 'failedConnect')
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['severity'], 'critical')
         self.assertEqual(data['alert']['timeout'], 600)
-        self.assertEqual(data['alert']['createTime'], "2016-08-01T10:27:08.008Z")
+        self.assertEqual(data['alert']['createTime'], '2016-08-01T10:27:08.008Z')
         self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
 
         # create v4 alert
         response = self.client.post('/webhooks/prometheus', data=self.prometheus_v4_alert, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['resource'], "n/a")
-        self.assertEqual(data['alert']['event'], "thing_dead")
+        self.assertEqual(data['alert']['resource'], 'n/a')
+        self.assertEqual(data['alert']['event'], 'thing_dead')
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['severity'], 'warning')
         self.assertEqual(data['alert']['timeout'], 86400)
-        self.assertEqual(data['alert']['createTime'], "2017-08-03T19:17:37.804Z")
+        self.assertEqual(data['alert']['createTime'], '2017-08-03T19:17:37.804Z')
         self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
 
     def test_riemann_webhook(self):
@@ -660,7 +660,7 @@ class WebhooksTestCase(unittest.TestCase):
         response = self.client.post('/webhooks/grafana', data=self.grafana_alert_alerting, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['status'], "ok")
+        self.assertEqual(data['status'], 'ok')
 
         # check tags with dots are replaced with underscores ie. 'info.host_id' => 'info_host_id'
         self.assertEqual(data['alert']['attributes']['info_host_id'], 'i-0d0721c7f97545d43')
@@ -671,7 +671,7 @@ class WebhooksTestCase(unittest.TestCase):
         response = self.client.post('/webhooks/grafana', data=self.grafana_alert_ok, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['status'], "ok")
+        self.assertEqual(data['status'], 'ok')
 
         # get alert
         response = self.client.get('/alert/' + alert_id)
@@ -693,7 +693,7 @@ class WebhooksTestCase(unittest.TestCase):
                                     telegram_alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['status'], "ok")
+        self.assertEqual(data['status'], 'ok')
 
     def test_graylog_webhook(self):
         # graylog alert
@@ -733,7 +733,7 @@ class WebhooksTestCase(unittest.TestCase):
         # test multipart form data
         form_data1 = dict(
             field1='value1',
-            file1=(BytesIO(b'my file contents'), "file1.txt"),
+            file1=(BytesIO(b'my file contents'), 'file1.txt'),
         )
         response = self.client.post('/webhooks/multipart?foo=1', data=form_data1,
                                     content_type='multipart/form-data;boundary="boundary"')

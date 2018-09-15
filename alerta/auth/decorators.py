@@ -55,7 +55,7 @@ def permission(scope):
                 g.scopes = jwt.scopes
 
                 if not Permission.is_in_scope(scope, g.scopes):
-                    raise ApiError("Missing required scope: %s" % scope, 403)
+                    raise ApiError('Missing required scope: %s' % scope, 403)
                 else:
                     return f(*args, **kwargs)
 
@@ -67,17 +67,17 @@ def permission(scope):
                 try:
                     username, password = base64.b64decode(credentials).decode('utf-8').split(':')
                 except Exception as e:
-                    raise BasicAuthError("Invalid credentials", 400, errors=[str(e)])
+                    raise BasicAuthError('Invalid credentials', 400, errors=[str(e)])
 
                 user = User.check_credentials(username, password)
                 if not user:
-                    raise BasicAuthError("Authorization required", 401)
+                    raise BasicAuthError('Authorization required', 401)
 
                 if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
                     raise BasicAuthError('email not verified', 401)
 
                 if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
-                    raise BasicAuthError("Unauthorized domain", 403)
+                    raise BasicAuthError('Unauthorized domain', 403)
 
                 g.user = user.email
                 g.customers = get_customers(user.email, groups=[user.domain])

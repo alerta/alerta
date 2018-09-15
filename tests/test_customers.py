@@ -273,7 +273,7 @@ class AuthTestCase(unittest.TestCase):
 
         # create customer blackout by foo user
         response = self.client.post(
-            '/blackout', data=json.dumps({"environment": "Production"}), headers=foo_user_headers)
+            '/blackout', data=json.dumps({'environment': 'Production'}), headers=foo_user_headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
@@ -293,7 +293,7 @@ class AuthTestCase(unittest.TestCase):
 
         # create global blackout by admin user
         response = self.client.post(
-            '/blackout', data=json.dumps({"environment": "Production"}), headers=self.admin_headers)
+            '/blackout', data=json.dumps({'environment': 'Production'}), headers=self.admin_headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 

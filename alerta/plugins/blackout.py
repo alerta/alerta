@@ -30,7 +30,7 @@ class BlackoutHandler(PluginBase):
                 alert.status = 'blackout'
             else:
                 LOG.debug('Suppressed alert during blackout period (id=%s)' % alert.id)
-                raise BlackoutPeriod("Suppressed alert during blackout period")
+                raise BlackoutPeriod('Suppressed alert during blackout period')
         return alert
 
     def post_receive(self, alert):

@@ -45,7 +45,7 @@ def parse_prometheus(alert, external_url):
     service = labels.pop('service', '').split(',')
     group = labels.pop('job', 'Prometheus')
     origin = 'prometheus/' + labels.pop('monitor', '-')
-    tags = ["%s=%s" % t for t in labels.items()]  # any labels left over are used for tags
+    tags = ['%s=%s' % t for t in labels.items()]  # any labels left over are used for tags
 
     try:
         timeout = int(labels.pop('timeout', 0)) or None
@@ -109,9 +109,9 @@ def prometheus():
                 raise ApiError(str(e), 500)
             alerts.append(alert)
     else:
-        raise ApiError("no alerts in Prometheus notification payload", 400)
+        raise ApiError('no alerts in Prometheus notification payload', 400)
 
     if len(alerts) == 1:
-        return jsonify(status="ok", id=alerts[0].id, alert=alerts[0].serialize), 201
+        return jsonify(status='ok', id=alerts[0].id, alert=alerts[0].serialize), 201
     else:
-        return jsonify(status="ok", ids=[alert.id for alert in alerts]), 201
+        return jsonify(status='ok', ids=[alert.id for alert in alerts]), 201

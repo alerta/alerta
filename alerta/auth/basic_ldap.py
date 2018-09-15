@@ -20,14 +20,14 @@ def login():
     except KeyError:
         raise ApiError("must supply 'username' and 'password'", 401)
 
-    username = email.split("@")[0]
-    domain = email.split("@")[1]
+    username = email.split('@')[0]
+    domain = email.split('@')[1]
 
     # Validate LDAP domain
-    if domain not in current_app.config["LDAP_DOMAINS"]:
-        raise ApiError("unauthorized domain", 403)
+    if domain not in current_app.config['LDAP_DOMAINS']:
+        raise ApiError('unauthorized domain', 403)
 
-    userdn = current_app.config["LDAP_DOMAINS"][domain] % username
+    userdn = current_app.config['LDAP_DOMAINS'][domain] % username
 
     # Attempt LDAP AUTH
     try:
@@ -35,14 +35,14 @@ def login():
         ldap_connection = ldap.initialize(current_app.config['LDAP_URL'], trace_level=trace_level)
         ldap_connection.simple_bind_s(userdn, password)
     except ldap.INVALID_CREDENTIALS:
-        raise ApiError("invalid username or password", 401)
+        raise ApiError('invalid username or password', 401)
     except Exception as e:
         raise ApiError(str(e), 500)
 
     # Create user if not yet there
     user = User.find_by_email(email=email)
     if not user:
-        user = User(username, email, "", ["user"], "LDAP user", email_verified=True)
+        user = User(username, email, '', ['user'], 'LDAP user', email_verified=True)
         user.create()
 
     # Check user is active

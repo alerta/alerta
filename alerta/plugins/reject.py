@@ -25,13 +25,13 @@ class RejectPolicy(PluginBase):
             raise RejectException("[POLICY] Alert origin '%s' has been blacklisted" % alert.origin)
 
         if not any(regex.match(alert.environment) for regex in ALLOWED_ENVIRONMENT_REGEX):
-            LOG.warning("[POLICY] Alert environment does not match one of %s", ', '.join(ALLOWED_ENVIRONMENTS))
-            raise RejectException("[POLICY] Alert environment does not match one of %s" %
+            LOG.warning('[POLICY] Alert environment does not match one of %s', ', '.join(ALLOWED_ENVIRONMENTS))
+            raise RejectException('[POLICY] Alert environment does not match one of %s' %
                                   ', '.join(ALLOWED_ENVIRONMENTS))
 
         if not alert.service:
-            LOG.warning("[POLICY] Alert must define a service")
-            raise RejectException("[POLICY] Alert must define a service")
+            LOG.warning('[POLICY] Alert must define a service')
+            raise RejectException('[POLICY] Alert must define a service')
 
         return alert
 

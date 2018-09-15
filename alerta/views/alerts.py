@@ -47,16 +47,16 @@ def receive():
     except RejectException as e:
         raise ApiError(str(e), 403)
     except RateLimit as e:
-        return jsonify(status="error", message=str(e), id=incomingAlert.id), 429
+        return jsonify(status='error', message=str(e), id=incomingAlert.id), 429
     except BlackoutPeriod as e:
-        return jsonify(status="ok", message=str(e), id=incomingAlert.id), 202
+        return jsonify(status='ok', message=str(e), id=incomingAlert.id), 202
     except Exception as e:
         raise ApiError(str(e), 500)
 
     if alert:
-        return jsonify(status="ok", id=alert.id, alert=alert.serialize), 201
+        return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
     else:
-        raise ApiError("insert or update of received alert failed", 500)
+        raise ApiError('insert or update of received alert failed', 500)
 
 
 @api.route('/alert/<alert_id>', methods=['OPTIONS', 'GET'])
@@ -69,9 +69,9 @@ def get_alert(alert_id):
     alert = Alert.find_by_id(alert_id, customers)
 
     if alert:
-        return jsonify(status="ok", total=1, alert=alert.serialize)
+        return jsonify(status='ok', total=1, alert=alert.serialize)
     else:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
 
 # set status
@@ -92,7 +92,7 @@ def set_status(alert_id):
     alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     try:
         alert, status, text = process_status(alert, status, text)
@@ -102,9 +102,9 @@ def set_status(alert_id):
         raise ApiError(str(e), 500)
 
     if alert.set_status(status, text, timeout):
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to set alert status", 500)
+        raise ApiError('failed to set alert status', 500)
 
 
 # action alert
@@ -125,7 +125,7 @@ def action_alert(alert_id):
     alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     try:
         severity, status = process_action(alert, action)
@@ -136,9 +136,9 @@ def action_alert(alert_id):
         raise ApiError(str(e), 500)
 
     if alert.set_severity_and_status(severity, status, text, timeout):
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to perform alert action", 500)
+        raise ApiError('failed to perform alert action', 500)
 
 
 # tag
@@ -155,12 +155,12 @@ def tag_alert(alert_id):
     alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if alert.tag(tags=request.json['tags']):
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to tag alert", 500)
+        raise ApiError('failed to tag alert', 500)
 
 
 # untag
@@ -177,12 +177,12 @@ def untag_alert(alert_id):
     alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if alert.untag(tags=request.json['tags']):
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to untag alert", 500)
+        raise ApiError('failed to untag alert', 500)
 
 
 # update attributes
@@ -199,12 +199,12 @@ def update_attributes(alert_id):
     alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if alert.update_attributes(request.json['attributes']):
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to update attributes", 500)
+        raise ApiError('failed to update attributes', 500)
 
 
 # delete
@@ -218,12 +218,12 @@ def delete_alert(alert_id):
     alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if alert.delete():
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to delete alert", 500)
+        raise ApiError('failed to delete alert', 500)
 
 
 @api.route('/alerts', methods=['OPTIONS', 'GET'])
@@ -244,7 +244,7 @@ def search_alerts():
 
     if alerts:
         return jsonify(
-            status="ok",
+            status='ok',
             page=paging.page,
             pageSize=paging.page_size,
             pages=paging.pages,
@@ -258,8 +258,8 @@ def search_alerts():
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             page=paging.page,
             pageSize=paging.page_size,
             pages=0,
@@ -285,14 +285,14 @@ def history():
 
     if history:
         return jsonify(
-            status="ok",
+            status='ok',
             history=[h.serialize for h in history],
             total=len(history)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             history=[],
             total=0
         )
@@ -311,7 +311,7 @@ def get_counts():
     status_count = Alert.get_counts_by_status(query)
 
     return jsonify(
-        status="ok",
+        status='ok',
         total=sum(severity_count.values()),
         severityCounts=severity_count,
         statusCounts=status_count
@@ -330,14 +330,14 @@ def get_top10_count():
 
     if top10:
         return jsonify(
-            status="ok",
+            status='ok',
             top10=top10,
             total=len(top10)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             top10=[],
             total=0
         )
@@ -355,14 +355,14 @@ def get_top10_flapping():
 
     if top10:
         return jsonify(
-            status="ok",
+            status='ok',
             top10=top10,
             total=len(top10)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             top10=[],
             total=0
         )
@@ -380,14 +380,14 @@ def get_top10_standing():
 
     if top10:
         return jsonify(
-            status="ok",
+            status='ok',
             top10=top10,
             total=len(top10)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             top10=[],
             total=0
         )
@@ -405,14 +405,14 @@ def get_environments():
 
     if environments:
         return jsonify(
-            status="ok",
+            status='ok',
             environments=environments,
             total=len(environments)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             environments=[],
             total=0
         )
@@ -430,14 +430,14 @@ def get_services():
 
     if services:
         return jsonify(
-            status="ok",
+            status='ok',
             services=services,
             total=len(services)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             services=[],
             total=0
         )
@@ -455,14 +455,14 @@ def get_tags():
 
     if tags:
         return jsonify(
-            status="ok",
+            status='ok',
             tags=tags,
             total=len(tags)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             tags=[],
             total=0
         )

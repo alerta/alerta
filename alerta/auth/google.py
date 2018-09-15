@@ -36,7 +36,7 @@ def google():
     domain = id_token.email.split('@')[1]
 
     if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[domain]):
-        raise ApiError("User %s is not authorized" % id_token.email, 403)
+        raise ApiError('User %s is not authorized' % id_token.email, 403)
 
     # Get Google+ profile for Full name
     headers = {'Authorization': 'Bearer ' + token['access_token']}
@@ -44,7 +44,7 @@ def google():
     profile = r.json()
 
     if not profile:
-        raise ApiError("Google+ API is not enabled for this Client ID", 400)
+        raise ApiError('Google+ API is not enabled for this Client ID', 400)
 
     customers = get_customers(id_token.email, groups=[domain])
 

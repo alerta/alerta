@@ -27,9 +27,9 @@ def create_customer():
         raise ApiError(str(e), 500)
 
     if customer:
-        return jsonify(status="ok", id=customer.id, customer=customer.serialize), 201
+        return jsonify(status='ok', id=customer.id, customer=customer.serialize), 201
     else:
-        raise ApiError("create customer lookup failed", 500)
+        raise ApiError('create customer lookup failed', 500)
 
 
 @api.route('/customers', methods=['OPTIONS', 'GET'])
@@ -42,14 +42,14 @@ def list_customers():
 
     if customers:
         return jsonify(
-            status="ok",
+            status='ok',
             customers=[customer.serialize for customer in customers],
             total=len(customers)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             customers=[],
             total=0
         )
@@ -63,9 +63,9 @@ def delete_customer(customer_id):
     customer = Customer.find_by_id(customer_id)
 
     if not customer:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if customer.delete():
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to delete customer", 500)
+        raise ApiError('failed to delete customer', 500)

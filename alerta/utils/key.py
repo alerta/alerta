@@ -35,8 +35,8 @@ class ApiKeyHelper:
     def type_to_scopes(self, user, key_type):
         if user in self.admin_users:
             return ['admin', 'read', 'write']
-        if key_type == "read-write":
+        if key_type == 'read-write':
             return ['read', 'write']
-        if key_type == "read-only":
+        if key_type == 'read-only':
             return ['read']
         return []

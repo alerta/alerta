@@ -41,9 +41,9 @@ def create_key():
         raise ApiError(str(e), 500)
 
     if key:
-        return jsonify(status="ok", key=key.key, data=key.serialize), 201
+        return jsonify(status='ok', key=key.key, data=key.serialize), 201
     else:
-        raise ApiError("create API key failed", 500)
+        raise ApiError('create API key failed', 500)
 
 
 @api.route('/keys', methods=['OPTIONS', 'GET'])
@@ -62,14 +62,14 @@ def list_keys():
 
     if keys:
         return jsonify(
-            status="ok",
+            status='ok',
             keys=[key.serialize for key in keys],
             total=len(keys)
         )
     else:
         return jsonify(
-            status="ok",
-            message="not found",
+            status='ok',
+            message='not found',
             keys=[],
             total=0
         )
@@ -83,9 +83,9 @@ def delete_key(key):
     key = ApiKey.find_by_id(key)
 
     if not key:
-        raise ApiError("not found", 404)
+        raise ApiError('not found', 404)
 
     if key.delete():
-        return jsonify(status="ok")
+        return jsonify(status='ok')
     else:
-        raise ApiError("failed to delete API key", 500)
+        raise ApiError('failed to delete API key', 500)

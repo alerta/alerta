@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 version = '0.0.1'
 
 setup(
-    name="alerta-transient",
+    name='alerta-transient',
     version=version,
     description='Example Alerta plugin for transient flapping alerts',
     url='https://github.com/alerta/alerta-contrib',

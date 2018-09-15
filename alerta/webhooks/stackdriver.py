@@ -76,6 +76,6 @@ def stackdriver():
         raise ApiError(str(e), 500)
 
     if alert:
-        return jsonify(status="ok", id=alert.id, alert=alert.serialize), 201
+        return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
     else:
-        raise ApiError("insert or update of StackDriver notification failed", 500)
+        raise ApiError('insert or update of StackDriver notification failed', 500)

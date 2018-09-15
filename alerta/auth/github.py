@@ -44,7 +44,7 @@ def github():
     login = profile['login']
 
     if not_authorized('ALLOWED_GITHUB_ORGS', organizations):
-        raise ApiError("User %s is not authorized" % login, 403)
+        raise ApiError('User %s is not authorized' % login, 403)
 
     customers = get_customers(login, organizations)
 

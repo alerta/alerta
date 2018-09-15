@@ -32,7 +32,7 @@ class HistoryAdapter:
                 a.prepare(self.conn)
             return a.getquoted().decode('utf-8')
 
-        return "({}, {}, {}, {}, {}, {}, {}, {}::timestamp)::history".format(
+        return '({}, {}, {}, {}, {}, {}, {}, {}::timestamp)::history'.format(
             quoted(self.history.id),
             quoted(self.history.event),
             quoted(self.history.severity),
@@ -97,24 +97,24 @@ class Backend(Database):
 
     @staticmethod
     def _adapt_datetime(dt):
-        return AsIs("%s" % adapt(DateTime.iso8601(dt)))
+        return AsIs('%s' % adapt(DateTime.iso8601(dt)))
 
     @property
     def name(self):
         cursor = g.db.cursor()
-        cursor.execute("SELECT current_database()")
+        cursor.execute('SELECT current_database()')
         return cursor.fetchone()[0]
 
     @property
     def version(self):
         cursor = g.db.cursor()
-        cursor.execute("SHOW server_version")
+        cursor.execute('SHOW server_version')
         return cursor.fetchone()[0]
 
     @property
     def is_alive(self):
         cursor = g.db.cursor()
-        cursor.execute("SELECT true")
+        cursor.execute('SELECT true')
         return cursor.fetchone()
 
     def close(self):
@@ -124,7 +124,7 @@ class Backend(Database):
         conn = self.connect()
         cursor = conn.cursor()
         for table in ['alerts', 'blackouts', 'customers', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
-            cursor.execute("DROP TABLE IF EXISTS %s" % table)
+            cursor.execute('DROP TABLE IF EXISTS %s' % table)
         conn.commit()
         conn.close()
 
@@ -137,7 +137,7 @@ class Backend(Database):
                AND ((event=%(event)s AND severity!=%(severity)s)
                 OR (event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
-            """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
+            """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         return self._fetchone(select, vars(alert)).severity
 
     def get_status(self, alert):
@@ -146,7 +146,7 @@ class Backend(Database):
              WHERE environment=%(environment)s AND resource=%(resource)s
               AND (event=%(event)s OR %(event)s=ANY(correlate))
               AND {customer}
-            """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
+            """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         return self._fetchone(select, vars(alert)).status
 
     def get_status_and_value(self, alert):
@@ -155,7 +155,7 @@ class Backend(Database):
              WHERE environment=%(environment)s AND resource=%(resource)s
               AND (event=%(event)s OR %(event)s=ANY(correlate))
               AND {customer}
-            """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
+            """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         r = self._fetchone(select, vars(alert))
         return r.status, r.value
 
@@ -167,7 +167,7 @@ class Backend(Database):
                AND event=%(event)s
                AND severity=%(severity)s
                AND {customer}
-            """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
+            """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         return bool(self._fetchone(select, vars(alert)))
 
     def is_correlated(self, alert):
@@ -177,7 +177,7 @@ class Backend(Database):
                AND ((event=%(event)s AND severity!=%(severity)s)
                 OR (event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
-        """.format(customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
+        """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         return bool(self._fetchone(select, vars(alert)))
 
     def is_flapping(self, alert, window=1800, count=2):
@@ -193,7 +193,7 @@ class Backend(Database):
                AND h.update_time > (NOW() at time zone 'utc' - INTERVAL '{window} seconds')
                AND h.type='severity'
                AND {customer}
-        """.format(window=window, customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
+        """.format(window=window, customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         return self._fetchone(select, vars(alert)).count > count
 
     def dedup_alert(self, alert, history):
@@ -214,7 +214,7 @@ class Backend(Database):
                AND severity=%(severity)s
                AND {customer}
          RETURNING *
-        """.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
+        """.format(limit=current_app.config['HISTORY_LIMIT'], customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         return self._update(update, vars(alert), returning=True)
 
     def correlate_alert(self, alert, history):
@@ -232,7 +232,7 @@ class Backend(Database):
                AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
          RETURNING *
-        """.format(limit=current_app.config['HISTORY_LIMIT'], customer="customer=%(customer)s" if alert.customer else "customer IS NULL")
+        """.format(limit=current_app.config['HISTORY_LIMIT'], customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         return self._update(update, vars(alert), returning=True)
 
     def create_alert(self, alert):
@@ -255,7 +255,7 @@ class Backend(Database):
             SELECT * FROM alerts
              WHERE (id ~* (%(id)s) OR last_receive_id ~* (%(id)s))
                AND {customer}
-        """.format(customer="customer=ANY(%(customers)s)" if customers else "1=1")
+        """.format(customer='customer=ANY(%(customers)s)' if customers else '1=1')
         return self._fetchone(select, {'id': '^'+id, 'customers': customers})
 
     #### STATUS, TAGS, ATTRIBUTES
@@ -334,7 +334,7 @@ class Backend(Database):
              WHERE {where}
           ORDER BY update_time DESC
         """.format(where=query.where, limit=current_app.config['HISTORY_LIMIT'])
-        Record = namedtuple("Record", ['id', 'resource', 'event', 'environment', 'severity', 'status', 'service',
+        Record = namedtuple('Record', ['id', 'resource', 'event', 'environment', 'severity', 'status', 'service',
                                        'group', 'value', 'text', 'tags', 'attributes', 'origin', 'update_time',
                                        'type', 'customer'])
         return [
@@ -397,7 +397,7 @@ class Backend(Database):
         """.format(where=query.where)
         return {s.status: s.count for s in self._fetchall(select, query.vars)}
 
-    def get_topn_count(self, query=None, group="event", topn=10):
+    def get_topn_count(self, query=None, group='event', topn=10):
         query = query or Query()
         select = """
             SELECT event, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
@@ -410,16 +410,16 @@ class Backend(Database):
         """.format(where=query.where, group=group)
         return [
             {
-                "count": t.count,
-                "duplicateCount": t.duplicate_count,
-                "environments": t.environments,
-                "services": t.services,
-                "%s" % group: t.event,
-                "resources": [{"id": r[0], "resource": r[1], "href": absolute_url('/alert/%s' % r[0])} for r in t.resources]
+                'count': t.count,
+                'duplicateCount': t.duplicate_count,
+                'environments': t.environments,
+                'services': t.services,
+                '%s' % group: t.event,
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url('/alert/%s' % r[0])} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
-    def get_topn_flapping(self, query=None, group="event", topn=10):
+    def get_topn_flapping(self, query=None, group='event', topn=10):
         query = query or Query()
         select = """
             WITH topn AS (SELECT * FROM alerts WHERE {where})
@@ -433,16 +433,16 @@ class Backend(Database):
         """.format(where=query.where, group=group)
         return [
             {
-                "count": t.count,
-                "duplicateCount": t.duplicate_count,
-                "environments": t.environments,
-                "services": t.services,
-                "event": t.event,
-                "resources": [{"id": r[0], "resource": r[1], "href": absolute_url('/alert/%s' % r[0])} for r in t.resources]
+                'count': t.count,
+                'duplicateCount': t.duplicate_count,
+                'environments': t.environments,
+                'services': t.services,
+                'event': t.event,
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url('/alert/%s' % r[0])} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
-    def get_topn_standing(self, query=None, group="event", topn=10):
+    def get_topn_standing(self, query=None, group='event', topn=10):
         query = query or Query()
         select = """
             WITH topn AS (SELECT * FROM alerts WHERE {where})
@@ -457,12 +457,12 @@ class Backend(Database):
         """.format(where=query.where, group=group)
         return [
             {
-                "count": t.count,
-                "duplicateCount": t.duplicate_count,
-                "environments": t.environments,
-                "services": t.services,
-                "event": t.event,
-                "resources": [{"id": r[0], "resource": r[1], "href": absolute_url('/alert/%s' % r[0])} for r in t.resources]
+                'count': t.count,
+                'duplicateCount': t.duplicate_count,
+                'environments': t.environments,
+                'services': t.services,
+                'event': t.event,
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url('/alert/%s' % r[0])} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
@@ -475,7 +475,7 @@ class Backend(Database):
             WHERE {where}
             GROUP BY environment
         """.format(where=query.where)
-        return [{"environment": e.environment, "count": e.count} for e in self._fetchall(select, query.vars, limit=topn)]
+        return [{'environment': e.environment, 'count': e.count} for e in self._fetchall(select, query.vars, limit=topn)]
 
     # SERVICES
 
@@ -486,7 +486,7 @@ class Backend(Database):
             WHERE {where}
             GROUP BY environment, svc
         """.format(where=query.where)
-        return [{"environment": s.environment, "service": s.svc, "count": s.count} for s in self._fetchall(select, query.vars, limit=topn)]
+        return [{'environment': s.environment, 'service': s.svc, 'count': s.count} for s in self._fetchall(select, query.vars, limit=topn)]
 
     # SERVICES
 
@@ -497,7 +497,7 @@ class Backend(Database):
             WHERE {where}
             GROUP BY environment, tag
         """.format(where=query.where)
-        return [{"environment": t.environment, "tag": t.tag, "count": t.count} for t in self._fetchall(select, query.vars, limit=topn)]
+        return [{'environment': t.environment, 'tag': t.tag, 'count': t.count} for t in self._fetchall(select, query.vars, limit=topn)]
 
     # BLACKOUTS
 
@@ -516,7 +516,7 @@ class Backend(Database):
             SELECT * FROM blackouts
             WHERE id=%(id)s
               AND {customer}
-        """.format(customer="customer=%(customer)s" if customer else "1=1")
+        """.format(customer='customer=%(customer)s' if customer else '1=1')
         return self._fetchone(select, {'id': id, 'customer': customer})
 
     def get_blackouts(self, query=None):
@@ -569,7 +569,7 @@ class Backend(Database):
                 )
         """
         if current_app.config['CUSTOMER_VIEWS']:
-            select += " AND (customer IS NULL OR customer=%(customer)s)"
+            select += ' AND (customer IS NULL OR customer=%(customer)s)'
         if self._fetchone(select, vars(alert)):
             return True
         return False
@@ -599,7 +599,7 @@ class Backend(Database):
             SELECT * FROM heartbeats
              WHERE (id=%(id)s OR id LIKE %(like_id)s)
                AND {customer}
-        """.format(customer="customer=%(customers)s" if customers else "1=1")
+        """.format(customer='customer=%(customers)s' if customers else '1=1')
         return self._fetchone(select, {'id': id, 'like_id': id+'%', 'customers': customers})
 
     def get_heartbeats(self, query=None):
@@ -713,21 +713,21 @@ class Backend(Database):
             SET
         """
         if 'name' in kwargs:
-            update += "name=%(name)s, "
+            update += 'name=%(name)s, '
         if 'email' in kwargs:
-            update += "email=%(email)s, "
+            update += 'email=%(email)s, '
         if 'password' in kwargs:
-            update += "password=%(password)s, "
+            update += 'password=%(password)s, '
         if 'status' in kwargs:
-            update += "status=%(status)s, "
+            update += 'status=%(status)s, '
         if 'roles' in kwargs:
-            update += "roles=%(roles)s, "
+            update += 'roles=%(roles)s, '
         if 'attributes' in kwargs:
-            update += "attributes=attributes || %(attributes)s, "
+            update += 'attributes=attributes || %(attributes)s, '
         if 'text' in kwargs:
-            update += "text=%(text)s, "
+            update += 'text=%(text)s, '
         if 'email_verified' in kwargs:
-            update += "email_verified=%(email_verified)s, "
+            update += 'email_verified=%(email_verified)s, '
         update += """
             update_time=NOW()
             WHERE id=%(id)s
@@ -851,7 +851,7 @@ class Backend(Database):
     def get_metrics(self, type=None):
         select = """SELECT * FROM metrics"""
         if type:
-            select += " WHERE type=%s"
+            select += ' WHERE type=%s'
         return self._fetchall(select, (type,))
 
     def set_gauge(self, gauge):
@@ -896,7 +896,7 @@ class Backend(Database):
                 OR (severity='informational'
                     AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(info_threshold)s hours'))
         """
-        self._delete(delete, {"expired_threshold": expired_threshold, "info_threshold": info_threshold})
+        self._delete(delete, {'expired_threshold': expired_threshold, 'info_threshold': info_threshold})
 
         # get list of alerts to be newly expired
         select = """
@@ -952,7 +952,7 @@ class Backend(Database):
         """
         if limit is None:
             limit = current_app.config['DEFAULT_PAGE_SIZE']
-        query += " LIMIT %s OFFSET %s""" % (limit, offset)
+        query += ' LIMIT %s OFFSET %s''' % (limit, offset)
         cursor = g.db.cursor()
         self._log(cursor, query, vars)
         cursor.execute(query, vars)

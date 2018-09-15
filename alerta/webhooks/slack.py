@@ -36,15 +36,15 @@ def build_slack_response(alert, action, user, data):
 
     actions = ['watch', 'unwatch']
     message = (
-        "User {user} is {action}ing alert {alert}" if action in actions else
-        "The status of alert {alert} is {status} now!").format(
+        'User {user} is {action}ing alert {alert}' if action in actions else
+        'The status of alert {alert} is {status} now!').format(
             alert=alert.get_id(short=True), status=alert.status.capitalize(),
             action=action, user=user
     )
 
     attachment_response = {
-        "fallback": message, "pretext": "Action done!", "color": "#808080",
-        "title": message, "title_link": absolute_url('/alert/' + alert.id)
+        'fallback': message, 'pretext': 'Action done!', 'color': '#808080',
+        'title': message, 'title_link': absolute_url('/alert/' + alert.id)
     }
 
     # clear interactive buttons and add new attachment as response of action
@@ -78,12 +78,12 @@ def slack():
     customers = g.get('customers', None)
     alert = Alert.find_by_id(alert_id, customers=customers)
     if not alert:
-        jsonify(status="error", message="alert not found for #slack message")
+        jsonify(status='error', message='alert not found for #slack message')
 
     if action in ['open', 'ack', 'close']:
-        alert.set_status(status=action, text="status change via #slack by {}".format(user))
+        alert.set_status(status=action, text='status change via #slack by {}'.format(user))
     elif action in ['watch', 'unwatch']:
-        alert.untag(alert.id, ["{}:{}".format(action, user)])
+        alert.untag(alert.id, ['{}:{}'.format(action, user)])
     else:
         raise ApiError('Unsupported #slack action', 400)
 

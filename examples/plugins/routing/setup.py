@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 version = '0.0.1'
 
 setup(
-    name="alerta-routing",
+    name='alerta-routing',
     version=version,
     description='Alerta routing rules for blackout notifications',
     url='https://github.com/alerta/alerta-contrib',

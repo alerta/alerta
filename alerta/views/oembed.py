@@ -22,11 +22,11 @@ except ImportError:
 def oembed(format):
 
     if format != 'json':
-        return jsonify(status="error", message="unsupported format: %s" % format), 400
+        return jsonify(status='error', message='unsupported format: %s' % format), 400
 
     if 'url' not in request.args or 'maxwidth' not in request.args \
             or 'maxheight' not in request.args:
-        return jsonify(status="error", message="missing default parameters: url, maxwidth, maxheight"), 400
+        return jsonify(status='error', message='missing default parameters: url, maxwidth, maxheight'), 400
 
     try:
         url = request.args['url']
@@ -34,19 +34,19 @@ def oembed(format):
         height = int(request.args['maxheight'])
         title = request.args.get('title', 'Alerts')
     except Exception as e:
-        return jsonify(status="error", message=str(e)), 400
+        return jsonify(status='error', message=str(e)), 400
 
     try:
         o = urlparse(url)
         query = qb.from_params(request.args)
     except Exception as e:
-        return jsonify(status="error", message=str(e)), 500
+        return jsonify(status='error', message=str(e)), 500
 
     if o.path.endswith('/alerts/count'):
         try:
             severity_count = db.get_counts_by_severity(query)
         except Exception as e:
-            return jsonify(status="error", message=str(e)), 500
+            return jsonify(status='error', message=str(e)), 500
 
         max = 'normal'
         if severity_count.get('warning', 0) > 0:
@@ -66,13 +66,13 @@ def oembed(format):
             max=max,
             counts=severity_count
         )
-        return jsonify(version="1.0", type="rich", width=width, height=height, title=title, provider_name="Alerta", provider_url=request.url_root, html=html)
+        return jsonify(version='1.0', type='rich', width=width, height=height, title=title, provider_name='Alerta', provider_url=request.url_root, html=html)
 
     elif o.path.endswith('/alerts/top10/count'):
         # TODO: support top10 oembed widget
         pass
     else:
-        return jsonify(status="error", message="unsupported oEmbed URL scheme"), 400
+        return jsonify(status='error', message='unsupported oEmbed URL scheme'), 400
 
 
 @api.route('/embed.js', methods=['OPTIONS', 'GET'])

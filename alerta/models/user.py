@@ -23,7 +23,7 @@ class User:
             raise ValueError('Value for "email" not valid: %s' % email)
 
         self.id = kwargs.get('id', None) or str(uuid4())
-        self.name = name or ""
+        self.name = name or ''
         self.email = email  # => g.user
         self.password = password  # NB: hashed password
         self.status = kwargs.get('status', None) or 'active'  # 'active', 'inactive', 'unknown'
@@ -31,7 +31,7 @@ class User:
         self.attributes = kwargs.get('attributes', None) or dict()
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
         self.last_login = kwargs.get('last_login', None)
-        self.text = text or ""
+        self.text = text or ''
         self.update_time = kwargs.get('update_time', None) or datetime.utcnow()
         self.email_verified = kwargs.get('email_verified', False)
 

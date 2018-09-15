@@ -27,7 +27,7 @@ def pingfederate():
     try:
         r = requests.post(access_token_url, data=payload)
     except Exception:
-        return jsonify(status="error", message="Failed to call sso API over HTTPS")
+        return jsonify(status='error', message='Failed to call sso API over HTTPS')
     access_token = r.json()
     encoded = access_token['access_token']
 
