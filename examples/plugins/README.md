@@ -12,4 +12,3 @@ Some example plugins that can be used as a starting point for custom development
 
 See the [alerta contrib repo](https://github.com/alerta/alerta-contrib/tree/master/plugins) for
 a comprehensive list of plugins that can be used as-is or as examples for your own environment.
-

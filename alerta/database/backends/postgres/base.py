@@ -606,7 +606,7 @@ class Backend(Database):
         query = query or Query()
         select = """
             SELECT * FROM heartbeats
-            WHERE {where}    
+            WHERE {where}
         """.format(where=query.where)
         return self._fetchall(select, query.vars)
 
