@@ -20,7 +20,7 @@ def before_request():
 
 
 @add_metaclass(abc.ABCMeta)
-class WebhookBase(object):
+class WebhookBase:
 
     def __init__(self, name=None):
         self.name = name or self.__module__

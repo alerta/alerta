@@ -2,13 +2,12 @@
 import json
 import unittest
 
+from flask import g
 
 from alerta.app import create_app, db
+from alerta.exceptions import ApiError
 from alerta.models.key import ApiKey
 from alerta.utils.api import assign_customer
-from alerta.exceptions import ApiError
-
-from flask import g
 
 
 class AuthTestCase(unittest.TestCase):
@@ -63,14 +62,16 @@ class AuthTestCase(unittest.TestCase):
             'customer': 'Bar Corp',
             'match': 'bar.com'
         }
-        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 201)
 
         payload = {
             'customer': 'Foo Bar Corp',
             'match': 'foo@bar.com'
         }
-        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 201)
 
         response = self.client.get('/customers', headers=self.admin_headers)
@@ -84,7 +85,8 @@ class AuthTestCase(unittest.TestCase):
             'text': ''
         }
 
-        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        response = self.client.post('/auth/signup', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data, 'Failed to create user')
@@ -101,7 +103,8 @@ class AuthTestCase(unittest.TestCase):
             'text': ''
         }
 
-        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        response = self.client.post('/auth/signup', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data, 'Failed to create user')
@@ -118,7 +121,8 @@ class AuthTestCase(unittest.TestCase):
             'text': ''
         }
 
-        response = self.client.post('/key', data=json.dumps(payload), content_type='application/json', headers=self.bar_bearer_headers)
+        response = self.client.post('/key', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.bar_bearer_headers)
         self.assertEqual(response.status_code, 201, response.data)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data['key'], 'Failed to create read-write key')
@@ -136,7 +140,8 @@ class AuthTestCase(unittest.TestCase):
             'customer': 'Foo Bar Corp'
         }
 
-        response = self.client.post('/key', data=json.dumps(payload), content_type='application/json', headers=self.foobar_bearer_headers)
+        response = self.client.post('/key', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.foobar_bearer_headers)
         self.assertEqual(response.status_code, 201, response.data)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data['key'], 'Failed to create read-write key')
@@ -153,7 +158,8 @@ class AuthTestCase(unittest.TestCase):
             'customer': 'Bar Corp'
         }
 
-        response = self.client.post('/key', data=json.dumps(payload), content_type='application/json', headers=self.foobar_bearer_headers)
+        response = self.client.post('/key', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.foobar_bearer_headers)
         self.assertEqual(response.status_code, 201, response.data)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data['key'], 'Failed to create read-write key')
@@ -185,12 +191,14 @@ class AuthTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['customer'], 'Foo Bar Corp')
 
-        response = self.client.post('/alert', data=json.dumps(self.foo_alert), headers=self.foobar_bar_only_api_key_headers)
+        response = self.client.post('/alert', data=json.dumps(self.foo_alert),
+                                    headers=self.foobar_bar_only_api_key_headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['customer'], 'Bar Corp')
 
-        response = self.client.post('/alert', data=json.dumps(self.foo_alert), headers=self.foobar_bar_only_api_key_headers)
+        response = self.client.post('/alert', data=json.dumps(self.foo_alert),
+                                    headers=self.foobar_bar_only_api_key_headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['customer'], 'Bar Corp')
@@ -214,14 +222,16 @@ class AuthTestCase(unittest.TestCase):
             'customer': 'Foo Corp',
             'match': 'foo.com'
         }
-        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 201)
 
         payload = {
             'customer': 'Bar Corp',
             'match': 'bar.com'
         }
-        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 201)
 
         # create users
@@ -232,7 +242,8 @@ class AuthTestCase(unittest.TestCase):
             'text': ''
         }
 
-        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        response = self.client.post('/auth/signup', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data, 'Failed to create user')
@@ -249,7 +260,8 @@ class AuthTestCase(unittest.TestCase):
             'text': ''
         }
 
-        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.admin_headers)
+        response = self.client.post('/auth/signup', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data, 'Failed to create user')
@@ -260,7 +272,8 @@ class AuthTestCase(unittest.TestCase):
         }
 
         # create customer blackout by foo user
-        response = self.client.post('/blackout', data=json.dumps({"environment": "Production"}), headers=foo_user_headers)
+        response = self.client.post(
+            '/blackout', data=json.dumps({"environment": "Production"}), headers=foo_user_headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
@@ -279,7 +292,8 @@ class AuthTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         # create global blackout by admin user
-        response = self.client.post('/blackout', data=json.dumps({"environment": "Production"}), headers=self.admin_headers)
+        response = self.client.post(
+            '/blackout', data=json.dumps({"environment": "Production"}), headers=self.admin_headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 

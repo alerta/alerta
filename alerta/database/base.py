@@ -1,17 +1,18 @@
 
 from importlib import import_module
 
+from flask import g
+
 try:
     from urllib.parse import urlparse
 except ImportError:
     from urlparse import urlparse  # type: ignore
 
-from flask import g
 
 # http://stackoverflow.com/questions/8544983/dynamically-mixin-a-base-class-to-an-instance-in-python
 
 
-class Base(object):
+class Base:
     pass
 
 
@@ -85,7 +86,7 @@ class Database(Base):
         if db is not None:
             self.close()
 
-    #### ALERTS
+    # ALERTS
 
     def get_severity(self, alert):
         raise NotImplementedError
@@ -145,7 +146,7 @@ class Database(Base):
     def get_history(self, query=None, page=None, page_size=None):
         raise NotImplementedError
 
-    #### COUNTS
+    # COUNTS
 
     def get_count(self, query=None):
         raise NotImplementedError
@@ -165,22 +166,22 @@ class Database(Base):
     def get_topn_flapping(self, query, group="event", topn=10):
         raise NotImplementedError
 
-    #### ENVIRONMENTS
+    # ENVIRONMENTS
 
     def get_environments(self, query=None, topn=100):
         raise NotImplementedError
 
-    #### SERVICES
+    # SERVICES
 
     def get_services(self, query=None, topn=100):
         raise NotImplementedError
 
-    #### TAGS
+    # TAGS
 
     def get_tags(self, query=None, topn=100):
         raise NotImplementedError
 
-    #### BLACKOUTS
+    # BLACKOUTS
 
     def create_blackout(self, blackout):
         raise NotImplementedError
@@ -197,7 +198,7 @@ class Database(Base):
     def delete_blackout(self, id):
         raise NotImplementedError
 
-    #### HEARTBEATS
+    # HEARTBEATS
 
     def upsert_heartbeat(self, heartbeat):
         raise NotImplementedError
@@ -211,7 +212,7 @@ class Database(Base):
     def delete_heartbeat(self, id):
         raise NotImplementedError
 
-    #### API KEYS
+    # API KEYS
 
     def create_key(self, key):
         raise NotImplementedError
@@ -228,7 +229,7 @@ class Database(Base):
     def delete_key(self, key):
         raise NotImplementedError
 
-    #### USERS
+    # USERS
 
     def create_user(self, user):
         raise NotImplementedError
@@ -260,7 +261,7 @@ class Database(Base):
     def delete_user(self, id):
         raise NotImplementedError
 
-    #### PERMISSIONS
+    # PERMISSIONS
 
     def create_perm(self, perm):
         raise NotImplementedError
@@ -277,7 +278,7 @@ class Database(Base):
     def get_scopes_by_match(self, login, matches):
         raise NotImplementedError
 
-    #### CUSTOMERS
+    # CUSTOMERS
 
     def create_customer(self, customer):
         raise NotImplementedError
@@ -294,7 +295,7 @@ class Database(Base):
     def get_customers_by_match(self, login, matches):
         raise NotImplementedError
 
-    #### METRICS
+    # METRICS
 
     def get_metrics(self, type=None):
         raise NotImplementedError
@@ -308,7 +309,7 @@ class Database(Base):
     def update_timer(self, timer):
         raise NotImplementedError
 
-    #### HOUSEKEEPING
+    # HOUSEKEEPING
 
     def housekeeping(self, expired_threshold, info_threshold):
         raise NotImplementedError

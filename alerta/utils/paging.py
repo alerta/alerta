@@ -4,7 +4,7 @@ from flask import current_app
 from alerta.exceptions import ApiError
 
 
-class Page(object):
+class Page:
 
     def __init__(self, page=1, page_size=None, items=0):
 

@@ -1,13 +1,14 @@
 import json
 import logging
 
-from flask import request, g, jsonify
+from flask import g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
 from alerta.utils.api import absolute_url
+
 from . import webhooks
 
 LOG = logging.getLogger(__name__)
@@ -21,11 +22,11 @@ def parse_slack(data):
     action = payload.get('actions', [{}])[0].get('value')
 
     if not alert_id:
-        raise ValueError(u'Alert {} not match'.format(alert_id))
+        raise ValueError('Alert {} not match'.format(alert_id))
     elif not user:
-        raise ValueError(u'User {} not exist'.format(user))
+        raise ValueError('User {} not exist'.format(user))
     elif not action:
-        raise ValueError(u'Non existent action {}'.format(action))
+        raise ValueError('Non existent action {}'.format(action))
 
     return alert_id, user, action
 
@@ -35,11 +36,11 @@ def build_slack_response(alert, action, user, data):
 
     actions = ['watch', 'unwatch']
     message = (
-        u"User {user} is {action}ing alert {alert}" if action in actions else
-        u"The status of alert {alert} is {status} now!").format(
+        "User {user} is {action}ing alert {alert}" if action in actions else
+        "The status of alert {alert} is {status} now!").format(
             alert=alert.get_id(short=True), status=alert.status.capitalize(),
             action=action, user=user
-        )
+    )
 
     attachment_response = {
         "fallback": message, "pretext": "Action done!", "color": "#808080",

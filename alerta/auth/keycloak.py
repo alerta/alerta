@@ -1,10 +1,11 @@
 
 import requests
-from flask import current_app, request, jsonify
+from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
-from alerta.auth.utils import not_authorized, create_token, get_customers
+from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
+
 from . import auth
 
 
@@ -15,7 +16,8 @@ def keycloak():
     if not current_app.config['KEYCLOAK_URL']:
         return jsonify(status="error", message="Must define KEYCLOAK_URL setting in server configuration."), 503
 
-    access_token_url = "{0}/auth/realms/{1}/protocol/openid-connect/token".format(current_app.config['KEYCLOAK_URL'], current_app.config['KEYCLOAK_REALM'])
+    access_token_url = "{}/auth/realms/{}/protocol/openid-connect/token".format(
+        current_app.config['KEYCLOAK_URL'], current_app.config['KEYCLOAK_REALM'])
 
     payload = {
         'client_id': request.json['clientId'],
@@ -31,8 +33,9 @@ def keycloak():
         return jsonify(status="error", message="Failed to call Keycloak API over HTTPS")
     access_token = r.json()
 
-    headers = {"Authorization": "{0} {1}".format(access_token['token_type'], access_token['access_token'])}
-    r = requests.get("{0}/auth/realms/{1}/protocol/openid-connect/userinfo".format(current_app.config['KEYCLOAK_URL'], current_app.config['KEYCLOAK_REALM']), headers=headers)
+    headers = {"Authorization": "{} {}".format(access_token['token_type'], access_token['access_token'])}
+    r = requests.get("{}/auth/realms/{}/protocol/openid-connect/userinfo".format(
+        current_app.config['KEYCLOAK_URL'], current_app.config['KEYCLOAK_REALM']), headers=headers)
     profile = r.json()
 
     roles = profile['roles']

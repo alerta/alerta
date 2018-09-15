@@ -14,7 +14,7 @@ from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 
 
-class Alert(object):
+class Alert:
 
     def __init__(self, resource, event, **kwargs):
 
@@ -43,7 +43,7 @@ class Alert(object):
         self.text = kwargs.get('text', None) or ""
         self.tags = kwargs.get('tags', None) or list()
         self.attributes = kwargs.get('attributes', None) or dict()
-        self.origin = kwargs.get('origin', None) or '%s/%s' % (os.path.basename(sys.argv[0]), platform.uname()[1])
+        self.origin = kwargs.get('origin', None) or '{}/{}'.format(os.path.basename(sys.argv[0]), platform.uname()[1])
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or "exceptionAlert"
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
         self.timeout = kwargs.get('timeout', None) or current_app.config['ALERT_TIMEOUT']
@@ -142,7 +142,7 @@ class Alert(object):
         return body
 
     def __repr__(self):
-        return 'Alert(id=%r, environment=%r, resource=%r, event=%r, severity=%r, status=%r, customer=%r)' % (
+        return 'Alert(id={!r}, environment={!r}, resource={!r}, event={!r}, severity={!r}, status={!r}, customer={!r})'.format(
             self.id, self.environment, self.resource, self.event, self.severity, self.status, self.customer)
 
     @classmethod

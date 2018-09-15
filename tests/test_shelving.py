@@ -64,7 +64,8 @@ class ShelvingTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # shelve alert
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'shelved'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'shelved'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
@@ -91,7 +92,8 @@ class ShelvingTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
 
         # shelve alert
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'shelved'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'shelved'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
@@ -141,7 +143,8 @@ class ShelvingTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
 
         # shelve alert
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'shelved'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'shelved'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
@@ -155,7 +158,8 @@ class ShelvingTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'shelved')
 
         # unshelve alert
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'open'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'open'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)

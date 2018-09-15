@@ -6,7 +6,7 @@
 #
 # Further information on settings can be found at http://docs.alerta.io
 
-from typing import List, Dict
+from typing import Dict, List
 
 DEBUG = False
 

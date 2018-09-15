@@ -24,7 +24,7 @@ def index():
             "href": absolute_url(rule.rule),
             "method": ','.join([m for m in rule.methods if m not in ['HEAD', 'OPTIONS']])
         })
-    return jsonify(status="ok", uri=absolute_url(), data={'description':'Alerta API'}, links=sorted(links, key=lambda k: k["href"]))
+    return jsonify(status="ok", uri=absolute_url(), data={'description': 'Alerta API'}, links=sorted(links, key=lambda k: k["href"]))
 
 
 @api.route('/_', methods=['GET'])

@@ -5,11 +5,12 @@ from uuid import uuid4
 from flask import current_app
 
 from alerta.app import db
-from alerta.auth.utils import generate_password_hash, check_password_hash, confirm_email_token
+from alerta.auth.utils import (check_password_hash, confirm_email_token,
+                               generate_password_hash)
 from alerta.utils.api import absolute_url
 
 
-class User(object):
+class User:
     """
     User model for BasicAuth only.
     """
@@ -78,7 +79,7 @@ class User(object):
         }
 
     def __repr__(self):
-        return 'User(id=%r, name=%r, email=%r, status=%r, roles=%r, email_verified=%r)' % (
+        return 'User(id={!r}, name={!r}, email={!r}, status={!r}, roles={!r}, email_verified={!r})'.format(
             self.id, self.name, self.email, self.status, ','.join(self.roles), self.email_verified
         )
 

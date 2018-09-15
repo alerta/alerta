@@ -1,12 +1,13 @@
 
 import re
 
-from flask import request, jsonify
+from flask import jsonify, request
 from flask_cors import cross_origin
 
-from alerta.exceptions import ApiError
 from alerta.auth.decorators import permission
+from alerta.exceptions import ApiError
 from alerta.models.token import Jwt
+
 from . import auth
 
 

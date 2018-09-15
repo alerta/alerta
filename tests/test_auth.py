@@ -57,14 +57,16 @@ class AuthTestCase(unittest.TestCase):
             'type': 'read-write'
         }
 
-        response = self.client.post('/key', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/key', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data['key'], 'Failed to create read-write key')
 
         rw_api_key = data['key']
 
-        response = self.client.post('/alert', data=json.dumps(self.alert), content_type='application/json', headers={'Authorization': 'Key ' + rw_api_key})
+        response = self.client.post('/alert', data=json.dumps(self.alert),
+                                    content_type='application/json', headers={'Authorization': 'Key ' + rw_api_key})
         self.assertEqual(response.status_code, 201)
 
         response = self.client.get('/alerts', headers={'Authorization': 'Key ' + rw_api_key})
@@ -82,14 +84,16 @@ class AuthTestCase(unittest.TestCase):
             'type': 'read-only'
         }
 
-        response = self.client.post('/key', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/key', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data['key'], 'Failed to create read-only key')
 
         ro_api_key = data['key']
 
-        response = self.client.post('/alert', data=json.dumps(self.alert), content_type='application/json', headers={'Authorization': 'Key ' + ro_api_key})
+        response = self.client.post('/alert', data=json.dumps(self.alert),
+                                    content_type='application/json', headers={'Authorization': 'Key ' + ro_api_key})
         self.assertEqual(response.status_code, 403)
 
         response = self.client.get('/alerts', headers={'Authorization': 'Key ' + ro_api_key})
@@ -107,7 +111,8 @@ class AuthTestCase(unittest.TestCase):
             'customer': 'Bonaparte Industries',
             'match': 'bonaparte.fr'
         }
-        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 201)
 
         payload = {
@@ -118,7 +123,8 @@ class AuthTestCase(unittest.TestCase):
         }
 
         # create user
-        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/auth/signup', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIsNotNone(data, 'Failed to create user')
@@ -134,7 +140,8 @@ class AuthTestCase(unittest.TestCase):
         self.assertIn(user_id, [u['id'] for u in data['users']])
 
         # create duplicate user
-        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/auth/signup', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 409)
 
         # delete user
@@ -161,7 +168,8 @@ class AuthTestCase(unittest.TestCase):
             'customer': 'Bonaparte Industries',
             'match': 'debeauharnais.fr'
         }
-        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
@@ -232,7 +240,8 @@ class AuthTestCase(unittest.TestCase):
             'customer': 'Bonaparte Industries',
             'match': 'bonaparte.fr'
         }
-        response = self.client.post('/customer', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 201)
 
         payload = {
@@ -243,7 +252,8 @@ class AuthTestCase(unittest.TestCase):
         }
 
         # create user
-        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json', headers=self.headers)
+        response = self.client.post('/auth/signup', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
         # authenticate using basic auth

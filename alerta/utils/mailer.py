@@ -11,7 +11,7 @@ except ImportError:
     pass
 
 
-class Mailer(object):
+class Mailer:
 
     def __init__(self, app=None):
         self.app = None

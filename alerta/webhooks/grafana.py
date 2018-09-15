@@ -1,14 +1,15 @@
 import json
 
-from flask import request, jsonify, current_app
+from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.app import qb
 from alerta.auth.decorators import permission
-from alerta.exceptions import RejectException, ApiError
+from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
 from alerta.models.severity_code import Severity
-from alerta.utils.api import process_alert, add_remote_ip, assign_customer
+from alerta.utils.api import add_remote_ip, assign_customer, process_alert
+
 from . import webhooks
 
 
@@ -32,9 +33,8 @@ def parse_grafana(alert, match, args):
     service = args.get('service', 'Grafana')
     timeout = args.get('timeout', current_app.config['ALERT_TIMEOUT'])
 
-
     attributes = match.get('tags', None) or dict()
-    attributes = {k.replace('.', '_'):v for (k, v) in attributes.items()}
+    attributes = {k.replace('.', '_'): v for (k, v) in attributes.items()}
 
     attributes['ruleId'] = str(alert['ruleId'])
     if 'ruleUrl' in alert:

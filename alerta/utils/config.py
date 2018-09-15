@@ -3,7 +3,7 @@ import logging
 import os
 
 
-class Config(object):
+class Config:
 
     def __init__(self, app=None):
         self.app = None
@@ -85,12 +85,14 @@ class Config(object):
 
         if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
             config['ALLOWED_KEYCLOAK_ROLES'] = os.environ['ALLOWED_KEYCLOAK_ROLES'].split(',')
-            
+
         if 'PINGFEDERATE_OPENID_ACCESS_TOKEN_URL' in os.environ:
-            config['PINGFEDERATE_OPENID_ACCESS_TOKEN_URL'] = os.environ['PINGFEDERATE_OPENID_ACCESS_TOKEN_URL'].split(',')
+            config['PINGFEDERATE_OPENID_ACCESS_TOKEN_URL'] = os.environ['PINGFEDERATE_OPENID_ACCESS_TOKEN_URL'].split(
+                ',')
 
         if 'PINGFEDERATE_OPENID_PAYLOAD_USERNAME' in os.environ:
-            config['PINGFEDERATE_OPENID_PAYLOAD_USERNAME'] = os.environ['PINGFEDERATE_OPENID_PAYLOAD_USERNAME'].split(',')
+            config['PINGFEDERATE_OPENID_PAYLOAD_USERNAME'] = os.environ['PINGFEDERATE_OPENID_PAYLOAD_USERNAME'].split(
+                ',')
 
         if 'PINGFEDERATE_OPENID_PAYLOAD_EMAIL' in os.environ:
             config['PINGFEDERATE_OPENID_PAYLOAD_EMAIL'] = os.environ['PINGFEDERATE_OPENID_PAYLOAD_EMAIL'].split(',')
@@ -103,7 +105,7 @@ class Config(object):
 
         if 'PINGFEDERATE_TOKEN_ALGORITHM' in os.environ:
             config['PINGFEDERATE_TOKEN_ALGORITHM'] = os.environ['PINGFEDERATE_TOKEN_ALGORITHM'].split(',')
-            
+
         if 'CORS_ORIGINS' in os.environ:
             config['CORS_ORIGINS'] = os.environ['CORS_ORIGINS'].split(',')
 
