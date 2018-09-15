@@ -23,4 +23,3 @@ Create new release (use a python3 virt env)
     $ make upload
 ```
 See http://pythonwheels.com/
-
