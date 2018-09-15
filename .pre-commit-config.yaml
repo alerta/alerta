@@ -12,17 +12,17 @@ repos:
     -   id: check-merge-conflict
     -   id: check-yaml
     -   id: debug-statements
-    -   id: double-quote-string-fixer
-    -   id: end-of-file-fixer
-    -   id: flake8
-    -   id: fix-encoding-pragma
-        args: ['--remove']
-    -   id: pretty-format-json
-        args: ['--autofix']
-    -   id: name-tests-test
-        args: ['--django']
-    -   id: requirements-txt-fixer
-    -   id: trailing-whitespace
+#    -   id: double-quote-string-fixer
+#    -   id: end-of-file-fixer
+#    -   id: flake8
+#    -   id: fix-encoding-pragma
+#        args: ['--remove']
+#    -   id: pretty-format-json
+#        args: ['--autofix']
+#    -   id: name-tests-test
+#        args: ['--django']
+#    -   id: requirements-txt-fixer
+#    -   id: trailing-whitespace
 -   repo: https://github.com/asottile/pyupgrade
     rev: v1.6.0
     hooks:
