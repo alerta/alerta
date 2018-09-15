@@ -2,13 +2,14 @@
 import json
 from datetime import datetime
 
-from flask import request, jsonify
+from flask import jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
-from alerta.utils.api import process_alert, assign_customer, add_remote_ip
+from alerta.utils.api import add_remote_ip, assign_customer, process_alert
+
 from . import webhooks
 
 
@@ -35,7 +36,8 @@ def parse_notification(notification):
             severity='informational',
             service=['Unknown'],
             group='AWS/CloudWatch',
-            text='%s <a href="%s" target="_blank">SubscribeURL</a>' % (notification['Message'], notification['SubscribeURL']),
+            text='{} <a href="{}" target="_blank">SubscribeURL</a>'.format(
+                notification['Message'], notification['SubscribeURL']),
             origin=notification['TopicArn'],
             event_type='cloudwatchAlarm',
             create_time=datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'),
@@ -50,7 +52,8 @@ def parse_notification(notification):
             raise ValueError("SNS message is not a Cloudwatch notification")
 
         return Alert(
-            resource='%s:%s' % (alarm['Trigger']['Dimensions'][0]['name'], alarm['Trigger']['Dimensions'][0]['value']),
+            resource='{}:{}'.format(alarm['Trigger']['Dimensions'][0]['name'],
+                                    alarm['Trigger']['Dimensions'][0]['value']),
             event=alarm['AlarmName'],
             environment='Production',
             severity=cw_state_to_severity(alarm['NewStateValue']),

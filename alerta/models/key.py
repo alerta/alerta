@@ -2,12 +2,12 @@
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from alerta.app import db, qb, key_helper
+from alerta.app import db, key_helper, qb
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 
 
-class ApiKey(object):
+class ApiKey:
 
     def __init__(self, user, scopes, text='', expire_time=None, customer=None, **kwargs):
 
@@ -59,7 +59,7 @@ class ApiKey(object):
         }
 
     def __repr__(self):
-        return 'ApiKey(key=%r, user=%r, scopes=%r, expireTime=%r, customer=%r)' % (
+        return 'ApiKey(key={!r}, user={!r}, scopes={!r}, expireTime={!r}, customer={!r})'.format(
             self.key, self.user, self.scopes, self.expire_time, self.customer)
 
     @classmethod
@@ -68,7 +68,8 @@ class ApiKey(object):
             id=doc.get('id', None) or doc.get('_id'),
             key=doc.get('key', None) or doc.get('_id'),
             user=doc.get('user', None),
-            scopes=doc.get('scopes', None) or key_helper.type_to_scopes(doc.get('user', None), doc.get('type', None)) or list(),
+            scopes=doc.get('scopes', None) or key_helper.type_to_scopes(
+                doc.get('user', None), doc.get('type', None)) or list(),
             text=doc.get('text', None),
             expire_time=doc.get('expireTime', None),
             count=doc.get('count', None),

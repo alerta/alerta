@@ -85,7 +85,6 @@ class BlackoutsTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
         self.assertEqual(response.status_code, 202)
 
-
         self.headers = {
             'Authorization': 'Key %s' % self.admin_api_key.key,
             'Content-type': 'application/json'
@@ -276,7 +275,8 @@ class BlackoutsTestCase(unittest.TestCase):
         }
 
         # create new blackout
-        response = self.client.post('/blackout', data=json.dumps({"environment": "Production", "service": ["Network"], "text": "administratively down"}), headers=self.headers)
+        response = self.client.post('/blackout', data=json.dumps({"environment": "Production", "service": [
+                                    "Network"], "text": "administratively down"}), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['blackout']['user'], 'admin@alerta.io')

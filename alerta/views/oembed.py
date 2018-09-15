@@ -1,19 +1,20 @@
 
-from flask import request, render_template, jsonify, current_app
+from flask import current_app, jsonify, render_template, request
 from flask_cors import cross_origin
+
+from alerta.app import db, qb
+from alerta.auth.decorators import permission
+from alerta.utils.api import jsonp
+
+from . import api
 
 try:
     from urllib.parse import urlparse
 except ImportError:
     from urlparse import urlparse  # type: ignore
 
-from alerta.app import db, qb
-from alerta.auth.decorators import permission
-from alerta.utils.api import jsonp
-from . import api
 
-
-@api.route('/oembed', defaults={'format':'json'}, methods=['OPTIONS', 'GET'])
+@api.route('/oembed', defaults={'format': 'json'}, methods=['OPTIONS', 'GET'])
 @api.route('/oembed.<format>', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission('read:oembed')

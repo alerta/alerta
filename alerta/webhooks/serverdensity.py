@@ -1,11 +1,12 @@
 
-from flask import request, g, jsonify
+from flask import g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
-from alerta.utils.api import process_alert, add_remote_ip, assign_customer
+from alerta.utils.api import add_remote_ip, assign_customer, process_alert
+
 from . import webhooks
 
 
@@ -24,7 +25,7 @@ def parse_serverdensity(alert):
         service=[alert['item_type']],
         group=alert['alert_section'],
         value=alert['configured_trigger_value'],
-        text='Alert created for %s:%s' % (alert['item_type'], alert['item_name']),
+        text='Alert created for {}:{}'.format(alert['item_type'], alert['item_name']),
         tags=['cloud'] if alert['item_cloud'] else [],
         attributes={
             'alertId': alert['alert_id'],

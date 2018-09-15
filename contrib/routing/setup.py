@@ -21,7 +21,7 @@ setuptools.setup(
     zip_safe=False,
     entry_points={
         'alerta.routing': [
-          'rules = routing:rules'
+            'rules = routing:rules'
         ]
     }
 )

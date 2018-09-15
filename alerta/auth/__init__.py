@@ -2,7 +2,7 @@ from flask import Blueprint, request
 
 from alerta.exceptions import ApiError
 
-auth = Blueprint('auth', __name__) 
+auth = Blueprint('auth', __name__)
 
 
 try:
@@ -12,6 +12,7 @@ except ImportError:
     from . import basic
 
 from . import github, gitlab, google, keycloak, pingfederate, saml2, userinfo
+
 
 @auth.before_request
 def only_json():

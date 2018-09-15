@@ -1,12 +1,13 @@
 
-from flask import jsonify, request, g
+from flask import g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.blackout import Blackout
-from alerta.utils.api import jsonp, absolute_url, assign_customer
+from alerta.utils.api import absolute_url, assign_customer, jsonp
+
 from . import api
 
 

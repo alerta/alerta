@@ -1,5 +1,5 @@
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 version = '0.0.1'
 
@@ -18,7 +18,7 @@ setup(
     zip_safe=True,
     entry_points={
         'alerta.routing': [
-          'rules = routing:rules'
+            'rules = routing:rules'
         ]
     }
 )

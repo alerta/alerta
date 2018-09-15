@@ -1,11 +1,12 @@
 
-from flask import jsonify, request, g
+from flask import g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.permission import Permission
 from alerta.utils.api import jsonp
+
 from . import api
 
 
@@ -21,7 +22,8 @@ def create_perm():
 
     for want_scope in perm.scopes:
         if not Permission.is_in_scope(want_scope, g.scopes):
-            raise ApiError("Requested scope '%s' not in existing scopes: %s" % (want_scope, ','.join(g.scopes)), 403)
+            raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
+                want_scope, ','.join(g.scopes)), 403)
 
     try:
         perm = perm.create()

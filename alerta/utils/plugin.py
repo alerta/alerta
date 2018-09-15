@@ -1,14 +1,15 @@
 import logging
 from collections import OrderedDict
 
-from pkg_resources import iter_entry_points, load_entry_point, DistributionNotFound
+from pkg_resources import (DistributionNotFound, iter_entry_points,
+                           load_entry_point)
 
 from alerta.plugins import app
 
 LOG = logging.getLogger('alerta.plugins')
 
 
-class Plugins(object):
+class Plugins:
 
     def __init__(self):
         self.plugins = OrderedDict()

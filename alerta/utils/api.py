@@ -1,16 +1,14 @@
 
 import logging
-
 from functools import wraps
 from os.path import join as path_join
 
 from flask import current_app, g, request
 
 from alerta.app import plugins
-from alerta.exceptions import ApiError
-from alerta.exceptions import RejectException, RateLimit, BlackoutPeriod
-from alerta.models import actions
-from alerta.models import status_code
+from alerta.exceptions import (ApiError, BlackoutPeriod, RateLimit,
+                               RejectException)
+from alerta.models import actions, status_code
 
 try:
     from urllib.parse import urljoin, urlparse, urlunparse
@@ -35,7 +33,8 @@ def jsonp(func):
 
 def absolute_url(path=''):
     # ensure that "path" (see urlparse result) part of url has both leading and trailing slashes
-    conf_base_url = urlunparse([(x if i != 2 else path_join('/', x, '')) for i, x in enumerate(urlparse(current_app.config.get('BASE_URL', '/')))])
+    conf_base_url = urlunparse([(x if i != 2 else path_join('/', x, ''))
+                                for i, x in enumerate(urlparse(current_app.config.get('BASE_URL', '/')))])
     try:
         base_url = urljoin(request.base_url, conf_base_url)
     except RuntimeError:  # Working outside of request context
@@ -79,9 +78,9 @@ def process_alert(alert):
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise RuntimeError("Error while running pre-receive plug-in '%s': %s" % (plugin.name, str(e)))
+                raise RuntimeError("Error while running pre-receive plug-in '{}': {}".format(plugin.name, str(e)))
             else:
-                logging.error("Error while running pre-receive plug-in '%s': %s" % (plugin.name, str(e)))
+                logging.error("Error while running pre-receive plug-in '{}': {}".format(plugin.name, str(e)))
         if not alert:
             raise SyntaxError("Plug-in '%s' pre-receive hook did not return modified alert" % plugin.name)
 
@@ -103,9 +102,9 @@ def process_alert(alert):
             updated = plugin.post_receive(alert)
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError("Error while running post-receive plug-in '%s': %s" % (plugin.name, str(e)))
+                raise ApiError("Error while running post-receive plug-in '{}': {}".format(plugin.name, str(e)))
             else:
-                logging.error("Error while running post-receive plug-in '%s': %s" % (plugin.name, str(e)))
+                logging.error("Error while running post-receive plug-in '{}': {}".format(plugin.name, str(e)))
         if updated:
             alert = updated
 
@@ -151,9 +150,9 @@ def process_status(alert, status, text):
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
+                raise ApiError("Error while running status plug-in '{}': {}".format(plugin.name, str(e)))
             else:
-                logging.error("Error while running status plug-in '%s': %s" % (plugin.name, str(e)))
+                logging.error("Error while running status plug-in '{}': {}".format(plugin.name, str(e)))
         if updated:
             try:
                 alert, status, text = updated

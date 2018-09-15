@@ -1,27 +1,30 @@
 import datetime
 import time
 
-from flask import request, Response, url_for, jsonify, render_template, current_app
+from flask import (Response, current_app, jsonify, render_template, request,
+                   url_for)
 from flask_cors import cross_origin
-
-try:
-    from alerta import build  # type: ignore
-except Exception:
-    from alerta import dev as build  # type: ignore
 
 from alerta.app import db
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
 from alerta.models.heartbeat import Heartbeat
-from alerta.models.metrics import Gauge, Counter, Timer
+from alerta.models.metrics import Counter, Gauge, Timer
 from alerta.models.switch import Switch, SwitchState
 from alerta.version import __version__
 
 from . import mgmt
 
+try:
+    from alerta import build  # type: ignore
+except Exception:
+    from alerta import dev as build  # type: ignore
+
+
 switches = [
-    Switch('auto-refresh-allow', 'Alerta console auto-refresh', 'Allow consoles to auto-refresh alerts', SwitchState.ON),
+    Switch('auto-refresh-allow', 'Alerta console auto-refresh',
+           'Allow consoles to auto-refresh alerts', SwitchState.ON),
     Switch('sender-api-allow', 'API alert submission', 'Allow alerts to be submitted via the API', SwitchState.ON)
 ]
 total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of alerts in the database')
@@ -69,10 +72,10 @@ def properties():
     properties = ''
 
     for k, v in current_app.__dict__.items():
-        properties += '%s: %s\n' % (k, v)
+        properties += '{}: {}\n'.format(k, v)
 
     for k, v in current_app.config.items():
-        properties += '%s: %s\n' % (k, v)
+        properties += '{}: {}\n'.format(k, v)
 
     return Response(properties, content_type='text/plain')
 

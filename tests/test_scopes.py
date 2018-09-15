@@ -31,8 +31,10 @@ class ScopeTestCase(unittest.TestCase):
             self.app.preprocess_request()
             self.api_keys_scopes = dict()
             self.api_keys_scopes['read-only'] = make_key('user@alerta.io', scopes=['read'], type=None, text='read-only')
-            self.api_keys_scopes['read-write'] = make_key('user@alerta.io', scopes=['read', 'write'], type=None, text='read-write')
-            self.api_keys_scopes['admin'] = make_key('admin@alerta.io', scopes=['read', 'write', 'admin'], type=None, text='admin')
+            self.api_keys_scopes['read-write'] = make_key('user@alerta.io',
+                                                          scopes=['read', 'write'], type=None, text='read-write')
+            self.api_keys_scopes['admin'] = make_key(
+                'admin@alerta.io', scopes=['read', 'write', 'admin'], type=None, text='admin')
 
             # self.api_keys_types = dict()
             # self.api_keys_types['read-only'] = make_key('user@alerta.io', scopes=None, type='read-only', text='read-only')

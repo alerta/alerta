@@ -1,7 +1,7 @@
 
 import traceback
 
-from flask import current_app, jsonify, Response
+from flask import Response, current_app, jsonify
 
 
 class AlertaException(IOError):
@@ -32,7 +32,7 @@ class BaseError(Exception):
     code = 500
 
     def __init__(self, message, code=None, errors=None):
-        super(BaseError, self).__init__(message)
+        super().__init__(message)
         self.message = message
         if code is not None:
             self.code = code
@@ -47,7 +47,7 @@ class BasicAuthError(BaseError):
     pass
 
 
-class ExceptionHandlers(object):
+class ExceptionHandlers:
 
     def register(self, app):
         from werkzeug.exceptions import default_exceptions

@@ -5,7 +5,7 @@ from functools import wraps
 from alerta.app import db
 
 
-class Gauge(object):
+class Gauge:
 
     def __init__(self, group, name, title=None, description=None, value=0):
 
@@ -36,7 +36,7 @@ class Gauge(object):
             }
 
     def __repr__(self):
-        return 'Gauge(group=%r, name=%r, title=%r, value=%r)' % (
+        return 'Gauge(group={!r}, name={!r}, title={!r}, value={!r})'.format(
             self.group, self.name, self.title, self.value
         )
 
@@ -78,7 +78,7 @@ class Gauge(object):
         return [Gauge.from_db(gauge) for gauge in db.get_metrics(type='gauge')]
 
 
-class Counter(object):
+class Counter:
 
     def __init__(self, group, name, title=None, description=None, count=0):
 
@@ -109,7 +109,7 @@ class Counter(object):
             }
 
     def __repr__(self):
-        return 'Counter(group=%r, name=%r, title=%r, count=%r)' % (
+        return 'Counter(group={!r}, name={!r}, title={!r}, count={!r})'.format(
             self.group, self.name, self.title, self.count
         )
 
@@ -157,7 +157,7 @@ class Counter(object):
         return [Counter.from_db(counter) for counter in db.get_metrics(type='counter')]
 
 
-class Timer(object):
+class Timer:
 
     def __init__(self, group, name, title=None, description=None, count=0, total_time=0):
 
@@ -193,7 +193,7 @@ class Timer(object):
             }
 
     def __repr__(self):
-        return 'Timer(group=%r, name=%r, title=%r, count=%r, total_time=%r)' % (
+        return 'Timer(group={!r}, name={!r}, title={!r}, count={!r}, total_time={!r})'.format(
             self.group, self.name, self.title, self.count, self.total_time
         )
 

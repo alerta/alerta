@@ -5,7 +5,7 @@ import hmac
 import os
 
 
-class ApiKeyHelper(object):
+class ApiKeyHelper:
 
     def __init__(self, app=None):
         self.app = app

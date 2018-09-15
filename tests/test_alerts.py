@@ -212,7 +212,8 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
 
         # ack alert
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'ack'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -226,7 +227,8 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
 
         # ack alert (again)
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'ack'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -306,7 +308,8 @@ class AlertTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # expire alert
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'expired'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'expired'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -320,7 +323,8 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
 
         # expire alert
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'expired'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'expired'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -365,7 +369,8 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['duplicateCount'], 0)
 
         # operator=closed -> status=closed
-        response = self.client.put('/alert/' + alert_id + '/action', data=json.dumps({'action': 'close', 'text': 'operator action'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps({'action': 'close', 'text': 'operator action'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -392,7 +397,8 @@ class AlertTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # close alert
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'closed'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'closed'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -441,7 +447,8 @@ class AlertTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # append tag to existing
-        response = self.client.put('/alert/' + alert_id + '/tag', data=json.dumps({'tags': ['bar']}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/tag',
+                                   data=json.dumps({'tags': ['bar']}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -449,7 +456,8 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['tags'], ['foo', 'bar'])
 
         # duplicate tag is a no-op
-        response = self.client.put('/alert/' + alert_id + '/tag', data=json.dumps({'tags': ['bar']}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/tag',
+                                   data=json.dumps({'tags': ['bar']}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -457,7 +465,8 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['tags'], ['foo', 'bar'])
 
         # delete tag
-        response = self.client.put('/alert/' + alert_id + '/untag', data=json.dumps({'tags': ['foo']}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/untag',
+                                   data=json.dumps({'tags': ['foo']}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -470,31 +479,37 @@ class AlertTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'bar': 1234, 'baz': False, 'ip': '10.0.0.1'}))
+        self.assertEqual(sorted(data['alert']['attributes']), sorted(
+            {'foo': 'abc def', 'bar': 1234, 'baz': False, 'ip': '10.0.0.1'}))
 
         alert_id = data['id']
 
         # modify some attributes, add a new one and delete another
-        response = self.client.put('/alert/' + alert_id + '/attributes', data=json.dumps({'attributes': {'quux': ['q', 'u', 'u', 'x'], 'bar': None}}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/attributes', data=json.dumps(
+            {'attributes': {'quux': ['q', 'u', 'u', 'x'], 'bar': None}}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'baz': False, 'quux': ['q', 'u', 'u', 'x'], 'ip': '10.0.0.1'}))
+        self.assertEqual(sorted(data['alert']['attributes']), sorted(
+            {'foo': 'abc def', 'baz': False, 'quux': ['q', 'u', 'u', 'x'], 'ip': '10.0.0.1'}))
 
         # re-send duplicate alert with custom attributes ('quux' should not change)
         response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': ['q', 'u', 'u', 'x'], 'ip': '10.0.0.1'}))
+        self.assertEqual(sorted(data['alert']['attributes']), sorted(
+            {'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': ['q', 'u', 'u', 'x'], 'ip': '10.0.0.1'}))
 
         # update custom attribute again (only 'quux' should change)
-        response = self.client.put('/alert/' + alert_id + '/attributes', data=json.dumps({'attributes': {'quux': [1, 'u', 'u', 4]}}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/attributes',
+                                   data=json.dumps({'attributes': {'quux': [1, 'u', 'u', 4]}}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': '10.0.0.1'}))
+        self.assertEqual(sorted(data['alert']['attributes']), sorted(
+            {'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': '10.0.0.1'}))
 
         # send correlated alert with custom attributes (nothing should change)
         response = self.client.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
@@ -502,7 +517,8 @@ class AlertTestCase(unittest.TestCase):
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(sorted(data['alert']['attributes']), sorted({'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': '10.0.0.1'}))
+        self.assertEqual(sorted(data['alert']['attributes']), sorted(
+            {'foo': 'abc def', 'bar': 1234, 'baz': False, 'quux': [1, 'u', 'u', 4], 'ip': '10.0.0.1'}))
 
     def test_history_limit(self):
 
@@ -520,7 +536,8 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
 
         # ack alert, status change
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'ack'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
         # duplicate alert, value change
@@ -544,8 +561,9 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
-        self.assertListEqual([h['value'] for h in data['alert']['history']],['102', None, '104', None, '105'])
-        self.assertListEqual([h['type'] for h in data['alert']['history']], ['value', 'severity', 'severity', 'status', 'value'])
+        self.assertListEqual([h['value'] for h in data['alert']['history']], ['102', None, '104', None, '105'])
+        self.assertListEqual([h['type'] for h in data['alert']['history']], [
+                             'value', 'severity', 'severity', 'status', 'value'])
 
     def test_timeout(self):
 

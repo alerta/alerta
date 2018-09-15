@@ -5,7 +5,7 @@ from alerta.app import db
 from alerta.utils.api import absolute_url
 
 
-class Customer(object):
+class Customer:
 
     def __init__(self, match, customer, **kwargs):
 
@@ -30,7 +30,7 @@ class Customer(object):
         }
 
     def __repr__(self):
-        return 'Customer(id=%r, match=%r, customer=%r)' % (
+        return 'Customer(id={!r}, match={!r}, customer={!r})'.format(
             self.id, self.match, self.customer)
 
     @classmethod

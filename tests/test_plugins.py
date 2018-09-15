@@ -86,7 +86,8 @@ class PluginsTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # ack alert
-        response = self.client.put('/alert/' + alert_id + '/status', data=json.dumps({'status': 'ack', 'text': 'input'}), headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'ack', 'text': 'input'}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
@@ -95,7 +96,8 @@ class PluginsTestCase(unittest.TestCase):
 
         # alert status, tags, attributes and history text modified by plugin1 & plugin2
         self.assertEqual(data['alert']['status'], 'owned')
-        self.assertEqual(sorted(data['alert']['tags']), sorted(['three', 'four', 'this', 'that', 'the', 'other', 'more']))
+        self.assertEqual(sorted(data['alert']['tags']), sorted(
+            ['three', 'four', 'this', 'that', 'the', 'other', 'more']))
         self.assertEqual(data['alert']['attributes']['foo'], 'bar')
         self.assertEqual(data['alert']['attributes']['baz'], 'quux')
         self.assertNotIn('abc', data['alert']['attributes'])
@@ -135,7 +137,7 @@ class TestPlugin2(PluginBase):
         # alert.tags.extend(['skip?'])
         status = 'skipped'
         text = text + '-plugin2'
-        return # does not return alert, status, text
+        return  # does not return alert, status, text
 
 
 class TestPlugin3(PluginBase):

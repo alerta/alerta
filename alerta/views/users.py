@@ -1,15 +1,17 @@
 
 from uuid import uuid4
 
-from flask import jsonify, request, g, current_app
+from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.app import qb
-from alerta.auth.utils import not_authorized, create_token, get_customers, send_confirmation
 from alerta.auth.decorators import permission
+from alerta.auth.utils import (create_token, get_customers, not_authorized,
+                               send_confirmation)
 from alerta.exceptions import ApiError
 from alerta.models.user import User
 from alerta.utils.api import jsonp
+
 from . import api
 
 

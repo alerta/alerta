@@ -9,7 +9,7 @@ LOG = logging.getLogger('alerta.plugins')
 
 
 @add_metaclass(abc.ABCMeta)
-class PluginBase(object):
+class PluginBase:
 
     def __init__(self, name=None):
         self.name = name or self.__module__
@@ -30,7 +30,7 @@ class PluginBase(object):
         return None
 
 
-class FakeApp(object):
+class FakeApp:
 
     def init_app(self):
         from alerta.app import config

@@ -1,11 +1,12 @@
 
-from flask import request, g, jsonify
+from flask import g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
-from alerta.utils.api import process_alert, add_remote_ip, assign_customer
+from alerta.utils.api import add_remote_ip, assign_customer, process_alert
+
 from . import webhooks
 
 
