@@ -2,7 +2,7 @@ import sys
 
 if sys.version_info < (3,):
     raise ImportError(
-    """You are running Alerta 6.0 on Python 2
+        """You are running Alerta 6.0 on Python 2
 
 Alerta 6.0 and above are no longer compatible with Python 2.
 

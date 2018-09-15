@@ -2,13 +2,13 @@
 from datetime import datetime, timedelta
 
 from flask import current_app, g
-from pymongo import MongoClient, ASCENDING, TEXT, ReturnDocument
+from pymongo import ASCENDING, TEXT, MongoClient, ReturnDocument
 from pymongo.errors import ConnectionFailure
 
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
-from .utils import Query
 
+from .utils import Query
 
 # See https://github.com/MongoEngine/flask-mongoengine/blob/master/flask_mongoengine/__init__.py
 # See https://github.com/dcrosta/flask-pymongo/blob/master/flask_pymongo/__init__.py
@@ -67,7 +67,7 @@ class Backend(Database):
         db = self.connect()
         self.client.drop_database(db.name)
 
-    #### ALERTS
+    # ALERTS
 
     def get_severity(self, alert):
         """
@@ -465,7 +465,7 @@ class Backend(Database):
             )
         return history
 
-    #### COUNTS
+    # COUNTS
 
     def get_count(self, query=None):
         """
@@ -580,7 +580,7 @@ class Backend(Database):
                     "_id": "$%s" % group,
                     "count": {'$sum': 1},
                     "duplicateCount": {'$sum': "$duplicateCount"},
-                    "lifeTime": {'$sum': {'$subtract': [ "$lastReceiveTime", "$createTime"]}},
+                    "lifeTime": {'$sum': {'$subtract': ["$lastReceiveTime", "$createTime"]}},
                     "environments": {'$addToSet': "$environment"},
                     "services": {'$addToSet': "$service"},
                     "resources": {'$addToSet': {"id": "$_id", "resource": "$resource"}}
@@ -605,7 +605,7 @@ class Backend(Database):
             )
         return top
 
-    #### ENVIRONMENTS
+    # ENVIRONMENTS
 
     def get_environments(self, query=None, topn=100):
         query = query or Query()
@@ -627,7 +627,7 @@ class Backend(Database):
             )
         return environments
 
-    #### SERVICES
+    # SERVICES
 
     def get_services(self, query=None, topn=100):
         query = query or Query()
@@ -651,7 +651,7 @@ class Backend(Database):
             )
         return services
 
-    #### TAGS
+    # TAGS
 
     def get_tags(self, query=None, topn=100):
         query = query or Query()
@@ -675,7 +675,7 @@ class Backend(Database):
             )
         return tags
 
-    #### BLACKOUTS
+    # BLACKOUTS
 
     def create_blackout(self, blackout):
         data = {
@@ -960,7 +960,7 @@ class Backend(Database):
         response = g.db.blackouts.delete_one({"_id": id})
         return True if response.deleted_count == 1 else False
 
-    #### HEARTBEATS
+    # HEARTBEATS
 
     def upsert_heartbeat(self, heartbeat):
         return g.db.heartbeats.find_one_and_update(
@@ -1005,7 +1005,7 @@ class Backend(Database):
         response = g.db.heartbeats.delete_one({'_id': {'$regex': '^' + id}})
         return True if response.deleted_count == 1 else False
 
-    #### API KEYS
+    # API KEYS
 
     # save
     def create_key(self, key):
@@ -1051,7 +1051,7 @@ class Backend(Database):
         response = g.db.keys.delete_one(query)
         return True if response.deleted_count == 1 else False
 
-    #### USERS
+    # USERS
 
     def create_user(self, user):
         data = {
@@ -1127,7 +1127,7 @@ class Backend(Database):
         response = g.db.users.delete_one({"_id": id})
         return True if response.deleted_count == 1 else False
 
-    #### PERMISSIONS
+    # PERMISSIONS
 
     def create_perm(self, perm):
         data = {
@@ -1161,7 +1161,7 @@ class Backend(Database):
                 scopes.extend(response['scopes'])
         return set(scopes) or current_app.config['USER_DEFAULT_SCOPES']
 
-    #### CUSTOMERS
+    # CUSTOMERS
 
     def create_customer(self, customer):
         data = {
@@ -1196,13 +1196,13 @@ class Backend(Database):
 
         if customers:
             if '*' in customers:
-                return '*' # all customers
+                return '*'  # all customers
 
             return customers
 
-        raise NoCustomerMatch("No customer lookup configured for user '%s' or '%s'" % (login, ','.join(matches)))
+        raise NoCustomerMatch("No customer lookup configured for user '{}' or '{}'".format(login, ','.join(matches)))
 
-    #### METRICS
+    # METRICS
 
     def get_metrics(self, type=None):
         query = {"type": type} if type else {}
@@ -1270,7 +1270,7 @@ class Backend(Database):
             return_document=ReturnDocument.AFTER
         )
 
-    #### HOUSEKEEPING
+    # HOUSEKEEPING
 
     def housekeeping(self, expired_threshold, info_threshold):
         # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
@@ -1286,8 +1286,9 @@ class Backend(Database):
             {'$project': {
                 "event": 1, "status": 1, "lastReceiveId": 1, "timeout": 1,
                 "expireTime": {'$add': ["$lastReceiveTime", {'$multiply': ["$timeout", 1000]}]}}
-            },
-            {'$match': {"status": {'$nin': ['expired', 'shelved']}, "expireTime": {'$lt': datetime.utcnow()}, "timeout": {'$ne': 0}}}
+             },
+            {'$match': {"status": {'$nin': ['expired', 'shelved']}, "expireTime": {'$lt': datetime.utcnow()}, "timeout": {
+                '$ne': 0}}}
         ]
         expired = [(r['_id'], r['event'], r['lastReceiveId']) for r in g.db.alerts.aggregate(pipeline)]
 

@@ -48,4 +48,3 @@ class AlertTestCase(unittest.TestCase):
         for metric in data['metrics']:
             if metric['name'] == 'total':
                 self.assertGreaterEqual(metric['value'], 1)
-

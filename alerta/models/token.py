@@ -4,10 +4,11 @@ from flask import current_app, request
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
 
-class Jwt(object):
+class Jwt:
     """
     JSON Web Token (JWT): https://tools.ietf.org/html/rfc7519
     """
+
     def __init__(self, iss, sub, aud, exp, nbf, iat, jti=None, **kwargs):
 
         self.issuer = iss
@@ -102,6 +103,6 @@ class Jwt(object):
         return token.decode('unicode_escape')
 
     def __repr__(self):
-        return 'Jwt(iss=%r, sub=%r, aud=%r, exp=%r, name=%r, preferred_username=%r, customers=%r)' % (
+        return 'Jwt(iss={!r}, sub={!r}, aud={!r}, exp={!r}, name={!r}, preferred_username={!r}, customers={!r})'.format(
             self.issuer, self.subject, self.audience, self.expiration, self.name, self.preferred_username, self.customers
         )

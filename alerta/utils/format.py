@@ -21,7 +21,7 @@ class CustomJSONEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, o)
 
 
-class DateTime(object):
+class DateTime:
     @staticmethod
     def parse(date_str):
         if not isinstance(date_str, six.string_types):

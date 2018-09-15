@@ -5,7 +5,7 @@ from alerta.app import db
 from alerta.utils.api import absolute_url
 
 
-class Permission(object):
+class Permission:
 
     def __init__(self, match, scopes, **kwargs):
 
@@ -33,7 +33,7 @@ class Permission(object):
         }
 
     def __repr__(self):
-        return 'Perm(id=%r, match=%r, scopes=%r)' % (
+        return 'Perm(id={!r}, match={!r}, scopes={!r})'.format(
             self.id, self.match, self.scopes)
 
     @classmethod

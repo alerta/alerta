@@ -4,19 +4,20 @@ from datetime import datetime
 
 import psycopg2
 from flask import current_app, g
-from psycopg2.extensions import register_adapter, adapt, AsIs
-from psycopg2.extras import NamedTupleCursor, register_composite, Json
+from psycopg2.extensions import AsIs, adapt, register_adapter
+from psycopg2.extras import Json, NamedTupleCursor, register_composite
 
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
+
 from .utils import Query
 
 MAX_RETRIES = 5
 
 
-class HistoryAdapter(object):
+class HistoryAdapter:
     def __init__(self, history):
         self.history = history
         self.conn = None
@@ -31,7 +32,7 @@ class HistoryAdapter(object):
                 a.prepare(self.conn)
             return a.getquoted().decode('utf-8')
 
-        return "(%s, %s, %s, %s, %s, %s, %s, %s::timestamp)::history" % (
+        return "({}, {}, {}, {}, {}, {}, {}, {}::timestamp)::history".format(
             quoted(self.history.id),
             quoted(self.history.event),
             quoted(self.history.severity),
@@ -127,7 +128,7 @@ class Backend(Database):
         conn.commit()
         conn.close()
 
-    #### ALERTS
+    # ALERTS
 
     def get_severity(self, alert):
         select = """
@@ -297,7 +298,7 @@ class Backend(Database):
 
     def update_attributes(self, id, old_attrs, new_attrs):
         old_attrs.update(new_attrs)
-        attrs = dict([k, v] for k, v in old_attrs.items() if v is not None)
+        attrs = {k: v for k, v in old_attrs.items() if v is not None}
         update = """
             UPDATE alerts
             SET attributes=%(attrs)s
@@ -357,7 +358,7 @@ class Backend(Database):
             ) for h in self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
         ]
 
-    #### COUNTS
+    # COUNTS
 
     def get_count(self, query=None):
         query = query or Query()
@@ -376,7 +377,7 @@ class Backend(Database):
              WHERE {where}
             GROUP BY {group}
         """.format(where=query.where, group=group)
-        return dict([(s['group'], s.count) for s in self._fetchall(select, query.vars)])
+        return {s['group']: s.count for s in self._fetchall(select, query.vars)}
 
     def get_counts_by_severity(self, query=None):
         query = query or Query()
@@ -385,7 +386,7 @@ class Backend(Database):
              WHERE {where}
             GROUP BY severity
         """.format(where=query.where)
-        return dict([(s.severity, s.count) for s in self._fetchall(select, query.vars)])
+        return {s.severity: s.count for s in self._fetchall(select, query.vars)}
 
     def get_counts_by_status(self, query=None):
         query = query or Query()
@@ -394,7 +395,7 @@ class Backend(Database):
             WHERE {where}
             GROUP BY status
         """.format(where=query.where)
-        return dict([(s.status, s.count) for s in self._fetchall(select, query.vars)])
+        return {s.status: s.count for s in self._fetchall(select, query.vars)}
 
     def get_topn_count(self, query=None, group="event", topn=10):
         query = query or Query()
@@ -465,7 +466,7 @@ class Backend(Database):
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
-    #### ENVIRONMENTS
+    # ENVIRONMENTS
 
     def get_environments(self, query=None, topn=100):
         query = query or Query()
@@ -476,7 +477,7 @@ class Backend(Database):
         """.format(where=query.where)
         return [{"environment": e.environment, "count": e.count} for e in self._fetchall(select, query.vars, limit=topn)]
 
-    #### SERVICES
+    # SERVICES
 
     def get_services(self, query=None, topn=100):
         query = query or Query()
@@ -487,7 +488,7 @@ class Backend(Database):
         """.format(where=query.where)
         return [{"environment": s.environment, "service": s.svc, "count": s.count} for s in self._fetchall(select, query.vars, limit=topn)]
 
-    #### SERVICES
+    # SERVICES
 
     def get_tags(self, query=None, topn=100):
         query = query or Query()
@@ -498,7 +499,7 @@ class Backend(Database):
         """.format(where=query.where)
         return [{"environment": t.environment, "tag": t.tag, "count": t.count} for t in self._fetchall(select, query.vars, limit=topn)]
 
-    #### BLACKOUTS
+    # BLACKOUTS
 
     def create_blackout(self, blackout):
         insert = """
@@ -581,7 +582,7 @@ class Backend(Database):
         """
         return self._delete(delete, (id,), returning=True)
 
-    #### HEARTBEATS
+    # HEARTBEATS
 
     def upsert_heartbeat(self, heartbeat):
         upsert = """
@@ -617,7 +618,7 @@ class Backend(Database):
         """
         return self._delete(delete, {'id': id, 'like_id': id+'%'}, returning=True)
 
-    #### API KEYS
+    # API KEYS
 
     def create_key(self, key):
         insert = """
@@ -658,7 +659,7 @@ class Backend(Database):
         """
         return self._delete(delete, (key, key), returning=True)
 
-    #### USERS
+    # USERS
 
     def create_user(self, user):
         insert = """
@@ -737,7 +738,7 @@ class Backend(Database):
 
     def update_user_attributes(self, id, old_attrs, new_attrs):
         old_attrs.update(new_attrs)
-        attrs = dict([k, v] for k, v in old_attrs.items() if v is not None)
+        attrs = {k: v for k, v in old_attrs.items() if v is not None}
         update = """
             UPDATE users
                SET attributes=%(attrs)s
@@ -754,7 +755,7 @@ class Backend(Database):
         """
         return self._delete(delete, (id,), returning=True)
 
-    #### PERMISSIONS
+    # PERMISSIONS
 
     def create_perm(self, perm):
         insert = """
@@ -796,7 +797,7 @@ class Backend(Database):
                 scopes.extend(response.scopes)
         return set(scopes) or current_app.config['USER_DEFAULT_SCOPES']
 
-    #### CUSTOMERS
+    # CUSTOMERS
 
     def create_customer(self, customer):
         insert = """
@@ -843,9 +844,9 @@ class Backend(Database):
 
             return customers
 
-        raise NoCustomerMatch("No customer lookup configured for user '%s' or '%s'" % (login, ','.join(matches)))
+        raise NoCustomerMatch("No customer lookup configured for user '{}' or '{}'".format(login, ','.join(matches)))
 
-    #### METRICS
+    # METRICS
 
     def get_metrics(self, type=None):
         select = """SELECT * FROM metrics"""
@@ -883,7 +884,7 @@ class Backend(Database):
         """
         return self._upsert(upsert, vars(timer))
 
-    #### HOUSEKEEPING
+    # HOUSEKEEPING
 
     def housekeeping(self, expired_threshold, info_threshold):
         # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
@@ -924,7 +925,7 @@ class Backend(Database):
 
         return (expired, unshelved)
 
-    #### SQL HELPERS
+    # SQL HELPERS
 
     def _insert(self, query, vars):
         """

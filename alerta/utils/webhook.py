@@ -2,7 +2,7 @@
 from pkg_resources import iter_entry_points
 
 
-class CustomWebhooks(object):
+class CustomWebhooks:
     def __init__(self):
         self.webhooks = dict()
 
@@ -14,4 +14,4 @@ class CustomWebhooks(object):
                 if webhook:
                     self.webhooks[ep.name] = webhook()
             except Exception as e:
-                app.log.warn('Failed to load custom webhook %s - %s' % (ep.name, e))
+                app.log.warn('Failed to load custom webhook {} - {}'.format(ep.name, e))

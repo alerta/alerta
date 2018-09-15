@@ -3,8 +3,8 @@ import os
 import platform
 import sys
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
-from typing import List, Dict, Any, Union, Tuple, Optional
 
 from flask import current_app
 
@@ -17,11 +17,11 @@ MAX_LATENCY = 2000  # ms
 JSON = Dict[str, Any]
 
 
-class Heartbeat(object):
+class Heartbeat:
 
     def __init__(self, origin: str=None, tags: List[str]=None, create_time: datetime=None, timeout: int=None, customer: str=None, **kwargs) -> None:
         self.id = kwargs.get('id', str(uuid4()))
-        self.origin = origin or '%s/%s' % (os.path.basename(sys.argv[0]), platform.uname()[1])
+        self.origin = origin or '{}/{}'.format(os.path.basename(sys.argv[0]), platform.uname()[1])
         self.tags = tags or list()
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'Heartbeat'
         self.create_time = create_time or datetime.utcnow()
@@ -80,7 +80,7 @@ class Heartbeat(object):
         }
 
     def __repr__(self) -> str:
-        return 'Heartbeat(id=%r, origin=%r, create_time=%r, timeout=%r, customer=%r)' % (
+        return 'Heartbeat(id={!r}, origin={!r}, create_time={!r}, timeout={!r}, customer={!r})'.format(
             self.id, self.origin, self.create_time, self.timeout, self.customer)
 
     @classmethod

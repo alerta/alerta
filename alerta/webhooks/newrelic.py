@@ -1,11 +1,12 @@
 
-from flask import request, g, jsonify
+from flask import g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
-from alerta.utils.api import process_alert, add_remote_ip, assign_customer
+from alerta.utils.api import add_remote_ip, assign_customer, process_alert
+
 from . import webhooks
 
 
@@ -24,10 +25,10 @@ def parse_newrelic(alert):
         severity = 'ok'
     elif alert['severity'].lower() == 'info':
         severity = 'informational'
-        status='open'
+        status = 'open'
     else:
         severity = alert['severity'].lower()
-        status='open'
+        status = 'open'
 
     attributes = dict()
     if 'incident_url' in alert:
@@ -44,7 +45,7 @@ def parse_newrelic(alert):
         service=[alert['account_name']],
         group=alert['targets'][0]['type'],
         text=alert['details'],
-        tags=['%s:%s' % (key, value) for (key, value) in alert['targets'][0]['labels'].items()],
+        tags=['{}:{}'.format(key, value) for (key, value) in alert['targets'][0]['labels'].items()],
         attributes=attributes,
         origin='New Relic/v%s' % alert['version'],
         event_type=alert['event_type'].lower(),

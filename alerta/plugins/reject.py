@@ -1,13 +1,14 @@
-import re
 import logging
+import re
+
+from alerta.exceptions import RejectException
+from alerta.plugins import PluginBase
 
 try:
     from alerta.plugins import app  # alerta >= 5.0
 except ImportError:
     from alerta.app import app  # type: ignore # alerta < 5.0
 
-from alerta.exceptions import RejectException
-from alerta.plugins import PluginBase
 
 LOG = logging.getLogger('alerta.plugins.reject')
 
@@ -25,7 +26,8 @@ class RejectPolicy(PluginBase):
 
         if not any(regex.match(alert.environment) for regex in ALLOWED_ENVIRONMENT_REGEX):
             LOG.warning("[POLICY] Alert environment does not match one of %s", ', '.join(ALLOWED_ENVIRONMENTS))
-            raise RejectException("[POLICY] Alert environment does not match one of %s" % ', '.join(ALLOWED_ENVIRONMENTS))
+            raise RejectException("[POLICY] Alert environment does not match one of %s" %
+                                  ', '.join(ALLOWED_ENVIRONMENTS))
 
         if not alert.service:
             LOG.warning("[POLICY] Alert must define a service")

@@ -45,7 +45,8 @@ class QueryBuilderImpl(QueryBuilder):
             qvars['duplicate_count'] = params.get('duplicateCount', int)
         if params.get('repeat', None):
             query.append('AND repeat=%(repeat)s')
-            qvars['repeat'] = params.get('repeat', default=True, type=lambda x: x.lower() in ['true', 't', '1', 'yes', 'y', 'on'])
+            qvars['repeat'] = params.get('repeat', default=True, type=lambda x: x.lower()
+                                         in ['true', 't', '1', 'yes', 'y', 'on'])
 
         def reverse_sort(direction):
             return 'ASC' if direction == 'DESC' else 'DESC'
@@ -96,7 +97,7 @@ class QueryBuilderImpl(QueryBuilder):
                 qvars[field] = value
             elif field.startswith('attributes.'):
                 field = field.replace('attributes.', '')
-                query.append('AND attributes @> %(attr_{0})s'.format(field))
+                query.append('AND attributes @> %(attr_{})s'.format(field))
                 qvars['attr_'+field] = {field: value[0]}
             elif len(value) == 1:
                 value = value[0]

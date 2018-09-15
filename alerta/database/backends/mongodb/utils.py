@@ -35,7 +35,8 @@ class QueryBuilderImpl(QueryBuilder):
         to_date = params.get('to-date', default=query_time, type=DateTime.parse)
 
         if from_date and to_date:
-            query['lastReceiveTime'] = {'$gt': from_date.replace(tzinfo=pytz.utc), '$lte': to_date.replace(tzinfo=pytz.utc)}
+            query['lastReceiveTime'] = {'$gt': from_date.replace(
+                tzinfo=pytz.utc), '$lte': to_date.replace(tzinfo=pytz.utc)}
         elif to_date:
             query['lastReceiveTime'] = {'$lte': to_date.replace(tzinfo=pytz.utc)}
 

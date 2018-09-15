@@ -19,13 +19,15 @@ class MetricsTestCase(unittest.TestCase):
         with self.app.test_request_context():
             self.app.preprocess_request()
 
-            test_gauge = Gauge(group='test', name='gauge', title='Test gauge', description='total time to process timed events')
+            test_gauge = Gauge(group='test', name='gauge', title='Test gauge',
+                               description='total time to process timed events')
             test_gauge.set(500)
 
             gauge = [g for g in Gauge.find_all() if g.title == 'Test gauge'][0]
             self.assertGreaterEqual(gauge.value, 500)
 
-            test_timer = Timer(group='test', name='timer', title='Test timer', description='total time to process timed events')
+            test_timer = Timer(group='test', name='timer', title='Test timer',
+                               description='total time to process timed events')
             recv_started = test_timer.start_timer()
             time.sleep(1)
             test_timer.stop_timer(recv_started)

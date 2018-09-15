@@ -4,7 +4,7 @@ import unittest
 from io import BytesIO
 from uuid import uuid4
 
-from alerta.app import create_app, db, custom_webhooks
+from alerta.app import create_app, custom_webhooks, db
 from alerta.models.alert import Alert
 from alerta.webhooks import WebhookBase
 
@@ -423,8 +423,7 @@ class WebhooksTestCase(unittest.TestCase):
             }
         }
         """
-        
-        
+
         self.graylog_notification = """
          {
              "check_result": {
@@ -533,7 +532,8 @@ class WebhooksTestCase(unittest.TestCase):
     def test_cloudwatch_webhook(self):
 
         # subscription confirmation
-        response = self.client.post('/webhooks/cloudwatch', data=self.cloudwatch_subscription_confirmation, headers=self.headers)
+        response = self.client.post('/webhooks/cloudwatch',
+                                    data=self.cloudwatch_subscription_confirmation, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'arn:aws:sns:eu-west-1:1234567890:alerta-test')
@@ -574,7 +574,8 @@ class WebhooksTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         resolve_alert_id = data['id']
 
-        response = self.client.post('/webhooks/pagerduty', data=self.pagerduty_alert % (trigger_alert_id, resolve_alert_id), headers=self.headers)
+        response = self.client.post('/webhooks/pagerduty', data=self.pagerduty_alert %
+                                    (trigger_alert_id, resolve_alert_id), headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
         # get alert
@@ -639,7 +640,8 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['event'], 'CPU usage')
         self.assertEqual(data['alert']['severity'], 'critical')
         self.assertEqual(data['alert']['service'], ['Webserver Health'])
-        self.assertEqual(data['alert']['text'], 'CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%')
+        self.assertEqual(data['alert']['text'],
+                         'CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%')
 
         # closed alert
         response = self.client.post('/webhooks/stackdriver', data=self.stackdriver_closed, headers=self.headers)
@@ -649,7 +651,8 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['event'], 'CPU usage')
         self.assertEqual(data['alert']['severity'], 'ok')
         self.assertEqual(data['alert']['service'], ['Webserver Health'])
-        self.assertEqual(data['alert']['text'], 'CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%')
+        self.assertEqual(data['alert']['text'],
+                         'CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%')
 
     def test_grafana_webhook(self):
 
@@ -686,7 +689,8 @@ class WebhooksTestCase(unittest.TestCase):
         telegram_alert_id = data['id']
 
         # command=/ack
-        response = self.client.post('/webhooks/telegram', data=self.telegram_ack % telegram_alert_id, headers=self.headers)
+        response = self.client.post('/webhooks/telegram', data=self.telegram_ack %
+                                    telegram_alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], "ok")
@@ -719,7 +723,8 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['event'], 'this is raw data')
 
         # test form data
-        response = self.client.post('/webhooks/form?foo=1', data='say=Hi&to=Mom', content_type='application/x-www-form-urlencoded')
+        response = self.client.post('/webhooks/form?foo=1', data='say=Hi&to=Mom',
+                                    content_type='application/x-www-form-urlencoded')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], '1')
@@ -730,7 +735,8 @@ class WebhooksTestCase(unittest.TestCase):
             field1='value1',
             file1=(BytesIO(b'my file contents'), "file1.txt"),
         )
-        response = self.client.post('/webhooks/multipart?foo=1', data=form_data1, content_type='multipart/form-data;boundary="boundary"')
+        response = self.client.post('/webhooks/multipart?foo=1', data=form_data1,
+                                    content_type='multipart/form-data;boundary="boundary"')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], '1')

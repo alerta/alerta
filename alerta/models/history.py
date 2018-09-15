@@ -4,7 +4,7 @@ from datetime import datetime
 from alerta.utils.api import absolute_url
 
 
-class History(object):
+class History:
 
     def __init__(self, id, event, **kwargs):
         self.id = id
@@ -31,7 +31,7 @@ class History(object):
         }
 
     def __repr__(self):
-        return 'History(id=%r, event=%r, severity=%r, status=%r, type=%r)' % (
+        return 'History(id={!r}, event={!r}, severity={!r}, status={!r}, type={!r})'.format(
             self.id, self.event, self.severity, self.status, self.change_type)
 
     @classmethod
@@ -68,7 +68,7 @@ class History(object):
             return cls.from_record(r)
 
 
-class RichHistory(object):
+class RichHistory:
 
     def __init__(self, resource, event, **kwargs):
 
@@ -118,7 +118,7 @@ class RichHistory(object):
         return data
 
     def __repr__(self):
-        return 'RichHistory(id=%r, environment=%r, resource=%r, event=%r, severity=%r, status=%r, type=%r, customer=%r)' % (
+        return 'RichHistory(id={!r}, environment={!r}, resource={!r}, event={!r}, severity={!r}, status={!r}, type={!r}, customer={!r})'.format(
             self.id, self.environment, self.resource, self.event, self.severity, self.status, self.change_type, self.customer)
 
     @classmethod

@@ -1,11 +1,12 @@
-from flask import jsonify, request, g, current_app
+from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.key import ApiKey
 from alerta.models.permission import Permission
-from alerta.utils.api import jsonp, assign_customer
+from alerta.utils.api import assign_customer, jsonp
+
 from . import api
 
 
@@ -31,7 +32,8 @@ def create_key():
 
     for want_scope in key.scopes:
         if not Permission.is_in_scope(want_scope, g.scopes):
-            raise ApiError("Requested scope '%s' not in existing scopes: %s" % (want_scope, ','.join(g.scopes)), 403)
+            raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
+                want_scope, ','.join(g.scopes)), 403)
 
     try:
         key = key.create()
@@ -54,7 +56,7 @@ def list_keys():
     elif 'admin' in g.scopes or 'admin:keys' in g.scopes:
         keys = ApiKey.find_all()
     elif not g.get('user', None):
-            raise ApiError("Must define 'user' to list user keys", 400)
+        raise ApiError("Must define 'user' to list user keys", 400)
     else:
         keys = ApiKey.find_by_user(g.user)
 

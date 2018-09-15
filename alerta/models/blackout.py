@@ -9,7 +9,7 @@ from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 
 
-class Blackout(object):
+class Blackout:
 
     def __init__(self, environment, **kwargs):
         if not environment:
@@ -125,7 +125,7 @@ class Blackout(object):
         if self.customer:
             more += 'customer=%r, ' % self.customer
 
-        return 'Blackout(id=%r, priority=%r, status=%r, environment=%r, %sstart_time=%r, end_time=%r, remaining=%r)' % (
+        return 'Blackout(id={!r}, priority={!r}, status={!r}, environment={!r}, {}start_time={!r}, end_time={!r}, remaining={!r})'.format(
             self.id,
             self.priority,
             self.status,

@@ -1,17 +1,20 @@
 
 from datetime import datetime
 
-from flask import jsonify, request, g
+from flask import g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.app import qb
 from alerta.auth.decorators import permission
-from alerta.exceptions import ApiError, RejectException, RateLimit, BlackoutPeriod
+from alerta.exceptions import (ApiError, BlackoutPeriod, RateLimit,
+                               RejectException)
 from alerta.models.alert import Alert
 from alerta.models.metrics import Timer, timer
 from alerta.models.switch import Switch
-from alerta.utils.api import jsonp, process_alert, process_status, process_action, assign_customer, add_remote_ip
+from alerta.utils.api import (add_remote_ip, assign_customer, jsonp,
+                              process_action, process_alert, process_status)
 from alerta.utils.paging import Page
+
 from . import api
 
 receive_timer = Timer('alerts', 'received', 'Received alerts', 'Total time and number of received alerts')
@@ -19,7 +22,8 @@ gets_timer = Timer('alerts', 'queries', 'Alert queries', 'Total time and number 
 status_timer = Timer('alerts', 'status', 'Alert status change', 'Total time and number of alerts with status changed')
 tag_timer = Timer('alerts', 'tagged', 'Tagging alerts', 'Total time to tag number of alerts')
 untag_timer = Timer('alerts', 'untagged', 'Removing tags from alerts', 'Total time to un-tag and number of alerts')
-attrs_timer = Timer('alerts', 'attributes', 'Alert attributes change', 'Total time and number of alerts with attributes changed')
+attrs_timer = Timer('alerts', 'attributes', 'Alert attributes change',
+                    'Total time and number of alerts with attributes changed')
 delete_timer = Timer('alerts', 'deleted', 'Deleted alerts', 'Total time and number of deleted alerts')
 count_timer = Timer('alerts', 'counts', 'Count alerts', 'Total time and number of count queries')
 

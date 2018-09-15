@@ -2,7 +2,7 @@
 from typing import List
 
 
-class SwitchState(object):
+class SwitchState:
     ON = True
     OFF = False
 
@@ -15,7 +15,7 @@ class SwitchState(object):
         return "ON" if state else "OFF"
 
 
-class Switch(object):
+class Switch:
 
     switches = []  # type: List[Switch]
 
@@ -40,7 +40,7 @@ class Switch(object):
         }
 
     def __repr__(self):
-        return 'Switch(name=%r, description=%r, state=%r)' % (
+        return 'Switch(name={!r}, description={!r}, state={!r})'.format(
             self.name, self.description, SwitchState.to_string(self.state)
         )
 

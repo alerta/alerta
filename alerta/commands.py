@@ -120,6 +120,5 @@ def users():
                 click.echo('{} {}'.format(user.id, user.name))
 
 
-
 if __name__ == '__main__':
     cli()

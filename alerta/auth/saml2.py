@@ -1,11 +1,12 @@
 
 import json
 
-from flask import current_app, request, jsonify, make_response
+from flask import current_app, jsonify, make_response, request
 from flask_cors import cross_origin
 
-from alerta.auth.utils import not_authorized, create_token, get_customers
+from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.utils.api import absolute_url, deepmerge
+
 from . import auth
 
 try:
@@ -91,7 +92,8 @@ def saml_response_from_idp():
     identity = authn_response.get_identity()
     email = identity['emailAddress'][0]
     domain = email.split('@')[1]
-    name = (current_app.config.get('SAML2_USER_NAME_FORMAT', '{givenName} {surname}')).format(**dict(map(lambda x: (x[0], x[1][0]), identity.items())))
+    name = (current_app.config.get('SAML2_USER_NAME_FORMAT', '{givenName} {surname}')).format(
+        **dict(map(lambda x: (x[0], x[1][0]), identity.items())))
 
     groups = identity.get('groups', [])
     if not_authorized('ALLOWED_SAML2_GROUPS', groups):

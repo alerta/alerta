@@ -1,13 +1,13 @@
 
-from flask import request, g, jsonify
+from flask import g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
-from alerta.utils.api import process_alert, add_remote_ip, assign_customer
-from . import webhooks
+from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
+from . import webhooks
 
 # {
 #     "second_probe": {},
@@ -37,7 +37,6 @@ from . import webhooks
 # }
 
 
-
 def parse_pingdom(check):
 
     if check['importance_level'] == 'HIGH':
@@ -57,7 +56,7 @@ def parse_pingdom(check):
         service=[check['check_type']],
         group='Network',
         value=check['description'],
-        text='%s: %s' % (check['importance_level'], check['long_description']),
+        text='{}: {}'.format(check['importance_level'], check['long_description']),
         tags=check['tags'],
         attributes={'checkId': check['check_id']},
         origin='Pingdom',

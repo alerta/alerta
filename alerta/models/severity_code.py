@@ -88,7 +88,7 @@ _COLOR_MAP = {
 ENDC = '\033[0m'
 
 
-class Severity(object):
+class Severity:
 
     def __init__(self, app=None):
         self.app = None

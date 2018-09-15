@@ -1,10 +1,11 @@
 import base64
 import re
-from flask import request, g, current_app
 from functools import wraps
+
+from flask import current_app, g, request
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
-from alerta.auth.utils import not_authorized, get_customers
+from alerta.auth.utils import get_customers, not_authorized
 from alerta.exceptions import ApiError, BasicAuthError
 from alerta.models.key import ApiKey
 from alerta.models.permission import Permission
@@ -101,4 +102,3 @@ def permission(scope):
 
         return wrapped
     return decorated
-
