@@ -207,7 +207,7 @@ class Backend(Database):
                SET status=%(status)s, value=%(value)s, text=%(text)s, timeout=%(timeout)s, raw_data=%(raw_data)s,
                    repeat=%(repeat)s, last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
                    tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)), attributes=attributes || %(attributes)s,
-                   duplicate_count=duplicate_count+1, history=(%(history)s || history)[1:{limit}]
+                   duplicate_count=duplicate_count + 1, history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND event=%(event)s
@@ -256,7 +256,7 @@ class Backend(Database):
              WHERE (id ~* (%(id)s) OR last_receive_id ~* (%(id)s))
                AND {customer}
         """.format(customer='customer=ANY(%(customers)s)' if customers else '1=1')
-        return self._fetchone(select, {'id': '^'+id, 'customers': customers})
+        return self._fetchone(select, {'id': '^' + id, 'customers': customers})
 
     # STATUS, TAGS, ATTRIBUTES
 
@@ -294,7 +294,7 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """
-        return self._update(update, {'id': id, 'like_id': id+'%', 'tags': tags}, returning=True)
+        return self._update(update, {'id': id, 'like_id': id + '%', 'tags': tags}, returning=True)
 
     def update_attributes(self, id, old_attrs, new_attrs):
         old_attrs.update(new_attrs)
@@ -305,7 +305,7 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """
-        return self._update(update, {'id': id, 'like_id': id+'%', 'attrs': attrs}, returning=True)
+        return self._update(update, {'id': id, 'like_id': id + '%', 'attrs': attrs}, returning=True)
 
     def delete_alert(self, id):
         delete = """
@@ -313,7 +313,7 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING id
         """
-        return self._delete(delete, {'id': id, 'like_id': id+'%'}, returning=True)
+        return self._delete(delete, {'id': id, 'like_id': id + '%'}, returning=True)
 
     # SEARCH & HISTORY
 
@@ -600,7 +600,7 @@ class Backend(Database):
              WHERE (id=%(id)s OR id LIKE %(like_id)s)
                AND {customer}
         """.format(customer='customer=%(customers)s' if customers else '1=1')
-        return self._fetchone(select, {'id': id, 'like_id': id+'%', 'customers': customers})
+        return self._fetchone(select, {'id': id, 'like_id': id + '%', 'customers': customers})
 
     def get_heartbeats(self, query=None):
         query = query or Query()
@@ -616,7 +616,7 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING id
         """
-        return self._delete(delete, {'id': id, 'like_id': id+'%'}, returning=True)
+        return self._delete(delete, {'id': id, 'like_id': id + '%'}, returning=True)
 
     # API KEYS
 
@@ -646,7 +646,7 @@ class Backend(Database):
     def update_key_last_used(self, key):
         update = """
             UPDATE keys
-            SET last_used_time=NOW(), count=count+1
+            SET last_used_time=NOW(), count=count + 1
             WHERE id=%s OR key=%s
         """
         return self._update(update, (key, key))
@@ -869,7 +869,7 @@ class Backend(Database):
             INSERT INTO metrics ("group", name, title, description, count, type)
             VALUES (%(group)s, %(name)s, %(title)s, %(description)s, %(count)s, %(type)s)
             ON CONFLICT ("group", name, type) DO UPDATE
-                SET count=metrics.count+%(count)s
+                SET count=metrics.count + %(count)s
             RETURNING *
         """
         return self._upsert(upsert, vars(counter))
@@ -879,7 +879,7 @@ class Backend(Database):
             INSERT INTO metrics ("group", name, title, description, count, total_time, type)
             VALUES (%(group)s, %(name)s, %(title)s, %(description)s, %(count)s, %(total_time)s, %(type)s)
             ON CONFLICT ("group", name, type) DO UPDATE
-                SET count=metrics.count+%(count)s, total_time=metrics.total_time+%(total_time)s
+                SET count=metrics.count + %(count)s, total_time=metrics.total_time + %(total_time)s
             RETURNING *
         """
         return self._upsert(upsert, vars(timer))
@@ -986,4 +986,4 @@ class Backend(Database):
 
     def _log(self, cursor, query, vars):
         LOG = current_app.logger
-        LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*'*40, query=cursor.mogrify(query, vars).decode('utf-8')))
+        LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*' * 40, query=cursor.mogrify(query, vars).decode('utf-8')))
