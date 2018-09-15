@@ -2,10 +2,8 @@
 import json
 import unittest
 
-from alerta.app import create_app, db, plugins
-from alerta.exceptions import BlackoutPeriod
+from alerta.app import create_app, db
 from alerta.models.key import ApiKey
-from alerta.plugins import PluginBase
 
 
 class ShelvingTestCase(unittest.TestCase):

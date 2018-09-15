@@ -135,8 +135,8 @@ class TestPlugin2(PluginBase):
 
     def status_change(self, alert, status, text):
         # alert.tags.extend(['skip?'])
-        status = 'skipped'
-        text = text + '-plugin2'
+        # status = 'skipped'
+        # text = text + '-plugin2'
         return  # does not return alert, status, text
 
 

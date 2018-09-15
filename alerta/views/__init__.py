@@ -6,7 +6,7 @@ from alerta.utils.api import absolute_url
 
 api = Blueprint('api', __name__)
 
-from . import alerts, blackouts, customers, heartbeats, keys, permissions, users, oembed
+from . import alerts, blackouts, customers, heartbeats, keys, permissions, users, oembed  # noqa
 
 
 @api.before_request
