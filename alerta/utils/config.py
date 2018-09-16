@@ -50,6 +50,9 @@ class Config:
         if 'AUTH_REQUIRED' in os.environ:
             config['AUTH_REQUIRED'] = True if os.environ['AUTH_REQUIRED'] == 'True' else False
 
+        if 'AUTH_PROVIDER' in os.environ:
+            config['AUTH_PROVIDER'] = os.environ['AUTH_PROVIDER']
+
         if 'ADMIN_USERS' in os.environ:
             config['ADMIN_USERS'] = os.environ['ADMIN_USERS'].split(',')
 
@@ -114,6 +117,9 @@ class Config:
 
         if 'SMTP_PASSWORD' in os.environ:
             config['SMTP_PASSWORD'] = os.environ['SMTP_PASSWORD']
+
+        if 'GOOGLE_TRACKING_ID' in os.environ:
+            config['GOOGLE_TRACKING_ID'] = os.environ['GOOGLE_TRACKING_ID']
 
         if 'PLUGINS' in os.environ:
             config['PLUGINS'] = os.environ['PLUGINS'].split(',')
