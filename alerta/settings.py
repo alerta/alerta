@@ -107,6 +107,26 @@ SEVERITY_MAP = {
 DEFAULT_NORMAL_SEVERITY = 'normal'  # 'normal', 'ok', 'cleared'
 DEFAULT_PREVIOUS_SEVERITY = 'indeterminate'
 
+COLOR_MAP = {
+    'severity': {
+        'security': 'blue',
+        'critical': 'red',
+        'major': 'orange',
+        'minor': 'yellow',
+        'warning': '#1E90FF',
+        'indeterminate': 'lightblue',
+        'cleared': '#00CC00',
+        'normal': '#00CC00',
+        'ok': '#00CC00',
+        'informational': '#00CC00',
+        'debug': '#7554BF',
+        'trace': '#7554BF',
+        'unknown': 'silver'
+    },
+    'text': 'black',
+    'highlight': 'skyblue '
+}
+
 DEFAULT_TIMEOUT = 86400
 ALERT_TIMEOUT = DEFAULT_TIMEOUT
 HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
