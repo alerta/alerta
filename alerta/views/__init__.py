@@ -46,7 +46,7 @@ def config():
         'keycloak_url': current_app.config['KEYCLOAK_URL'],
         'keycloak_realm': current_app.config['KEYCLOAK_REALM'],
         'pingfederate_url': current_app.config['PINGFEDERATE_URL'],
-        'colors': {},  # not supported yet
+        'colors': current_app.config['COLOR_MAP'],
         'severity': current_app.config['SEVERITY_MAP'],
         'dates': {
             'shortTime': 'shortTime',  # 1:39 PM
