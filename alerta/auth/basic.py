@@ -108,13 +108,11 @@ def forgot():
     try:
         email = request.json['email']
     except KeyError:
-        raise ApiError("must supply 'email'", 401)
+        raise ApiError("must supply 'email'", 400)
 
     user = User.find_by_email(email)
     if user:
-        if not user.email_verified:
-            raise ApiError('user email not verified', 401)
-        elif not user.is_active:
+        if not user.is_active:
             raise ApiError('user not active', 403)
         send_password_reset(user)
 
