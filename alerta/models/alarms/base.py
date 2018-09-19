@@ -30,3 +30,9 @@ class AlarmModel(Base):
 
     def transition(self, previous_severity, current_severity, previous_status=None, current_status=None, **kwargs):
         raise NotImplementedError
+
+    def get_config(self):
+        raise NotImplementedError
+
+    def is_suppressed(self, status):
+        raise NotImplementedError

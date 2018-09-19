@@ -3,6 +3,7 @@ import json
 import unittest
 
 from alerta.app import create_app, db
+from alerta.models.severity import Severity, Trend
 
 
 class SeverityTestCase(unittest.TestCase):
@@ -115,7 +116,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'ok')
         self.assertEqual(data['alert']['status'], 'closed')
-        self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
+        self.assertEqual(data['alert']['trendIndication'], 'noChange')
 
         # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=informational, status=open, trend=lessSevere
         response = self.client.post('/alert', data=json.dumps(self.inform_alert), headers=self.headers)
@@ -126,7 +127,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'informational')
         self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
+        self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
         # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=debug, status=open, trend=lessSevere
         response = self.client.post('/alert', data=json.dumps(self.debug_alert), headers=self.headers)
@@ -137,7 +138,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
         self.assertEqual(data['alert']['severity'], 'debug')
         self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
+        self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
     def test_active(self):
 
@@ -247,7 +248,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['previousSeverity'], 'normal')
         self.assertEqual(data['alert']['severity'], 'trace')
         self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
+        self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
         # prevSev=trace, sev=security, status=open, trend=moreSevere
         response = self.client.post('/alert', data=json.dumps(self.auth_alert), headers=self.headers)
@@ -259,3 +260,13 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['severity'], 'security')
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
+
+    def test_trend(self):
+
+        self.assertEqual(Severity.trend(Severity.MAJOR, Severity.MINOR), Trend.LESS_SEVERE)
+        self.assertEqual(Severity.trend(Severity.CRITICAL, Severity.CRITICAL), Trend.NO_CHANGE)
+        self.assertEqual(Severity.trend(Severity.CRITICAL, Severity.MINOR), Trend.LESS_SEVERE)
+        self.assertEqual(Severity.trend(Severity.WARNING, Severity.MINOR), Trend.MORE_SEVERE)
+        self.assertEqual(Severity.trend(Severity.NORMAL, Severity.CLEARED), Trend.NO_CHANGE)
+        self.assertEqual(Severity.trend(Severity.DEBUG, Severity.SECURITY), Trend.MORE_SEVERE)
+        self.assertEqual(Severity.trend(Severity.INDETERMINATE, Severity.NORMAL), Trend.NO_CHANGE)

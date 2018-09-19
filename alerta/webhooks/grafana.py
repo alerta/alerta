@@ -7,24 +7,25 @@ from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
-from alerta.models.severity_code import Severity
+from alerta.models.enums import Status
+from alerta.models.severity import SEVERITY_MAP, Severity
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
 
 
 def parse_grafana(alert, match, args):
-    alerting_severity = args.get('severity', 'major')
-    if alerting_severity not in Severity.SEVERITY_MAP:
+    alerting_severity = Severity.from_str(args.get('severity', 'major'))
+    if alerting_severity not in SEVERITY_MAP:
         raise ValueError('Invalid severity parameter, expected one of %s' % ', '.join(
-            sorted(Severity.SEVERITY_MAP)))
+            sorted(SEVERITY_MAP)))
 
     if alert['state'] == 'alerting':
         severity = alerting_severity
     elif alert['state'] == 'ok':
-        severity = 'normal'
+        severity = Severity.NORMAL
     else:
-        severity = 'indeterminate'
+        severity = Severity.INDETERMINATE
 
     environment = args.get('environment', 'Production')  # TODO: verify at create?
     event_type = args.get('event_type', 'performanceAlert')
@@ -93,8 +94,8 @@ def grafana():
             raise ApiError(str(e), 500)
 
         for updateAlert in existingAlerts:
-            updateAlert.severity = 'normal'
-            updateAlert.status = 'closed'
+            updateAlert.severity = Severity.NORMAL
+            updateAlert.status = Status.CLOSED
 
             try:
                 alert = process_alert(updateAlert)

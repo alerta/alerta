@@ -7,7 +7,6 @@ from raven.contrib.flask import Sentry
 from alerta.database.base import Database, QueryBuilder
 from alerta.exceptions import ExceptionHandlers
 from alerta.models.alarms.base import AlarmModel
-from alerta.models.severity_code import Severity
 from alerta.utils.config import Config
 from alerta.utils.key import ApiKeyHelper
 from alerta.utils.mailer import Mailer
@@ -15,7 +14,6 @@ from alerta.utils.plugin import Plugins
 from alerta.utils.webhook import CustomWebhooks
 
 config = Config()
-severity = Severity()
 alarm = AlarmModel()
 
 cors = CORS()
@@ -37,7 +35,6 @@ def create_app(config_override=None, environment=None):
     config.init_app(app)
     app.config.update(config_override or {})
 
-    severity.init_app(app)
     alarm.register(app)
 
     cors.init_app(app)

@@ -1,6 +1,7 @@
 import logging
 
 from alerta.exceptions import BlackoutPeriod
+from alerta.models.enums import Status
 from alerta.plugins import PluginBase
 
 try:
@@ -27,7 +28,7 @@ class BlackoutHandler(PluginBase):
         if alert.is_blackout():
             if app.config.get('NOTIFICATION_BLACKOUT', True):
                 LOG.debug('Set status to "blackout" during blackout period (id=%s)' % alert.id)
-                alert.status = 'blackout'
+                alert.status = Status.BLACKOUT  # FIXME - 'blackout' or 'Out-of-Service'
             else:
                 LOG.debug('Suppressed alert during blackout period (id=%s)' % alert.id)
                 raise BlackoutPeriod('Suppressed alert during blackout period')

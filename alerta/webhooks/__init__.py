@@ -11,7 +11,7 @@ from . import serverdensity, slack, stackdriver, telegram, custom  # noqa
 
 @webhooks.before_request
 def before_request():
-    current_app.logger.info('Webhook Request:\n{} {}\n\n{}{}'.format(
+    current_app.logger.debug('Webhook Request:\n{} {}\n\n{}{}'.format(
         request.method,
         request.url,
         request.headers,

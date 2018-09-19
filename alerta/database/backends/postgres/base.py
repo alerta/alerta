@@ -1,6 +1,7 @@
 import time
 from collections import namedtuple
 from datetime import datetime
+from enum import Enum
 
 import psycopg2
 from flask import current_app, g
@@ -15,6 +16,21 @@ from alerta.utils.format import DateTime
 from .utils import Query
 
 MAX_RETRIES = 5
+
+
+class EnumAdapter:
+    def __init__(self, enum):
+        self._enum = enum
+        self.conn = None
+
+    def prepare(self, conn):
+        self.conn = conn
+
+    def getquoted(self):
+        return ("'%s'" % self._enum.value).encode('utf8')
+
+    def __str__(self):
+        return "'%s'" % self._enum.value
 
 
 class HistoryAdapter:
@@ -67,6 +83,7 @@ class Backend(Database):
         )
         from alerta.models.alert import History
         register_adapter(History, HistoryAdapter)
+        register_adapter(Enum, EnumAdapter)
 
     def connect(self):
         retry = 0

@@ -8,6 +8,7 @@ from flask_cors import cross_origin
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
+from alerta.models.severity import Severity
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
@@ -16,13 +17,13 @@ from . import webhooks
 def cw_state_to_severity(state):
 
     if state == 'ALARM':
-        return 'major'
+        return Severity.MAJOR
     elif state == 'INSUFFICIENT_DATA':
-        return 'warning'
+        return Severity.WARNING
     elif state == 'OK':
-        return 'normal'
+        return Severity.NORMAL
     else:
-        return 'unknown'
+        return Severity.UNKNOWN
 
 
 def parse_notification(notification):
@@ -33,7 +34,7 @@ def parse_notification(notification):
             resource=notification['TopicArn'],
             event=notification['Type'],
             environment='Production',
-            severity='informational',
+            severity=Severity.INFORMATIONAL,
             service=['Unknown'],
             group='AWS/CloudWatch',
             text='{} <a href="{}" target="_blank">SubscribeURL</a>'.format(

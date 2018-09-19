@@ -3,13 +3,15 @@ import os
 import platform
 import sys
 from datetime import datetime
+from typing import Tuple
 from uuid import uuid4
 
 from flask import current_app
 
-from alerta.app import alarm, db, severity
-from alerta.models import status_code
+from alerta.app import alarm, db
+from alerta.models.enums import Status
 from alerta.models.history import History, RichHistory
+from alerta.models.severity import Severity, Trend
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 
@@ -32,11 +34,11 @@ class Alert:
         self.resource = resource
         self.event = event
         self.environment = kwargs.get('environment', None) or ''
-        self.severity = kwargs.get('severity', None) or current_app.config['DEFAULT_NORMAL_SEVERITY']
+        self.severity = kwargs.get('severity', None) or Severity.from_str(current_app.config['DEFAULT_NORMAL_SEVERITY'])
         self.correlate = kwargs.get('correlate', None) or list()
         if self.correlate and event not in self.correlate:
             self.correlate.append(event)
-        self.status = kwargs.get('status', None) or status_code.UNKNOWN
+        self.status = kwargs.get('status', None) or Status.UNKNOWN
         self.service = kwargs.get('service', None) or list()
         self.group = kwargs.get('group', None) or 'Misc'
         self.value = kwargs.get('value', None)
@@ -79,9 +81,9 @@ class Alert:
             resource=json.get('resource', None),
             event=json.get('event', None),
             environment=json.get('environment', None),
-            severity=json.get('severity', None),
+            severity=Severity.from_str(json.get('severity', None)),
             correlate=json.get('correlate', list()),
-            status=json.get('status', None),
+            status=Status.from_str(json.get('status', None)),
             service=json.get('service', list()),
             group=json.get('group', None),
             value=json.get('value', None),
@@ -152,9 +154,9 @@ class Alert:
             resource=doc.get('resource', None),
             event=doc.get('event', None),
             environment=doc.get('environment', None),
-            severity=doc.get('severity', None),
+            severity=Severity.from_str(doc.get('severity', None)),
             correlate=doc.get('correlate', list()),
-            status=doc.get('status', None),
+            status=Status.from_str(doc.get('status', None)),
             service=doc.get('service', list()),
             group=doc.get('group', None),
             value=doc.get('value', None),
@@ -169,8 +171,8 @@ class Alert:
             customer=doc.get('customer', None),
             duplicate_count=doc.get('duplicateCount', None),
             repeat=doc.get('repeat', None),
-            previous_severity=doc.get('previousSeverity', None),
-            trend_indication=doc.get('trendIndication', None),
+            previous_severity=Severity.from_str(doc.get('previousSeverity', None)),
+            trend_indication=Trend.from_str(doc.get('trendIndication', None)),
             receive_time=doc.get('receiveTime', None),
             last_receive_id=doc.get('lastReceiveId', None),
             last_receive_time=doc.get('lastReceiveTime', None),
@@ -184,9 +186,9 @@ class Alert:
             resource=rec.resource,
             event=rec.event,
             environment=rec.environment,
-            severity=rec.severity,
+            severity=Severity.from_str(rec.severity),
             correlate=rec.correlate,
-            status=rec.status,
+            status=Status.from_str(rec.status),
             service=rec.service,
             group=rec.group,
             value=rec.value,
@@ -201,8 +203,8 @@ class Alert:
             customer=rec.customer,
             duplicate_count=rec.duplicate_count,
             repeat=rec.repeat,
-            previous_severity=rec.previous_severity,
-            trend_indication=rec.trend_indication,
+            previous_severity=Severity.from_str(rec.previous_severity),
+            trend_indication=Trend.from_str(rec.trend_indication),
             receive_time=rec.receive_time,
             last_receive_id=rec.last_receive_id,
             last_receive_time=rec.last_receive_time,
@@ -225,17 +227,25 @@ class Alert:
     def is_flapping(self, window=1800, count=2):
         return db.is_flapping(self, window, count)
 
+    @property
+    def is_suppressed(self):
+        return alarm.is_suppressed(self.status)
+
     # de-duplicate an alert
     def deduplicate(self):
         now = datetime.utcnow()
 
-        previous_status, previous_value = db.get_status_and_value(self)
+        def from_db(sv):
+            return Status(sv[0]), sv[1]
 
-        self.status = alarm.transition(
+        previous_status, previous_value = from_db(db.get_status_and_value(self))
+
+        _, self.status = alarm.transition(
             previous_severity=self.severity,
             current_severity=self.severity,
             previous_status=previous_status,
-            current_status=self.status
+            current_status=self.status,
+            latched=self.is_latched()
         )
 
         self.repeat = True
@@ -268,15 +278,17 @@ class Alert:
     def update(self):
         now = datetime.utcnow()
 
-        self.previous_severity = db.get_severity(self)
-        previous_status = db.get_status(self)
-        self.trend_indication = severity.trend(self.previous_severity, self.severity)
+        self.previous_severity = Severity.from_str(db.get_severity(self))
+        previous_status = Status(db.get_status(self))
+        self.trend_indication = Severity.trend(self.previous_severity, self.severity)
 
-        self.status = alarm.transition(
+        _, self.status = alarm.transition(
             previous_severity=self.previous_severity,
             current_severity=self.severity,
             previous_status=previous_status,
-            current_status=self.status
+            current_status=self.status,
+            latched=self.is_latched()
+
         )
 
         self.duplicate_count = 0
@@ -309,16 +321,18 @@ class Alert:
 
     # create an alert
     def create(self):
-        if self.status == status_code.UNKNOWN:
-            self.status = alarm.transition(
-                previous_severity=current_app.config['DEFAULT_PREVIOUS_SEVERITY'],
-                current_severity=self.severity
+        default_previous_severity = Severity.from_str(current_app.config['DEFAULT_PREVIOUS_SEVERITY'])
+        if self.status == Status.UNKNOWN:
+            _, self.status = alarm.transition(
+                previous_severity=default_previous_severity,
+                current_severity=self.severity,
+                latched=self.is_latched()
             )
-        trend_indication = severity.trend(current_app.config['DEFAULT_PREVIOUS_SEVERITY'], self.severity)
+        trend_indication = Severity.trend(default_previous_severity, self.severity)
 
         self.duplicate_count = 0
         self.repeat = False
-        self.previous_severity = current_app.config['DEFAULT_PREVIOUS_SEVERITY']
+        self.previous_severity = default_previous_severity
         self.trend_indication = trend_indication
         self.receive_time = datetime.utcnow()
         self.last_receive_id = self.id
@@ -356,6 +370,9 @@ class Alert:
                 return False
         return db.is_blackout_period(self)
 
+    def is_latched(self):
+        return True if 'latched' in self.event_type.lower() else False
+
     # set alert status
     def set_status(self, status, text='', timeout=None):
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
@@ -368,6 +385,30 @@ class Alert:
             update_time=datetime.utcnow()
         )
         return db.set_status(self.id, status, timeout, history)
+
+    def from_action(self, action, text='', timeout=None) -> Tuple[Severity, Status]:
+        self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
+        previous_status = Status(db.get_status(self))
+
+        severity, status = alarm.transition(
+            previous_severity=self.previous_severity,
+            current_severity=self.severity,
+            previous_status=previous_status,
+            current_status=self.status,
+            action=action
+        )
+
+        history = History(
+            id=self.id,
+            event=self.event,
+            severity=self.severity if self.previous_severity != self.severity else None,
+            status=self.status,
+            text=text,
+            change_type='action',
+            update_time=datetime.utcnow()
+        )
+        db.set_severity_and_status(self.id, severity, status, self.timeout, history)
+        return severity, status
 
     def set_severity_and_status(self, severity, status, text='', timeout=None):
         timeout = timeout or current_app.config['ALERT_TIMEOUT']

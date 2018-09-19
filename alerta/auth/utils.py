@@ -71,9 +71,6 @@ def send_confirmation(user):
     token = generate_email_token(email=user.email, salt='confirm')
     user.set_email_hash(token)
 
-    ui_base_url = request.referrer
-    print(ui_base_url)
-
     subject = "[Alerta] Please verify your email '%s'" % user.email
     text = 'Hello {name}!\n\n' \
            'Please verify your email address is {email} by clicking on the link below:\n\n' \
