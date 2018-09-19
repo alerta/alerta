@@ -89,6 +89,7 @@ CORS_ORIGINS = [
 ]
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
+ALARM_MODEL = 'ALERTA'  # 'ALERTA' or 'ISA_18_2'
 SEVERITY_MAP = {
     'security': 0,
     'critical': 1,

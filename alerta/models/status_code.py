@@ -2,9 +2,6 @@
 Possible alert status codes.
 """
 
-from alerta.app import severity
-from alerta.models import severity_code
-
 OPEN_STATUS_CODE = 1
 ASSIGN_STATUS_CODE = 2
 ACK_STATUS_CODE = 3
@@ -52,15 +49,3 @@ def parse_status(name):
             if name.lower() == st.lower():
                 return st
     return NOT_VALID
-
-
-def status_from_severity(previous_severity, current_severity, previous_status=OPEN, current_status=UNKNOWN):
-    if current_severity in [severity_code.NORMAL, severity_code.CLEARED, severity_code.OK]:
-        return CLOSED
-    if current_status in [BLACKOUT, SHELVED]:
-        return current_status
-    if previous_status in [BLACKOUT, CLOSED, EXPIRED]:
-        return OPEN
-    if severity.trend(previous_severity, current_severity) == severity_code.MORE_SEVERE:
-        return OPEN
-    return previous_status
