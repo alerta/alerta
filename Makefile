@@ -55,4 +55,5 @@ tag:
 	git push --tags
 
 upload:
-	$(PYTHON) setup.py sdist bdist_wheel upload
+	$(PYTHON) setup.py sdist bdist_wheel
+	twine upload dist/*
