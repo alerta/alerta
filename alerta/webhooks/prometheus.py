@@ -9,6 +9,7 @@ from flask_cors import cross_origin
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
+from alerta.models.severity import Severity
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
@@ -28,13 +29,13 @@ def parse_prometheus(alert, external_url):
         ends_at = parse_date(alert['endsAt'])
 
     if status == 'firing':
-        severity = labels.pop('severity', 'warning')
+        severity = Severity.from_str(labels.pop('severity', None)) or Severity.WARNING
         create_time = starts_at
     elif status == 'resolved':
-        severity = 'normal'
+        severity = Severity.NORMAL
         create_time = ends_at
     else:
-        severity = 'unknown'
+        severity = Severity.UNKNOWN
         create_time = ends_at or starts_at
 
     # labels

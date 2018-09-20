@@ -1,10 +1,10 @@
-
 from flask import jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
+from alerta.models.severity import Severity
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
@@ -16,7 +16,7 @@ def parse_riemann(alert):
         resource='{}-{}'.format(alert['host'], alert['service']),
         event=alert.get('event', alert['service']),
         environment=alert.get('environment', 'Production'),
-        severity=alert.get('state', 'unknown'),
+        severity=Severity.from_str(alert.get('state', None)) or Severity.UNKNOWN,
         service=[alert['service']],
         group=alert.get('group', 'Performance'),
         text=alert.get('description', None),

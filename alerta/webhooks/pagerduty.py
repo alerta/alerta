@@ -5,6 +5,7 @@ from flask_cors import cross_origin
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
+from alerta.models.enums import Status
 
 from . import webhooks
 
@@ -17,40 +18,38 @@ def parse_pagerduty(message):
         html_url = message['data']['incident']['html_url']
         incident_url = '<a href="{}">#{}</a>'.format(html_url, incident_number)
 
-        from alerta.models import status_code
-
         if message['type'] == 'incident.trigger':
-            status = status_code.OPEN
+            status = Status.OPEN
             user = message['data']['incident']['assigned_to_user']['name']
             text = 'Incident {} assigned to {}'.format(incident_url, user)
         elif message['type'] == 'incident.acknowledge':
-            status = status_code.ACK
+            status = Status.ACK
             user = message['data']['incident']['assigned_to_user']['name']
             text = 'Incident {} acknowledged by {}'.format(incident_url, user)
         elif message['type'] == 'incident.unacknowledge':
-            status = status_code.OPEN
+            status = Status.OPEN
             text = 'Incident %s unacknowledged due to timeout' % incident_url
         elif message['type'] == 'incident.resolve':
-            status = status_code.CLOSED
+            status = Status.CLOSED
             if message['data']['incident']['resolved_by_user']:
                 user = message['data']['incident']['resolved_by_user']['name']
             else:
                 user = 'n/a'
             text = 'Incident {} resolved by {}'.format(incident_url, user)
         elif message['type'] == 'incident.assign':
-            status = status_code.ASSIGN
+            status = Status.ASSIGN
             user = message['data']['incident']['assigned_to_user']['name']
             text = 'Incident {} manually assigned to {}'.format(incident_url, user)
         elif message['type'] == 'incident.escalate':
-            status = status_code.OPEN
+            status = Status.OPEN
             user = message['data']['incident']['assigned_to_user']['name']
             text = 'Incident {} escalated to {}'.format(incident_url, user)
         elif message['type'] == 'incident.delegate':
-            status = status_code.OPEN
+            status = Status.OPEN
             user = message['data']['incident']['assigned_to_user']['name']
             text = 'Incident {} reassigned due to escalation to {}'.format(incident_url, user)
         else:
-            status = status_code.UNKNOWN
+            status = Status.UNKNOWN
             text = message['type']
     except Exception:
         raise ValueError

@@ -1,8 +1,8 @@
-
 from flask import Blueprint, request, jsonify, current_app
 
 from alerta.exceptions import ApiError
 from alerta.utils.api import absolute_url
+from alerta.app import alarm
 
 api = Blueprint('api', __name__)
 
@@ -37,8 +37,8 @@ def config():
     return jsonify({
         'endpoint': absolute_url().rstrip('/'),  # FIXME - shouldn't need to rstrip()
         'auth_required': current_app.config['AUTH_REQUIRED'],
-        'customer_views': current_app.config['CUSTOMER_VIEWS'],
         'provider': current_app.config['AUTH_PROVIDER'],
+        'customer_views': current_app.config['CUSTOMER_VIEWS'],
         'signup_enabled': current_app.config['SIGNUP_ENABLED'],
         'client_id': current_app.config['OAUTH2_CLIENT_ID'],
         'github_url': current_app.config['GITHUB_URL'],
@@ -46,8 +46,9 @@ def config():
         'keycloak_url': current_app.config['KEYCLOAK_URL'],
         'keycloak_realm': current_app.config['KEYCLOAK_REALM'],
         'pingfederate_url': current_app.config['PINGFEDERATE_URL'],
-        'colors': current_app.config['COLOR_MAP'],
+        'alarm_model': alarm.get_config(),
         'severity': current_app.config['SEVERITY_MAP'],
+        'colors': current_app.config['COLOR_MAP'],
         'dates': {
             'shortTime': 'shortTime',  # 1:39 PM
             'mediumDate': 'medium',  # Apr 26, 2016 1:39:44 PM

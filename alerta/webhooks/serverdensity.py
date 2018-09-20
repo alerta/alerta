@@ -5,6 +5,7 @@ from flask_cors import cross_origin
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
+from alerta.models.severity import Severity
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
@@ -13,9 +14,9 @@ from . import webhooks
 def parse_serverdensity(alert):
 
     if alert['fixed']:
-        severity = 'ok'
+        severity = Severity.OK
     else:
-        severity = 'critical'
+        severity = Severity.CRITICAL
 
     return Alert(
         resource=alert['item_name'],

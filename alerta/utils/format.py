@@ -1,5 +1,6 @@
 
 import datetime
+from enum import Enum
 
 import six
 from bson import ObjectId
@@ -9,12 +10,15 @@ from flask import json
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, o):
         from alerta.models.alert import Alert, History
+
         if isinstance(o, (datetime.date, datetime.datetime)):
             return o.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + '.%03dZ' % (o.microsecond // 1000)
         elif isinstance(o, datetime.timedelta):
             return int(o.total_seconds())
         elif isinstance(o, (Alert, History)):
             return o.serialize
+        elif isinstance(o, Enum):
+            return o.value
         elif isinstance(o, ObjectId):
             return str(o)
         else:

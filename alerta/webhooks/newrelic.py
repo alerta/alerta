@@ -1,10 +1,11 @@
-
 from flask import jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
+from alerta.models.enums import Status
+from alerta.models.severity import Severity
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
@@ -15,20 +16,18 @@ def parse_newrelic(alert):
     if 'version' not in alert:
         raise ValueError('New Relic Legacy Alerting is not supported')
 
-    status = alert['current_state'].lower()
-    if status == 'open':
-        severity = alert['severity'].lower()
-    elif status == 'acknowledged':
-        severity = alert['severity'].lower()
-        status = 'ack'
+    status = Status.from_str(alert['current_state'])
+    severity = Severity.from_str(alert['severity'])
+
+    if status == 'acknowledged':
+        status = Status.ACK
     elif status == 'closed':
-        severity = 'ok'
+        severity = Severity.OK
     elif alert['severity'].lower() == 'info':
-        severity = 'informational'
-        status = 'open'
+        severity = Severity.INFORMATIONAL
+        status = Status.OPEN
     else:
-        severity = alert['severity'].lower()
-        status = 'open'
+        status = Status.OPEN
 
     attributes = dict()
     if 'incident_url' in alert:

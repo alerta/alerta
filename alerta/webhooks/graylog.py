@@ -1,10 +1,10 @@
-
 from flask import jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
+from alerta.models.severity import Severity
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
@@ -17,7 +17,7 @@ def parse_graylog(alert):
         event='Alert',
         environment='Development',
         service=['test'],
-        severity='critical',
+        severity=Severity.CRITICAL,
         value='n/a',
         text=alert['check_result']['result_description'],
         attributes={'checkId': alert['check_result']['triggered_condition']['id']},
@@ -45,7 +45,7 @@ def graylog():
     if request.args.get('service', None):
         incomingAlert.service = request.args.get('service').split(',')
     if request.args.get('severity', None):
-        incomingAlert.severity = request.args.get('severity')
+        incomingAlert.severity = Severity.from_str(request.args.get('severity'))
 
     incomingAlert.customer = assign_customer(wanted=incomingAlert.customer)
     add_remote_ip(request, incomingAlert)

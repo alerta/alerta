@@ -1,6 +1,8 @@
 
 from datetime import datetime
 
+from alerta.models.enums import Status
+from alerta.models.severity import Severity
 from alerta.utils.api import absolute_url
 
 
@@ -39,8 +41,8 @@ class History:
         return History(
             id=doc.get('id', None),
             event=doc.get('event'),
-            severity=doc.get('severity', None),
-            status=doc.get('status', None),
+            severity=Severity.from_str(doc.get('severity', None)),
+            status=Status.from_str(doc.get('status', None)),
             value=doc.get('value', None),
             text=doc.get('text', None),
             change_type=doc.get('type', None),
@@ -52,8 +54,8 @@ class History:
         return History(
             id=rec.id,
             event=rec.event,
-            severity=rec.severity,
-            status=rec.status,
+            severity=Severity.from_str(rec.severity),
+            status=Status.from_str(rec.status),
             value=rec.value,
             text=rec.text,
             change_type=rec.type,

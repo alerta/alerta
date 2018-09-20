@@ -9,6 +9,7 @@ from alerta.auth.decorators import permission
 from alerta.exceptions import (ApiError, BlackoutPeriod, RateLimit,
                                RejectException)
 from alerta.models.alert import Alert
+from alerta.models.enums import Action, Status
 from alerta.models.metrics import Timer, timer
 from alerta.models.switch import Switch
 from alerta.utils.api import (add_remote_ip, assign_customer, jsonp,
@@ -81,7 +82,7 @@ def get_alert(alert_id):
 @timer(status_timer)
 @jsonp
 def set_status(alert_id):
-    status = request.json.get('status', None)
+    status = Status(request.json.get('status', None))
     text = request.json.get('text', '')
     timeout = request.json.get('timeout', None)
 
@@ -114,7 +115,7 @@ def set_status(alert_id):
 @timer(status_timer)
 @jsonp
 def action_alert(alert_id):
-    action = request.json.get('action', None)
+    action = Action(request.json.get('action'))
     text = request.json.get('text', '%s operator action' % action)
     timeout = request.json.get('timeout', None)
 
@@ -128,7 +129,7 @@ def action_alert(alert_id):
         raise ApiError('not found', 404)
 
     try:
-        severity, status = process_action(alert, action)
+        severity, status = process_action(alert, action, text)
         alert, status, text = process_status(alert, status, text)
     except RejectException as e:
         raise ApiError(str(e), 400)

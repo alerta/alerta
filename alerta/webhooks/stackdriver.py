@@ -7,6 +7,8 @@ from flask_cors import cross_origin
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
+from alerta.models.enums import Status
+from alerta.models.severity import Severity
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
@@ -18,19 +20,19 @@ def parse_stackdriver(notification):
     state = incident['state']
 
     if state == 'open':
-        severity = 'critical'
+        severity = Severity.CRITICAL
         status = None
         create_time = datetime.fromtimestamp(incident['started_at'])
     elif state == 'acknowledged':
-        severity = 'critical'
-        status = 'ack'
+        severity = Severity.CRITICAL
+        status = Status.ACK
         create_time = None
     elif state == 'closed':
-        severity = 'ok'
+        severity = Severity.OK
         status = None
         create_time = datetime.fromtimestamp(incident['ended_at'])
     else:
-        severity = 'indeterminate'
+        severity = Severity.INDETERMINATE
         status = None
         create_time = None
 

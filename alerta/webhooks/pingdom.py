@@ -1,10 +1,10 @@
-
 from flask import jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
+from alerta.models.severity import Severity
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
@@ -40,12 +40,12 @@ from . import webhooks
 def parse_pingdom(check):
 
     if check['importance_level'] == 'HIGH':
-        severity = 'critical'
+        severity = Severity.CRITICAL
     else:
-        severity = 'warning'
+        severity = Severity.WARNING
 
     if check['current_state'] == 'UP':
-        severity = 'normal'
+        severity = Severity.NORMAL
 
     return Alert(
         resource=check['check_name'],
