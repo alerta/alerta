@@ -1,4 +1,5 @@
 import datetime
+import os
 import time
 
 from flask import (Response, current_app, jsonify, render_template, request,
@@ -70,6 +71,9 @@ def manifest():
 def properties():
 
     properties = ''
+
+    for k, v in os.environ.items():
+        properties += '{}: {}\n'.format(k, v)
 
     for k, v in current_app.__dict__.items():
         properties += '{}: {}\n'.format(k, v)
