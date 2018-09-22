@@ -55,7 +55,7 @@ class Mailer:
                 mx.set_debuglevel(True)
             mx.ehlo()
 
-            if self.smtp_starttls:
+            if not self.smtp_use_ssl and self.smtp_starttls:
                 mx.starttls()
 
             if self.smtp_password:
