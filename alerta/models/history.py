@@ -110,10 +110,12 @@ class RichHistory:
 
         if self.severity:
             data['severity'] = self.severity
-            data['value'] = self.value
 
         if self.status:
             data['status'] = self.status
+
+        if self.value:
+            data['value'] = self.value
 
         return data
 
