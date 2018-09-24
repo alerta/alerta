@@ -53,6 +53,8 @@ class Heartbeat:
             raise ValueError('tags must be a list')
         if not isinstance(json.get('timeout') if json.get('timeout', None) is not None else 0, int):
             raise ValueError('timeout must be an integer')
+        if json.get('customer', None) == '':
+            raise ValueError('customer must not be an empty string')
 
         return Heartbeat(
             origin=json.get('origin', None),
