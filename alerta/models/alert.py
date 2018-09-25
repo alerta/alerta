@@ -403,6 +403,26 @@ class Alert:
     def delete(self) -> bool:
         return db.delete_alert(self.id)
 
+    # bulk tag
+    @staticmethod
+    def tag_find_all(query, tags):
+        return db.tag_alerts(query, tags)
+
+    # bulk untag
+    @staticmethod
+    def untag_find_all(query, tags):
+        return db.untag_alerts(query, tags)
+
+    # bulk update attributes
+    @staticmethod
+    def update_attributes_find_all(query, attributes):
+        return db.update_attributes_by_query(query, attributes)
+
+    # bulk delete
+    @staticmethod
+    def delete_find_all(query=None):
+        return db.delete_alerts(query)
+
     # search alerts
     @staticmethod
     def find_all(query: Query=None, page: int=1, page_size: int=1000) -> List['Alert']:
