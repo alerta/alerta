@@ -1,5 +1,6 @@
 
 import datetime
+import traceback
 
 import six
 from bson import ObjectId
@@ -17,6 +18,8 @@ class CustomJSONEncoder(json.JSONEncoder):
             return o.serialize
         elif isinstance(o, ObjectId):
             return str(o)
+        elif isinstance(o, Exception):
+            return traceback.format_exception_only(o.__class__, o)
         else:
             return json.JSONEncoder.default(self, o)
 

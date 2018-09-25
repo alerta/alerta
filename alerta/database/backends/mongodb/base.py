@@ -389,15 +389,15 @@ class Backend(Database):
         response = g.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$pullAll': {'tags': tags}})
         return response.matched_count > 0
 
-    def update_attributes(self, id, old_attrs, new_attrs):
+    def update_attributes(self, id, attributes):
         """
         Set all attributes (including private attributes) and unset attributes by using a value of 'null'.
         """
         update = dict()
-        set_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is not None}
+        set_value = {'attributes.' + k: v for k, v in attributes.items() if v is not None}
         if set_value:
             update['$set'] = set_value
-        unset_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is None}
+        unset_value = {'attributes.' + k: v for k, v in attributes.items() if v is None}
         if unset_value:
             update['$unset'] = unset_value
 
@@ -407,6 +407,40 @@ class Backend(Database):
     def delete_alert(self, id):
         response = g.db.alerts.delete_one({'_id': {'$regex': '^' + id}})
         return True if response.deleted_count == 1 else False
+
+    # BULK
+
+    def tag_alerts(self, query=None, tags=None):
+        query = query or Query()
+        updated = list(g.db.alerts.find(query.where, projection={'_id': 1}))
+        response = g.db.alerts.update(query.where, {'$addToSet': {'tags': {'$each': tags}}})
+        return updated if response['n'] else []
+
+    def untag_alerts(self, query=None, tags=None):
+        query = query or Query()
+        updated = list(g.db.alerts.find(query.where, projection={'_id': 1}))
+        response = g.db.alerts.update(query.where, {'$pullAll': {'tags': tags}})
+        return updated if response['n'] else []
+
+    def update_attributes_by_query(self, query=None, attributes=None):
+        query = query or Query()
+        update = dict()
+        set_value = {'attributes.' + k: v for k, v in attributes.items() if v is not None}
+        if set_value:
+            update['$set'] = set_value
+        unset_value = {'attributes.' + k: v for k, v in attributes.items() if v is None}
+        if unset_value:
+            update['$unset'] = unset_value
+
+        updated = list(g.db.alerts.find(query.where, projection={'_id': 1}))
+        response = g.db.alerts.update_many(query.where, update=update)
+        return updated if response.matched_count > 0 else []
+
+    def delete_alerts(self, query=None):
+        query = query or Query()
+        deleted = list(g.db.alerts.find(query.where, projection={'_id': 1}))
+        response = g.db.alerts.remove(query.where)
+        return deleted if response['n'] else []
 
     # SEARCH & HISTORY
 

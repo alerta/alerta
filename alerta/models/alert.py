@@ -391,11 +391,31 @@ class Alert:
 
     # update alert attributes
     def update_attributes(self, attributes):
-        return db.update_attributes(self.id, self.attributes, attributes)
+        return db.update_attributes(self.id, attributes)
 
     # delete an alert
     def delete(self):
         return db.delete_alert(self.id)
+
+    # bulk tag
+    @staticmethod
+    def tag_find_all(query, tags):
+        return db.tag_alerts(query, tags)
+
+    # bulk untag
+    @staticmethod
+    def untag_find_all(query, tags):
+        return db.untag_alerts(query, tags)
+
+    # bulk update attributes
+    @staticmethod
+    def update_attributes_find_all(query, attributes):
+        return db.update_attributes_by_query(query, attributes)
+
+    # bulk delete
+    @staticmethod
+    def delete_find_all(query=None):
+        return db.delete_alerts(query)
 
     # search alerts
     @staticmethod
