@@ -155,25 +155,25 @@ class Database(Base):
     def get_counts_by_status(self, query=None):
         raise NotImplementedError
 
-    def get_topn_count(self, query, group='event', topn=10):
+    def get_topn_count(self, query, group='event', topn=100):
         raise NotImplementedError
 
-    def get_topn_flapping(self, query, group='event', topn=10):
+    def get_topn_flapping(self, query, group='event', topn=100):
         raise NotImplementedError
 
     # ENVIRONMENTS
 
-    def get_environments(self, query=None, topn=100):
+    def get_environments(self, query=None, topn=1000):
         raise NotImplementedError
 
     # SERVICES
 
-    def get_services(self, query=None, topn=100):
+    def get_services(self, query=None, topn=1000):
         raise NotImplementedError
 
     # TAGS
 
-    def get_tags(self, query=None, topn=100):
+    def get_tags(self, query=None, topn=1000):
         raise NotImplementedError
 
     # BLACKOUTS
