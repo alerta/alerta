@@ -399,12 +399,12 @@ class Alert:
 
     # search alerts
     @staticmethod
-    def find_all(query=None, page=1, page_size=100):
+    def find_all(query=None, page=1, page_size=1000):
         return [Alert.from_db(alert) for alert in db.get_alerts(query, page, page_size)]
 
     # list alert history
     @staticmethod
-    def get_history(query=None, page=1, page_size=100):
+    def get_history(query=None, page=1, page_size=1000):
         return [RichHistory.from_db(hist) for hist in db.get_history(query, page, page_size)]
 
     # get total count
@@ -425,17 +425,17 @@ class Alert:
     # top 10 alerts
     @staticmethod
     def get_top10_count(query=None):
-        return db.get_topn_count(query)
+        return db.get_topn_count(query, topn=10)
 
     # top 10 flapping
     @staticmethod
     def get_top10_flapping(query=None):
-        return db.get_topn_flapping(query)
+        return db.get_topn_flapping(query, topn=10)
 
     # top 10 standing
     @staticmethod
     def get_top10_standing(query=None):
-        return db.get_topn_standing(query)
+        return db.get_topn_standing(query, topn=10)
 
     # get environments
     @staticmethod
