@@ -1006,16 +1006,6 @@ class Backend(Database):
         g.db.commit()
         return cursor.fetchone() if returning else None
 
-    def _updateall(self, query, vars, returning=False):
-        """
-        Update, with optional return.
-        """
-        cursor = g.db.cursor()
-        self._log(cursor, query, vars)
-        cursor.execute(query, vars)
-        g.db.commit()
-        return cursor.fetchall() if returning else None
-
     def _upsert(self, query, vars):
         """
         Insert or update, with return.
@@ -1032,10 +1022,28 @@ class Backend(Database):
         g.db.commit()
         return cursor.fetchone() if returning else None
 
-    def _deleteall(self, query, vars, returning=False):
+    # BULK SQL HELPERS
+
+    def _updateall(self, query, vars, limit=None, returning=False):
+        """
+        Update, with optional return.
+        """
+        if limit is None:
+            limit = current_app.config['BULK_QUERY_LIMIT']
+        query += ' LIMIT %s OFFSET %s''' % (limit, 0)
+        cursor = g.db.cursor()
+        self._log(cursor, query, vars)
+        cursor.execute(query, vars)
+        g.db.commit()
+        return cursor.fetchall() if returning else None
+
+    def _deleteall(self, query, vars, limit=None, returning=False):
         """
         Delete multiple rows, with optional return.
         """
+        if limit is None:
+            limit = current_app.config['BULK_QUERY_LIMIT']
+        query += ' LIMIT %s OFFSET %s''' % (limit, 0)
         cursor = g.db.cursor()
         self._log(cursor, query, vars)
         cursor.execute(query, vars)
