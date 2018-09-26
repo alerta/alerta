@@ -498,7 +498,7 @@ class Backend(Database):
         query = query or Query()
         return self.get_counts(query, group='status')
 
-    def get_topn_count(self, query=None, group='event', topn=10):
+    def get_topn_count(self, query=None, group='event', topn=100):
         query = query or Query()
         pipeline = [
             {'$match': query.where},
@@ -533,7 +533,7 @@ class Backend(Database):
             )
         return top
 
-    def get_topn_flapping(self, query=None, group='event', topn=10):
+    def get_topn_flapping(self, query=None, group='event', topn=100):
         query = query or Query()
         pipeline = [
             {'$match': query.where},
@@ -570,7 +570,7 @@ class Backend(Database):
             )
         return top
 
-    def get_topn_standing(self, query=None, group='event', topn=10):
+    def get_topn_standing(self, query=None, group='event', topn=100):
         query = query or Query()
         pipeline = [
             {'$match': query.where},
@@ -607,7 +607,7 @@ class Backend(Database):
 
     # ENVIRONMENTS
 
-    def get_environments(self, query=None, topn=100):
+    def get_environments(self, query=None, topn=1000):
         query = query or Query()
         pipeline = [
             {'$match': query.where},
@@ -629,7 +629,7 @@ class Backend(Database):
 
     # SERVICES
 
-    def get_services(self, query=None, topn=100):
+    def get_services(self, query=None, topn=1000):
         query = query or Query()
         pipeline = [
             {'$unwind': '$service'},
@@ -653,7 +653,7 @@ class Backend(Database):
 
     # TAGS
 
-    def get_tags(self, query=None, topn=100):
+    def get_tags(self, query=None, topn=1000):
         query = query or Query()
         pipeline = [
             {'$unwind': '$tags'},

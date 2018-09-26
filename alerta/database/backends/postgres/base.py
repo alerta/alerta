@@ -397,7 +397,7 @@ class Backend(Database):
         """.format(where=query.where)
         return {s.status: s.count for s in self._fetchall(select, query.vars)}
 
-    def get_topn_count(self, query=None, group='event', topn=10):
+    def get_topn_count(self, query=None, group='event', topn=100):
         query = query or Query()
         select = """
             SELECT event, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
@@ -419,7 +419,7 @@ class Backend(Database):
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
-    def get_topn_flapping(self, query=None, group='event', topn=10):
+    def get_topn_flapping(self, query=None, group='event', topn=100):
         query = query or Query()
         select = """
             WITH topn AS (SELECT * FROM alerts WHERE {where})
@@ -442,7 +442,7 @@ class Backend(Database):
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
-    def get_topn_standing(self, query=None, group='event', topn=10):
+    def get_topn_standing(self, query=None, group='event', topn=100):
         query = query or Query()
         select = """
             WITH topn AS (SELECT * FROM alerts WHERE {where})
@@ -468,7 +468,7 @@ class Backend(Database):
 
     # ENVIRONMENTS
 
-    def get_environments(self, query=None, topn=100):
+    def get_environments(self, query=None, topn=1000):
         query = query or Query()
         select = """
             SELECT environment, count(1) FROM alerts
@@ -479,7 +479,7 @@ class Backend(Database):
 
     # SERVICES
 
-    def get_services(self, query=None, topn=100):
+    def get_services(self, query=None, topn=1000):
         query = query or Query()
         select = """
             SELECT environment, svc, count(1) FROM alerts, UNNEST(service) svc
@@ -490,7 +490,7 @@ class Backend(Database):
 
     # SERVICES
 
-    def get_tags(self, query=None, topn=100):
+    def get_tags(self, query=None, topn=1000):
         query = query or Query()
         select = """
             SELECT environment, tag, count(1) FROM alerts, UNNEST(tags) tag
