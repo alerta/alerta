@@ -357,7 +357,7 @@ class Alert:
 
     # set alert status
     def set_status(self, status, text='', timeout=None):
-        self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
+        timeout = timeout or current_app.config['ALERT_TIMEOUT']
         history = History(
             id=self.id,
             event=self.event,
