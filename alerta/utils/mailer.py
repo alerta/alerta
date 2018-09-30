@@ -4,6 +4,7 @@ from flask import current_app
 try:
     import smtplib
     import socket
+    import ssl
 
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
@@ -45,24 +46,29 @@ class Mailer:
         msg.attach(msg_text)
 
         try:
+            # Create ssl context
+            ctx = ssl.create_default_context()
+            if self.ssl_key_file and self.ssl_cert_file:
+                # Load client certificates
+                ctx.load_cert_chain(certfile=self.ssl_cert_file, keyfile=self.ssl_key_file)
+
             if self.smtp_use_ssl:
                 mx = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, local_hostname=self.mail_localhost,
-                                      keyfile=self.ssl_key_file, certfile=self.ssl_cert_file)
+                                      context=ctx)
             else:
                 mx = smtplib.SMTP(self.smtp_host, self.smtp_port, local_hostname=self.mail_localhost)
 
             if current_app.debug:
                 mx.set_debuglevel(True)
-            mx.ehlo()
 
             if self.smtp_starttls:
-                mx.starttls()
+                mx.starttls(context=ctx)
 
-            if self.smtp_password:
+            if self.smtp_username and self.smtp_password:
                 mx.login(self.smtp_username, self.smtp_password)
 
             mx.sendmail(self.mail_from, [email], msg.as_string())
-            mx.close()
+            mx.quit()
 
         except smtplib.SMTPException as e:
             current_app.logger.error('Failed to send email : %s', str(e))
