@@ -1,3 +1,4 @@
+
 from flask import jsonify, request
 from flask_cors import cross_origin
 
@@ -6,11 +7,22 @@ from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
 from alerta.models.metrics import timer
-from alerta.utils.api import jsonp, process_action, process_status
-from alerta.views.alerts import (attrs_timer, delete_timer, status_timer,
-                                 tag_timer)
+from alerta.utils.api import absolute_url, jsonp, process_status
+from alerta.views.alerts import attrs_timer, delete_timer, status_timer, tag_timer
+from alerta.utils.tasks import action_alerts
 
 from . import api
+
+
+@api.route('/_bulk/task/<task_id>', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission('read:alerts')
+@timer(status_timer)
+@jsonp
+def task_status(task_id):
+    task = action_alerts.AsyncResult(task_id)
+
+    return jsonify(status=task.status.lower(), id=task.id)
 
 
 @api.route('/_bulk/alerts/status', methods=['OPTIONS', 'PUT'])
@@ -72,26 +84,9 @@ def bulk_action_alert():
     if not alerts:
         raise ApiError('not found', 404)
 
-    updated = []
-    errors = []
-    for alert in alerts:
-        try:
-            severity, status = process_action(alert, action)
-            alert, status, text = process_status(alert, status, text)
-        except RejectException as e:
-            errors.append(str(e))
-            continue
-        except Exception as e:
-            errors.append(str(e))
-            continue
+    task = action_alerts.delay(alerts, action, text, timeout)
 
-        if alert.set_severity_and_status(severity, status, text, timeout):
-            updated.append(alert.id)
-
-    if errors:
-        raise ApiError('failed to bulk action alerts', 500, errors=errors)
-    else:
-        return jsonify(status='ok', updated=updated, count=len(updated))
+    return jsonify(status='ok', message='{} alerts queued for action'.format(len(alerts))), 202, {'Location': absolute_url('/_bulk/task/' + task.id)}
 
 
 @api.route('/_bulk/alerts/tag', methods=['OPTIONS', 'PUT'])

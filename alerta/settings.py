@@ -39,6 +39,12 @@ DATABASE_URL = MONGO_URI  # default: MongoDB
 DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
 DATABASE_RAISE_ON_ERROR = MONGO_RAISE_ON_ERROR  # True - terminate, False - ignore and continue
 
+CELERY_BROKER_URL = None
+CELERY_RESULT_BACKEND = None
+CELERY_ACCEPT_CONTENT = ['customjson']
+CELERY_TASK_SERIALIZER = 'customjson'
+CELERY_RESULT_SERIALIZER = 'customjson'
+
 AUTH_REQUIRED = False
 AUTH_PROVIDER = 'basic'  # basic (default), github, gitlab, google, keycloak, pingfederate, saml2
 ADMIN_USERS = []  # type: List[str]
