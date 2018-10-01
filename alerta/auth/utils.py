@@ -80,7 +80,7 @@ def send_confirmation(user):
            '{url}\n\n' \
            'You\'re receiving this email because you recently created a new Alerta account.' \
            ' If this wasn\'t you, please ignore this email.'.format(
-               name=user.name, email=user.email, url=urljoin(request.referrer, '/#/confirm/' + token)
+               name=user.name, email=user.email, url=urljoin(request.referrer, '#/confirm/' + token)
            )
     mailer.send_email(user.email, subject, body=text)
 
@@ -94,7 +94,7 @@ def send_password_reset(user):
            '{url}\n\n' \
            'You\'re receiving this email because you asked for a password reset of an Alerta account.' \
            ' If this wasn\'t you, please ignore this email.'.format(
-               name=user.name, email=user.email, url=urljoin(request.referrer, '/#/reset/' + token)
+               name=user.name, email=user.email, url=urljoin(request.referrer, '#/reset/' + token)
            )
     mailer.send_email(user.email, subject, body=text)
 
