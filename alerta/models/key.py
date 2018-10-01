@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from alerta.app import db, key_helper, qb
+from alerta.app import db, key_helper
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 

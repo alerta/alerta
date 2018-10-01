@@ -15,6 +15,7 @@ class Config:
         app.config.update(config)
         self.setup_logging(app)
 
+
     @staticmethod
     def get_user_config():
         from flask import Config
