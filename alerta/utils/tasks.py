@@ -1,6 +1,7 @@
 
 from alerta.app import create_celery_app
 from alerta.exceptions import RejectException
+from alerta.models.alert import Alert
 from alerta.utils.api import process_action, process_status
 
 celery = create_celery_app()
@@ -10,7 +11,8 @@ celery = create_celery_app()
 def action_alerts(alerts, action, text, timeout):
     updated = []
     errors = []
-    for alert in alerts:
+    for a in alerts:
+        alert = Alert.parse(a)
         try:
             severity, status = process_action(alert, action)
             alert, status, text = process_status(alert, status, text)

@@ -72,7 +72,11 @@ def create_app(config_override=None, environment=None):
 def create_celery_app(app=None):
     register_custom_serializer()
     app = app or create_app()
-    celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+    celery = Celery(
+        app.name,
+        backend=app.config['CELERY_RESULT_BACKEND'],
+        broker=app.config['CELERY_BROKER_URL']
+    )
     celery.conf.update(app.config)
     TaskBase = celery.Task
 
@@ -84,5 +88,4 @@ def create_celery_app(app=None):
                 return TaskBase.__call__(self, *args, **kwargs)
 
     celery.Task = ContextTask
-
     return celery
