@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import psycopg2
+from flask import current_app
 from psycopg2.extensions import AsIs, adapt, register_adapter
 from psycopg2.extras import NamedTupleCursor
 
@@ -43,7 +44,20 @@ class Backend(Database):
         return conn
 
     def get_alert(self, id, customers=None):
-        print(self.conn)
-        print(self.cursor)
+        select = """
+            SELECT * FROM alerts
+             WHERE (id ~* (%(id)s) OR last_receive_id ~* (%(id)s))
+               AND {customer}
+        """.format(customer='customer=ANY(%(customers)s)' if customers else '1=1')
+        foo = self._fetchone(select, {'id': '^' + id, 'customers': customers})
+        print(foo)
+        return foo
 
-        
+    def _fetchone(self, query, vars):
+        """
+        Return none or one row.
+        """
+        cursor = self.conn.cursor()
+        current_app.logger.warning(cursor, query, vars)
+        cursor.execute(query, vars)
+        return cursor.fetchone()
