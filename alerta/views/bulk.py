@@ -8,8 +8,9 @@ from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
 from alerta.models.metrics import timer
 from alerta.utils.api import absolute_url, jsonp, process_status
-from alerta.views.alerts import attrs_timer, delete_timer, status_timer, tag_timer
 from alerta.utils.tasks import action_alerts
+from alerta.views.alerts import (attrs_timer, delete_timer, status_timer,
+                                 tag_timer)
 
 from . import api
 
@@ -79,7 +80,7 @@ def bulk_action_alert():
         raise ApiError("must supply 'action' as json data", 400)
 
     query = qb.from_params(request.args)
-    alerts = Alert.find_all(query)
+    alerts = [alert.id for alert in Alert.find_all(query)]
 
     if not alerts:
         raise ApiError('not found', 404)

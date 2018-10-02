@@ -11,8 +11,8 @@ celery = create_celery_app()
 def action_alerts(alerts, action, text, timeout):
     updated = []
     errors = []
-    for a in alerts:
-        alert = Alert.parse(a)
+    for alert_id in alerts:
+        alert = Alert.find_by_id(alert_id)
         try:
             severity, status = process_action(alert, action)
             alert, status, text = process_status(alert, status, text)
