@@ -2,8 +2,6 @@
 from importlib import import_module
 from urllib.parse import urlparse
 
-from flask import g
-
 # http://stackoverflow.com/questions/8544983/dynamically-mixin-a-base-class-to-an-instance-in-python
 
 
@@ -30,7 +28,9 @@ def load_backend(backend):
 class Database(Base):
 
     def __init__(self, app=None):
-        self.app = None
+        self.cx = None  # client/connection
+        self.db = None  # database
+
         if app is not None:
             self.init_db(app)
 
@@ -74,12 +74,11 @@ class Database(Base):
         raise NotImplementedError('Database engine has no destroy() method')
 
     def get_db(self):
-        g.db = self.connect()
+        self.connect()
 
     def teardown_db(self, exc):
-        db = getattr(g, 'db', None)
-        if db is not None:
-            self.close()
+        # self.close()
+        pass
 
     # ALERTS
 
