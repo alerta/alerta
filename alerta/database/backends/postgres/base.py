@@ -1,4 +1,5 @@
 import time
+import warnings
 from collections import namedtuple
 from datetime import datetime
 
@@ -13,6 +14,10 @@ from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 
 from .utils import Query
+
+# http://initd.org/psycopg/articles/2018/02/08/psycopg-274-released/
+warnings.filterwarnings('ignore', category=UserWarning, module='psycopg2')
+
 
 MAX_RETRIES = 5
 
