@@ -22,6 +22,7 @@ SECRET_KEY = 'changeme'
 
 QUERY_LIMIT = 1000
 DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single query
+BULK_QUERY_LIMIT = 100000  # max number of alerts for bulk endpoints
 HISTORY_LIMIT = 100  # cap the number of alert history entries
 HISTORY_ON_VALUE_CHANGE = True  # history entry for duplicate alerts if value changes
 
@@ -37,6 +38,12 @@ POSTGRES_DB = None
 DATABASE_URL = MONGO_URI  # default: MongoDB
 DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
 DATABASE_RAISE_ON_ERROR = MONGO_RAISE_ON_ERROR  # True - terminate, False - ignore and continue
+
+CELERY_BROKER_URL = None
+CELERY_RESULT_BACKEND = None
+CELERY_ACCEPT_CONTENT = ['customjson']
+CELERY_TASK_SERIALIZER = 'customjson'
+CELERY_RESULT_SERIALIZER = 'customjson'
 
 AUTH_REQUIRED = False
 AUTH_PROVIDER = 'basic'  # basic (default), github, gitlab, google, keycloak, pingfederate, saml2
