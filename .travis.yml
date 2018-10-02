@@ -16,11 +16,6 @@ services:
   - postgresql
 
 addons:
-  apt:
-    sources:
-    - mongodb-3.0-precise
-    packages:
-    - mongodb-org-server
   postgresql: "9.5"
 
 before_script:
