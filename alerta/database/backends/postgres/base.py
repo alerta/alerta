@@ -53,16 +53,16 @@ class Backend(Database):
         self.uri = uri
         self.dbname = dbname
 
-        conn = self.connect()
+        self.cx = self.db = self.connect()
         with app.open_resource('sql/schema.sql') as f:
-            conn.cursor().execute(f.read())
-            conn.commit()
+            self.db.cursor().execute(f.read())
+            self.db.commit()
 
         register_adapter(dict, Json)
         register_adapter(datetime, self._adapt_datetime)
         register_composite(
             'history',
-            conn,
+            self.db,
             globally=True
         )
         from alerta.models.alert import History

@@ -20,29 +20,28 @@ class Backend(Database):
         self.uri = uri
         self.dbname = dbname
 
-        db = self.connect()
-        self._create_indexes(db)
+        self.db = self.connect()
+        self._create_indexes()
 
     def connect(self):
-        self.client = MongoClient(self.uri)
+        self.cx = MongoClient(self.uri)
         if self.dbname:
-            return self.client[self.dbname]
+            return self.cx[self.dbname]
         else:
-            return self.client.get_default_database()
+            return self.cx.get_default_database()
 
-    @staticmethod
-    def _create_indexes(db):
-        db.alerts.create_index(
+    def _create_indexes(self):
+        self.db.alerts.create_index(
             [('environment', ASCENDING), ('customer', ASCENDING), ('resource', ASCENDING), ('event', ASCENDING)],
             unique=True
         )
-        db.alerts.create_index([('$**', TEXT)])
-        db.customers.create_index([('match', ASCENDING)], unique=True)
-        db.heartbeats.create_index([('origin', ASCENDING), ('customer', ASCENDING)], unique=True)
-        db.keys.create_index([('key', ASCENDING)], unique=True)
-        db.perms.create_index([('match', ASCENDING)], unique=True)
-        db.users.create_index([('email', ASCENDING)], unique=True)
-        db.metrics.create_index([('group', ASCENDING), ('name', ASCENDING)], unique=True)
+        self.db.alerts.create_index([('$**', TEXT)])
+        self.db.customers.create_index([('match', ASCENDING)], unique=True)
+        self.db.heartbeats.create_index([('origin', ASCENDING), ('customer', ASCENDING)], unique=True)
+        self.db.keys.create_index([('key', ASCENDING)], unique=True)
+        self.db.perms.create_index([('match', ASCENDING)], unique=True)
+        self.db.users.create_index([('email', ASCENDING)], unique=True)
+        self.db.metrics.create_index([('group', ASCENDING), ('name', ASCENDING)], unique=True)
 
     @property
     def name(self):
@@ -61,11 +60,11 @@ class Backend(Database):
         return True
 
     def close(self):
-        self.client.close()
+        self.cx.close()
 
     def destroy(self):
         db = self.connect()
-        self.client.drop_database(db.name)
+        self.cx.drop_database(db.name)
 
     # ALERTS
 

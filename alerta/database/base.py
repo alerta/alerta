@@ -30,7 +30,9 @@ def load_backend(backend):
 class Database(Base):
 
     def __init__(self, app=None):
-        self.app = None
+        self.cx = None  # client/connection
+        self.db = None  # database
+
         if app is not None:
             self.init_db(app)
 
