@@ -1,7 +1,7 @@
 
 from datetime import datetime, timedelta
 
-from flask import current_app, g
+from flask import current_app
 from pymongo import ASCENDING, TEXT, MongoClient, ReturnDocument
 from pymongo.errors import ConnectionFailure
 
@@ -45,16 +45,16 @@ class Backend(Database):
 
     @property
     def name(self):
-        return g.db.name
+        return self.db.name
 
     @property
     def version(self):
-        return g.db.client.server_info()['version']
+        return self.db.client.server_info()['version']
 
     @property
     def is_alive(self):
         try:
-            g.db.client.admin.command('ismaster')
+            self.db.client.admin.command('ismaster')
         except ConnectionFailure:
             return False
         return True
@@ -86,7 +86,7 @@ class Backend(Database):
                 }],
             'customer': alert.customer
         }
-        r = g.db.alerts.find_one(query, projection={'severity': 1, '_id': 0})
+        r = self.db.alerts.find_one(query, projection={'severity': 1, '_id': 0})
         return r['severity'] if r else None
 
     def get_status(self, alert):
@@ -106,7 +106,7 @@ class Backend(Database):
             ],
             'customer': alert.customer
         }
-        r = g.db.alerts.find_one(query, projection={'status': 1, '_id': 0})
+        r = self.db.alerts.find_one(query, projection={'status': 1, '_id': 0})
         return r['status'] if r else None
 
     def get_status_and_value(self, alert):
@@ -126,7 +126,7 @@ class Backend(Database):
             ],
             'customer': alert.customer
         }
-        r = g.db.alerts.find_one(query, projection={'status': 1, 'value': 1, '_id': 0})
+        r = self.db.alerts.find_one(query, projection={'status': 1, 'value': 1, '_id': 0})
         return (r['status'], r['value']) if r else (None, None)
 
     def is_duplicate(self, alert):
@@ -137,7 +137,7 @@ class Backend(Database):
             'severity': alert.severity,
             'customer': alert.customer
         }
-        return bool(g.db.alerts.find_one(query))
+        return bool(self.db.alerts.find_one(query))
 
     def is_correlated(self, alert):
         query = {
@@ -154,7 +154,7 @@ class Backend(Database):
                 }],
             'customer': alert.customer
         }
-        return bool(g.db.alerts.find_one(query))
+        return bool(self.db.alerts.find_one(query))
 
     def is_flapping(self, alert, window=1800, count=2):
         """
@@ -174,7 +174,7 @@ class Backend(Database):
             }},
             {'$group': {'_id': '$history.type', 'count': {'$sum': 1}}}
         ]
-        responses = g.db.alerts.aggregate(pipeline)
+        responses = self.db.alerts.aggregate(pipeline)
         for r in responses:
             if r['count'] > count:
                 return True
@@ -221,7 +221,7 @@ class Backend(Database):
                 }
             }
 
-        return g.db.alerts.find_one_and_update(
+        return self.db.alerts.find_one_and_update(
             query,
             update=update,
             return_document=ReturnDocument.AFTER
@@ -278,7 +278,7 @@ class Backend(Database):
         attributes = {'attributes.' + k: v for k, v in alert.attributes.items()}
         update['$set'].update(attributes)
 
-        return g.db.alerts.find_one_and_update(
+        return self.db.alerts.find_one_and_update(
             query,
             update=update,
             return_document=ReturnDocument.AFTER
@@ -314,7 +314,7 @@ class Backend(Database):
             'lastReceiveTime': alert.last_receive_time,
             'history': [h.serialize for h in alert.history]
         }
-        if g.db.alerts.insert_one(data).inserted_id == alert.id:
+        if self.db.alerts.insert_one(data).inserted_id == alert.id:
             return data
 
     def get_alert(self, id, customers=None):
@@ -326,7 +326,7 @@ class Backend(Database):
         if customers:
             query['customer'] = {'$in': customers}
 
-        return g.db.alerts.find_one(query)
+        return self.db.alerts.find_one(query)
 
     # STATUS, TAGS, ATTRIBUTES
 
@@ -345,7 +345,7 @@ class Backend(Database):
                 }
             }
         }
-        return g.db.alerts.find_one_and_update(
+        return self.db.alerts.find_one_and_update(
             query,
             update=update,
             projection={'history': 0},
@@ -367,7 +367,7 @@ class Backend(Database):
                 }
             }
         }
-        return g.db.alerts.find_one_and_update(
+        return self.db.alerts.find_one_and_update(
             query,
             update=update,
             projection={'history': 0},
@@ -378,14 +378,14 @@ class Backend(Database):
         """
         Append tags to tag list. Don't add same tag more than once.
         """
-        response = g.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$addToSet': {'tags': {'$each': tags}}})
+        response = self.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$addToSet': {'tags': {'$each': tags}}})
         return response.matched_count > 0
 
     def untag_alert(self, id, tags):
         """
         Remove tags from tag list.
         """
-        response = g.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$pullAll': {'tags': tags}})
+        response = self.db.alerts.update_one({'_id': {'$regex': '^' + id}}, {'$pullAll': {'tags': tags}})
         return response.matched_count > 0
 
     def update_attributes(self, id, old_attrs, new_attrs):
@@ -400,18 +400,18 @@ class Backend(Database):
         if unset_value:
             update['$unset'] = unset_value
 
-        response = g.db.alerts.update_one({'_id': {'$regex': '^' + id}}, update=update)
+        response = self.db.alerts.update_one({'_id': {'$regex': '^' + id}}, update=update)
         return response.matched_count > 0
 
     def delete_alert(self, id):
-        response = g.db.alerts.delete_one({'_id': {'$regex': '^' + id}})
+        response = self.db.alerts.delete_one({'_id': {'$regex': '^' + id}})
         return True if response.deleted_count == 1 else False
 
     # SEARCH & HISTORY
 
     def get_alerts(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return g.db.alerts.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+        return self.db.alerts.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
 
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()
@@ -438,7 +438,7 @@ class Backend(Database):
             {'$limit': page_size},
         ]
 
-        responses = g.db.alerts.aggregate(pipeline)
+        responses = self.db.alerts.aggregate(pipeline)
 
         history = list()
         for response in responses:
@@ -471,7 +471,7 @@ class Backend(Database):
         Return total number of alerts that meet the query filter.
         """
         query = query or Query()
-        return g.db.alerts.find(query.where).count()
+        return self.db.alerts.find(query.where).count()
 
     def get_counts(self, query=None, group=None):
         query = query or Query()
@@ -482,7 +482,7 @@ class Backend(Database):
             {'$project': {group: 1}},
             {'$group': {'_id': '$' + group, 'count': {'$sum': 1}}}
         ]
-        responses = g.db.alerts.aggregate(pipeline)
+        responses = self.db.alerts.aggregate(pipeline)
 
         counts = dict()
         for response in responses:
@@ -516,7 +516,7 @@ class Backend(Database):
             {'$limit': topn}
         ]
 
-        responses = g.db.alerts.aggregate(pipeline)
+        responses = self.db.alerts.aggregate(pipeline)
 
         top = list()
         for response in responses:
@@ -553,7 +553,7 @@ class Backend(Database):
             {'$limit': topn}
         ]
 
-        responses = g.db.alerts.aggregate(pipeline)
+        responses = self.db.alerts.aggregate(pipeline)
 
         top = list()
         for response in responses:
@@ -589,7 +589,7 @@ class Backend(Database):
             {'$limit': topn}
         ]
 
-        responses = g.db.alerts.aggregate(pipeline)
+        responses = self.db.alerts.aggregate(pipeline)
         top = list()
         for response in responses:
             top.append(
@@ -614,7 +614,7 @@ class Backend(Database):
             {'$group': {'_id': '$environment', 'count': {'$sum': 1}}},
             {'$limit': topn}
         ]
-        responses = g.db.alerts.aggregate(pipeline)
+        responses = self.db.alerts.aggregate(pipeline)
 
         environments = list()
         for response in responses:
@@ -637,7 +637,7 @@ class Backend(Database):
             {'$group': {'_id': {'environment': '$environment', 'service': '$service'}, 'count': {'$sum': 1}}},
             {'$limit': topn}
         ]
-        responses = g.db.alerts.aggregate(pipeline)
+        responses = self.db.alerts.aggregate(pipeline)
 
         services = list()
         for response in responses:
@@ -661,7 +661,7 @@ class Backend(Database):
             {'$limit': topn},
             {'$group': {'_id': {'environment': '$environment', 'tag': '$tags'}, 'count': {'$sum': 1}}}
         ]
-        responses = g.db.alerts.aggregate(pipeline)
+        responses = self.db.alerts.aggregate(pipeline)
 
         tags = list()
         for response in responses:
@@ -701,18 +701,18 @@ class Backend(Database):
         if blackout.customer:
             data['customer'] = blackout.customer
 
-        if g.db.blackouts.insert_one(data).inserted_id == blackout.id:
+        if self.db.blackouts.insert_one(data).inserted_id == blackout.id:
             return data
 
     def get_blackout(self, id, customer=None):
         query = {'_id': id}
         if customer:
             query['customer'] = customer
-        return g.db.blackouts.find_one(query)
+        return self.db.blackouts.find_one(query)
 
     def get_blackouts(self, query=None):
         query = query or Query()
-        return g.db.blackouts.find(query.where)
+        return self.db.blackouts.find(query.where)
 
     def is_blackout_period(self, alert):
         now = datetime.utcnow()
@@ -951,18 +951,18 @@ class Backend(Database):
 
         if current_app.config['CUSTOMER_VIEWS']:
             query['$and'].append({'$or': [{'customer': None}, {'customer': alert.customer}]})
-        if g.db.blackouts.find_one(query):
+        if self.db.blackouts.find_one(query):
             return True
         return False
 
     def delete_blackout(self, id):
-        response = g.db.blackouts.delete_one({'_id': id})
+        response = self.db.blackouts.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
 
     # HEARTBEATS
 
     def upsert_heartbeat(self, heartbeat):
-        return g.db.heartbeats.find_one_and_update(
+        return self.db.heartbeats.find_one_and_update(
             {
                 'origin': heartbeat.origin,
                 'customer': heartbeat.customer
@@ -994,14 +994,14 @@ class Backend(Database):
         if customers:
             query['customer'] = {'$in': customers}
 
-        return g.db.heartbeats.find_one(query)
+        return self.db.heartbeats.find_one(query)
 
     def get_heartbeats(self, query=None):
         query = query or Query()
-        return g.db.heartbeats.find(query.where)
+        return self.db.heartbeats.find(query.where)
 
     def delete_heartbeat(self, id):
-        response = g.db.heartbeats.delete_one({'_id': {'$regex': '^' + id}})
+        response = self.db.heartbeats.delete_one({'_id': {'$regex': '^' + id}})
         return True if response.deleted_count == 1 else False
 
     # API KEYS
@@ -1021,22 +1021,22 @@ class Backend(Database):
         if key.customer:
             data['customer'] = key.customer
 
-        if g.db.keys.insert_one(data).inserted_id == key.id:
+        if self.db.keys.insert_one(data).inserted_id == key.id:
             return data
 
     # get
     def get_key(self, key):
         query = {'$or': [{'key': key}, {'_id': key}]}
-        return g.db.keys.find_one(query)
+        return self.db.keys.find_one(query)
 
     # list
     def get_keys(self, query=None):
         query = query or Query()
-        return g.db.keys.find(query.where)
+        return self.db.keys.find(query.where)
 
     # update
     def update_key_last_used(self, key):
-        return g.db.keys.update_one(
+        return self.db.keys.update_one(
             {'$or': [{'key': key}, {'_id': key}]},
             {
                 '$set': {'lastUsedTime': datetime.utcnow()},
@@ -1047,7 +1047,7 @@ class Backend(Database):
     # delete
     def delete_key(self, key):
         query = {'$or': [{'key': key}, {'_id': key}]}
-        response = g.db.keys.delete_one(query)
+        response = self.db.keys.delete_one(query)
         return True if response.deleted_count == 1 else False
 
     # USERS
@@ -1067,44 +1067,44 @@ class Backend(Database):
             'updateTime': user.update_time,
             'email_verified': user.email_verified
         }
-        if g.db.users.insert_one(data).inserted_id == user.id:
+        if self.db.users.insert_one(data).inserted_id == user.id:
             return data
 
     # get
     def get_user(self, id):
         query = {'_id': id}
-        return g.db.users.find_one(query)
+        return self.db.users.find_one(query)
 
     # list
     def get_users(self, query=None):
         query = query or Query()
-        return g.db.users.find(query.where)
+        return self.db.users.find(query.where)
 
     def get_user_by_email(self, email):
         if not email:
             return
         query = {'$or': [{'email': email}, {'login': email}]}
-        return g.db.users.find_one(query)
+        return self.db.users.find_one(query)
 
     def get_user_by_hash(self, hash):
         query = {'hash': hash}
-        return g.db.users.find_one(query)
+        return self.db.users.find_one(query)
 
     def update_last_login(self, id):
-        return g.db.users.update_one(
+        return self.db.users.update_one(
             {'_id': id},
             update={'$set': {'lastLogin': datetime.utcnow()}}
         ).matched_count == 1
 
     def set_email_hash(self, id, hash):
-        return g.db.users.update_one(
+        return self.db.users.update_one(
             {'_id': id},
             update={'$set': {'hash': hash, 'updateTime': datetime.utcnow()}}
         ).matched_count == 1
 
     def update_user(self, id, **kwargs):
         kwargs['updateTime'] = datetime.utcnow()
-        return g.db.users.find_one_and_update(
+        return self.db.users.find_one_and_update(
             {'_id': id},
             update={'$set': kwargs},
             return_document=ReturnDocument.AFTER
@@ -1119,11 +1119,11 @@ class Backend(Database):
         if unset_value:
             update['$unset'] = unset_value
 
-        response = g.db.users.update_one({'_id': {'$regex': '^' + id}}, update=update)
+        response = self.db.users.update_one({'_id': {'$regex': '^' + id}}, update=update)
         return response.matched_count > 0
 
     def delete_user(self, id):
-        response = g.db.users.delete_one({'_id': id})
+        response = self.db.users.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
 
     # PERMISSIONS
@@ -1134,19 +1134,19 @@ class Backend(Database):
             'match': perm.match,
             'scopes': perm.scopes
         }
-        if g.db.perms.insert_one(data).inserted_id == perm.id:
+        if self.db.perms.insert_one(data).inserted_id == perm.id:
             return data
 
     def get_perm(self, id):
         query = {'_id': id}
-        return g.db.perms.find_one(query)
+        return self.db.perms.find_one(query)
 
     def get_perms(self, query=None):
         query = query or Query()
-        return g.db.perms.find(query.where)
+        return self.db.perms.find(query.where)
 
     def delete_perm(self, id):
-        response = g.db.perms.delete_one({'_id': id})
+        response = self.db.perms.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
 
     def get_scopes_by_match(self, login, matches):
@@ -1155,7 +1155,7 @@ class Backend(Database):
 
         scopes = list()
         for match in matches:
-            response = g.db.perms.find_one({'match': match}, projection={'scopes': 1, '_id': 0})
+            response = self.db.perms.find_one({'match': match}, projection={'scopes': 1, '_id': 0})
             if response:
                 scopes.extend(response['scopes'])
         return set(scopes) or current_app.config['USER_DEFAULT_SCOPES']
@@ -1168,19 +1168,19 @@ class Backend(Database):
             'match': customer.match,
             'customer': customer.customer
         }
-        if g.db.customers.insert_one(data).inserted_id == customer.id:
+        if self.db.customers.insert_one(data).inserted_id == customer.id:
             return data
 
     def get_customer(self, id):
         query = {'_id': id}
-        return g.db.customers.find_one(query)
+        return self.db.customers.find_one(query)
 
     def get_customers(self, query=None):
         query = query or Query()
-        return g.db.customers.find(query.where)
+        return self.db.customers.find(query.where)
 
     def delete_customer(self, id):
-        response = g.db.customers.delete_one({'_id': id})
+        response = self.db.customers.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
 
     def get_customers_by_match(self, login, matches):
@@ -1189,7 +1189,7 @@ class Backend(Database):
 
         customers = []
         for match in [login] + matches:
-            response = g.db.customers.find_one({'match': match}, projection={'customer': 1, '_id': 0})
+            response = self.db.customers.find_one({'match': match}, projection={'customer': 1, '_id': 0})
             if response:
                 customers.append(response['customer'])
 
@@ -1205,11 +1205,11 @@ class Backend(Database):
 
     def get_metrics(self, type=None):
         query = {'type': type} if type else {}
-        return list(g.db.metrics.find(query, {'_id': 0}))
+        return list(self.db.metrics.find(query, {'_id': 0}))
 
     def set_gauge(self, gauge):
 
-        return g.db.metrics.find_one_and_update(
+        return self.db.metrics.find_one_and_update(
             {
                 'group': gauge.group,
                 'name': gauge.name
@@ -1230,7 +1230,7 @@ class Backend(Database):
 
     def inc_counter(self, counter):
 
-        return g.db.metrics.find_one_and_update(
+        return self.db.metrics.find_one_and_update(
             {
                 'group': counter.group,
                 'name': counter.name
@@ -1250,7 +1250,7 @@ class Backend(Database):
         )['count']
 
     def update_timer(self, timer):
-        return g.db.metrics.find_one_and_update(
+        return self.db.metrics.find_one_and_update(
             {
                 'group': timer.group,
                 'name': timer.name
@@ -1275,10 +1275,10 @@ class Backend(Database):
         # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
         # and 'informational' alerts older than "info_threshold" hours
         expired_hours_ago = datetime.utcnow() - timedelta(hours=expired_threshold)
-        g.db.alerts.remove({'status': {'$in': ['closed', 'expired']}, 'lastReceiveTime': {'$lt': expired_hours_ago}})
+        self.db.alerts.remove({'status': {'$in': ['closed', 'expired']}, 'lastReceiveTime': {'$lt': expired_hours_ago}})
 
         info_hours_ago = datetime.utcnow() - timedelta(hours=info_threshold)
-        g.db.alerts.remove({'severity': 'informational', 'lastReceiveTime': {'$lt': info_hours_ago}})
+        self.db.alerts.remove({'severity': 'informational', 'lastReceiveTime': {'$lt': info_hours_ago}})
 
         # get list of alerts to be newly expired
         pipeline = [
@@ -1289,7 +1289,7 @@ class Backend(Database):
             {'$match': {'status': {'$nin': ['expired', 'shelved']}, 'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {
                 '$ne': 0}}}
         ]
-        expired = [(r['_id'], r['event'], r['lastReceiveId']) for r in g.db.alerts.aggregate(pipeline)]
+        expired = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.db.alerts.aggregate(pipeline)]
 
         # get list of alerts to be unshelved
         pipeline = [
@@ -1314,6 +1314,6 @@ class Backend(Database):
             }},
             {'$match': {'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {'$ne': 0}}}
         ]
-        unshelved = [(r['_id'], r['event'], r['lastReceiveId']) for r in g.db.alerts.aggregate(pipeline)]
+        unshelved = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.db.alerts.aggregate(pipeline)]
 
         return (expired, unshelved)
