@@ -233,6 +233,38 @@ class AuthTestCase(unittest.TestCase):
         response = self.client.delete('/customer/' + customer_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
+    def test_x_api_key(self):
+
+        self.headers = {
+            'X-API-Key': self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        payload = {
+            'user': 'rw-demo-key',
+            'type': 'read-write'
+        }
+
+        response = self.client.post('/key', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIsNotNone(data['key'], 'Failed to create read-write key')
+
+        rw_api_key = data['key']
+
+        response = self.client.post('/alert', data=json.dumps(self.alert),
+                                    content_type='application/json', headers={'X-API-Key': rw_api_key})
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.get('/alerts', headers={'X-API-Key': rw_api_key})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('total', data)
+
+        response = self.client.delete('/key/' + rw_api_key, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
     def test_basic_auth(self):
 
         # add customer mapping

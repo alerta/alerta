@@ -18,19 +18,25 @@ def permission(scope):
         @wraps(f)
         def wrapped(*args, **kwargs):
 
-            auth_header = request.headers.get('Authorization', '')
+            # API Key (Authorization: Key <key>)
+            if 'Authorization' in request.headers:
+                auth_header = request.headers['Authorization']
+                m = re.match(r'Key (\S+)', auth_header)
+                key = m.group(1) if m else None
+            # API Key (X-API-Key: <key>)
+            elif 'X-API-Key' in request.headers:
+                key = request.headers['X-API-Key']
+            # API Key (/foo?api-key=<key>)
+            else:
+                key = request.args.get('api-key', None)
 
-            # API Key
-            m = re.match(r'Key (\S+)', auth_header)
-            param = m.group(1) if m else request.args.get('api-key', None)
-
-            if param:
-                key = ApiKey.verify_key(param)
-                if not key:
-                    raise ApiError("API key parameter '%s' is invalid" % param, 401)
-                g.user = key.user
-                g.customers = [key.customer] if key.customer else []
-                g.scopes = key.scopes
+            if key:
+                key_info = ApiKey.verify_key(key)
+                if not key_info:
+                    raise ApiError("API key parameter '%s' is invalid" % key, 401)
+                g.user = key_info.user
+                g.customers = [key_info.customer] if key_info.customer else []
+                g.scopes = key_info.scopes
 
                 if not Permission.is_in_scope(scope, g.scopes):
                     raise ApiError('Missing required scope: %s' % scope, 403)
@@ -38,6 +44,7 @@ def permission(scope):
                     return f(*args, **kwargs)
 
             # Bearer Token
+            auth_header = request.headers.get('Authorization', '')
             m = re.match(r'Bearer (\S+)', auth_header)
             token = m.group(1) if m else None
 
@@ -60,6 +67,7 @@ def permission(scope):
                     return f(*args, **kwargs)
 
             # Basic Auth
+            auth_header = request.headers.get('Authorization', '')
             m = re.match(r'Basic (\S+)', auth_header)
             credentials = m.group(1) if m else None
 
