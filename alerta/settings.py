@@ -14,7 +14,7 @@ BASE_URL = ''
 
 LOGGER_NAME = 'alerta'
 LOG_FILE = None
-LOG_MAX_BYTES = 100000
+LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 LOG_BACKUP_COUNT = 2
 LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
 
@@ -113,14 +113,14 @@ COLOR_MAP = {
         'critical': 'red',
         'major': 'orange',
         'minor': 'yellow',
-        'warning': '#1E90FF',
+        'warning': 'dodgerblue',
         'indeterminate': 'lightblue',
-        'cleared': '#00CC00',
+        'cleared': '#00CC00',  # lime green
         'normal': '#00CC00',
         'ok': '#00CC00',
         'informational': '#00CC00',
-        'debug': '#7554BF',
-        'trace': '#7554BF',
+        'debug': '#9D006D',  # purple
+        'trace': '#7554BF',  # violet
         'unknown': 'silver'
     },
     'text': 'black',
@@ -140,7 +140,7 @@ SMTP_STARTTLS = False
 SMTP_USE_SSL = False
 SSL_KEY_FILE = None
 SSL_CERT_FILE = None
-MAIL_FROM = 'your@gmail.com'  # replace with valid sender address
+MAIL_FROM = ''  # replace with valid sender address eg you@gmail.com
 SMTP_USERNAME = ''  # application-specific username if different to MAIL_FROM user
 SMTP_PASSWORD = ''  # password for MAIL_FROM (or SMTP_USERNAME if used)
 
