@@ -1,0 +1,394 @@
+openapi: 3.0.0
+info:
+  title: Alerta API
+  description: monitoring system
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 6.0.0
+servers:
+  - url: https://alerta-api.herokuapp.com/
+    description: Heroku demo server for testing
+
+paths:
+  /alert:
+    post:
+      tags:
+        - Alerts
+      summary: Creates an alert.
+      description: >
+        Creates a new alert, or updates an existing alert if the
+        environment-resource-event combination already exists.
+      operationId: sendAlert
+      security:
+        - Permissions: [write_alerts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Alert'
+      responses:
+        '201':
+          description: Created
+        '202':
+          description: Accepted
+
+  /alert/{id}:
+    get:
+      tags:
+        - Alerts
+      summary: Retrieves an alert by ID.
+      description: >
+        Retrieves an alert with the given alert ID.
+      operationId: getAlert
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Alert'
+      responses:
+        '200':
+          description: An alert object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+
+        '404':
+          description: An alert with the specified ID was not found.
+        default:
+          description: Unexpected error.
+    delete:
+      tags:
+        - Alerts
+      summary: Delete an alert.
+      description: >
+        Permanently deletes an alert. It cannot be undone.
+      operationId: deleteAlert
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200':
+          description: status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /alert/{id}/status:
+    put:
+      tags:
+        - Alerts
+      summary: Set alert status.
+      description: >
+        Sets the status of an alert, and logs the status change
+        to the alert history.
+      operationId: setStatus
+      parameters:
+      - $ref: '#/components/parameters/idParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                text:
+                  type: string
+                timeout:
+                  type: integer
+      responses:
+        '200':
+          description: status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /alert/{id}/action:
+    put:
+      tags:
+        - Alerts
+      summary: Action an alert.
+      description: >
+        Takes an action against an alert which can change the
+        status or severity of the alert and logs the action to
+        the alert history.
+      operationId: action
+      parameters:
+      - $ref: '#/components/parameters/idParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                text:
+                  type: string
+                timeout:
+                  type: integer
+      responses:
+        '200':
+          description: status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /alert/{id}/tag:
+    put:
+      tags:
+        - Alerts
+      summary: Tag an alert.
+      description: >
+        Adds tag values from the set of tags for an alert.
+      operationId: tagAlert
+      parameters:
+      - $ref: '#/components/parameters/idParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /alert/{id}/untag:
+    put:
+      tags:
+        - Alerts
+      summary: Untag an alert.
+      description: >
+        Removes tag values from the set of tags for an alert.
+      operationId: untagAlert
+      parameters:
+      - $ref: '#/components/parameters/idParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /alert/{id}/attributes:
+    put:
+      tags:
+        - Alerts
+      summary: Update alert attributes.
+      description: >
+        Adds, deletes or modifies alert attributes. To
+        delete an attribute assign “null” to the attribute.
+      operationId: updateAttributes
+      parameters:
+      - $ref: '#/components/parameters/idParam'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                attributes:
+                  type: object
+      responses:
+        '200':
+          description: status.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+
+  /alerts:
+    get:
+      tags:
+        - Alerts
+      summary: Search alerts.
+      description: >
+        Find alerts using various alert attributes.
+      operationId: search
+      parameters:
+      - name: status
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+            $ref: '#/components/schemas/Status'
+        description: Filter by status.
+        required: false
+      - $ref: '#/components/parameters/pageParam'
+      - $ref: '#/components/parameters/pageSizeParam'
+      responses:
+        '200':
+          description: An array of alerts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+        default:
+          description: Unexpected error.
+
+components:
+  schemas:
+    Severity:
+      type: string
+      enum:
+        - security
+        - critical
+        - major
+        - minor
+        - warning
+        - indeterminate
+        - cleared
+        - normal
+        - ok
+        - informational
+        - debug
+        - trace
+        - unknown
+    Status:
+      type: string
+      enum:
+        - open
+        - assign
+        - ack
+        - closed
+        - expired
+        - blackout
+        - shelved
+        - unknown
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        resource:
+          type: string
+        event:
+          type: string
+        environment:
+          type: string
+        severity:
+          $ref: '#/components/schemas/Severity'
+        correlate:
+          type: array
+          items:
+            type: string
+        status:
+          $ref: '#/components/schemas/Status'
+      required:
+        - resource
+        - event
+
+    Response:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+
+  parameters:
+    idParam:
+      name: id
+      in: path
+      description: The resource ID eg. alert ID, user ID etc.
+      schema:
+        type: string
+        format: uuid
+      required: true
+    pageParam:
+      name: page
+      in: query
+      description: Page number.
+      schema:
+        type: integer
+      required: false
+    pageSizeParam:
+      name: page-size
+      in: query
+      description: Page size.
+      schema:
+        type: integer
+      required: false
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    ApiKeyQuery:
+      type: apiKey
+      in: query
+      name: api-key
+    BearerTokenAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    BasicAuth:
+      type: http
+      scheme: basic
+    Permissions:
+      type: oauth2
+      flows:
+        authorizationCode:
+          scopes:
+            read: Grants read-only access to all scopes.
+            write: Grants read/write access to all scopes.
+            admin: Grants admin, read, write and delete access to all scopes.
+            read_alerts: Read-only access to alerts.
+            write_alerts: Grants read/write access to alerts.
+            admin_alerts: Grants read, write and delete access to alerts.
+            read_blackouts: Grants read-only access to blackouts.
+            write_blackouts: Grants read/write access to blackouts.
+            read_heartbeats: Read-only access to heartbeats.
+            write_heartbeats: Grants read/write access to heartbeats.
+            admin_heartbeats: Grants read, write and delete access to heartbeats.
+            admin_users: Fully manage users.
+            admin_customers: Fully manage customers.
+            read_keys: List and view API keys.
+            write_keys: Create, list and view API keys.
+            admin_keys: Fully manage API keys.
+            write_webhooks: Grants write access to webhooks.
+            read_oembed: Grants read-only to oembed endpoints.
+            read_management: Grants read-only access to management endpoints.
+            admin_management: Fully manage management endpoints.
+            read_userinfo: Grants read-only access to userinfo.
+
+security:
+  - ApiKeyAuth: []
+  - ApiKeyQuery: []
+  - BearerTokenAuth: []
+  - BasicAuth: []
+
+# Issues
+# 1. scopes only seem to be supported if using OAuth2
