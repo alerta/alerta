@@ -1,3 +1,4 @@
+from typing import Any, Dict
 
 import jwt
 from flask import current_app, request
@@ -9,7 +10,7 @@ class Jwt:
     JSON Web Token (JWT): https://tools.ietf.org/html/rfc7519
     """
 
-    def __init__(self, iss, sub, aud, exp, nbf, iat, jti=None, **kwargs):
+    def __init__(self, iss: str, sub: str, aud: str, exp: str, nbf: str, iat: str, jti: str=None, **kwargs) -> None:
 
         self.issuer = iss
         self.subject = sub
@@ -31,7 +32,7 @@ class Jwt:
         self.customers = kwargs.get('customers', None)
 
     @classmethod
-    def parse(cls, token, key=None, verify=True, algorithm='HS256'):
+    def parse(cls, token: str, key: str=None, verify: bool=True, algorithm: str='HS256') -> 'Jwt':
         try:
             json = jwt.decode(
                 token,
@@ -64,7 +65,7 @@ class Jwt:
         )
 
     @property
-    def serialize(self):
+    def serialize(self) -> Dict[str, Any]:
         data = {
             'iss': self.issuer,
             'sub': self.subject,
@@ -98,11 +99,11 @@ class Jwt:
         return data
 
     @property
-    def tokenize(self):
+    def tokenize(self) -> str:
         token = jwt.encode(self.serialize, key=current_app.config['SECRET_KEY'])
         return token.decode('unicode_escape')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Jwt(iss={!r}, sub={!r}, aud={!r}, exp={!r}, name={!r}, preferred_username={!r}, customers={!r})'.format(
             self.issuer, self.subject, self.audience, self.expiration, self.name, self.preferred_username, self.customers
         )

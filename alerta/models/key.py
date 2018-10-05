@@ -1,15 +1,19 @@
 
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from alerta.app import db, key_helper, qb
+from alerta.database.base import Query
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
+
+JSON = Dict[str, Any]
 
 
 class ApiKey:
 
-    def __init__(self, user, scopes, text='', expire_time=None, customer=None, **kwargs):
+    def __init__(self, user: str, scopes: List[str], text: str='', expire_time: datetime=None, customer: str=None, **kwargs) -> None:
 
         self.id = kwargs.get('id', None) or str(uuid4())
         self.key = kwargs.get('key', None) or key_helper.generate()
@@ -22,17 +26,17 @@ class ApiKey:
         self.customer = customer
 
     @property
-    def type(self):
+    def type(self) -> str:
         return key_helper.scopes_to_type(self.scopes)
 
     @classmethod
-    def parse(cls, json):
+    def parse(cls, json: JSON) -> 'ApiKey':
         if not isinstance(json.get('scopes', []), list):
             raise ValueError('scopes must be a list')
 
         api_key = ApiKey(
             user=json.get('user', None),
-            scopes=json.get('scopes', None) or list(),
+            scopes=json.get('scopes', []),
             text=json.get('text', None),
             expire_time=DateTime.parse(json.get('expireTime')),
             customer=json.get('customer', None)
@@ -43,7 +47,7 @@ class ApiKey:
         return api_key
 
     @property
-    def serialize(self):
+    def serialize(self) -> Dict[str, Any]:
         return {
             'id': self.id,
             'key': self.key,
@@ -58,12 +62,12 @@ class ApiKey:
             'customer': self.customer
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'ApiKey(key={!r}, user={!r}, scopes={!r}, expireTime={!r}, customer={!r})'.format(
             self.key, self.user, self.scopes, self.expire_time, self.customer)
 
     @classmethod
-    def from_document(cls, doc):
+    def from_document(cls, doc: Dict[str, Any]) -> 'ApiKey':
         return ApiKey(
             id=doc.get('id', None) or doc.get('_id'),
             key=doc.get('key', None) or doc.get('_id'),
@@ -78,7 +82,7 @@ class ApiKey:
         )
 
     @classmethod
-    def from_record(cls, rec):
+    def from_record(cls, rec) -> 'ApiKey':
         return ApiKey(
             id=rec.id,
             key=rec.key,
@@ -92,50 +96,49 @@ class ApiKey:
         )
 
     @classmethod
-    def from_db(cls, r):
+    def from_db(cls, r: Union[Dict, Tuple]) -> 'ApiKey':
         if isinstance(r, dict):
             return cls.from_document(r)
         elif isinstance(r, tuple):
             return cls.from_record(r)
-        else:
-            return
 
-    def create(self):
+    def create(self) -> 'ApiKey':
         """
         Create a new API key.
         """
         return ApiKey.from_db(db.create_key(self))
 
     @staticmethod
-    def find_by_id(key):
+    def find_by_id(key: str) -> Optional['ApiKey']:
         """
         Get API key details.
         """
         return ApiKey.from_db(db.get_key(key))
 
     @staticmethod
-    def find_all(query=None):
+    def find_all(query: Query=None) -> List['ApiKey']:
         """
         List all API keys.
         """
         return [ApiKey.from_db(key) for key in db.get_keys(query)]
 
     @staticmethod
-    def find_by_user(user):
+    def find_by_user(user: str) -> List['ApiKey']:
         """
         List API keys for a user.
         """
         return [ApiKey.from_db(key) for key in db.get_keys(qb.from_dict({'user': user}))]
 
-    def delete(self):
+    def delete(self) -> bool:
         """
         Delete an API key.
         """
         return db.delete_key(self.key)
 
     @staticmethod
-    def verify_key(key):
+    def verify_key(key: str) -> Optional['ApiKey']:
         key_info = ApiKey.from_db(db.get_key(key))
         if key_info and key_info.expire_time > datetime.utcnow():
             db.update_key_last_used(key)
             return key_info
+        return None

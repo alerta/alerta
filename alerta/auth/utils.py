@@ -67,13 +67,7 @@ def create_token(user_id, name, login, provider, customers, orgs=None, groups=No
     )
 
 
-def send_confirmation(user):
-    token = generate_email_token(email=user.email, salt='confirm')
-    user.set_email_hash(token)
-
-    ui_base_url = request.referrer
-    print(ui_base_url)
-
+def send_confirmation(user, token):
     subject = "[Alerta] Please verify your email '%s'" % user.email
     text = 'Hello {name}!\n\n' \
            'Please verify your email address is {email} by clicking on the link below:\n\n' \
@@ -85,10 +79,7 @@ def send_confirmation(user):
     mailer.send_email(user.email, subject, body=text)
 
 
-def send_password_reset(user):
-    token = generate_email_token(email=user.email, salt='reset')
-    user.set_email_hash(token)
-
+def send_password_reset(user, token):
     subject = '[Alerta] Reset password request'
     text = 'You forgot your password. Reset it by clicking on the link below:\n\n' \
            '{url}\n\n' \
@@ -113,7 +104,7 @@ def confirm_email_token(token, salt, expiration=900):
             max_age=expiration
         )
     except SignatureExpired as e:
-        raise ApiError('confirmation token signature has expired', 401, errors=[str(e)])
+        raise ApiError('confirmation token has expired', 401, errors=[str(e)])
     except BadData as e:
         raise ApiError('confirmation token invalid', 400, errors=[str(e)])
 

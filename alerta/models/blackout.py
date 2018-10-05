@@ -1,23 +1,27 @@
 
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from flask import current_app
 
 from alerta.app import db
+from alerta.database.base import Query
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
+
+JSON = Dict[str, Any]
 
 
 class Blackout:
 
-    def __init__(self, environment, **kwargs):
+    def __init__(self, environment: str, **kwargs) -> None:
         if not environment:
             raise ValueError('Missing mandatory value for "environment"')
 
         start_time = kwargs.get('start_time', None) or datetime.utcnow()
         if kwargs.get('end_time', None):
-            end_time = kwargs.get('end_time')
+            end_time = kwargs['end_time']
             duration = int((end_time - start_time).total_seconds())
         else:
             duration = kwargs.get('duration', None) or current_app.config['BLACKOUT_DURATION']
@@ -66,14 +70,14 @@ class Blackout:
             self.remaining = 0
 
     @classmethod
-    def parse(cls, json):
+    def parse(cls, json: JSON) -> 'Blackout':
         if not isinstance(json.get('service', []), list):
             raise ValueError('service must be a list')
         if not isinstance(json.get('tags', []), list):
             raise ValueError('tags must be a list')
 
         return Blackout(
-            environment=json.get('environment'),
+            environment=json['environment'],
             service=json.get('service', list()),
             resource=json.get('resource', None),
             event=json.get('event', None),
@@ -88,7 +92,7 @@ class Blackout:
         )
 
     @property
-    def serialize(self):
+    def serialize(self) -> Dict[str, Any]:
         return {
             'id': self.id,
             'href': absolute_url('/blackout/' + self.id),
@@ -110,7 +114,7 @@ class Blackout:
             'text': self.text
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         more = ''
         if self.service:
             more += 'service=%r, ' % self.service
@@ -137,11 +141,11 @@ class Blackout:
         )
 
     @classmethod
-    def from_document(cls, doc):
+    def from_document(cls, doc: Dict[str, Any]) -> 'Blackout':
         return Blackout(
             id=doc.get('id', None) or doc.get('_id'),
             priority=doc.get('priority', None),
-            environment=doc.get('environment'),
+            environment=doc['environment'],
             service=doc.get('service', list()),
             resource=doc.get('resource', None),
             event=doc.get('event', None),
@@ -157,7 +161,7 @@ class Blackout:
         )
 
     @classmethod
-    def from_record(cls, rec):
+    def from_record(cls, rec) -> 'Blackout':
         return Blackout(
             id=rec.id,
             priority=rec.priority,
@@ -177,26 +181,24 @@ class Blackout:
         )
 
     @classmethod
-    def from_db(cls, r):
+    def from_db(cls, r: Union[Dict, Tuple]) -> 'Blackout':
         if isinstance(r, dict):
             return cls.from_document(r)
         elif isinstance(r, tuple):
             return cls.from_record(r)
-        else:
-            return
 
     # create a blackout
-    def create(self):
+    def create(self) -> 'Blackout':
         return Blackout.from_db(db.create_blackout(self))
 
     # get a blackout
     @staticmethod
-    def find_by_id(id, customers=None):
+    def find_by_id(id: str, customers: List[str]=None) -> Optional['Blackout']:
         return Blackout.from_db(db.get_blackout(id, customers))
 
     @staticmethod
-    def find_all(query=None):
+    def find_all(query: Query=None) -> List['Blackout']:
         return [Blackout.from_db(blackout) for blackout in db.get_blackouts(query)]
 
-    def delete(self):
+    def delete(self) -> bool:
         return db.delete_blackout(self.id)
