@@ -7,7 +7,6 @@ from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
-from alerta.models.severity_code import Severity
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
@@ -15,9 +14,6 @@ from . import webhooks
 
 def parse_grafana(alert, match, args):
     alerting_severity = args.get('severity', 'major')
-    if alerting_severity not in Severity.SEVERITY_MAP:
-        raise ValueError('Invalid severity parameter, expected one of %s' % ', '.join(
-            sorted(Severity.SEVERITY_MAP)))
 
     if alert['state'] == 'alerting':
         severity = alerting_severity
