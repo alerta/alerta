@@ -40,7 +40,7 @@ def create_user():
     # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
         hash = str(uuid4())
-        send_confirmation(user, hash)
+        send_confirmation(user)
         user.set_email_hash(hash)
         raise ApiError('email not verified', 401)
 
