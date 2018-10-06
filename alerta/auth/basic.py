@@ -1,8 +1,7 @@
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
-from alerta.auth.utils import (create_token, get_customers, not_authorized,
-                               send_confirmation, send_password_reset)
+from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
 from alerta.models.user import User
 
@@ -39,7 +38,7 @@ def signup():
 
     # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
-        send_confirmation(user)
+        user.send_confirmation()
         raise ApiError('email not verified', 401)
 
     # check user is active & update last login
@@ -72,7 +71,7 @@ def login():
 
     # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
-        send_confirmation(user)
+        user.send_confirmation()
         raise ApiError('email not verified', 401)
 
     # check allowed domain
@@ -114,7 +113,7 @@ def forgot():
     if user:
         if not user.is_active:
             raise ApiError('user not active', 403)
-        send_password_reset(user)
+        user.send_password_reset()
 
         return jsonify(status='ok', message='password reset sent')
     else:

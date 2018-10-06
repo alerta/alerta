@@ -9,6 +9,7 @@ from uuid import uuid4
 from flask import current_app
 
 from alerta.app import db
+from alerta.database.base import Query
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 
@@ -129,7 +130,7 @@ class Heartbeat:
 
     # search heartbeats
     @staticmethod
-    def find_all(query=None) -> List['Heartbeat']:
+    def find_all(query: Query=None) -> List['Heartbeat']:
         return [Heartbeat.from_db(heartbeat) for heartbeat in db.get_heartbeats(query)]
 
     # delete a heartbeat
