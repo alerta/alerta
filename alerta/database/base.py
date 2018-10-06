@@ -1,10 +1,13 @@
 
 from importlib import import_module
+from typing import NamedTuple
 from urllib.parse import urlparse
 
 from flask import g
 
 # http://stackoverflow.com/questions/8544983/dynamically-mixin-a-base-class-to-an-instance-in-python
+
+Query = NamedTuple('Query', [('where', str), ('sort', str), ('group', str)])
 
 
 class Base:
@@ -244,9 +247,6 @@ class Database(Base):
     def update_last_login(self, id):
         raise NotImplementedError
 
-    def set_email_hash(self, id, hash):
-        raise NotImplementedError
-
     def update_user(self, id, **kwargs):
         raise NotImplementedError
 
@@ -254,6 +254,9 @@ class Database(Base):
         raise NotImplementedError
 
     def delete_user(self, id):
+        raise NotImplementedError
+
+    def set_email_hash(self, id, hash):
         raise NotImplementedError
 
     # PERMISSIONS

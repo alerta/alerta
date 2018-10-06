@@ -704,14 +704,6 @@ class Backend(Database):
         """
         return self._update(update, (id,))
 
-    def set_email_hash(self, id, hash):
-        update = """
-            UPDATE users
-            SET hash=%s
-            WHERE id=%s
-        """
-        return self._update(update, (hash, id))
-
     def update_user(self, id, **kwargs):
         update = """
             UPDATE users
@@ -748,9 +740,9 @@ class Backend(Database):
             UPDATE users
                SET attributes=%(attrs)s
              WHERE id=%(id)s
-            RETURNING *
+            RETURNING id
         """
-        return self._update(update, {'id': id, 'attrs': attrs}, returning=True)
+        return bool(self._update(update, {'id': id, 'attrs': attrs}, returning=True))
 
     def delete_user(self, id):
         delete = """
@@ -759,6 +751,14 @@ class Backend(Database):
             RETURNING id
         """
         return self._delete(delete, (id,), returning=True)
+
+    def set_email_hash(self, id, hash):
+        update = """
+            UPDATE users
+            SET hash=%s
+            WHERE id=%s
+        """
+        return self._update(update, (hash, id))
 
     # PERMISSIONS
 

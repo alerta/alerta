@@ -1097,12 +1097,6 @@ class Backend(Database):
             update={'$set': {'lastLogin': datetime.utcnow()}}
         ).matched_count == 1
 
-    def set_email_hash(self, id, hash):
-        return g.db.users.update_one(
-            {'_id': id},
-            update={'$set': {'hash': hash, 'updateTime': datetime.utcnow()}}
-        ).matched_count == 1
-
     def update_user(self, id, **kwargs):
         kwargs['updateTime'] = datetime.utcnow()
         return g.db.users.find_one_and_update(
@@ -1126,6 +1120,12 @@ class Backend(Database):
     def delete_user(self, id):
         response = g.db.users.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
+
+    def set_email_hash(self, id, hash):
+        return g.db.users.update_one(
+            {'_id': id},
+            update={'$set': {'hash': hash, 'updateTime': datetime.utcnow()}}
+        ).matched_count == 1
 
     # PERMISSIONS
 

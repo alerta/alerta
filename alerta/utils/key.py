@@ -3,6 +3,7 @@ import base64
 import hashlib
 import hmac
 import os
+from typing import List
 
 
 class ApiKeyHelper:
@@ -23,7 +24,7 @@ class ApiKeyHelper:
         digest = hmac.new(self.secret_key.encode('utf-8'), msg=random, digestmod=hashlib.sha256).digest()
         return base64.urlsafe_b64encode(digest).decode('utf-8')[:40]
 
-    def scopes_to_type(self, scopes):
+    def scopes_to_type(self, scopes: List[str]) -> str:
         for scope in scopes:
             if scope.startswith('write') or scope.startswith('admin'):
                 return 'read-write'
