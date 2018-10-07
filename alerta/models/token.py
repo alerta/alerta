@@ -1,8 +1,11 @@
+import datetime
 from typing import Any, Dict
 
 import jwt
 from flask import current_app, request
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
+
+dt = datetime.datetime
 
 
 class Jwt:
@@ -10,7 +13,7 @@ class Jwt:
     JSON Web Token (JWT): https://tools.ietf.org/html/rfc7519
     """
 
-    def __init__(self, iss: str, sub: str, aud: str, exp: str, nbf: str, iat: str, jti: str=None, **kwargs) -> None:
+    def __init__(self, iss: str, sub: str, aud: str, exp: dt, nbf: dt, iat: dt, jti: str=None, **kwargs) -> None:
 
         self.issuer = iss
         self.subject = sub
