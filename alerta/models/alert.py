@@ -3,19 +3,23 @@ import os
 import platform
 import sys
 from datetime import datetime
+from typing import Any, Dict, List, Tuple, Union
 from uuid import uuid4
 
 from flask import current_app
 
 from alerta.app import db, state_machine
+from alerta.database.base import Query
 from alerta.models.history import History, RichHistory
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
 
+JSON = Dict[str, Any]
+
 
 class Alert:
 
-    def __init__(self, resource, event, **kwargs):
+    def __init__(self, resource: str, event: str, **kwargs) -> None:
 
         if not resource:
             raise ValueError('Missing mandatory value for "resource"')
@@ -59,7 +63,7 @@ class Alert:
         self.history = kwargs.get('history', None) or list()
 
     @classmethod
-    def parse(cls, json):
+    def parse(cls, json: JSON) -> 'Alert':
         if not isinstance(json.get('correlate', []), list):
             raise ValueError('correlate must be a list')
         if not isinstance(json.get('service', []), list):
@@ -96,7 +100,7 @@ class Alert:
         )
 
     @property
-    def serialize(self):
+    def serialize(self) -> Dict[str, Any]:
         return {
             'id': self.id,
             'href': absolute_url('/alert/' + self.id),
@@ -128,10 +132,10 @@ class Alert:
             'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)]
         }
 
-    def get_id(self, short=False):
+    def get_id(self, short: bool=False) -> str:
         return self.id[:8] if short else self.id
 
-    def get_body(self, history=True):
+    def get_body(self, history: bool=True) -> Dict[str, Any]:
         body = self.serialize
         body.update({
             key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime']
@@ -140,12 +144,12 @@ class Alert:
             body['history'] = []
         return body
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Alert(id={!r}, environment={!r}, resource={!r}, event={!r}, severity={!r}, status={!r}, customer={!r})'.format(
             self.id, self.environment, self.resource, self.event, self.severity, self.status, self.customer)
 
     @classmethod
-    def from_document(cls, doc):
+    def from_document(cls, doc: Dict[str, Any]) -> 'Alert':
         return Alert(
             id=doc.get('id', None) or doc.get('_id'),
             resource=doc.get('resource', None),
@@ -177,7 +181,7 @@ class Alert:
         )
 
     @classmethod
-    def from_record(cls, rec):
+    def from_record(cls, rec) -> 'Alert':
         return Alert(
             id=rec.id,
             resource=rec.resource,
@@ -209,23 +213,23 @@ class Alert:
         )
 
     @classmethod
-    def from_db(cls, r):
+    def from_db(cls, r: Union[Dict, Tuple]) -> 'Alert':
         if isinstance(r, dict):
             return cls.from_document(r)
         elif isinstance(r, tuple):
             return cls.from_record(r)
 
-    def is_duplicate(self):
+    def is_duplicate(self) -> bool:
         return db.is_duplicate(self)
 
-    def is_correlated(self):
+    def is_correlated(self) -> bool:
         return db.is_correlated(self)
 
-    def is_flapping(self, window=1800, count=2):
+    def is_flapping(self, window: int=1800, count: int=2) -> bool:
         return db.is_flapping(self, window, count)
 
     # de-duplicate an alert
-    def deduplicate(self):
+    def deduplicate(self) -> 'Alert':
         now = datetime.utcnow()
 
         previous_status, previous_value = db.get_status_and_value(self)
@@ -240,6 +244,8 @@ class Alert:
         self.last_receive_id = self.id
         self.last_receive_time = now
 
+        from typing import Optional  # noqa
+
         if self.status != previous_status:
             history = History(
                 id=self.id,
@@ -248,7 +254,7 @@ class Alert:
                 text='duplicate alert with status change',
                 change_type='status',
                 update_time=self.create_time
-            )
+            )  # type: Optional[History]
         elif current_app.config['HISTORY_ON_VALUE_CHANGE'] and self.value != previous_value:
             history = History(
                 id=self.id,
@@ -263,7 +269,7 @@ class Alert:
         return Alert.from_db(db.dedup_alert(self, history))
 
     # correlate an alert
-    def update(self):
+    def update(self) -> 'Alert':
         now = datetime.utcnow()
 
         self.previous_severity = db.get_severity(self)
@@ -306,7 +312,7 @@ class Alert:
         return Alert.from_db(db.correlate_alert(self, history))
 
     # create an alert
-    def create(self):
+    def create(self) -> 'Alert':
         if self.status == state_machine.DEFAULT_STATUS:
             _, self.status = state_machine.transition(
                 previous_severity=current_app.config['DEFAULT_PREVIOUS_SEVERITY'],
@@ -345,17 +351,17 @@ class Alert:
 
     # retrieve an alert
     @staticmethod
-    def find_by_id(id, customers=None):
+    def find_by_id(id: str, customers: List[str]=None) -> 'Alert':
         return Alert.from_db(db.get_alert(id, customers))
 
-    def is_blackout(self):
+    def is_blackout(self) -> bool:
         if not current_app.config['NOTIFICATION_BLACKOUT']:
             if self.severity in current_app.config['BLACKOUT_ACCEPT']:
                 return False
         return db.is_blackout_period(self)
 
     # set alert status
-    def set_status(self, status, text='', timeout=None):
+    def set_status(self, status: str, text: str='', timeout: int=None) -> 'Alert':
         timeout = timeout or current_app.config['ALERT_TIMEOUT']
         history = History(
             id=self.id,
@@ -367,7 +373,7 @@ class Alert:
         )
         return db.set_status(self.id, status, timeout, history)
 
-    def set_severity_and_status(self, severity, status, text='', timeout=None):
+    def set_severity_and_status(self, severity: str, status: str, text: str='', timeout: int=None) -> 'Alert':
         timeout = timeout or current_app.config['ALERT_TIMEOUT']
         history = History(
             id=self.id,
@@ -381,78 +387,78 @@ class Alert:
         return db.set_severity_and_status(self.id, severity, status, timeout, history)
 
     # tag an alert
-    def tag(self, tags):
+    def tag(self, tags: List[str]) -> bool:
         return db.tag_alert(self.id, tags)
 
     # untag an alert
-    def untag(self, tags):
+    def untag(self, tags: List[str]) -> bool:
         return db.untag_alert(self.id, tags)
 
     # update alert attributes
-    def update_attributes(self, attributes):
+    def update_attributes(self, attributes: Dict[str, Any]) -> bool:
         return db.update_attributes(self.id, self.attributes, attributes)
 
     # delete an alert
-    def delete(self):
+    def delete(self) -> bool:
         return db.delete_alert(self.id)
 
     # search alerts
     @staticmethod
-    def find_all(query=None, page=1, page_size=1000):
+    def find_all(query: Query=None, page: int=1, page_size: int=1000) -> List['Alert']:
         return [Alert.from_db(alert) for alert in db.get_alerts(query, page, page_size)]
 
     # list alert history
     @staticmethod
-    def get_history(query=None, page=1, page_size=1000):
+    def get_history(query: Query=None, page=1, page_size=1000) -> List[RichHistory]:
         return [RichHistory.from_db(hist) for hist in db.get_history(query, page, page_size)]
 
     # get total count
     @staticmethod
-    def get_count(query=None):
+    def get_count(query: Query=None) -> Dict[str, Any]:
         return db.get_count(query)
 
     # get severity counts
     @staticmethod
-    def get_counts_by_severity(query=None):
+    def get_counts_by_severity(query: Query=None) -> Dict[str, Any]:
         return db.get_counts_by_severity(query)
 
     # get status counts
     @staticmethod
-    def get_counts_by_status(query=None):
+    def get_counts_by_status(query: Query=None) -> Dict[str, Any]:
         return db.get_counts_by_status(query)
 
     # top 10 alerts
     @staticmethod
-    def get_top10_count(query=None):
+    def get_top10_count(query: Query=None) -> List[Dict[str, Any]]:
         return db.get_topn_count(query, topn=10)
 
     # top 10 flapping
     @staticmethod
-    def get_top10_flapping(query=None):
+    def get_top10_flapping(query: Query=None) -> List[Dict[str, Any]]:
         return db.get_topn_flapping(query, topn=10)
 
     # top 10 standing
     @staticmethod
-    def get_top10_standing(query=None):
+    def get_top10_standing(query: Query=None) -> List[Dict[str, Any]]:
         return db.get_topn_standing(query, topn=10)
 
     # get environments
     @staticmethod
-    def get_environments(query=None):
+    def get_environments(query: Query=None) -> List[str]:
         return db.get_environments(query)
 
     # get services
     @staticmethod
-    def get_services(query=None):
+    def get_services(query: Query=None) -> List[str]:
         return db.get_services(query)
 
     # get tags
     @staticmethod
-    def get_tags(query=None):
+    def get_tags(query: Query=None) -> List[str]:
         return db.get_tags(query)
 
     @staticmethod
-    def housekeeping(expired_threshold=2, info_threshold=12):
+    def housekeeping(expired_threshold: int=2, info_threshold: int=12) -> None:
         expired, unshelved = db.housekeeping(expired_threshold, info_threshold)
 
         for (id, event, last_receive_id) in expired:
@@ -477,7 +483,7 @@ class Alert:
             )
             db.set_status(id, 'open', timeout=current_app.config['ALERT_TIMEOUT'], history=history)
 
-    def from_action(self, action, text='', timeout=None):
+    def from_action(self, action: str, text: str='', timeout: int=None) -> Tuple[str, str]:
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
         previous_status = db.get_status(self)
 
@@ -502,5 +508,5 @@ class Alert:
         return severity, status
 
     @property
-    def is_suppressed(self):
+    def is_suppressed(self) -> bool:
         return state_machine.is_suppressed(self)
