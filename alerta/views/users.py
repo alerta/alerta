@@ -6,8 +6,7 @@ from flask_cors import cross_origin
 
 from alerta.app import qb
 from alerta.auth.decorators import permission
-from alerta.auth.utils import (create_token, get_customers, not_authorized,
-                               send_confirmation)
+from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
 from alerta.models.user import User
 from alerta.utils.api import jsonp
@@ -39,9 +38,7 @@ def create_user():
 
     # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
-        hash = str(uuid4())
-        send_confirmation(user)
-        user.set_email_hash(hash)
+        user.send_confirmation()
         raise ApiError('email not verified', 401)
 
     # check user is active
