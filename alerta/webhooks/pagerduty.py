@@ -17,43 +17,41 @@ def parse_pagerduty(message):
         html_url = message['data']['incident']['html_url']
         incident_url = '<a href="{}">#{}</a>'.format(html_url, incident_number)
 
-        from alerta.models import status_code
-
         if message['type'] == 'incident.trigger':
-            status = status_code.OPEN
+            status = 'open'
             user = message['data']['incident']['assigned_to_user']['name']
             text = 'Incident {} assigned to {}'.format(incident_url, user)
         elif message['type'] == 'incident.acknowledge':
-            status = status_code.ACK
+            status = 'ack'
             user = message['data']['incident']['assigned_to_user']['name']
             text = 'Incident {} acknowledged by {}'.format(incident_url, user)
         elif message['type'] == 'incident.unacknowledge':
-            status = status_code.OPEN
+            status = 'open'
             text = 'Incident %s unacknowledged due to timeout' % incident_url
         elif message['type'] == 'incident.resolve':
-            status = status_code.CLOSED
+            status = 'closed'
             if message['data']['incident']['resolved_by_user']:
                 user = message['data']['incident']['resolved_by_user']['name']
             else:
                 user = 'n/a'
             text = 'Incident {} resolved by {}'.format(incident_url, user)
         elif message['type'] == 'incident.assign':
-            status = status_code.ASSIGN
+            status = 'assign'
             user = message['data']['incident']['assigned_to_user']['name']
             text = 'Incident {} manually assigned to {}'.format(incident_url, user)
         elif message['type'] == 'incident.escalate':
-            status = status_code.OPEN
+            status = 'open'
             user = message['data']['incident']['assigned_to_user']['name']
             text = 'Incident {} escalated to {}'.format(incident_url, user)
         elif message['type'] == 'incident.delegate':
-            status = status_code.OPEN
+            status = 'open'
             user = message['data']['incident']['assigned_to_user']['name']
             text = 'Incident {} reassigned due to escalation to {}'.format(incident_url, user)
         else:
-            status = status_code.UNKNOWN
+            status = 'unknown'
             text = message['type']
-    except Exception:
-        raise ValueError
+    except Exception as e:
+        raise ValueError(e)
 
     return incident_key, status, text
 
