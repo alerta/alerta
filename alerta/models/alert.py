@@ -7,8 +7,7 @@ from uuid import uuid4
 
 from flask import current_app
 
-from alerta.app import db, severity
-from alerta.models import status_code
+from alerta.app import db, state_machine
 from alerta.models.history import History, RichHistory
 from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
@@ -36,7 +35,7 @@ class Alert:
         self.correlate = kwargs.get('correlate', None) or list()
         if self.correlate and event not in self.correlate:
             self.correlate.append(event)
-        self.status = kwargs.get('status', None) or status_code.UNKNOWN
+        self.status = kwargs.get('status', None) or state_machine.DEFAULT_STATUS
         self.service = kwargs.get('service', None) or list()
         self.group = kwargs.get('group', None) or 'Misc'
         self.value = kwargs.get('value', None)
@@ -230,7 +229,7 @@ class Alert:
         now = datetime.utcnow()
 
         previous_status, previous_value = db.get_status_and_value(self)
-        self.status = status_code.status_from_severity(
+        _, self.status = state_machine.transition(
             previous_severity=self.severity,
             current_severity=self.severity,
             previous_status=previous_status,
@@ -269,9 +268,9 @@ class Alert:
 
         self.previous_severity = db.get_severity(self)
         previous_status = db.get_status(self)
-        self.trend_indication = severity.trend(self.previous_severity, self.severity)
+        self.trend_indication = state_machine.trend(self.previous_severity, self.severity)
 
-        self.status = status_code.status_from_severity(
+        _, self.status = state_machine.transition(
             previous_severity=self.previous_severity,
             current_severity=self.severity,
             previous_status=previous_status,
@@ -308,12 +307,12 @@ class Alert:
 
     # create an alert
     def create(self):
-        if self.status == status_code.UNKNOWN:
-            self.status = status_code.status_from_severity(
+        if self.status == state_machine.DEFAULT_STATUS:
+            _, self.status = state_machine.transition(
                 previous_severity=current_app.config['DEFAULT_PREVIOUS_SEVERITY'],
                 current_severity=self.severity
             )
-        trend_indication = severity.trend(current_app.config['DEFAULT_PREVIOUS_SEVERITY'], self.severity)
+        trend_indication = state_machine.trend(current_app.config['DEFAULT_PREVIOUS_SEVERITY'], self.severity)
 
         self.duplicate_count = 0
         self.repeat = False
@@ -477,3 +476,31 @@ class Alert:
                 update_time=datetime.utcnow()
             )
             db.set_status(id, 'open', timeout=current_app.config['ALERT_TIMEOUT'], history=history)
+
+    def from_action(self, action, text='', timeout=None):
+        self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
+        previous_status = db.get_status(self)
+
+        severity, status = state_machine.transition(
+            previous_severity=self.previous_severity,
+            current_severity=self.severity,
+            previous_status=previous_status,
+            current_status=self.status,
+            action=action
+        )
+
+        history = History(
+            id=self.id,
+            event=self.event,
+            severity=self.severity if self.previous_severity != self.severity else None,
+            status=self.status,
+            text=text,
+            change_type='action',
+            update_time=datetime.utcnow()
+        )
+        db.set_severity_and_status(self.id, severity, status, self.timeout, history)
+        return severity, status
+
+    @property
+    def is_suppressed(self):
+        return state_machine.is_suppressed(self)

@@ -95,7 +95,7 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['attributes']['aaa'], 'post1')
 
         # alert status, tags, attributes and history text modified by plugin1 & plugin2
-        self.assertEqual(data['alert']['status'], 'owned')
+        self.assertEqual(data['alert']['status'], 'assigned')
         self.assertEqual(sorted(data['alert']['tags']), sorted(
             ['three', 'four', 'this', 'that', 'the', 'other', 'more']))
         self.assertEqual(data['alert']['attributes']['foo'], 'bar')
@@ -154,6 +154,6 @@ class TestPlugin3(PluginBase):
         if alert.attributes['abc'] == 123:
             alert.attributes['abc'] = None
         alert.attributes['xyz'] = 'down'
-        status = 'owned'
+        status = 'assigned'
         text = text + '-plugin3'
         return alert, status, text
