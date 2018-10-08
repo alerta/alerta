@@ -6,7 +6,7 @@
 #
 # Further information on settings can be found at http://docs.alerta.io
 
-from typing import Dict, List  # noqa
+from typing import Any, Dict, List  # noqa
 
 DEBUG = False
 
@@ -19,6 +19,8 @@ LOG_BACKUP_COUNT = 2
 LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
 
 SECRET_KEY = 'changeme'
+
+ALARM_MODEL = 'ALERTA'  # 'ALERTA' (default) or 'ISA_18_2'
 
 QUERY_LIMIT = 1000
 DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single query
@@ -89,43 +91,10 @@ CORS_ORIGINS = [
 ]
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
-SEVERITY_MAP = {
-    'security': 0,
-    'critical': 1,
-    'major': 2,
-    'minor': 3,
-    'warning': 4,
-    'normal': 5,
-    'ok': 5,
-    'cleared': 5,
-    'indeterminate': 5,
-    'informational': 6,
-    'debug': 7,
-    'trace': 8,
-    'unknown': 9
-}
-DEFAULT_NORMAL_SEVERITY = 'normal'  # 'normal', 'ok', 'cleared'
-DEFAULT_PREVIOUS_SEVERITY = 'indeterminate'
-
-COLOR_MAP = {
-    'severity': {
-        'security': 'blue',
-        'critical': 'red',
-        'major': 'orange',
-        'minor': 'yellow',
-        'warning': 'dodgerblue',
-        'indeterminate': 'lightblue',
-        'cleared': '#00CC00',  # lime green
-        'normal': '#00CC00',
-        'ok': '#00CC00',
-        'informational': '#00CC00',
-        'debug': '#9D006D',  # purple
-        'trace': '#7554BF',  # violet
-        'unknown': 'silver'
-    },
-    'text': 'black',
-    'highlight': 'skyblue '
-}
+SEVERITY_MAP = {}  # type: Dict[str, Any]
+DEFAULT_NORMAL_SEVERITY = None
+DEFAULT_PREVIOUS_SEVERITY = None
+COLOR_MAP = {}  # type: Dict[str, Any]
 
 DEFAULT_TIMEOUT = 86400
 ALERT_TIMEOUT = DEFAULT_TIMEOUT

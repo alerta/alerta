@@ -3,7 +3,7 @@ import json
 import unittest
 from uuid import uuid4
 
-from alerta.app import create_app, db
+from alerta.app import alarm_model, create_app, db
 
 
 class AlertTestCase(unittest.TestCase):
@@ -113,7 +113,7 @@ class AlertTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['duplicateCount'], 1)
-        self.assertEqual(data['alert']['previousSeverity'], self.app.config['DEFAULT_PREVIOUS_SEVERITY'])
+        self.assertEqual(data['alert']['previousSeverity'], alarm_model.DEFAULT_PREVIOUS_SEVERITY)
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
         # correlate alert (same event, diff sev)
