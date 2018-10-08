@@ -220,7 +220,7 @@ class Backend(Database):
                AND {customer}
          RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'], customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
-        return self._update(update, vars(alert), returning=True)
+        return self._updateone(update, vars(alert), returning=True)
 
     def correlate_alert(self, alert, history):
         alert.history = history
@@ -238,7 +238,7 @@ class Backend(Database):
                AND {customer}
          RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'], customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
-        return self._update(update, vars(alert), returning=True)
+        return self._updateone(update, vars(alert), returning=True)
 
     def create_alert(self, alert):
         insert = """
@@ -272,7 +272,7 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
-        return self._update(update, {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout, 'change': history}, returning=True)
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout, 'change': history}, returning=True)
 
     def set_severity_and_status(self, id, severity, status, timeout, history=None):
         update = """
@@ -281,7 +281,7 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
-        return self._update(update, {'id': id, 'like_id': id + '%', 'severity': severity, 'status': status, 'timeout': timeout, 'change': history}, returning=True)
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'severity': severity, 'status': status, 'timeout': timeout, 'change': history}, returning=True)
 
     def tag_alert(self, id, tags):
         update = """
@@ -290,7 +290,7 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """
-        return self._update(update, {'id': id, 'like_id': id + '%', 'tags': tags}, returning=True)
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'tags': tags}, returning=True)
 
     def untag_alert(self, id, tags):
         update = """
@@ -299,7 +299,7 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """
-        return self._update(update, {'id': id, 'like_id': id + '%', 'tags': tags}, returning=True)
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'tags': tags}, returning=True)
 
     def update_attributes(self, id, old_attrs, new_attrs):
         old_attrs.update(new_attrs)
@@ -310,7 +310,7 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """
-        return self._update(update, {'id': id, 'like_id': id + '%', 'attrs': attrs}, returning=True)
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'attrs': attrs}, returning=True)
 
     def delete_alert(self, id):
         delete = """
@@ -318,7 +318,47 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING id
         """
-        return self._delete(delete, {'id': id, 'like_id': id + '%'}, returning=True)
+        return self._deleteone(delete, {'id': id, 'like_id': id + '%'}, returning=True)
+
+    # BULK
+
+    def tag_alerts(self, query=None, tags=None):
+        query = query or Query()
+        update = """
+            UPDATE alerts
+            SET tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(_tags)s))
+            WHERE {where}
+            RETURNING id
+        """.format(where=query.where)
+        return [row[0] for row in self._updateall(update, {**query.vars, **{'_tags': tags}}, returning=True)]
+
+    def untag_alerts(self, query=None, tags=None):
+        query = query or Query()
+        update = """
+            UPDATE alerts
+            SET tags=(select array_agg(t) FROM unnest(tags) AS t WHERE NOT t=ANY(%(_tags)s) )
+            WHERE {where}
+            RETURNING id
+        """.format(where=query.where)
+        return [row[0] for row in self._updateall(update, {**query.vars, **{'_tags': tags}}, returning=True)]
+
+    def update_attributes_by_query(self, query=None, attributes=None):
+        update = """
+            UPDATE alerts
+            SET attributes=attributes || %(_attributes)s
+            WHERE {where}
+            RETURNING id
+        """.format(where=query.where)
+        return [row[0] for row in self._updateall(update, {**query.vars, **{'_attributes': attributes}}, returning=True)]
+
+    def delete_alerts(self, query=None):
+        query = query or Query()
+        delete = """
+            DELETE FROM alerts
+            WHERE {where}
+            RETURNING id
+        """.format(where=query.where)
+        return [row[0] for row in self._deleteall(delete, query.vars, returning=True)]
 
     # SEARCH & HISTORY
 
@@ -585,7 +625,7 @@ class Backend(Database):
             WHERE id=%s
             RETURNING id
         """
-        return self._delete(delete, (id,), returning=True)
+        return self._deleteone(delete, (id,), returning=True)
 
     # HEARTBEATS
 
@@ -621,7 +661,7 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING id
         """
-        return self._delete(delete, {'id': id, 'like_id': id + '%'}, returning=True)
+        return self._deleteone(delete, {'id': id, 'like_id': id + '%'}, returning=True)
 
     # API KEYS
 
@@ -654,7 +694,7 @@ class Backend(Database):
             SET last_used_time=NOW(), count=count + 1
             WHERE id=%s OR key=%s
         """
-        return self._update(update, (key, key))
+        return self._updateone(update, (key, key))
 
     def delete_key(self, key):
         delete = """
@@ -662,7 +702,7 @@ class Backend(Database):
             WHERE id=%s OR key=%s
             RETURNING key
         """
-        return self._delete(delete, (key, key), returning=True)
+        return self._deleteone(delete, (key, key), returning=True)
 
     # USERS
 
@@ -702,7 +742,7 @@ class Backend(Database):
             SET last_login=NOW()
             WHERE id=%s
         """
-        return self._update(update, (id,))
+        return self._updateone(update, (id,))
 
     def update_user(self, id, **kwargs):
         update = """
@@ -731,7 +771,7 @@ class Backend(Database):
             RETURNING *
         """
         kwargs['id'] = id
-        return self._update(update, kwargs, returning=True)
+        return self._updateone(update, kwargs, returning=True)
 
     def update_user_attributes(self, id, old_attrs, new_attrs):
         old_attrs.update(new_attrs)
@@ -742,7 +782,7 @@ class Backend(Database):
              WHERE id=%(id)s
             RETURNING id
         """
-        return bool(self._update(update, {'id': id, 'attrs': attrs}, returning=True))
+        return bool(self._updateone(update, {'id': id, 'attrs': attrs}, returning=True))
 
     def delete_user(self, id):
         delete = """
@@ -750,7 +790,7 @@ class Backend(Database):
             WHERE id=%s
             RETURNING id
         """
-        return self._delete(delete, (id,), returning=True)
+        return self._deleteone(delete, (id,), returning=True)
 
     def set_email_hash(self, id, hash):
         update = """
@@ -758,7 +798,7 @@ class Backend(Database):
             SET hash=%s
             WHERE id=%s
         """
-        return self._update(update, (hash, id))
+        return self._updateone(update, (hash, id))
 
     # PERMISSIONS
 
@@ -788,7 +828,7 @@ class Backend(Database):
             WHERE id=%s
             RETURNING id
         """
-        return self._delete(delete, (id,), returning=True)
+        return self._deleteone(delete, (id,), returning=True)
 
     def get_scopes_by_match(self, login, matches):
         if login in current_app.config['ADMIN_USERS']:
@@ -830,7 +870,7 @@ class Backend(Database):
             WHERE id=%s
             RETURNING id
         """
-        return self._delete(delete, (id,), returning=True)
+        return self._deleteone(delete, (id,), returning=True)
 
     def get_customers_by_match(self, login, matches):
         if login in current_app.config['ADMIN_USERS']:
@@ -901,7 +941,7 @@ class Backend(Database):
                 OR (severity='informational'
                     AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(info_threshold)s hours'))
         """
-        self._delete(delete, {'expired_threshold': expired_threshold, 'info_threshold': info_threshold})
+        self._deleteall(delete, {'expired_threshold': expired_threshold, 'info_threshold': info_threshold})
 
         # get list of alerts to be newly expired
         select = """
@@ -963,7 +1003,7 @@ class Backend(Database):
         cursor.execute(query, vars)
         return cursor.fetchall()
 
-    def _update(self, query, vars, returning=False):
+    def _updateone(self, query, vars, returning=False):
         """
         Update, with optional return.
         """
@@ -973,13 +1013,23 @@ class Backend(Database):
         self.get_db().commit()
         return cursor.fetchone() if returning else None
 
+    def _updateall(self, query, vars, returning=False):
+        """
+        Update, with optional return.
+        """
+        cursor = self.get_db().cursor()
+        self._log(cursor, query, vars)
+        cursor.execute(query, vars)
+        self.get_db().commit()
+        return cursor.fetchall() if returning else None
+
     def _upsert(self, query, vars):
         """
         Insert or update, with return.
         """
         return self._insert(query, vars)
 
-    def _delete(self, query, vars, returning=False):
+    def _deleteone(self, query, vars, returning=False):
         """
         Delete, with optional return.
         """
@@ -988,6 +1038,16 @@ class Backend(Database):
         cursor.execute(query, vars)
         self.get_db().commit()
         return cursor.fetchone() if returning else None
+
+    def _deleteall(self, query, vars, returning=False):
+        """
+        Delete multiple rows, with optional return.
+        """
+        cursor = self.get_db().cursor()
+        self._log(cursor, query, vars)
+        cursor.execute(query, vars)
+        self.get_db().commit()
+        return cursor.fetchall() if returning else None
 
     def _log(self, cursor, query, vars):
         LOG = current_app.logger

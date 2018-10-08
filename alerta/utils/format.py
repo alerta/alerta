@@ -1,9 +1,11 @@
 
 import datetime
+import traceback
 
 import six
 from bson import ObjectId
 from flask import json
+from kombu.serialization import register
 
 
 class CustomJSONEncoder(json.JSONEncoder):
@@ -17,6 +19,8 @@ class CustomJSONEncoder(json.JSONEncoder):
             return o.serialize
         elif isinstance(o, ObjectId):
             return str(o)
+        elif isinstance(o, Exception):
+            return traceback.format_exception_only(o.__class__, o)
         else:
             return json.JSONEncoder.default(self, o)
 
@@ -34,3 +38,13 @@ class DateTime:
     @staticmethod
     def iso8601(dt):
         return dt.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + '.%03dZ' % (dt.microsecond // 1000)
+
+
+def custom_json_dumps(obj):
+    return json.dumps(obj, cls=CustomJSONEncoder)
+
+
+def register_custom_serializer():
+    register('customjson', custom_json_dumps, json.loads,
+             content_type='application/x-customjson',
+             content_encoding='utf-8')

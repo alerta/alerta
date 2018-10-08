@@ -6,7 +6,7 @@ from flask import Blueprint, request, jsonify, current_app
 
 api = Blueprint('api', __name__)
 
-from . import alerts, blackouts, customers, heartbeats, keys, permissions, users, oembed  # noqa
+from . import alerts, bulk, blackouts, customers, heartbeats, keys, permissions, users, oembed  # noqa
 
 
 @api.before_request

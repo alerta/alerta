@@ -7,8 +7,8 @@ from pymongo.errors import ConnectionFailure
 
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
-from .utils import Query
 
+from .utils import Query
 
 # See https://github.com/MongoEngine/flask-mongoengine/blob/master/flask_mongoengine/__init__.py
 # See https://github.com/dcrosta/flask-pymongo/blob/master/flask_pymongo/__init__.py
@@ -408,6 +408,40 @@ class Backend(Database):
     def delete_alert(self, id):
         response = self.get_db().alerts.delete_one({'_id': {'$regex': '^' + id}})
         return True if response.deleted_count == 1 else False
+
+    # BULK
+
+    def tag_alerts(self, query=None, tags=None):
+        query = query or Query()
+        updated = list(self.get_db().alerts.find(query.where, projection={'_id': 1}))
+        response = self.get_db().alerts.update(query.where, {'$addToSet': {'tags': {'$each': tags}}})
+        return updated if response['n'] else []
+
+    def untag_alerts(self, query=None, tags=None):
+        query = query or Query()
+        updated = list(self.get_db().alerts.find(query.where, projection={'_id': 1}))
+        response = self.get_db().alerts.update(query.where, {'$pullAll': {'tags': tags}})
+        return updated if response['n'] else []
+
+    def update_attributes_by_query(self, query=None, attributes=None):
+        query = query or Query()
+        update = dict()
+        set_value = {'attributes.' + k: v for k, v in attributes.items() if v is not None}
+        if set_value:
+            update['$set'] = set_value
+        unset_value = {'attributes.' + k: v for k, v in attributes.items() if v is None}
+        if unset_value:
+            update['$unset'] = unset_value
+
+        updated = list(self.get_db().alerts.find(query.where, projection={'_id': 1}))
+        response = self.get_db().alerts.update_many(query.where, update=update)
+        return updated if response.matched_count > 0 else []
+
+    def delete_alerts(self, query=None):
+        query = query or Query()
+        deleted = list(self.get_db().alerts.find(query.where, projection={'_id': 1}))
+        response = self.get_db().alerts.remove(query.where)
+        return deleted if response['n'] else []
 
     # SEARCH & HISTORY
 

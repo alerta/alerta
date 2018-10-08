@@ -137,6 +137,20 @@ class Database(Base):
     def delete_alert(self, id):
         raise NotImplementedError
 
+    # BULK
+
+    def tag_alerts(self, query=None, tags=None):
+        raise NotImplementedError
+
+    def untag_alerts(self, query=None, tags=None):
+        raise NotImplementedError
+
+    def update_attributes_by_query(self, query=None, attributes=None):
+        raise NotImplementedError
+
+    def delete_alerts(self, query=None):
+        raise NotImplementedError
+
     # SEARCH & HISTORY
 
     def get_alerts(self, query=None, page=None, page_size=None):
