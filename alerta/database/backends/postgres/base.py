@@ -4,7 +4,7 @@ from collections import namedtuple
 from datetime import datetime
 
 import psycopg2
-from flask import current_app, g
+from flask import current_app
 from psycopg2.extensions import AsIs, adapt, register_adapter
 from psycopg2.extras import Json, NamedTupleCursor, register_composite
 
@@ -106,24 +106,24 @@ class Backend(Database):
 
     @property
     def name(self):
-        cursor = g.db.cursor()
+        cursor = self.get_db().cursor()
         cursor.execute('SELECT current_database()')
         return cursor.fetchone()[0]
 
     @property
     def version(self):
-        cursor = g.db.cursor()
+        cursor = self.get_db().cursor()
         cursor.execute('SHOW server_version')
         return cursor.fetchone()[0]
 
     @property
     def is_alive(self):
-        cursor = g.db.cursor()
+        cursor = self.get_db().cursor()
         cursor.execute('SELECT true')
         return cursor.fetchone()
 
     def close(self):
-        g.db.close()
+        self.get_db().close()
 
     def destroy(self):
         conn = self.connect()
@@ -936,17 +936,17 @@ class Backend(Database):
         """
         Insert, with return.
         """
-        cursor = g.db.cursor()
+        cursor = self.get_db().cursor()
         self._log(cursor, query, vars)
         cursor.execute(query, vars)
-        g.db.commit()
+        self.get_db().commit()
         return cursor.fetchone()
 
     def _fetchone(self, query, vars):
         """
         Return none or one row.
         """
-        cursor = g.db.cursor()
+        cursor = self.get_db().cursor()
         self._log(cursor, query, vars)
         cursor.execute(query, vars)
         return cursor.fetchone()
@@ -958,7 +958,7 @@ class Backend(Database):
         if limit is None:
             limit = current_app.config['DEFAULT_PAGE_SIZE']
         query += ' LIMIT %s OFFSET %s''' % (limit, offset)
-        cursor = g.db.cursor()
+        cursor = self.get_db().cursor()
         self._log(cursor, query, vars)
         cursor.execute(query, vars)
         return cursor.fetchall()
@@ -967,10 +967,10 @@ class Backend(Database):
         """
         Update, with optional return.
         """
-        cursor = g.db.cursor()
+        cursor = self.get_db().cursor()
         self._log(cursor, query, vars)
         cursor.execute(query, vars)
-        g.db.commit()
+        self.get_db().commit()
         return cursor.fetchone() if returning else None
 
     def _upsert(self, query, vars):
@@ -983,10 +983,10 @@ class Backend(Database):
         """
         Delete, with optional return.
         """
-        cursor = g.db.cursor()
+        cursor = self.get_db().cursor()
         self._log(cursor, query, vars)
         cursor.execute(query, vars)
-        g.db.commit()
+        self.get_db().commit()
         return cursor.fetchone() if returning else None
 
     def _log(self, cursor, query, vars):
