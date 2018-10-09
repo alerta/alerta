@@ -52,9 +52,9 @@ def config():
         'severity': alarm_model.Severity,
         'colors': alarm_model.Colors,
         'dates': {
-            'shortTime': 'shortTime',  # 1:39 PM
-            'mediumDate': 'medium',  # Apr 26, 2016 1:39:44 PM
-            'longDate': 'EEEE, MMMM d, yyyy h:mm:ss.sss a (Z)'  # Tuesday, April 26, 2016 1:39:43.987 PM (+0100)
+            'shortTime': current_app.config['DATE_FORMAT_SHORT_TIME'],
+            'mediumDate': current_app.config['DATE_FORMAT_MEDIUM_DATE'],
+            'longDate': current_app.config['DATE_FORMAT_LONG_DATE']
         },
         'audio': {
             'new': current_app.config['DEFAULT_AUDIO_FILE']
