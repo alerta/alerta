@@ -1,11 +1,7 @@
 
 import abc
-import logging
 
 from six import add_metaclass
-
-
-LOG = logging.getLogger('alerta.plugins')
 
 
 @add_metaclass(abc.ABCMeta)

@@ -1050,5 +1050,5 @@ class Backend(Database):
         return cursor.fetchall() if returning else None
 
     def _log(self, cursor, query, vars):
-        LOG = current_app.logger
-        LOG.debug('{stars}\n{query}\n{stars}'.format(stars='*' * 40, query=cursor.mogrify(query, vars).decode('utf-8')))
+        current_app.logger.debug('{stars}\n{query}\n{stars}'.format(
+            stars='*' * 40, query=cursor.mogrify(query, vars).decode('utf-8')))
