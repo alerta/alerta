@@ -56,7 +56,9 @@ def config():
             'mediumDate': 'medium',  # Apr 26, 2016 1:39:44 PM
             'longDate': 'EEEE, MMMM d, yyyy h:mm:ss.sss a (Z)'  # Tuesday, April 26, 2016 1:39:43.987 PM (+0100)
         },
-        'audio': {},  # not supported yet
+        'audio': {
+            'new': current_app.config['DEFAULT_AUDIO_FILE']
+        },
         'tracking_id': current_app.config['GOOGLE_TRACKING_ID'],
         'refresh_interval': current_app.config['AUTO_REFRESH_INTERVAL']
     })
