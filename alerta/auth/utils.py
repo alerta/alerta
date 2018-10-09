@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import List, Optional, Union, cast
 from urllib.parse import urljoin
 from uuid import uuid4
 
@@ -11,39 +12,41 @@ from alerta.exceptions import ApiError, NoCustomerMatch
 from alerta.models.customer import Customer
 from alerta.models.permission import Permission
 from alerta.models.token import Jwt
+from alerta.models.user import User
 
 try:
     import bcrypt  # type: ignore
 
-    def generate_password_hash(password):
+    def generate_password_hash(password: Union[str, bytes]) -> str:
         if isinstance(password, text_type):
             password = password.encode('utf-8')
         return bcrypt.hashpw(password, bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
 
-    def check_password_hash(pwhash, password):
+    def check_password_hash(pwhash: str, password: str) -> bool:
         return bcrypt.checkpw(password.encode('utf-8'), pwhash.encode('utf-8'))
 
 except ImportError:  # Google App Engine
     from werkzeug.security import generate_password_hash, check_password_hash  # noqa
 
 
-def not_authorized(allowed_setting, groups):
+def not_authorized(allowed_setting: str, groups: List[str]) -> bool:
     return (current_app.config['AUTH_REQUIRED'] and
             not ('*' in current_app.config[allowed_setting] or
                  set(current_app.config[allowed_setting]).intersection(set(groups))))
 
 
-def get_customers(login, groups):
+def get_customers(login: str, groups: List[str]) -> Optional[List['Customer']]:
     if current_app.config['CUSTOMER_VIEWS']:
         try:
             return Customer.lookup(login, groups)
         except NoCustomerMatch as e:
             raise ApiError(str(e), 403)
     else:
-        return
+        return None
 
 
-def create_token(user_id, name, login, provider, customers, orgs=None, groups=None, roles=None, email=None, email_verified=None):
+def create_token(user_id: str, name: str, login: str, provider: str, customers: List[str], orgs: List[str]=None,
+                 groups: List[str]=None, roles: List[str]=None, email: str=None, email_verified: bool=None) -> 'Jwt':
     now = datetime.utcnow()
     scopes = Permission.lookup(login, groups=(roles or []) + (groups or []) + (orgs or []))
     return Jwt(
@@ -67,7 +70,7 @@ def create_token(user_id, name, login, provider, customers, orgs=None, groups=No
     )
 
 
-def send_confirmation(user, token):
+def send_confirmation(user: User, token: str) -> None:
     subject = "[Alerta] Please verify your email '%s'" % user.email
     text = 'Hello {name}!\n\n' \
            'Please verify your email address is {email} by clicking on the link below:\n\n' \
@@ -79,7 +82,7 @@ def send_confirmation(user, token):
     mailer.send_email(user.email, subject, body=text)
 
 
-def send_password_reset(user, token):
+def send_password_reset(user: User, token: str) -> None:
     subject = '[Alerta] Reset password request'
     text = 'You forgot your password. Reset it by clicking on the link below:\n\n' \
            '{url}\n\n' \
@@ -90,12 +93,12 @@ def send_password_reset(user, token):
     mailer.send_email(user.email, subject, body=text)
 
 
-def generate_email_token(email, salt):
+def generate_email_token(email: str, salt: str=None) -> str:
     serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-    return serializer.dumps(email, salt)
+    return cast(str, serializer.dumps(email, salt))
 
 
-def confirm_email_token(token, salt, expiration=900):
+def confirm_email_token(token: str, salt: str=None, expiration: int=900) -> str:
     serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
     try:
         email = serializer.loads(
