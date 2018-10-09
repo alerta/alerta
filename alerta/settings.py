@@ -120,6 +120,7 @@ MAIL_FROM = ''  # replace with valid sender address eg you@gmail.com
 SMTP_USERNAME = ''  # application-specific username if different to MAIL_FROM user
 SMTP_PASSWORD = ''  # password for MAIL_FROM (or SMTP_USERNAME if used)
 
+DEFAULT_AUDIO_FILE = None  # must exist on client at relative path eg. `/audio/Bike Horn.mp3'
 GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
 
