@@ -6,6 +6,7 @@ dist: xenial
 python:
   - "3.5"
   - "3.6"
+  - "3.7"
 
 env:
   - DB=mongodb DATABASE_URL=mongodb://localhost:27017/alerta5
