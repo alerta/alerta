@@ -1,7 +1,11 @@
 import abc
+from typing import Any
 
 from flask import Blueprint, request, current_app
 from six import add_metaclass
+from werkzeug.datastructures import ImmutableMultiDict
+
+from alerta.models.alert import Alert
 
 webhooks = Blueprint('webhooks', __name__)
 
@@ -22,10 +26,10 @@ def before_request():
 @add_metaclass(abc.ABCMeta)
 class WebhookBase:
 
-    def __init__(self, name=None):
+    def __init__(self, name: str=None) -> None:
         self.name = name or self.__module__
 
     @abc.abstractmethod
-    def incoming(self, query_string, payload):
+    def incoming(self, query_string: ImmutableMultiDict, payload: Any) -> Alert:
         """Parse webhook query string and/or payload in JSON or plain text and return an alert."""
-        return
+        raise NotImplementedError

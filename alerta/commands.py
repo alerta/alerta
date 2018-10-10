@@ -86,7 +86,7 @@ def user(username, password, all):
             name=admin,
             email=admin,
             password=generate_password_hash(password),
-            roles=None,
+            roles=[],
             text='Admin user created by alertad script',
             email_verified=True
         )

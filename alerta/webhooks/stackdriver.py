@@ -1,5 +1,6 @@
 
 from datetime import datetime
+from typing import Any, Dict
 
 from flask import jsonify, request
 from flask_cors import cross_origin
@@ -11,8 +12,10 @@ from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
 
+JSON = Dict[str, Any]
 
-def parse_stackdriver(notification):
+
+def parse_stackdriver(notification: JSON) -> Alert:
 
     incident = notification['incident']
     state = incident['state']
@@ -24,7 +27,7 @@ def parse_stackdriver(notification):
     elif state == 'acknowledged':
         severity = 'critical'
         status = 'ack'
-        create_time = None
+        create_time = None  # type: ignore
     elif state == 'closed':
         severity = 'ok'
         status = None
@@ -32,7 +35,7 @@ def parse_stackdriver(notification):
     else:
         severity = 'indeterminate'
         status = None
-        create_time = None
+        create_time = None  # type: ignore
 
     return Alert(
         resource=incident['resource_name'],

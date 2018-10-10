@@ -1,7 +1,11 @@
 
 import abc
+from typing import Optional, TYPE_CHECKING, Any
 
 from six import add_metaclass
+
+if TYPE_CHECKING:
+    from alerta.models.alert import Alert  # noqa
 
 
 @add_metaclass(abc.ABCMeta)
@@ -11,19 +15,19 @@ class PluginBase:
         self.name = name or self.__module__
 
     @abc.abstractmethod
-    def pre_receive(self, alert):
+    def pre_receive(self, alert: 'Alert') -> 'Alert':
         """Pre-process an alert based on alert properties or reject it by raising RejectException."""
-        return alert
+        raise NotImplementedError
 
     @abc.abstractmethod
-    def post_receive(self, alert):
+    def post_receive(self, alert: 'Alert') -> Optional['Alert']:
         """Send an alert to another service or notify users."""
-        return None
+        raise NotImplementedError
 
     @abc.abstractmethod
-    def status_change(self, alert, status, text):
+    def status_change(self, alert: 'Alert', status: str, text: str) -> Any:
         """Trigger integrations based on status changes."""
-        return None
+        raise NotImplementedError
 
 
 class FakeApp:

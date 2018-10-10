@@ -20,6 +20,7 @@ ALLOWED_ENVIRONMENTS = app.config.get('ALLOWED_ENVIRONMENTS', [])
 class RejectPolicy(PluginBase):
 
     def pre_receive(self, alert):
+
         if any(regex.match(alert.origin) for regex in ORIGIN_BLACKLIST_REGEX):
             LOG.warning("[POLICY] Alert origin '%s' has been blacklisted", alert.origin)
             raise RejectException("[POLICY] Alert origin '%s' has been blacklisted" % alert.origin)

@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from celery import Celery
 from flask import Flask
 from flask_compress import Compress
@@ -8,7 +10,6 @@ from alerta.database.base import Database, QueryBuilder
 from alerta.exceptions import ExceptionHandlers
 from alerta.models.alarms import AlarmModel
 from alerta.utils.config import Config
-from alerta.utils.format import register_custom_serializer
 from alerta.utils.key import ApiKeyHelper
 from alerta.utils.mailer import Mailer
 from alerta.utils.plugin import Plugins
@@ -25,27 +26,31 @@ key_helper = ApiKeyHelper()
 db = Database()
 qb = QueryBuilder()
 sentry = Sentry()
+mailer = Mailer()
 plugins = Plugins()
 custom_webhooks = CustomWebhooks()
-mailer = Mailer()
 
 
-def create_app(config_override: str=None, environment: str=None) -> Flask:
+def create_app(config_override: Dict[str, Any]=None, environment: str=None) -> Flask:
     app = Flask(__name__)
     app.config['ENVIRONMENT'] = environment
     config.init_app(app)
     app.config.update(config_override or {})
 
     alarm_model.init_app(app)
-    key_helper.init_app(app)
 
     cors.init_app(app)
     compress.init_app(app)
     handlers.register(app)
+    key_helper.init_app(app)
 
     db.init_db(app)
     qb.init_app(app)
     sentry.init_app(app)
+
+    mailer.register(app)
+    plugins.register(app)
+    custom_webhooks.register(app)
 
     from alerta.utils.format import CustomJSONEncoder
     app.json_encoder = CustomJSONEncoder
@@ -62,14 +67,11 @@ def create_app(config_override: str=None, environment: str=None) -> Flask:
     from alerta.management import mgmt
     app.register_blueprint(mgmt)
 
-    plugins.register(app)
-    custom_webhooks.register(app)
-    mailer.register(app)
-
     return app
 
 
 def create_celery_app(app: Flask=None) -> Celery:
+    from alerta.utils.format import register_custom_serializer
     register_custom_serializer()
     app = app or create_app()
     celery = Celery(

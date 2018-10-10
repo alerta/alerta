@@ -1,8 +1,10 @@
 import json
 import logging
+from typing import Any, Dict, Tuple
 
 from flask import g, jsonify, request
 from flask_cors import cross_origin
+from werkzeug.datastructures import ImmutableMultiDict
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
@@ -13,8 +15,10 @@ from . import webhooks
 
 LOG = logging.getLogger(__name__)
 
+JSON = Dict[str, Any]
 
-def parse_slack(data):
+
+def parse_slack(data: ImmutableMultiDict) -> Tuple[str, str, str]:
     payload = json.loads(data['payload'])
 
     user = payload.get('user', {}).get('name')
@@ -31,7 +35,7 @@ def parse_slack(data):
     return alert_id, user, action
 
 
-def build_slack_response(alert, action, user, data):
+def build_slack_response(alert: Alert, action: str, user: str, data: ImmutableMultiDict) -> JSON:
     response = json.loads(data['payload']).get('original_message', {})
 
     actions = ['watch', 'unwatch']
@@ -83,7 +87,7 @@ def slack():
     if action in ['open', 'ack', 'close']:
         alert.set_status(status=action, text='status change via #slack by {}'.format(user))
     elif action in ['watch', 'unwatch']:
-        alert.untag(alert.id, ['{}:{}'.format(action, user)])
+        alert.untag(tags=['{}:{}'.format(action, user)])
     else:
         raise ApiError('Unsupported #slack action', 400)
 

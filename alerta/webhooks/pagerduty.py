@@ -1,3 +1,4 @@
+from typing import Any, Dict, Tuple
 
 from flask import g, jsonify, request
 from flask_cors import cross_origin
@@ -8,8 +9,10 @@ from alerta.models.alert import Alert
 
 from . import webhooks
 
+JSON = Dict[str, Any]
 
-def parse_pagerduty(message):
+
+def parse_pagerduty(message: JSON) -> Tuple[str, str, str]:
 
     try:
         incident_key = message['data']['incident']['incident_key']
