@@ -1,6 +1,7 @@
 
 import json
 from datetime import datetime
+from typing import Any, Dict
 
 from flask import jsonify, request
 from flask_cors import cross_origin
@@ -12,8 +13,10 @@ from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
 
+JSON = Dict[str, Any]
 
-def cw_state_to_severity(state):
+
+def cw_state_to_severity(state: str) -> str:
 
     if state == 'ALARM':
         return 'major'
@@ -25,7 +28,7 @@ def cw_state_to_severity(state):
         return 'unknown'
 
 
-def parse_notification(notification):
+def parse_notification(notification: JSON) -> Alert:
 
     if notification['Type'] == 'SubscriptionConfirmation':
 
@@ -71,6 +74,8 @@ def parse_notification(notification):
             create_time=datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'),
             raw_data=alarm
         )
+    else:
+        raise RuntimeWarning('No SNS notification in payload')
 
 
 @webhooks.route('/webhooks/cloudwatch', methods=['OPTIONS', 'POST'])

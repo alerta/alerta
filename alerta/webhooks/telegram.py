@@ -1,6 +1,7 @@
 
 import logging
 import os
+from typing import Any, Dict, List  # noqa
 
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
@@ -13,8 +14,10 @@ from . import webhooks
 
 LOG = logging.getLogger(__name__)
 
+JSON = Dict[str, Any]
 
-def send_message_reply(alert, action, user, data):
+
+def send_message_reply(alert: Alert, action: str, user: str, data: JSON) -> None:
     try:
         import telepot  # type: ignore
     except ImportError as e:
@@ -32,16 +35,18 @@ def send_message_reply(alert, action, user, data):
         message_log = '\n'.join(data['callback_query']['message']['text'].split('\n')[1:])
 
         # process buttons for reply text
-        inline_keyboard, reply = [], 'The status of alert {alert} is *{status}* now!'
+        inline_keyboard, reply = [], 'The status of alert {alert} is *{status}* now!'  # type: List[List[JSON]], str
 
         actions = ['watch', 'unwatch']
         if action in actions:
             reply = 'User `{user}` is _{status}ing_ alert {alert}'
             next_action = actions[(actions.index(action) + 1) % len(actions)]
             inline_keyboard = [
-                [{'text': next_action.capitalize(), 'callback_data': '/{} {}'.format(next_action, alert.id)},
-                 {'text': 'Ack', 'callback_data': '{} {}'.format('/ack', alert.id)},
-                 {'text': 'Close', 'callback_data': '{} {}'.format('/close', alert.id)}, ]
+                [
+                    {'text': next_action.capitalize(), 'callback_data': '/{} {}'.format(next_action, alert.id)},
+                    {'text': 'Ack', 'callback_data': '{} {}'.format('/ack', alert.id)},
+                    {'text': 'Close', 'callback_data': '{} {}'.format('/close', alert.id)}
+                ]
             ]
 
         # format message response
@@ -83,7 +88,7 @@ def telegram():
         elif action in ['watch', 'unwatch']:
             alert.untag(tags=['{}:{}'.format(action, user)])
         elif action == 'blackout':
-            environment, resource, event = alert.split('|', 2)
+            environment, resource, event = command.split('|', 2)
             blackout = Blackout(environment, resource=resource, event=event)
             blackout.create()
 

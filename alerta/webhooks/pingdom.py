@@ -1,3 +1,4 @@
+from typing import Any, Dict
 
 from flask import jsonify, request
 from flask_cors import cross_origin
@@ -36,8 +37,10 @@ from . import webhooks
 #     "description": "test"
 # }
 
+JSON = Dict[str, Any]
 
-def parse_pingdom(check):
+
+def parse_pingdom(check: JSON) -> Alert:
 
     if check['importance_level'] == 'HIGH':
         severity = 'critical'
