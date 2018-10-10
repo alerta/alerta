@@ -30,7 +30,7 @@ custom_webhooks = CustomWebhooks()
 mailer = Mailer()
 
 
-def create_app(config_override=None, environment=None):
+def create_app(config_override: str=None, environment: str=None) -> Flask:
     app = Flask(__name__)
     app.config['ENVIRONMENT'] = environment
     config.init_app(app)
@@ -69,7 +69,7 @@ def create_app(config_override=None, environment=None):
     return app
 
 
-def create_celery_app(app=None):
+def create_celery_app(app: Flask=None) -> Celery:
     register_custom_serializer()
     app = app or create_app()
     celery = Celery(
@@ -80,7 +80,7 @@ def create_celery_app(app=None):
     celery.conf.update(app.config)
     TaskBase = celery.Task
 
-    class ContextTask(TaskBase):
+    class ContextTask(TaskBase):  # type: ignore
         abstract = True
 
         def __call__(self, *args, **kwargs):
