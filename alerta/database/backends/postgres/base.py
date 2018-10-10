@@ -886,7 +886,6 @@ class Backend(Database):
         if customers:
             if '*' in customers:
                 return '*'  # all customers
-
             return customers
 
         raise NoCustomerMatch("No customer lookup configured for user '{}' or '{}'".format(login, ','.join(matches)))
