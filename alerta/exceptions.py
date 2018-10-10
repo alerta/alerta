@@ -1,7 +1,9 @@
 
 import traceback
+from typing import Any, Dict, Tuple
 
-from flask import current_app, jsonify
+from flask import Response, current_app, jsonify
+from werkzeug.exceptions import HTTPException
 
 
 class AlertaException(IOError):
@@ -58,7 +60,7 @@ class ExceptionHandlers:
         app.register_error_handler(Exception, handle_exception)
 
 
-def handle_http_error(error):
+def handle_http_error(error: HTTPException) -> Tuple[Response, int]:
     if error.code >= 500:
         current_app.logger.exception(error)
     return jsonify({
@@ -71,7 +73,7 @@ def handle_http_error(error):
     }), error.code
 
 
-def handle_api_error(error):
+def handle_api_error(error: ApiError) -> Tuple[Response, int]:
     if error.code >= 500:
         current_app.logger.exception(error)
     return jsonify({
@@ -82,7 +84,7 @@ def handle_api_error(error):
     }), error.code
 
 
-def handle_basic_auth_error(error):
+def handle_basic_auth_error(error: BasicAuthError) -> Tuple[Response, int, Dict[str, Any]]:
     return jsonify({
         'status': 'error',
         'message': error.message,
@@ -91,7 +93,7 @@ def handle_basic_auth_error(error):
     }), error.code, {'WWW-Authenticate': 'Basic realm=%s' % current_app.config['BASIC_AUTH_REALM']}
 
 
-def handle_exception(error):
+def handle_exception(error: Exception) -> Tuple[Response, int]:
     current_app.logger.exception(error)
     return jsonify({
         'status': 'error',
