@@ -11,9 +11,10 @@ from alerta.exceptions import (ApiError, BlackoutPeriod, RateLimit,
 from alerta.models.alert import Alert
 from alerta.models.metrics import Timer, timer
 from alerta.models.switch import Switch
-from alerta.utils.api import (add_remote_ip, assign_customer, jsonp,
-                              process_action, process_alert, process_status)
+from alerta.utils.api import (add_remote_ip, assign_customer, process_action,
+                              process_alert, process_status)
 from alerta.utils.paging import Page
+from alerta.utils.response import jsonp
 
 from . import api
 

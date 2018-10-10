@@ -5,8 +5,8 @@ from uuid import uuid4
 
 from alerta.app import db, key_helper, qb
 from alerta.database.base import Query
-from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
+from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
 
@@ -38,7 +38,7 @@ class ApiKey:
             user=json.get('user', None),
             scopes=json.get('scopes', []),
             text=json.get('text', None),
-            expire_time=DateTime.parse(json.get('expireTime')),
+            expire_time=DateTime.parse(json['expireTime']) if 'expireTime' in json else None,
             customer=json.get('customer', None)
         )
         if 'type' in json:

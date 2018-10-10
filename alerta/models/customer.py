@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from alerta.app import db
 from alerta.database.base import Query
-from alerta.utils.api import absolute_url
+from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
 

@@ -1,43 +1,16 @@
 
 import logging
-from functools import wraps
-from os.path import join as path_join
-from urllib.parse import urljoin, urlparse, urlunparse
+from typing import Optional, Tuple
 
-from flask import current_app, g, request
+from flask import Request, current_app, g
 
 from alerta.app import plugins
 from alerta.exceptions import (ApiError, BlackoutPeriod, RateLimit,
                                RejectException)
+from alerta.models.alert import Alert
 
 
-def jsonp(func):
-    """Wraps JSONified output for JSONP requests."""
-    @wraps(func)
-    def decorated(*args, **kwargs):
-        callback = request.args.get('callback', False)
-        if callback:
-            data = str(func(*args, **kwargs).data)
-            content = str(callback) + '(' + data + ')'
-            mimetype = 'application/javascript'
-            return current_app.response_class(content, mimetype=mimetype)
-        else:
-            return func(*args, **kwargs)
-    return decorated
-
-
-def absolute_url(path=''):
-    # ensure that "path" (see urlparse result) part of url has both leading and trailing slashes
-    conf_base_url = urlunparse([(x if i != 2 else path_join('/', x, ''))
-                                for i, x in enumerate(urlparse(current_app.config.get('BASE_URL', '/')))])
-    try:
-        base_url = urljoin(request.base_url, conf_base_url)
-    except RuntimeError:  # Working outside of request context
-        base_url = conf_base_url
-    return urljoin(base_url, path.lstrip('/'))
-
-
-def assign_customer(wanted, permission='admin:alerts'):
+def assign_customer(wanted: str, permission: str='admin:alerts') -> Optional[str]:
     customers = g.get('customers', [])
     if wanted:
         if 'admin' in g.scopes or permission in g.scopes:
@@ -51,16 +24,17 @@ def assign_customer(wanted, permission='admin:alerts'):
             raise ApiError('must define customer as more than one possibility', 400)
         else:
             return customers[0]
+    return None
 
 
-def add_remote_ip(req, alert):
+def add_remote_ip(req: Request, alert: Alert) -> None:
     if req.headers.getlist('X-Forwarded-For'):
         alert.attributes.update(ip=req.headers.getlist('X-Forwarded-For')[0])
     else:
         alert.attributes.update(ip=req.remote_addr)
 
 
-def process_alert(alert):
+def process_alert(alert: Alert) -> Alert:
 
     skip_plugins = False
     for plugin in plugins.routing(alert):
@@ -110,11 +84,11 @@ def process_alert(alert):
     return alert
 
 
-def process_action(alert, action):
+def process_action(alert: Alert, action: str) -> Tuple[str, str]:
     return alert.from_action(action)
 
 
-def process_status(alert, status, text):
+def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, str]:
 
     updated = None
     for plugin in plugins.routing(alert):
@@ -141,19 +115,3 @@ def process_status(alert, status, text):
         alert.update_attributes(alert.attributes)
 
     return alert, status, text
-
-
-def deepmerge(first, second):
-    result = {}
-    for key in first.keys():
-        if key in second:
-            if isinstance(first[key], dict) and isinstance(second[key], dict):
-                result[key] = deepmerge(first[key], second[key])
-            else:
-                result[key] = second[key]
-        else:
-            result[key] = first[key]
-    for key, value in second.items():
-        if key not in first:  # already processed above
-            result[key] = value
-    return result

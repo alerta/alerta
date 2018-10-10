@@ -7,7 +7,7 @@ from flask_cors import cross_origin
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
-from alerta.utils.api import absolute_url
+from alerta.utils.response import absolute_url
 
 from . import webhooks
 

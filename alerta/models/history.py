@@ -1,7 +1,7 @@
 
 from datetime import datetime
 
-from alerta.utils.api import absolute_url
+from alerta.utils.response import absolute_url
 
 
 class History:

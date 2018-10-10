@@ -7,7 +7,8 @@ from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
 from alerta.models.metrics import timer
-from alerta.utils.api import absolute_url, jsonp, process_status
+from alerta.utils.api import process_status
+from alerta.utils.response import absolute_url, jsonp
 from alerta.utils.tasks import action_alerts
 from alerta.views.alerts import (attrs_timer, delete_timer, status_timer,
                                  tag_timer)

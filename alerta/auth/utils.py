@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Any, List, cast
+from typing import Any, Dict, List, cast
 from urllib.parse import urljoin
 from uuid import uuid4
 
@@ -112,3 +112,19 @@ def confirm_email_token(token: str, salt: str=None, expiration: int=900) -> str:
         raise ApiError('confirmation token invalid', 400, errors=[str(e)])
 
     return email
+
+
+def deepmerge(first: Dict[str, Any], second: Dict[str, Any]) -> Dict[str, Any]:
+    result = {}
+    for key in first.keys():
+        if key in second:
+            if isinstance(first[key], dict) and isinstance(second[key], dict):
+                result[key] = deepmerge(first[key], second[key])
+            else:
+                result[key] = second[key]
+        else:
+            result[key] = first[key]
+    for key, value in second.items():
+        if key not in first:  # already processed above
+            result[key] = value
+    return result
