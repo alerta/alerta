@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, cast
+from typing import TYPE_CHECKING, Any, Dict, List, cast
 from urllib.parse import urljoin
 from uuid import uuid4
 
@@ -12,7 +12,9 @@ from alerta.exceptions import ApiError, NoCustomerMatch
 from alerta.models.customer import Customer
 from alerta.models.permission import Permission
 from alerta.models.token import Jwt
-from alerta.models.user import User
+
+if TYPE_CHECKING:
+    from alerta.models.user import User  # noqa
 
 try:
     import bcrypt  # type: ignore
@@ -70,7 +72,7 @@ def create_token(user_id: str, name: str, login: str, provider: str, customers: 
     )
 
 
-def send_confirmation(user: User, token: str) -> None:
+def send_confirmation(user: 'User', token: str) -> None:
     subject = "[Alerta] Please verify your email '%s'" % user.email
     text = 'Hello {name}!\n\n' \
            'Please verify your email address is {email} by clicking on the link below:\n\n' \
@@ -82,7 +84,7 @@ def send_confirmation(user: User, token: str) -> None:
     mailer.send_email(user.email, subject, body=text)
 
 
-def send_password_reset(user: User, token: str) -> None:
+def send_password_reset(user: 'User', token: str) -> None:
     subject = '[Alerta] Reset password request'
     text = 'You forgot your password. Reset it by clicking on the link below:\n\n' \
            '{url}\n\n' \

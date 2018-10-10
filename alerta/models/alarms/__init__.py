@@ -17,9 +17,9 @@ class AlarmModel(Base):
     Severity = {}  # type: ignore
     Colors = {}  # type: ignore
 
-    DEFAULT_STATUS = None
-    DEFAULT_NORMAL_SEVERITY = None
-    DEFAULT_PREVIOUS_SEVERITY = None
+    DEFAULT_STATUS = None  # type: str
+    DEFAULT_NORMAL_SEVERITY = None  # type: str
+    DEFAULT_PREVIOUS_SEVERITY = None  # type: str
 
     def __init__(self, app=None):
         self.app = None

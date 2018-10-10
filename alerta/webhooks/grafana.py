@@ -1,7 +1,9 @@
 import json
+from typing import Any, Dict
 
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
+from werkzeug.datastructures import ImmutableMultiDict
 
 from alerta.app import qb
 from alerta.auth.decorators import permission
@@ -11,8 +13,10 @@ from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
 
+JSON = Dict[str, Any]
 
-def parse_grafana(alert, match, args):
+
+def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) -> Alert:
     alerting_severity = args.get('severity', 'major')
 
     if alert['state'] == 'alerting':

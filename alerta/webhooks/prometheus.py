@@ -1,5 +1,7 @@
 
+import datetime
 from copy import copy
+from typing import Any, Dict
 
 import pytz
 from dateutil.parser import parse as parse_date
@@ -13,8 +15,11 @@ from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
 
+JSON = Dict[str, Any]
+dt = datetime.datetime
 
-def parse_prometheus(alert, external_url):
+
+def parse_prometheus(alert: JSON, external_url: str) -> Alert:
 
     status = alert.get('status', 'firing')
 
@@ -22,10 +27,10 @@ def parse_prometheus(alert, external_url):
     annotations = copy(alert['annotations'])
 
     starts_at = parse_date(alert['startsAt'])
-    if alert['endsAt'] == '0001-01-01T00:00:00Z':
-        ends_at = None
-    else:
+    if alert['endsAt'] != '0001-01-01T00:00:00Z':
         ends_at = parse_date(alert['endsAt'])
+    else:
+        ends_at = None  # type: ignore
 
     if status == 'firing':
         severity = labels.pop('severity', 'warning')

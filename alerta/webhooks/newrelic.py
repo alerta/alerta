@@ -1,3 +1,4 @@
+from typing import Any, Dict
 
 from flask import jsonify, request
 from flask_cors import cross_origin
@@ -9,8 +10,10 @@ from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
 
+JSON = Dict[str, Any]
 
-def parse_newrelic(alert):
+
+def parse_newrelic(alert: JSON) -> Alert:
 
     if 'version' not in alert:
         raise ValueError('New Relic Legacy Alerting is not supported')

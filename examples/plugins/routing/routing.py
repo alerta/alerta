@@ -36,6 +36,7 @@ def rules(alert, plugins):
             plugins['slack']
         ]
     else:
+        # Tier 3 customers get "best effort"
         return [
             plugins['reject'],
             plugins['blackout']
