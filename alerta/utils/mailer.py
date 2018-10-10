@@ -1,11 +1,12 @@
 
-from flask import current_app
+from flask import Flask, current_app
 
 try:
     import smtplib
     import socket
     import ssl
 
+    from smtplib import SMTP  # noqa
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
 except ImportError:
@@ -14,12 +15,12 @@ except ImportError:
 
 class Mailer:
 
-    def __init__(self, app=None):
+    def __init__(self, app: Flask=None) -> None:
         self.app = None
         if app is not None:
             self.register(app)
 
-    def register(self, app):
+    def register(self, app: Flask) -> None:
 
         self.smtp_host = app.config['SMTP_HOST']
         self.smtp_port = app.config['SMTP_PORT']
@@ -34,7 +35,7 @@ class Mailer:
         self.smtp_use_ssl = app.config['SMTP_USE_SSL']
         self.smtp_starttls = app.config['SMTP_STARTTLS']
 
-    def send_email(self, email, subject, body):
+    def send_email(self, email: str, subject: str, body: str) -> None:
 
         msg = MIMEMultipart('related')
         msg['Subject'] = subject
@@ -54,7 +55,7 @@ class Mailer:
 
             if self.smtp_use_ssl:
                 mx = smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, local_hostname=self.mail_localhost,
-                                      context=ctx)
+                                      context=ctx)  # type: SMTP
             else:
                 mx = smtplib.SMTP(self.smtp_host, self.smtp_port, local_hostname=self.mail_localhost)
 

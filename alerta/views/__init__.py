@@ -1,7 +1,7 @@
 
 from alerta.app import alarm_model
 from alerta.exceptions import ApiError
-from alerta.utils.api import absolute_url
+from alerta.utils.response import absolute_url
 from flask import Blueprint, request, jsonify, current_app
 
 api = Blueprint('api', __name__)

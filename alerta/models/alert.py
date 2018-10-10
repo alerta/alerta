@@ -11,8 +11,8 @@ from flask import current_app
 from alerta.app import alarm_model, db
 from alerta.database.base import Query
 from alerta.models.history import History, RichHistory
-from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
+from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
 
@@ -93,7 +93,7 @@ class Alert:
             attributes=json.get('attributes', dict()),
             origin=json.get('origin', None),
             event_type=json.get('type', None),
-            create_time=DateTime.parse(json.get('createTime')),
+            create_time=DateTime.parse(json['createTime']) if 'createTime' in json else None,
             timeout=json.get('timeout', None),
             raw_data=json.get('rawData', None),
             customer=json.get('customer', None)

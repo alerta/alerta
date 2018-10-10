@@ -10,8 +10,8 @@ from flask import current_app
 
 from alerta.app import db
 from alerta.database.base import Query
-from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
+from alerta.utils.response import absolute_url
 
 MAX_LATENCY = 2000  # ms
 
@@ -60,7 +60,7 @@ class Heartbeat:
         return Heartbeat(
             origin=json.get('origin', None),
             tags=json.get('tags', list()),
-            create_time=DateTime.parse(json.get('createTime')),
+            create_time=DateTime.parse(json['createTime']) if 'createTime' in json else None,
             timeout=json.get('timeout', None),
             customer=json.get('customer', None)
         )

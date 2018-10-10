@@ -6,7 +6,8 @@ from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.heartbeat import Heartbeat
-from alerta.utils.api import assign_customer, jsonp
+from alerta.utils.api import assign_customer
+from alerta.utils.response import jsonp
 
 from . import api
 

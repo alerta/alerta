@@ -7,8 +7,8 @@ from flask import current_app
 
 from alerta.app import db
 from alerta.database.base import Query
-from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
+from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
 
@@ -84,8 +84,8 @@ class Blackout:
             group=json.get('group', None),
             tags=json.get('tags', list()),
             customer=json.get('customer', None),
-            start_time=DateTime.parse(json.get('startTime')),
-            end_time=DateTime.parse(json.get('endTime')),
+            start_time=DateTime.parse(json['startTime']) if 'startTime' in json else None,
+            end_time=DateTime.parse(json['endTime']) if 'endTime' in json else None,
             duration=json.get('duration', None),
             user=json.get('user', None),
             text=json.get('text', None)

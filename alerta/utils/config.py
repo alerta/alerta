@@ -1,19 +1,21 @@
 
 import logging
 import os
+from logging import Handler  # noqa
 from logging.handlers import RotatingFileHandler
 
+from flask import Flask
 from flask.logging import default_handler, wsgi_errors_stream
 
 
 class Config:
 
-    def __init__(self, app=None):
+    def __init__(self, app: Flask=None) -> None:
         self.app = None
         if app:
             self.init_app(app)
 
-    def init_app(self, app):
+    def init_app(self, app: Flask) -> None:
         config = self.get_user_config()
         app.config.update(config)
         self.setup_logging(app)
@@ -137,7 +139,7 @@ class Config:
         return config
 
     @staticmethod
-    def setup_logging(app):
+    def setup_logging(app: Flask) -> None:
         app.logger.removeHandler(default_handler)
 
         if app.config['LOG_FILE']:
@@ -146,7 +148,7 @@ class Config:
                 maxBytes=app.config['LOG_MAX_BYTES'],
                 backupCount=app.config['LOG_BACKUP_COUNT'],
                 encoding='utf-8'
-            )
+            )  # type: Handler
             app.logger.addHandler(handler)
         else:
             handler = logging.StreamHandler(wsgi_errors_stream)
