@@ -74,6 +74,6 @@ class Customer:
         return db.delete_customer(self.id)
 
     @classmethod
-    def lookup(cls, login: str, groups: List[str]) -> Optional[List['Customer']]:
+    def lookup(cls, login: str, groups: List[str]) -> List[str]:
         customers = db.get_customers_by_match(login, matches=groups)
-        return customers if customers != '*' else None
+        return customers if customers != '*' else []

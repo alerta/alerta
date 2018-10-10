@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import List, Optional, Union, cast
+from typing import Any, List, cast
 from urllib.parse import urljoin
 from uuid import uuid4
 
@@ -17,12 +17,12 @@ from alerta.models.user import User
 try:
     import bcrypt  # type: ignore
 
-    def generate_password_hash(password: Union[str, bytes]) -> str:
+    def generate_password_hash(password: Any) -> str:
         if isinstance(password, text_type):
             password = password.encode('utf-8')
         return bcrypt.hashpw(password, bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
 
-    def check_password_hash(pwhash: str, password: str) -> bool:
+    def check_password_hash(pwhash: str, password: Any) -> bool:
         return bcrypt.checkpw(password.encode('utf-8'), pwhash.encode('utf-8'))
 
 except ImportError:  # Google App Engine
@@ -35,14 +35,14 @@ def not_authorized(allowed_setting: str, groups: List[str]) -> bool:
                  set(current_app.config[allowed_setting]).intersection(set(groups))))
 
 
-def get_customers(login: str, groups: List[str]) -> Optional[List['Customer']]:
+def get_customers(login: str, groups: List[str]) -> List[str]:
     if current_app.config['CUSTOMER_VIEWS']:
         try:
             return Customer.lookup(login, groups)
         except NoCustomerMatch as e:
             raise ApiError(str(e), 403)
     else:
-        return None
+        return []
 
 
 def create_token(user_id: str, name: str, login: str, provider: str, customers: List[str], orgs: List[str]=None,
