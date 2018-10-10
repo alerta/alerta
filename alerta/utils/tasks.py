@@ -1,3 +1,4 @@
+from typing import List
 
 from alerta.app import create_celery_app
 from alerta.exceptions import RejectException
@@ -8,7 +9,7 @@ celery = create_celery_app()
 
 
 @celery.task
-def action_alerts(alerts, action, text, timeout):
+def action_alerts(alerts: List[str], action: str, text: str, timeout: int) -> None:
     updated = []
     errors = []
     for alert_id in alerts:

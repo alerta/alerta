@@ -1,18 +1,21 @@
 
 import datetime
 import traceback
+from typing import Any, Optional
 
 import six
 from bson import ObjectId
 from flask import json
 from kombu.serialization import register
 
+dt = datetime.datetime
+
 
 class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, o):
+    def default(self, o: Any) -> Any:
         from alerta.models.alert import Alert, History
-        if isinstance(o, (datetime.date, datetime.datetime)):
-            return o.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + '.%03dZ' % (o.microsecond // 1000)
+        if isinstance(o, datetime.datetime):
+            return DateTime.iso8601(o)
         elif isinstance(o, datetime.timedelta):
             return int(o.total_seconds())
         elif isinstance(o, (Alert, History)):
@@ -27,24 +30,24 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 class DateTime:
     @staticmethod
-    def parse(date_str):
+    def parse(date_str: str) -> Optional[dt]:
         if not isinstance(date_str, six.string_types):
-            return
+            return None
         try:
             return datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%fZ')
         except Exception:
             raise ValueError('dates must be ISO 8601 date format YYYY-MM-DDThh:mm:ss.sssZ')
 
     @staticmethod
-    def iso8601(dt):
+    def iso8601(dt: dt) -> str:
         return dt.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + '.%03dZ' % (dt.microsecond // 1000)
 
 
-def custom_json_dumps(obj):
+def custom_json_dumps(obj: object) -> str:
     return json.dumps(obj, cls=CustomJSONEncoder)
 
 
-def register_custom_serializer():
+def register_custom_serializer() -> None:
     register('customjson', custom_json_dumps, json.loads,
              content_type='application/x-customjson',
              content_encoding='utf-8')

@@ -6,7 +6,7 @@ from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.customer import Customer
-from alerta.utils.api import jsonp
+from alerta.utils.response import jsonp
 
 from . import api
 

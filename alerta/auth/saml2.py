@@ -4,8 +4,9 @@ import json
 from flask import current_app, jsonify, make_response, request
 from flask_cors import cross_origin
 
-from alerta.auth.utils import create_token, get_customers, not_authorized
-from alerta.utils.api import absolute_url, deepmerge
+from alerta.auth.utils import (create_token, deepmerge, get_customers,
+                               not_authorized)
+from alerta.utils.response import absolute_url
 
 from . import auth
 

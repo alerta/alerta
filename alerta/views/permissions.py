@@ -5,7 +5,7 @@ from flask_cors import cross_origin
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.permission import Permission
-from alerta.utils.api import jsonp
+from alerta.utils.response import jsonp
 
 from . import api
 

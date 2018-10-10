@@ -8,7 +8,7 @@ from flask import current_app
 from alerta.app import db
 from alerta.auth import utils
 from alerta.database.base import Query
-from alerta.utils.api import absolute_url
+from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
 

@@ -10,8 +10,8 @@ from psycopg2.extras import Json, NamedTupleCursor, register_composite
 
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
-from alerta.utils.api import absolute_url
 from alerta.utils.format import DateTime
+from alerta.utils.response import absolute_url
 
 from .utils import Query
 
