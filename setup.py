@@ -43,8 +43,6 @@ setuptools.setup(
         'raven[flask]>=6.2.1',
         'pymongo>=3.0',
         'psycopg2',
-        'celery',
-        'redis',
         'requests',
         'python-dateutil',
         'pytz',

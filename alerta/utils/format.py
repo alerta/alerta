@@ -6,7 +6,6 @@ from typing import Any, Optional
 import six
 from bson import ObjectId
 from flask import json
-from kombu.serialization import register
 
 dt = datetime.datetime
 
@@ -48,6 +47,7 @@ def custom_json_dumps(obj: object) -> str:
 
 
 def register_custom_serializer() -> None:
+    from kombu.serialization import register
     register('customjson', custom_json_dumps, json.loads,
              content_type='application/x-customjson',
              content_encoding='utf-8')

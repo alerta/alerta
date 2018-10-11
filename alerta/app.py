@@ -1,6 +1,5 @@
 from typing import Any, Dict
 
-from celery import Celery
 from flask import Flask
 from flask_compress import Compress
 from flask_cors import CORS
@@ -70,9 +69,17 @@ def create_app(config_override: Dict[str, Any]=None, environment: str=None) -> F
     return app
 
 
-def create_celery_app(app: Flask=None) -> Celery:
+try:
+    from celery import Celery
+except ImportError:
+    pass
+
+
+def create_celery_app(app: Flask=None) -> 'Celery':
+
     from alerta.utils.format import register_custom_serializer
     register_custom_serializer()
+
     app = app or create_app()
     celery = Celery(
         app.name,
