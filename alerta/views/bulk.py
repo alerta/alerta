@@ -9,7 +9,6 @@ from alerta.models.alert import Alert
 from alerta.models.metrics import timer
 from alerta.utils.api import process_status
 from alerta.utils.response import absolute_url, jsonp
-from alerta.utils.tasks import action_alerts
 from alerta.views.alerts import (attrs_timer, delete_timer, status_timer,
                                  tag_timer)
 
@@ -22,6 +21,7 @@ from . import api
 @timer(status_timer)
 @jsonp
 def task_status(task_id):
+    from alerta.tasks import action_alerts
     task = action_alerts.AsyncResult(task_id)
 
     return jsonify(status=task.status.lower(), id=task.id)
@@ -73,6 +73,8 @@ def bulk_set_status():
 @timer(status_timer)
 @jsonp
 def bulk_action_alert():
+    from alerta.tasks import action_alerts
+
     action = request.json.get('action', None)
     text = request.json.get('text', 'bulk status update')
     timeout = request.json.get('timeout', None)
