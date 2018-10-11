@@ -121,6 +121,7 @@ SMTP_USERNAME = ''  # application-specific username if different to MAIL_FROM us
 SMTP_PASSWORD = ''  # password for MAIL_FROM (or SMTP_USERNAME if used)
 
 # Web console settings
+SITE_LOGO_URL = ''  # URL to company logo
 DATE_FORMAT_SHORT_TIME = 'HH:mm'  # eg. 09:24
 DATE_FORMAT_MEDIUM_DATE = 'EEE d MMM HH:mm'  # eg. Tue 9 Oct 09:24
 DATE_FORMAT_LONG_DATE = 'd/M/yyyy h:mm:ss.sss a'  # eg. 9/10/2018 9:24:03.036 AM
