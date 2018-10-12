@@ -318,6 +318,31 @@ class Backend(Database):
         if self.get_db().alerts.insert_one(data).inserted_id == alert.id:
             return data
 
+    def set_alert(self, id, severity, status, tags, attributes, timeout, history=None):
+        query = {'_id': {'$regex': '^' + id}}
+
+        update = {
+            '$set': {
+                'severity': severity,
+                'status': status,
+                'timeout': timeout,
+                'attributes': attributes
+            },
+            '$addToSet': {'tags': {'$each': tags}},
+            '$push': {
+                'history': {
+                    '$each': [history.serialize],
+                    '$slice': -abs(current_app.config['HISTORY_LIMIT'])
+                }
+            }
+        }
+
+        return self.get_db().alerts.find_one_and_update(
+            query,
+            update=update,
+            return_document=ReturnDocument.AFTER
+        )
+
     def get_alert(self, id, customers=None):
         if len(id) == 8:
             query = {'$or': [{'_id': {'$regex': '^' + id}}, {'lastReceiveId': {'$regex': '^' + id}}]}

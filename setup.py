@@ -57,8 +57,7 @@ setuptools.setup(
         ],
         'alerta.plugins': [
             'reject = alerta.plugins.reject:RejectPolicy',
-            'blackout = alerta.plugins.blackout:BlackoutHandler',
-            'gitlab = alerta.plugins.gitlab:GitlabIssue'
+            'blackout = alerta.plugins.blackout:BlackoutHandler'
         ]
     },
     keywords='alert monitoring system wsgi application api',

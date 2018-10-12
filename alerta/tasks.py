@@ -14,9 +14,11 @@ def action_alerts(alerts: List[str], action: str, text: str, timeout: int) -> No
     errors = []
     for alert_id in alerts:
         alert = Alert.find_by_id(alert_id)
+
         try:
-            severity, status = process_action(alert, action, text)
-            alert, status, text = process_status(alert, status, text)
+            previous_status = alert.status
+            alert, action, text = process_action(alert, action, text)
+            alert = alert.from_action(action, text, timeout)
         except RejectException as e:
             errors.append(str(e))
             continue
@@ -24,5 +26,15 @@ def action_alerts(alerts: List[str], action: str, text: str, timeout: int) -> No
             errors.append(str(e))
             continue
 
-        if alert.set_severity_and_status(severity, status, text, timeout):
-            updated.append(alert.id)
+        if previous_status != alert.status:
+            try:
+                alert, status, text = process_status(alert, alert.status, text)
+                alert = alert.from_status(status, text, timeout)
+            except RejectException as e:
+                errors.append(str(e))
+                continue
+            except Exception as e:
+                errors.append(str(e))
+                continue
+
+        updated.append(alert.id)

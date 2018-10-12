@@ -84,16 +84,15 @@ def process_alert(alert: Alert) -> Alert:
     return alert
 
 
-def process_action(alert: Alert, action: str, text: str) -> Tuple[str, str]:
+def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, str]:
 
     updated = None
     for plugin in plugins.routing(alert):
-        print(plugin)
         if alert.is_suppressed:
             break
         try:
             updated = plugin.take_action(alert, action, text)
-        except RuntimeWarning:
+        except NotImplementedError:
             pass  # plugin does not support action() method
         except RejectException:
             raise
@@ -108,11 +107,11 @@ def process_action(alert: Alert, action: str, text: str) -> Tuple[str, str]:
             except Exception:
                 alert = updated
 
-    if updated:
-        alert.tag(alert.tags)
-        alert.update_attributes(alert.attributes)
+    # remove keys from attributes with None values
+    new_attrs = {k: v for k, v in alert.attributes.items() if v is not None}
+    alert.attributes = new_attrs
 
-    return alert.from_action(action)
+    return alert, action, text
 
 
 def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, str]:
@@ -136,9 +135,8 @@ def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, st
             except Exception:
                 alert = updated
 
-    if updated:
-        alert.status = status
-        alert.tag(alert.tags)
-        alert.update_attributes(alert.attributes)
+    # remove keys from attributes with None values
+    new_attrs = {k: v for k, v in alert.attributes.items() if v is not None}
+    alert.attributes = new_attrs
 
     return alert, status, text
