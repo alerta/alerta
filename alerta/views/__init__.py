@@ -65,6 +65,7 @@ def config():
         'audio': {
             'new': current_app.config['DEFAULT_AUDIO_FILE']
         },
+        'columns': current_app.config['COLUMNS'],
         'sort_by': current_app.config['SORT_LIST_BY'],
         'tracking_id': current_app.config['GOOGLE_TRACKING_ID'],
         'refresh_interval': current_app.config['AUTO_REFRESH_INTERVAL']

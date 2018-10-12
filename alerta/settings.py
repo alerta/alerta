@@ -126,6 +126,8 @@ DATE_FORMAT_SHORT_TIME = 'HH:mm'  # eg. 09:24
 DATE_FORMAT_MEDIUM_DATE = 'EEE d MMM HH:mm'  # eg. Tue 9 Oct 09:24
 DATE_FORMAT_LONG_DATE = 'd/M/yyyy h:mm:ss.sss a'  # eg. 9/10/2018 9:24:03.036 AM
 DEFAULT_AUDIO_FILE = None  # must exist on client at relative path eg. `/audio/Bike Horn.mp3'
+COLUMNS = ['severity', 'status', 'lastReceiveTime', 'duplicateCount',
+           'customer', 'environment', 'service', 'resource', 'event', 'value', 'text']
 SORT_LIST_BY = 'lastReceiveTime'  # newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
 GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
