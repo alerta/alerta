@@ -15,7 +15,7 @@ def action_alerts(alerts: List[str], action: str, text: str, timeout: int) -> No
     for alert_id in alerts:
         alert = Alert.find_by_id(alert_id)
         try:
-            severity, status = process_action(alert, action)
+            severity, status = process_action(alert, action, text)
             alert, status, text = process_status(alert, status, text)
         except RejectException as e:
             errors.append(str(e))

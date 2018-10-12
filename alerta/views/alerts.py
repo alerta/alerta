@@ -129,7 +129,7 @@ def action_alert(alert_id):
         raise ApiError('not found', 404)
 
     try:
-        severity, status = process_action(alert, action)
+        severity, status = process_action(alert, action, text)
         alert, status, text = process_status(alert, status, text)
     except RejectException as e:
         raise ApiError(str(e), 400)

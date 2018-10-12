@@ -84,7 +84,34 @@ def process_alert(alert: Alert) -> Alert:
     return alert
 
 
-def process_action(alert: Alert, action: str) -> Tuple[str, str]:
+def process_action(alert: Alert, action: str, text: str) -> Tuple[str, str]:
+
+    updated = None
+    for plugin in plugins.routing(alert):
+        print(plugin)
+        if alert.is_suppressed:
+            break
+        try:
+            updated = plugin.take_action(alert, action, text)
+        except RuntimeWarning:
+            pass  # plugin does not support action() method
+        except RejectException:
+            raise
+        except Exception as e:
+            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                raise ApiError("Error while running action plug-in '{}': {}".format(plugin.name, str(e)))
+            else:
+                logging.error("Error while running action plug-in '{}': {}".format(plugin.name, str(e)))
+        if updated:
+            try:
+                alert, action, text = updated
+            except Exception:
+                alert = updated
+
+    if updated:
+        alert.tag(alert.tags)
+        alert.update_attributes(alert.attributes)
+
     return alert.from_action(action)
 
 

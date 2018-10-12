@@ -29,6 +29,10 @@ class PluginBase:
         """Trigger integrations based on status changes."""
         raise NotImplementedError
 
+    def take_action(self, alert: 'Alert', action: str, text: str) -> Any:
+        """Trigger integrations based on external actions. (optional)"""
+        raise RuntimeWarning
+
 
 class FakeApp:
 
