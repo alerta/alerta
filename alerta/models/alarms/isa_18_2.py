@@ -86,8 +86,6 @@ class StateMachine(AlarmModel):
         StateMachine.DEFAULT_PREVIOUS_SEVERITY = app.config['DEFAULT_PREVIOUS_SEVERITY'] or DEFAULT_PREVIOUS_SEVERITY
 
     def trend(self, previous, current):
-        print(previous)
-        print(current)
         if StateMachine.Severity[previous] < StateMachine.Severity[current]:
             return MORE_SEVERE
         elif StateMachine.Severity[previous] > StateMachine.Severity[current]:

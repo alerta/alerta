@@ -129,6 +129,8 @@ DEFAULT_AUDIO_FILE = None  # must exist on client at relative path eg. `/audio/B
 COLUMNS = ['severity', 'status', 'lastReceiveTime', 'duplicateCount',
            'customer', 'environment', 'service', 'resource', 'event', 'value', 'text']
 SORT_LIST_BY = 'lastReceiveTime'  # newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
+# list of custom actions
+ACTIONS = []  # type: List[str]
 GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
 

@@ -255,6 +255,18 @@ class Backend(Database):
         """
         return self._insert(insert, vars(alert))
 
+    def set_alert(self, id, severity, status, tags, attributes, timeout, history=None):
+        update = """
+            UPDATE alerts
+               SET severity=%(severity)s, status=%(status)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
+                   attributes=%(attributes)s, timeout=%(timeout)s, history=(%(change)s || history)[1:{limit}]
+             WHERE id=%(id)s OR id LIKE %(like_id)s
+         RETURNING *
+        """.format(limit=current_app.config['HISTORY_LIMIT'])
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'severity': severity, 'status': status,
+                                        'tags': tags, 'attributes': attributes,
+                                        'timeout': timeout, 'change': history}, returning=True)
+
     def get_alert(self, id, customers=None):
         select = """
             SELECT * FROM alerts

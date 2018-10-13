@@ -318,7 +318,6 @@ class Alert:
                 previous_severity=alarm_model.DEFAULT_PREVIOUS_SEVERITY,
                 current_severity=self.severity
             )
-        print(self.severity)
         trend_indication = alarm_model.trend(alarm_model.DEFAULT_PREVIOUS_SEVERITY, self.severity)
 
         self.duplicate_count = 0
@@ -356,10 +355,16 @@ class Alert:
         return Alert.from_db(db.get_alert(id, customers))
 
     def is_blackout(self) -> bool:
+        """Does this alert match a blackout period?"""
         if not current_app.config['NOTIFICATION_BLACKOUT']:
             if self.severity in current_app.config['BLACKOUT_ACCEPT']:
                 return False
         return db.is_blackout_period(self)
+
+    @property
+    def is_suppressed(self) -> bool:
+        """Is the alert status 'blackout'?"""
+        return alarm_model.is_suppressed(self)
 
     # set alert status
     def set_status(self, status: str, text: str='', timeout: int=None) -> 'Alert':
@@ -504,7 +509,19 @@ class Alert:
             )
             db.set_status(id, 'open', timeout=current_app.config['ALERT_TIMEOUT'], history=history)
 
-    def from_action(self, action: str, text: str='', timeout: int=None) -> Tuple[str, str]:
+    def from_status(self, status: str, text: str='', timeout: int=None) -> 'Alert':
+        self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
+        history = History(
+            id=self.id,
+            event=self.event,
+            status=status,
+            text=text,
+            change_type='status',
+            update_time=datetime.utcnow()
+        )
+        return Alert.from_db(db.set_alert(self.id, self.severity, status, self.tags, self.attributes, timeout, history))
+
+    def from_action(self, action: str, text: str='', timeout: int=None) -> 'Alert':
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
         previous_status = db.get_status(self)
 
@@ -525,9 +542,4 @@ class Alert:
             change_type='action',
             update_time=datetime.utcnow()
         )
-        db.set_severity_and_status(self.id, severity, status, self.timeout, history)
-        return severity, status
-
-    @property
-    def is_suppressed(self) -> bool:
-        return alarm_model.is_suppressed(self)
+        return Alert.from_db(db.set_alert(self.id, severity, status, self.tags, self.attributes, timeout, history))
