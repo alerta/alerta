@@ -97,15 +97,16 @@ def set_status(alert_id):
 
     try:
         alert, status, text = process_status(alert, status, text)
+        alert = alert.from_status(status, text, timeout)
     except RejectException as e:
         raise ApiError(str(e), 400)
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    if alert.set_status(status, text, timeout):
+    if alert:
         return jsonify(status='ok')
     else:
-        raise ApiError('failed to set alert status', 500)
+        raise ApiError('failed to set status', 500)
 
 
 # action alert
@@ -129,17 +130,26 @@ def action_alert(alert_id):
         raise ApiError('not found', 404)
 
     try:
-        severity, status = process_action(alert, action)
-        alert, status, text = process_status(alert, status, text)
+        previous_status = alert.status
+        alert, action, text = process_action(alert, action, text)
+        alert = alert.from_action(action, text, timeout)
     except RejectException as e:
         raise ApiError(str(e), 400)
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    if alert.set_severity_and_status(severity, status, text, timeout):
+    if previous_status != alert.status:
+        try:
+            alert, status, text = process_status(alert, alert.status, text)
+        except RejectException as e:
+            raise ApiError(str(e), 400)
+        except Exception as e:
+            raise ApiError(str(e), 500)
+
+    if alert:
         return jsonify(status='ok')
     else:
-        raise ApiError('failed to perform alert action', 500)
+        raise ApiError('failed to action alert', 500)
 
 
 # tag
