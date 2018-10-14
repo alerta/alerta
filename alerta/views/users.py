@@ -3,7 +3,7 @@ from flask_cors import cross_origin
 
 from alerta.app import qb
 from alerta.auth.decorators import permission
-from alerta.auth.utils import create_token, get_customers, not_authorized
+from alerta.auth.utils import not_authorized
 from alerta.exceptions import ApiError
 from alerta.models.user import User
 from alerta.utils.response import jsonp
@@ -33,23 +33,14 @@ def create_user():
     except Exception as e:
         ApiError(str(e), 500)
 
-    # if email verification is enforced, deny login and send email
+    # if email verification is enforced, send confirmation email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
         user.send_confirmation()
-        raise ApiError('email not verified', 401)
 
-    # check user is active
-    if user.status != 'active':
-        raise ApiError('user not active', 403)
-
-    # assign customers & update last login time
-    customers = get_customers(user.email, groups=[user.domain])
-    user.update_last_login()
-
-    # generate token
-    token = create_token(user.id, user.name, user.email, provider='basic', customers=customers,
-                         roles=user.roles, email=user.email, email_verified=user.email_verified)
-    return jsonify(token=token.tokenize)
+    if user:
+        return jsonify(status='ok', id=user.id, data=user.serialize), 201
+    else:
+        raise ApiError('create user failed', 500)
 
 
 @api.route('/user/<user_id>', methods=['OPTIONS', 'PUT'])
