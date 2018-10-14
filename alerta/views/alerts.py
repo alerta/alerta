@@ -325,7 +325,8 @@ def get_counts():
         status='ok',
         total=sum(severity_count.values()),
         severityCounts=severity_count,
-        statusCounts=status_count
+        statusCounts=status_count,
+        autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
     )
 
 
@@ -343,14 +344,16 @@ def get_top10_count():
         return jsonify(
             status='ok',
             top10=top10,
-            total=len(top10)
+            total=len(top10),
+            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
         )
     else:
         return jsonify(
             status='ok',
             message='not found',
             top10=[],
-            total=0
+            total=0,
+            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
         )
 
 
@@ -368,14 +371,16 @@ def get_top10_flapping():
         return jsonify(
             status='ok',
             top10=top10,
-            total=len(top10)
+            total=len(top10),
+            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
         )
     else:
         return jsonify(
             status='ok',
             message='not found',
             top10=[],
-            total=0
+            total=0,
+            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
         )
 
 
@@ -393,14 +398,16 @@ def get_top10_standing():
         return jsonify(
             status='ok',
             top10=top10,
-            total=len(top10)
+            total=len(top10),
+            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
         )
     else:
         return jsonify(
             status='ok',
             message='not found',
             top10=[],
-            total=0
+            total=0,
+            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
         )
 
 
