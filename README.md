@@ -1,4 +1,4 @@
-Alerta Release 6.0
+Alerta Release 6.2
 ==================
 
 [![Build Status](https://travis-ci.org/alerta/alerta.png)](https://travis-ci.org/alerta/alerta)
@@ -34,17 +34,22 @@ The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optio
 Installation
 ------------
 
-To install MongoDB on Debian/Ubuntu run::
+To install MongoDB on Debian/Ubuntu run:
 
     $ sudo apt-get install -y mongodb-org
     $ mongod
+    
+To install MongoDB on CentOS/RHEL run:
 
-To install the Alerta server and client run::
+    $ sudo yum install -y mongodb
+    $ mongod
+
+To install the Alerta server and client run:
 
     $ pip install alerta-server alerta
     $ alertad run
 
-To install the web console run::
+To install the web console run:
 
     $ wget -O alerta-web.tgz https://github.com/alerta/angular-alerta-webui/tarball/master
     $ tar zxvf alerta-web.tgz
@@ -52,6 +57,9 @@ To install the web console run::
     $ python -m http.server 8000
 
     >> browse to http://localhost:8000
+    
+### Docker
+Alerta and MongoDB can also run using Docker containers, see [alerta/docker-alerta](https://github.com/alerta/docker-alerta).
 
 Configuration
 -------------
@@ -71,14 +79,14 @@ at <http://docs.alerta.io>
 Development
 -----------
 
-To run in development mode, listening on port 5000::
+To run in development mode, listening on port 5000:
 
     $ export FLASK_APP=alerta FLASK_ENV=development
     $ pip install -e .
     $ flask run
 
 To run in development mode, listening on port 8080, using Postgres and
-reporting errors to [Sentry](https://sentry.io)::
+reporting errors to [Sentry](https://sentry.io):
 
     $ export FLASK_APP=alerta FLASK_ENV=development
     $ export DATABASE_URL=postgres://localhost:5432/alerta5
@@ -106,7 +114,7 @@ except Exception:
 Tests
 -----
 
-To run the tests using a local Postgres database run::
+To run the tests using a local Postgres database run:
 
     $ pip install -r requirements.txt
     $ pip install -e .
