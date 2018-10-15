@@ -640,18 +640,14 @@ class AlertTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn('services', data)
 
-    def test_mongo_query(self):
+    def test_query_param(self):
         # create alert
         response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
-        if self.app.config['DATABASE_URL'].startswith('mongodb'):
-            query_dict = {
-                'q': '{"event": "node_up"}'
-            }
-            response = self.client.get('/alerts', query_string=query_dict)
-            self.assertEqual(response.status_code, 200)
-            data = json.loads(response.data.decode('utf-8'))
-            self.assertEquals(data['total'], 1)
-            self.assertEquals(data['alerts'][0]['event'], 'node_up')
+        response = self.client.get('/alerts?q=event:node_up')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEquals(data['total'], 1)
+        self.assertEquals(data['alerts'][0]['event'], 'node_up')

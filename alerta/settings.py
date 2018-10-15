@@ -23,6 +23,7 @@ SECRET_KEY = 'changeme'
 ALARM_MODEL = 'ALERTA'  # 'ALERTA' (default) or 'ISA_18_2'
 
 QUERY_LIMIT = 1000
+DEFAULT_FIELD = 'text'  # default field if no search prefix specified (Postgres only)
 DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single query
 BULK_QUERY_LIMIT = 100000  # max number of alerts for bulk endpoints
 HISTORY_LIMIT = 100  # cap the number of alert history entries
