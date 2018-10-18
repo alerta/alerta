@@ -4,6 +4,7 @@ import pytz
 from flask import g
 from werkzeug.datastructures import MultiDict
 
+from alerta.database.backends.postgres.parser import expression
 from alerta.database.base import QueryBuilder
 from alerta.utils.format import DateTime
 
@@ -18,7 +19,8 @@ class QueryBuilderImpl(QueryBuilder):
 
         # q
         if params.get('q', None):
-            raise NotImplementedError("'q' search parameter is not currently supported")
+            query = [repr(expression.parseString(params.get('q'))[0])]
+            qvars = dict()
         else:
             query = ['1=1']
             qvars = dict()
