@@ -6,6 +6,7 @@ import pytz
 from flask import g
 from werkzeug.datastructures import MultiDict
 
+from alerta.database.backends.mongodb.parser import expression
 from alerta.database.base import QueryBuilder
 from alerta.utils.format import DateTime
 
@@ -16,11 +17,11 @@ Query.__new__.__defaults__ = ({}, {}, 'lastReceiveTime', 'status')  # type: igno
 class QueryBuilderImpl(QueryBuilder):
 
     @staticmethod
-    def from_params(params, query_time=None):
+    def from_params(params: MultiDict, query_time=None):
 
         # q
         if params.get('q', None):
-            query = json.loads(params['q'])
+            query = json.loads(repr(expression.parseString(params.get('q'))[0]))
         else:
             query = dict()
 
@@ -28,7 +29,7 @@ class QueryBuilderImpl(QueryBuilder):
         if g.get('customers', None):
             customer_query = {'customer': {'$in': g.get('customers')}}
         else:
-            customer_query = None
+            customer_query = None  # type: ignore
 
         # from-date, to-date
         from_date = params.get('from-date', default=None, type=DateTime.parse)
