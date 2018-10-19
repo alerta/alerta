@@ -1,82 +1,70 @@
 import unittest
 
-from alerta.app import create_app
-from alerta.database.backends.postgres.parser import expression as postgres_search
+from alerta.database.backends.postgres.parser import query_parser
 
 
 class PostgresQueryTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        test_config = {
-            'TESTING': True
-        }
-        self.app = create_app(test_config)
+        pass
 
     def test_word_and_phrase_terms(self):
 
-        with self.app.test_request_context('/'):
+        # default field (ie. "text") contains word
+        string = r'''quick'''
+        r = query_parser(string)
+        self.assertEqual(r, '"text" ILIKE \'%%quick%%\'')
 
-            # default field (ie. "text") contains word
-            string = r'''quick'''
-            r = postgres_search.parseString(string)
-            self.assertEqual(repr(r[0]), '"text" ILIKE \'%%quick%%\'')
-
-            # default field (ie. "text") contains phrase
-            string = r'''"quick brown"'''
-            r = postgres_search.parseString(string)
-            self.assertEqual(repr(r[0]), '"text" ~* \'quick brown\'')
+        # default field (ie. "text") contains phrase
+        string = r'''"quick brown"'''
+        r = query_parser(string)
+        self.assertEqual(r, '"text" ~* \'quick brown\'')
 
     def test_field_names(self):
 
-        with self.app.test_request_context('/'):
+        # field contains word
+        string = r'''status:active'''
+        r = query_parser(string)
+        self.assertEqual(r, '"status" ILIKE \'%%active%%\'')
 
-            # field contains word
-            string = r'''status:active'''
-            r = postgres_search.parseString(string)
-            self.assertEqual(repr(r[0]), '"status" ILIKE \'%%active%%\'')
+        # field contains either words
+        string = r'''title:(quick OR brown)'''
+        r = query_parser(string)
+        self.assertEqual(r, '("title" ILIKE \'%%quick%%\' OR "title" ILIKE \'%%brown%%\')')
 
-            # # field contains either words
-            # string = r'''title:(quick OR brown)'''
-            # r = postgres_search.parseString(string)
-            # self.assertEqual(repr(r[0]), '', repr(r[0]))
+        # field contains either words (default operator)
+        string = r'''title:(quick brown)'''
+        r = query_parser(string)
+        self.assertEqual(r, '("title" ILIKE \'%%quick%%\' OR "title" ILIKE \'%%brown%%\')')
 
-            # # field contains either words (default operator)
-            # string = r'''title:(quick brown)'''
-            # r = postgres_search.parseString(string)
-            # self.assertEqual(repr(r[0]), '')
+        # field exact match
+        string = r'''author:"John Smith"'''
+        r = query_parser(string)
+        self.assertEqual(r, '"author"=\'John Smith\'')
 
-            # field exact match
-            string = r'''author:"John Smith"'''
-            r = postgres_search.parseString(string)
-            self.assertEqual(repr(r[0]), '"author"=\'John Smith\'')
+        # # any attribute contains word or phrase
+        # string = r'''attributes.\*:(quick brown)'''
+        # r = query_parser(string)
+        # self.assertEqual(r, '??')
 
-            # # any attribute contains word or phrase
-            # string = r'''attributes.\*:(quick brown)'''
-            # r = postgres_search.parseString(string)
-            # self.assertEqual(repr(r[0]), '??')
-
-            # attribute field has non-null value
-            string = r'''_exists_:title'''
-            r = postgres_search.parseString(string)
-            self.assertEqual(repr(r[0]), '"attributes"::jsonb ? \'title\'')
+        # attribute field has non-null value
+        string = r'''_exists_:title'''
+        r = query_parser(string)
+        self.assertEqual(r, '"attributes"::jsonb ? \'title\'')
 
     def test_wildcards(self):
 
-        with self.app.test_request_context('/'):
-
-            # ? = single character, * = one or more characters
-            string = r'''text:qu?ck bro*'''
-            r = postgres_search.parseString(string)
-            self.assertEqual(repr(r[0]), '"text" ~* \'qu.?ck bro.*\'')
+        # ? = single character, * = one or more characters
+        string = r'''text:qu?ck bro*'''
+        r = query_parser(string)
+        self.assertEqual(r, '"text" ~* \'qu.?ck bro.*\'')
 
     def test_regular_expressions(self):
 
-        with self.app.test_request_context('/'):
-
-            string = r'''name:/joh?n(ath[oa]n)/'''
-            r = postgres_search.parseString(string)
-            self.assertEqual(repr(r[0]), '"name" ~* \'joh?n(ath[oa]n)\'')
+        string = r'''name:/joh?n(ath[oa]n)/'''
+        r = query_parser(string)
+        self.assertEqual(r, '"name" ~* \'joh?n(ath[oa]n)\'')
 
     def test_fuzziness(self):
         pass
@@ -87,46 +75,46 @@ class PostgresQueryTestCase(unittest.TestCase):
     # def test_ranges(self):
     #
     #     string = r'''date:[2012-01-01 TO 2012-12-31]'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
+    #     r = query_parser(string)
+    #     self.assertEqual(r, '??')
     #
     #     string = r'''count:[1 TO 5]'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
+    #     r = query_parser(string)
+    #     self.assertEqual(r, '??')
     #
     #     string = r'''tag:{alpha TO omega}'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
+    #     r = query_parser(string)
+    #     self.assertEqual(r, '??')
     #
     #     string = r'''count:[10 TO *]'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
+    #     r = query_parser(string)
+    #     self.assertEqual(r, '??')
     #
     #     string = r''''date:{* TO 2012-01-01}'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
+    #     r = query_parser(string)
+    #     self.assertEqual(r, '??')
     #
     #     string = r''''count:[1 TO 5}'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
+    #     r = query_parser(string)
+    #     self.assertEqual(r, '??')
     #
     # def test_unbounded_ranges(self):
     #
     #     string = r'''age:>10'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
+    #     r = query_parser(string)
+    #     self.assertEqual(r, '??')
     #
     #     string = r'''age:>=10'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
+    #     r = query_parser(string)
+    #     self.assertEqual(r, '??')
     #
     #     string = r'''age:<10'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
+    #     r = query_parser(string)
+    #     self.assertEqual(r, '??')
     #
     #     string = r'''age:<=10'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
+    #     r = query_parser(string)
+    #     self.assertEqual(r, '??')
 
     def test_boosting(self):
         pass
@@ -134,14 +122,14 @@ class PostgresQueryTestCase(unittest.TestCase):
     def test_boolean_operators(self):
         pass
 
-    # def test_grouping(self):
-    #
-    #     # field exact match
-    #     string = r'''(quick OR brown) AND fox'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
-    #
-    #     # field exact match
-    #     string = r'''status:(active OR pending) title:(full text search)'''
-    #     r = postgres_search.parseString(string)
-    #     self.assertEqual(repr(r[0]), '??')
+    def test_grouping(self):
+
+        # field exact match
+        string = r'''(quick OR brown) AND fox'''
+        r = query_parser(string)
+        self.assertEqual(r, '(("text" ILIKE \'%%quick%%\' OR "text" ILIKE \'%%brown%%\') AND "text" ILIKE \'%%fox%%\')')
+
+        # field exact match
+        string = r'''status:(active OR pending) title:(full text search)'''
+        r = query_parser(string)
+        self.assertEqual(r, '(("status" ILIKE \'%%active%%\' OR "status" ILIKE \'%%pending%%\') OR ("title" ILIKE \'%%full%%\' OR "title" ILIKE \'%%text%%\'))')
