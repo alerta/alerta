@@ -2,11 +2,14 @@ from collections import namedtuple
 
 import pytz
 from flask import g
+from pyparsing import ParseException
 from werkzeug.datastructures import MultiDict
 
-from alerta.database.backends.postgres.parser import expression
 from alerta.database.base import QueryBuilder
+from alerta.exceptions import ApiError
 from alerta.utils.format import DateTime
+
+from .parser import query_parser
 
 Query = namedtuple('Query', ['where', 'vars', 'sort', 'group'])
 Query.__new__.__defaults__ = ('1=1', {}, 'last_receive_time', 'status')  # type: ignore
@@ -19,8 +22,11 @@ class QueryBuilderImpl(QueryBuilder):
 
         # q
         if params.get('q', None):
-            query = [repr(expression.parseString(params.get('q'))[0])]
-            qvars = dict()
+            try:
+                query = [query_parser(params['q'])]
+                qvars = dict()
+            except ParseException as e:
+                raise ApiError('Failed to parse query string.', 400, [e])
         else:
             query = ['1=1']
             qvars = dict()
