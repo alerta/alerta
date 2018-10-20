@@ -9,7 +9,7 @@ from alerta.database.base import QueryBuilder
 from alerta.exceptions import ApiError
 from alerta.utils.format import DateTime
 
-from .parser import query_parser
+from .queryparser import QueryParser
 
 Query = namedtuple('Query', ['where', 'vars', 'sort', 'group'])
 Query.__new__.__defaults__ = ('1=1', {}, 'last_receive_time', 'status')  # type: ignore
@@ -23,7 +23,8 @@ class QueryBuilderImpl(QueryBuilder):
         # q
         if params.get('q', None):
             try:
-                query = [query_parser(params['q'])]
+                parser = QueryParser()
+                query = [parser.parse(params['q'])]
                 qvars = dict()
             except ParseException as e:
                 raise ApiError('Failed to parse query string.', 400, [e])
