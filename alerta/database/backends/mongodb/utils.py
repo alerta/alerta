@@ -11,7 +11,7 @@ from alerta.database.base import QueryBuilder
 from alerta.exceptions import ApiError
 from alerta.utils.format import DateTime
 
-from .parser import query_parser
+from .queryparser import QueryParser
 
 Query = namedtuple('Query', ['where', 'sort', 'group'])
 Query.__new__.__defaults__ = ({}, {}, 'lastReceiveTime', 'status')  # type: ignore
@@ -25,7 +25,8 @@ class QueryBuilderImpl(QueryBuilder):
         # q
         if params.get('q', None):
             try:
-                query = json.loads(query_parser(params['q']))
+                parser = QueryParser()
+                query = json.loads(parser.parse(params['q']))
             except ParseException as e:
                 raise ApiError('Failed to parse query string.', 400, [e])
         else:
