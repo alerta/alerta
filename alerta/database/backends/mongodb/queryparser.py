@@ -71,6 +71,30 @@ class SearchTerm:
             return '{{ "{}": {{ "$regex": "{}" }} }}'.format(self.tokens.field[0], self.tokens.wildcard)
         if 'regex' in self.tokens:
             return '{{ "{}": {{ "$regex": "{}" }} }}'.format(self.tokens.field[0], self.tokens.regex)
+        if 'range' in self.tokens:
+            if self.tokens.range[0].lowerbound == '*':
+                lower_term = '{{}}'
+            else:
+                lower_term = '{{ "{}": {{ "{}": "{}" }} }}'.format(
+                    self.tokens.field[0],
+                    '$gte' if 'inclusive' in self.tokens.range[0] else '$gt',
+                    self.tokens.range[0].lowerbound
+                )
+            if self.tokens.range[2].upperbound == '*':
+                upper_term = '{}'
+            else:
+                upper_term = '{{ "{}": {{ "{}": "{}" }} }}'.format(
+                    self.tokens.field[0],
+                    '$lte' if 'inclusive' in self.tokens.range[2] else '$lt',
+                    self.tokens.range[2].upperbound
+                )
+            return '{{ "$and": [ {}, {} ] }}'.format(lower_term, upper_term)
+        if 'onesidedrange' in self.tokens:
+            return '{{ "{}": {{ "{}": "{}" }} }}'.format(
+                self.tokens.field[0],
+                self.tokens.onesidedrange.op,
+                self.tokens.onesidedrange.bound
+            )
         if 'subquery' in self.tokens:
             if self.tokens.field[0] != '__default_field__':
                 return '{}'.format(self.tokens.subquery[0])\
@@ -97,7 +121,8 @@ query = Forward()
 
 required_modifier = Literal('+')('required')
 prohibit_modifier = Literal('-')('prohibit')
-valid_word = Word(printables, excludeChars='?*:"()').setName('word')
+special_characters = '=><(){}[]^"~*?:\\/'
+valid_word = Word(printables, excludeChars=special_characters).setName('word')
 valid_word.setParseAction(
     lambda t: t[0].replace('\\\\', chr(127)).replace('\\', '').replace(chr(127), '\\')
 )
@@ -111,7 +136,24 @@ wildcard.setParseAction(
     lambda t: t[0].replace('?', '.?').replace('*', '.*')
 )
 regex = QuotedString('/', unquoteResults=True)('regex')
-term = (regex | wildcard | phrase | single_term)
+
+_all = Literal('*')
+lower_range = Group((LBRACK('inclusive') | LBRACE('exclusive')) + (valid_word | _all)('lowerbound'))
+upper_range = Group((valid_word | _all)('upperbound') + (RBRACK('inclusive') | RBRACE('esclusive')))
+_range = (lower_range + to_ + upper_range)('range')
+
+GT = Literal('>')
+GTE = Literal('>=')
+LT = Literal('<')
+LTE = Literal('<=')
+
+mongo_op = (GTE | GT | LTE | LT)
+mongo_op.setParseAction(
+    lambda t: t[0].replace('>=', '$gte').replace('>', '$gt').replace('<=', '$lte').replace('<', '$lt')
+)
+one_sided_range = Group(mongo_op('op') + valid_word('bound'))('onesidedrange')
+
+term = (_range | one_sided_range | regex | wildcard | phrase | single_term)
 
 clause << (Optional(field_name + COLON, default='__default_field__')('field') +
            (term('term') | Group(LPAR + query + RPAR)('subquery')))
@@ -126,9 +168,13 @@ query << infixNotation(clause,
                            (Optional(or_ | '||').setParseAction(lambda: 'OR'), 2, opAssoc.LEFT, SearchOr),
                        ])
 
-DEFAULT_FIELD = 'text'
-DEFAULT_OPERATOR = '$regex'
 
+class QueryParser:
 
-def query_parser(q):
-    return repr(query.parseString(q)[0]).replace('__default_field__', DEFAULT_FIELD).replace('__default_operator__', DEFAULT_OPERATOR)
+    DEFAULT_FIELD = 'text'
+    DEFAULT_OPERATOR = '$regex'
+
+    def parse(self, q):
+        return repr(query.parseString(q)[0])\
+            .replace('__default_field__', QueryParser.DEFAULT_FIELD)\
+            .replace('__default_operator__', QueryParser.DEFAULT_OPERATOR)
