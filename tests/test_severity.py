@@ -3,6 +3,8 @@ import json
 import unittest
 
 from alerta.app import alarm_model, create_app, db
+from alerta.models.alert import Alert
+from alerta.utils.api import process_alert
 
 
 class SeverityTestCase(unittest.TestCase):
@@ -259,3 +261,13 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['severity'], 'security')
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
+
+    def test_invalid(self):
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            with self.assertRaises(Exception) as e:
+                process_alert(Alert(resource='foo', event='bar',
+                                    environment='Development', service=['Svc'], severity='baz'))
+            exc = e.exception
+            self.assertEqual(str(exc), '\'baz\' is not a valid severity')

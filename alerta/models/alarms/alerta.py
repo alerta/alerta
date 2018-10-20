@@ -18,6 +18,7 @@ SEVERITY_MAP = {
 }
 DEFAULT_NORMAL_SEVERITY = 'normal'  # 'normal', 'ok', 'cleared'
 DEFAULT_PREVIOUS_SEVERITY = 'indeterminate'
+NORMAL_SEVERITY_LEVEL = 5
 
 COLOR_MAP = {
     'severity': {
@@ -76,6 +77,9 @@ class StateMachine(AlarmModel):
         StateMachine.DEFAULT_PREVIOUS_SEVERITY = app.config['DEFAULT_PREVIOUS_SEVERITY'] or DEFAULT_PREVIOUS_SEVERITY
 
     def trend(self, previous, current):
+        assert previous in StateMachine.Severity, "'%s' is not a valid severity" % previous
+        assert current in StateMachine.Severity, "'%s' is not a valid severity" % current
+
         if StateMachine.Severity[previous] > StateMachine.Severity[current]:
             return MORE_SEVERE
         elif StateMachine.Severity[previous] < StateMachine.Severity[current]:
@@ -84,9 +88,10 @@ class StateMachine(AlarmModel):
             return NO_CHANGE
 
     def transition(self, previous_severity, current_severity, previous_status=None, current_status=None, action=None, **kwargs):
-
         previous_status = previous_status or OPEN
         current_status = current_status or StateMachine.DEFAULT_STATUS
+
+        assert current_severity in StateMachine.Severity, "'%s' is not a valid severity" % current_severity
 
         # transitions driven by operator actions
         if action == ACTION_UNACK:
@@ -101,7 +106,7 @@ class StateMachine(AlarmModel):
             return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
 
         # transitions driven by alert severity or status changes
-        if StateMachine.Severity[current_severity] == StateMachine.Severity['normal']:
+        if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
             return current_severity, CLOSED
         if current_status in [BLACKOUT, SHELVED]:
             return current_severity, current_status
