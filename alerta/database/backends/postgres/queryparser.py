@@ -1,8 +1,7 @@
 
-from pyparsing import (CaselessKeyword, Combine, Forward, Group, Literal,
-                       OneOrMore, Optional, ParseException, ParserElement,
-                       QuotedString, Regex, Suppress, White, Word,
-                       infixNotation, opAssoc, printables)
+from pyparsing import (CaselessKeyword, Forward, Group, Literal, Optional,
+                       ParseException, ParserElement, QuotedString, Regex,
+                       Suppress, Word, infixNotation, opAssoc, printables)
 
 ParserElement.enablePackrat()
 
@@ -61,11 +60,11 @@ class SearchTerm:
                 return '"{}" ILIKE \'%%{}%%\''.format(self.tokens.field[0], self.tokens.term)
         if 'phrase' in self.tokens:
             if self.tokens.field[0] == '__default_field__':
-                return '"{}" ~* \'{}\''.format('__default_field__', self.tokens.phrase)
+                return '"{}" ~* \'\\y{}\\y\''.format('__default_field__', self.tokens.phrase)
             else:
-                return '"{}"=\'{}\''.format(self.tokens.field[0], self.tokens.phrase)
+                return '"{}" ~* \'\\y{}\\y\''.format(self.tokens.field[0], self.tokens.phrase)
         if 'wildcard' in self.tokens:
-            return '"{}" ~* \'{}\''.format(self.tokens.field[0], self.tokens.wildcard)
+            return '"{}" ~* \'\\y{}\\y\''.format(self.tokens.field[0], self.tokens.wildcard)
         if 'regex' in self.tokens:
             return '"{}" ~* \'{}\''.format(self.tokens.field[0], self.tokens.regex)
         if 'range' in self.tokens:
@@ -124,7 +123,7 @@ clause = Forward()
 field_name = valid_word()('fieldname')
 single_term = valid_word()('singleterm')
 phrase = QuotedString('"', unquoteResults=True)('phrase')
-wildcard = Combine(OneOrMore(Regex('[a-z0-9]*[\?\*][a-z0-9]*') | White(' ', max=1) + ~White()))('wildcard')
+wildcard = Regex('[a-z0-9]*[\?\*][a-z0-9]*')('wildcard')
 wildcard.setParseAction(
     lambda t: t[0].replace('?', '.?').replace('*', '.*')
 )

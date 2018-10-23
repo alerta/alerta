@@ -22,7 +22,7 @@ class PostgresQueryTestCase(unittest.TestCase):
         # default field (ie. "text") contains phrase
         string = r'''"quick brown"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '"text" ~* \'quick brown\'')
+        self.assertEqual(r, '"text" ~* \'\yquick brown\y\'')
 
     def test_field_names(self):
 
@@ -44,7 +44,7 @@ class PostgresQueryTestCase(unittest.TestCase):
         # field exact match
         string = r'''author:"John Smith"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '"author"=\'John Smith\'')
+        self.assertEqual(r, '"author" ~* \'\yJohn Smith\y\'')
 
         # # any attribute contains word or phrase
         # string = r'''attributes.\*:(quick brown)'''
@@ -61,7 +61,7 @@ class PostgresQueryTestCase(unittest.TestCase):
         # ? = single character, * = one or more characters
         string = r'''text:qu?ck bro*'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '"text" ~* \'qu.?ck bro.*\'')
+        self.assertEqual(r, '("text" ~* \'\yqu.?ck\y\' OR "text" ~* \'\ybro.*\y\')')
 
     def test_regular_expressions(self):
 
@@ -155,7 +155,7 @@ class MongoQueryTestCase(unittest.TestCase):
         # default field (ie. "text") contains phrase
         string = r'''"quick brown"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{ "text": { "$regex": "\\"quick brown\\"" } }')
+        self.assertEqual(r, '{ "text": { "$regex": "quick brown" } }')
 
     def test_field_names(self):
 
@@ -177,7 +177,7 @@ class MongoQueryTestCase(unittest.TestCase):
         # field exact match
         string = r'''author:"John Smith"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{ "author": "John Smith" }')
+        self.assertEqual(r, '{ "author": { "$regex": "John Smith" } }')
 
         # # # any attribute contains word or phrase
         # # string = r'''attributes.\*:(quick brown)'''
@@ -194,7 +194,8 @@ class MongoQueryTestCase(unittest.TestCase):
         # ? = single character, * = one or more characters
         string = r'''text:qu?ck bro*'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{ "text": { "$regex": "qu.?ck bro.*" } }')
+        self.assertEqual(
+            r, '{ "$or": [{ "text": { "$regex": "\\\\bqu.?ck\\\\b" } }, { "text": { "$regex": "\\\\bbro.*\\\\b" } }] }')
 
     def test_regular_expressions(self):
 
@@ -229,7 +230,7 @@ class MongoQueryTestCase(unittest.TestCase):
 
         string = r'''date:{* TO 2012-01-01}'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{ "$and": [ {{}}, { "date": { "$lt": "2012-01-01" } } ] }')
+        self.assertEqual(r, '{ "$and": [ {}, { "date": { "$lt": "2012-01-01" } } ] }')
 
         string = r'''count:[1 TO 5}'''
         r = self.parser.parse(string)
