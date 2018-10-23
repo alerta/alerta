@@ -66,10 +66,11 @@ class QueryParserTestCase(unittest.TestCase):
                 'severity': 'major',
                 'correlate': ['node_down', 'node_marginal', 'node_up'],
                 'status': 'open',
-                'service': ['Network', 'Core', 'Shared'],
+                'service': ['Network', 'Core'],
                 'group': 'Network',
                 'value': 'johno',
                 'text': 'panic: this is a foo alert',
+                'tags': ['aaa', 'bbb', 'ccc'],
                 'attributes': {'region': 'NORAM'},
                 'origin': 'alpha',
                 'timeout': 100,
@@ -86,6 +87,7 @@ class QueryParserTestCase(unittest.TestCase):
                 'group': 'Network',
                 'value': 'jonathon',
                 'text': 'Kernel Panic: this is a bar test alert',
+                'tags': ['bbb', 'ccc', 'ddd'],
                 'attributes': {'region': 'LATAM'},
                 'origin': 'bravo',
                 'timeout': 200,
@@ -98,10 +100,11 @@ class QueryParserTestCase(unittest.TestCase):
                 'severity': 'normal',
                 'correlate': ['node_down', 'node_marginal', 'node_up'],
                 'status': 'closed',
-                'service': ['Network', 'Core', 'Shared'],
+                'service': ['Network', 'Shared'],
                 'group': 'Netperf',
                 'value': 'jonathan',
                 'text': 'kernel panic: this is a foo bar text alert',
+                'tags': ['ccc', 'ddd', 'eee'],
                 'attributes': {'region': 'APAC'},
                 'origin': 'charlie',
                 'timeout': 300,
@@ -114,10 +117,11 @@ class QueryParserTestCase(unittest.TestCase):
                 'severity': 'ok',
                 'correlate': ['node_down', 'node_marginal', 'node_up'],
                 'status': 'closed',
-                'service': ['Network', 'Core', 'Shared'],
+                'service': ['Core', 'Shared'],
                 'group': 'Performance',
                 'value': 'john',
                 'text': 'kernel panick: this is a fu bar baz quux tests alert (i have a boat)',
+                'tags': ['ddd', 'eee', 'aaa'],
                 'attributes': {'region': 'EMEA'},
                 'origin': 'delta',
                 'timeout': 400,
@@ -134,6 +138,7 @@ class QueryParserTestCase(unittest.TestCase):
                 'group': 'Network',
                 'value': 'jon',
                 'text': 'don\'t panic: this is a foo bar baz quux tester alert (i have a moat)',
+                'tags': ['eee', 'aaa', 'bbb'],
                 'attributes': {},
                 'origin': 'zulu',
                 'timeout': 500,
@@ -171,6 +176,8 @@ class QueryParserTestCase(unittest.TestCase):
         self.assertEqual(self._search(q='group:(Network Performance)'), 4)
         self.assertEqual(self._search(q='text:"kernel panic"'), 2)
         self.assertEqual(self._search(q='_exists_:region'), 4)
+        self.assertEqual(self._search(q='service:Shared'), 4)
+        self.assertEqual(self._search(q='tags:aaa'), 3)
 
     def test_wildcards(self):
         self.assertEqual(self._search(q='f*'), 4)
