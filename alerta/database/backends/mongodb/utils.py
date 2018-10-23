@@ -26,7 +26,11 @@ class QueryBuilderImpl(QueryBuilder):
         if params.get('q', None):
             try:
                 parser = QueryParser()
-                query = json.loads(parser.parse(params['q']))
+                query = json.loads(parser.parse(
+                    query=params['q'],
+                    default_field=params.get('q.df'),
+                    default_operator=params.get('q.op')
+                ))
             except ParseException as e:
                 raise ApiError('Failed to parse query string.', 400, [e])
         else:
@@ -79,9 +83,9 @@ class QueryBuilderImpl(QueryBuilder):
             query['$or'] = [{'_id': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}},
                             {'lastReceiveId': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}]
 
-        EXCLUDE_QUERY = ['_', 'callback', 'token', 'api-key', 'q', 'id', 'from-date',
-                         'to-date', 'duplicateCount', 'repeat', 'sort-by', 'reverse',
-                         'group-by', 'page', 'page-size', 'limit']
+        EXCLUDE_QUERY = ['_', 'callback', 'token', 'api-key', 'q', 'q.df', 'q.op', 'id',
+                         'from-date', 'to-date', 'duplicateCount', 'repeat', 'sort-by',
+                         'reverse', 'group-by', 'page', 'page-size', 'limit']
         # fields
         for field in params:
             if field in EXCLUDE_QUERY:
