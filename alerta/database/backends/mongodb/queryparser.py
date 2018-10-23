@@ -117,7 +117,7 @@ LPAR, RPAR, COLON = map(Suppress, '():')
 and_, or_, not_, to_ = map(CaselessKeyword, 'AND OR NOT TO'.split())
 keyword = and_ | or_ | not_ | to_
 
-query = Forward()
+query_expr = Forward()
 
 required_modifier = Literal('+')('required')
 prohibit_modifier = Literal('-')('prohibit')
@@ -156,17 +156,17 @@ one_sided_range = Group(mongo_op('op') + valid_word('bound'))('onesidedrange')
 term = (_range | one_sided_range | regex | wildcard | phrase | single_term)
 
 clause << (Optional(field_name + COLON, default='__default_field__')('field') +
-           (term('term') | Group(LPAR + query + RPAR)('subquery')))
+           (term('term') | Group(LPAR + query_expr + RPAR)('subquery')))
 
 clause.addParseAction(SearchTerm)
 
-query << infixNotation(clause,
-                       [
-                           (required_modifier | prohibit_modifier, 1, opAssoc.RIGHT, SearchModifier),
-                           ((not_ | '!').setParseAction(lambda: 'NOT'), 1, opAssoc.RIGHT, SearchNot),
-                           ((and_ | '&&').setParseAction(lambda: 'AND'), 2, opAssoc.LEFT, SearchAnd),
-                           (Optional(or_ | '||').setParseAction(lambda: 'OR'), 2, opAssoc.LEFT, SearchOr),
-                       ])
+query_expr << infixNotation(clause,
+                            [
+                                (required_modifier | prohibit_modifier, 1, opAssoc.RIGHT, SearchModifier),
+                                ((not_ | '!').setParseAction(lambda: 'NOT'), 1, opAssoc.RIGHT, SearchNot),
+                                ((and_ | '&&').setParseAction(lambda: 'AND'), 2, opAssoc.LEFT, SearchAnd),
+                                (Optional(or_ | '||').setParseAction(lambda: 'OR'), 2, opAssoc.LEFT, SearchOr),
+                            ])
 
 
 class QueryParser:
@@ -174,7 +174,10 @@ class QueryParser:
     DEFAULT_FIELD = 'text'
     DEFAULT_OPERATOR = '$regex'
 
-    def parse(self, q):
-        return repr(query.parseString(q)[0])\
-            .replace('__default_field__', QueryParser.DEFAULT_FIELD)\
-            .replace('__default_operator__', QueryParser.DEFAULT_OPERATOR)
+    def parse(self, query, default_field=None, default_operator=None):
+        self.default_field = default_field or QueryParser.DEFAULT_FIELD
+        self.default_operator = default_operator or QueryParser.DEFAULT_OPERATOR
+
+        return repr(query_expr.parseString(query)[0])\
+            .replace('__default_field__', self.default_field)\
+            .replace('__default_operator__', self.default_operator)
