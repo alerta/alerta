@@ -1,8 +1,7 @@
 
-from pyparsing import (CaselessKeyword, Combine, Forward, Group, Literal,
-                       OneOrMore, Optional, ParseException, ParserElement,
-                       QuotedString, Regex, Suppress, White, Word,
-                       infixNotation, opAssoc, printables)
+from pyparsing import (CaselessKeyword, Forward, Group, Literal, Optional,
+                       ParseException, ParserElement, QuotedString, Regex,
+                       Suppress, Word, infixNotation, opAssoc, printables)
 
 ParserElement.enablePackrat()
 
@@ -64,18 +63,26 @@ class SearchTerm:
                     return '{{ "{}": {{ "$regex": "{}" }} }}'.format(self.tokens.field[0], self.tokens.term)
         if 'phrase' in self.tokens:
             if self.tokens.field[0] == '__default_field__':
-                return '{{ "{}": {{ "{}": "\\\"{}\\\"" }} }}'.format('__default_field__', '__default_operator__', self.tokens.phrase)
+                return '{{ "{}": {{ "{}": "{}" }} }}'.format('__default_field__', '__default_operator__', self.tokens.phrase)
             else:
-                return '{{ "{}": "{}" }}'.format(self.tokens.field[0], self.tokens.phrase)
+                return '{{ "{}": {{ "$regex": "{}" }} }}'.format(self.tokens.field[0], self.tokens.phrase)
         if 'wildcard' in self.tokens:
-            return '{{ "{}": {{ "$regex": "{}" }} }}'.format(self.tokens.field[0], self.tokens.wildcard)
+            return '{{ "{}": {{ "$regex": "\\\\b{}\\\\b" }} }}'.format(self.tokens.field[0], self.tokens.wildcard)
         if 'regex' in self.tokens:
             return '{{ "{}": {{ "$regex": "{}" }} }}'.format(self.tokens.field[0], self.tokens.regex)
+
+        def range_term(field, operator, range):
+            if field in ['duplicateCount', 'timeout']:
+                range = int(range)
+            else:
+                range = '"{}"'.format(range)
+            return '{{ "{}": {{ "{}": {} }} }}'.format(field, operator, range)
+
         if 'range' in self.tokens:
             if self.tokens.range[0].lowerbound == '*':
-                lower_term = '{{}}'
+                lower_term = '{}'
             else:
-                lower_term = '{{ "{}": {{ "{}": "{}" }} }}'.format(
+                lower_term = range_term(
                     self.tokens.field[0],
                     '$gte' if 'inclusive' in self.tokens.range[0] else '$gt',
                     self.tokens.range[0].lowerbound
@@ -83,14 +90,14 @@ class SearchTerm:
             if self.tokens.range[2].upperbound == '*':
                 upper_term = '{}'
             else:
-                upper_term = '{{ "{}": {{ "{}": "{}" }} }}'.format(
+                upper_term = range_term(
                     self.tokens.field[0],
                     '$lte' if 'inclusive' in self.tokens.range[2] else '$lt',
                     self.tokens.range[2].upperbound
                 )
             return '{{ "$and": [ {}, {} ] }}'.format(lower_term, upper_term)
         if 'onesidedrange' in self.tokens:
-            return '{{ "{}": {{ "{}": "{}" }} }}'.format(
+            return range_term(
                 self.tokens.field[0],
                 self.tokens.onesidedrange.op,
                 self.tokens.onesidedrange.bound
@@ -131,7 +138,7 @@ clause = Forward()
 field_name = valid_word()('fieldname')
 single_term = valid_word()('singleterm')
 phrase = QuotedString('"', unquoteResults=True)('phrase')
-wildcard = Combine(OneOrMore(Regex('[a-z0-9]*[\?\*][a-z0-9]*') | White(' ', max=1) + ~White()))('wildcard')
+wildcard = Regex('[a-z0-9]*[\?\*][a-z0-9]*')('wildcard')
 wildcard.setParseAction(
     lambda t: t[0].replace('?', '.?').replace('*', '.*')
 )
