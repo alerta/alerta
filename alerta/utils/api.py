@@ -1,6 +1,6 @@
 
 import logging
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict
 
 from flask import Request, current_app, g
 
@@ -140,3 +140,112 @@ def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, st
     alert.attributes = new_attrs
 
     return alert, status, text
+
+
+def process_tag(alert: Alert, tags: List[str], text: str) -> Tuple[Alert, List[str], str]:
+
+    updated = None
+    for plugin in plugins.routing(alert):
+        if alert.is_suppressed:
+            break
+        try:
+            updated = plugin.alert_tagged(alert, tags, text)
+        except NotImplementedError as e:
+            pass  # plugin does not support alert_tagged() method
+        except RejectException:
+            raise
+        except Exception as e:
+            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                raise ApiError("Error while running alert_tagged plug-in '{}': {}".format(plugin.name, str(e)))
+            else:
+                logging.error("Error while running alert_tagged plug-in '{}': {}".format(plugin.name, str(e)))
+        if updated:
+            try:
+                alert, tags, text = updated
+            except Exception:
+                alert = updated
+
+    # remove keys from attributes with None values
+    new_attrs = {k: v for k, v in alert.attributes.items() if v is not None}
+    alert.attributes = new_attrs
+
+    return alert, tags, text
+
+
+def process_untag(alert: Alert, tags: List[str], text: str) -> Tuple[Alert, List[str], str]:
+
+    updated = None
+    for plugin in plugins.routing(alert):
+        if alert.is_suppressed:
+            break
+        try:
+            updated = plugin.alert_untagged(alert, tags, text)
+        except NotImplementedError as e:
+            pass  # plugin does not support alert_untagged() method
+        except RejectException:
+            raise
+        except Exception as e:
+            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                raise ApiError("Error while running alert_untagged plug-in '{}': {}".format(plugin.name, str(e)))
+            else:
+                logging.error("Error while running alert_untagged plug-in '{}': {}".format(plugin.name, str(e)))
+        if updated:
+            try:
+                alert, tags, text = updated
+            except Exception:
+                alert = updated
+
+    # remove keys from attributes with None values
+    new_attrs = {k: v for k, v in alert.attributes.items() if v is not None}
+    alert.attributes = new_attrs
+
+    return alert, tags, text
+
+
+def process_attributes(alert: Alert, attrs: Dict[str, str], text: str) -> Tuple[Alert, Dict[str, str], str]:
+
+    updated = None
+    for plugin in plugins.routing(alert):
+        if alert.is_suppressed:
+            break
+        try:
+            updated = plugin.attributes_change(alert, attrs, text)
+        except NotImplementedError as e:
+            pass  # plugin does not support attributes_change() method
+        except RejectException:
+            raise
+        except Exception as e:
+            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                raise ApiError("Error while running attributes_change plug-in '{}': {}".format(plugin.name, str(e)))
+            else:
+                logging.error("Error while running attributes_change plug-in '{}': {}".format(plugin.name, str(e)))
+        if updated:
+            try:
+                alert, attrs, text = updated
+            except Exception:
+                alert = updated
+
+    # remove keys from attributes with None values
+    new_attrs = {k: v for k, v in attrs.items() if v is not None}
+
+    return alert, new_attrs, text
+
+
+def process_delete(alert: Alert, text: str) -> None:
+
+    for plugin in plugins.routing(alert):
+        if alert.is_suppressed:
+            break
+        try:
+            plugin.delete(alert, text)
+        except NotImplementedError as e:
+            pass  # plugin does not support delete() method
+        except RejectException:
+            raise
+        except Exception as e:
+            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                raise ApiError("Error while running delete plug-in '{}': {}".format(plugin.name, str(e)))
+            else:
+                logging.error("Error while running delete plug-in '{}': {}".format(plugin.name, str(e)))
+
+    return None

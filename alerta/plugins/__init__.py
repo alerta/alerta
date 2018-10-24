@@ -1,6 +1,6 @@
 
 import abc
-from typing import Optional, TYPE_CHECKING, Any
+from typing import Optional, TYPE_CHECKING, Any, List, Dict
 
 from six import add_metaclass
 
@@ -31,6 +31,22 @@ class PluginBase:
 
     def take_action(self, alert: 'Alert', action: str, text: str, **kwargs) -> Any:
         """Trigger integrations based on external actions. (optional)"""
+        raise NotImplementedError
+
+    def alert_tagged(self, alert: 'Alert', tags: List[str], text: str) -> Any:
+        """Trigger integrations based on alert tagging. (optional)"""
+        raise NotImplementedError
+
+    def alert_untagged(self, alert: 'Alert', tags: List[str], text: str) -> Any:
+        """Trigger integrations based on alert untagging. (optional)"""
+        raise NotImplementedError
+
+    def attributes_change(self, alert: 'Alert', attr: Dict[str, str], text: str) -> Any:
+        """Trigger integrations based on alert attributes changes. (optional)"""
+        raise NotImplementedError
+
+    def delete(self, alert: 'Alert', text: str) -> Any:
+        """Trigger integrations based on alert deletion. (optional)"""
         raise NotImplementedError
 
 

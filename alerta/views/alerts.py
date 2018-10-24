@@ -12,7 +12,8 @@ from alerta.models.alert import Alert
 from alerta.models.metrics import Timer, timer
 from alerta.models.switch import Switch
 from alerta.utils.api import (add_remote_ip, assign_customer, process_action,
-                              process_alert, process_status)
+                              process_alert, process_status, process_tag,
+                              process_untag, process_attributes, process_delete)
 from alerta.utils.paging import Page
 from alerta.utils.response import jsonp
 
@@ -159,8 +160,12 @@ def action_alert(alert_id):
 @timer(tag_timer)
 @jsonp
 def tag_alert(alert_id):
-    if not request.json.get('tags', None):
-        raise ApiError("must supply 'tags' as json list")
+    tags = request.json.get('tags', None)
+    text = request.json.get('text', 'tagged with %s' % tags)
+    timeout = request.json.get('timeout', None)
+
+    if not tags:
+        raise ApiError("must supply 'tags' as json list", 400)
 
     customers = g.get('customers', None)
     alert = Alert.find_by_id(alert_id, customers)
@@ -168,7 +173,24 @@ def tag_alert(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    if alert.tag(tags=request.json['tags']):
+    try:
+        previous_status = alert.status
+        alert, tags, text = process_tag(alert, tags, text)
+        alert = alert.from_action('tagging', text, timeout)
+    except RejectException as e:
+        raise ApiError(str(e), 400)
+    except Exception as e:
+        raise ApiError(str(e), 500)
+
+    if previous_status != alert.status:
+        try:
+            alert, status, text = process_status(alert, alert.status, text)
+        except RejectException as e:
+            raise ApiError(str(e), 400)
+        except Exception as e:
+            raise ApiError(str(e), 500)
+
+    if alert.tag(tags=tags):
         return jsonify(status='ok')
     else:
         raise ApiError('failed to tag alert', 500)
@@ -181,8 +203,12 @@ def tag_alert(alert_id):
 @timer(untag_timer)
 @jsonp
 def untag_alert(alert_id):
-    if not request.json.get('tags', None):
-        raise ApiError("must supply 'tags' as json list")
+    tags = request.json.get('tags', None)
+    text = request.json.get('text', 'untagged with %s' % tags)
+    timeout = request.json.get('timeout', None)
+
+    if not tags:
+        raise ApiError("must supply 'tags' as json list", 400)
 
     customers = g.get('customers', None)
     alert = Alert.find_by_id(alert_id, customers)
@@ -190,7 +216,24 @@ def untag_alert(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    if alert.untag(tags=request.json['tags']):
+    try:
+        previous_status = alert.status
+        alert, tags, text = process_untag(alert, tags, text)
+        alert = alert.from_action('untagging', text, timeout)
+    except RejectException as e:
+        raise ApiError(str(e), 400)
+    except Exception as e:
+        raise ApiError(str(e), 500)
+
+    if previous_status != alert.status:
+        try:
+            alert, status, text = process_status(alert, alert.status, text)
+        except RejectException as e:
+            raise ApiError(str(e), 400)
+        except Exception as e:
+            raise ApiError(str(e), 500)
+
+    if alert.untag(tags=tags):
         return jsonify(status='ok')
     else:
         raise ApiError('failed to untag alert', 500)
@@ -203,7 +246,11 @@ def untag_alert(alert_id):
 @timer(attrs_timer)
 @jsonp
 def update_attributes(alert_id):
-    if not request.json.get('attributes', None):
+    attributes = request.json.get('attributes', None)
+    text = request.json.get('text', 'attributes updated: %s' % attributes)
+    timeout = request.json.get('timeout', None)
+
+    if not attributes:
         raise ApiError("must supply 'attributes' as json data", 400)
 
     customers = g.get('customers', None)
@@ -212,7 +259,24 @@ def update_attributes(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    if alert.update_attributes(request.json['attributes']):
+    try:
+        previous_status = alert.status
+        alert, attributes, text = process_attributes(alert, attributes, text)
+        alert = alert.from_action('attributes change', text, timeout)
+    except RejectException as e:
+        raise ApiError(str(e), 400)
+    except Exception as e:
+        raise ApiError(str(e), 500)
+
+    if previous_status != alert.status:
+        try:
+            alert, status, text = process_status(alert, alert.status, text)
+        except RejectException as e:
+            raise ApiError(str(e), 400)
+        except Exception as e:
+            raise ApiError(str(e), 500)
+
+    if alert.update_attributes(attributes):
         return jsonify(status='ok')
     else:
         raise ApiError('failed to update attributes', 500)
@@ -225,11 +289,23 @@ def update_attributes(alert_id):
 @timer(delete_timer)
 @jsonp
 def delete_alert(alert_id):
+    if request is None or request.json is None:
+        text = 'alert %s being deleted' % alert_id
+    else:
+        text = request.json.get('text', 'alert %s being deleted' % alert_id)
+
     customers = g.get('customers', None)
     alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
         raise ApiError('not found', 404)
+
+    try:
+        process_delete(alert, text)
+    except RejectException as e:
+        raise ApiError(str(e), 400)
+    except Exception as e:
+        raise ApiError(str(e), 500)
 
     if alert.delete():
         return jsonify(status='ok')
