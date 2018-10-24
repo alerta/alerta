@@ -4,6 +4,7 @@ from flask import Flask
 from flask_compress import Compress
 from flask_cors import CORS
 from raven.contrib.flask import Sentry
+from werkzeug.contrib.fixers import ProxyFix
 
 from alerta.database.base import Database, QueryBuilder
 from alerta.exceptions import ExceptionHandlers
@@ -35,6 +36,9 @@ def create_app(config_override: Dict[str, Any]=None, environment: str=None) -> F
     app.config['ENVIRONMENT'] = environment
     config.init_app(app)
     app.config.update(config_override or {})
+
+    if app.config['USE_PROXYFIX']:
+        app.wsgi_app = ProxyFix(app.wsgi_app)
 
     alarm_model.init_app(app)
 

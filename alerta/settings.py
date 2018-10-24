@@ -11,6 +11,7 @@ from typing import Any, Dict, List  # noqa
 DEBUG = False
 
 BASE_URL = ''
+USE_PROXYFIX = False
 
 LOGGER_NAME = 'alerta'
 LOG_FILE = None
