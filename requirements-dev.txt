@@ -1,3 +1,4 @@
+mypy==0.620
 nose
 pre-commit
 twine
