@@ -38,7 +38,7 @@ def create_user():
         user.send_confirmation()
 
     if user:
-        return jsonify(status='ok', id=user.id, data=user.serialize), 201
+        return jsonify(status='ok', id=user.id, user=user.serialize), 201
     else:
         raise ApiError('create user failed', 500)
 
