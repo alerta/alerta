@@ -35,6 +35,9 @@ class Config:
         if 'BASE_URL' in os.environ:
             config['BASE_URL'] = os.environ['BASE_URL']
 
+        if 'USE_PROXYFIX' in os.environ:
+            config['USE_PROXYFIX'] = True if os.environ['USE_PROXYFIX'] == 'True' else False
+
         if 'SECRET_KEY' in os.environ:
             config['SECRET_KEY'] = os.environ['SECRET_KEY']
 

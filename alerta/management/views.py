@@ -72,6 +72,9 @@ def properties():
 
     properties = ''
 
+    for k, v in request.environ.items():
+        properties += '{}: {}\n'.format(k, v)
+
     for k, v in os.environ.items():
         properties += '{}: {}\n'.format(k, v)
 
