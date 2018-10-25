@@ -26,7 +26,7 @@ class Heartbeat:
         self.tags = tags or list()
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'Heartbeat'
         self.create_time = create_time or datetime.utcnow()
-        self.timeout = timeout or current_app.config['HEARTBEAT_TIMEOUT']
+        self.timeout = timeout if timeout is not None else current_app.config['HEARTBEAT_TIMEOUT']
         self.receive_time = kwargs.get('receive_time', None) or datetime.utcnow()
         self.customer = customer
 

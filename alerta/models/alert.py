@@ -49,7 +49,8 @@ class Alert:
         self.origin = kwargs.get('origin', None) or '{}/{}'.format(os.path.basename(sys.argv[0]), platform.uname()[1])
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'exceptionAlert'
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
-        self.timeout = kwargs.get('timeout', None) or current_app.config['ALERT_TIMEOUT']
+        timeout = kwargs.get('timeout')
+        self.timeout = timeout if timeout is not None else current_app.config['ALERT_TIMEOUT']
         self.raw_data = kwargs.get('raw_data', None)
         self.customer = kwargs.get('customer', None)
 
