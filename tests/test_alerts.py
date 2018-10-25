@@ -578,6 +578,13 @@ class AlertTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['timeout'], 20)
 
+        # resend alert with timeout disabled (ie. 0)
+        self.fatal_alert['timeout'] = 0
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['timeout'], 0)
+
         # send correlated with different timeout
         response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
