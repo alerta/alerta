@@ -35,10 +35,20 @@ class PluginsTestCase(unittest.TestCase):
             'event': 'node_marginal',
             'resource': self.resource,
             'environment': 'Production',
-            'service': ['Network'],  # alert will be accepted because service not defined
+            'service': ['Network'],  # alert will be accepted because service defined
             'severity': 'warning',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
             'tags': ['three', 'four']
+        }
+
+        self.critical_alert = {
+            'event': 'node_down',
+            'resource': self.resource,
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'critical',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'tags': []
         }
 
         self.headers = {
@@ -104,6 +114,68 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['attributes']['xyz'], 'down')
         self.assertEqual(data['alert']['history'][-1]['text'], 'input-plugin1-plugin3')
 
+    def test_take_action(self):
+
+        plugins.plugins['action1'] = TestActionPlugin1()
+
+        # create alert
+        response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        alert_id = data['id']
+
+        # create ticket for alert
+        payload = {
+            'action': 'createTicket',
+            'text': 'ticket created by bob'
+        }
+        response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # check status=assign
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'assign')
+        self.assertEqual(data['alert']['history'][2]['text'],
+                         'ticket created by bob (ticket #12345)', data['alert']['history'])
+
+        # update ticket for alert
+        payload = {
+            'action': 'updateTicket',
+            'text': 'ticket updated by bob'
+        }
+        response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+
+        # check no change in status, new alert text
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'assign')
+        self.assertEqual(data['alert']['attributes']['up'], 'down')
+        self.assertEqual(data['alert']['history'][3]['text'],
+                         'ticket updated by bob (ticket #12345)', data['alert']['history'])
+
+        # update ticket for alert
+        payload = {
+            'action': 'resolveTicket',
+            'text': 'ticket resolved by bob'
+        }
+        response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # check status=closed
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'closed')
+        self.assertEqual(data['alert']['tags'], ['true'])
+        self.assertEqual(data['alert']['history'][4]['text'],
+                         'ticket resolved by bob (ticket #12345)', data['alert']['history'])
+
 
 class TestPlugin1(PluginBase):
 
@@ -157,3 +229,33 @@ class TestPlugin3(PluginBase):
         status = 'assigned'
         text = text + '-plugin3'
         return alert, status, text
+
+
+class TestActionPlugin1(PluginBase):
+
+    def pre_receive(self, alert):
+        return alert
+
+    def post_receive(self, alert):
+        return
+
+    def status_change(self, alert, status, text):
+        return alert, status, text
+
+    def take_action(self, alert, action, text, **kwargs):
+
+        if action == 'createTicket':
+            alert.status = 'assign'
+            text = text + ' (ticket #12345)'
+
+        if action == 'updateTicket':
+            # do not change status
+            alert.attributes['up'] = 'down'
+            text = text + ' (ticket #12345)'
+
+        if action == 'resolveTicket':
+            alert.status = 'closed'
+            alert.tags.append('true')
+            text = text + ' (ticket #12345)'
+
+        return alert, action, text
