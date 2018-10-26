@@ -105,6 +105,11 @@ class StateMachine(AlarmModel):
         if action == ACTION_CLOSE:
             return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
 
+        # if an unrecognised action is passed then assume state transition has been handled
+        # by a take_action() plugin and return the current severity and status unchanged
+        if action:
+            return current_severity, current_status
+
         # transitions driven by alert severity or status changes
         if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
             return current_severity, CLOSED
