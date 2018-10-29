@@ -1,6 +1,5 @@
 
 import datetime
-from copy import copy
 from typing import Any, Dict
 
 import pytz
@@ -23,8 +22,23 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
 
     status = alert.get('status', 'firing')
 
-    labels = copy(alert['labels'])
-    annotations = copy(alert['annotations'])
+    # Allow labels and annotations to use python string formats that refer to
+    # other labels eg. runbook = 'https://internal.myorg.net/wiki/alerts/{app}/{alertname}'
+    # See https://github.com/prometheus/prometheus/issues/2818
+
+    labels = {}
+    for k, v in alert['labels'].items():
+        try:
+            labels[k] = v.format(**alert['labels'])
+        except Exception:
+            labels[k] = v
+
+    annotations = {}
+    for k, v in alert['annotations'].items():
+        try:
+            annotations[k] = v.format(**labels)
+        except Exception:
+            annotations[k] = v
 
     starts_at = parse_date(alert['startsAt'])
     if alert['endsAt'] != '0001-01-01T00:00:00Z':
@@ -44,7 +58,7 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
 
     # labels
     resource = labels.pop('exported_instance', None) or labels.pop('instance', 'n/a')
-    event = labels.pop('alertname')
+    event = labels.pop('event', None) or labels.pop('alertname')
     environment = labels.pop('environment', 'Production')
     correlate = labels.pop('correlate').split(',') if 'correlate' in labels else None
     service = labels.pop('service', '').split(',')
