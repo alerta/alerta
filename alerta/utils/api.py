@@ -225,10 +225,7 @@ def process_attributes(alert: Alert, attrs: Dict[str, str], text: str) -> Tuple[
             except Exception:
                 alert = updated
 
-    # remove keys from attributes with None values
-    new_attrs = {k: v for k, v in attrs.items() if v is not None}
-
-    return alert, new_attrs, text
+    return alert, attrs, text
 
 
 def process_delete(alert: Alert, text: str) -> None:
