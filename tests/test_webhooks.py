@@ -305,12 +305,15 @@ class WebhooksTestCase(unittest.TestCase):
                     {
                         "status": "firing",
                         "labels": {
-                            "alertname": "thing_dead"
+                            "alertname": "thing_dead",
+                            "severity": "critical"
                         },
                         "annotations": {
                             "description": "No things have been recorded for over 10 minutes. Something terrible is happening.",
                             "severity": "critical",
-                            "summary": "No things for over 10 minutes"
+                            "summary": "No things for over 10 minutes",
+                            "runbookBad": "https://internal.myorg.net/wiki/alerts/{app}/{alertname}",
+                            "runbookGood": "https://internal.myorg.net/wiki/alerts/{alertname}"
                         },
                         "startsAt": "2017-08-03T15:17:37.804-04:00",
                         "endsAt": "0001-01-01T00:00:00Z",
@@ -613,10 +616,14 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['resource'], 'n/a')
         self.assertEqual(data['alert']['event'], 'thing_dead')
         self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['severity'], 'critical')
         self.assertEqual(data['alert']['timeout'], 86400)
         self.assertEqual(data['alert']['createTime'], '2017-08-03T19:17:37.804Z')
         self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+        self.assertEqual(data['alert']['attributes']['runbookBad'],
+                         'https://internal.myorg.net/wiki/alerts/{app}/{alertname}')
+        self.assertEqual(data['alert']['attributes']['runbookGood'],
+                         'https://internal.myorg.net/wiki/alerts/thing_dead')
 
     def test_riemann_webhook(self):
 
