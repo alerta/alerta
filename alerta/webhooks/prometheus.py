@@ -24,7 +24,16 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
     status = alert.get('status', 'firing')
 
     labels = copy(alert['labels'])
-    annotations = copy(alert['annotations'])
+    annotations = {}
+
+    # Allow annotations to use python string formats that refer to labels
+    # eg. runbook = 'https://internal.myorg.net/wiki/alerts/{app}/{alertname}'
+    # See https://github.com/prometheus/prometheus/issues/2818
+    for k, v in alert['annotations'].items():
+        try:
+            annotations[k] = v.format(**labels)
+        except Exception:
+            annotations[k] = v
 
     starts_at = parse_date(alert['startsAt'])
     if alert['endsAt'] != '0001-01-01T00:00:00Z':
