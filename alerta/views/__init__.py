@@ -1,5 +1,5 @@
 
-from alerta.app import alarm_model
+from alerta.app import alarm_model, custom_webhooks
 from alerta.exceptions import ApiError
 from alerta.utils.response import absolute_url
 from flask import Blueprint, request, jsonify, current_app
@@ -23,12 +23,21 @@ def before_request():
 @api.route('/', methods=['OPTIONS', 'GET'])
 def index():
     links = []
+
     for rule in current_app.url_map.iter_rules():
         links.append({
             'rel': rule.endpoint,
             'href': absolute_url(rule.rule),
             'method': ','.join([m for m in rule.methods if m not in ['HEAD', 'OPTIONS']])
         })
+
+    for rule in custom_webhooks.iter_rules():
+        links.append({
+            'rel': rule.endpoint,
+            'href': absolute_url(rule.rule),
+            'method': ','.join(rule.methods)
+        })
+
     return jsonify(status='ok', uri=absolute_url(), data={'description': 'Alerta API'}, links=sorted(links, key=lambda k: k['href']))
 
 
