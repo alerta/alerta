@@ -129,8 +129,8 @@ def action_alert(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
+    previous_status = alert.status
     try:
-        previous_status = alert.status
         alert, action, text = process_action(alert, action, text)
         alert = alert.from_action(action, text, timeout)
     except RejectException as e:
@@ -138,9 +138,12 @@ def action_alert(alert_id):
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    if previous_status != alert.status:
+    # trigger status_change() hook only if status has changed
+    new_status = alert.status
+    if previous_status != new_status:
+        alert.status = previous_status
         try:
-            alert, status, text = process_status(alert, alert.status, text)
+            alert, status, text = process_status(alert, new_status, text)
         except RejectException as e:
             raise ApiError(str(e), 400)
         except Exception as e:
