@@ -167,6 +167,7 @@ class Config:
         #     print('logging.getLogger(\'{}\'),'.format(key))
 
         loggers = [
+            logging.getLogger('alerta'),
             logging.getLogger('amqp'),
             logging.getLogger('asyncio'),
             logging.getLogger('celery'),
