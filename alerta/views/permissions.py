@@ -4,6 +4,7 @@ from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
+from alerta.models.enums import Scope
 from alerta.models.permission import Permission
 from alerta.utils.response import jsonp
 
@@ -12,7 +13,7 @@ from . import api
 
 @api.route('/perm', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('admin:perms')
+@permission(Scope.admin_perms)
 @jsonp
 def create_perm():
     try:
@@ -21,7 +22,7 @@ def create_perm():
         raise ApiError(str(e), 400)
 
     for want_scope in perm.scopes:
-        if not Permission.is_in_scope(want_scope, g.scopes):
+        if not Permission.is_in_scope(want_scope, have_scopes=g.scopes):
             raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
                 want_scope, ','.join(g.scopes)), 403)
 
@@ -38,7 +39,7 @@ def create_perm():
 
 @api.route('/perms', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:perms')
+@permission(Scope.read_perms)
 @jsonp
 def list_perms():
     perms = Permission.find_all()
@@ -60,7 +61,7 @@ def list_perms():
 
 @api.route('/perm/<perm_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
-@permission('admin:perms')
+@permission(Scope.admin_perms)
 @jsonp
 def delete_perm(perm_id):
     perm = Permission.find_by_id(perm_id)
@@ -72,3 +73,17 @@ def delete_perm(perm_id):
         return jsonify(status='ok')
     else:
         raise ApiError('failed to delete permission', 500)
+
+
+@api.route('/scopes', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.read_perms)
+@jsonp
+def list_scopes():
+    scopes = list(Scope)
+
+    return jsonify(
+        status='ok',
+        scopes=scopes,
+        total=len(scopes)
+    )

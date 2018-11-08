@@ -1,6 +1,7 @@
 import base64
 import re
 from functools import wraps
+from typing import TYPE_CHECKING
 
 from flask import current_app, g, request
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
@@ -11,6 +12,10 @@ from alerta.models.key import ApiKey
 from alerta.models.permission import Permission
 from alerta.models.token import Jwt
 from alerta.models.user import User
+
+if TYPE_CHECKING:
+    from typing import List   # noqa
+    from alerta.models.enums import Scope  # noqa
 
 
 def permission(scope):
@@ -36,10 +41,10 @@ def permission(scope):
                     raise ApiError("API key parameter '%s' is invalid" % key, 401)
                 g.user = key_info.user
                 g.customers = [key_info.customer] if key_info.customer else []
-                g.scopes = key_info.scopes
+                g.scopes = key_info.scopes  # type: List[Scope]
 
-                if not Permission.is_in_scope(scope, g.scopes):
-                    raise ApiError('Missing required scope: %s' % scope, 403)
+                if not Permission.is_in_scope(scope, have_scopes=g.scopes):
+                    raise ApiError('Missing required scope: %s' % scope.value, 403)
                 else:
                     return f(*args, **kwargs)
 
@@ -59,10 +64,10 @@ def permission(scope):
                     raise ApiError('Invalid audience', 401)
                 g.user = jwt.preferred_username
                 g.customers = jwt.customers
-                g.scopes = jwt.scopes
+                g.scopes = jwt.scopes  # type: List[Scope]
 
-                if not Permission.is_in_scope(scope, g.scopes):
-                    raise ApiError('Missing required scope: %s' % scope, 403)
+                if not Permission.is_in_scope(scope, have_scopes=g.scopes):
+                    raise ApiError('Missing required scope: %s' % scope.value, 403)
                 else:
                     return f(*args, **kwargs)
 
@@ -89,17 +94,17 @@ def permission(scope):
 
                 g.user = user.email
                 g.customers = get_customers(user.email, groups=[user.domain])
-                g.scopes = Permission.lookup(user.email, groups=user.roles)
+                g.scopes = Permission.lookup(user.email, groups=user.roles)  # type: List[Scope]
 
-                if not Permission.is_in_scope(scope, g.scopes):
-                    raise BasicAuthError('Missing required scope: %s' % scope, 403)
+                if not Permission.is_in_scope(scope, have_scopes=g.scopes):
+                    raise BasicAuthError('Missing required scope: %s' % scope.value, 403)
                 else:
                     return f(*args, **kwargs)
 
             if not current_app.config['AUTH_REQUIRED']:
                 g.user = None
                 g.customers = []
-                g.scopes = []
+                g.scopes = []  # type: List[Scope]
                 return f(*args, **kwargs)
 
             # Google App Engine Cron Service

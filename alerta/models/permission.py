@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from alerta.app import db
 from alerta.database.base import Query
+from alerta.models.enums import Scope
 from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
@@ -10,7 +11,7 @@ JSON = Dict[str, Any]
 
 class Permission:
 
-    def __init__(self, match: str, scopes: List[str], **kwargs) -> None:
+    def __init__(self, match: str, scopes: List[Scope], **kwargs) -> None:
 
         self.id = kwargs.get('id', str(uuid4()))
         self.match = match
@@ -23,7 +24,7 @@ class Permission:
 
         return Permission(
             match=json.get('match', None),
-            scopes=json.get('scopes', list())
+            scopes=[Scope(s) for s in json.get('scopes', list())]
         )
 
     @property
@@ -44,7 +45,7 @@ class Permission:
         return Permission(
             id=doc.get('id', None) or doc.get('_id'),
             match=doc.get('match', None),
-            scopes=doc.get('scopes', list())
+            scopes=[Scope(s) for s in doc.get('scopes', list())]
         )
 
     @classmethod
@@ -52,7 +53,7 @@ class Permission:
         return Permission(
             id=rec.id,
             match=rec.match,
-            scopes=rec.scopes
+            scopes=[Scope(s) for s in rec.scopes]
         )
 
     @classmethod
@@ -77,16 +78,21 @@ class Permission:
         return db.delete_perm(self.id)
 
     @classmethod
-    def is_in_scope(cls, scope: str, scopes: List[str]) -> bool:
-        if scope in scopes or scope.split(':')[0] in scopes:
+    def is_in_scope(cls, want_scope: str, have_scopes: List[Scope]) -> bool:
+        """Return True if wanted scope is in list of scopes or derived scopes.
+
+        :param want_scope: scope wanted for permission to do something (str because could be invalid scope)
+        :param have_scopes: list of valid scopes that user has been assigned
+        """
+        if want_scope in have_scopes or want_scope.split(':')[0] in have_scopes:
             return True
-        elif scope.startswith('read'):
-            return cls.is_in_scope(scope.replace('read', 'write'), scopes)
-        elif scope.startswith('write'):
-            return cls.is_in_scope(scope.replace('write', 'admin'), scopes)
+        elif want_scope.startswith('read'):
+            return cls.is_in_scope(want_scope.replace('read', 'write'), have_scopes)
+        elif want_scope.startswith('write'):
+            return cls.is_in_scope(want_scope.replace('write', 'admin'), have_scopes)
         else:
             return False
 
     @classmethod
-    def lookup(cls, login: str, groups: List[str]) -> List[str]:
-        return db.get_scopes_by_match(login, matches=groups)
+    def lookup(cls, login: str, groups: List[str]) -> List[Scope]:
+        return [Scope(s) for s in db.get_scopes_by_match(login, matches=groups)]

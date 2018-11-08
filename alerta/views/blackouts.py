@@ -6,6 +6,7 @@ from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.blackout import Blackout
+from alerta.models.enums import Scope
 from alerta.utils.api import assign_customer
 from alerta.utils.response import absolute_url, jsonp
 
@@ -14,7 +15,7 @@ from . import api
 
 @api.route('/blackout', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('write:blackouts')
+@permission(Scope.write_blackouts)
 @jsonp
 def create_blackout():
     try:
@@ -22,12 +23,12 @@ def create_blackout():
     except Exception as e:
         raise ApiError(str(e), 400)
 
-    if 'admin' in g.scopes or 'admin:blackouts' in g.scopes:
+    if Scope.admin in g.scopes or Scope.admin_blackouts in g.scopes:
         blackout.user = blackout.user or g.user
     else:
         blackout.user = g.user
 
-    blackout.customer = assign_customer(wanted=blackout.customer, permission='admin:blackouts')
+    blackout.customer = assign_customer(wanted=blackout.customer, permission=Scope.admin_blackouts)
 
     try:
         blackout = blackout.create()
@@ -42,7 +43,7 @@ def create_blackout():
 
 @api.route('/blackouts', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:blackouts')
+@permission(Scope.read_blackouts)
 @jsonp
 def list_blackouts():
     query = qb.from_params(request.args)
@@ -65,7 +66,7 @@ def list_blackouts():
 
 @api.route('/blackout/<blackout_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
-@permission('write:blackouts')
+@permission(Scope.write_blackouts)
 @jsonp
 def delete_blackout(blackout_id):
     customer = g.get('customer', None)

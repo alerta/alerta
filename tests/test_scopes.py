@@ -3,7 +3,9 @@ import json
 import unittest
 
 from alerta.app import create_app, db, key_helper
+from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
+from alerta.models.permission import Permission
 
 
 class ScopeTestCase(unittest.TestCase):
@@ -69,3 +71,27 @@ class ScopeTestCase(unittest.TestCase):
     #         else:
     #             self.assertEqual(key['text'], key['type'])
     #         self.assertEqual(sorted(key_helper.type_to_scopes(key['user'], key['text'])), sorted(key['scopes']))
+
+    def test_is_in_scope(self):
+
+        self.assertEqual(Permission.is_in_scope(Scope.read_customers, [Scope.read]), True)
+        self.assertEqual(Permission.is_in_scope(Scope.read_customers, [Scope.write]), True)
+        self.assertEqual(Permission.is_in_scope(Scope.read_customers, [Scope.admin]), True)
+
+        self.assertEqual(Permission.is_in_scope(Scope.read_heartbeats, [Scope.read_alerts]), False)
+        self.assertEqual(Permission.is_in_scope(Scope.read_heartbeats, [Scope.write_alerts]), False)
+        self.assertEqual(Permission.is_in_scope(Scope.read_heartbeats, [Scope.admin_alerts]), False)
+
+        self.assertEqual(Permission.is_in_scope(Scope.write_blackouts, [Scope.read]), False)
+        self.assertEqual(Permission.is_in_scope(Scope.write_blackouts, [Scope.read_blackouts, Scope.read]), False)
+        self.assertEqual(
+            Permission.is_in_scope(Scope.write_blackouts, [Scope.read_blackouts, Scope.write_blackouts]), True)
+        self.assertEqual(Permission.is_in_scope(Scope.write_blackouts, [Scope.write_blackouts]), True)
+        self.assertEqual(Permission.is_in_scope(Scope.write_blackouts, [Scope.read_blackouts, Scope.write]), True)
+        self.assertEqual(Permission.is_in_scope(Scope.write_blackouts, [Scope.read_blackouts, Scope.admin]), True)
+        self.assertEqual(Permission.is_in_scope(Scope.write_blackouts, [Scope.read, Scope.write_keys]), False)
+        self.assertEqual(Permission.is_in_scope(Scope.write_blackouts, [Scope.read, Scope.admin_keys]), False)
+
+        self.assertEqual(Permission.is_in_scope(Scope.admin, [Scope.write]), False)
+        self.assertEqual(Permission.is_in_scope(Scope.admin, [Scope.read, Scope.write, Scope.admin]), True)
+        self.assertEqual(Permission.is_in_scope(Scope.read_heartbeats, [Scope.write]), True)

@@ -10,6 +10,7 @@ from alerta.app import db
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
+from alerta.models.enums import Scope
 from alerta.models.heartbeat import Heartbeat
 from alerta.models.metrics import Counter, Gauge, Timer
 from alerta.models.switch import Switch, SwitchState
@@ -52,7 +53,7 @@ def management():
 
 @mgmt.route('/management/manifest', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:management')
+@permission(Scope.read_management)
 def manifest():
 
     manifest = {
@@ -67,7 +68,7 @@ def manifest():
 
 @mgmt.route('/management/properties', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('admin:management')
+@permission(Scope.admin_management)
 def properties():
 
     properties = ''
@@ -89,7 +90,7 @@ def properties():
 
 @mgmt.route('/management/switchboard', methods=['OPTIONS', 'GET', 'POST'])
 @cross_origin()
-@permission('admin:management')
+@permission(Scope.admin_management)
 def switchboard():
 
     if request.method == 'POST':
@@ -140,7 +141,7 @@ def health_check():
 
 @mgmt.route('/management/housekeeping', methods=['OPTIONS', 'GET', 'POST'])
 @cross_origin()
-@permission('admin:management')
+@permission(Scope.admin_management)
 def housekeeping():
     DEFAULT_EXPIRED_DELETE_HRS = 2  # hours
     DEFAULT_INFO_DELETE_HRS = 12  # hours
@@ -160,7 +161,7 @@ def housekeeping():
 
 @mgmt.route('/management/status', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:management')
+@permission(Scope.read_management)
 def status():
 
     now = int(time.time() * 1000)
@@ -177,7 +178,7 @@ def status():
 
 @mgmt.route('/management/metrics', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:management')
+@permission(Scope.read_management)
 def prometheus_metrics():
 
     total_alert_gauge.set(Alert.get_count())

@@ -6,6 +6,7 @@ from flask_cors import cross_origin
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
+from alerta.models.enums import Scope
 
 from . import webhooks
 
@@ -61,7 +62,7 @@ def parse_pagerduty(message: JSON) -> Tuple[str, str, str]:
 
 @webhooks.route('/webhooks/pagerduty', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('write:webhooks')
+@permission(Scope.write_webhooks)
 def pagerduty():
 
     data = request.json

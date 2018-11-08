@@ -3,6 +3,7 @@ from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
+from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
 from alerta.models.permission import Permission
 from alerta.utils.api import assign_customer
@@ -13,7 +14,7 @@ from . import api
 
 @api.route('/key', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('write:keys')
+@permission(Scope.write_keys)
 @jsonp
 def create_key():
     try:
@@ -21,18 +22,18 @@ def create_key():
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    if 'admin' in g.scopes or 'admin:keys' in g.scopes:
+    if Scope.admin in g.scopes or Scope.admin_keys in g.scopes:
         key.user = key.user or g.user
     else:
         key.user = g.user
 
-    key.customer = assign_customer(wanted=key.customer, permission='admin:keys')
+    key.customer = assign_customer(wanted=key.customer, permission=Scope.admin_keys)
 
     if not key.user:
         raise ApiError("An API key must be associated with a 'user'. Retry with user credentials.", 400)
 
     for want_scope in key.scopes:
-        if not Permission.is_in_scope(want_scope, g.scopes):
+        if not Permission.is_in_scope(want_scope, have_scopes=g.scopes):
             raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
                 want_scope, ','.join(g.scopes)), 403)
 
@@ -49,12 +50,12 @@ def create_key():
 
 @api.route('/keys', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:keys')
+@permission(Scope.read_keys)
 @jsonp
 def list_keys():
     if not current_app.config['AUTH_REQUIRED']:
         keys = ApiKey.find_all()
-    elif 'admin' in g.scopes or 'admin:keys' in g.scopes:
+    elif Scope.admin in g.scopes or Scope.admin_keys in g.scopes:
         keys = ApiKey.find_all()
     elif not g.get('user', None):
         raise ApiError("Must define 'user' to list user keys", 400)
@@ -78,7 +79,7 @@ def list_keys():
 
 @api.route('/key/<path:key>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
-@permission('admin:keys')
+@permission(Scope.admin_keys)
 @jsonp
 def delete_key(key):
     key = ApiKey.find_by_id(key)
