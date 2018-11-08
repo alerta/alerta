@@ -9,6 +9,7 @@ from flask_cors import cross_origin
 from alerta.auth.decorators import permission
 from alerta.models.alert import Alert
 from alerta.models.blackout import Blackout
+from alerta.models.enums import Scope
 
 from . import webhooks
 
@@ -68,7 +69,7 @@ def send_message_reply(alert: Alert, action: str, user: str, data: JSON) -> None
 
 @webhooks.route('/webhooks/telegram', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('write:webhooks')
+@permission(Scope.write_webhooks)
 def telegram():
 
     data = request.json

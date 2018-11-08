@@ -6,6 +6,7 @@ from flask_cors import cross_origin
 
 from alerta.app import db, qb
 from alerta.auth.decorators import permission
+from alerta.models.enums import Scope
 from alerta.utils.response import jsonp
 
 from . import api
@@ -14,7 +15,7 @@ from . import api
 @api.route('/oembed', defaults={'format': 'json'}, methods=['OPTIONS', 'GET'])
 @api.route('/oembed.<format>', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:oembed')
+@permission(Scope.read_oembed)
 @jsonp
 def oembed(format):
 

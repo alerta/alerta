@@ -5,6 +5,7 @@ from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.auth.utils import not_authorized
 from alerta.exceptions import ApiError
+from alerta.models.enums import Scope
 from alerta.models.user import User
 from alerta.utils.response import jsonp
 
@@ -13,7 +14,7 @@ from . import api
 
 @api.route('/user', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('admin:users')
+@permission(Scope.admin_users)
 @jsonp
 def create_user():
     try:
@@ -45,7 +46,7 @@ def create_user():
 
 @api.route('/user/<user_id>', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('admin:users')
+@permission(Scope.admin_users)
 @jsonp
 def update_user(user_id):
     if not request.json:
@@ -67,7 +68,7 @@ def update_user(user_id):
 
 @api.route('/user/me', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:users')
+@permission(Scope.write_users)
 @jsonp
 def update_me():
     if not request.json:
@@ -94,7 +95,7 @@ def update_me():
 
 @api.route('/user/<user_id>/attributes', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('admin:users')
+@permission(Scope.admin_users)
 @jsonp
 def update_user_attributes(user_id):
     if not request.json.get('attributes', None):
@@ -113,7 +114,7 @@ def update_user_attributes(user_id):
 
 @api.route('/user/me/attributes', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:users')
+@permission(Scope.write_users)
 @jsonp
 def update_me_attributes():
     if not request.json.get('attributes', None):
@@ -132,7 +133,7 @@ def update_me_attributes():
 
 @api.route('/users', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('admin:users')
+@permission(Scope.admin_users)
 @jsonp
 def search_users():
     query = qb.from_params(request.args)
@@ -157,7 +158,7 @@ def search_users():
 
 @api.route('/user/<user_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
-@permission('admin:users')
+@permission(Scope.admin_users)
 @jsonp
 def delete_user(user_id):
     user = User.find_by_id(user_id)

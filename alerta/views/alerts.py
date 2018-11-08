@@ -9,6 +9,7 @@ from alerta.auth.decorators import permission
 from alerta.exceptions import (ApiError, BlackoutPeriod, RateLimit,
                                RejectException)
 from alerta.models.alert import Alert
+from alerta.models.enums import Scope
 from alerta.models.metrics import Timer, timer
 from alerta.models.switch import Switch
 from alerta.utils.api import (add_remote_ip, assign_customer, process_action,
@@ -31,7 +32,7 @@ count_timer = Timer('alerts', 'counts', 'Count alerts', 'Total time and number o
 
 @api.route('/alert', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(receive_timer)
 @jsonp
 def receive():
@@ -62,7 +63,7 @@ def receive():
 
 @api.route('/alert/<alert_id>', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:alerts')
+@permission(Scope.read_alerts)
 @timer(gets_timer)
 @jsonp
 def get_alert(alert_id):
@@ -78,7 +79,7 @@ def get_alert(alert_id):
 # set status
 @api.route('/alert/<alert_id>/status', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(status_timer)
 @jsonp
 def set_status(alert_id):
@@ -112,7 +113,7 @@ def set_status(alert_id):
 # action alert
 @api.route('/alert/<alert_id>/action', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(status_timer)
 @jsonp
 def action_alert(alert_id):
@@ -158,7 +159,7 @@ def action_alert(alert_id):
 # tag
 @api.route('/alert/<alert_id>/tag', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(tag_timer)
 @jsonp
 def tag_alert(alert_id):
@@ -180,7 +181,7 @@ def tag_alert(alert_id):
 # untag
 @api.route('/alert/<alert_id>/untag', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(untag_timer)
 @jsonp
 def untag_alert(alert_id):
@@ -202,7 +203,7 @@ def untag_alert(alert_id):
 # update attributes
 @api.route('/alert/<alert_id>/attributes', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(attrs_timer)
 @jsonp
 def update_attributes(alert_id):
@@ -224,7 +225,7 @@ def update_attributes(alert_id):
 # delete
 @api.route('/alert/<alert_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(delete_timer)
 @jsonp
 def delete_alert(alert_id):
@@ -242,7 +243,7 @@ def delete_alert(alert_id):
 
 @api.route('/alerts', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:alerts')
+@permission(Scope.read_alerts)
 @timer(gets_timer)
 @jsonp
 def search_alerts():
@@ -289,7 +290,7 @@ def search_alerts():
 
 @api.route('/alerts/history', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:alerts')
+@permission(Scope.read_alerts)
 @timer(gets_timer)
 @jsonp
 def history():
@@ -316,7 +317,7 @@ def history():
 # status counts
 @api.route('/alerts/count', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:alerts')
+@permission(Scope.read_alerts)
 @timer(count_timer)
 @jsonp
 def get_counts():
@@ -336,7 +337,7 @@ def get_counts():
 # top 10 counts
 @api.route('/alerts/top10/count', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:alerts')
+@permission(Scope.read_alerts)
 @timer(count_timer)
 @jsonp
 def get_top10_count():
@@ -363,7 +364,7 @@ def get_top10_count():
 # top 10 flapping
 @api.route('/alerts/top10/flapping', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:alerts')
+@permission(Scope.read_alerts)
 @timer(count_timer)
 @jsonp
 def get_top10_flapping():
@@ -390,7 +391,7 @@ def get_top10_flapping():
 # top 10 standing
 @api.route('/alerts/top10/standing', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:alerts')
+@permission(Scope.read_alerts)
 @timer(count_timer)
 @jsonp
 def get_top10_standing():
@@ -417,7 +418,7 @@ def get_top10_standing():
 # get alert environments
 @api.route('/environments', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:alerts')
+@permission(Scope.read_alerts)
 @timer(gets_timer)
 @jsonp
 def get_environments():
@@ -442,7 +443,7 @@ def get_environments():
 # get alert services
 @api.route('/services', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:alerts')
+@permission(Scope.read_alerts)
 @timer(gets_timer)
 @jsonp
 def get_services():
@@ -467,7 +468,7 @@ def get_services():
 # get alert tags
 @api.route('/tags', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:alerts')
+@permission(Scope.read_alerts)
 @timer(gets_timer)
 @jsonp
 def get_tags():

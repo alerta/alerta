@@ -10,6 +10,7 @@ from psycopg2.extras import Json, NamedTupleCursor, register_composite
 
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
+from alerta.models.enums import Scope
 from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
@@ -844,7 +845,7 @@ class Backend(Database):
 
     def get_scopes_by_match(self, login, matches):
         if login in current_app.config['ADMIN_USERS']:
-            return ['admin', 'read', 'write']
+            return [Scope.admin, Scope.read, Scope.write]
 
         scopes = list()
         for match in matches:

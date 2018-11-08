@@ -6,6 +6,7 @@ from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.customer import Customer
+from alerta.models.enums import Scope
 from alerta.utils.response import jsonp
 
 from . import api
@@ -13,7 +14,7 @@ from . import api
 
 @api.route('/customer', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('admin:customers')
+@permission(Scope.admin_customers)
 @jsonp
 def create_customer():
     try:
@@ -34,7 +35,7 @@ def create_customer():
 
 @api.route('/customers', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:customers')
+@permission(Scope.read_customers)
 @jsonp
 def list_customers():
     query = qb.from_params(request.args)
@@ -57,7 +58,7 @@ def list_customers():
 
 @api.route('/customer/<customer_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
-@permission('admin:customers')
+@permission(Scope.admin_customers)
 @jsonp
 def delete_customer(customer_id):
     customer = Customer.find_by_id(customer_id)

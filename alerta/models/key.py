@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from alerta.app import db, key_helper, qb
 from alerta.database.base import Query
+from alerta.models.enums import Scope
 from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
@@ -13,7 +14,7 @@ JSON = Dict[str, Any]
 
 class ApiKey:
 
-    def __init__(self, user: str, scopes: List[str], text: str='', expire_time: datetime=None, customer: str=None, **kwargs) -> None:
+    def __init__(self, user: str, scopes: List[Scope], text: str='', expire_time: datetime=None, customer: str=None, **kwargs) -> None:
 
         self.id = kwargs.get('id', None) or str(uuid4())
         self.key = kwargs.get('key', None) or key_helper.generate()
@@ -36,7 +37,7 @@ class ApiKey:
 
         api_key = ApiKey(
             user=json.get('user', None),
-            scopes=json.get('scopes', []),
+            scopes=[Scope(s) for s in json.get('scopes', [])],
             text=json.get('text', None),
             expire_time=DateTime.parse(json['expireTime']) if 'expireTime' in json else None,
             customer=json.get('customer', None)
@@ -72,7 +73,7 @@ class ApiKey:
             id=doc.get('id', None) or doc.get('_id'),
             key=doc.get('key', None) or doc.get('_id'),
             user=doc.get('user', None),
-            scopes=doc.get('scopes', None) or key_helper.type_to_scopes(
+            scopes=[Scope(s) for s in doc.get('scopes', None)] or key_helper.type_to_scopes(
                 doc.get('user', None), doc.get('type', None)) or list(),
             text=doc.get('text', None),
             expire_time=doc.get('expireTime', None),
@@ -87,7 +88,7 @@ class ApiKey:
             id=rec.id,
             key=rec.key,
             user=rec.user,
-            scopes=rec.scopes,  # legacy type => scopes conversion only required for mongo documents
+            scopes=[Scope(s) for s in rec.scopes],  # legacy type => scopes conversion only required for mongo documents
             text=rec.text,
             expire_time=rec.expire_time,
             count=rec.count,
