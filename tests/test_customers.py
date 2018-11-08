@@ -6,6 +6,7 @@ from flask import g
 
 from alerta.app import create_app, db
 from alerta.exceptions import ApiError
+from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
 from alerta.utils.api import assign_customer
 
@@ -42,7 +43,7 @@ class AuthTestCase(unittest.TestCase):
             self.app.preprocess_request()
             self.api_key = ApiKey(
                 user='admin@alerta.io',
-                scopes=['admin', 'read', 'write'],
+                scopes=[Scope.admin, Scope.read, Scope.write],
                 text='admin-key'
             )
             self.api_key.create()
@@ -365,14 +366,14 @@ class AuthTestCase(unittest.TestCase):
             g.customers = ['Customer1']
             g.scopes = ['read:keys', 'write:keys']
             with self.assertRaises(ApiError) as e:
-                assign_customer(wanted='Customer2', permission='admin:keys')
+                assign_customer(wanted='Customer2', permission=Scope.admin_keys)
             exc = e.exception
             self.assertEqual(str(exc), "not allowed to set customer to 'Customer2'")
 
             # right scope
             g.customers = ['Customer1']
             g.scopes = ['admin:keys', 'read:keys', 'write:keys']
-            self.assertEqual(assign_customer(wanted='Customer2', permission='admin:keys'), 'Customer2')
+            self.assertEqual(assign_customer(wanted='Customer2', permission=Scope.admin_keys), 'Customer2')
 
     def test_invalid_customer(self):
 

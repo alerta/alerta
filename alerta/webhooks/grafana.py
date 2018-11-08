@@ -9,6 +9,7 @@ from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
+from alerta.models.enums import Scope
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
@@ -62,7 +63,7 @@ def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) 
 
 @webhooks.route('/webhooks/grafana', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('write:webhooks')
+@permission(Scope.write_webhooks)
 def grafana():
 
     alerts = []

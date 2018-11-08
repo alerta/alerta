@@ -5,6 +5,7 @@ from flask.cli import FlaskGroup, with_appcontext
 
 from alerta.app import db
 from alerta.auth.utils import generate_password_hash
+from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
 from alerta.models.user import User
 
@@ -33,7 +34,7 @@ def key(username, key, all):
         key = ApiKey(
             user=admin,
             key=key,
-            scopes=['admin', 'write', 'read'],
+            scopes=[Scope.admin, Scope.write, Scope.read],
             text='Admin key created by alertad script',
             expire_time=None
         )

@@ -5,6 +5,7 @@ from flask_cors import cross_origin
 from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
+from alerta.models.enums import Scope
 from alerta.models.heartbeat import Heartbeat
 from alerta.utils.api import assign_customer
 from alerta.utils.response import jsonp
@@ -14,7 +15,7 @@ from . import api
 
 @api.route('/heartbeat', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('write:heartbeats')
+@permission(Scope.write_heartbeats)
 @jsonp
 def create_heartbeat():
     try:
@@ -22,7 +23,7 @@ def create_heartbeat():
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    heartbeat.customer = assign_customer(wanted=heartbeat.customer, permission='admin:heartbeats')
+    heartbeat.customer = assign_customer(wanted=heartbeat.customer, permission=Scope.admin_heartbeats)
 
     try:
         heartbeat = heartbeat.create()
@@ -37,7 +38,7 @@ def create_heartbeat():
 
 @api.route('/heartbeat/<heartbeat_id>', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:heartbeats')
+@permission(Scope.read_heartbeats)
 @jsonp
 def get_heartbeat(heartbeat_id):
     customer = g.get('customer', None)
@@ -51,7 +52,7 @@ def get_heartbeat(heartbeat_id):
 
 @api.route('/heartbeats', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:heartbeats')
+@permission(Scope.read_heartbeats)
 @jsonp
 def list_heartbeats():
     query = qb.from_params(request.args)
@@ -74,7 +75,7 @@ def list_heartbeats():
 
 @api.route('/heartbeat/<heartbeat_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
-@permission('write:heartbeats')
+@permission(Scope.write_heartbeats)
 @jsonp
 def delete_heartbeat(heartbeat_id):
     customer = g.get('customer', None)

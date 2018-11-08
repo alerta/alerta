@@ -9,6 +9,7 @@ from werkzeug.datastructures import ImmutableMultiDict
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
+from alerta.models.enums import Scope
 from alerta.utils.response import absolute_url
 
 from . import webhooks
@@ -75,7 +76,7 @@ def build_slack_response(alert: Alert, action: str, user: str, data: ImmutableMu
 
 @webhooks.route('/webhooks/slack', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('write:webhooks')
+@permission(Scope.write_webhooks)
 def slack():
     alert_id, user, action = parse_slack(request.form)
 

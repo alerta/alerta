@@ -8,12 +8,13 @@ from alerta.app import plugins
 from alerta.exceptions import (ApiError, BlackoutPeriod, RateLimit,
                                RejectException)
 from alerta.models.alert import Alert
+from alerta.models.enums import Scope
 
 
-def assign_customer(wanted: str, permission: str='admin:alerts') -> Optional[str]:
+def assign_customer(wanted: str=None, permission: Scope=Scope.admin_alerts) -> Optional[str]:
     customers = g.get('customers', [])
     if wanted:
-        if 'admin' in g.scopes or permission in g.scopes:
+        if Scope.admin in g.scopes or permission in g.scopes:
             return wanted
         if wanted not in customers:
             raise ApiError("not allowed to set customer to '%s'" % wanted, 400)

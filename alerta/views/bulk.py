@@ -6,6 +6,7 @@ from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
+from alerta.models.enums import Scope
 from alerta.models.metrics import timer
 from alerta.utils.api import process_status
 from alerta.utils.response import absolute_url, jsonp
@@ -17,7 +18,7 @@ from . import api
 
 @api.route('/_bulk/task/<task_id>', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission('read:alerts')
+@permission(Scope.read_alerts)
 @timer(status_timer)
 @jsonp
 def task_status(task_id):
@@ -29,7 +30,7 @@ def task_status(task_id):
 
 @api.route('/_bulk/alerts/status', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(status_timer)
 @jsonp
 def bulk_set_status():
@@ -69,7 +70,7 @@ def bulk_set_status():
 
 @api.route('/_bulk/alerts/action', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(status_timer)
 @jsonp
 def bulk_action_alert():
@@ -95,7 +96,7 @@ def bulk_action_alert():
 
 @api.route('/_bulk/alerts/tag', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(tag_timer)
 @jsonp
 def bulk_tag_alert():
@@ -110,7 +111,7 @@ def bulk_tag_alert():
 
 @api.route('/_bulk/alerts/untag', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(tag_timer)
 @jsonp
 def bulk_untag_alert():
@@ -125,7 +126,7 @@ def bulk_untag_alert():
 
 @api.route('/_bulk/alerts/attributes', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(attrs_timer)
 @jsonp
 def bulk_update_attributes():
@@ -140,7 +141,7 @@ def bulk_update_attributes():
 
 @api.route('/_bulk/alerts', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
-@permission('write:alerts')
+@permission(Scope.write_alerts)
 @timer(delete_timer)
 @jsonp
 def bulk_delete_alert():

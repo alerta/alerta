@@ -6,6 +6,7 @@ from flask_cors import cross_origin
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
+from alerta.models.enums import Scope
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
 
 from . import webhooks
@@ -32,7 +33,7 @@ def parse_riemann(alert: JSON) -> Alert:
 
 @webhooks.route('/webhooks/riemann', methods=['OPTIONS', 'POST'])
 @cross_origin()
-@permission('write:webhooks')
+@permission(Scope.write_webhooks)
 def riemann():
 
     try:
