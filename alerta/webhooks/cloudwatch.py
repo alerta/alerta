@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from typing import Any, Dict
 
-from flask import jsonify, request
+from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
@@ -11,6 +11,7 @@ from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
+from alerta.utils.audit import audit_trail
 
 from . import webhooks
 
@@ -98,6 +99,10 @@ def cloudwatch():
         raise ApiError(str(e), 403)
     except Exception as e:
         raise ApiError(str(e), 500)
+
+    text = 'cloudwatch alert received via webhook'
+    audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert:
         return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201

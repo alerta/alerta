@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 import pytz
 from dateutil.parser import parse as parse_date
-from flask import jsonify, request
+from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.decorators import permission
@@ -12,6 +12,7 @@ from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
+from alerta.utils.audit import audit_trail
 
 from . import webhooks
 
@@ -130,6 +131,11 @@ def prometheus():
             alerts.append(alert)
     else:
         raise ApiError('no alerts in Prometheus notification payload', 400)
+
+    for alert in alerts:
+        text = 'prometheus alert received via webhook'
+        audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
+                         customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if len(alerts) == 1:
         return jsonify(status='ok', id=alerts[0].id, alert=alerts[0].serialize), 201

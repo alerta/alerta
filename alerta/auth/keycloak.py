@@ -5,6 +5,8 @@ from flask_cors import cross_origin
 
 from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
+from alerta.models.permission import Permission
+from alerta.utils.audit import audit_trail
 
 from . import auth
 
@@ -46,5 +48,10 @@ def keycloak():
 
     customers = get_customers(login, groups=roles)
 
-    token = create_token(profile['sub'], profile['name'], login, provider='keycloak', customers=customers, roles=roles)
+    audit_trail.send(current_app._get_current_object(), event='keycloak-login', message='user login via Keycloak',
+                     user=login, customers=customers, scopes=Permission.lookup(login, groups=roles),
+                     resource_id=profile['sub'], type='keycloak', request=request)
+
+    token = create_token(user_id=profile['sub'], name=profile['name'], login=login, provider='keycloak',
+                         customers=customers, roles=roles)
     return jsonify(token=token.tokenize)

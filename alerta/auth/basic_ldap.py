@@ -5,7 +5,9 @@ from flask_cors import cross_origin
 
 from alerta.auth.utils import create_token, get_customers
 from alerta.exceptions import ApiError
+from alerta.models.permission import Permission
 from alerta.models.user import User
+from alerta.utils.audit import audit_trail
 
 from . import auth
 
@@ -53,7 +55,11 @@ def login():
     customers = get_customers(user.email, groups=[user.domain])
     user.update_last_login()
 
+    audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
+                     user=user.email, customers=customers, scopes=Permission.lookup(login, groups=user.roles),
+                     resource_id=user.id, type='user', request=request)
+
     # Generate token
-    token = create_token(user.id, user.name, user.email, provider='basic_ldap', customers=customers,
-                         roles=user.roles, email=user.email, email_verified=user.email_verified)
+    token = create_token(user_id=user.id, name=user.name, login=user.email, provider='basic_ldap',
+                         customers=customers, roles=user.roles, email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)

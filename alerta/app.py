@@ -9,6 +9,7 @@ from werkzeug.contrib.fixers import ProxyFix
 from alerta.database.base import Database, QueryBuilder
 from alerta.exceptions import ExceptionHandlers
 from alerta.models.alarms import AlarmModel
+from alerta.utils.audit import AuditTrail
 from alerta.utils.config import Config
 from alerta.utils.key import ApiKeyHelper
 from alerta.utils.mailer import Mailer
@@ -16,6 +17,7 @@ from alerta.utils.plugin import Plugins
 from alerta.utils.webhook import CustomWebhooks
 
 config = Config()
+audit = AuditTrail()
 alarm_model = AlarmModel()
 
 cors = CORS()
@@ -40,6 +42,7 @@ def create_app(config_override: Dict[str, Any]=None, environment: str=None) -> F
     if app.config['USE_PROXYFIX']:
         app.wsgi_app = ProxyFix(app.wsgi_app)
 
+    audit.init_app(app)
     alarm_model.init_app(app)
 
     cors.init_app(app)

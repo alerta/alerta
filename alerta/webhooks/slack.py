@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Dict, Tuple
 
-from flask import g, jsonify, request
+from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 from werkzeug.datastructures import ImmutableMultiDict
 
@@ -10,6 +10,7 @@ from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
+from alerta.utils.audit import audit_trail
 from alerta.utils.response import absolute_url
 
 from . import webhooks
@@ -91,6 +92,10 @@ def slack():
         alert.untag(tags=['{}:{}'.format(action, user)])
     else:
         raise ApiError('Unsupported #slack action', 400)
+
+    text = 'alert updated via slack webhook'
+    audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text, user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     response = build_slack_response(alert, action, user, request.form)
     return jsonify(**response), 201

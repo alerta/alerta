@@ -5,6 +5,8 @@ from flask_cors import cross_origin
 
 from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
+from alerta.models.permission import Permission
+from alerta.utils.audit import audit_trail
 
 from . import auth
 
@@ -48,6 +50,11 @@ def github():
 
     customers = get_customers(login, organizations)
 
-    token = create_token(profile['id'], profile.get('name', '@' + login), login, provider='github', customers=customers,
-                         orgs=organizations, email=profile.get('email', None), email_verified=True if 'email' in profile else False)
+    audit_trail.send(current_app._get_current_object(), event='github-login', message='user login via GitHub',
+                     user=login, customers=customers, scopes=Permission.lookup(login, groups=organizations),
+                     resource_id=profile['id'], type='github', request=request)
+
+    token = create_token(user_id=profile['id'], name=profile.get('name', '@' + login), login=login, provider='github',
+                         customers=customers, orgs=organizations, email=profile.get('email', None),
+                         email_verified=True if 'email' in profile else False)
     return jsonify(token=token.tokenize)

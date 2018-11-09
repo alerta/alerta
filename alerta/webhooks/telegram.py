@@ -10,6 +10,7 @@ from alerta.auth.decorators import permission
 from alerta.models.alert import Alert
 from alerta.models.blackout import Blackout
 from alerta.models.enums import Scope
+from alerta.utils.audit import audit_trail
 
 from . import webhooks
 
@@ -94,6 +95,11 @@ def telegram():
             blackout.create()
 
         send_message_reply(alert, action, user, data)
+
+        text = 'alert updated via telegram webhook'
+        audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text, user=g.user,
+                         customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+
         return jsonify(status='ok')
     else:
         return jsonify(status='ok', message='no callback_query in Telegram message')
