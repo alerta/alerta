@@ -7,7 +7,7 @@ from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.customer import Customer
 from alerta.models.enums import Scope
-from alerta.utils.audit import audit_trail
+from alerta.utils.audit import admin_audit_trail
 from alerta.utils.response import jsonp
 
 from . import api
@@ -28,8 +28,8 @@ def create_customer():
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    audit_trail.send(current_app._get_current_object(), event='customer-created', message='', user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=customer.id, type='customer', request=request)
+    admin_audit_trail.send(current_app._get_current_object(), event='customer-created', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=customer.id, type='customer', request=request)
 
     if customer:
         return jsonify(status='ok', id=customer.id, customer=customer.serialize), 201
@@ -70,8 +70,8 @@ def delete_customer(customer_id):
     if not customer:
         raise ApiError('not found', 404)
 
-    audit_trail.send(current_app._get_current_object(), event='customer-deleted', message='', user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=customer.id, type='customer', request=request)
+    admin_audit_trail.send(current_app._get_current_object(), event='customer-deleted', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=customer.id, type='customer', request=request)
 
     if customer.delete():
         return jsonify(status='ok')

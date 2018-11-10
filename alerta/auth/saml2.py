@@ -7,7 +7,7 @@ from flask_cors import cross_origin
 from alerta.auth.utils import (create_token, deepmerge, get_customers,
                                not_authorized)
 from alerta.models.permission import Permission
-from alerta.utils.audit import audit_trail
+from alerta.utils.audit import auth_audit_trail
 from alerta.utils.response import absolute_url
 
 from . import auth
@@ -104,9 +104,9 @@ def saml_response_from_idp():
 
     customers = get_customers(email, groups=[domain])
 
-    audit_trail.send(current_app._get_current_object(), event='saml2-login', message='user login via SAML2',
-                     user=email, customers=customers, scopes=Permission.lookup(email, groups=groups),
-                     resource_id=email, type='saml2', request=request)
+    auth_audit_trail.send(current_app._get_current_object(), event='saml2-login', message='user login via SAML2',
+                          user=email, customers=customers, scopes=Permission.lookup(email, groups=groups),
+                          resource_id=email, type='saml2', request=request)
 
     token = create_token(user_id=email, name=name, login=email, provider='saml2', customers=customers, groups=groups)
     return _make_response({'status': 'ok', 'token': token.tokenize}, 200)

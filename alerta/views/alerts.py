@@ -14,7 +14,7 @@ from alerta.models.metrics import Timer, timer
 from alerta.models.switch import Switch
 from alerta.utils.api import (add_remote_ip, assign_customer, process_action,
                               process_alert, process_status)
-from alerta.utils.audit import audit_trail
+from alerta.utils.audit import write_audit_trail
 from alerta.utils.paging import Page
 from alerta.utils.response import jsonp
 
@@ -56,8 +56,8 @@ def receive():
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    audit_trail.send(current_app._get_current_object(), event='alert-received', message=alert.text, user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+    write_audit_trail.send(current_app._get_current_object(), event='alert-received', message=alert.text, user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert:
         return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
@@ -108,8 +108,8 @@ def set_status(alert_id):
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    audit_trail.send(current_app._get_current_object(), event='alert-status-changed', message=text, user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+    write_audit_trail.send(current_app._get_current_object(), event='alert-status-changed', message=text, user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
     if alert:
         return jsonify(status='ok')
     else:
@@ -156,8 +156,8 @@ def action_alert(alert_id):
         except Exception as e:
             raise ApiError(str(e), 500)
 
-    audit_trail.send(current_app._get_current_object(), event='alert-actioned', message=text, user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+    write_audit_trail.send(current_app._get_current_object(), event='alert-actioned', message=text, user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert:
         return jsonify(status='ok')
@@ -183,8 +183,8 @@ def tag_alert(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    audit_trail.send(current_app._get_current_object(), event='alert-tagged', message='', user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+    write_audit_trail.send(current_app._get_current_object(), event='alert-tagged', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert.tag(tags):
         return jsonify(status='ok')
@@ -210,8 +210,8 @@ def untag_alert(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    audit_trail.send(current_app._get_current_object(), event='alert-untagged', message='', user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+    write_audit_trail.send(current_app._get_current_object(), event='alert-untagged', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert.untag(tags):
         return jsonify(status='ok')
@@ -237,8 +237,8 @@ def update_attributes(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    audit_trail.send(current_app._get_current_object(), event='alert-attributes-updated', message='', user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+    write_audit_trail.send(current_app._get_current_object(), event='alert-attributes-updated', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert.update_attributes(attributes):
         return jsonify(status='ok')
@@ -259,8 +259,8 @@ def delete_alert(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    audit_trail.send(current_app._get_current_object(), event='alert-deleted', message='', user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+    write_audit_trail.send(current_app._get_current_object(), event='alert-deleted', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert.delete():
         return jsonify(status='ok')

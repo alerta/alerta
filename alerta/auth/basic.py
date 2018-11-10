@@ -5,7 +5,7 @@ from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
 from alerta.models.permission import Permission
 from alerta.models.user import User
-from alerta.utils.audit import audit_trail
+from alerta.utils.audit import auth_audit_trail
 
 from . import auth
 
@@ -51,9 +51,9 @@ def signup():
     # assign customers
     customers = get_customers(user.email, groups=[user.domain])
 
-    audit_trail.send(current_app._get_current_object(), event='basic-auth-signup', message='user signup using BasicAuth',
-                     user=user.email, customers=customers, scopes=Permission.lookup(login, groups=user.roles),
-                     resource_id=user.id, type='user', request=request)
+    auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-signup', message='user signup using BasicAuth',
+                          user=user.email, customers=customers, scopes=Permission.lookup(login, groups=user.roles),
+                          resource_id=user.id, type='user', request=request)
 
     # generate token
     token = create_token(user_id=user.id, name=user.name, login=user.email, provider='basic',
@@ -87,9 +87,9 @@ def login():
     # assign customers
     customers = get_customers(user.email, groups=[user.domain])
 
-    audit_trail.send(current_app._get_current_object(), event='basic-auth-login', message='user login via BasicAuth',
-                     user=user.email, customers=customers, scopes=Permission.lookup(login, groups=user.roles),
-                     resource_id=user.id, type='user', request=request)
+    auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-login', message='user login via BasicAuth',
+                          user=user.email, customers=customers, scopes=Permission.lookup(login, groups=user.roles),
+                          resource_id=user.id, type='user', request=request)
 
     # generate token
     token = create_token(user_id=user.id, name=user.name, login=user.email, provider='basic',
@@ -106,6 +106,10 @@ def verify_email(hash):
         if user.email_verified:
             raise ApiError('email already verified', 400)
         user.set_email_verified()
+
+        auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-verify-email',
+                              message='user confirm email address', user=user.email, customers=[], scopes=[],
+                              resource_id=user.id, type='user', request=request)
 
         return jsonify(status='ok', message='email address {} confirmed'.format(user.email))
     else:
@@ -126,6 +130,10 @@ def forgot():
             raise ApiError('user not active', 403)
         user.send_password_reset()
 
+        auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-password-forgot',
+                              message='user requested password reset', user=user.email, customers=[], scopes=[],
+                              resource_id=user.id, type='user', request=request)
+
         return jsonify(status='ok', message='password reset sent')
     else:
         raise ApiError('invalid email address', 400)
@@ -144,6 +152,10 @@ def reset(hash):
         if not user.is_active:
             raise ApiError('user not active', 403)
         user.reset_password(password)
+
+        auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-password-reset',
+                              message='user password reset successful', user=user.email, customers=[], scopes=[],
+                              resource_id=user.id, type='user', request=request)
 
         return jsonify(status='ok', message='password reset successful')
     else:
