@@ -6,7 +6,7 @@ from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.enums import Scope
 from alerta.models.permission import Permission
-from alerta.utils.audit import audit_trail
+from alerta.utils.audit import admin_audit_trail
 from alerta.utils.response import jsonp
 
 from . import api
@@ -32,8 +32,8 @@ def create_perm():
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    audit_trail.send(current_app._get_current_object(), event='permission-created', message='', user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=perm.id, type='permission', request=request)
+    admin_audit_trail.send(current_app._get_current_object(), event='permission-created', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=perm.id, type='permission', request=request)
 
     if perm:
         return jsonify(status='ok', id=perm.id, permission=perm.serialize), 201
@@ -73,8 +73,8 @@ def delete_perm(perm_id):
     if not perm:
         raise ApiError('not found', 404)
 
-    audit_trail.send(current_app._get_current_object(), event='permission-deleted', message='', user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=perm.id, type='permission', request=request)
+    admin_audit_trail.send(current_app._get_current_object(), event='permission-deleted', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=perm.id, type='permission', request=request)
 
     if perm.delete():
         return jsonify(status='ok')

@@ -7,7 +7,7 @@ from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
-from alerta.utils.audit import audit_trail
+from alerta.utils.audit import write_audit_trail
 
 from . import webhooks
 
@@ -94,9 +94,9 @@ def pagerduty():
                 raise ApiError(str(e), 500)
 
             text = 'alert updated via pagerduty webhook'
-            audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text, user=g.user,
-                             customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
-                             request=request)
+            write_audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text, user=g.user,
+                                   customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                                   request=request)
     else:
         raise ApiError('no messages in PagerDuty data payload', 400)
 

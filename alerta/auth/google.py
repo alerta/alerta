@@ -7,7 +7,7 @@ from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
 from alerta.models.permission import Permission
 from alerta.models.token import Jwt
-from alerta.utils.audit import audit_trail
+from alerta.utils.audit import auth_audit_trail
 
 from . import auth
 
@@ -51,10 +51,10 @@ def google():
     customers = get_customers(id_token.email, groups=[domain])
     name = profile.get('name', id_token.email.split('@')[0])
 
-    audit_trail.send(current_app._get_current_object(), event='google-login', message='user login via Google',
-                     user=id_token.email, customers=customers,
-                     scopes=Permission.lookup(id_token.email, groups=[domain]),
-                     resource_id=id_token.subject, type='google', request=request)
+    auth_audit_trail.send(current_app._get_current_object(), event='google-login', message='user login via Google',
+                          user=id_token.email, customers=customers,
+                          scopes=Permission.lookup(id_token.email, groups=[domain]),
+                          resource_id=id_token.subject, type='google', request=request)
 
     token = create_token(user_id=id_token.subject, name=name, login=id_token.email, provider='google',
                          customers=customers, orgs=[domain], email=id_token.email, email_verified=id_token.email_verified)
