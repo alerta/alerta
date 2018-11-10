@@ -5,6 +5,8 @@ from flask_cors import cross_origin
 
 from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
+from alerta.models.permission import Permission
+from alerta.utils.audit import audit_trail
 
 from . import auth
 
@@ -29,7 +31,7 @@ def gitlab():
     try:
         r = requests.post(access_token_url, data=payload)
     except Exception:
-        return jsonify(status='error', message='Failed to call Gitlab API over HTTPS')
+        return jsonify(status='error', message='Failed to call GitLab API over HTTPS')
     token = r.json()
 
     headers = {'Authorization': 'Bearer ' + token['access_token']}
@@ -61,6 +63,10 @@ def gitlab():
 
     customers = get_customers(login, groups)
 
-    token = create_token(user_id, profile.get('name', '@' + login), login, provider='gitlab', customers=customers,
-                         groups=groups, email=profile.get('email', None), email_verified=email_verified)
+    audit_trail.send(current_app._get_current_object(), event='gitlab-login', message='user login via GitLab',
+                     user=login, customers=customers, scopes=Permission.lookup(login, groups=groups),
+                     resource_id=user_id, type='gitlab', request=request)
+
+    token = create_token(user_id=user_id, name=profile.get('name', '@' + login), login=login, provider='gitlab',
+                         customers=customers, groups=groups, email=profile.get('email', None), email_verified=email_verified)
     return jsonify(token=token.tokenize)

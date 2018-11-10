@@ -7,6 +7,7 @@ from alerta.auth.utils import not_authorized
 from alerta.exceptions import ApiError
 from alerta.models.enums import Scope
 from alerta.models.user import User
+from alerta.utils.audit import audit_trail
 from alerta.utils.response import jsonp
 
 from . import api
@@ -38,6 +39,9 @@ def create_user():
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
         user.send_confirmation()
 
+    audit_trail.send(current_app._get_current_object(), event='user-created', message='', user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
+
     if user:
         return jsonify(status='ok', id=user.id, user=user.serialize), 201
     else:
@@ -59,6 +63,9 @@ def update_user(user_id):
 
     if 'email' in request.json and User.find_by_email(request.json['email']):
         raise ApiError('user with email already exists', 409)
+
+    audit_trail.send(current_app._get_current_object(), event='user-updated', message='', user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
     if user.update(**request.json):
         return jsonify(status='ok')
@@ -87,6 +94,9 @@ def update_me():
     if 'email' in request.json and User.find_by_email(request.json['email']):
         raise ApiError('user with email already exists', 409)
 
+    audit_trail.send(current_app._get_current_object(), event='user-me-updated', message='', user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
+
     if user.update(**request.json):
         return jsonify(status='ok')
     else:
@@ -106,6 +116,9 @@ def update_user_attributes(user_id):
     if not user:
         raise ApiError('not found', 404)
 
+    audit_trail.send(current_app._get_current_object(), event='user-attributes-updated', message='', user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
+
     if user.update_attributes(request.json['attributes']):
         return jsonify(status='ok')
     else:
@@ -124,6 +137,9 @@ def update_me_attributes():
 
     if not user:
         raise ApiError('not found', 404)
+
+    audit_trail.send(current_app._get_current_object(), event='user-me-attributes-updated', message='', user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
     if user.update_attributes(request.json['attributes']):
         return jsonify(status='ok')
@@ -165,6 +181,9 @@ def delete_user(user_id):
 
     if not user:
         raise ApiError('not found', 404)
+
+    audit_trail.send(current_app._get_current_object(), event='user-deleted', message='', user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
     if user.delete():
         return jsonify(status='ok')

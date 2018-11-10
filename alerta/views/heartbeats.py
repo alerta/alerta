@@ -1,5 +1,5 @@
 
-from flask import g, jsonify, request
+from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.app import qb
@@ -8,6 +8,7 @@ from alerta.exceptions import ApiError
 from alerta.models.enums import Scope
 from alerta.models.heartbeat import Heartbeat
 from alerta.utils.api import assign_customer
+from alerta.utils.audit import audit_trail
 from alerta.utils.response import jsonp
 
 from . import api
@@ -29,6 +30,9 @@ def create_heartbeat():
         heartbeat = heartbeat.create()
     except Exception as e:
         raise ApiError(str(e), 500)
+
+    audit_trail.send(current_app._get_current_object(), event='heartbeat-created', message='', user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=heartbeat.id, type='heartbeat', request=request)
 
     if heartbeat:
         return jsonify(status='ok', id=heartbeat.id, heartbeat=heartbeat.serialize), 201
@@ -83,6 +87,9 @@ def delete_heartbeat(heartbeat_id):
 
     if not heartbeat:
         raise ApiError('not found', 404)
+
+    audit_trail.send(current_app._get_current_object(), event='heartbeat-deleted', message='', user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=heartbeat.id, type='heartbeat', request=request)
 
     if heartbeat.delete():
         return jsonify(status='ok')
