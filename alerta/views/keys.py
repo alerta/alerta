@@ -7,6 +7,7 @@ from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
 from alerta.models.permission import Permission
 from alerta.utils.api import assign_customer
+from alerta.utils.audit import audit_trail
 from alerta.utils.response import jsonp
 
 from . import api
@@ -41,6 +42,9 @@ def create_key():
         key = key.create()
     except Exception as e:
         raise ApiError(str(e), 500)
+
+    audit_trail.send(current_app._get_current_object(), event='apikey-created', message='', user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=key.id, type='apikey', request=request)
 
     if key:
         return jsonify(status='ok', key=key.key, data=key.serialize), 201
@@ -86,6 +90,9 @@ def delete_key(key):
 
     if not key:
         raise ApiError('not found', 404)
+
+    audit_trail.send(current_app._get_current_object(), event='apikey-deleted', message='', user=g.user,
+                     customers=g.customers, scopes=g.scopes, resource_id=key.id, type='apikey', request=request)
 
     if key.delete():
         return jsonify(status='ok')

@@ -5,7 +5,9 @@ from flask_cors import cross_origin
 
 from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
+from alerta.models.permission import Permission
 from alerta.models.token import Jwt
+from alerta.utils.audit import audit_trail
 
 from . import auth
 
@@ -47,8 +49,13 @@ def google():
         raise ApiError('Google+ API is not enabled for this Client ID', 400)
 
     customers = get_customers(id_token.email, groups=[domain])
-
     name = profile.get('name', id_token.email.split('@')[0])
-    token = create_token(id_token.subject, name, id_token.email, provider='google', customers=customers,
-                         orgs=[domain], email=id_token.email, email_verified=id_token.email_verified)
+
+    audit_trail.send(current_app._get_current_object(), event='google-login', message='user login via Google',
+                     user=id_token.email, customers=customers,
+                     scopes=Permission.lookup(id_token.email, groups=[domain]),
+                     resource_id=id_token.subject, type='google', request=request)
+
+    token = create_token(user_id=id_token.subject, name=name, login=id_token.email, provider='google',
+                         customers=customers, orgs=[domain], email=id_token.email, email_verified=id_token.email_verified)
     return jsonify(token=token.tokenize)
