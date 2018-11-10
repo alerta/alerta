@@ -49,6 +49,7 @@ CELERY_ACCEPT_CONTENT = ['customjson']
 CELERY_TASK_SERIALIZER = 'customjson'
 CELERY_RESULT_SERIALIZER = 'customjson'
 
+AUDIT_TRAIL = ['admin']  # possible categories are 'admin', 'write', and 'auth'
 AUDIT_LOG = None  # set to True to log to application logger
 AUDIT_URL = None  # send audit log events via webhook URL
 

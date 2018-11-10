@@ -7,7 +7,7 @@ from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.enums import Scope
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
-from alerta.utils.audit import audit_trail
+from alerta.utils.audit import write_audit_trail
 
 from . import webhooks
 
@@ -37,8 +37,8 @@ def custom(webhook):
         raise ApiError(str(e), 500)
 
     text = '{} alert received via custom webhook'.format(webhook)
-    audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+    write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert:
         return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201

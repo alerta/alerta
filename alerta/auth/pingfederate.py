@@ -6,7 +6,7 @@ from flask_cors import cross_origin
 
 from alerta.auth.utils import create_token, get_customers
 from alerta.models.permission import Permission
-from alerta.utils.audit import audit_trail
+from alerta.utils.audit import auth_audit_trail
 
 from . import auth
 
@@ -42,9 +42,9 @@ def pingfederate():
     email = decoded[current_app.config['PINGFEDERATE_OPENID_PAYLOAD_EMAIL']]
     customers = get_customers(login, current_app.config['PINGFEDERATE_OPENID_PAYLOAD_GROUP'])
 
-    audit_trail.send(current_app._get_current_object(), event='pingfederate-login', message='user login via PingFederate',
-                     user=email, customers=customers, scopes=Permission.lookup(login, groups=[]),
-                     resource_id=login, type='pingfederate', request=request)
+    auth_audit_trail.send(current_app._get_current_object(), event='pingfederate-login', message='user login via PingFederate',
+                          user=email, customers=customers, scopes=Permission.lookup(login, groups=[]),
+                          resource_id=login, type='pingfederate', request=request)
 
     token = create_token(user_id=login, name=email, login=email, provider='openid', customers=customers)
     return jsonify(token=token.tokenize)

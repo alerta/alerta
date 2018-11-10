@@ -8,7 +8,7 @@ from alerta.exceptions import ApiError
 from alerta.models.blackout import Blackout
 from alerta.models.enums import Scope
 from alerta.utils.api import assign_customer
-from alerta.utils.audit import audit_trail
+from alerta.utils.audit import write_audit_trail
 from alerta.utils.response import absolute_url, jsonp
 
 from . import api
@@ -36,8 +36,8 @@ def create_blackout():
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    audit_trail.send(current_app._get_current_object(), event='blackout-created', message='', user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout', request=request)
+    write_audit_trail.send(current_app._get_current_object(), event='blackout-created', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout', request=request)
 
     if blackout:
         return jsonify(status='ok', id=blackout.id, blackout=blackout.serialize), 201, {'Location': absolute_url('/blackout/' + blackout.id)}
@@ -79,8 +79,8 @@ def delete_blackout(blackout_id):
     if not blackout:
         raise ApiError('not found', 404)
 
-    audit_trail.send(current_app._get_current_object(), event='blackout-deleted', message='', user=g.user,
-                     customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout', request=request)
+    write_audit_trail.send(current_app._get_current_object(), event='blackout-deleted', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout', request=request)
 
     if blackout.delete():
         return jsonify(status='ok')
