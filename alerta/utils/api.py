@@ -48,11 +48,11 @@ def process_alert(alert: Alert) -> Alert:
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise RuntimeError("Error while running pre-receive plug-in '{}': {}".format(plugin.name, str(e)))
+                raise RuntimeError("Error while running pre-receive plugin '{}': {}".format(plugin.name, str(e)))
             else:
-                logging.error("Error while running pre-receive plug-in '{}': {}".format(plugin.name, str(e)))
+                logging.error("Error while running pre-receive plugin '{}': {}".format(plugin.name, str(e)))
         if not alert:
-            raise SyntaxError("Plug-in '%s' pre-receive hook did not return modified alert" % plugin.name)
+            raise SyntaxError("Plugin '%s' pre-receive hook did not return modified alert" % plugin.name)
 
     try:
         if alert.is_duplicate():
@@ -72,9 +72,9 @@ def process_alert(alert: Alert) -> Alert:
             updated = plugin.post_receive(alert)
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError("Error while running post-receive plug-in '{}': {}".format(plugin.name, str(e)))
+                raise ApiError("Error while running post-receive plugin '{}': {}".format(plugin.name, str(e)))
             else:
-                logging.error("Error while running post-receive plug-in '{}': {}".format(plugin.name, str(e)))
+                logging.error("Error while running post-receive plugin '{}': {}".format(plugin.name, str(e)))
         if updated:
             alert = updated
 
@@ -99,9 +99,9 @@ def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, st
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError("Error while running action plug-in '{}': {}".format(plugin.name, str(e)))
+                raise ApiError("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
             else:
-                logging.error("Error while running action plug-in '{}': {}".format(plugin.name, str(e)))
+                logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
         if updated:
             try:
                 alert, action, text = updated
@@ -127,9 +127,9 @@ def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, st
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError("Error while running status plug-in '{}': {}".format(plugin.name, str(e)))
+                raise ApiError("Error while running status plugin '{}': {}".format(plugin.name, str(e)))
             else:
-                logging.error("Error while running status plug-in '{}': {}".format(plugin.name, str(e)))
+                logging.error("Error while running status plugin '{}': {}".format(plugin.name, str(e)))
         if updated:
             try:
                 alert, status, text = updated
