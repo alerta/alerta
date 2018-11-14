@@ -22,6 +22,9 @@ def create_perm():
     except ValueError as e:
         raise ApiError(str(e), 400)
 
+    if perm.match in ['admin', 'user']:
+        raise ApiError('{} role already exists'.format(perm.match), 409)
+
     for want_scope in perm.scopes:
         if not Permission.is_in_scope(want_scope, have_scopes=g.scopes):
             raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
