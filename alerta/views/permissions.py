@@ -51,6 +51,19 @@ def create_perm():
 def list_perms():
     perms = Permission.find_all()
 
+    # add system-defined roles 'admin' and 'user'
+    admin_perm = Permission(
+        match='admin',
+        scopes=[Scope.admin]
+    )
+    perms.append(admin_perm)
+
+    user_perm = Permission(
+        match='user',
+        scopes=current_app.config['USER_DEFAULT_SCOPES']
+    )
+    perms.append(user_perm)
+
     if perms:
         return jsonify(
             status='ok',
