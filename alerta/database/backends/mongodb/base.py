@@ -139,7 +139,8 @@ class Backend(Database):
             'severity': alert.severity,
             'customer': alert.customer
         }
-        return bool(self.get_db().alerts.find_one(query))
+        r = self.get_db().alerts.find_one(query)
+        return r['duplicateCount'] if r else None
 
     def is_correlated(self, alert):
         query = {

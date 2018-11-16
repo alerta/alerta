@@ -167,14 +167,14 @@ class Backend(Database):
 
     def is_duplicate(self, alert):
         select = """
-            SELECT id FROM alerts
+            SELECT duplicate_count FROM alerts
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND event=%(event)s
                AND severity=%(severity)s
                AND {customer}
             """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
-        return bool(self._fetchone(select, vars(alert)))
+        return self._fetchone(select, vars(alert))
 
     def is_correlated(self, alert):
         select = """
