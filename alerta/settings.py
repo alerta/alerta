@@ -9,6 +9,7 @@
 from typing import Any, Dict, List  # noqa
 
 DEBUG = False
+SECRET_KEY = 'changeme'
 
 BASE_URL = ''
 USE_PROXYFIX = False
@@ -19,14 +20,10 @@ LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 LOG_BACKUP_COUNT = 2
 LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
 
-SECRET_KEY = 'changeme'
-
+# API settings
 ALARM_MODEL = 'ALERTA'  # 'ALERTA' (default) or 'ISA_18_2'
-
 QUERY_LIMIT = 1000
-DEFAULT_FIELD = 'text'  # default field if no search prefix specified (Postgres only)
 DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single query
-BULK_QUERY_LIMIT = 100000  # max number of alerts for bulk endpoints
 HISTORY_LIMIT = 100  # cap the number of alert history entries
 HISTORY_ON_VALUE_CHANGE = True  # history entry for duplicate alerts if value changes
 
@@ -39,20 +36,21 @@ MONGO_RAISE_ON_ERROR = True
 POSTGRES_URI = 'postgres://localhost:5432/monitoring'  # not used (use DATABASE_URL)
 POSTGRES_DB = None
 
+# Database
 DATABASE_URL = MONGO_URI  # default: MongoDB
 DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
 DATABASE_RAISE_ON_ERROR = MONGO_RAISE_ON_ERROR  # True - terminate, False - ignore and continue
 
+# Bulk API
+BULK_QUERY_LIMIT = 100000  # max number of alerts for bulk endpoints
+DEFAULT_FIELD = 'text'  # default field if no search prefix specified (Postgres only)
 CELERY_BROKER_URL = None
 CELERY_RESULT_BACKEND = None
 CELERY_ACCEPT_CONTENT = ['customjson']
 CELERY_TASK_SERIALIZER = 'customjson'
 CELERY_RESULT_SERIALIZER = 'customjson'
 
-AUDIT_TRAIL = ['admin']  # possible categories are 'admin', 'write', and 'auth'
-AUDIT_LOG = None  # set to True to log to application logger
-AUDIT_URL = None  # send audit log events via webhook URL
-
+# Authentication settings
 AUTH_REQUIRED = False
 AUTH_PROVIDER = 'basic'  # basic (default), github, gitlab, google, keycloak, pingfederate, saml2
 ADMIN_USERS = []  # type: List[str]
@@ -75,10 +73,6 @@ ALLOWED_GITLAB_GROUPS = ['*']
 LDAP_URL = ''  # eg. ldap://localhost:389
 LDAP_DOMAINS = {}  # type: Dict[str, str]
 
-KEYCLOAK_URL = None
-KEYCLOAK_REALM = None
-ALLOWED_KEYCLOAK_ROLES = ['*']
-
 PINGFEDERATE_URL = None
 PINGFEDERATE_OPENID_ACCESS_TOKEN_URL = PINGFEDERATE_URL
 PINGFEDERATE_PUBKEY_LOCATION = None
@@ -87,6 +81,10 @@ PINGFEDERATE_OPENID_PAYLOAD_USERNAME = None
 PINGFEDERATE_OPENID_PAYLOAD_EMAIL = None
 PINGFEDERATE_OPENID_PAYLOAD_GROUP = None
 
+KEYCLOAK_URL = None
+KEYCLOAK_REALM = None
+ALLOWED_KEYCLOAK_ROLES = ['*']
+
 SAML2_CONFIG = None
 ALLOWED_SAML2_GROUPS = ['*']
 SAML2_USER_NAME_FORMAT = '{givenName} {surname}'
@@ -94,6 +92,12 @@ SAML2_USER_NAME_FORMAT = '{givenName} {surname}'
 TOKEN_EXPIRE_DAYS = 14
 API_KEY_EXPIRE_DAYS = 365  # 1 year
 
+# Audit Log
+AUDIT_TRAIL = ['admin']  # possible categories are 'admin', 'write', and 'auth'
+AUDIT_LOG = None  # set to True to log to application logger
+AUDIT_URL = None  # send audit log events via webhook URL
+
+# CORS settings
 CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
 CORS_ORIGINS = [
     # 'http://try.alerta.io',
@@ -104,11 +108,13 @@ CORS_ORIGINS = [
 ]
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
+# Serverity settings
 SEVERITY_MAP = {}  # type: Dict[str, Any]
 DEFAULT_NORMAL_SEVERITY = None
 DEFAULT_PREVIOUS_SEVERITY = None
 COLOR_MAP = {}  # type: Dict[str, Any]
 
+# Timeout settings
 DEFAULT_TIMEOUT = 86400
 ALERT_TIMEOUT = DEFAULT_TIMEOUT
 HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
