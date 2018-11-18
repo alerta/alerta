@@ -1,13 +1,7 @@
 import logging
 
 from alerta.exceptions import BlackoutPeriod
-from alerta.plugins import PluginBase
-
-try:
-    from alerta.plugins import app  # alerta >= 5.0
-except ImportError:
-    from alerta.app import app  # type: ignore # alerta < 5.0
-
+from alerta.plugins import PluginBase, app
 
 LOG = logging.getLogger('alerta.plugins.blackout')
 
