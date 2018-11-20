@@ -58,7 +58,8 @@ setuptools.setup(
         ],
         'alerta.plugins': [
             'reject = alerta.plugins.reject:RejectPolicy',
-            'blackout = alerta.plugins.blackout:BlackoutHandler'
+            'blackout = alerta.plugins.blackout:BlackoutHandler',
+            'priority = alerta.plugins.priority:Prioritize',
         ]
     },
     keywords='alert monitoring system wsgi application api',
