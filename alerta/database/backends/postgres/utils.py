@@ -104,7 +104,7 @@ class QueryBuilderImpl(QueryBuilder):
             if field in EXCLUDE_QUERY:
                 continue
             value = params.getlist(field)
-            if field in ['service', 'tags']:
+            if field in ['service', 'tags', 'roles', 'scopes']:
                 query.append('AND {0} && %({0})s'.format(field))
                 qvars[field] = value
             elif field.startswith('attributes.'):
