@@ -155,6 +155,17 @@ def search_users():
     query = qb.from_params(request.args)
     users = User.find_all(query)
 
+    # add admins defined in server config
+    if 'admin' in request.args.getlist('roles'):
+        for admin in set(current_app.config['ADMIN_USERS']):
+            user = User.find_by_email(admin)
+            if user:
+                users.append(user)
+
+    # remove admins whose default role is 'user'
+    if 'admin' not in request.args.getlist('roles'):
+        users = [u for u in users if 'admin' not in u.roles]
+
     if users:
         return jsonify(
             status='ok',

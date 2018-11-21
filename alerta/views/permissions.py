@@ -2,6 +2,7 @@
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
+from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.enums import Scope
@@ -49,20 +50,28 @@ def create_perm():
 @permission(Scope.read_perms)
 @jsonp
 def list_perms():
-    perms = Permission.find_all()
+    query = qb.from_params(request.args)
+    perms = Permission.find_all(query)
 
-    # add system-defined roles 'admin' and 'user'
     admin_perm = Permission(
         match='admin',
         scopes=[Scope.admin]
     )
-    perms.append(admin_perm)
-
     user_perm = Permission(
         match='user',
         scopes=current_app.config['USER_DEFAULT_SCOPES']
     )
-    perms.append(user_perm)
+
+    # add system-defined roles 'admin' and 'user'
+    if 'scopes' in request.args:
+        want_scopes = request.args.getlist('scopes')
+        if set(admin_perm.scopes) & set(want_scopes):
+            perms.append(admin_perm)
+        if set(user_perm.scopes) & set(want_scopes):
+            perms.append(user_perm)
+    else:
+        perms.append(admin_perm)
+        perms.append(user_perm)
 
     if perms:
         return jsonify(
