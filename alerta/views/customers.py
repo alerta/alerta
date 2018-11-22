@@ -37,6 +37,19 @@ def create_customer():
         raise ApiError('create customer lookup failed', 500)
 
 
+@api.route('/customer/<customer_id>', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.read_customers)
+@jsonp
+def get_customer(customer_id):
+    customer = Customer.find_by_id(customer_id)
+
+    if customer:
+        return jsonify(status='ok', total=1, customer=customer.serialize)
+    else:
+        raise ApiError('not found', 404)
+
+
 @api.route('/customers', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.read_customers)

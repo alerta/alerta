@@ -110,11 +110,11 @@ class ApiKey:
         return ApiKey.from_db(db.create_key(self))
 
     @staticmethod
-    def find_by_id(key: str) -> Optional['ApiKey']:
+    def find_by_id(key: str, user: str=None) -> Optional['ApiKey']:
         """
         Get API key details.
         """
-        return ApiKey.from_db(db.get_key(key))
+        return ApiKey.from_db(db.get_key(key, user))
 
     @staticmethod
     def find_all(query: Query=None) -> List['ApiKey']:
