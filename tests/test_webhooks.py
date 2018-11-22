@@ -714,6 +714,7 @@ class WebhooksTestCase(unittest.TestCase):
         custom_webhooks.webhooks['text'] = TestTextWebhook()
         custom_webhooks.webhooks['form'] = TestFormWebhook()
         custom_webhooks.webhooks['multipart'] = TestMultiPartFormWebhook()
+        custom_webhooks.webhooks['userdefined'] = TestUserDefinedWebhook()
 
         # test json payload
         response = self.client.post('/webhooks/json?foo=bar', json={'baz': 'quux'}, content_type='application/json')
@@ -748,6 +749,14 @@ class WebhooksTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], '1')
         self.assertEqual(data['alert']['event'], 'value1')
+
+        # test user-defined response
+        response = self.client.post('/webhooks/userdefined?foo=bar',
+                                    json={'baz': 'quux'}, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+        self.assertEqual(data['message'], 'This is a test user-defined response')
 
 
 class TestJsonWebhook(WebhookBase):
@@ -791,4 +800,13 @@ class TestMultiPartFormWebhook(WebhookBase):
             event=payload['field1'],
             environment='Production',
             service=['Foo']
+        )
+
+
+class TestUserDefinedWebhook(WebhookBase):
+
+    def incoming(self, query_string, payload):
+        return dict(
+            status='ok',
+            message='This is a test user-defined response'
         )

@@ -18,7 +18,7 @@ from . import webhooks
 @permission(Scope.write_webhooks)
 def custom(webhook):
     try:
-        incomingAlert = custom_webhooks.webhooks[webhook].incoming(
+        response = custom_webhooks.webhooks[webhook].incoming(
             query_string=request.args,
             payload=request.get_json() or request.get_data(as_text=True) or request.form
         )
@@ -27,26 +27,28 @@ def custom(webhook):
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    alert = None
-    if incomingAlert and isinstance(incomingAlert, Alert):
-        incomingAlert.customer = assign_customer(wanted=incomingAlert.customer)
-        add_remote_ip(request, incomingAlert)
+    if isinstance(response, Alert):
+        response.customer = assign_customer(wanted=response.customer)
+        add_remote_ip(request, response)
 
         try:
-            alert = process_alert(incomingAlert)
+            alert = process_alert(response)
         except RejectException as e:
             raise ApiError(str(e), 403)
         except Exception as e:
             raise ApiError(str(e), 500)
 
-    text = '{} alert received via custom webhook'.format(webhook)
-    write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
-                           customers=g.customers, scopes=g.scopes, resource_id=getattr(alert, 'id', None), type='alert',
-                           request=request)
-
-    if incomingAlert and not isinstance(incomingAlert, Alert):
-        return incomingAlert
-    elif alert:
-        return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
+        text = '{} alert received via custom webhook'.format(webhook)
+        write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
+                               customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                               request=request)
+        if alert:
+            return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
+        else:
+            raise ApiError('insert or update via %s webhook failed' % webhook, 500)
     else:
-        raise ApiError('insert or update via %s webhook failed' % webhook, 500)
+        text = '{} request received via custom webhook'.format(webhook)
+        write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
+                               customers=g.customers, scopes=g.scopes, resource_id=None, type='user-defined',
+                               request=request)
+        return jsonify(**response)
