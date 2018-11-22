@@ -1087,8 +1087,10 @@ class Backend(Database):
             return data
 
     # get
-    def get_key(self, key):
+    def get_key(self, key, user=None):
         query = {'$or': [{'key': key}, {'_id': key}]}
+        if user:
+            query['user'] = user
         return self.get_db().keys.find_one(query)
 
     # list

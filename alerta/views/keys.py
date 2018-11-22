@@ -52,6 +52,25 @@ def create_key():
         raise ApiError('create API key failed', 500)
 
 
+@api.route('/key/<path:key>', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.read_keys)
+@jsonp
+def get_key(key):
+    if not current_app.config['AUTH_REQUIRED']:
+        key = ApiKey.find_by_id(key)
+    elif Scope.admin in g.scopes or Scope.admin_keys in g.scopes:
+        key = ApiKey.find_by_id(key)
+    else:
+        user = g.get('user', None)
+        key = ApiKey.find_by_id(key, user)
+
+    if key:
+        return jsonify(status='ok', total=1, key=key.serialize)
+    else:
+        raise ApiError('not found', 404)
+
+
 @api.route('/keys', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.read_keys)
