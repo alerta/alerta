@@ -3,6 +3,7 @@ import os
 import platform
 import sys
 from datetime import datetime
+from typing import Optional  # noqa
 from typing import Any, Dict, List, Tuple, Union
 from uuid import uuid4
 
@@ -12,6 +13,7 @@ from alerta.app import alarm_model, db
 from alerta.database.base import Query
 from alerta.models.history import History, RichHistory
 from alerta.utils.format import DateTime
+from alerta.utils.hooks import status_change_hook
 from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
@@ -234,7 +236,7 @@ class Alert:
         now = datetime.utcnow()
 
         previous_status, previous_value = db.get_status_and_value(self)
-        _, self.status = alarm_model.transition(
+        _, new_status = alarm_model.transition(
             previous_severity=self.severity,
             current_severity=self.severity,
             previous_status=previous_status,
@@ -245,17 +247,19 @@ class Alert:
         self.last_receive_id = self.id
         self.last_receive_time = now
 
-        from typing import Optional  # noqa
-
-        if self.status != previous_status:
+        if new_status != previous_status:
+            history_text = 'duplicate alert with status change'
             history = History(
                 id=self.id,
                 event=self.event,
-                status=self.status,
-                text='duplicate alert with status change',
+                status=new_status,
+                text=history_text,
                 change_type='status',
                 update_time=self.create_time
             )  # type: Optional[History]
+
+            status_change_hook.send(self, status=new_status, text=history_text)
+
         elif current_app.config['HISTORY_ON_VALUE_CHANGE'] and self.value != previous_value:
             history = History(
                 id=self.id,
@@ -267,6 +271,8 @@ class Alert:
             )
         else:
             history = None
+
+        self.status = new_status
         return Alert.from_db(db.dedup_alert(self, history))
 
     # correlate an alert
@@ -277,7 +283,7 @@ class Alert:
         previous_status = db.get_status(self)
         self.trend_indication = alarm_model.trend(self.previous_severity, self.severity)
 
-        _, self.status = alarm_model.transition(
+        _, new_status = alarm_model.transition(
             previous_severity=self.previous_severity,
             current_severity=self.severity,
             previous_status=previous_status,
@@ -300,16 +306,19 @@ class Alert:
             update_time=self.create_time
         )]
 
-        if self.status != previous_status:
+        if new_status != previous_status:
+            history_text = 'correlated alert status change'
             history.append(History(
                 id=self.id,
                 event=self.event,
-                status=self.status,
-                text='correlated alert status change',
+                status=new_status,
+                text=history_text,
                 change_type='status',
                 update_time=self.create_time
             ))
+            status_change_hook.send(self, status=new_status, text=history_text)
 
+        self.status = new_status
         return Alert.from_db(db.correlate_alert(self, history))
 
     # create an alert
@@ -512,21 +521,21 @@ class Alert:
 
     def from_status(self, status: str, text: str='', timeout: int=None) -> 'Alert':
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
-        history = History(
+        history = [History(
             id=self.id,
             event=self.event,
             status=status,
             text=text,
             change_type='status',
             update_time=datetime.utcnow()
-        )
+        )]
         return Alert.from_db(db.set_alert(self.id, self.severity, status, self.tags, self.attributes, timeout, history))
 
     def from_action(self, action: str, text: str='', timeout: int=None) -> 'Alert':
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
         previous_status = db.get_status(self)
 
-        severity, status = alarm_model.transition(
+        new_severity, new_status = alarm_model.transition(
             previous_severity=self.previous_severity,
             current_severity=self.severity,
             previous_status=previous_status,
@@ -534,13 +543,27 @@ class Alert:
             action=action
         )
 
-        history = History(
-            id=self.id,
-            event=self.event,
-            severity=self.severity if self.previous_severity != self.severity else None,
-            status=self.status,
-            text=text,
-            change_type='action',
-            update_time=datetime.utcnow()
-        )
-        return Alert.from_db(db.set_alert(self.id, severity, status, self.tags, self.attributes, timeout, history))
+        history = []
+        if new_severity != self.previous_severity:
+            history.append(History(
+                id=self.id,
+                event=self.event,
+                severity=new_severity,
+                text=text,
+                change_type='action',
+                update_time=datetime.utcnow()
+            ))
+
+        if new_status != previous_status:
+            history_text = 'alert status change from action'
+            history.append(History(
+                id=self.id,
+                event=self.event,
+                status=new_status,
+                text=history_text,
+                change_type='action',
+                update_time=datetime.utcnow()
+            ))
+            status_change_hook.send(self, status=new_status, text=history_text)
+
+        return Alert.from_db(db.set_alert(self.id, new_severity, new_status, self.tags, self.attributes, timeout, history))

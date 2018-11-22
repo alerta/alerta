@@ -332,7 +332,7 @@ class Backend(Database):
             '$addToSet': {'tags': {'$each': tags}},
             '$push': {
                 'history': {
-                    '$each': [history.serialize],
+                    '$each': [h.serialize for h in history],
                     '$slice': -abs(current_app.config['HISTORY_LIMIT'])
                 }
             }
