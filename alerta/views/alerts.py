@@ -136,7 +136,6 @@ def action_alert(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    previous_status = alert.status
     try:
         alert, action, text = process_action(alert, action, text)
         alert = alert.from_action(action, text, timeout)
@@ -144,17 +143,6 @@ def action_alert(alert_id):
         raise ApiError(str(e), 400)
     except Exception as e:
         raise ApiError(str(e), 500)
-
-    # trigger status_change() hook only if status has changed
-    new_status = alert.status
-    if previous_status != new_status:
-        alert.status = previous_status
-        try:
-            alert, status, text = process_status(alert, new_status, text)
-        except RejectException as e:
-            raise ApiError(str(e), 400)
-        except Exception as e:
-            raise ApiError(str(e), 500)
 
     write_audit_trail.send(current_app._get_current_object(), event='alert-actioned', message=text, user=g.user,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
