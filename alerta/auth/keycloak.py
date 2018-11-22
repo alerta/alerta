@@ -40,7 +40,7 @@ def keycloak():
         current_app.config['KEYCLOAK_URL'], current_app.config['KEYCLOAK_REALM']), headers=headers)
     profile = r.json()
 
-    roles = profile['roles']
+    roles = profile.get('roles', ['user'])
     login = profile['preferred_username']
 
     if not_authorized('ALLOWED_KEYCLOAK_ROLES', roles):
