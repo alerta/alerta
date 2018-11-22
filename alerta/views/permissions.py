@@ -45,6 +45,19 @@ def create_perm():
         raise ApiError('create API key failed', 500)
 
 
+@api.route('/perm/<perm_id>', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.read_perms)
+@jsonp
+def get_perm(perm_id):
+    perm = Permission.find_by_id(perm_id)
+
+    if perm:
+        return jsonify(status='ok', total=1, permission=perm.serialize)
+    else:
+        raise ApiError('not found', 404)
+
+
 @api.route('/perms', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.read_perms)

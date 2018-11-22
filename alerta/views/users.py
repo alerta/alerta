@@ -48,6 +48,19 @@ def create_user():
         raise ApiError('create user failed', 500)
 
 
+@api.route('/user/<user_id>', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.admin_users)
+@jsonp
+def get_user(user_id):
+    user = User.find_by_id(user_id)
+
+    if user:
+        return jsonify(status='ok', total=1, user=user.serialize)
+    else:
+        raise ApiError('not found', 404)
+
+
 @api.route('/user/<user_id>', methods=['OPTIONS', 'PUT'])
 @cross_origin()
 @permission(Scope.admin_users)

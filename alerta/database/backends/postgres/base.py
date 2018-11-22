@@ -686,12 +686,13 @@ class Backend(Database):
         """
         return self._insert(insert, vars(key))
 
-    def get_key(self, key):
+    def get_key(self, key, user=None):
         select = """
             SELECT * FROM keys
-             WHERE id=%s OR key=%s
-        """
-        return self._fetchone(select, (key, key))
+             WHERE (id=%(key)s OR key=%(key)s)
+               AND {user}
+        """.format(user='"user"=%(user)s' if user else '1=1')
+        return self._fetchone(select, {'key': key, 'user': user})
 
     def get_keys(self, query=None):
         query = query or Query()

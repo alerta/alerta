@@ -3,6 +3,7 @@ import json
 import unittest
 
 from alerta.app import create_app, db
+from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
 from alerta.models.token import Jwt
 
@@ -32,7 +33,7 @@ class AuthTestCase(unittest.TestCase):
             self.app.preprocess_request()
             self.api_key = ApiKey(
                 user='admin@alerta.io',
-                scopes=['admin', 'read', 'write'],
+                scopes=[Scope.admin, Scope.read, Scope.write],
                 text='demo-key'
             )
             self.api_key.create()
@@ -73,6 +74,11 @@ class AuthTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn('total', data)
+
+        response = self.client.get('/key/' + rw_api_key, headers={'Authorization': 'Key ' + rw_api_key})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['key']['scopes'], ['read', 'write'])
 
         response = self.client.delete('/key/' + rw_api_key, headers=self.headers)
         self.assertEqual(response.status_code, 200)
@@ -210,6 +216,11 @@ class AuthTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn('total', data)
+
+        response = self.client.get('/key/' + customer_api_key, headers=headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['key']['scopes'], ['read'])
 
         response = self.client.delete('/key/' + customer_api_key, headers={'Authorization': 'Key ' + customer_api_key})
         self.assertEqual(response.status_code, 403)

@@ -45,6 +45,19 @@ def create_blackout():
         raise ApiError('insert blackout failed', 500)
 
 
+@api.route('/blackout/<blackout_id>', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.read_blackouts)
+@jsonp
+def get_blackout(blackout_id):
+    blackout = Blackout.find_by_id(blackout_id)
+
+    if blackout:
+        return jsonify(status='ok', total=1, blackout=blackout.serialize)
+    else:
+        raise ApiError('not found', 404)
+
+
 @api.route('/blackouts', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.read_blackouts)

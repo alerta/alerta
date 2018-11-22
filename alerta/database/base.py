@@ -236,7 +236,7 @@ class Database(Base):
     def create_key(self, key):
         raise NotImplementedError
 
-    def get_key(self, key):
+    def get_key(self, key, user=None):
         raise NotImplementedError
 
     def get_keys(self, query=None):
