@@ -1,5 +1,5 @@
 import abc
-from typing import Any
+from typing import Any, Union, Dict
 
 from flask import Blueprint, request, current_app
 from six import add_metaclass
@@ -11,6 +11,8 @@ webhooks = Blueprint('webhooks', __name__)
 
 from . import cloudwatch, grafana, graylog, newrelic, pagerduty, pingdom, prometheus, riemann  # noqa
 from . import serverdensity, slack, stackdriver, telegram, custom  # noqa
+
+JSON = Dict[str, Any]
 
 
 @webhooks.before_request
@@ -30,6 +32,9 @@ class WebhookBase:
         self.name = name or self.__module__
 
     @abc.abstractmethod
-    def incoming(self, query_string: ImmutableMultiDict, payload: Any) -> Alert:
-        """Parse webhook query string and/or payload in JSON or plain text and return an alert."""
+    def incoming(self, query_string: ImmutableMultiDict, payload: Any) -> Union[Alert, JSON]:
+        """
+        Parse webhook query string and/or payload in JSON or plain text and
+        return an alert or a custom JSON response.
+        """
         raise NotImplementedError
