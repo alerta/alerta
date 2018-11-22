@@ -224,7 +224,12 @@ class WebhooksTestCase(unittest.TestCase):
                 "policy_name": "Webserver Health",
                 "condition_name": "CPU usage",
                 "url": "https://app.stackdriver.com/incidents/f2e08c333dc64cb09f75eaab355393bz",
-                "summary": "CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%"
+                "summary": "CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%",
+                "documentation": {
+                    "content": "{\\"summary\\": \\"CPU utilization for alerta-webserver-85 is over 95%\\", \
+                                 \\"resource_name\\": \\"alerta-webserver-85\\"}",
+                    "mime_type": "text/markdown"
+                }
             },
             "version": "1.1"
         }
@@ -242,7 +247,11 @@ class WebhooksTestCase(unittest.TestCase):
                 "policy_name": "Webserver Health",
                 "condition_name": "CPU usage",
                 "url": "https://app.stackdriver.com/incidents/f2e08c333dc64cb09f75eaab355393bz",
-                "summary": "CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%"
+                "summary": "CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%",
+                "documentation": {
+                    "content": "This is a markdown text example",
+                    "mime_type": "text/markdown"
+                }
             },
             "version": "1.1"
         }
@@ -640,15 +649,16 @@ class WebhooksTestCase(unittest.TestCase):
     def test_stackdriver_webhook(self):
 
         # open alert
+        import nose.tools; nose.tools.set_trace()
         response = self.client.post('/webhooks/stackdriver', data=self.stackdriver_open, headers=self.headers)
+        import nose.tools; nose.tools.set_trace()
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['resource'], 'webserver-85')
+        self.assertEqual(data['alert']['resource'], 'alerta-webserver-85')
         self.assertEqual(data['alert']['event'], 'CPU usage')
         self.assertEqual(data['alert']['severity'], 'critical')
         self.assertEqual(data['alert']['service'], ['Webserver Health'])
-        self.assertEqual(data['alert']['text'],
-                         'CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%')
+        self.assertEqual(data['alert']['text'], 'CPU utilization for alerta-webserver-85 is over 95%')
 
         # closed alert
         response = self.client.post('/webhooks/stackdriver', data=self.stackdriver_closed, headers=self.headers)
