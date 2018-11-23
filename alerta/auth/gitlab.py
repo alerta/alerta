@@ -31,7 +31,7 @@ def gitlab():
     try:
         r = requests.post(access_token_url, data=payload)
     except Exception:
-        return jsonify(status='error', message='Failed to call GitLab API over HTTPS')
+        raise ApiError('Failed to call GitLab API over HTTPS', 400)
     token = r.json()
 
     headers = {'Authorization': 'Bearer ' + token['access_token']}

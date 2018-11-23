@@ -5,6 +5,7 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.utils import create_token, get_customers
+from alerta.exceptions import ApiError
 from alerta.models.permission import Permission
 from alerta.utils.audit import auth_audit_trail
 
@@ -29,7 +30,7 @@ def pingfederate():
     try:
         r = requests.post(access_token_url, data=payload)
     except Exception:
-        return jsonify(status='error', message='Failed to call sso API over HTTPS')
+        raise ApiError('Failed to call sso API over HTTPS', 400)
     access_token = r.json()
     encoded = access_token['access_token']
 
