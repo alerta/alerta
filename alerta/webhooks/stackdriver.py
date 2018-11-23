@@ -39,7 +39,7 @@ def parse_stackdriver(notification: JSON) -> Alert:
     if state == 'open':
         severity = 'critical'
         status = None
-        create_time = datetime.fromtimestamp(incident['started_at'])
+        create_time = datetime.utcfromtimestamp(incident['started_at'])
     elif state == 'acknowledged':
         severity = 'critical'
         status = 'ack'
@@ -47,7 +47,7 @@ def parse_stackdriver(notification: JSON) -> Alert:
     elif state == 'closed':
         severity = 'ok'
         status = None
-        create_time = datetime.fromtimestamp(incident['ended_at'])
+        create_time = datetime.utcfromtimestamp(incident['ended_at'])
     else:
         severity = 'indeterminate'
         status = None
