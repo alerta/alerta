@@ -649,9 +649,7 @@ class WebhooksTestCase(unittest.TestCase):
     def test_stackdriver_webhook(self):
 
         # open alert
-        import nose.tools; nose.tools.set_trace()
         response = self.client.post('/webhooks/stackdriver', data=self.stackdriver_open, headers=self.headers)
-        import nose.tools; nose.tools.set_trace()
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'alerta-webserver-85')
