@@ -1,3 +1,5 @@
+import json
+import logging
 
 from datetime import datetime
 from typing import Any, Dict
@@ -14,6 +16,9 @@ from alerta.utils.audit import write_audit_trail
 
 from . import webhooks
 
+
+LOG = logging.getLogger(__name__)
+
 JSON = Dict[str, Any]
 
 
@@ -21,6 +26,15 @@ def parse_stackdriver(notification: JSON) -> Alert:
 
     incident = notification['incident']
     state = incident['state']
+
+    # 'documentation' is an optional field that you can use to customize
+    # your alert sending a json
+    if 'documentation' in incident:
+        try:
+            content = json.loads(incident['documentation']['content'])
+            incident.update(content)
+        except Exception as e:
+            LOG.warning("Invalid documentation content: '{}'".format(incident['documentation']))
 
     if state == 'open':
         severity = 'critical'
@@ -53,6 +67,7 @@ def parse_stackdriver(notification: JSON) -> Alert:
             'resourceId': incident['resource_id'],
             'moreInfo': '<a href="%s" target="_blank">Stackdriver Console</a>' % incident['url']
         },
+        customer=incident.get('customer'),
         origin='Stackdriver',
         event_type='stackdriverAlert',
         create_time=create_time,
