@@ -15,12 +15,12 @@ from . import auth
 @cross_origin(supports_credentials=True)
 def github():
 
-    if current_app.config['GITHUB_URL']:
-        access_token_url = current_app.config['GITHUB_URL'] + '/login/oauth/access_token'
-        github_api_url = current_app.config['GITHUB_URL'] + '/api/v3'
-    else:
+    if current_app.config['GITHUB_URL'] == 'https://github.com':
         access_token_url = 'https://github.com/login/oauth/access_token'
         github_api_url = 'https://api.github.com'
+    else:
+        access_token_url = current_app.config['GITHUB_URL'] + '/login/oauth/access_token'
+        github_api_url = current_app.config['GITHUB_URL'] + '/api/v3'
 
     client_lookup = dict(zip(
         current_app.config['OAUTH2_CLIENT_ID'].split(','),
