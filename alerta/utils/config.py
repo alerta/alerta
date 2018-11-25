@@ -64,6 +64,9 @@ class Config:
         if 'ADMIN_USERS' in os.environ:
             config['ADMIN_USERS'] = os.environ['ADMIN_USERS'].split(',')
 
+        if 'SIGNUP_ENABLED' in os.environ:
+            config['SIGNUP_ENABLED'] = True if os.environ['SIGNUP_ENABLED'] == 'True' else False
+
         if 'CUSTOMER_VIEWS' in os.environ:
             config['CUSTOMER_VIEWS'] = True if os.environ['CUSTOMER_VIEWS'] == 'True' else False
 

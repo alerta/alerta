@@ -9,10 +9,10 @@
 from typing import Any, Dict, List  # noqa
 
 DEBUG = False
-SECRET_KEY = 'changeme'
 
 BASE_URL = ''
 USE_PROXYFIX = False
+SECRET_KEY = 'changeme'
 
 LOGGER_NAME = 'alerta'
 LOG_FILE = None
