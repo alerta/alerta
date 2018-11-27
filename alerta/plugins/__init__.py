@@ -13,6 +13,9 @@ class PluginBase:
 
     def __init__(self, name=None):
         self.name = name or self.__module__
+        if self.__doc__:
+            from alerta import app
+            app.logger.info('\n{}\n'.format(self.__doc__))
 
     @abc.abstractmethod
     def pre_receive(self, alert: 'Alert') -> 'Alert':
