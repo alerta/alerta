@@ -12,6 +12,13 @@ ALLOWED_ENVIRONMENTS = app.config.get('ALLOWED_ENVIRONMENTS', [])
 
 
 class RejectPolicy(PluginBase):
+    """
+    Default reject policy will block alerts that do not have the following
+    required attributes:
+    1) environment - must match an allowed environment. By default it should
+       be either "Production" or "Development". Config setting is `ALLOWED_ENVIRONMENTS`.
+    2) service - must supply a value for service. Any value is acceptable.
+    """
 
     def pre_receive(self, alert):
 
