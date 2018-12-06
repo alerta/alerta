@@ -5,8 +5,9 @@ import time
 from flask import (Response, current_app, jsonify, render_template, request,
                    url_for)
 from flask_cors import cross_origin
+from prometheus_client import generate_latest
 
-from alerta.app import db
+from alerta.app import db, metrics
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
@@ -187,7 +188,10 @@ def prometheus_metrics():
     output += Counter.find_all()
     output += Timer.find_all()
 
+    alerta_metrics = [o.serialize(format='prometheus') for o in output]
+    flask_metrics = [generate_latest(metrics.registry)]
+
     return Response(
-        [o.serialize(format='prometheus') for o in output],
+        alerta_metrics + flask_metrics,
         content_type='text/plain; version=0.0.4; charset=utf-8'
     )

@@ -3,6 +3,7 @@ from typing import Any, Dict
 from flask import Flask
 from flask_compress import Compress
 from flask_cors import CORS
+from prometheus_flask_exporter import PrometheusMetrics
 from raven.contrib.flask import Sentry
 from werkzeug.contrib.fixers import ProxyFix
 
@@ -33,6 +34,7 @@ sentry = Sentry()
 mailer = Mailer()
 plugins = Plugins()
 custom_webhooks = CustomWebhooks()
+metrics = PrometheusMetrics(app=None, path=None)
 
 
 def create_app(config_override: Dict[str, Any]=None, environment: str=None) -> Flask:
@@ -56,6 +58,7 @@ def create_app(config_override: Dict[str, Any]=None, environment: str=None) -> F
     db.init_db(app)
     qb.init_app(app)
     sentry.init_app(app)
+    metrics.init_app(app)
 
     mailer.register(app)
     plugins.register(app)
