@@ -48,7 +48,8 @@ setuptools.setup(
         'python-dateutil',
         'pytz',
         'PyJWT',
-        'bcrypt'
+        'bcrypt',
+        'prometheus_flask_exporter'
     ],
     include_package_data=True,
     zip_safe=False,
