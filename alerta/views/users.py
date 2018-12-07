@@ -74,8 +74,10 @@ def update_user(user_id):
     if not user:
         raise ApiError('not found', 404)
 
-    if 'email' in request.json and User.find_by_email(request.json['email']):
-        raise ApiError('user with email already exists', 409)
+    if 'email' in request.json:
+        user_by_email = User.find_by_email(request.json['email'])
+        if user_by_email and user_by_email.id != user.id:
+            raise ApiError('user with email already exists', 409)
 
     admin_audit_trail.send(current_app._get_current_object(), event='user-updated', message='', user=g.user,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
@@ -104,8 +106,10 @@ def update_me():
     if not user:
         raise ApiError('not found', 404)
 
-    if 'email' in request.json and User.find_by_email(request.json['email']):
-        raise ApiError('user with email already exists', 409)
+    if 'email' in request.json:
+        user_by_email = User.find_by_email(request.json['email'])
+        if user_by_email and user_by_email.id != user.id:
+            raise ApiError('user with email already exists', 409)
 
     write_audit_trail.send(current_app._get_current_object(), event='user-me-updated', message='', user=g.user,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
