@@ -47,8 +47,8 @@ class AuditTrail:
 
     def _log_response(self, app: Flask, category: str, event: str, message: str, user: str, customers: List[str],
                       scopes: List[str], resource_id: str, type: str, request: Any, **extra: Any) -> None:
-        app.logger.debug(self._fmt(category, event, message, user, customers,
-                                   scopes, resource_id, type, request, **extra))
+        app.logger.info(self._fmt(category, event, message, user, customers,
+                                  scopes, resource_id, type, request, **extra))
 
     def _webhook_response(self, app: Flask, category: str, event: str, message: str, user: str, customers: List[str],
                           scopes: List[str], resource_id: str, type: str, request: Any, **extra: Any) -> None:
