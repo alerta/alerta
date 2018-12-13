@@ -37,7 +37,7 @@ class AlertTestCase(unittest.TestCase):
         # check Access-Control-Allow-Headers header
         response = self.client.options('/alerts', headers=headers)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers.get(ACL_ALLOW_HEADERS), 'authorization, content-type')
+        self.assertEqual(response.headers.get(ACL_ALLOW_HEADERS), 'X-XSRF-TOKEN, authorization, content-type')
 
         headers = {
             'Origin': 'http://try.alerta.io'
