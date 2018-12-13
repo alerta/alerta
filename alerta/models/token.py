@@ -33,6 +33,7 @@ class Jwt:
         self.scopes = kwargs.get('scopes', list())
         self.email_verified = kwargs.get('email_verified', None)
         self.customers = kwargs.get('customers', None)
+        self.xsrf_token = kwargs.get('xsrfToken', None)
 
     @classmethod
     def parse(cls, token: str, key: str=None, verify: bool=True, algorithm: str='HS256') -> 'Jwt':
@@ -64,7 +65,8 @@ class Jwt:
             roles=json.get('roles', list()),
             scopes=json.get('scope', '').split(' '),  # eg. scope='read write' => scopes=['read', 'write']
             email_verified=json.get('email_verified', None),
-            customers=[json['customer']] if 'customer' in json else json.get('customers', list())
+            customers=[json['customer']] if 'customer' in json else json.get('customers', list()),
+            xsrfToken=json.get('xsrfToken', None)
         )
 
     @property
@@ -99,6 +101,9 @@ class Jwt:
             data['email_verified'] = self.email_verified
         if current_app.config['CUSTOMER_VIEWS']:
             data['customers'] = self.customers
+
+        if self.xsrf_token:
+            data['xsrfToken'] = self.xsrf_token
         return data
 
     @property

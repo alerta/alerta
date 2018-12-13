@@ -97,8 +97,13 @@ AUDIT_TRAIL = ['admin']  # possible categories are 'admin', 'write', and 'auth'
 AUDIT_LOG = None  # set to True to log to application logger
 AUDIT_URL = None  # send audit log events via webhook URL
 
+# Cross-site Request Forgery (XSRF) settings
+XSRF_ENABLED = False
+XSRF_HEADER = 'X-XSRF-TOKEN'
+XSRF_ALLOWED_METHODS = ['GET', 'HEAD', 'OPTIONS']
+
 # CORS settings
-CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
+CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin', XSRF_HEADER]
 CORS_ORIGINS = [
     # 'http://try.alerta.io',
     # 'http://explorer.alerta.io',
