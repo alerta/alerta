@@ -68,8 +68,13 @@ def permission(scope):
 
                 if not Permission.is_in_scope(scope, have_scopes=g.scopes):
                     raise ApiError('Missing required scope: %s' % scope.value, 403)
-                else:
-                    return f(*args, **kwargs)
+
+                if current_app.config['XSRF_ENABLED']:
+                    xsrf_header = request.headers.get(current_app.config['XSRF_HEADER'])
+                    if request.method not in current_app.config['XSRF_ALLOWED_METHODS'] and jwt.xsrf_token != xsrf_header:
+                        raise ApiError('Invalid XSRF token', 403)
+
+                return f(*args, **kwargs)
 
             # Basic Auth
             auth_header = request.headers.get('Authorization', '')
