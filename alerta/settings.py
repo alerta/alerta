@@ -19,6 +19,7 @@ LOG_FILE = None
 LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 LOG_BACKUP_COUNT = 2
 LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
+LOG_FORMATTER =  None # Default: logging.Formatter(LOG_FORMAT)
 
 # API settings
 ALARM_MODEL = 'ALERTA'  # 'ALERTA' (default) or 'ISA_18_2'

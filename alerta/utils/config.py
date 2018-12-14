@@ -166,6 +166,11 @@ class Config:
         handler.setLevel(log_level)
         handler.setFormatter(logging.Formatter(app.config['LOG_FORMAT']))
 
+        if app.config['LOG_FORMATTER']:
+            handler.setFormatter(app.config['LOG_FORMATTER'])
+        else:
+            handler.setFormatter(logging.Formatter(app.config['LOG_FORMAT']))
+
         # for key in sorted(logging.Logger.manager.loggerDict):
         #     print('logging.getLogger(\'{}\'),'.format(key))
 
