@@ -36,31 +36,32 @@ def parse_stackdriver(notification: JSON) -> Alert:
         except Exception as e:
             LOG.warning("Invalid documentation content: '{}'".format(incident['documentation']))
 
+    service = []
+    status = None
+    create_time = None  # type: ignore
+    severity = incident.get('severity', 'critical')
+
+    if incident['policy_name']:
+        service.append(incident['policy_name'])
+
     if state == 'open':
-        severity = 'critical'
-        status = None
         create_time = datetime.utcfromtimestamp(incident['started_at'])
     elif state == 'acknowledged':
-        severity = 'critical'
         status = 'ack'
-        create_time = None  # type: ignore
     elif state == 'closed':
         severity = 'ok'
-        status = None
         create_time = datetime.utcfromtimestamp(incident['ended_at'])
     else:
         severity = 'indeterminate'
-        status = None
-        create_time = None  # type: ignore
 
     return Alert(
         resource=incident['resource_name'],
         event=incident['condition_name'],
-        environment='Production',
+        environment=incident.get('environment', 'Production'),
         severity=severity,
         status=status,
-        service=[incident['policy_name']],
-        group='Cloud',
+        service=service,
+        group=incident.get('group', 'Cloud'),
         text=incident['summary'],
         attributes={
             'incidentId': incident['incident_id'],
@@ -68,7 +69,7 @@ def parse_stackdriver(notification: JSON) -> Alert:
             'moreInfo': '<a href="%s" target="_blank">Stackdriver Console</a>' % incident['url']
         },
         customer=incident.get('customer'),
-        origin='Stackdriver',
+        origin=incident.get('origin', 'Stackdriver'),
         event_type='stackdriverAlert',
         create_time=create_time,
         raw_data=notification
