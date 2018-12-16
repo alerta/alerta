@@ -68,8 +68,7 @@ def create_token(user_id: str, name: str, login: str, provider: str, customers: 
         scopes=scopes,
         email=email,
         email_verified=email_verified,
-        customers=customers,
-        xsrfToken=str(uuid4())
+        customers=customers
     )
 
 
