@@ -58,7 +58,8 @@ def login():
         base_dns = current_app.config.get('LDAP_DOMAINS_BASEDN', {})
         if domain in groups_filters and domain in base_dns:
             resultID = ldap_connection.search(base_dns[domain], ldap.SCOPE_SUBTREE, \
-                                              groups_filters[domain] % username, ['cn'])
+                                              groups_filters[domain].format(username=username, email=email, userdn=userdn), \
+                                              ['cn'])
             resultTypes, results = ldap_connection.result(resultID)
             for _dn, attributes in results:
                 groups.append(attributes['cn'][0].decode("utf-8"))
