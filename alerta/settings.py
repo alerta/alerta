@@ -72,6 +72,8 @@ ALLOWED_GITLAB_GROUPS = ['*']
 
 LDAP_URL = ''  # eg. ldap://localhost:389
 LDAP_DOMAINS = {}  # type: Dict[str, str]
+LDAP_DOMAINS_GROUP = {} # type: Dict[str, str]
+LDAP_DOMAINS_BASEDN = {} # type: Dict[str, str]
 
 PINGFEDERATE_URL = None
 PINGFEDERATE_OPENID_ACCESS_TOKEN_URL = PINGFEDERATE_URL
