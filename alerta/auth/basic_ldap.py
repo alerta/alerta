@@ -52,7 +52,21 @@ def login():
         raise ApiError('user not active', 403)
 
     # Assign customers & update last login time
-    customers = get_customers(user.email, groups=[user.domain])
+    groups = [user.domain]
+    try:
+        groups_filters = current_app.config.get('LDAP_DOMAINS_GROUP', {})
+        base_dns = current_app.config.get('LDAP_DOMAINS_BASEDN', {})
+        if domain in groups_filters and domain in base_dns:
+            resultID = ldap_connection.search(base_dns[domain], ldap.SCOPE_SUBTREE, \
+                                              groups_filters[domain].format(username=username, email=email, userdn=userdn), \
+                                              ['cn'])
+            resultTypes, results = ldap_connection.result(resultID)
+            for _dn, attributes in results:
+                groups.append(attributes['cn'][0].decode("utf-8"))
+    except ldap.LDAPError as e:
+        raise ApiError(str(e), 500)
+
+    customers = get_customers(user.email, groups=groups)
     user.update_last_login()
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
