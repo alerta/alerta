@@ -38,21 +38,28 @@ count_timer = Timer('alerts', 'counts', 'Count alerts', 'Total time and number o
 @jsonp
 def receive():
     try:
-        incomingAlert = Alert.parse(request.json)
+        alert = Alert.parse(request.json)
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    incomingAlert.customer = assign_customer(wanted=incomingAlert.customer)
-    add_remote_ip(request, incomingAlert)
+    alert.customer = assign_customer(wanted=alert.customer)
+    add_remote_ip(request, alert)
+
+    def audit_trail_alert(event: str):
+        write_audit_trail.send(current_app._get_current_object(), event=event, message=alert.text, user=g.user,
+                               customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     try:
-        alert = process_alert(incomingAlert)
+        alert = process_alert(alert)
     except RejectException as e:
+        audit_trail_alert(event='alert-rejected')
         raise ApiError(str(e), 403)
     except RateLimit as e:
-        return jsonify(status='error', message=str(e), id=incomingAlert.id), 429
+        audit_trail_alert(event='alert-rate-limited')
+        return jsonify(status='error', message=str(e), id=alert.id), 429
     except BlackoutPeriod as e:
-        return jsonify(status='ok', message=str(e), id=incomingAlert.id), 202
+        audit_trail_alert(event='alert-blackout')
+        return jsonify(status='ok', message=str(e), id=alert.id), 202
     except Exception as e:
         raise ApiError(str(e), 500)
 
@@ -104,6 +111,9 @@ def set_status(alert_id):
         alert, status, text = process_status(alert, status, text)
         alert = alert.from_status(status, text, timeout)
     except RejectException as e:
+        write_audit_trail.send(current_app._get_current_object(), event='alert-status-rejected', message=alert.text,
+                               user=g.user, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                               request=request)
         raise ApiError(str(e), 400)
     except Exception as e:
         raise ApiError(str(e), 500)
@@ -140,6 +150,9 @@ def action_alert(alert_id):
         alert, action, text = process_action(alert, action, text)
         alert = alert.from_action(action, text, timeout)
     except RejectException as e:
+        write_audit_trail.send(current_app._get_current_object(), event='alert-action-rejected', message=alert.text,
+                               user=g.user, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                               request=request)
         raise ApiError(str(e), 400)
     except Exception as e:
         raise ApiError(str(e), 500)
