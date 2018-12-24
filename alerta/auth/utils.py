@@ -53,6 +53,7 @@ def create_token(user_id: str, name: str, login: str, provider: str, customers: 
     scopes = Permission.lookup(login, groups=(roles or []) + (groups or []) + (orgs or []))
     return Jwt(
         iss=request.url_root,
+        typ='Bearer',
         sub=user_id,
         aud=current_app.config.get('OAUTH2_CLIENT_ID', None) or request.url_root,
         exp=(now + timedelta(days=current_app.config['TOKEN_EXPIRE_DAYS'])),

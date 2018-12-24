@@ -13,9 +13,10 @@ class Jwt:
     JSON Web Token (JWT): https://tools.ietf.org/html/rfc7519
     """
 
-    def __init__(self, iss: str, sub: str, aud: str, exp: dt, nbf: dt, iat: dt, jti: str=None, **kwargs) -> None:
+    def __init__(self, iss: str, typ: str, sub: str, aud: str, exp: dt, nbf: dt, iat: dt, jti: str=None, **kwargs) -> None:
 
         self.issuer = iss
+        self.type = typ
         self.subject = sub
         self.audience = aud
         self.expiration = exp
@@ -49,6 +50,7 @@ class Jwt:
 
         return Jwt(
             iss=json.get('iss', None),
+            typ=json.get('typ', None),
             sub=json.get('sub', None),
             aud=json.get('aud', None),
             exp=json.get('exp', None),
@@ -71,6 +73,7 @@ class Jwt:
     def serialize(self) -> Dict[str, Any]:
         data = {
             'iss': self.issuer,
+            'typ': self.type,
             'sub': self.subject,
             'aud': self.audience,
             'exp': self.expiration,
