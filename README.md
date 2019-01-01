@@ -1,4 +1,4 @@
-Alerta Release 6.2
+Alerta Release 6.6
 ==================
 
 [![Build Status](https://travis-ci.org/alerta/alerta.png)](https://travis-ci.org/alerta/alerta)
@@ -38,7 +38,7 @@ To install MongoDB on Debian/Ubuntu run:
 
     $ sudo apt-get install -y mongodb-org
     $ mongod
-    
+
 To install MongoDB on CentOS/RHEL run:
 
     $ sudo yum install -y mongodb
@@ -57,7 +57,7 @@ To install the web console run:
     $ python -m http.server 8000
 
     >> browse to http://localhost:8000
-    
+
 ### Docker
 Alerta and MongoDB can also run using Docker containers, see [alerta/docker-alerta](https://github.com/alerta/docker-alerta).
 
