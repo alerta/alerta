@@ -297,6 +297,9 @@ class Database(Base):
     def get_perms(self, query=None):
         raise NotImplementedError
 
+    def update_perm(self, id, **kwargs):
+        raise NotImplementedError
+
     def delete_perm(self, id):
         raise NotImplementedError
 

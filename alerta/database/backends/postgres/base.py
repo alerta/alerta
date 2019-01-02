@@ -893,6 +893,23 @@ class Backend(Database):
         """.format(where=query.where)
         return self._fetchall(select, query.vars)
 
+    def update_perm(self, id, **kwargs):
+        update = """
+            UPDATE perms
+            SET
+        """
+        if 'match' in kwargs:
+            update += 'match=%(match)s, '
+        if 'scopes' in kwargs:
+            update += 'scopes=%(scopes)s, '
+        update += """
+            id=%(id)s
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs['id'] = id
+        return self._updateone(update, kwargs, returning=True)
+
     def delete_perm(self, id):
         delete = """
             DELETE FROM perms
