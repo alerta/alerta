@@ -311,6 +311,9 @@ class Database(Base):
     def get_customers(self, query=None):
         raise NotImplementedError
 
+    def update_customer(self, id, **kwargs):
+        raise NotImplementedError
+
     def delete_customer(self, id):
         raise NotImplementedError
 

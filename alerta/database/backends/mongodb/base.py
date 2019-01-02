@@ -1250,6 +1250,13 @@ class Backend(Database):
         query = query or Query()
         return self.get_db().customers.find(query.where)
 
+    def update_customer(self, id, **kwargs):
+        return self.get_db().customers.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
     def delete_customer(self, id):
         response = self.get_db().customers.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
