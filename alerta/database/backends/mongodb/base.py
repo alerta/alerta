@@ -1223,6 +1223,13 @@ class Backend(Database):
         query = query or Query()
         return self.get_db().perms.find(query.where)
 
+    def update_perm(self, id, **kwargs):
+        return self.get_db().perms.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
     def delete_perm(self, id):
         response = self.get_db().perms.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
