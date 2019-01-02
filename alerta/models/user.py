@@ -146,29 +146,15 @@ class User:
         return db.update_last_login(self.id)
 
     def update(self, **kwargs) -> 'User':
-        update = dict()
-        if kwargs.get('name', None) is not None:
-            update['name'] = kwargs['name']
-        if kwargs.get('email', None) is not None:
+        if 'email' in kwargs:
             if '@' not in kwargs['email']:
                 raise ValueError('Value for "email" not valid: %s' % kwargs['email'])
-            update['email'] = kwargs['email']
-            update['email_verified'] = False
-        if kwargs.get('password', None) is not None:
-            update['password'] = utils.generate_password_hash(kwargs['password'])
-        if kwargs.get('status', None) is not None:
-            update['status'] = kwargs['status']
-        if kwargs.get('role', None) is not None:
-            update['roles'] = [kwargs['role']]
-        elif kwargs.get('roles', None) is not None:
-            update['roles'] = kwargs['roles']
-        if kwargs.get('attributes', None) is not None:
-            update['attributes'] = kwargs['attributes']
-        if kwargs.get('text', None) is not None:
-            update['text'] = kwargs['text']
-        if kwargs.get('email_verified', None) is not None:
-            update['email_verified'] = kwargs['email_verified']
-        return User.from_db(db.update_user(self.id, **update))
+            kwargs['email_verified'] = kwargs.get('email_verified', False)
+        if 'password' in kwargs:
+            kwargs['password'] = utils.generate_password_hash(kwargs['password'])
+        if 'role' in kwargs:
+            kwargs['roles'] = kwargs['role']  # backwards compat
+        return User.from_db(db.update_user(self.id, **kwargs))
 
     # update user attributes
     def update_attributes(self, attributes: Dict[str, Any]) -> bool:
