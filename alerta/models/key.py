@@ -130,6 +130,10 @@ class ApiKey:
         """
         return [ApiKey.from_db(key) for key in db.get_keys(qb.from_dict({'user': user}))]
 
+    def update(self, **kwargs) -> 'ApiKey':
+        kwargs['expireTime'] = DateTime.parse(kwargs['expireTime']) if 'expireTime' in kwargs else None
+        return ApiKey.from_db(db.update_key(self.key, **kwargs))
+
     def delete(self) -> bool:
         """
         Delete an API key.
