@@ -101,6 +101,28 @@ def list_perms():
         )
 
 
+@api.route('/perm/<perm_id>', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@permission(Scope.admin_perms)
+@jsonp
+def update_perm(perm_id):
+    if not request.json:
+        raise ApiError('nothing to change', 400)
+
+    perm = Permission.find_by_id(perm_id)
+
+    if not perm:
+        raise ApiError('not found', 404)
+
+    admin_audit_trail.send(current_app._get_current_object(), event='permission-updated', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=perm.id, type='permission', request=request)
+
+    if perm.update(**request.json):
+        return jsonify(status='ok')
+    else:
+        raise ApiError('failed to update permission', 500)
+
+
 @api.route('/perm/<perm_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
 @permission(Scope.admin_perms)

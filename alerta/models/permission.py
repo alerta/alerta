@@ -74,6 +74,9 @@ class Permission:
     def find_all(query: Query=None) -> List['Permission']:
         return [Permission.from_db(perm) for perm in db.get_perms(query)]
 
+    def update(self, **kwargs) -> 'Permission':
+        return Permission.from_db(db.update_perm(self.id, **kwargs))
+
     def delete(self) -> bool:
         return db.delete_perm(self.id)
 
