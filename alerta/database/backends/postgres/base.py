@@ -632,6 +632,42 @@ class Backend(Database):
             return True
         return False
 
+    def update_blackout(self, id, **kwargs):
+        update = """
+            UPDATE blackouts
+            SET
+        """
+        if 'environment' in kwargs:
+            update += 'environment=%(environment)s, '
+        if 'service' in kwargs:
+            update += 'service=%(service)s, '
+        if 'resource' in kwargs:
+            update += 'resource=%(resource)s, '
+        if 'event' in kwargs:
+            update += 'event=%(event)s, '
+        if 'group' in kwargs:
+            update += '"group"=%(group)s, '
+        if 'tags' in kwargs:
+            update += 'tags=%(tags)s, '
+        if 'customer' in kwargs:
+            update += 'customer=%(customer)s, '
+        if 'startTime' in kwargs:
+            update += 'start_time=%(startTime)s, '
+        if 'endTime' in kwargs:
+            update += 'end_time=%(endTime)s, '
+        if 'duration' in kwargs:
+            update += 'duration=%(duration)s, '
+        if 'text' in kwargs:
+            update += 'text=%(text)s, '
+        update += """
+            "user"=COALESCE(%(user)s, "user")
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs['id'] = id
+        kwargs['user'] = kwargs.get('user')
+        return self._updateone(update, kwargs, returning=True)
+
     def delete_blackout(self, id):
         delete = """
             DELETE FROM blackouts
