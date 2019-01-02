@@ -914,6 +914,23 @@ class Backend(Database):
         """.format(where=query.where)
         return self._fetchall(select, query.vars)
 
+    def update_customer(self, id, **kwargs):
+        update = """
+            UPDATE customers
+            SET
+        """
+        if 'match' in kwargs:
+            update += 'match=%(match)s, '
+        if 'customer' in kwargs:
+            update += 'customer=%(customer)s, '
+        update += """
+            id=%(id)s
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs['id'] = id
+        return self._updateone(update, kwargs, returning=True)
+
     def delete_customer(self, id):
         delete = """
             DELETE FROM customers
