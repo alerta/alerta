@@ -1105,6 +1105,13 @@ class Backend(Database):
         query = query or Query()
         return self.get_db().keys.find(query.where)
 
+    def update_key(self, key, **kwargs):
+        return self.get_db().keys.find_one_and_update(
+            {'$or': [{'key': key}, {'_id': key}]},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
     # update
     def update_key_last_used(self, key):
         return self.get_db().keys.update_one(

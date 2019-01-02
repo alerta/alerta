@@ -100,6 +100,28 @@ def list_keys():
         )
 
 
+@api.route('/key/<path:key>', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@permission(Scope.write_keys)
+@jsonp
+def update_key(key):
+    if not request.json:
+        raise ApiError('nothing to change', 400)
+
+    key = ApiKey.find_by_id(key)
+
+    if not key:
+        raise ApiError('not found', 404)
+
+    admin_audit_trail.send(current_app._get_current_object(), event='apikey-updated', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=key.id, type='apikey', request=request)
+
+    if key.update(**request.json):
+        return jsonify(status='ok')
+    else:
+        raise ApiError('failed to update API key', 500)
+
+
 @api.route('/key/<path:key>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
 @permission(Scope.admin_keys)
