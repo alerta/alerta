@@ -200,5 +200,10 @@ class Blackout:
     def find_all(query: Query=None) -> List['Blackout']:
         return [Blackout.from_db(blackout) for blackout in db.get_blackouts(query)]
 
+    def update(self, **kwargs) -> 'Blackout':
+        kwargs['startTime'] = DateTime.parse(kwargs['startTime']) if 'startTime' in kwargs else None
+        kwargs['endTime'] = DateTime.parse(kwargs['endTime']) if 'endTime' in kwargs else None
+        return Blackout.from_db(db.update_blackout(self.id, **kwargs))
+
     def delete(self) -> bool:
         return db.delete_blackout(self.id)

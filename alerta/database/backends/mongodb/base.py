@@ -1017,6 +1017,13 @@ class Backend(Database):
             return True
         return False
 
+    def update_blackout(self, id, **kwargs):
+        return self.get_db().blackouts.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
     def delete_blackout(self, id):
         response = self.get_db().blackouts.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
