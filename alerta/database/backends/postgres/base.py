@@ -738,6 +738,27 @@ class Backend(Database):
         """.format(where=query.where)
         return self._fetchall(select, query.vars)
 
+    def update_key(self, key, **kwargs):
+        update = """
+            UPDATE keys
+            SET
+        """
+        if 'scopes' in kwargs:
+            update += 'scopes=%(scopes)s, '
+        if 'text' in kwargs:
+            update += 'text=%(text)s, '
+        if 'expireTime' in kwargs:
+            update += 'expire_time=%(expireTime)s, '
+        if 'customer' in kwargs:
+            update += 'customer=%(customer)s, '
+        update += """
+            id=id
+            WHERE (id=%(key)s OR key=%(key)s)
+            RETURNING *
+        """
+        kwargs['key'] = key
+        return self._updateone(update, kwargs, returning=True)
+
     def update_key_last_used(self, key):
         update = """
             UPDATE keys

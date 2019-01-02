@@ -245,6 +245,9 @@ class Database(Base):
     def get_keys(self, query=None):
         raise NotImplementedError
 
+    def update_key(self, key, **kwargs):
+        raise NotImplementedError
+
     def update_key_last_used(self, key):
         raise NotImplementedError
 
