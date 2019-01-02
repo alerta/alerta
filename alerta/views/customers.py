@@ -73,6 +73,28 @@ def list_customers():
         )
 
 
+@api.route('/customer/<customer_id>', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@permission(Scope.admin_customers)
+@jsonp
+def update_customer(customer_id):
+    if not request.json:
+        raise ApiError('nothing to change', 400)
+
+    customer = Customer.find_by_id(customer_id)
+
+    if not customer:
+        raise ApiError('not found', 404)
+
+    admin_audit_trail.send(current_app._get_current_object(), event='customer-updated', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=customer.id, type='customer', request=request)
+
+    if customer.update(**request.json):
+        return jsonify(status='ok')
+    else:
+        raise ApiError('failed to update customer', 500)
+
+
 @api.route('/customer/<customer_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
 @permission(Scope.admin_customers)

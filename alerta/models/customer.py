@@ -70,6 +70,9 @@ class Customer:
     def find_all(query: Query=None) -> List['Customer']:
         return [Customer.from_db(customer) for customer in db.get_customers(query)]
 
+    def update(self, **kwargs) -> 'Customer':
+        return Customer.from_db(db.update_customer(self.id, **kwargs))
+
     def delete(self) -> bool:
         return db.delete_customer(self.id)
 
