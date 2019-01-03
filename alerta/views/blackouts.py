@@ -58,28 +58,6 @@ def get_blackout(blackout_id):
         raise ApiError('not found', 404)
 
 
-@api.route('/blackout/<blackout_id>', methods=['OPTIONS', 'PUT'])
-@cross_origin()
-@permission(Scope.write_blackouts)
-@jsonp
-def update_blackout(blackout_id):
-    if not request.json:
-        raise ApiError('nothing to change', 400)
-
-    blackout = Blackout.find_by_id(blackout_id)
-
-    if not blackout:
-        raise ApiError('not found', 404)
-
-    write_audit_trail.send(current_app._get_current_object(), event='blackout-updated', message='', user=g.user,
-                           customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout', request=request)
-
-    if blackout.update(**request.json):
-        return jsonify(status='ok')
-    else:
-        raise ApiError('failed to update blackout', 500)
-
-
 @api.route('/blackouts', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.read_blackouts)
@@ -101,6 +79,28 @@ def list_blackouts():
             blackouts=[],
             total=0
         )
+
+
+@api.route('/blackout/<blackout_id>', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@permission(Scope.write_blackouts)
+@jsonp
+def update_blackout(blackout_id):
+    if not request.json:
+        raise ApiError('nothing to change', 400)
+
+    blackout = Blackout.find_by_id(blackout_id)
+
+    if not blackout:
+        raise ApiError('not found', 404)
+
+    write_audit_trail.send(current_app._get_current_object(), event='blackout-updated', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout', request=request)
+
+    if blackout.update(**request.json):
+        return jsonify(status='ok')
+    else:
+        raise ApiError('failed to update blackout', 500)
 
 
 @api.route('/blackout/<blackout_id>', methods=['OPTIONS', 'DELETE'])
