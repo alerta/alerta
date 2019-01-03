@@ -61,6 +61,42 @@ def get_user(user_id):
         raise ApiError('not found', 404)
 
 
+@api.route('/users', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.admin_users)
+@jsonp
+def search_users():
+    query = qb.from_params(request.args)
+    users = User.find_all(query)
+
+    # add admins defined in server config
+    if 'admin' in request.args.getlist('roles'):
+        for admin in set(current_app.config['ADMIN_USERS']):
+            user = User.find_by_email(admin)
+            if user:
+                users.append(user)
+
+    # remove admins whose default role is 'user'
+    if 'admin' not in request.args.getlist('roles'):
+        users = [u for u in users if 'admin' not in u.roles]
+
+    if users:
+        return jsonify(
+            status='ok',
+            users=[user.serialize for user in users],
+            domains=current_app.config['ALLOWED_EMAIL_DOMAINS'],
+            total=len(users)
+        )
+    else:
+        return jsonify(
+            status='ok',
+            message='not found',
+            users=[],
+            domains=current_app.config['ALLOWED_EMAIL_DOMAINS'],
+            total=0
+        )
+
+
 @api.route('/user/<user_id>', methods=['OPTIONS', 'PUT'])
 @cross_origin()
 @permission(Scope.admin_users)
@@ -162,42 +198,6 @@ def update_me_attributes():
         return jsonify(status='ok')
     else:
         raise ApiError('failed to update attributes', 500)
-
-
-@api.route('/users', methods=['OPTIONS', 'GET'])
-@cross_origin()
-@permission(Scope.admin_users)
-@jsonp
-def search_users():
-    query = qb.from_params(request.args)
-    users = User.find_all(query)
-
-    # add admins defined in server config
-    if 'admin' in request.args.getlist('roles'):
-        for admin in set(current_app.config['ADMIN_USERS']):
-            user = User.find_by_email(admin)
-            if user:
-                users.append(user)
-
-    # remove admins whose default role is 'user'
-    if 'admin' not in request.args.getlist('roles'):
-        users = [u for u in users if 'admin' not in u.roles]
-
-    if users:
-        return jsonify(
-            status='ok',
-            users=[user.serialize for user in users],
-            domains=current_app.config['ALLOWED_EMAIL_DOMAINS'],
-            total=len(users)
-        )
-    else:
-        return jsonify(
-            status='ok',
-            message='not found',
-            users=[],
-            domains=current_app.config['ALLOWED_EMAIL_DOMAINS'],
-            total=0
-        )
 
 
 @api.route('/user/<user_id>', methods=['OPTIONS', 'DELETE'])
