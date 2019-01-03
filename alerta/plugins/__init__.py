@@ -1,4 +1,4 @@
-
+import logging
 import abc
 from typing import Optional, TYPE_CHECKING, Any
 
@@ -7,6 +7,8 @@ from six import add_metaclass
 if TYPE_CHECKING:
     from alerta.models.alert import Alert  # noqa
 
+LOG = logging.getLogger('alerta.plugins')
+
 
 @add_metaclass(abc.ABCMeta)
 class PluginBase:
@@ -14,8 +16,7 @@ class PluginBase:
     def __init__(self, name=None):
         self.name = name or self.__module__
         if self.__doc__:
-            from alerta import app
-            app.logger.info('\n{}\n'.format(self.__doc__))
+            LOG.info('\n{}\n'.format(self.__doc__))
 
     @abc.abstractmethod
     def pre_receive(self, alert: 'Alert') -> 'Alert':
