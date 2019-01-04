@@ -87,6 +87,8 @@ class Permission:
         :param want_scope: scope wanted for permission to do something (str because could be invalid scope)
         :param have_scopes: list of valid scopes that user has been assigned
         """
+        if not want_scope:
+            return True
         if want_scope in have_scopes or want_scope.split(':')[0] in have_scopes:
             return True
         elif want_scope.startswith('read'):

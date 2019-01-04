@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from alerta.models.enums import Scope  # noqa
 
 
-def permission(scope):
+def permission(scope=None):
     def decorated(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
