@@ -166,8 +166,7 @@ class User:
     @staticmethod
     def check_credentials(username: str, password: str) -> Optional['User']:
         user = User.find_by_email(email=username)
-        if user and user.verify_password(password) and user.is_active:
-            user.update_last_login()
+        if user and user.verify_password(password):
             return user
         return None
 
