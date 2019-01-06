@@ -1183,16 +1183,13 @@ class Backend(Database):
         )
 
     def update_user_attributes(self, id, old_attrs, new_attrs):
-        update = dict()
-        set_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is not None}
-        if set_value:
-            update['$set'] = set_value
-        unset_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is None}
-        if unset_value:
-            update['$unset'] = unset_value
-
-        response = self.get_db().users.update_one({'_id': {'$regex': '^' + id}}, update=update)
-        return response.matched_count > 0
+        from alerta.utils.collections import merge
+        merge(old_attrs, new_attrs)
+        attrs = {k: v for k, v in old_attrs.items() if v is not None}
+        return self.get_db().users.update_one(
+            {'_id': {'$regex': '^' + id}},
+            update={'$set': {'attributes': attrs, 'updateTime': datetime.utcnow()}}
+        ).matched_count == 1
 
     def delete_user(self, id):
         response = self.get_db().users.delete_one({'_id': id})
