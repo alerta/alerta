@@ -84,6 +84,11 @@ def login():
     if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError('unauthorized domain', 403)
 
+    # check user is active & update last login
+    if user.status != 'active':
+        raise ApiError('user not active', 403)
+    user.update_last_login()
+
     # assign customers
     customers = get_customers(user.email, groups=[user.domain])
 
