@@ -61,6 +61,32 @@ def get_user(user_id):
         raise ApiError('not found', 404)
 
 
+@api.route('/user/me', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission()
+@jsonp
+def get_me():
+    user = User.find_by_email(g.user)
+
+    if user:
+        return jsonify(status='ok', total=1, user=user.serialize)
+    else:
+        raise ApiError('not found', 404)
+
+
+@api.route('/user/me/attributes', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission()
+@jsonp
+def get_me_attributes():
+    user = User.find_by_email(g.user)
+
+    if user:
+        return jsonify(status='ok', total=1, attributes=user.attributes)
+    else:
+        raise ApiError('not found', 404)
+
+
 @api.route('/users', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.admin_users)
@@ -126,7 +152,7 @@ def update_user(user_id):
 
 @api.route('/user/me', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission(Scope.write_users)
+@permission()
 @jsonp
 def update_me():
     if not request.json:
@@ -180,7 +206,7 @@ def update_user_attributes(user_id):
 
 @api.route('/user/me/attributes', methods=['OPTIONS', 'PUT'])
 @cross_origin()
-@permission(Scope.write_users)
+@permission()
 @jsonp
 def update_me_attributes():
     if not request.json.get('attributes', None):

@@ -845,11 +845,12 @@ class Backend(Database):
         return self._updateone(update, kwargs, returning=True)
 
     def update_user_attributes(self, id, old_attrs, new_attrs):
-        old_attrs.update(new_attrs)
+        from alerta.utils.collections import merge
+        merge(old_attrs, new_attrs)
         attrs = {k: v for k, v in old_attrs.items() if v is not None}
         update = """
             UPDATE users
-               SET attributes=%(attrs)s
+               SET attributes=%(attrs)s, update_time=NOW()
              WHERE id=%(id)s
             RETURNING id
         """
@@ -866,7 +867,7 @@ class Backend(Database):
     def set_email_hash(self, id, hash):
         update = """
             UPDATE users
-            SET hash=%s
+            SET hash=%s, update_time=NOW()
             WHERE id=%s
         """
         return self._updateone(update, (hash, id))
