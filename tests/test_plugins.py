@@ -158,7 +158,7 @@ class PluginsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'assign')
         self.assertEqual(data['alert']['attributes']['up'], 'down')
-        self.assertEqual(data['alert']['history'][4]['text'],
+        self.assertEqual(data['alert']['history'][3]['text'],
                          'ticket updated by bob (ticket #12345)', data['alert']['history'])
 
         # update ticket for alert
@@ -175,7 +175,7 @@ class PluginsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'closed')
         self.assertIn('true', data['alert']['tags'])
-        self.assertEqual(data['alert']['history'][5]['text'],
+        self.assertEqual(data['alert']['history'][4]['text'],
                          'ticket resolved by bob (ticket #12345)', data['alert']['history'])
 
 

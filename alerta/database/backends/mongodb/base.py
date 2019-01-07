@@ -319,15 +319,16 @@ class Backend(Database):
         if self.get_db().alerts.insert_one(data).inserted_id == alert.id:
             return data
 
-    def set_alert(self, id, severity, status, tags, attributes, timeout, history=None):
+    def set_alert(self, id, severity, status, tags, attributes, timeout, previous_severity, history=None):
         query = {'_id': {'$regex': '^' + id}}
 
         update = {
             '$set': {
                 'severity': severity,
                 'status': status,
+                'attributes': attributes,
                 'timeout': timeout,
-                'attributes': attributes
+                'previousSeverity': previous_severity
             },
             '$addToSet': {'tags': {'$each': tags}},
             '$push': {

@@ -56,6 +56,7 @@ NO_CHANGE = 'noChange'
 LESS_SEVERE = 'lessSevere'
 
 
+ACTION_OPEN = 'open'
 ACTION_ACK = 'ack'
 ACTION_UNACK = 'unack'
 ACTION_SHELVE = 'shelve'
@@ -94,6 +95,8 @@ class StateMachine(AlarmModel):
         assert current_severity in StateMachine.Severity, "'%s' is not a valid severity" % current_severity
 
         # transitions driven by operator actions
+        if action == ACTION_OPEN:
+            return previous_severity, OPEN
         if action == ACTION_UNACK:
             return current_severity, OPEN
         if action == ACTION_SHELVE:
