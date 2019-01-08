@@ -590,7 +590,7 @@ class Backend(Database):
         select = """
             SELECT *
             FROM blackouts
-            WHERE start_time <= NOW() AND end_time > NOW()
+            WHERE start_time <= NOW() at time zone 'utc' AND end_time > NOW() at time zone 'utc'
               AND environment=%(environment)s
               AND (
                  (resource IS NULL AND service='{}' AND event IS NULL AND "group" IS NULL AND tags='{}')
@@ -763,7 +763,7 @@ class Backend(Database):
     def update_key_last_used(self, key):
         update = """
             UPDATE keys
-            SET last_used_time=NOW(), count=count + 1
+            SET last_used_time=NOW() at time zone 'utc', count=count + 1
             WHERE id=%s OR key=%s
         """
         return self._updateone(update, (key, key))
@@ -811,7 +811,7 @@ class Backend(Database):
     def update_last_login(self, id):
         update = """
             UPDATE users
-            SET last_login=NOW()
+            SET last_login=NOW() at time zone 'utc'
             WHERE id=%s
         """
         return self._updateone(update, (id,))
@@ -838,7 +838,7 @@ class Backend(Database):
         if 'email_verified' in kwargs:
             update += 'email_verified=%(email_verified)s, '
         update += """
-            update_time=NOW()
+            update_time=NOW() at time zone 'utc'
             WHERE id=%(id)s
             RETURNING *
         """
@@ -851,7 +851,7 @@ class Backend(Database):
         attrs = {k: v for k, v in old_attrs.items() if v is not None}
         update = """
             UPDATE users
-               SET attributes=%(attrs)s, update_time=NOW()
+               SET attributes=%(attrs)s, update_time=NOW() at time zone 'utc'
              WHERE id=%(id)s
             RETURNING id
         """
@@ -868,7 +868,7 @@ class Backend(Database):
     def set_email_hash(self, id, hash):
         update = """
             UPDATE users
-            SET hash=%s, update_time=NOW()
+            SET hash=%s, update_time=NOW() at time zone 'utc'
             WHERE id=%s
         """
         return self._updateone(update, (hash, id))
@@ -1054,7 +1054,7 @@ class Backend(Database):
             SELECT id, event, last_receive_id
               FROM alerts
              WHERE status NOT IN ('expired','shelved') AND timeout!=0
-               AND (last_receive_time + INTERVAL '1 second' * timeout) < (NOW() at time zone 'utc')
+               AND (last_receive_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """
         expired = self._fetchall(select, {})
 
@@ -1070,7 +1070,7 @@ class Backend(Database):
         )
         SELECT id, event, last_receive_id
           FROM shelved
-         WHERE (update_time + INTERVAL '1 second' * timeout) < (NOW() at time zone 'utc')
+         WHERE (update_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """
         unshelved = self._fetchall(select, {})
 
