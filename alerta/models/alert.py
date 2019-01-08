@@ -529,7 +529,16 @@ class Alert:
             change_type='status',
             update_time=datetime.utcnow()
         )]
-        return Alert.from_db(db.set_alert(self.id, self.severity, status, self.tags, self.attributes, timeout, history))
+        return Alert.from_db(db.set_alert(
+            id=self.id,
+            severity=self.severity,
+            status=status,
+            tags=self.tags,
+            attributes=self.attributes,
+            timeout=timeout,
+            previous_severity=self.previous_severity,
+            history=history)
+        )
 
     def from_action(self, action: str, text: str='', timeout: int=None) -> 'Alert':
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
@@ -543,27 +552,34 @@ class Alert:
             action=action
         )
 
-        history = []
-        if new_severity != self.previous_severity:
+        history = [History(
+            id=self.id,
+            event=self.event,
+            status=new_status,
+            text=text,
+            change_type='action',
+            update_time=datetime.utcnow()
+        )]
+        status_change_hook.send(self, status=new_status, text=text)
+
+        if new_severity != self.severity:
+            history_text = 'alert severity change from action'
             history.append(History(
                 id=self.id,
                 event=self.event,
                 severity=new_severity,
-                text=text,
-                change_type='action',
-                update_time=datetime.utcnow()
-            ))
-
-        if new_status != previous_status:
-            history_text = 'alert status change from action'
-            history.append(History(
-                id=self.id,
-                event=self.event,
-                status=new_status,
                 text=history_text,
                 change_type='action',
                 update_time=datetime.utcnow()
             ))
-            status_change_hook.send(self, status=new_status, text=history_text)
 
-        return Alert.from_db(db.set_alert(self.id, new_severity, new_status, self.tags, self.attributes, timeout, history))
+        return Alert.from_db(db.set_alert(
+            id=self.id,
+            severity=new_severity,
+            status=new_status,
+            tags=self.tags,
+            attributes=self.attributes,
+            timeout=timeout,
+            previous_severity=self.severity if new_severity != self.severity else self.previous_severity,
+            history=history)
+        )
