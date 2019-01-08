@@ -89,15 +89,25 @@ def update_blackout(blackout_id):
     if not request.json:
         raise ApiError('nothing to change', 400)
 
-    blackout = Blackout.find_by_id(blackout_id)
+    if not current_app.config['AUTH_REQUIRED']:
+        blackout = Blackout.find_by_id(blackout_id)
+    elif Scope.admin in g.scopes or Scope.admin_blackouts in g.scopes:
+        blackout = Blackout.find_by_id(blackout_id)
+    else:
+        blackout = Blackout.find_by_id(blackout_id, g.customers)
 
     if not blackout:
         raise ApiError('not found', 404)
 
-    write_audit_trail.send(current_app._get_current_object(), event='blackout-updated', message='', user=g.user,
-                           customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout', request=request)
+    update = request.json
+    update['user'] = g.user
+    update['customer'] = assign_customer(wanted=update.get('customer'), permission=Scope.admin_blackouts)
 
-    if blackout.update(**request.json):
+    write_audit_trail.send(current_app._get_current_object(), event='blackout-updated', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout',
+                           request=request)
+
+    if blackout.update(**update):
         return jsonify(status='ok')
     else:
         raise ApiError('failed to update blackout', 500)
