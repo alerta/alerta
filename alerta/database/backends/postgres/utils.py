@@ -1,7 +1,7 @@
 from collections import namedtuple
+from typing import Any, Dict  # noqa
 
 import pytz
-from flask import g
 from pyparsing import ParseException
 from werkzeug.datastructures import MultiDict
 
@@ -18,7 +18,7 @@ Query.__new__.__defaults__ = ('1=1', {}, 'last_receive_time', 'status')  # type:
 class QueryBuilderImpl(QueryBuilder):
 
     @staticmethod
-    def from_params(params, query_time=None):
+    def from_params(params: MultiDict, customers=None, query_time=None):
 
         # q
         if params.get('q', None):
@@ -28,7 +28,7 @@ class QueryBuilderImpl(QueryBuilder):
                     query=params['q'],
                     default_field=params.get('q.df')
                 )]
-                qvars = dict()
+                qvars = dict()  # type: Dict[str, Any]
             except ParseException as e:
                 raise ApiError('Failed to parse query string.', 400, [e])
         else:
@@ -36,9 +36,9 @@ class QueryBuilderImpl(QueryBuilder):
             qvars = dict()
 
         # customer
-        if g.get('customers', None):
+        if customers:
             query.append('AND customer=ANY(%(customers)s)')
-            qvars['customers'] = g.get('customers')
+            qvars['customers'] = customers
 
         # from-date, to-date
         from_date = params.get('from-date', default=None, type=DateTime.parse)

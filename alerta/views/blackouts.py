@@ -63,7 +63,7 @@ def get_blackout(blackout_id):
 @permission(Scope.read_blackouts)
 @jsonp
 def list_blackouts():
-    query = qb.from_params(request.args)
+    query = qb.from_params(request.args, customers=g.customers)
     blackouts = Blackout.find_all(query)
 
     if blackouts:

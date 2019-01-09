@@ -55,7 +55,7 @@ def get_customer(customer_id):
 @permission(Scope.read_customers)
 @jsonp
 def list_customers():
-    query = qb.from_params(request.args)
+    query = qb.from_params(request.args, customers=g.customers)
     customers = Customer.find_all(query)
 
     if customers:

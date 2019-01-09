@@ -359,7 +359,7 @@ class QueryBuilder(Base):
         self.__class__ = type('QueryBuilderImpl', (cls.QueryBuilderImpl, QueryBuilder), {})
 
     @staticmethod
-    def from_params(params, query_time=None):
+    def from_params(params, customers=None, query_time=None):
         raise NotImplementedError('QueryBuilder has no from_params() method')
 
     @staticmethod
