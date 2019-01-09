@@ -3,7 +3,6 @@ import re
 from collections import namedtuple
 
 import pytz
-from flask import g
 from pyparsing import ParseException
 from werkzeug.datastructures import MultiDict
 
@@ -20,7 +19,7 @@ Query.__new__.__defaults__ = ({}, {}, 'lastReceiveTime', 'status')  # type: igno
 class QueryBuilderImpl(QueryBuilder):
 
     @staticmethod
-    def from_params(params: MultiDict, query_time=None):
+    def from_params(params: MultiDict, customers=None, query_time=None):
 
         # q
         if params.get('q', None):
@@ -37,8 +36,8 @@ class QueryBuilderImpl(QueryBuilder):
             query = dict()
 
         # customers
-        if g.get('customers', None):
-            customer_query = {'customer': {'$in': g.get('customers')}}
+        if customers:
+            customer_query = {'customer': {'$in': customers}}
         else:
             customer_query = None  # type: ignore
 
