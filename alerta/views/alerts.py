@@ -276,7 +276,7 @@ def delete_alert(alert_id):
 @jsonp
 def search_alerts():
     query_time = datetime.utcnow()
-    query = qb.from_params(request.args, query_time)
+    query = qb.from_params(request.args, customers=g.customers, query_time=query_time)
     severity_count = Alert.get_counts_by_severity(query)
     status_count = Alert.get_counts_by_status(query)
 
@@ -322,7 +322,7 @@ def search_alerts():
 @timer(gets_timer)
 @jsonp
 def history():
-    query = qb.from_params(request.args)
+    query = qb.from_params(request.args, customers=g.customers)
     paging = Page.from_params(request.args, items=0)
     history = Alert.get_history(query, paging.page, paging.page_size)
 
@@ -349,7 +349,7 @@ def history():
 @timer(count_timer)
 @jsonp
 def get_counts():
-    query = qb.from_params(request.args)
+    query = qb.from_params(request.args, customers=g.customers)
     severity_count = Alert.get_counts_by_severity(query)
     status_count = Alert.get_counts_by_status(query)
 
@@ -369,7 +369,7 @@ def get_counts():
 @timer(count_timer)
 @jsonp
 def get_top10_count():
-    query = qb.from_params(request.args)
+    query = qb.from_params(request.args, customers=g.customers)
     top10 = Alert.get_top10_count(query)
 
     if top10:
@@ -396,7 +396,7 @@ def get_top10_count():
 @timer(count_timer)
 @jsonp
 def get_top10_flapping():
-    query = qb.from_params(request.args)
+    query = qb.from_params(request.args, customers=g.customers)
     top10 = Alert.get_top10_flapping(query)
 
     if top10:
@@ -423,7 +423,7 @@ def get_top10_flapping():
 @timer(count_timer)
 @jsonp
 def get_top10_standing():
-    query = qb.from_params(request.args)
+    query = qb.from_params(request.args, customers=g.customers)
     top10 = Alert.get_top10_standing(query)
 
     if top10:
@@ -450,7 +450,7 @@ def get_top10_standing():
 @timer(gets_timer)
 @jsonp
 def get_environments():
-    query = qb.from_params(request.args)
+    query = qb.from_params(request.args, customers=g.customers)
     environments = Alert.get_environments(query)
 
     if environments:
@@ -475,7 +475,7 @@ def get_environments():
 @timer(gets_timer)
 @jsonp
 def get_services():
-    query = qb.from_params(request.args)
+    query = qb.from_params(request.args, customers=g.customers)
     services = Alert.get_services(query)
 
     if services:
@@ -500,7 +500,7 @@ def get_services():
 @timer(gets_timer)
 @jsonp
 def get_tags():
-    query = qb.from_params(request.args)
+    query = qb.from_params(request.args, customers=g.customers)
     tags = Alert.get_tags(query)
 
     if tags:

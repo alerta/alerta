@@ -59,7 +59,7 @@ def get_heartbeat(heartbeat_id):
 @permission(Scope.read_heartbeats)
 @jsonp
 def list_heartbeats():
-    query = qb.from_params(request.args)
+    query = qb.from_params(request.args, customers=g.customers)
     heartbeats = Heartbeat.find_all(query)
 
     if heartbeats:
