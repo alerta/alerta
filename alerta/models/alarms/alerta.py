@@ -43,10 +43,10 @@ COLOR_MAP = {
 OPEN = 'open'
 ASSIGN = 'assign'
 ACK = 'ack'
+SHELVED = 'shelved'
+BLACKOUT = 'blackout'
 CLOSED = 'closed'
 EXPIRED = 'expired'
-BLACKOUT = 'blackout'
-SHELVED = 'shelved'
 UNKNOWN = 'unknown'
 NOT_VALID = 'notValid'
 
@@ -57,11 +57,22 @@ LESS_SEVERE = 'lessSevere'
 
 
 ACTION_OPEN = 'open'
+ACTION_ASSIGN = 'assign'
 ACTION_ACK = 'ack'
 ACTION_UNACK = 'unack'
 ACTION_SHELVE = 'shelve'
 ACTION_UNSHELVE = 'unshelve'
 ACTION_CLOSE = 'close'
+
+ACTION_ALL = [
+    ACTION_OPEN,
+    ACTION_ASSIGN,
+    ACTION_ACK,
+    ACTION_UNACK,
+    ACTION_SHELVE,
+    ACTION_UNSHELVE,
+    ACTION_CLOSE
+]
 
 
 class StateMachine(AlarmModel):
@@ -73,7 +84,7 @@ class StateMachine(AlarmModel):
         StateMachine.Severity = app.config['SEVERITY_MAP'] or SEVERITY_MAP
         StateMachine.Colors = app.config['COLOR_MAP'] or COLOR_MAP
 
-        StateMachine.DEFAULT_STATUS = UNKNOWN
+        StateMachine.DEFAULT_STATUS = OPEN
         StateMachine.DEFAULT_NORMAL_SEVERITY = app.config['DEFAULT_NORMAL_SEVERITY'] or DEFAULT_NORMAL_SEVERITY
         StateMachine.DEFAULT_PREVIOUS_SEVERITY = app.config['DEFAULT_PREVIOUS_SEVERITY'] or DEFAULT_PREVIOUS_SEVERITY
 
@@ -89,41 +100,92 @@ class StateMachine(AlarmModel):
             return NO_CHANGE
 
     def transition(self, previous_severity, current_severity, previous_status=None, current_status=None, action=None, **kwargs):
-        previous_status = previous_status or OPEN
-        current_status = current_status or StateMachine.DEFAULT_STATUS
 
         assert current_severity in StateMachine.Severity, "'%s' is not a valid severity" % current_severity
 
-        # transitions driven by operator actions
-        if action == ACTION_OPEN:
-            return previous_severity, OPEN
-        if action == ACTION_UNACK:
-            return current_severity, OPEN
-        if action == ACTION_SHELVE:
-            return current_severity, SHELVED
-        if action == ACTION_UNSHELVE:
-            return current_severity, OPEN
-        if action == ACTION_ACK:
-            return current_severity, ACK
-        if action == ACTION_CLOSE:
-            return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
-
         # if an unrecognised action is passed then assume state transition has been handled
         # by a take_action() plugin and return the current severity and status unchanged
-        if action:
+        if action and action not in ACTION_ALL:
             return current_severity, current_status
 
-        # transitions driven by alert severity or status changes
-        if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
-            return current_severity, CLOSED
-        if current_status in [BLACKOUT, SHELVED]:
-            return current_severity, current_status
-        if previous_status in [BLACKOUT, CLOSED, EXPIRED]:
-            return current_severity, OPEN
-        if self.trend(previous_severity, current_severity) == MORE_SEVERE:
-            return current_severity, OPEN
+        previous_status = previous_status or StateMachine.DEFAULT_STATUS
+        state = current_status = current_status or StateMachine.DEFAULT_STATUS
 
-        return current_severity, previous_status
+        if state == OPEN:
+            if action == ACTION_ACK:
+                return current_severity, ACK
+            if action == ACTION_SHELVE:
+                return current_severity, SHELVED
+            if action == ACTION_CLOSE:
+                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
+
+            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
+                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
+            if self.trend(previous_severity, current_severity) == MORE_SEVERE:
+                return current_severity, OPEN
+            if previous_status in [ACK, SHELVED]:
+                return current_severity, previous_status
+
+            # FIXME: this should return the status before it became blackout
+            # if previous_status == BLACKOUT:
+            #     return current_severity, OPEN
+
+        if state == ASSIGN:
+            pass
+
+        if state == ACK:
+            if action in [ACTION_UNACK, ACTION_OPEN]:
+                return current_severity, OPEN
+            if action == ACTION_SHELVE:
+                return current_severity, SHELVED
+            if action == ACTION_CLOSE:
+                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
+
+            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
+                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
+            if self.trend(previous_severity, current_severity) == MORE_SEVERE:
+                return current_severity, OPEN
+            else:
+                return current_severity, previous_status
+
+        if state == SHELVED:
+            if action == ACTION_OPEN:
+                return current_severity, OPEN
+            if action == ACTION_ACK:
+                return current_severity, ACK
+            if action == ACTION_UNSHELVE:
+                return current_severity, previous_status
+            if action == ACTION_CLOSE:
+                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
+
+            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
+                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
+            else:
+                return current_severity, previous_status
+
+        if state == BLACKOUT:
+            if action == ACTION_OPEN:
+                return current_severity, OPEN
+            if action == ACTION_ACK:
+                return current_severity, ACK
+            if action == ACTION_CLOSE:
+                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
+
+            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
+                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
+
+        if state == CLOSED:
+            if action == ACTION_OPEN:
+                return previous_severity, OPEN
+
+            if StateMachine.Severity[current_severity] != NORMAL_SEVERITY_LEVEL:
+                return previous_severity, OPEN
+
+        if state == EXPIRED:
+            if StateMachine.Severity[current_severity] != NORMAL_SEVERITY_LEVEL:
+                return current_severity, OPEN
+
+        return current_severity, current_status
 
     @staticmethod
     def is_suppressed(alert):
