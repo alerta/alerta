@@ -108,10 +108,23 @@ def update_key(key):
     if not request.json:
         raise ApiError('nothing to change', 400)
 
-    key = ApiKey.find_by_id(key)
+    if not current_app.config['AUTH_REQUIRED']:
+        key = ApiKey.find_by_id(key)
+    elif Scope.admin in g.scopes or Scope.admin_keys in g.scopes:
+        key = ApiKey.find_by_id(key)
+    else:
+        key = ApiKey.find_by_id(key, g.user)
 
     if not key:
         raise ApiError('not found', 404)
+
+    update = request.json
+    update['customer'] = assign_customer(wanted=update.get('customer'), permission=Scope.admin_keys)
+
+    for want_scope in update.get('scopes', []):
+        if not Permission.is_in_scope(want_scope, have_scopes=g.scopes):
+            raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
+                want_scope, ','.join(g.scopes)), 403)
 
     admin_audit_trail.send(current_app._get_current_object(), event='apikey-updated', message='', user=g.user,
                            customers=g.customers, scopes=g.scopes, resource_id=key.id, type='apikey', request=request)

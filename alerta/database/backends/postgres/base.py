@@ -570,13 +570,13 @@ class Backend(Database):
         """
         return self._insert(insert, vars(blackout))
 
-    def get_blackout(self, id, customer=None):
+    def get_blackout(self, id, customers=None):
         select = """
             SELECT * FROM blackouts
             WHERE id=%(id)s
               AND {customer}
-        """.format(customer='customer=%(customer)s' if customer else '1=1')
-        return self._fetchone(select, {'id': id, 'customer': customer})
+        """.format(customer='customer=ANY(%(customers)s)' if customers else '1=1')
+        return self._fetchone(select, {'id': id, 'customers': customers})
 
     def get_blackouts(self, query=None):
         query = query or Query()

@@ -767,10 +767,12 @@ class Backend(Database):
         if self.get_db().blackouts.insert_one(data).inserted_id == blackout.id:
             return data
 
-    def get_blackout(self, id, customer=None):
+    def get_blackout(self, id, customers=None):
         query = {'_id': id}
-        if customer:
-            query['customer'] = customer
+
+        if customers:
+            query['customer'] = {'$in': customers}
+
         return self.get_db().blackouts.find_one(query)
 
     def get_blackouts(self, query=None):
