@@ -111,26 +111,6 @@ class Backend(Database):
         r = self.get_db().alerts.find_one(query, projection={'status': 1, '_id': 0})
         return r['status'] if r else None
 
-    def get_status_and_value(self, alert):
-        """
-        Get status and value of correlated or duplicate alert. Used to determine if any have changed.
-        """
-        query = {
-            'environment': alert.environment,
-            'resource': alert.resource,
-            '$or': [
-                {
-                    'event': alert.event
-                },
-                {
-                    'correlate': alert.event,
-                }
-            ],
-            'customer': alert.customer
-        }
-        r = self.get_db().alerts.find_one(query, projection={'status': 1, 'value': 1, '_id': 0})
-        return (r['status'], r['value']) if r else (None, None)
-
     def is_duplicate(self, alert):
         query = {
             'environment': alert.environment,
@@ -475,6 +455,69 @@ class Backend(Database):
     def get_alerts(self, query=None, page=None, page_size=None):
         query = query or Query()
         return self.get_db().alerts.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+
+    def get_alert_history(self, alert, page=None, page_size=None):
+        query = {
+            'environment': alert.environment,
+            'resource': alert.resource,
+            '$or': [
+                {
+                    'event': alert.event
+                },
+                {
+                    'correlate': alert.event,
+                }
+            ],
+            'customer': alert.customer
+        }
+        fields = {
+            'resource': 1,
+            'event': 1,
+            'environment': 1,
+            'customer': 1,
+            'service': 1,
+            'group': 1,
+            'tags': 1,
+            'attributes': 1,
+            'origin': 1,
+            'type': 1,
+            'history': 1
+        }
+
+        pipeline = [
+            {'$unwind': '$history'},
+            {'$match': query},
+            {'$project': fields},
+            {'$sort': {'history.updateTime': -1}},
+            {'$skip': (page - 1) * page_size},
+            {'$limit': page_size},
+        ]
+
+        responses = self.get_db().alerts.aggregate(pipeline)
+
+        history = list()
+        for response in responses:
+            history.append(
+                {
+                    'id': response['history']['id'],
+                    'resource': response['resource'],
+                    'event': response['history']['event'],
+                    'environment': response['environment'],
+                    'severity': response['history']['severity'],
+                    'service': response['service'],
+                    'status': response['history']['status'],
+                    'group': response['group'],
+                    'value': response['history']['value'],
+                    'text': response['history']['text'],
+                    'tags': response['tags'],
+                    'attributes': response['attributes'],
+                    'origin': response['origin'],
+                    'updateTime': response['history']['updateTime'],
+                    'type': response['history'].get('type', 'unknown'),
+                    'customer': response.get('customer', None)
+                }
+            )
+        return history
 
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()

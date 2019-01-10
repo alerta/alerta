@@ -24,9 +24,9 @@ class BlackoutsTestCase(unittest.TestCase):
 
         self.prod_alert = {
             'resource': 'node404',
-            'event': 'node_marginal',
+            'event': 'node_down',
             'environment': 'Production',
-            'severity': 'warning',
+            'severity': 'major',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
             'service': ['Core', 'Web', 'Network'],
             'group': 'Network',
@@ -42,6 +42,71 @@ class BlackoutsTestCase(unittest.TestCase):
             'service': ['Core', 'Web', 'Network'],
             'group': 'Network',
             'tags': ['level=20', 'switch:off']
+        }
+
+        self.fatal_alert = {
+            'event': 'node_down',
+            'resource': 'net01',
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'critical',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'tags': ['foo'],
+            'attributes': {'foo': 'abc def', 'bar': 1234, 'baz': False},
+        }
+        self.critical_alert = {
+            'event': 'node_marginal',
+            'resource': 'net02',
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'critical',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 30
+        }
+        self.major_alert = {
+            'event': 'node_marginal',
+            'resource': 'net03',
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'major',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 40
+        }
+        self.normal_alert = {
+            'event': 'node_up',
+            'resource': 'net03',
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'normal',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 100
+        }
+        self.minor_alert = {
+            'event': 'node_marginal',
+            'resource': 'net04',
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'minor',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 40
+        }
+        self.ok_alert = {
+            'event': 'node_up',
+            'resource': 'net04',
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'ok',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 100
+        }
+        self.warn_alert = {
+            'event': 'node_marginal',
+            'resource': 'net05',
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'warning',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 50
         }
 
         with self.app.test_request_context('/'):
@@ -214,6 +279,147 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'closed')
+
+    def test_previous_status(self):
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # create an alert => critical, open
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['status'], 'open')
+
+        alert_id_1 = data['id']
+
+        # ack the alert => critical, ack
+        response = self.client.put('/alert/' + alert_id_1 + '/action',
+                                   data=json.dumps({'action': 'ack'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/alert/' + alert_id_1, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['status'], 'ack')
+
+        # create 2nd alert => critical, open
+        response = self.client.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['status'], 'open')
+
+        alert_id_2 = data['id']
+
+        # shelve 2nd alert => critical, shelved
+        response = self.client.put('/alert/' + alert_id_2 + '/action',
+                                   data=json.dumps({'action': 'shelve'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/alert/' + alert_id_2, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['status'], 'shelved')
+
+        # create a blackout
+        plugins.plugins['blackout'] = NotificationBlackout()
+
+        blackout = {
+            'environment': 'Production',
+            'service': ['Network']
+        }
+        response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        blackout_id = data['id']
+
+        # update 1st alert => critical, blackout
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['status'], 'blackout')
+
+        # create 3rd alert => major, blackout
+        response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'major')
+        self.assertEqual(data['alert']['status'], 'blackout')
+
+        # clear 3rd alert => normal, closed
+        response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'normal')
+        self.assertEqual(data['alert']['status'], 'closed')
+
+        # create 4th alert => minor, blackout
+        response = self.client.post('/alert', data=json.dumps(self.minor_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'minor')
+        self.assertEqual(data['alert']['status'], 'blackout')
+
+        # clear 4th alert => ok, closed
+        response = self.client.post('/alert', data=json.dumps(self.ok_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'ok')
+        self.assertEqual(data['alert']['status'], 'closed')
+
+        # create 5th alert => warning, blackout
+        response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['status'], 'blackout')
+
+        # remove blackout
+        response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # update 1st alert => critical, ack
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['status'], 'ack')
+
+        # update 2nd alert => critical, shelved
+        response = self.client.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['status'], 'shelved')
+
+        # update 3rd alert => normal, closed
+        response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'normal')
+        self.assertEqual(data['alert']['status'], 'closed')
+
+        # update 4th alert => minor, open
+        response = self.client.post('/alert', data=json.dumps(self.minor_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'minor')
+        self.assertEqual(data['alert']['status'], 'open')
+
+        # update 5th alert => warning, open
+        response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['status'], 'open')
 
     def test_whole_environment_blackout(self):
 
