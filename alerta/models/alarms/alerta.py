@@ -110,8 +110,6 @@ class StateMachine(AlarmModel):
 
         assert current_severity in StateMachine.Severity, "'%s' is not a valid severity" % current_severity
 
-        print('current status (from db) = {} inbound status (from alert) = {}'.format(current_status, alert.status))
-
         def next_state(rule, severity, status):
             current_app.logger.info(
                 'State Transition: Rule #{} STATE={:8s} ACTION={:8s} '
@@ -135,13 +133,17 @@ class StateMachine(AlarmModel):
         if action and action not in ACTION_ALL:
             return next_state('ACT-1', current_severity, alert.status)
 
+        # if alert has non-default status then assume state transition has been handled
+        # by a pre_receive() plugin and return the current severity and status, accounting
+        # for auto-closing normal alerts, otherwise unchanged
         if alert.status != StateMachine.DEFAULT_STATUS:
             if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
                 return next_state('SET-1', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
-
             return next_state('SET-*', current_severity, alert.status)
 
+        # state transition determined by operator action, if any, or severity changes
         state = current_status
+
         if state == OPEN:
             if action == ACTION_ACK:
                 return next_state('OPN-1', current_severity, ACK)
@@ -149,9 +151,6 @@ class StateMachine(AlarmModel):
                 return next_state('OPN-2', current_severity, SHELVED)
             if action == ACTION_CLOSE:
                 return next_state('OPN-3', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
-
-            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
-                return next_state('OPN-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
         if state == ASSIGN:
             pass
@@ -166,16 +165,11 @@ class StateMachine(AlarmModel):
             if action == ACTION_CLOSE:
                 return next_state('ACK-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
-            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
-                return next_state('ACK-5', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
-
-            if previous_severity == StateMachine.DEFAULT_PREVIOUS_SEVERITY:
-                return next_state('ACK-6', current_severity, ACK)
-
-            if self.trend(previous_severity, current_severity) == MORE_SEVERE:
-                return next_state('ACK-7', current_severity, OPEN)
-            else:
-                return next_state('ACK-8', current_severity, ACK)
+            # re-open ack'ed alerts if the severity actually increases
+            # not just because the previous severity is the default
+            if previous_severity != StateMachine.DEFAULT_PREVIOUS_SEVERITY:
+                if self.trend(previous_severity, current_severity) == MORE_SEVERE:
+                    return next_state('ACK-7', current_severity, OPEN)
 
         if state == SHELVED:
             if action == ACTION_OPEN:
@@ -187,11 +181,6 @@ class StateMachine(AlarmModel):
             if action == ACTION_CLOSE:
                 return next_state('SHL-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
-            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
-                return next_state('SHL-5', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
-
-            return next_state('SHL-*', current_severity, SHELVED)
-
         if state == BLACKOUT:
             if action == ACTION_OPEN:
                 return next_state('BLK-1', current_severity, OPEN)
@@ -201,9 +190,6 @@ class StateMachine(AlarmModel):
                 return next_state('BLK-3', current_severity, SHELVED)
             if action == ACTION_CLOSE:
                 return next_state('BLK-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
-
-            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
-                return next_state('BLK-5', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
             if previous_status == CLOSED:
                 return next_state('BLK-6', current_severity, alert.status)
@@ -216,15 +202,17 @@ class StateMachine(AlarmModel):
 
             if StateMachine.Severity[current_severity] != NORMAL_SEVERITY_LEVEL:
                 if previous_status == SHELVED:
-                    return next_state('CLS-2', previous_severity, previous_status)
+                    return next_state('CLS-2', previous_severity, SHELVED)
                 else:
                     return next_state('CLS-3', previous_severity, OPEN)
+
+        # auto-close normal severity alerts from ANY state
+        if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
+            return next_state('CLS-*', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
         if state == EXPIRED:
             if StateMachine.Severity[current_severity] != NORMAL_SEVERITY_LEVEL:
                 return next_state('EXP-1', current_severity, OPEN)
-            else:
-                return next_state('EXP-2', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
         return next_state('ALL-*', current_severity, current_status)
 

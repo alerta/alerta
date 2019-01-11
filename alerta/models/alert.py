@@ -243,8 +243,6 @@ class Alert:
 
     # de-duplicate an alert
     def deduplicate(self) -> 'Alert':
-        print('dedup -> {}'.format(self.status))
-
         now = datetime.utcnow()
 
         status_history = self.get_status_and_value()
@@ -291,8 +289,6 @@ class Alert:
 
     # correlate an alert
     def update(self) -> 'Alert':
-        print('correlate -> {}'.format(self.status))
-
         now = datetime.utcnow()
 
         self.previous_severity = db.get_severity(self)
@@ -341,7 +337,6 @@ class Alert:
 
     # create an alert
     def create(self) -> 'Alert':
-        print('new -> {}'.format(self.status))
         trend_indication = alarm_model.trend(alarm_model.DEFAULT_PREVIOUS_SEVERITY, self.severity)
 
         _, self.status = alarm_model.transition(
