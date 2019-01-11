@@ -92,9 +92,11 @@ END$$;
 
 CREATE TABLE IF NOT EXISTS customers (
     id text PRIMARY KEY,
-    match text UNIQUE NOT NULL,
+    match text NOT NULL,
     customer text
 );
+
+ALTER TABLE customers DROP CONSTRAINT IF EXISTS customers_match_key;
 
 
 CREATE TABLE IF NOT EXISTS heartbeats (

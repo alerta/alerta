@@ -38,7 +38,8 @@ class Backend(Database):
             unique=True
         )
         db.alerts.create_index([('$**', TEXT)])
-        db.customers.create_index([('match', ASCENDING)], unique=True)
+        db.customers.drop_indexes()  # FIXME: should only drop customers index if it's unique (ie. the old one)
+        db.customers.create_index([('match', ASCENDING)])
         db.heartbeats.create_index([('origin', ASCENDING), ('customer', ASCENDING)], unique=True)
         db.keys.create_index([('key', ASCENDING)], unique=True)
         db.perms.create_index([('match', ASCENDING)], unique=True)
@@ -1324,9 +1325,8 @@ class Backend(Database):
 
         customers = []
         for match in [login] + matches:
-            response = self.get_db().customers.find_one({'match': match}, projection={'customer': 1, '_id': 0})
-            if response:
-                customers.append(response['customer'])
+            for r in self.get_db().customers.find({'match': match}):
+                customers.append(r['customer'])
 
         if customers:
             if '*' in customers:
