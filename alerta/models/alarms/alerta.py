@@ -191,6 +191,9 @@ class StateMachine(AlarmModel):
             if action == ACTION_CLOSE:
                 return next_state('BLK-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
+            # blackout period has expired so transition back to previous status unless
+            # the alert had auto-closed during the blackout period. If so, then fallback
+            # to the status in the incoming alert which is most likely to be OPEN
             if previous_status == CLOSED:
                 return next_state('BLK-6', current_severity, alert.status)
             else:
