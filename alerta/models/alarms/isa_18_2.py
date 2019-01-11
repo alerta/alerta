@@ -93,10 +93,13 @@ class StateMachine(AlarmModel):
         else:
             return NO_CHANGE
 
-    def transition(self, previous_severity, current_severity, previous_status=None, current_status=None, action=None, **kwargs):
+    def transition(self, alert, current_status=None, previous_status=None, action=None, **kwargs):
 
         state = previous_status or StateMachine.DEFAULT_STATUS
         latched = kwargs.get('is_latched', False)
+
+        current_severity = alert.severity
+        previous_severity = alert.previous_severity
 
         # Alarm Occurs, Normal (A) -> Unack (B)
         if state == NORMAL:

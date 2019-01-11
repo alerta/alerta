@@ -40,7 +40,7 @@ class AlarmModel(Base):
     def trend(self, previous, current):
         raise NotImplementedError
 
-    def transition(self, previous_severity, current_severity, previous_status=None, current_status=None, action=None, **kwargs):
+    def transition(self, alert, current_status=None, previous_status=None, action=None, **kwargs):
         raise NotImplementedError
 
     @staticmethod

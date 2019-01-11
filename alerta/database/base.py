@@ -93,9 +93,6 @@ class Database(Base):
     def get_status(self, alert):
         raise NotImplementedError
 
-    def get_status_and_value(self, alert):
-        raise NotImplementedError
-
     def is_duplicate(self, alert):
         raise NotImplementedError
 
@@ -157,6 +154,9 @@ class Database(Base):
     # SEARCH & HISTORY
 
     def get_alerts(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_alert_history(self, alert, page=None, page_size=None):
         raise NotImplementedError
 
     def get_history(self, query=None, page=None, page_size=None):

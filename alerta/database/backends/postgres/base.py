@@ -53,6 +53,12 @@ class HistoryAdapter:
         return str(self.getquoted())
 
 
+Record = namedtuple('Record', [
+    'id', 'resource', 'event', 'environment', 'severity', 'status', 'service', 'group',
+    'value', 'text', 'tags', 'attributes', 'origin', 'update_time', 'type', 'customer'
+])
+
+
 class Backend(Database):
 
     def create_engine(self, app, uri, dbname=None):
@@ -154,16 +160,6 @@ class Backend(Database):
               AND {customer}
             """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         return self._fetchone(select, vars(alert)).status
-
-    def get_status_and_value(self, alert):
-        select = """
-            SELECT status, value FROM alerts
-             WHERE environment=%(environment)s AND resource=%(resource)s
-              AND (event=%(event)s OR %(event)s=ANY(correlate))
-              AND {customer}
-            """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
-        r = self._fetchone(select, vars(alert))
-        return r.status, r.value
 
     def is_duplicate(self, alert):
         select = """
@@ -380,22 +376,53 @@ class Backend(Database):
         query = query or Query()
         select = """
             SELECT * FROM alerts
-            WHERE {where}
-            ORDER BY {order}
+             WHERE {where}
+          ORDER BY {order}
         """.format(where=query.where, order=query.sort or 'last_receive_time')
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_alert_history(self, alert, page=None, page_size=None):
+        select = """
+            SELECT resource, environment, service, "group", tags, attributes, origin, customer, h.*
+              FROM alerts, unnest(history[1:{limit}]) h
+             WHERE environment=%(environment)s AND resource=%(resource)s
+               AND (h.event=%(event)s OR %(event)s=ANY(correlate))
+               AND {customer}
+          ORDER BY update_time DESC
+            """.format(
+            customer='customer=%(customer)s' if alert.customer else 'customer IS NULL',
+            limit=current_app.config['HISTORY_LIMIT']
+        )
+        return [
+            Record(
+                id=h.id,
+                resource=h.resource,
+                event=h.event,
+                environment=h.environment,
+                severity=h.severity,
+                status=h.status,
+                service=h.service,
+                group=h.group,
+                value=h.value,
+                text=h.text,
+                tags=h.tags,
+                attributes=h.attributes,
+                origin=h.origin,
+                update_time=h.update_time,
+                type=h.type,
+                customer=h.customer
+            ) for h in self._fetchall(select, vars(alert), limit=page_size, offset=(page - 1) * page_size)
+        ]
 
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """
-            SELECT resource, environment, service, "group", tags, attributes, origin, customer,
-                   history, h.* from alerts, unnest(history[1:{limit}]) h
+            SELECT resource, environment, service, "group", tags, attributes, origin, customer, history, h.*
+              FROM alerts, unnest(history[1:{limit}]) h
              WHERE {where}
           ORDER BY update_time DESC
         """.format(where=query.where, limit=current_app.config['HISTORY_LIMIT'])
-        Record = namedtuple('Record', ['id', 'resource', 'event', 'environment', 'severity', 'status', 'service',
-                                       'group', 'value', 'text', 'tags', 'attributes', 'origin', 'update_time',
-                                       'type', 'customer'])
+
         return [
             Record(
                 id=h.id,
