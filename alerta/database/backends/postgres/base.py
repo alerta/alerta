@@ -1013,9 +1013,9 @@ class Backend(Database):
         customers = []
         for match in [login] + matches:
             select = """SELECT customer FROM customers WHERE match=%s"""
-            response = self._fetchone(select, (match,))
+            response = self._fetchall(select, (match,))
             if response:
-                customers.append(response.customer)
+                customers.extend([r.customer for r in response])
 
         if customers:
             if '*' in customers:
