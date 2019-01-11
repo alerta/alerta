@@ -231,23 +231,35 @@ class Alert:
     def is_flapping(self, window: int=1800, count: int=2) -> bool:
         return db.is_flapping(self, window, count)
 
+    def get_status_and_value(self):
+        return [(h.status, h.value) for h in self.get_alert_history(self, page=1, page_size=10) if h.status]
+
+    @staticmethod
+    def _pop_hist(h, index=0):
+        try:
+            return h[index]
+        except IndexError:
+            return None, None
+
     # de-duplicate an alert
     def deduplicate(self) -> 'Alert':
         now = datetime.utcnow()
 
-        previous_status, previous_value = db.get_status_and_value(self)
+        status_history = self.get_status_and_value()
+        status, previous_value = self._pop_hist(status_history)
+        previous_status, _ = self._pop_hist(status_history, 1)
+
         _, new_status = alarm_model.transition(
-            previous_severity=self.severity,
-            current_severity=self.severity,
-            previous_status=previous_status,
-            current_status=self.status
+            alert=self,
+            current_status=status,
+            previous_status=previous_status
         )
 
         self.repeat = True
         self.last_receive_id = self.id
         self.last_receive_time = now
 
-        if new_status != previous_status:
+        if new_status != status:
             history_text = 'duplicate alert with status change'
             history = History(
                 id=self.id,
@@ -280,14 +292,16 @@ class Alert:
         now = datetime.utcnow()
 
         self.previous_severity = db.get_severity(self)
-        previous_status = db.get_status(self)
         self.trend_indication = alarm_model.trend(self.previous_severity, self.severity)
 
+        status_history = self.get_status_and_value()
+        status, _ = self._pop_hist(status_history)
+        previous_status, _ = self._pop_hist(status_history, 1)
+
         _, new_status = alarm_model.transition(
-            previous_severity=self.previous_severity,
-            current_severity=self.severity,
-            previous_status=previous_status,
-            current_status=self.status
+            alert=self,
+            current_status=status,
+            previous_status=previous_status
         )
 
         self.duplicate_count = 0
@@ -306,7 +320,7 @@ class Alert:
             update_time=self.create_time
         )]
 
-        if new_status != previous_status:
+        if new_status != status:
             history_text = 'correlated alert status change'
             history.append(History(
                 id=self.id,
@@ -323,12 +337,11 @@ class Alert:
 
     # create an alert
     def create(self) -> 'Alert':
-        if self.status == alarm_model.DEFAULT_STATUS:
-            _, self.status = alarm_model.transition(
-                previous_severity=alarm_model.DEFAULT_PREVIOUS_SEVERITY,
-                current_severity=self.severity
-            )
         trend_indication = alarm_model.trend(alarm_model.DEFAULT_PREVIOUS_SEVERITY, self.severity)
+
+        _, self.status = alarm_model.transition(
+            alert=self
+        )
 
         self.duplicate_count = 0
         self.repeat = False
@@ -443,6 +456,10 @@ class Alert:
     def find_all(query: Query=None, page: int=1, page_size: int=1000) -> List['Alert']:
         return [Alert.from_db(alert) for alert in db.get_alerts(query, page, page_size)]
 
+    @staticmethod
+    def get_alert_history(alert, page=1, page_size=100):
+        return [RichHistory.from_db(hist) for hist in db.get_alert_history(alert, page, page_size)]
+
     # list alert history
     @staticmethod
     def get_history(query: Query=None, page=1, page_size=1000) -> List[RichHistory]:
@@ -542,13 +559,15 @@ class Alert:
 
     def from_action(self, action: str, text: str='', timeout: int=None) -> 'Alert':
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
-        previous_status = db.get_status(self)
+
+        status_history = self.get_status_and_value()
+        status, _ = self._pop_hist(status_history)
+        previous_status, _ = self._pop_hist(status_history, 1)
 
         new_severity, new_status = alarm_model.transition(
-            previous_severity=self.previous_severity,
-            current_severity=self.severity,
+            alert=self,
+            current_status=status,
             previous_status=previous_status,
-            current_status=self.status,
             action=action
         )
 

@@ -82,12 +82,12 @@ class ShelvingTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'shelved')
 
-        # increase severity alert should be status=open
+        # increase severity alert should stay status=shelved
         self.alert['severity'] = 'major'
         response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['status'], 'shelved')
 
         # shelve alert
         response = self.client.put('/alert/' + alert_id + '/status',
@@ -133,12 +133,12 @@ class ShelvingTestCase(unittest.TestCase):
 
         ###
 
-        # increase severity alert should be status=open
+        # increase severity alert should be status=shelved
         self.alert['severity'] = 'critical'
         response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['status'], 'shelved')
 
         # shelve alert
         response = self.client.put('/alert/' + alert_id + '/status',

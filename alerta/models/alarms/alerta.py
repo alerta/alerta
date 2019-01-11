@@ -1,3 +1,4 @@
+from flask import current_app
 
 from alerta.models.alarms import AlarmModel
 
@@ -99,93 +100,121 @@ class StateMachine(AlarmModel):
         else:
             return NO_CHANGE
 
-    def transition(self, previous_severity, current_severity, previous_status=None, current_status=None, action=None, **kwargs):
+    def transition(self, alert, current_status=None, previous_status=None, action=None, **kwargs):
+
+        current_status = current_status or StateMachine.DEFAULT_STATUS
+        previous_status = previous_status or StateMachine.DEFAULT_STATUS
+
+        current_severity = alert.severity
+        previous_severity = alert.previous_severity or StateMachine.DEFAULT_PREVIOUS_SEVERITY
 
         assert current_severity in StateMachine.Severity, "'%s' is not a valid severity" % current_severity
+
+        def next_state(rule, severity, status):
+            current_app.logger.info(
+                'State Transition: Rule #{} STATE={:8s} ACTION={:8s} '
+                'SEVERITY={:8s}-> {:8s} HISTORY={:8s}-> {:8s}-> {:8s} '
+                '=> SEVERITY={:8s}, STATUS={:8s}'.format(
+                    rule,
+                    current_status,
+                    action or '',
+                    previous_severity,
+                    current_severity,
+                    previous_status,
+                    current_status,
+                    alert.status,
+                    severity,
+                    status
+                ))
+            return severity, status
 
         # if an unrecognised action is passed then assume state transition has been handled
         # by a take_action() plugin and return the current severity and status unchanged
         if action and action not in ACTION_ALL:
-            return current_severity, current_status
+            return next_state('ACT-1', current_severity, alert.status)
 
-        previous_status = previous_status or StateMachine.DEFAULT_STATUS
-        state = current_status = current_status or StateMachine.DEFAULT_STATUS
+        # if alert has non-default status then assume state transition has been handled
+        # by a pre_receive() plugin and return the current severity and status, accounting
+        # for auto-closing normal alerts, otherwise unchanged
+        if alert.status != StateMachine.DEFAULT_STATUS:
+            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
+                return next_state('SET-1', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
+            return next_state('SET-*', current_severity, alert.status)
+
+        # state transition determined by operator action, if any, or severity changes
+        state = current_status
 
         if state == OPEN:
             if action == ACTION_ACK:
-                return current_severity, ACK
+                return next_state('OPN-1', current_severity, ACK)
             if action == ACTION_SHELVE:
-                return current_severity, SHELVED
+                return next_state('OPN-2', current_severity, SHELVED)
             if action == ACTION_CLOSE:
-                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
-
-            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
-                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
-            if self.trend(previous_severity, current_severity) == MORE_SEVERE:
-                return current_severity, OPEN
-            if previous_status in [ACK, SHELVED]:
-                return current_severity, previous_status
-
-            # FIXME: this should return the status before it became blackout
-            # if previous_status == BLACKOUT:
-            #     return current_severity, OPEN
+                return next_state('OPN-3', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
         if state == ASSIGN:
             pass
 
         if state == ACK:
-            if action in [ACTION_UNACK, ACTION_OPEN]:
-                return current_severity, OPEN
+            if action == ACTION_OPEN:
+                return next_state('ACK-1', current_severity, OPEN)
+            if action == ACTION_UNACK:
+                return next_state('ACK-2', current_severity, previous_status)
             if action == ACTION_SHELVE:
-                return current_severity, SHELVED
+                return next_state('ACK-3', current_severity, SHELVED)
             if action == ACTION_CLOSE:
-                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
+                return next_state('ACK-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
-            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
-                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
-            if self.trend(previous_severity, current_severity) == MORE_SEVERE:
-                return current_severity, OPEN
-            else:
-                return current_severity, previous_status
+            # re-open ack'ed alerts if the severity actually increases
+            # not just because the previous severity is the default
+            if previous_severity != StateMachine.DEFAULT_PREVIOUS_SEVERITY:
+                if self.trend(previous_severity, current_severity) == MORE_SEVERE:
+                    return next_state('ACK-7', current_severity, OPEN)
 
         if state == SHELVED:
             if action == ACTION_OPEN:
-                return current_severity, OPEN
+                return next_state('SHL-1', current_severity, OPEN)
             if action == ACTION_ACK:
-                return current_severity, ACK
+                return next_state('SHL-2', current_severity, ACK)
             if action == ACTION_UNSHELVE:
-                return current_severity, previous_status
+                return next_state('SHL-3', current_severity, previous_status)
             if action == ACTION_CLOSE:
-                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
-
-            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
-                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
-            else:
-                return current_severity, previous_status
+                return next_state('SHL-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
         if state == BLACKOUT:
             if action == ACTION_OPEN:
-                return current_severity, OPEN
+                return next_state('BLK-1', current_severity, OPEN)
             if action == ACTION_ACK:
-                return current_severity, ACK
+                return next_state('BLK-2', current_severity, ACK)
+            if action == ACTION_SHELVE:
+                return next_state('BLK-3', current_severity, SHELVED)
             if action == ACTION_CLOSE:
-                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
+                return next_state('BLK-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
-            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
-                return StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED
+            if previous_status == CLOSED:
+                return next_state('BLK-6', current_severity, alert.status)
+            else:
+                return next_state('BLK-*', current_severity, previous_status)
 
         if state == CLOSED:
             if action == ACTION_OPEN:
-                return previous_severity, OPEN
+                return next_state('CLS-1', previous_severity, OPEN)
 
             if StateMachine.Severity[current_severity] != NORMAL_SEVERITY_LEVEL:
-                return previous_severity, OPEN
+                if previous_status == SHELVED:
+                    return next_state('CLS-2', previous_severity, SHELVED)
+                else:
+                    return next_state('CLS-3', previous_severity, OPEN)
+
+        # auto-close normal severity alerts from ANY state
+        if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
+            return next_state('CLS-*', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
         if state == EXPIRED:
             if StateMachine.Severity[current_severity] != NORMAL_SEVERITY_LEVEL:
-                return current_severity, OPEN
+                return next_state('EXP-1', current_severity, OPEN)
 
-        return current_severity, current_status
+        return next_state('ALL-*', current_severity, current_status)
 
     @staticmethod
     def is_suppressed(alert):
