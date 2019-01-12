@@ -432,7 +432,7 @@ class AlertTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual([h['value'] for h in data['alert']['history']], ['100', None, '101', '102'])
+        self.assertEqual([h['value'] for h in data['alert']['history']], ['100', '101', '102'])
 
     def test_alert_tagging(self):
 
@@ -559,9 +559,9 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
-        self.assertListEqual([h['value'] for h in data['alert']['history']], ['102', None, '104', None, '105'])
-        self.assertListEqual([h['type'] for h in data['alert']['history']], [
-                             'value', 'severity', 'severity', 'status', 'value'])
+        self.assertListEqual([h['value'] for h in data['alert']['history']], [None, '102', None, '104', '105'])
+        self.assertListEqual([h['type'] for h in data['alert']['history']],
+                             ['status', 'value', 'severity', 'severity', 'value'])
 
     def test_timeout(self):
 

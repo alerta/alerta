@@ -284,15 +284,6 @@ class Backend(Database):
         """.format(limit=current_app.config['HISTORY_LIMIT'])
         return self._updateone(update, {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout, 'change': history}, returning=True)
 
-    def set_severity_and_status(self, id, severity, status, timeout, history=None):
-        update = """
-            UPDATE alerts
-            SET severity=%(severity)s, status=%(status)s, timeout=%(timeout)s, history=(%(change)s || history)[1:{limit}]
-            WHERE id=%(id)s OR id LIKE %(like_id)s
-            RETURNING *
-        """.format(limit=current_app.config['HISTORY_LIMIT'])
-        return self._updateone(update, {'id': id, 'like_id': id + '%', 'severity': severity, 'status': status, 'timeout': timeout, 'change': history}, returning=True)
-
     def tag_alert(self, id, tags):
         update = """
             UPDATE alerts
