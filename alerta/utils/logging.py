@@ -1,0 +1,125 @@
+import json
+import logging
+import os
+from logging.config import dictConfig
+
+import flask
+import yaml
+from flask import Flask, g, request
+
+
+class Logger:
+
+    def __init__(self, app: Flask = None) -> None:
+        self.app = None
+        if app:
+            self.setup_logging(app)
+
+    def setup_logging(self, app: Flask) -> None:
+
+        from flask.logging import default_handler  # noqa
+        # app.logger.removeHandler(default_handler)
+
+        def open_file(filename, mode='r'):
+            path = os.path.join(os.path.dirname(__file__), filename)
+            return open(path, mode)
+
+        log_config_file = os.path.expandvars(os.path.expanduser(app.config['LOG_CONFIG_FILE']))
+        log_level = 'DEBUG' if app.debug else 'INFO'
+
+        if os.path.exists(log_config_file):
+            with open_file(log_config_file) as f:
+                dictConfig(yaml.safe_load(f.read()))
+        else:
+            dictConfig({
+                'version': 1,
+                'formatters': {
+                    'default': {
+                        'format': logging.BASIC_FORMAT
+                    },
+                    'simple': {
+                        'format': '%(levelname)s %(message)s'
+                    },
+                    'verbose': {
+                        'format': '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
+                    },
+                    'json': {
+                        '()': 'alerta.utils.logging.JSONFormatter'
+                    }
+                },
+                'filters': {
+                    'requests': {
+                        '()': 'alerta.utils.logging.RequestFilter',
+                        'methods': app.config['LOG_METHODS']
+                    }
+                },
+                'handlers': {
+                    'console': {
+                        'class': 'logging.StreamHandler',
+                        'formatter': app.config['LOG_FORMAT'],
+                        'level': log_level,
+                        'filters': ['requests'],
+                        'stream': 'ext://sys.stdout'
+                    },
+                    'file': {
+                        'class': 'logging.handlers.RotatingFileHandler',
+                        'formatter': 'json',
+                        'filters': ['requests'],
+                        'filename': app.config['LOG_FILE'],
+                        'maxBytes': app.config['LOG_MAX_BYTES'],
+                        'backupCount': app.config['LOG_BACKUP_COUNT']
+                    },
+                    'wsgi': {
+                        'class': 'logging.StreamHandler',
+                        'formatter': app.config['LOG_FORMAT'],
+                        'filters': ['requests'],
+                        'stream': 'ext://flask.logging.wsgi_errors_stream'
+                    }
+                },
+                'root': {
+                    'level': log_level,
+                    'handlers': app.config['LOG_HANDLERS']
+                }
+            })
+
+
+class RequestFilter(logging.Filter):
+
+    def __init__(self, methods=None):
+        self.methods = methods or []
+        super().__init__()
+
+    def filter(self, record):
+        if flask.has_request_context():
+            record.endpoint = request.endpoint
+            record.method = request.method
+            record.url = request.url
+            record.args = request.args
+            record.data = request.get_data(as_text=True)
+            record.remote_addr = request.remote_addr
+            record.user = g.user if hasattr(g, 'user') else None
+
+        if hasattr(record, 'method'):
+            if record.method in self.methods:
+                return True
+        else:
+            return True
+
+
+class JSONFormatter(logging.Formatter):
+
+    RECORD_ATTRS = [
+        'name', 'levelno', 'levelname', 'pathname', 'filename', 'module', 'lineno',
+        'funcName', 'created', 'thread', 'threadName', 'process',  # 'message',
+        'endpoint', 'method', 'url', 'args', 'data', 'remote_addr', 'user'
+    ]
+
+    def format(self, record):
+        payload = {
+            attr: getattr(record, attr) for attr in self.RECORD_ATTRS if hasattr(record, attr)
+        }
+        payload['message'] = record.getMessage()
+
+        # do not assume there's a Flask request context here so must use FLASK_ENV env var not app.debug
+        indent = 2 if os.environ.get('FLASK_ENV', '') == 'development' else None
+        return json.dumps(payload, indent=indent)
