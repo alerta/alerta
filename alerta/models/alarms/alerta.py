@@ -112,17 +112,16 @@ class StateMachine(AlarmModel):
 
         def next_state(rule, severity, status):
             current_app.logger.info(
-                'State Transition: Rule #{} STATE={:8s} ACTION={:8s} '
-                'SEVERITY={:8s}-> {:8s} HISTORY={:8s}-> {:8s}-> {:8s} '
-                '=> SEVERITY={:8s}, STATUS={:8s}'.format(
+                'State Transition: Rule #{} STATE={:8s} ACTION={:8s} SET={:8s} '
+                'SEVERITY={:13s}-> {:8s} HISTORY={:8s}-> {:8s} => SEVERITY={:8s}, STATUS={:8s}'.format(
                     rule,
                     current_status,
                     action or '',
+                    alert.status,
                     previous_severity,
                     current_severity,
                     previous_status,
                     current_status,
-                    alert.status,
                     severity,
                     status
                 ))
@@ -136,7 +135,7 @@ class StateMachine(AlarmModel):
         # if alert has non-default status then assume state transition has been handled
         # by a pre_receive() plugin and return the current severity and status, accounting
         # for auto-closing normal alerts, otherwise unchanged
-        if alert.status != StateMachine.DEFAULT_STATUS:
+        if not action and alert.status != StateMachine.DEFAULT_STATUS:
             if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
                 return next_state('SET-1', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
             return next_state('SET-*', current_severity, alert.status)
@@ -169,35 +168,22 @@ class StateMachine(AlarmModel):
             # not just because the previous severity is the default
             if previous_severity != StateMachine.DEFAULT_PREVIOUS_SEVERITY:
                 if self.trend(previous_severity, current_severity) == MORE_SEVERE:
-                    return next_state('ACK-7', current_severity, OPEN)
+                    return next_state('ACK-5', current_severity, OPEN)
 
         if state == SHELVED:
-            if action == ACTION_OPEN:
-                return next_state('SHL-1', current_severity, OPEN)
-            if action == ACTION_ACK:
-                return next_state('SHL-2', current_severity, ACK)
             if action == ACTION_UNSHELVE:
                 return next_state('SHL-3', current_severity, previous_status)
             if action == ACTION_CLOSE:
                 return next_state('SHL-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
         if state == BLACKOUT:
-            if action == ACTION_OPEN:
-                return next_state('BLK-1', current_severity, OPEN)
-            if action == ACTION_ACK:
-                return next_state('BLK-2', current_severity, ACK)
-            if action == ACTION_SHELVE:
-                return next_state('BLK-3', current_severity, SHELVED)
             if action == ACTION_CLOSE:
                 return next_state('BLK-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
-            # blackout period has expired so transition back to previous status unless
-            # the alert had auto-closed during the blackout period. If so, then fallback
-            # to the status in the incoming alert which is most likely to be OPEN
-            if previous_status == CLOSED:
-                return next_state('BLK-6', current_severity, alert.status)
+            if previous_status != BLACKOUT:
+                return next_state('BLK-5', current_severity, previous_status)
             else:
-                return next_state('BLK-*', current_severity, previous_status)
+                return next_state('BLK-*', current_severity, alert.status)
 
         if state == CLOSED:
             if action == ACTION_OPEN:
