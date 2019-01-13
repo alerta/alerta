@@ -150,18 +150,55 @@ class AlertTestCase(unittest.TestCase):
     def test_unwind_actions(self):
 
         # new alert => open
-        # minor, open, new
 
-        # ack alert => ack
-        # minor, ack, ack
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], self.resource)
+        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['duplicateCount'], 0)
+        self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
 
-        # shelve alert => shelved
-        # minor, shelved, shelve
+        alert_id = data['id']
 
-        # unshelve => ack
-        # minor, ack, unshelve
+        # ack alert
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps({'action': 'ack'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['status'], 'ack')
 
-        # unack => open
-        # minor, open, unack
+        # shelve alert
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps({'action': 'shelve'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['status'], 'shelved')
 
-        pass
+        # unshelve alert
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps({'action': 'unshelve'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['status'], 'ack')
+
+        # unack alert
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps({'action': 'unack'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['status'], 'open')
