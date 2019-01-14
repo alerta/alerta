@@ -55,11 +55,11 @@ class SearchTerm:
         # print([t for t in self.tokens.items()])
         if 'singleterm' in self.tokens:
             if self.tokens.fieldname == '_exists_':
-                return '"attributes"::jsonb ? \'{}\''.format(self.tokens.term)
+                return '"attributes"::jsonb ? \'{}\''.format(self.tokens.singleterm)
             elif self.tokens.fieldname in ['correlate', 'service', 'tags']:
-                return '\'{}\'=ANY("{}")'.format(self.tokens.term, self.tokens.field[0])
+                return '\'{}\'=ANY("{}")'.format(self.tokens.singleterm, self.tokens.field[0])
             else:
-                return '"{}" ILIKE \'%%{}%%\''.format(self.tokens.field[0], self.tokens.term)
+                return '"{}" ILIKE \'%%{}%%\''.format(self.tokens.field[0], self.tokens.singleterm)
         if 'phrase' in self.tokens:
             if self.tokens.field[0] == '__default_field__':
                 return '"{}" ~* \'\\y{}\\y\''.format('__default_field__', self.tokens.phrase)
