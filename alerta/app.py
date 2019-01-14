@@ -13,11 +13,13 @@ from alerta.utils.audit import AuditTrail
 from alerta.utils.config import Config
 from alerta.utils.hooks import HookTrigger
 from alerta.utils.key import ApiKeyHelper
+from alerta.utils.logging import Logger
 from alerta.utils.mailer import Mailer
 from alerta.utils.plugin import Plugins
 from alerta.utils.webhook import CustomWebhooks
 
 config = Config()
+logger = Logger()
 hooks = HookTrigger()
 audit = AuditTrail()
 alarm_model = AlarmModel()
@@ -36,10 +38,13 @@ custom_webhooks = CustomWebhooks()
 
 
 def create_app(config_override: Dict[str, Any]=None, environment: str=None) -> Flask:
+
     app = Flask(__name__)
     app.config['ENVIRONMENT'] = environment
     config.init_app(app)
     app.config.update(config_override or {})
+
+    logger.setup_logging(app)
 
     if app.config['USE_PROXYFIX']:
         app.wsgi_app = ProxyFix(app.wsgi_app)
