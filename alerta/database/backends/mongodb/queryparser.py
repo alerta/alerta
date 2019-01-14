@@ -55,12 +55,12 @@ class SearchTerm:
         # print([t for t in self.tokens.items()])
         if 'singleterm' in self.tokens:
             if self.tokens.fieldname == '_exists_':
-                return '{{ "attributes.{}": {{ "$exists": true }} }}'.format(self.tokens.term)
+                return '{{ "attributes.{}": {{ "$exists": true }} }}'.format(self.tokens.singleterm)
             else:
                 if self.tokens.field[0] == '__default_field__':
-                    return '{{ "{}": {{ "{}": "{}" }} }}'.format('__default_field__', '__default_operator__', self.tokens.term)
+                    return '{{ "{}": {{ "{}": "{}" }} }}'.format('__default_field__', '__default_operator__', self.tokens.singleterm)
                 else:
-                    return '{{ "{}": {{ "$regex": "{}" }} }}'.format(self.tokens.field[0], self.tokens.term)
+                    return '{{ "{}": {{ "$regex": "{}" }} }}'.format(self.tokens.field[0], self.tokens.singleterm)
         if 'phrase' in self.tokens:
             if self.tokens.field[0] == '__default_field__':
                 return '{{ "{}": {{ "{}": "{}" }} }}'.format('__default_field__', '__default_operator__', self.tokens.phrase)
