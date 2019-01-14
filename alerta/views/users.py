@@ -125,7 +125,7 @@ def update_user(user_id):
     if not user:
         raise ApiError('not found', 404)
 
-    if 'email' in request.json:
+    if request.json.get('email'):
         user_by_email = User.find_by_email(request.json['email'])
         if user_by_email and user_by_email.id != user.id:
             raise ApiError('user with email already exists', 409)

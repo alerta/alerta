@@ -146,11 +146,11 @@ class User:
         return db.update_last_login(self.id)
 
     def update(self, **kwargs) -> 'User':
-        if 'email' in kwargs:
+        if kwargs.get('email', None) is not None:
             if '@' not in kwargs['email']:
                 raise ValueError('Value for "email" not valid: %s' % kwargs['email'])
             kwargs['email_verified'] = kwargs.get('email_verified', False)
-        if 'password' in kwargs:
+        if kwargs.get('password') is not None:
             kwargs['password'] = utils.generate_password_hash(kwargs['password'])
         if 'role' in kwargs:
             kwargs['roles'] = kwargs['role']  # backwards compat
