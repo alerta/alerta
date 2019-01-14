@@ -839,21 +839,21 @@ class Backend(Database):
             UPDATE users
             SET
         """
-        if 'name' in kwargs:
+        if kwargs.get('name', None) is not None:
             update += 'name=%(name)s, '
-        if 'email' in kwargs:
+        if kwargs.get('email', None) is not None:
             update += 'email=%(email)s, '
-        if 'password' in kwargs:
+        if kwargs.get('password', None) is not None:
             update += 'password=%(password)s, '
-        if 'status' in kwargs:
+        if kwargs.get('status', None) is not None:
             update += 'status=%(status)s, '
-        if 'roles' in kwargs:
+        if kwargs.get('roles', None) is not None:
             update += 'roles=%(roles)s, '
-        if 'attributes' in kwargs:
+        if kwargs.get('attributes', None) is not None:
             update += 'attributes=attributes || %(attributes)s, '
-        if 'text' in kwargs:
+        if kwargs.get('text', None) is not None:
             update += 'text=%(text)s, '
-        if 'email_verified' in kwargs:
+        if kwargs.get('email_verified', None) is not None:
             update += 'email_verified=%(email_verified)s, '
         update += """
             update_time=NOW() at time zone 'utc'
