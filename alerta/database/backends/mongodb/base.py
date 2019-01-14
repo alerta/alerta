@@ -1201,6 +1201,7 @@ class Backend(Database):
 
     def update_user(self, id, **kwargs):
         kwargs['updateTime'] = datetime.utcnow()
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}  # backward compatibility for alerta client
         return self.get_db().users.find_one_and_update(
             {'_id': id},
             update={'$set': kwargs},
