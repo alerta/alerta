@@ -4,7 +4,7 @@
 # To override these settings use /etc/alertad.conf or the contents of the
 # configuration file set by the environment variable ALERTA_SVR_CONF_FILE.
 #
-# Further information on settings can be found at http://docs.alerta.io
+# Further information on settings can be found at https://docs.alerta.io
 
 from typing import Any, Dict, List  # noqa
 
@@ -14,11 +14,14 @@ BASE_URL = ''
 USE_PROXYFIX = False
 SECRET_KEY = 'changeme'
 
-LOGGER_NAME = 'alerta'
-LOG_FILE = None
+# Logging configuration
+LOG_CONFIG_FILE = ''
+LOG_HANDLERS = ['console']  # ['console', 'file', 'wsgi']
+LOG_FILE = 'alertad.log'  # NOTE: 'file' must be added to LOG_HANDLERS for logging to work
 LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 LOG_BACKUP_COUNT = 2
-LOG_FORMAT = '%(asctime)s - %(name)s[%(process)d]: %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]'
+LOG_FORMAT = 'default'
+LOG_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
 
 # API settings
 ALARM_MODEL = 'ALERTA'  # 'ALERTA' (default) or 'ISA_18_2'
@@ -72,8 +75,8 @@ ALLOWED_GITLAB_GROUPS = ['*']
 
 LDAP_URL = ''  # eg. ldap://localhost:389
 LDAP_DOMAINS = {}  # type: Dict[str, str]
-LDAP_DOMAINS_GROUP = {} # type: Dict[str, str]
-LDAP_DOMAINS_BASEDN = {} # type: Dict[str, str]
+LDAP_DOMAINS_GROUP = {}  # type: Dict[str, str]
+LDAP_DOMAINS_BASEDN = {}  # type: Dict[str, str]
 
 PINGFEDERATE_URL = None
 PINGFEDERATE_OPENID_ACCESS_TOKEN_URL = PINGFEDERATE_URL
