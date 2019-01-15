@@ -383,3 +383,49 @@ class AuthTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['message'], 'customer must not be an empty string')
+
+    def test_edit_customer(self):
+
+        # add customer mappings
+        payload = {
+            'customer': 'Foo Corp',
+            'match': 'foo.com'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.admin_headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        customer_id = data['id']
+
+        # change customer name
+        update = {
+            'customer': 'Bar Corp'
+        }
+        response = self.client.put('/customer/' + customer_id, data=json.dumps(update), headers=self.admin_headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+
+        # check updates worked and didn't change anything else
+        response = self.client.get('/customer/' + customer_id, headers=self.admin_headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['customer']['customer'], 'Bar Corp')
+        self.assertEqual(data['customer']['match'], 'foo.com')
+
+        # change customer lookup
+        update = {
+            'match': 'bar.com'
+        }
+        response = self.client.put('/customer/' + customer_id, data=json.dumps(update), headers=self.admin_headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+
+        # check updates worked and didn't change anything else
+        response = self.client.get('/customer/' + customer_id, headers=self.admin_headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['customer']['customer'], 'Bar Corp')
+        self.assertEqual(data['customer']['match'], 'bar.com')
