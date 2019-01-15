@@ -17,7 +17,7 @@ class AuthTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
             'ADMIN_USERS': ['admin@alerta.io'],
-            'ALLOWED_EMAIL_DOMAINS': ['bonaparte.fr', 'debeauharnais.fr']
+            'ALLOWED_EMAIL_DOMAINS': ['bonaparte.fr', 'debeauharnais.fr', 'manorfarm.ru']
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -351,3 +351,89 @@ class AuthTestCase(unittest.TestCase):
         response = self.client.get('/alerts', headers=headers)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok', response.data)
+
+    def test_edit_user(self):
+
+        # add customer mapping
+        payload = {
+            'customer': 'Manor Farm',
+            'match': 'manorfarm.ru'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        payload = {
+            'name': 'Snowball',
+            'email': 'snowball@manorfarm.ru',
+            'password': 'Postoronii',
+            'text': 'Can you not understand that liberty is worth more than ribbons?',
+            'attributes': {'two-legs': 'bad', 'hasFourLegs': True, 'isEvil': False}
+        }
+
+        # create user
+        response = self.client.post('/auth/signup', data=json.dumps(payload), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+
+        with self.app.test_request_context():
+            jwt = Jwt.parse(data['token'])
+        user_id = jwt.subject
+
+        # get user
+        response = self.client.get('/user/' + user_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+        self.assertEqual(data['user']['name'], 'Snowball')
+        self.assertEqual(data['user']['email'], 'snowball@manorfarm.ru')
+        self.assertEqual(data['user']['text'], 'Can you not understand that liberty is worth more than ribbons?')
+
+        # FIXME: attribute keys with None (null) values aren't deleted in postgres
+
+        # change user details
+        update = {
+            'name': 'Squealer',
+            'text': 'Four legs good, two legs bad.',
+            'attributes': {'four-legs': 'good', 'isEvil': True}
+        }
+        response = self.client.put('/user/' + user_id, data=json.dumps(update), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+
+        # check updates worked and didn't change anything else
+        response = self.client.get('/user/' + user_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['user']['name'], 'Squealer')
+        self.assertEqual(data['user']['email'], 'snowball@manorfarm.ru')
+        self.assertEqual(data['user']['text'], 'Four legs good, two legs bad.')
+        self.assertEqual(data['user']['attributes'], {
+            'four-legs': 'good',
+            'two-legs': 'bad',
+            'hasFourLegs': True,
+            'isEvil': True
+        })
+
+        # just update attributes
+        update = {
+            'attributes': {'four-legs': 'double good', 'isEvil': False, 'hasFourLegs': None}
+        }
+        response = self.client.put('/user/' + user_id + '/attributes', data=json.dumps(update), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+
+        # check updates worked and didn't change anything else
+        response = self.client.get('/user/' + user_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['user']['name'], 'Squealer')
+        self.assertEqual(data['user']['email'], 'snowball@manorfarm.ru')
+        self.assertEqual(data['user']['text'], 'Four legs good, two legs bad.')
+        self.assertEqual(data['user']['attributes'], {
+            'four-legs': 'double good',
+            'two-legs': 'bad',
+            'isEvil': False
+        })
