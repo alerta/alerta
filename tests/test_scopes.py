@@ -95,3 +95,47 @@ class ScopeTestCase(unittest.TestCase):
         self.assertEqual(Permission.is_in_scope(Scope.admin, [Scope.write]), False)
         self.assertEqual(Permission.is_in_scope(Scope.admin, [Scope.read, Scope.write, Scope.admin]), True)
         self.assertEqual(Permission.is_in_scope(Scope.read_heartbeats, [Scope.write]), True)
+
+    def test_edit_perms(self):
+
+        headers = {
+            'Authorization': 'Key %s' % self.api_keys_scopes['admin'],
+            'Content-type': 'application/json'
+        }
+
+        # add permsission
+        payload = {
+            'scopes': [Scope.read],
+            'match': 'read-only'
+        }
+        response = self.client.post('/perm', data=json.dumps(payload),
+                                    content_type='application/json', headers=headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        perm_id = data['id']
+
+        # change scopes
+        update = {
+            'scopes': [Scope.write, Scope.read]
+        }
+        response = self.client.put('/perm/' + perm_id, data=json.dumps(update), headers=headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+
+        # change perm
+        update = {
+            'match': 'read-write'
+        }
+        response = self.client.put('/perm/' + perm_id, data=json.dumps(update), headers=headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+
+        # check updates worked
+        response = self.client.get('/perm/' + perm_id, headers=headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['permission']['scopes'], [Scope.write, Scope.read])
+        self.assertEqual(data['permission']['match'], 'read-write')
