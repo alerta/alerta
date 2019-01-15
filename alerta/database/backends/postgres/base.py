@@ -656,7 +656,7 @@ class Backend(Database):
             UPDATE blackouts
             SET
         """
-        if 'environment' in kwargs:
+        if kwargs.get('environment') is not None:
             update += 'environment=%(environment)s, '
         if 'service' in kwargs:
             update += 'service=%(service)s, '
@@ -670,9 +670,9 @@ class Backend(Database):
             update += 'tags=%(tags)s, '
         if 'customer' in kwargs:
             update += 'customer=%(customer)s, '
-        if 'startTime' in kwargs:
+        if kwargs.get('startTime') is not None:
             update += 'start_time=%(startTime)s, '
-        if 'endTime' in kwargs:
+        if kwargs.get('endTime') is not None:
             update += 'end_time=%(endTime)s, '
         if 'duration' in kwargs:
             update += 'duration=%(duration)s, '

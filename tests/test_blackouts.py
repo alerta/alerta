@@ -526,6 +526,55 @@ class BlackoutsTestCase(unittest.TestCase):
         response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
+    def test_edit_blackout(self):
+
+        # create new blackout
+        plugins.plugins['blackout'] = SuppressionBlackout()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.prod_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        # create blackout (only for services on a particular host)
+        blackout = {
+            'environment': 'Production',
+            'resource': 'node404',
+            'service': ['Network', 'Web'],
+            'startTime': '2019-01-01T00:00:00.000Z',
+            'endTime': '2019-12-31T23:59:59.999Z'
+        }
+        response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        blackout_id = data['id']
+
+        # extend blackout period & change environment
+        update = {
+            'environment': 'Development',
+            'endTime': '2020-12-31T23:59:59.999Z'
+        }
+        response = self.client.put('/blackout/' + blackout_id, data=json.dumps(update), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+
+        # check updates worked and didn't change anything else
+        response = self.client.get('/blackout/' + blackout_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['blackout']['environment'], 'Development')
+        self.assertEqual(data['blackout']['resource'], 'node404')
+        self.assertEqual(data['blackout']['service'], ['Network', 'Web'])
+        self.assertEqual(data['blackout']['group'], None)
+        self.assertEqual(data['blackout']['startTime'], '2019-01-01T00:00:00.000Z')
+        self.assertEqual(data['blackout']['endTime'], '2020-12-31T23:59:59.999Z')
+
     def test_user_info(self):
 
         self.headers = {
