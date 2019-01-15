@@ -276,6 +276,44 @@ class AuthTestCase(unittest.TestCase):
         response = self.client.delete('/key/' + rw_api_key, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
+    def test_edit_api_keys(self):
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # create api key
+        payload = {
+            'scopes': [Scope.read, Scope.write_alerts, Scope.write_blackouts],
+            'text': 'devops automation key',
+            'expireTime': '2099-12-31T23:59:59.999Z'
+        }
+        response = self.client.post('/key', data=json.dumps(payload), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        api_key_id = data['key']
+
+        # extend blackout period & change environment
+        update = {
+            'scopes': [Scope.read, Scope.write_blackouts, Scope.write_webhooks],
+            'expireTime': '2022-12-31T23:59:59.999Z'
+        }
+        response = self.client.put('/key/' + api_key_id, data=json.dumps(update), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+
+        # check updates worked and didn't change anything else
+        response = self.client.get('/key/' + api_key_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['key']['scopes'], [Scope.read, Scope.write_blackouts, Scope.write_webhooks])
+        self.assertEqual(data['key']['user'], 'admin@alerta.io')
+        self.assertEqual(data['key']['text'], 'devops automation key')
+        self.assertEqual(data['key']['expireTime'], '2022-12-31T23:59:59.999Z')
+
     def test_basic_auth(self):
 
         # add customer mapping
