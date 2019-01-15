@@ -378,7 +378,7 @@ class Backend(Database):
 
     def update_attributes(self, id, old_attrs, new_attrs):
         """
-        Set all attributes (including private attributes) and unset attributes by using a value of 'null'.
+        Set all attributes and unset attributes by using a value of 'null'.
         """
         update = dict()
         set_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is not None}
@@ -1200,22 +1200,34 @@ class Backend(Database):
         ).matched_count == 1
 
     def update_user(self, id, **kwargs):
-        kwargs['updateTime'] = datetime.utcnow()
-        kwargs = {k: v for k, v in kwargs.items() if v is not None}  # backward compatibility for alerta client
+        update = dict()
+        update['$set'] = {k: v for k, v in kwargs.items() if k != 'attributes'}
+
+        set_value = {'attributes.' + k: v for k, v in kwargs['attributes'].items() if v is not None}
+        if set_value:
+            update['$set'].update(set_value)
+        unset_value = {'attributes.' + k: v for k, v in kwargs['attributes'].items() if v is None}
+        if unset_value:
+            update['$unset'] = unset_value
+
         return self.get_db().users.find_one_and_update(
-            {'_id': id},
-            update={'$set': kwargs},
-            return_document=ReturnDocument.AFTER
+            {'_id': {'$regex': '^' + id}}, update=update, return_document=ReturnDocument.AFTER
         )
 
     def update_user_attributes(self, id, old_attrs, new_attrs):
-        from alerta.utils.collections import merge
-        merge(old_attrs, new_attrs)
-        attrs = {k: v for k, v in old_attrs.items() if v is not None}
-        return self.get_db().users.update_one(
-            {'_id': {'$regex': '^' + id}},
-            update={'$set': {'attributes': attrs, 'updateTime': datetime.utcnow()}}
-        ).matched_count == 1
+        """
+        Set all attributes and unset attributes by using a value of 'null'.
+        """
+        update = dict()
+        set_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is not None}
+        if set_value:
+            update['$set'] = set_value
+        unset_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is None}
+        if unset_value:
+            update['$unset'] = unset_value
+
+        response = self.get_db().users.update_one({'_id': {'$regex': '^' + id}}, update=update)
+        return response.matched_count > 0
 
     def delete_user(self, id):
         response = self.get_db().users.delete_one({'_id': id})
