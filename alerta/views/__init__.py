@@ -57,6 +57,7 @@ def config():
         'provider': current_app.config['AUTH_PROVIDER'],
         'customer_views': current_app.config['CUSTOMER_VIEWS'],
         'signup_enabled': current_app.config['SIGNUP_ENABLED'],
+        'email_verification': current_app.config['EMAIL_VERIFICATION'],
         'client_id': current_app.config['OAUTH2_CLIENT_ID'],
         'github_url': current_app.config['GITHUB_URL'],
         'gitlab_url': current_app.config['GITLAB_URL'],
