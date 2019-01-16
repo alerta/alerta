@@ -1201,14 +1201,18 @@ class Backend(Database):
 
     def update_user(self, id, **kwargs):
         update = dict()
-        update['$set'] = {k: v for k, v in kwargs.items() if k != 'attributes'}
 
-        set_value = {'attributes.' + k: v for k, v in kwargs['attributes'].items() if v is not None}
-        if set_value:
-            update['$set'].update(set_value)
-        unset_value = {'attributes.' + k: v for k, v in kwargs['attributes'].items() if v is None}
-        if unset_value:
-            update['$unset'] = unset_value
+        if 'attributes' in kwargs:
+            update['$set'] = {k: v for k, v in kwargs.items() if k != 'attributes'}
+
+            set_value = {'attributes.' + k: v for k, v in kwargs['attributes'].items() if v is not None}
+            if set_value:
+                update['$set'].update(set_value)
+            unset_value = {'attributes.' + k: v for k, v in kwargs['attributes'].items() if v is None}
+            if unset_value:
+                update['$unset'] = unset_value
+        else:
+            update['$set'] = kwargs
 
         return self.get_db().users.find_one_and_update(
             {'_id': {'$regex': '^' + id}}, update=update, return_document=ReturnDocument.AFTER
