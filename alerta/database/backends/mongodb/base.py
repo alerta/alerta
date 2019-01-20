@@ -1279,10 +1279,12 @@ class Backend(Database):
 
         scopes = list()
         for match in matches:
+            if match == 'user':
+                scopes.extend(current_app.config['USER_DEFAULT_SCOPES'])
             response = self.get_db().perms.find_one({'match': match}, projection={'scopes': 1, '_id': 0})
             if response:
                 scopes.extend(response['scopes'])
-        return set(scopes) or current_app.config['USER_DEFAULT_SCOPES']
+        return sorted(set(scopes)) or current_app.config['USER_DEFAULT_SCOPES']
 
     # CUSTOMERS
 

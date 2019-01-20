@@ -944,11 +944,13 @@ class Backend(Database):
 
         scopes = list()
         for match in matches:
+            if match == 'user':
+                scopes.extend(current_app.config['USER_DEFAULT_SCOPES'])
             select = """SELECT scopes FROM perms WHERE match=%s"""
             response = self._fetchone(select, (match,))
             if response:
                 scopes.extend(response.scopes)
-        return set(scopes) or current_app.config['USER_DEFAULT_SCOPES']
+        return sorted(set(scopes)) or current_app.config['USER_DEFAULT_SCOPES']
 
     # CUSTOMERS
 
