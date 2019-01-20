@@ -52,7 +52,7 @@ def signup():
     customers = get_customers(user.email, groups=[user.domain])
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-signup', message='user signup using BasicAuth',
-                          user=user.email, customers=customers, scopes=Permission.lookup(login, groups=user.roles),
+                          user=user.email, customers=customers, scopes=Permission.lookup(user.email, groups=user.roles),
                           resource_id=user.id, type='user', request=request)
 
     # generate token
@@ -93,7 +93,7 @@ def login():
     customers = get_customers(user.email, groups=[user.domain])
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-login', message='user login via BasicAuth',
-                          user=user.email, customers=customers, scopes=Permission.lookup(login, groups=user.roles),
+                          user=user.email, customers=customers, scopes=Permission.lookup(user.email, groups=user.roles),
                           resource_id=user.id, type='user', request=request)
 
     # generate token

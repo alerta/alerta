@@ -57,12 +57,15 @@ def login():
         groups_filters = current_app.config.get('LDAP_DOMAINS_GROUP', {})
         base_dns = current_app.config.get('LDAP_DOMAINS_BASEDN', {})
         if domain in groups_filters and domain in base_dns:
-            resultID = ldap_connection.search(base_dns[domain], ldap.SCOPE_SUBTREE, \
-                                              groups_filters[domain].format(username=username, email=email, userdn=userdn), \
-                                              ['cn'])
+            resultID = ldap_connection.search(
+                base_dns[domain],
+                ldap.SCOPE_SUBTREE,
+                groups_filters[domain].format(username=username, email=email, userdn=userdn),
+                ['cn']
+            )
             resultTypes, results = ldap_connection.result(resultID)
             for _dn, attributes in results:
-                groups.append(attributes['cn'][0].decode("utf-8"))
+                groups.append(attributes['cn'][0].decode('utf-8'))
     except ldap.LDAPError as e:
         raise ApiError(str(e), 500)
 
@@ -70,7 +73,7 @@ def login():
     user.update_last_login()
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
-                          user=user.email, customers=customers, scopes=Permission.lookup(login, groups=user.roles),
+                          user=user.email, customers=customers, scopes=Permission.lookup(user.email, groups=user.roles),
                           resource_id=user.id, type='user', request=request)
 
     # Generate token
