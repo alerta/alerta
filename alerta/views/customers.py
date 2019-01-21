@@ -44,7 +44,7 @@ def create_customer():
 def get_customer(customer_id):
     customer = Customer.find_by_id(customer_id)
 
-    if customer:
+    if Scope.admin in g.scopes or Scope.admin_customers in g.scopes or customer.customer in g.customers:
         return jsonify(status='ok', total=1, customer=customer.serialize)
     else:
         raise ApiError('not found', 404)
@@ -56,7 +56,10 @@ def get_customer(customer_id):
 @jsonp
 def list_customers():
     query = qb.from_params(request.args, customers=g.customers)
-    customers = Customer.find_all(query)
+    customers = [
+        c for c in Customer.find_all(query)
+        if Scope.admin in g.scopes or Scope.admin_customers in g.scopes or c.customer in g.customers
+    ]
 
     if customers:
         return jsonify(
