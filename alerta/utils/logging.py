@@ -31,6 +31,11 @@ class Logger:
             with open_file(log_config_file) as f:
                 dictConfig(yaml.safe_load(f.read()))
         else:
+            if 'file' in app.config['LOG_HANDLERS']:
+                log_file = os.path.expandvars(os.path.expanduser(app.config['LOG_FILE']))
+            else:
+                log_file = '/dev/null'
+
             dictConfig({
                 'version': 1,
                 'formatters': {
@@ -65,7 +70,7 @@ class Logger:
                         'class': 'logging.handlers.RotatingFileHandler',
                         'formatter': 'json',
                         'filters': ['requests'],
-                        'filename': app.config['LOG_FILE'],
+                        'filename': log_file,
                         'maxBytes': app.config['LOG_MAX_BYTES'],
                         'backupCount': app.config['LOG_BACKUP_COUNT']
                     },
