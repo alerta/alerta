@@ -31,6 +31,13 @@ class Logger:
             with open_file(log_config_file) as f:
                 dictConfig(yaml.safe_load(f.read()))
         else:
+            if app.config['LOG_FORMAT'] in ['default', 'simple', 'verbose', 'json']:
+                log_format = app.config['LOG_FORMAT']
+                custom_format = ''  # not used
+            else:
+                log_format = 'custom'
+                custom_format = app.config['LOG_FORMAT']
+
             if 'file' in app.config['LOG_HANDLERS']:
                 log_file = os.path.expandvars(os.path.expanduser(app.config['LOG_FILE']))
             else:
@@ -50,6 +57,9 @@ class Logger:
                     },
                     'json': {
                         '()': 'alerta.utils.logging.JSONFormatter'
+                    },
+                    'custom': {
+                        'format': custom_format
                     }
                 },
                 'filters': {
@@ -61,7 +71,7 @@ class Logger:
                 'handlers': {
                     'console': {
                         'class': 'logging.StreamHandler',
-                        'formatter': app.config['LOG_FORMAT'],
+                        'formatter': log_format,
                         'level': log_level,
                         'filters': ['requests'],
                         'stream': 'ext://sys.stdout'
@@ -76,7 +86,7 @@ class Logger:
                     },
                     'wsgi': {
                         'class': 'logging.StreamHandler',
-                        'formatter': app.config['LOG_FORMAT'],
+                        'formatter': log_format,
                         'filters': ['requests'],
                         'stream': 'ext://flask.logging.wsgi_errors_stream'
                     }
