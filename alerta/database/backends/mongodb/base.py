@@ -480,20 +480,20 @@ class Backend(Database):
                 {
                     'id': response['history']['id'],
                     'resource': response['resource'],
-                    'event': response['history']['event'],
+                    'event': response['history'].get('event'),
                     'environment': response['environment'],
-                    'severity': response['history']['severity'],
+                    'severity': response['history'].get('severity'),
                     'service': response['service'],
-                    'status': response['history']['status'],
+                    'status': response['history'].get('status'),
                     'group': response['group'],
-                    'value': response['history']['value'],
-                    'text': response['history']['text'],
+                    'value': response['history'].get('value'),
+                    'text': response['history'].get('text'),
                     'tags': response['tags'],
                     'attributes': response['attributes'],
                     'origin': response['origin'],
                     'updateTime': response['history']['updateTime'],
                     'type': response['history'].get('type', 'unknown'),
-                    'customer': response.get('customer', None)
+                    'customer': response.get('customer')
                 }
             )
         return history
