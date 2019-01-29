@@ -617,6 +617,9 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['timeout'], 600)
         self.assertEqual(data['alert']['createTime'], '2016-08-01T10:27:08.008Z')
         self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+        self.assertEqual(data['alert']['attributes']['moreInfo'],
+                         '<a href="http://prometheus.host:9090/..." target="_blank">Prometheus Graph</a>')
+        self.assertEqual(data['alert']['tags'], ['__name__=ping_success', 'timeout=600'])
 
         # create v4 alert
         response = self.client.post('/webhooks/prometheus', data=self.prometheus_v4_alert, headers=self.headers)
@@ -629,6 +632,8 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['timeout'], 86400)
         self.assertEqual(data['alert']['createTime'], '2017-08-03T19:17:37.804Z')
         self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+        self.assertEqual(data['alert']['attributes']['moreInfo'],
+                         '<a href="http://somehost:9090/graph?g0.expr=sum%28irate%28messages_received_total%5B5m%5D%29%29+%3D%3D+0&g0.tab=0" target="_blank">Prometheus Graph</a>')
         self.assertEqual(data['alert']['attributes']['runbookBad'],
                          'https://internal.myorg.net/wiki/alerts/{app}/{alertname}')
         self.assertEqual(data['alert']['attributes']['runbookGood'],
