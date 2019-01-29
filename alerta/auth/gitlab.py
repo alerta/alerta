@@ -55,7 +55,7 @@ def gitlab():
         login = profile['username']
 
         r = requests.get(gitlab_api_url + '/groups', headers=headers)
-        groups = [g['path'] for g in r.json()]
+        groups = [g['full_path'] for g in r.json()]
         email_verified = True if profile.get('email', None) else False
 
     if not_authorized('ALLOWED_GITLAB_GROUPS', groups):
