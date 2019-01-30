@@ -619,7 +619,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
         self.assertEqual(data['alert']['attributes']['moreInfo'],
                          '<a href="http://prometheus.host:9090/..." target="_blank">Prometheus Graph</a>')
-        self.assertEqual(data['alert']['tags'], ['__name__=ping_success', 'timeout=600'])
+        self.assertEqual(sorted(data['alert']['tags']), sorted(['__name__=ping_success', 'timeout=600']))
 
         # create v4 alert
         response = self.client.post('/webhooks/prometheus', data=self.prometheus_v4_alert, headers=self.headers)
