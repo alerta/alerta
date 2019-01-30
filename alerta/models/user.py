@@ -153,7 +153,7 @@ class User:
         if kwargs.get('password') is not None:
             kwargs['password'] = utils.generate_password_hash(kwargs['password'])
         if 'role' in kwargs:
-            kwargs['roles'] = kwargs['role']  # backwards compat
+            kwargs['roles'] = [kwargs['role']]  # backwards compat
         return User.from_db(db.update_user(self.id, **kwargs))
 
     # update user attributes
