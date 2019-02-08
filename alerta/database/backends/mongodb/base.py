@@ -431,6 +431,24 @@ class Backend(Database):
 
     # SEARCH & HISTORY
 
+    def add_history(self, id, history):
+        query = {'_id': {'$regex': '^' + id}}
+
+        update = {
+            '$push': {
+                'history': {
+                    '$each': [history.serialize],
+                    '$slice': -abs(current_app.config['HISTORY_LIMIT'])
+                }
+            }
+        }
+        return self.get_db().alerts.find_one_and_update(
+            query,
+            update=update,
+            projection={'history': 0},
+            return_document=ReturnDocument.AFTER
+        )
+
     def get_alerts(self, query=None, page=None, page_size=None):
         query = query or Query()
         return self.get_db().alerts.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)

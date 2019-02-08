@@ -247,6 +247,32 @@ def update_attributes(alert_id):
         raise ApiError('failed to update attributes', 500)
 
 
+# add note
+@api.route('/alert/<alert_id>/note', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@permission(Scope.write_alerts)
+@jsonp
+def add_note(alert_id):
+    note = request.json.get('note', None)
+
+    if not note:
+        raise ApiError("must supply 'note' text")
+
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
+
+    if not alert:
+        raise ApiError('not found', 404)
+
+    write_audit_trail.send(current_app._get_current_object(), event='alert-note-added', message='', user=g.user,
+                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+
+    if alert.add_note(note):
+        return jsonify(status='ok')
+    else:
+        raise ApiError('failed to add note to alert', 500)
+
+
 # delete
 @api.route('/alert/<alert_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
