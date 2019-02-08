@@ -131,6 +131,9 @@ class Database(Base):
     def update_attributes(self, id, old_attrs, new_attrs):
         raise NotImplementedError
 
+    def add_history(self, id, history):
+        raise NotImplementedError
+
     def delete_alert(self, id):
         raise NotImplementedError
 

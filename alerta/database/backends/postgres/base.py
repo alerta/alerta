@@ -363,6 +363,15 @@ class Backend(Database):
 
     # SEARCH & HISTORY
 
+    def add_history(self, id, history):
+        update = """
+            UPDATE alerts
+               SET history=(%(history)s || history)[1:{limit}]
+             WHERE id=%(id)s OR id LIKE %(like_id)s
+         RETURNING *
+        """.format(limit=current_app.config['HISTORY_LIMIT'])
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'history': history}, returning=True)
+
     def get_alerts(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """

@@ -405,6 +405,20 @@ class Alert:
     def update_attributes(self, attributes: Dict[str, Any]) -> bool:
         return db.update_attributes(self.id, self.attributes, attributes)
 
+    # add note
+    def add_note(self, note: str) -> bool:
+        history = History(
+            id=self.id,
+            event=self.event,
+            severity=self.severity,
+            status=self.status,
+            value=self.value,
+            text=note,
+            change_type='note',
+            update_time=datetime.utcnow()
+        )
+        return db.add_history(self.id, history)
+
     # delete an alert
     def delete(self) -> bool:
         return db.delete_alert(self.id)
