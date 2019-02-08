@@ -15,7 +15,7 @@ from . import auth
 def signup():
 
     if not current_app.config['SIGNUP_ENABLED']:
-        raise ApiError('user signup is disabled', 401)
+        raise ApiError('user signup is disabled', 403)
 
     try:
         user = User.parse(request.json)
@@ -41,7 +41,7 @@ def signup():
     # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
         user.send_confirmation()
-        raise ApiError('email not verified', 401)
+        raise ApiError('email not verified', 403)
 
     # check user is active & update last login
     if user.status != 'active':
@@ -78,7 +78,7 @@ def login():
     # if email verification is enforced, deny login and send email
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
         user.send_confirmation()
-        raise ApiError('email not verified', 401)
+        raise ApiError('email not verified', 403)
 
     # check allowed domain
     if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
