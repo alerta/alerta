@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 
 from alerta.exceptions import RejectException
@@ -6,9 +7,13 @@ from alerta.plugins import PluginBase, app
 
 LOG = logging.getLogger('alerta.plugins.reject')
 
-ORIGIN_BLACKLIST_REGEX = [re.compile(x) for x in app.config['ORIGIN_BLACKLIST']]
-ALLOWED_ENVIRONMENT_REGEX = [re.compile(x) for x in app.config['ALLOWED_ENVIRONMENTS']]
-ALLOWED_ENVIRONMENTS = app.config.get('ALLOWED_ENVIRONMENTS', [])
+ORIGIN_BLACKLIST = os.environ['ORIGIN_BLACKLIST'].split(',') \
+    if 'ORIGIN_BLACKLIST' in os.environ else app.config.get('ORIGIN_BLACKLIST', [])
+ALLOWED_ENVIRONMENTS = os.environ['ALLOWED_ENVIRONMENTS'].split(',') \
+    if 'ALLOWED_ENVIRONMENTS' in os.environ else app.config.get('ALLOWED_ENVIRONMENTS', [])
+
+ORIGIN_BLACKLIST_REGEX = [re.compile(x) for x in ORIGIN_BLACKLIST]
+ALLOWED_ENVIRONMENT_REGEX = [re.compile(x) for x in ALLOWED_ENVIRONMENTS]
 
 
 class RejectPolicy(PluginBase):
@@ -42,3 +47,6 @@ class RejectPolicy(PluginBase):
 
     def status_change(self, alert, status, text):
         return
+
+    def take_action(self, alert, action, text, **kwargs):
+        raise NotImplementedError
