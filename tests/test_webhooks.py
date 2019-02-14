@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from alerta.app import create_app, custom_webhooks, db
 from alerta.models.alert import Alert
+from alerta.models.key import ApiKey
 from alerta.webhooks import WebhookBase
 
 
@@ -19,6 +20,13 @@ class WebhooksTestCase(unittest.TestCase):
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
+        with self.app.test_request_context('/'):
+          self.admin_api_key = ApiKey(
+            user='admin@alerta.io',
+            scopes=['admin', 'read', 'write'],
+            text='test-key'
+          )
+          self.admin_api_key.create()
 
         # alert templates
         self.trigger_alert = {
@@ -46,7 +54,7 @@ class WebhooksTestCase(unittest.TestCase):
               "MessageId" : "8a14e4f3-f3ab-4be0-a12f-681ee8fe214f",
               "Token" : "2336412f37fb687f5d51e6e241da92fd72d769c5b4ca6fd6cd6d30949d5a51abf7e21aae199b52813b6f2ea51b41e3119b599532d25df4e6aea368b3a6d8272d38688f73c116b04204e9afb2f5b1d8c4bdb823103299a9f1da7409f1dcf4096ba20a0b0222cc493586e76450e3be6715",
               "TopicArn" : "arn:aws:sns:eu-west-1:1234567890:alerta-test",
-              "Message" : "You have chosen to subscribe to the topic arn:aws:sns:eu-west-1:1234567890:alerta-test.\nTo confirm the subscriptionDataBuilder, visit the SubscribeURL included in this message.",
+              "Message" : "You have chosen to subscribe to the topic arn:aws:sns:eu-west-1:1234567890:alerta-test.\nTo confirm the subscriptionDataBuilder, visit the SubscribeURL included in this message. %formatbreaker",
               "SubscribeURL" : "https://sns.eu-west-1.amazonaws.com/?Action=ConfirmSubscription&TopicArn=arn:aws:sns:eu-west-1:1234567890:alerta-test&Token=2336412f37fb687f5d51e6e241da92fd72d769c5b4ca6fd6cd6d30949d5a51abf7e21aae199b52813b6f2ea51b41e3119b599532d25df4e6aea368b3a6d8272d38688f73c116b04204e9afb2f5b1d8c4bdb823103299a9f1da7409f1dcf4096ba20a0b0222cc493586e76450e3be6715",
               "Timestamp" : "2018-07-08T21:33:44.782Z",
               "SignatureVersion" : "1",
@@ -544,7 +552,7 @@ class WebhooksTestCase(unittest.TestCase):
     def test_cloudwatch_webhook(self):
 
         # subscription confirmation
-        response = self.client.post('/webhooks/cloudwatch',
+        response = self.client.post('/webhooks/cloudwatch?api-key={}'.format(self.admin_api_key.key),
                                     data=self.cloudwatch_subscription_confirmation, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))

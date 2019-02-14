@@ -21,7 +21,7 @@ def before_request():
         request.method,
         request.url,
         request.headers,
-        request.get_data().decode('utf-8')
+        request.get_data().decode('utf-8').replace("%","%%")
     ))
 
 
