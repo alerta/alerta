@@ -17,14 +17,15 @@ from . import webhooks
 @cross_origin()
 @permission(Scope.write_webhooks)
 def custom(webhook):
+    if webhook not in custom_webhooks.webhooks:
+        raise ApiError("Custom webhook '%s' not found." % webhook, 404)
+
     try:
         response = custom_webhooks.webhooks[webhook].incoming(
             query_string=request.args,
             payload=request.get_json() or request.get_data(as_text=True) or request.form
         )
-    except KeyError as e:
-        raise ApiError("Webhook '%s' not found. Did you mean to use POST instead of GET?" % webhook, 404)
-    except ValueError as e:
+    except Exception as e:
         raise ApiError(str(e), 400)
 
     if isinstance(response, Alert):
