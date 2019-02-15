@@ -52,4 +52,4 @@ def custom(webhook):
         write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
                                customers=g.customers, scopes=g.scopes, resource_id=None, type='user-defined',
                                request=request)
-        return jsonify(**response)
+        return jsonify(**response), 201
