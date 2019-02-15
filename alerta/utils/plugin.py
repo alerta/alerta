@@ -24,10 +24,9 @@ class Plugins:
         app.init_app()  # fake app for plugin config
 
     def register(self, app: Flask) -> None:
-
         entry_points = {}
         for ep in iter_entry_points('alerta.plugins'):
-            LOG.debug("Server plugin '%s' installed.", ep.name)
+            LOG.debug("Server plugin '{}' found.".format(ep.name))
             entry_points[ep.name] = ep
 
         for name in app.config['PLUGINS']:
@@ -35,10 +34,10 @@ class Plugins:
                 plugin = entry_points[name].load()
                 if plugin:
                     self.plugins[name] = plugin()
-                    LOG.info("Server plugin '%s' enabled.", name)
+                    LOG.info("Server plugin '{}' loaded.".format(name))
             except Exception as e:
-                LOG.error("Server plugin '%s' could not be loaded: %s", name, e)
-        LOG.info('All server plugins enabled: %s', ', '.join(self.plugins.keys()))
+                LOG.error("Failed to load plugin '{}': {}", name, e)
+        LOG.info('All server plugins enabled: {}', ', '.join(self.plugins.keys()))
         try:
             self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')  # type: ignore
         except (DistributionNotFound, ImportError):
@@ -49,6 +48,6 @@ class Plugins:
             if self.plugins and self.rules:
                 return self.rules(alert, self.plugins)
         except Exception as e:
-            LOG.warning('Plugin routing rules failed: %s', str(e))
+            LOG.warning('Plugin routing rules failed: {}'.format(e))
 
         return self.plugins.values()

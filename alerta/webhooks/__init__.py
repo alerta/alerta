@@ -1,4 +1,5 @@
 import abc
+import logging
 from typing import Any, Union, Dict
 
 from flask import Blueprint, request, current_app
@@ -9,8 +10,7 @@ from alerta.models.alert import Alert
 
 webhooks = Blueprint('webhooks', __name__)
 
-from . import cloudwatch, grafana, graylog, newrelic, pagerduty, pingdom, prometheus, riemann  # noqa
-from . import serverdensity, slack, stackdriver, telegram, custom  # noqa
+from . import custom  # noqa
 
 JSON = Dict[str, Any]
 
@@ -25,11 +25,16 @@ def before_request():
     ))
 
 
+LOG = logging.getLogger('alerta.webhooks')
+
+
 @add_metaclass(abc.ABCMeta)
 class WebhookBase:
 
     def __init__(self, name: str=None) -> None:
         self.name = name or self.__module__
+        if self.__doc__:
+            LOG.info('\n{}\n'.format(self.__doc__))
 
     @abc.abstractmethod
     def incoming(self, query_string: ImmutableMultiDict, payload: Any) -> Union[Alert, JSON]:

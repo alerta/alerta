@@ -3,17 +3,14 @@ import logging
 from typing import Any, Dict, Tuple
 
 from flask import current_app, g, jsonify, request
-from flask_cors import cross_origin
 from werkzeug.datastructures import ImmutableMultiDict
 
-from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
-from alerta.models.enums import Scope
 from alerta.utils.audit import write_audit_trail
 from alerta.utils.response import absolute_url
 
-from . import webhooks
+from . import WebhookBase
 
 LOG = logging.getLogger(__name__)
 
@@ -75,27 +72,32 @@ def build_slack_response(alert: Alert, action: str, user: str, data: ImmutableMu
     return response
 
 
-@webhooks.route('/webhooks/slack', methods=['OPTIONS', 'POST'])
-@cross_origin()
-@permission(Scope.write_webhooks)
-def slack():
-    alert_id, user, action = parse_slack(request.form)
+class SlackWebhook(WebhookBase):
+    """
+    Slack apps
+    See https://api.slack.com/slack-apps
+    """
 
-    customers = g.get('customers', None)
-    alert = Alert.find_by_id(alert_id, customers=customers)
-    if not alert:
-        jsonify(status='error', message='alert not found for #slack message')
+    def incoming(self, query_string, payload):
 
-    if action in ['open', 'ack', 'close']:
-        alert.set_status(status=action, text='status change via #slack by {}'.format(user))
-    elif action in ['watch', 'unwatch']:
-        alert.untag(tags=['{}:{}'.format(action, user)])
-    else:
-        raise ApiError('Unsupported #slack action', 400)
+        alert_id, user, action = parse_slack(payload)
 
-    text = 'alert updated via slack webhook'
-    write_audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text, user=g.user,
-                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+        customers = g.get('customers', None)
+        alert = Alert.find_by_id(alert_id, customers=customers)
+        if not alert:
+            jsonify(status='error', message='alert not found for #slack message')
 
-    response = build_slack_response(alert, action, user, request.form)
-    return jsonify(**response), 201
+        if action in ['open', 'ack', 'close']:
+            alert.set_status(status=action, text='status change via #slack by {}'.format(user))
+        elif action in ['watch', 'unwatch']:
+            alert.untag(tags=['{}:{}'.format(action, user)])
+        else:
+            raise ApiError('Unsupported #slack action', 400)
+
+        text = 'alert updated via slack webhook'
+        write_audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text, user=g.user,
+                               customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                               request=request)
+
+        response = build_slack_response(alert, action, user, payload)
+        return jsonify(**response), 201

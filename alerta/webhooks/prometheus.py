@@ -4,17 +4,11 @@ from typing import Any, Dict
 
 import pytz
 from dateutil.parser import parse as parse_date
-from flask import current_app, g, jsonify, request
-from flask_cors import cross_origin
 
-from alerta.auth.decorators import permission
-from alerta.exceptions import ApiError, RejectException
+from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
-from alerta.models.enums import Scope
-from alerta.utils.api import add_remote_ip, assign_customer, process_alert
-from alerta.utils.audit import write_audit_trail
 
-from . import webhooks
+from . import WebhookBase
 
 JSON = Dict[str, Any]
 dt = datetime.datetime
@@ -106,39 +100,16 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
     )
 
 
-@webhooks.route('/webhooks/prometheus', methods=['OPTIONS', 'POST'])
-@cross_origin()
-@permission(Scope.write_webhooks)
-def prometheus():
+class PrometheusWebhook(WebhookBase):
+    """
+    Prometheus Alertmanager webhook receiver
+    See https://prometheus.io/docs/operating/integrations/#alertmanager-webhook-receiver
+    """
 
-    alerts = []
-    if request.json and 'alerts' in request.json:
-        external_url = request.json.get('externalURL', None)
-        for alert in request.json['alerts']:
-            try:
-                incomingAlert = parse_prometheus(alert, external_url)
-            except ValueError as e:
-                raise ApiError(str(e), 400)
+    def incoming(self, query_string, payload):
 
-            incomingAlert.customer = assign_customer(wanted=incomingAlert.customer)
-            add_remote_ip(request, incomingAlert)
-
-            try:
-                alert = process_alert(incomingAlert)
-            except RejectException as e:
-                raise ApiError(str(e), 403)
-            except Exception as e:
-                raise ApiError(str(e), 500)
-            alerts.append(alert)
-    else:
-        raise ApiError('no alerts in Prometheus notification payload', 400)
-
-    for alert in alerts:
-        text = 'prometheus alert received via webhook'
-        write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
-                               customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
-
-    if len(alerts) == 1:
-        return jsonify(status='ok', id=alerts[0].id, alert=alerts[0].serialize), 201
-    else:
-        return jsonify(status='ok', ids=[alert.id for alert in alerts]), 201
+        if payload and 'alerts' in payload:
+            external_url = payload.get('externalURL')
+            return [parse_prometheus(alert, external_url) for alert in payload['alerts']]
+        else:
+            raise ApiError('no alerts in Prometheus notification payload', 400)
