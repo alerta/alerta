@@ -3,108 +3,74 @@ import json
 from datetime import datetime
 from typing import Any, Dict
 
-from flask import current_app, g, jsonify, request
-from flask_cors import cross_origin
-
-from alerta.auth.decorators import permission
-from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
-from alerta.models.enums import Scope
-from alerta.utils.api import add_remote_ip, assign_customer, process_alert
-from alerta.utils.audit import write_audit_trail
 
-from . import webhooks
+from . import WebhookBase
 
 JSON = Dict[str, Any]
 
 
-def cw_state_to_severity(state: str) -> str:
+class CloudWatchWebhook(WebhookBase):
+    """
+    Amazon CloudWatch notifications via SNS HTTPS endpoint subscription
+    See https://docs.aws.amazon.com/sns/latest/dg/sns-http-https-endpoint-as-subscriber.html
+    """
 
-    if state == 'ALARM':
-        return 'major'
-    elif state == 'INSUFFICIENT_DATA':
-        return 'warning'
-    elif state == 'OK':
-        return 'normal'
-    else:
-        return 'unknown'
+    @staticmethod
+    def cw_state_to_severity(state: str) -> str:
+        if state == 'ALARM':
+            return 'major'
+        elif state == 'INSUFFICIENT_DATA':
+            return 'warning'
+        elif state == 'OK':
+            return 'normal'
+        else:
+            return 'unknown'
 
+    def incoming(self, query_string, payload):
+        notification = json.loads(payload)
 
-def parse_notification(notification: JSON) -> Alert:
+        if notification['Type'] == 'SubscriptionConfirmation':
+            return Alert(
+                resource=notification['TopicArn'],
+                event=notification['Type'],
+                environment='Production',
+                severity='informational',
+                service=['Unknown'],
+                group='AWS/CloudWatch',
+                text='{} <a href="{}" target="_blank">SubscribeURL</a>'.format(
+                    notification['Message'], notification['SubscribeURL']),
+                origin=notification['TopicArn'],
+                event_type='cloudwatchAlarm',
+                create_time=datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'),
+                raw_data=notification
+            )
 
-    if notification['Type'] == 'SubscriptionConfirmation':
+        elif notification['Type'] == 'Notification':
+            alarm = json.loads(notification['Message'])
 
-        return Alert(
-            resource=notification['TopicArn'],
-            event=notification['Type'],
-            environment='Production',
-            severity='informational',
-            service=['Unknown'],
-            group='AWS/CloudWatch',
-            text='{} <a href="{}" target="_blank">SubscribeURL</a>'.format(
-                notification['Message'], notification['SubscribeURL']),
-            origin=notification['TopicArn'],
-            event_type='cloudwatchAlarm',
-            create_time=datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'),
-            raw_data=notification,
-        )
+            if 'Trigger' not in alarm:
+                raise ValueError('SNS message is not a Cloudwatch notification')
 
-    elif notification['Type'] == 'Notification':
-
-        alarm = json.loads(notification['Message'])
-
-        if 'Trigger' not in alarm:
-            raise ValueError('SNS message is not a Cloudwatch notification')
-
-        return Alert(
-            resource='{}:{}'.format(alarm['Trigger']['Dimensions'][0]['name'],
-                                    alarm['Trigger']['Dimensions'][0]['value']),
-            event=alarm['AlarmName'],
-            environment='Production',
-            severity=cw_state_to_severity(alarm['NewStateValue']),
-            service=[alarm['AWSAccountId']],
-            group=alarm['Trigger']['Namespace'],
-            value=alarm['NewStateValue'],
-            text=alarm['AlarmDescription'],
-            tags=[alarm['Region']],
-            attributes={
-                'incidentKey': alarm['AlarmName'],
-                'thresholdInfo': alarm['Trigger']
-            },
-            origin=notification['TopicArn'],
-            event_type='cloudwatchAlarm',
-            create_time=datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'),
-            raw_data=alarm
-        )
-    else:
-        raise RuntimeWarning('No SNS notification in payload')
-
-
-@webhooks.route('/webhooks/cloudwatch', methods=['OPTIONS', 'POST'])
-@cross_origin()
-@permission(Scope.write_webhooks)
-def cloudwatch():
-
-    try:
-        incomingAlert = parse_notification(request.get_json(force=True))
-    except ValueError as e:
-        raise ApiError(str(e), 400)
-
-    incomingAlert.customer = assign_customer(wanted=incomingAlert.customer)
-    add_remote_ip(request, incomingAlert)
-
-    try:
-        alert = process_alert(incomingAlert)
-    except RejectException as e:
-        raise ApiError(str(e), 403)
-    except Exception as e:
-        raise ApiError(str(e), 500)
-
-    text = 'cloudwatch alert received via webhook'
-    write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
-                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
-
-    if alert:
-        return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
-    else:
-        raise ApiError('insert or update of cloudwatch alarm failed', 500)
+            return Alert(
+                resource='{}:{}'.format(alarm['Trigger']['Dimensions'][0]['name'],
+                                        alarm['Trigger']['Dimensions'][0]['value']),
+                event=alarm['AlarmName'],
+                environment='Production',
+                severity=self.cw_state_to_severity(alarm['NewStateValue']),
+                service=[alarm['AWSAccountId']],
+                group=alarm['Trigger']['Namespace'],
+                value=alarm['NewStateValue'],
+                text=alarm['AlarmDescription'],
+                tags=[alarm['Region']],
+                attributes={
+                    'incidentKey': alarm['AlarmName'],
+                    'thresholdInfo': alarm['Trigger']
+                },
+                origin=notification['TopicArn'],
+                event_type='cloudwatchAlarm',
+                create_time=datetime.strptime(notification['Timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ'),
+                raw_data=alarm
+            )
+        else:
+            raise ValueError('No SNS notification in payload')

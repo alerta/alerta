@@ -1,19 +1,15 @@
 import json
 from typing import Any, Dict
 
-from flask import current_app, g, jsonify, request
-from flask_cors import cross_origin
+from flask import current_app
 from werkzeug.datastructures import ImmutableMultiDict
 
 from alerta.app import qb
-from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
-from alerta.models.enums import Scope
-from alerta.utils.api import add_remote_ip, assign_customer, process_alert
-from alerta.utils.audit import write_audit_trail
+from alerta.utils.api import process_alert
 
-from . import webhooks
+from . import WebhookBase
 
 JSON = Dict[str, Any]
 
@@ -62,58 +58,36 @@ def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) 
     )
 
 
-@webhooks.route('/webhooks/grafana', methods=['OPTIONS', 'POST'])
-@cross_origin()
-@permission(Scope.write_webhooks)
-def grafana():
+class GrafanaWebhook(WebhookBase):
+    """
+    Grafana Alert alert notification webhook
+    See http://docs.grafana.org/alerting/notifications/#webhook
+    """
 
-    alerts = []
-    data = request.json
-    if data and data['state'] == 'alerting':
-        for match in data.get('evalMatches', []):
+    def incoming(self, query_string, payload):
+
+        if payload and payload['state'] == 'alerting':
+            return [parse_grafana(payload, match, query_string) for match in payload.get('evalMatches', [])]
+
+        elif payload and payload['state'] == 'ok' and payload.get('ruleId'):
             try:
-                incomingAlert = parse_grafana(data, match, request.args)
-            except ValueError as e:
-                return jsonify(status='error', message=str(e)), 400
-
-            incomingAlert.customer = assign_customer(wanted=incomingAlert.customer)
-            add_remote_ip(request, incomingAlert)
-
-            try:
-                alert = process_alert(incomingAlert)
-            except RejectException as e:
-                return jsonify(status='error', message=str(e)), 403
-            except Exception as e:
-                return jsonify(status='error', message=str(e)), 500
-            alerts.append(alert)
-
-    elif data and data['state'] == 'ok' and data.get('ruleId', None):
-        try:
-            query = qb.from_dict({'attributes.ruleId': str(data['ruleId'])})
-            existingAlerts = Alert.find_all(query)
-        except Exception as e:
-            raise ApiError(str(e), 500)
-
-        for updateAlert in existingAlerts:
-            updateAlert.severity = 'normal'
-            updateAlert.status = 'closed'
-
-            try:
-                alert = process_alert(updateAlert)
-            except RejectException as e:
-                raise ApiError(str(e), 403)
+                query = qb.from_dict({'attributes.ruleId': str(payload['ruleId'])})
+                existingAlerts = Alert.find_all(query)
             except Exception as e:
                 raise ApiError(str(e), 500)
-            alerts.append(alert)
-    else:
-        raise ApiError('no alerts in Grafana notification payload', 400)
 
-    for alert in alerts:
-        text = 'grafana alert received via webhook'
-        write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
-                               customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+            alerts = []
+            for updateAlert in existingAlerts:
+                updateAlert.severity = 'normal'
+                updateAlert.status = 'closed'
 
-    if len(alerts) == 1:
-        return jsonify(status='ok', id=alerts[0].id, alert=alerts[0].serialize), 201
-    else:
-        return jsonify(status='ok', ids=[alert.id for alert in alerts]), 201
+                try:
+                    alert = process_alert(updateAlert)
+                except RejectException as e:
+                    raise ApiError(str(e), 403)
+                except Exception as e:
+                    raise ApiError(str(e), 500)
+                alerts.append(alert)
+            return alerts
+        else:
+            raise ApiError('no alerts in Grafana notification payload', 400)

@@ -4,6 +4,8 @@ import unittest
 from io import BytesIO
 from uuid import uuid4
 
+from flask import jsonify
+
 from alerta.app import create_app, custom_webhooks, db
 from alerta.models.alert import Alert
 from alerta.webhooks import WebhookBase
@@ -55,75 +57,176 @@ class WebhooksTestCase(unittest.TestCase):
             }
         """
 
-        self.pingdom_down = """
+        self.cloudwatch_notification = r"""
             {
-                "second_probe": {
-                    "ip": "185.39.146.214",
-                    "location": "Stockholm 2, Sweden",
-                    "ipv6": "2a02:752:100:e::4002"
-                },
-                "check_type": "HTTP",
-                "first_probe": {
-                    "ip": "85.93.93.123",
-                    "location": "Strasbourg 5, France",
-                    "ipv6": ""
-                },
-                "tags": [],
-                "check_id": 803318,
-                "current_state": "DOWN",
-                "check_params": {
-                    "url": "/",
-                    "encryption": false,
-                    "hostname": "api.alerta.io",
-                    "basic_auth": false,
-                    "port": 80,
-                    "header": "User-Agent:Pingdom.com_bot_version_1.4_(http://www.pingdom.com/)",
-                    "ipv6": false,
-                    "full_url": "http://api.alerta.io/"
-                },
-                "previous_state": "UP",
-                "check_name": "Alerta API on OpenShift",
-                "version": 1,
-                "state_changed_timestamp": 1498861543,
-                "importance_level": "HIGH",
-                "state_changed_utc_time": "2017-06-30T22:25:43",
-                "long_description": "HTTP Server Error 503 Service Unavailable",
-                "description": "HTTP Error 503"
+              "Type" : "Notification",
+              "MessageId" : "e288882d-4281-5be4-8fde-dccc11c8cb01",
+              "TopicArn" : "arn:aws:sns:eu-west-1:1234567890:alerta-test",
+              "Subject" : "ALARM: \"bucketbytesAlarm\" in EU (Ireland)",
+              "Message" : "{\"AlarmName\":\"bucketbytesAlarm\",\"AlarmDescription\":\"bucket bytes size exceeded\",\"AWSAccountId\":\"1234567890\",\"NewStateValue\":\"ALARM\",\"NewStateReason\":\"Threshold Crossed: 1 datapoint [1062305.0 (14/02/19 23:53:00)] was greater than or equal to the threshold (0.0).\",\"StateChangeTime\":\"2019-02-15T23:53:45.093+0000\",\"Region\":\"EU (Ireland)\",\"OldStateValue\":\"INSUFFICIENT_DATA\",\"Trigger\":{\"MetricName\":\"BucketSizeBytes\",\"Namespace\":\"AWS/S3\",\"StatisticType\":\"Statistic\",\"Statistic\":\"AVERAGE\",\"Unit\":null,\"Dimensions\":[{\"value\":\"StandardStorage\",\"name\":\"StorageType\"},{\"value\":\"try.alerta.io\",\"name\":\"BucketName\"}],\"Period\":86400,\"EvaluationPeriods\":1,\"ComparisonOperator\":\"GreaterThanOrEqualToThreshold\",\"Threshold\":0.0,\"TreatMissingData\":\"\",\"EvaluateLowSampleCountPercentile\":\"\"}}",
+              "Timestamp" : "2019-02-15T23:53:45.134Z",
+              "SignatureVersion" : "1",
+              "Signature" : "Wui8ZxaiH1IXLGJOTonbzc9lUaoq5HN3e2tPaX7G122R4r9P+Gbs01gOUsKMjPFiOwdvLT5rQjJwczb+1F6r6kt4qhU3i1qMHlDjdnXF6rYDzP0u1RUJgX/b3Asb6V5w9SEiTCHlsF7ZInYn99lTOQOI7je4tYv8V9kVlzuynKmr7TGwKmxQc84UoIR9Nb7gU5ZXgOfoY64iZzY8nDssS8rLBTVNTGNVacJWCsIz5RLX41gUhAKNNdCW9dfI6G/cqMc+FFKqVAgYPTwnH/0hdx7jKei5fzyXUOzSSmAFxdUPN+DfwHemrfDzk8enALq7LIbR+HmbhtdSQaiXVAChkg==",
+              "SigningCertURL" : "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-6aad65c2f9911b05cd53efda11f913f9.pem",
+              "UnsubscribeURL" : "https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:eu-west-1:496780030265:alerta-test:6590056b-77a0-495f-83a1-53fbba126544"
             }
         """
 
-        self.pingdom_up = """
-            {
-                "second_probe": {},
-                "check_type": "HTTP",
-                "first_probe": {
-                    "ip": "185.70.76.23",
-                    "location": "Athens, Greece",
-                    "ipv6": ""
-                },
-                "tags": [],
-                "check_id": 803318,
-                "current_state": "UP",
-                "check_params": {
-                    "url": "/",
-                    "encryption": false,
-                    "hostname": "api.alerta.io",
-                    "basic_auth": false,
-                    "port": 80,
-                    "header": "User-Agent:Pingdom.com_bot_version_1.4_(http://www.pingdom.com/)",
-                    "ipv6": false,
-                    "full_url": "http://api.alerta.io/"
-                },
-                "previous_state": "DOWN",
-                "check_name": "Alerta API on OpenShift",
-                "version": 1,
-                "state_changed_timestamp": 1498861843,
-                "importance_level": "HIGH",
-                "state_changed_utc_time": "2017-06-30T22:30:43",
-                "long_description": "OK",
-                "description": "OK"
-            }
+        self.grafana_alert_alerting = """
+        {
+            "evalMatches": [
+                {
+                    "value": 97.007606,
+                    "metric": "user",
+                    "tags": {
+                        "__name__": "netdata_cpu_cpu_percentage_average",
+                        "chart": "cpu.cpu0",
+                        "dimension": "user",
+                        "family": "utilization",
+                        "instance": "zeta.domain",
+                        "job": "monitoring",
+                        "info.host_id": "i-0d0721c7f97545d43"
+                    }
+                }
+            ],
+            "message": "boom!",
+            "ruleId": 7,
+            "ruleName": "Zeta CPU alert",
+            "ruleUrl": "https://grafana.domain.tld/dashboard/db/alarms?fullscreen&edit&tab=alert&panelId=1&orgId=1",
+            "state": "alerting",
+            "title": "[Alerting] CPU alert"
+        }
         """
+
+        self.grafana_alert_ok = """
+        {
+            "evalMatches": [],
+            "message": "boom!",
+            "ruleId": 7,
+            "ruleName": "Zeta CPU alert",
+            "ruleUrl": "https://grafana.domain.tld/dashboard/db/alarms?fullscreen&edit&tab=alert&panelId=1&orgId=1",
+            "state": "ok",
+            "title": "[OK] CPU alert"
+        }
+        """
+
+        self.grafana_example = """
+        {
+          "title": "My alert",
+          "ruleId": 1,
+          "ruleName": "Load peaking!",
+          "ruleUrl": "http://url.to.grafana/db/dashboard/my_dashboard?panelId=2",
+          "state": "alerting",
+          "imageUrl": "http://s3.image.url",
+          "message": "Load is peaking. Make sure the traffic is real and spin up more webfronts",
+          "evalMatches": [
+            {
+              "metric": "requests",
+              "tags": {},
+              "value": 122
+            }
+          ]
+        }
+        """
+
+        self.graylog_notification = """
+        {
+            "check_result": {
+                "result_description": "Stream had 2 messages in the last 1 minutes with trigger condition more than 1 messages. (Current grace time: 1 minutes)",
+                "triggered_condition": {
+                    "id": "5e7a9c8d-9bb1-47b6-b8db-4a3a83a25e0c",
+                    "type": "MESSAGE_COUNT",
+                    "created_at": "2015-09-10T09:44:10.552Z",
+                    "creator_user_id": "admin",
+                    "grace": 1,
+                    "parameters": {
+                        "grace": 1,
+                        "threshold": 1,
+                        "threshold_type": "more",
+                        "backlog": 5,
+                        "time": 1
+                    },
+                    "description": "time: 1, threshold_type: more, threshold: 1, grace: 1",
+                    "type_string": "MESSAGE_COUNT",
+                    "backlog": 5
+                },
+                "triggered_at": "2015-09-10T09:45:54.749Z",
+                "triggered": true,
+                "matching_messages": [
+                    {
+                        "index": "graylog2_7",
+                        "message": "WARN: System is failing",
+                        "fields": {
+                            "gl2_remote_ip": "127.0.0.1",
+                            "gl2_remote_port": 56498,
+                            "gl2_source_node": "41283fec-36b4-4352-a859-7b3d79846b3c",
+                            "gl2_source_input": "55f15092bee8e2841898eb53"
+                        },
+                        "id": "b7b08150-57a0-11e5-b2a2-d6b4cd83d1d5",
+                        "stream_ids": [
+                            "55f1509dbee8e2841898eb64"
+                        ],
+                        "source": "127.0.0.1",
+                        "timestamp": "2015-09-10T09:45:49.284Z"
+                    },
+                    {
+                        "index": "graylog2_7",
+                        "message": "ERROR: This is an example error message",
+                        "fields": {
+                            "gl2_remote_ip": "127.0.0.1",
+                            "gl2_remote_port": 56481,
+                            "gl2_source_node": "41283fec-36b4-4352-a859-7b3d79846b3c",
+                            "gl2_source_input": "55f15092bee8e2841898eb53"
+                        },
+                        "id": "afd71342-57a0-11e5-b2a2-d6b4cd83d1d5",
+                        "stream_ids": [
+                            "55f1509dbee8e2841898eb64"
+                        ],
+                        "source": "127.0.0.1",
+                        "timestamp": "2015-09-10T09:45:36.116Z"
+                    }
+                ]
+            },
+            "stream": {
+                "creator_user_id": "admin",
+                "outputs": [],
+                "matching_type": "AND",
+                "description": "test stream",
+                "created_at": "2015-09-10T09:42:53.833Z",
+                "disabled": false,
+                "rules": [
+                    {
+                        "field": "gl2_source_input",
+                        "stream_id": "55f1509dbee8e2841898eb64",
+                        "id": "55f150b5bee8e2841898eb7f",
+                        "type": 1,
+                        "inverted": false,
+                        "value": "55f15092bee8e2841898eb53"
+                    }
+                ],
+                "alert_conditions": [
+                    {
+                        "creator_user_id": "admin",
+                        "created_at": "2015-09-10T09:44:10.552Z",
+                        "id": "5e7a9c8d-9bb1-47b6-b8db-4a3a83a25e0c",
+                        "type": "message_count",
+                        "parameters": {
+                            "grace": 1,
+                            "threshold": 1,
+                            "threshold_type": "more",
+                            "backlog": 5,
+                            "time": 1
+                        }
+                    }
+                ],
+                "id": "55f1509dbee8e2841898eb64",
+                "title": "test",
+                "content_pack": null
+            }
+        }
+        """
+
+        # new relic payload
 
         self.pagerduty_alert = """
             {
@@ -202,59 +305,74 @@ class WebhooksTestCase(unittest.TestCase):
             }
         """
 
-        self.riemann_alert = """
-          {
-            "host": "hostbob",
-            "service": "servicejane",
-            "state": "ok",
-            "description": "This is a description",
-            "metric": 1
-          }
+        self.pingdom_down = """
+            {
+                "second_probe": {
+                    "ip": "185.39.146.214",
+                    "location": "Stockholm 2, Sweden",
+                    "ipv6": "2a02:752:100:e::4002"
+                },
+                "check_type": "HTTP",
+                "first_probe": {
+                    "ip": "85.93.93.123",
+                    "location": "Strasbourg 5, France",
+                    "ipv6": ""
+                },
+                "tags": [],
+                "check_id": 803318,
+                "current_state": "DOWN",
+                "check_params": {
+                    "url": "/",
+                    "encryption": false,
+                    "hostname": "api.alerta.io",
+                    "basic_auth": false,
+                    "port": 80,
+                    "header": "User-Agent:Pingdom.com_bot_version_1.4_(http://www.pingdom.com/)",
+                    "ipv6": false,
+                    "full_url": "http://api.alerta.io/"
+                },
+                "previous_state": "UP",
+                "check_name": "Alerta API on OpenShift",
+                "version": 1,
+                "state_changed_timestamp": 1498861543,
+                "importance_level": "HIGH",
+                "state_changed_utc_time": "2017-06-30T22:25:43",
+                "long_description": "HTTP Server Error 503 Service Unavailable",
+                "description": "HTTP Error 503"
+            }
         """
 
-        self.stackdriver_open = """
-        {
-            "incident": {
-                "incident_id": "f2e08c333dc64cb09f75eaab355393bz",
-                "resource_id": "i-4a266a2d",
-                "resource_name": "webserver-85",
-                "state": "open",
-                "started_at": 1499368214,
-                "ended_at": null,
-                "policy_name": "Webserver Health",
-                "condition_name": "CPU usage",
-                "url": "https://app.stackdriver.com/incidents/f2e08c333dc64cb09f75eaab355393bz",
-                "summary": "CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%",
-                "documentation": {
-                    "content": "{\\"summary\\": \\"CPU utilization for alerta-webserver-85 is over 95%\\", \
-                                 \\"resource_name\\": \\"alerta-webserver-85\\"}",
-                    "mime_type": "text/markdown"
-                }
-            },
-            "version": "1.1"
-        }
-        """
-
-        self.stackdriver_closed = """
-        {
-            "incident": {
-                "incident_id": "f2e08c333dc64cb09f75eaab355393bz",
-                "resource_id": "i-4a266a2d",
-                "resource_name": "webserver-85",
-                "state": "closed",
-                "started_at": 1499368214,
-                "ended_at": 1499368836,
-                "policy_name": "Webserver Health",
-                "condition_name": "CPU usage",
-                "url": "https://app.stackdriver.com/incidents/f2e08c333dc64cb09f75eaab355393bz",
-                "summary": "CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%",
-                "documentation": {
-                    "content": "This is a markdown text example",
-                    "mime_type": "text/markdown"
-                }
-            },
-            "version": "1.1"
-        }
+        self.pingdom_up = """
+            {
+                "second_probe": {},
+                "check_type": "HTTP",
+                "first_probe": {
+                    "ip": "185.70.76.23",
+                    "location": "Athens, Greece",
+                    "ipv6": ""
+                },
+                "tags": [],
+                "check_id": 803318,
+                "current_state": "UP",
+                "check_params": {
+                    "url": "/",
+                    "encryption": false,
+                    "hostname": "api.alerta.io",
+                    "basic_auth": false,
+                    "port": 80,
+                    "header": "User-Agent:Pingdom.com_bot_version_1.4_(http://www.pingdom.com/)",
+                    "ipv6": false,
+                    "full_url": "http://api.alerta.io/"
+                },
+                "previous_state": "DOWN",
+                "check_name": "Alerta API on OpenShift",
+                "version": 1,
+                "state_changed_timestamp": 1498861843,
+                "importance_level": "HIGH",
+                "state_changed_utc_time": "2017-06-30T22:30:43",
+                "long_description": "OK",
+                "description": "OK"
+            }
         """
 
         self.prometheus_v3_alert = """
@@ -346,41 +464,62 @@ class WebhooksTestCase(unittest.TestCase):
             }
         """
 
-        self.grafana_alert_alerting = """
+        self.riemann_alert = """
+          {
+            "host": "hostbob",
+            "service": "servicejane",
+            "state": "ok",
+            "description": "This is a description",
+            "metric": 1
+          }
+        """
+
+        # server density
+
+        # slack
+
+        self.stackdriver_open = """
         {
-            "evalMatches": [
-                {
-                    "value": 97.007606,
-                    "metric": "user",
-                    "tags": {
-                        "__name__": "netdata_cpu_cpu_percentage_average",
-                        "chart": "cpu.cpu0",
-                        "dimension": "user",
-                        "family": "utilization",
-                        "instance": "zeta.domain",
-                        "job": "monitoring",
-                        "info.host_id": "i-0d0721c7f97545d43"
-                    }
+            "incident": {
+                "incident_id": "f2e08c333dc64cb09f75eaab355393bz",
+                "resource_id": "i-4a266a2d",
+                "resource_name": "webserver-85",
+                "state": "open",
+                "started_at": 1499368214,
+                "ended_at": null,
+                "policy_name": "Webserver Health",
+                "condition_name": "CPU usage",
+                "url": "https://app.stackdriver.com/incidents/f2e08c333dc64cb09f75eaab355393bz",
+                "summary": "CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%",
+                "documentation": {
+                    "content": "{\\"summary\\": \\"CPU utilization for alerta-webserver-85 is over 95%\\", \
+                                 \\"resource_name\\": \\"alerta-webserver-85\\"}",
+                    "mime_type": "text/markdown"
                 }
-            ],
-            "message": "boom!",
-            "ruleId": 7,
-            "ruleName": "Zeta CPU alert",
-            "ruleUrl": "https://grafana.domain.tld/dashboard/db/alarms?fullscreen&edit&tab=alert&panelId=1&orgId=1",
-            "state": "alerting",
-            "title": "[Alerting] CPU alert"
+            },
+            "version": "1.1"
         }
         """
 
-        self.grafana_alert_ok = """
+        self.stackdriver_closed = """
         {
-            "evalMatches": [],
-            "message": "boom!",
-            "ruleId": 7,
-            "ruleName": "Zeta CPU alert",
-            "ruleUrl": "https://grafana.domain.tld/dashboard/db/alarms?fullscreen&edit&tab=alert&panelId=1&orgId=1",
-            "state": "ok",
-            "title": "[OK] CPU alert"
+            "incident": {
+                "incident_id": "f2e08c333dc64cb09f75eaab355393bz",
+                "resource_id": "i-4a266a2d",
+                "resource_name": "webserver-85",
+                "state": "closed",
+                "started_at": 1499368214,
+                "ended_at": 1499368836,
+                "policy_name": "Webserver Health",
+                "condition_name": "CPU usage",
+                "url": "https://app.stackdriver.com/incidents/f2e08c333dc64cb09f75eaab355393bz",
+                "summary": "CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%",
+                "documentation": {
+                    "content": "This is a markdown text example",
+                    "mime_type": "text/markdown"
+                }
+            },
+            "version": "1.1"
         }
         """
 
@@ -436,103 +575,6 @@ class WebhooksTestCase(unittest.TestCase):
         }
         """
 
-        self.graylog_notification = """
-         {
-             "check_result": {
-                 "result_description": "Stream had 2 messages in the last 1 minutes with trigger condition more than 1 messages. (Current grace time: 1 minutes)",
-                 "triggered_condition": {
-                     "id": "5e7a9c8d-9bb1-47b6-b8db-4a3a83a25e0c",
-                     "type": "MESSAGE_COUNT",
-                     "created_at": "2015-09-10T09:44:10.552Z",
-                     "creator_user_id": "admin",
-                     "grace": 1,
-                     "parameters": {
-                         "grace": 1,
-                         "threshold": 1,
-                         "threshold_type": "more",
-                         "backlog": 5,
-                         "time": 1
-                     },
-                     "description": "time: 1, threshold_type: more, threshold: 1, grace: 1",
-                     "type_string": "MESSAGE_COUNT",
-                     "backlog": 5
-                 },
-                 "triggered_at": "2015-09-10T09:45:54.749Z",
-                 "triggered": true,
-                 "matching_messages": [
-                     {
-                         "index": "graylog2_7",
-                         "message": "WARN: System is failing",
-                         "fields": {
-                             "gl2_remote_ip": "127.0.0.1",
-                             "gl2_remote_port": 56498,
-                             "gl2_source_node": "41283fec-36b4-4352-a859-7b3d79846b3c",
-                             "gl2_source_input": "55f15092bee8e2841898eb53"
-                         },
-                         "id": "b7b08150-57a0-11e5-b2a2-d6b4cd83d1d5",
-                         "stream_ids": [
-                             "55f1509dbee8e2841898eb64"
-                         ],
-                         "source": "127.0.0.1",
-                         "timestamp": "2015-09-10T09:45:49.284Z"
-                     },
-                     {
-                         "index": "graylog2_7",
-                         "message": "ERROR: This is an example error message",
-                         "fields": {
-                             "gl2_remote_ip": "127.0.0.1",
-                             "gl2_remote_port": 56481,
-                             "gl2_source_node": "41283fec-36b4-4352-a859-7b3d79846b3c",
-                             "gl2_source_input": "55f15092bee8e2841898eb53"
-                         },
-                         "id": "afd71342-57a0-11e5-b2a2-d6b4cd83d1d5",
-                         "stream_ids": [
-                             "55f1509dbee8e2841898eb64"
-                         ],
-                         "source": "127.0.0.1",
-                         "timestamp": "2015-09-10T09:45:36.116Z"
-                     }
-                 ]
-             },
-             "stream": {
-                 "creator_user_id": "admin",
-                 "outputs": [],
-                 "matching_type": "AND",
-                 "description": "test stream",
-                 "created_at": "2015-09-10T09:42:53.833Z",
-                 "disabled": false,
-                 "rules": [
-                     {
-                         "field": "gl2_source_input",
-                         "stream_id": "55f1509dbee8e2841898eb64",
-                         "id": "55f150b5bee8e2841898eb7f",
-                         "type": 1,
-                         "inverted": false,
-                         "value": "55f15092bee8e2841898eb53"
-                     }
-                 ],
-                 "alert_conditions": [
-                     {
-                         "creator_user_id": "admin",
-                         "created_at": "2015-09-10T09:44:10.552Z",
-                         "id": "5e7a9c8d-9bb1-47b6-b8db-4a3a83a25e0c",
-                         "type": "message_count",
-                         "parameters": {
-                             "grace": 1,
-                             "threshold": 1,
-                             "threshold_type": "more",
-                             "backlog": 5,
-                             "time": 1
-                         }
-                     }
-                 ],
-                 "id": "55f1509dbee8e2841898eb64",
-                 "title": "test",
-                 "content_pack": null
-             }
-         }
-        """
-
         self.headers = {
             'Content-type': 'application/json',
             'X-Forwarded-For': ['10.1.1.1', '172.16.1.1', '192.168.1.1'],
@@ -545,32 +587,75 @@ class WebhooksTestCase(unittest.TestCase):
 
         # subscription confirmation
         response = self.client.post('/webhooks/cloudwatch',
-                                    data=self.cloudwatch_subscription_confirmation, headers=self.headers)
+                                    data=self.cloudwatch_subscription_confirmation, content_type='text/plain; charset=UTF-8')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'arn:aws:sns:eu-west-1:1234567890:alerta-test')
+        self.assertEqual(data['alert']['event'], 'SubscriptionConfirmation')
 
-    def test_pingdom_webhook(self):
+        # notification
+        response = self.client.post('/webhooks/cloudwatch',
+                                    data=self.cloudwatch_notification, content_type='text/plain; charset=UTF-8')
+        self.assertEqual(response.status_code, 201, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'StorageType:StandardStorage')
+        self.assertEqual(data['alert']['event'], 'bucketbytesAlarm')
+        self.assertEqual(data['alert']['service'], ['1234567890'])
+        self.assertEqual(data['alert']['group'], 'AWS/S3')
+        self.assertEqual(data['alert']['value'], 'ALARM')
+        self.assertEqual(data['alert']['text'], 'bucket bytes size exceeded')
+        self.assertEqual(data['alert']['tags'], ['EU (Ireland)'])
+        self.assertEqual(data['alert']['origin'], 'arn:aws:sns:eu-west-1:1234567890:alerta-test')
 
-        # http down
-        response = self.client.post('/webhooks/pingdom', data=self.pingdom_down, headers=self.headers)
+    def test_grafana_webhook(self):
+
+        # state=alerting
+        response = self.client.post('/webhooks/grafana', data=self.grafana_alert_alerting, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['resource'], 'Alerta API on OpenShift')
-        self.assertEqual(data['alert']['event'], 'DOWN')
+        self.assertEqual(data['status'], 'ok')
+
+        # check tags with dots are replaced with underscores ie. 'info.host_id' => 'info_host_id'
+        self.assertEqual(data['alert']['attributes']['info_host_id'], 'i-0d0721c7f97545d43')
+
+        alert_id = data['id']
+
+        # state=ok
+        response = self.client.post('/webhooks/grafana', data=self.grafana_alert_ok, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+
+        # get alert
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn(alert_id, data['alert']['id'])
+        self.assertEqual(data['alert']['status'], 'closed')
+
+        # example alert
+        response = self.client.post('/webhooks/grafana', data=self.grafana_example, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+        self.assertEqual(data['alert']['resource'], 'requests')
+        self.assertEqual(data['alert']['event'], 'Load peaking!')
+        self.assertEqual(data['alert']['group'], 'Performance')
+        self.assertEqual(data['alert']['text'],
+                         'Load is peaking. Make sure the traffic is real and spin up more webfronts')
+
+    def test_graylog_webhook(self):
+        # graylog alert
+        response = self.client.post('/webhooks/graylog?event=LogAlert',
+                                    data=self.graylog_notification, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'test')
+        self.assertEqual(data['alert']['event'], 'LogAlert')
+        self.assertEqual(data['alert']['service'], ['test'])
         self.assertEqual(data['alert']['severity'], 'critical')
-        self.assertEqual(data['alert']['text'], 'HIGH: HTTP Server Error 503 Service Unavailable')
-        self.assertEqual(data['alert']['value'], 'HTTP Error 503')
-
-        # http up
-        response = self.client.post('/webhooks/pingdom', data=self.pingdom_up, headers=self.headers)
-        self.assertEqual(response.status_code, 201)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['resource'], 'Alerta API on OpenShift')
-        self.assertEqual(data['alert']['event'], 'UP')
-        self.assertEqual(data['alert']['severity'], 'normal')
-        self.assertEqual(data['alert']['text'], 'HIGH: OK')
-        self.assertEqual(data['alert']['value'], 'OK')
+        self.assertEqual(
+            data['alert']['text'], 'Stream had 2 messages in the last 1 minutes with trigger condition more than 1 messages. (Current grace time: 1 minutes)')
 
     def test_pagerduty_webhook(self):
 
@@ -603,6 +688,28 @@ class WebhooksTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(resolve_alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['status'], 'closed')
+
+    def test_pingdom_webhook(self):
+
+        # http down
+        response = self.client.post('/webhooks/pingdom', data=self.pingdom_down, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'Alerta API on OpenShift')
+        self.assertEqual(data['alert']['event'], 'DOWN')
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['text'], 'HIGH: HTTP Server Error 503 Service Unavailable')
+        self.assertEqual(data['alert']['value'], 'HTTP Error 503')
+
+        # http up
+        response = self.client.post('/webhooks/pingdom', data=self.pingdom_up, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'Alerta API on OpenShift')
+        self.assertEqual(data['alert']['event'], 'UP')
+        self.assertEqual(data['alert']['severity'], 'normal')
+        self.assertEqual(data['alert']['text'], 'HIGH: OK')
+        self.assertEqual(data['alert']['value'], 'OK')
 
     def test_prometheus_webhook(self):
 
@@ -674,32 +781,6 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['text'],
                          'CPU (agent) for webserver-85 is above the threshold of 1% with a value of 28.5%')
 
-    def test_grafana_webhook(self):
-
-        # state=alerting
-        response = self.client.post('/webhooks/grafana', data=self.grafana_alert_alerting, headers=self.headers)
-        self.assertEqual(response.status_code, 201)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['status'], 'ok')
-
-        # check tags with dots are replaced with underscores ie. 'info.host_id' => 'info_host_id'
-        self.assertEqual(data['alert']['attributes']['info_host_id'], 'i-0d0721c7f97545d43')
-
-        alert_id = data['id']
-
-        # state=ok
-        response = self.client.post('/webhooks/grafana', data=self.grafana_alert_ok, headers=self.headers)
-        self.assertEqual(response.status_code, 201)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['status'], 'ok')
-
-        # get alert
-        response = self.client.get('/alert/' + alert_id)
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertIn(alert_id, data['alert']['id'])
-        self.assertEqual(data['alert']['status'], 'closed')
-
     def test_telegram_webhook(self):
 
         # telegram alert
@@ -714,11 +795,6 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
-
-    def test_graylog_webhook(self):
-        # graylog alert
-        response = self.client.post('/webhooks/graylog', data=self.graylog_notification, headers=self.headers)
-        self.assertEqual(response.status_code, 201)
 
     def test_custom_webhook(self):
 
@@ -766,10 +842,11 @@ class WebhooksTestCase(unittest.TestCase):
         # test user-defined response
         response = self.client.post('/webhooks/userdefined?foo=bar',
                                     json={'baz': 'quux'}, content_type='application/json')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 418)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
         self.assertEqual(data['message'], 'This is a test user-defined response')
+        self.assertEqual(data['teapot'], True)
 
 
 class TestJsonWebhook(WebhookBase):
@@ -819,7 +896,8 @@ class TestMultiPartFormWebhook(WebhookBase):
 class TestUserDefinedWebhook(WebhookBase):
 
     def incoming(self, query_string, payload):
-        return dict(
+        return jsonify(
             status='ok',
-            message='This is a test user-defined response'
-        )
+            message='This is a test user-defined response',
+            teapot=True
+        ), 418

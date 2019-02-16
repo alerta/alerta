@@ -60,6 +60,20 @@ setuptools.setup(
         'alerta.plugins': [
             'reject = alerta.plugins.reject:RejectPolicy',
             'blackout = alerta.plugins.blackout:BlackoutHandler'
+        ],
+        'alerta.webhooks': [
+            'cloudwatch = alerta.webhooks.cloudwatch:CloudWatchWebhook',
+            'grafana = alerta.webhooks.grafana:GrafanaWebhook',
+            'graylog = alerta.webhooks.graylog:GraylogWebhook',
+            'newrelic = alerta.webhooks.newrelic:NewRelicWebhook',
+            'pagerduty = alerta.webhooks.pagerduty:PagerDutyWebhook',
+            'pingdom = alerta.webhooks.pingdom:PingdomWebhook',
+            'prometheus = alerta.webhooks.prometheus:PrometheusWebhook',
+            'riemann = alerta.webhooks.riemann:RiemannWebhook',
+            'serverdensity = alerta.webhooks.serverdensity:ServerDensityWebhook',
+            'slack = alerta.webhooks.slack:SlackWebhook',
+            'stackdriver = alerta.webhooks.stackdriver:StackDriverWebhook',
+            'telegram = alerta.webhooks.telegram:TelegramWebhook'
         ]
     },
     keywords='alert monitoring system wsgi application api',

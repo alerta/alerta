@@ -1,15 +1,11 @@
 from typing import Any, Dict, Tuple
 
-from flask import current_app, g, jsonify, request
-from flask_cors import cross_origin
+from flask import g, jsonify
 
-from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
-from alerta.models.enums import Scope
-from alerta.utils.audit import write_audit_trail
 
-from . import webhooks
+from . import WebhookBase
 
 JSON = Dict[str, Any]
 
@@ -61,46 +57,43 @@ def parse_pagerduty(message: JSON) -> Tuple[str, str, str]:
     return incident_key, status, text
 
 
-@webhooks.route('/webhooks/pagerduty', methods=['OPTIONS', 'POST'])
-@cross_origin()
-@permission(Scope.write_webhooks)
-def pagerduty():
+class PagerDutyWebhook(WebhookBase):
+    """
+    PagerDuty incident webhook
+    See https://v2.developer.pagerduty.com/docs/webhooks-v2-overview
+    """
 
-    data = request.json
+    def incoming(self, query_string, payload):
 
-    updated = False
-    if data and 'messages' in data:
-        for message in data['messages']:
-            try:
-                incident_key, status, text = parse_pagerduty(message)
-            except ValueError as e:
-                raise ApiError(str(e), 400)
+        updated = False
+        if payload and 'messages' in payload:
+            for message in payload['messages']:
+                try:
+                    incident_key, status, text = parse_pagerduty(message)
+                except ValueError as e:
+                    raise ApiError(str(e), 400)
 
-            if not incident_key:
-                raise ApiError('no incident key in PagerDuty data payload', 400)
+                if not incident_key:
+                    raise ApiError('no incident key in PagerDuty data payload', 400)
 
-            customers = g.get('customers', None)
-            try:
-                alert = Alert.find_by_id(id=incident_key, customers=customers)
-            except Exception as e:
-                raise ApiError(str(e), 500)
+                customers = g.get('customers', None)
+                try:
+                    alert = Alert.find_by_id(id=incident_key, customers=customers)
+                except Exception as e:
+                    raise ApiError(str(e), 500)
 
-            if not alert:
-                raise ApiError('not found', 404)
+                if not alert:
+                    raise ApiError('not found', 404)
 
-            try:
-                updated = alert.set_status(status, text)
-            except Exception as e:
-                raise ApiError(str(e), 500)
+                try:
+                    updated = alert.set_status(status, text)
+                except Exception as e:
+                    raise ApiError(str(e), 500)
 
-            text = 'alert updated via pagerduty webhook'
-            write_audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text, user=g.user,
-                                   customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
-                                   request=request)
-    else:
-        raise ApiError('no messages in PagerDuty data payload', 400)
+            if updated:
+                return jsonify(status='ok')
+            else:
+                raise ApiError('update PagerDuty incident status failed', 500)
 
-    if updated:
-        return jsonify(status='ok'), 200
-    else:
-        raise ApiError('update PagerDuty incident status failed', 500)
+        else:
+            raise ApiError('no messages in PagerDuty data payload', 400)
