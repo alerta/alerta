@@ -1,100 +1,41 @@
 from typing import Any, Dict
 
-from flask import current_app, g, jsonify, request
-from flask_cors import cross_origin
-
-from alerta.auth.decorators import permission
-from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
-from alerta.models.enums import Scope
-from alerta.utils.api import add_remote_ip, assign_customer, process_alert
-from alerta.utils.audit import write_audit_trail
 
-from . import webhooks
-
-# {
-#     "second_probe": {},
-#     "check_type": "HTTP",
-#     "first_probe": {},
-#     "tags": [],
-#     "check_id": 803318,
-#     "current_state": "DOWN",
-#     "check_params": {
-#         "url": "/",
-#         "encryption": false,
-#         "hostname": "api.alerta.io",
-#         "basic_auth": false,
-#         "port": 80,
-#         "header": "User-Agent:Pingdom.com_bot_version_1.4_(http://www.pingdom.com/)",
-#         "ipv6": false,
-#         "full_url": "http://api.alerta.io/"
-#     },
-#     "previous_state": "UP",
-#     "check_name": "Alerta API on OpenShift",
-#     "version": 1,
-#     "state_changed_timestamp": 1498859836,
-#     "importance_level": "HIGH",
-#     "state_changed_utc_time": "2017-06-30T21:57:16",
-#     "long_description": "This is a test message triggered by a user in My Pingdom",
-#     "description": "test"
-# }
+from . import WebhookBase
 
 JSON = Dict[str, Any]
 
 
-def parse_pingdom(check: JSON) -> Alert:
+class PingdomWebhook(WebhookBase):
+    """
+    Pingdom state change webhook
+    See https://www.pingdom.com/resources/webhooks/
+    """
 
-    if check['importance_level'] == 'HIGH':
-        severity = 'critical'
-    else:
-        severity = 'warning'
+    def incoming(self, query_string, payload):
 
-    if check['current_state'] == 'UP':
-        severity = 'normal'
+        if payload['importance_level'] == 'HIGH':
+            severity = 'critical'
+        else:
+            severity = 'warning'
 
-    return Alert(
-        resource=check['check_name'],
-        event=check['current_state'],
-        correlate=['UP', 'DOWN'],
-        environment='Production',
-        severity=severity,
-        service=[check['check_type']],
-        group='Network',
-        value=check['description'],
-        text='{}: {}'.format(check['importance_level'], check['long_description']),
-        tags=check['tags'],
-        attributes={'checkId': check['check_id']},
-        origin='Pingdom',
-        event_type='availabilityAlert',
-        raw_data=check
-    )
+        if payload['current_state'] == 'UP':
+            severity = 'normal'
 
-
-@webhooks.route('/webhooks/pingdom', methods=['OPTIONS', 'POST'])
-@cross_origin()
-@permission(Scope.write_webhooks)
-def pingdom():
-
-    try:
-        incomingAlert = parse_pingdom(request.json)
-    except ValueError as e:
-        raise ApiError(str(e), 400)
-
-    incomingAlert.customer = assign_customer(wanted=incomingAlert.customer)
-    add_remote_ip(request, incomingAlert)
-
-    try:
-        alert = process_alert(incomingAlert)
-    except RejectException as e:
-        raise ApiError(str(e), 403)
-    except Exception as e:
-        raise ApiError(str(e), 500)
-
-    text = 'pingdom alert received via webhook'
-    write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
-                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
-
-    if alert:
-        return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
-    else:
-        raise ApiError('insert or update of pingdom check failed', 500)
+        return Alert(
+            resource=payload['check_name'],
+            event=payload['current_state'],
+            correlate=['UP', 'DOWN'],
+            environment='Production',
+            severity=severity,
+            service=[payload['check_type']],
+            group='Network',
+            value=payload['description'],
+            text='{}: {}'.format(payload['importance_level'], payload['long_description']),
+            tags=payload['tags'],
+            attributes={'checkId': payload['check_id']},
+            origin='Pingdom',
+            event_type='availabilityAlert',
+            raw_data=payload
+        )

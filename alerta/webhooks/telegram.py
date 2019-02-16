@@ -4,15 +4,12 @@ import os
 from typing import Any, Dict, List  # noqa
 
 from flask import current_app, g, jsonify, request
-from flask_cors import cross_origin
 
-from alerta.auth.decorators import permission
 from alerta.models.alert import Alert
 from alerta.models.blackout import Blackout
-from alerta.models.enums import Scope
 from alerta.utils.audit import write_audit_trail
 
-from . import webhooks
+from . import WebhookBase
 
 LOG = logging.getLogger(__name__)
 
@@ -68,38 +65,42 @@ def send_message_reply(alert: Alert, action: str, user: str, data: JSON) -> None
         LOG.warning('Error sending reply message', exc_info=True)
 
 
-@webhooks.route('/webhooks/telegram', methods=['OPTIONS', 'POST'])
-@cross_origin()
-@permission(Scope.write_webhooks)
-def telegram():
+class TelegramWebhook(WebhookBase):
+    """
+    Telegram Bot API
+    See https://core.telegram.org/bots/api
+    """
 
-    data = request.json
-    if 'callback_query' in data:
-        author = data['callback_query']['from']
-        user = '{} {}'.format(author.get('first_name'), author.get('last_name'))
-        command, alert_id = data['callback_query']['data'].split(' ', 1)
+    def incoming(self, query_string, payload):
 
-        customers = g.get('customers', None)
-        alert = Alert.find_by_id(alert_id, customers=customers)
-        if not alert:
-            jsonify(status='error', message='alert not found for Telegram message')
+        if 'callback_query' in payload:
+            author = payload['callback_query']['from']
+            user = '{} {}'.format(author.get('first_name'), author.get('last_name'))
+            command, alert_id = payload['callback_query']['data'].split(' ', 1)
 
-        action = command.lstrip('/')
-        if action in ['open', 'ack', 'close']:
-            alert.set_status(status=action, text='status change via Telegram')
-        elif action in ['watch', 'unwatch']:
-            alert.untag(tags=['{}:{}'.format(action, user)])
-        elif action == 'blackout':
-            environment, resource, event = command.split('|', 2)
-            blackout = Blackout(environment, resource=resource, event=event)
-            blackout.create()
+            customers = g.get('customers', None)
+            alert = Alert.find_by_id(alert_id, customers=customers)
+            if not alert:
+                jsonify(status='error', message='alert not found for Telegram message')
 
-        send_message_reply(alert, action, user, data)
+            action = command.lstrip('/')
+            if action in ['open', 'ack', 'close']:
+                alert.set_status(status=action, text='status change via Telegram')
+            elif action in ['watch', 'unwatch']:
+                alert.untag(tags=['{}:{}'.format(action, user)])
+            elif action == 'blackout':
+                environment, resource, event = command.split('|', 2)
+                blackout = Blackout(environment, resource=resource, event=event)
+                blackout.create()
 
-        text = 'alert updated via telegram webhook'
-        write_audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text, user=g.user,
-                               customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+            send_message_reply(alert, action, user, payload)
 
-        return jsonify(status='ok')
-    else:
-        return jsonify(status='ok', message='no callback_query in Telegram message')
+            text = 'alert updated via telegram webhook'
+            write_audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text,
+                                   user=g.user,
+                                   customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                                   request=request)
+
+            return jsonify(status='ok')
+        else:
+            return jsonify(status='ok', message='no callback_query in Telegram message')
