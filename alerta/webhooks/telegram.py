@@ -1,5 +1,3 @@
-
-import logging
 import os
 from typing import Any, Dict, List  # noqa
 
@@ -11,8 +9,6 @@ from alerta.utils.audit import write_audit_trail
 
 from . import WebhookBase
 
-LOG = logging.getLogger(__name__)
-
 JSON = Dict[str, Any]
 
 
@@ -20,7 +16,7 @@ def send_message_reply(alert: Alert, action: str, user: str, data: JSON) -> None
     try:
         import telepot  # type: ignore
     except ImportError as e:
-        LOG.warning("You have configured Telegram but 'telepot' client is not installed", exc_info=True)
+        current_app.logger.warning("You have configured Telegram but 'telepot' client is not installed", exc_info=True)
         return
 
     try:
@@ -62,7 +58,7 @@ def send_message_reply(alert: Alert, action: str, user: str, data: JSON) -> None
             parse_mode='Markdown', reply_markup={'inline_keyboard': inline_keyboard}
         )
     except Exception as e:
-        LOG.warning('Error sending reply message', exc_info=True)
+        current_app.logger.warning('Error sending reply message', exc_info=True)
 
 
 class TelegramWebhook(WebhookBase):

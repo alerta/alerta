@@ -4,7 +4,7 @@ import os
 from alerta.exceptions import BlackoutPeriod
 from alerta.plugins import PluginBase, app
 
-LOG = logging.getLogger('alerta.plugins.blackout')
+LOG = logging.getLogger('alerta.plugins')
 
 NOTIFICATION_BLACKOUT = os.environ.get('NOTIFICATION_BLACKOUT') or app.config.get('NOTIFICATION_BLACKOUT', True)
 
