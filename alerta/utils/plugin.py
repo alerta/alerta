@@ -37,7 +37,7 @@ class Plugins:
                     LOG.info("Server plugin '{}' loaded.".format(name))
             except Exception as e:
                 LOG.error("Failed to load plugin '{}': {}", name, e)
-        LOG.info('All server plugins enabled: {}', ', '.join(self.plugins.keys()))
+        LOG.info('All server plugins enabled: {}'.format(', '.join(self.plugins.keys())))
         try:
             self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')  # type: ignore
         except (DistributionNotFound, ImportError):

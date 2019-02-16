@@ -5,7 +5,7 @@ import re
 from alerta.exceptions import RejectException
 from alerta.plugins import PluginBase, app
 
-LOG = logging.getLogger('alerta.plugins.reject')
+LOG = logging.getLogger('alerta.plugins')
 
 ORIGIN_BLACKLIST = os.environ['ORIGIN_BLACKLIST'].split(',') \
     if 'ORIGIN_BLACKLIST' in os.environ else app.config.get('ORIGIN_BLACKLIST', [])

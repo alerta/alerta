@@ -1,5 +1,4 @@
 import json
-import logging
 from typing import Any, Dict, Tuple
 
 from flask import current_app, g, jsonify, request
@@ -11,8 +10,6 @@ from alerta.utils.audit import write_audit_trail
 from alerta.utils.response import absolute_url
 
 from . import WebhookBase
-
-LOG = logging.getLogger(__name__)
 
 JSON = Dict[str, Any]
 

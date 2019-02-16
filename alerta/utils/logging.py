@@ -45,6 +45,7 @@ class Logger:
 
             dictConfig({
                 'version': 1,
+                'disable_existing_loggers': False,
                 'formatters': {
                     'default': {
                         'format': logging.BASIC_FORMAT
@@ -109,7 +110,7 @@ class RequestFilter(logging.Filter):
             record.endpoint = request.endpoint
             record.method = request.method
             record.url = request.url
-            record.args = request.args
+            record.reqargs = request.args
             record.data = request.get_data(as_text=True)
             record.remote_addr = request.remote_addr
             record.user = g.user if hasattr(g, 'user') else None
@@ -126,7 +127,7 @@ class JSONFormatter(logging.Formatter):
     RECORD_ATTRS = [
         'name', 'levelno', 'levelname', 'pathname', 'filename', 'module', 'lineno',
         'funcName', 'created', 'thread', 'threadName', 'process',  # 'message',
-        'endpoint', 'method', 'url', 'args', 'data', 'remote_addr', 'user'
+        'endpoint', 'method', 'url', 'reqargs', 'data', 'remote_addr', 'user'
     ]
 
     def format(self, record):

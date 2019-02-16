@@ -1,13 +1,12 @@
 import json
-import logging
 from datetime import datetime
 from typing import Any, Dict
+
+from flask import current_app
 
 from alerta.models.alert import Alert
 
 from . import WebhookBase
-
-LOG = logging.getLogger(__name__)
 
 JSON = Dict[str, Any]
 
@@ -30,7 +29,7 @@ class StackDriverWebhook(WebhookBase):
                 content = json.loads(incident['documentation']['content'])
                 incident.update(content)
             except Exception as e:
-                LOG.warning("Invalid documentation content: '{}'".format(incident['documentation']))
+                current_app.logger.warning("Invalid documentation content: '{}'".format(incident['documentation']))
 
         service = []
         status = None
