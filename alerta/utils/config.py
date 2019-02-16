@@ -73,6 +73,9 @@ class Config:
         if 'ALLOWED_EMAIL_DOMAINS' in os.environ:
             config['ALLOWED_EMAIL_DOMAINS'] = os.environ['ALLOWED_EMAIL_DOMAINS'].split(',')
 
+        if 'AZURE_TENANT' in os.environ:
+            config['AZURE_TENANT'] = os.environ['AZURE_TENANT']
+
         if 'GITHUB_URL' in os.environ:
             config['GITHUB_URL'] = os.environ['GITHUB_URL']
 
