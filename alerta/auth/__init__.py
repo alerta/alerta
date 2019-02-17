@@ -11,7 +11,7 @@ try:
 except ImportError:
     from . import basic  # noqa
 
-from . import github, gitlab, google, keycloak, pingfederate, saml2, userinfo  # noqa
+from . import azure, github, gitlab, google, keycloak, pingfederate, saml2, userinfo  # noqa
 
 
 @auth.before_request
