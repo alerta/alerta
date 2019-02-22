@@ -55,9 +55,9 @@ class PluginsTestCase(unittest.TestCase):
             'Content-type': 'application/json'
         }
 
-        plugins.plugins['test1'] = TestPlugin1()
-        plugins.plugins['test2'] = TestPlugin2()
-        plugins.plugins['test3'] = TestPlugin3()
+        plugins.plugins['test1'] = CustPlugin1()
+        plugins.plugins['test2'] = CustPlugin2()
+        plugins.plugins['test3'] = CustPlugin3()
 
     def tearDown(self):
 
@@ -81,7 +81,7 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
-        self.assertRegexpMatches(data['id'], '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+        self.assertRegex(data['id'], '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 
     def test_status_update(self):
 
@@ -90,7 +90,7 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
-        self.assertRegexpMatches(data['id'], '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+        self.assertRegex(data['id'], '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
         self.assertEqual(data['alert']['attributes']['aaa'], 'post1')
 
         alert_id = data['id']
@@ -116,7 +116,7 @@ class PluginsTestCase(unittest.TestCase):
 
     def test_take_action(self):
 
-        plugins.plugins['action1'] = TestActionPlugin1()
+        plugins.plugins['action1'] = CustActionPlugin1()
 
         # create alert
         response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
@@ -179,7 +179,7 @@ class PluginsTestCase(unittest.TestCase):
                          'ticket resolved by bob (ticket #12345)', data['alert']['history'])
 
 
-class TestPlugin1(PluginBase):
+class CustPlugin1(PluginBase):
 
     def pre_receive(self, alert):
         alert.attributes['aaa'] = 'pre1'
@@ -199,7 +199,7 @@ class TestPlugin1(PluginBase):
         return alert, status, text
 
 
-class TestPlugin2(PluginBase):
+class CustPlugin2(PluginBase):
 
     def pre_receive(self, alert):
         return alert
@@ -214,7 +214,7 @@ class TestPlugin2(PluginBase):
         return  # does not return alert, status, text
 
 
-class TestPlugin3(PluginBase):
+class CustPlugin3(PluginBase):
 
     def pre_receive(self, alert):
         return alert
@@ -233,7 +233,7 @@ class TestPlugin3(PluginBase):
         return alert, status, text
 
 
-class TestActionPlugin1(PluginBase):
+class CustActionPlugin1(PluginBase):
 
     def pre_receive(self, alert):
         return alert
