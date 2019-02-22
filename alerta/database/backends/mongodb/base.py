@@ -29,7 +29,7 @@ class Backend(Database):
         if self.dbname:
             return self.client[self.dbname]
         else:
-            return self.client.get_default_database()
+            return self.client.get_database()
 
     @staticmethod
     def _create_indexes(db):
