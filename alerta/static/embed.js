@@ -19,14 +19,13 @@
 
     return this.each(function() {
 
-      var base = config.endpoint + '/oembed.json?url=' + encodeURIComponent(url);
+      var base = config.endpoint + '/oembed?url=' + encodeURIComponent(url);
       var key = (config.key ? '&api-key=' + config.key : '');
       var title = (config.title ? '&title=' + encodeURIComponent(config.title) : '');
       base += '&maxwidth=' + config.maxwidth + '&maxheight=' + config.maxheight + key + title;
 
       $.ajax({
         url: base,
-        dataType: 'jsonp',
         context: this,
         success: function(data) {
           $(this).html(data.html);

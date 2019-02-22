@@ -64,7 +64,10 @@ def oembed(format):
             max=max,
             counts=severity_count
         )
-        return jsonify(version='1.0', type='rich', width=width, height=height, title=title, provider_name='Alerta', provider_url=request.url_root, html=html)
+        headers =	{
+          "Access-Control-Allow-Origin": "*"
+        }
+        return jsonify(version='1.0', type='rich', width=width, height=height, title=title, provider_name='Alerta', provider_url=request.url_root, html=html), 200, headers
 
     elif o.path.endswith('/alerts/top10/count'):
         # TODO: support top10 oembed widget
