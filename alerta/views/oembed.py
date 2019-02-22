@@ -28,9 +28,7 @@ def oembed(format):
 
     try:
         url = request.args['url']
-        width = int(request.args['maxwidth'])
-        height = int(request.args['maxheight'])
-        title = request.args.get('title', 'Alerts')
+        title = request.args['title']
     except Exception as e:
         return jsonify(status='error', message=str(e)), 400
 
@@ -59,15 +57,13 @@ def oembed(format):
         html = render_template(
             'oembed/counts.html',
             title=title,
-            width=width,
-            height=height,
             max=max,
             counts=severity_count
         )
         headers =	{
           "Access-Control-Allow-Origin": "*"
         }
-        return jsonify(version='1.0', type='rich', width=width, height=height, title=title, provider_name='Alerta', provider_url=request.url_root, html=html), 200, headers
+        return jsonify(version='1.0', type='rich', title=title, provider_name='Alerta', provider_url=request.url_root, html=html), 200, headers
 
     elif o.path.endswith('/alerts/top10/count'):
         # TODO: support top10 oembed widget
