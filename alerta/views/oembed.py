@@ -44,7 +44,9 @@ def oembed(format):
         except Exception as e:
             return jsonify(status='error', message=str(e)), 500
 
-        max = 'normal'
+        max = 'none'
+        if severity_count.get('informational', 0) > 0:
+            max = 'informational'
         if severity_count.get('warning', 0) > 0:
             max = 'warning'
         if severity_count.get('minor', 0) > 0:
