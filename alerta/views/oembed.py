@@ -9,8 +9,11 @@ from alerta.auth.decorators import permission
 from alerta.models.enums import Scope
 from alerta.utils.response import jsonp
 
+from collections import namedtuple
+
 from . import api
 
+Query = namedtuple('Query', ['where', 'vars', 'sort', 'group'])
 
 @api.route('/oembed', defaults={'format': 'json'}, methods=['OPTIONS', 'GET'])
 @api.route('/oembed.<format>', methods=['OPTIONS', 'GET'])
@@ -18,14 +21,6 @@ from . import api
 @permission(Scope.read_oembed)
 @jsonp
 def oembed(format):
-
-    if format != 'json':
-        return jsonify(status='error', message='unsupported format: %s' % format), 400
-
-    if 'url' not in request.args or 'maxwidth' not in request.args \
-            or 'maxheight' not in request.args:
-        return jsonify(status='error', message='missing default parameters: url, maxwidth, maxheight'), 400
-
     try:
         url = request.args['url']
         title = request.args['title']
@@ -40,6 +35,9 @@ def oembed(format):
 
     if o.path.endswith('/alerts/count'):
         try:
+            qvars = dict()
+            qvars['status'] = 'open'
+            query = Query(where='"status"=%(status)s', vars=qvars, sort='', group='')
             severity_count = db.get_counts_by_severity(query)
         except Exception as e:
             return jsonify(status='error', message=str(e)), 500
