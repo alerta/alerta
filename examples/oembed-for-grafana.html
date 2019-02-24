@@ -1,0 +1,28 @@
+<style>
+  .alerta-div {width:100%; padding:20px;}
+  .alerta-table {width:100%; border:1px solid lightgrey; text-align:center;}
+</style>
+
+<div class="mobile-alerts" style="width:100%">Loading...</div>
+
+<a href="http://localhost:8080/">Alerta</a>
+
+<script type="text/javascript" src="http://localhost:8080/api/embed.js"></script>
+<script>
+  $(window).on('load', function () {
+    $(function () {
+      $.alerta.defaults = {
+        endpoint: 'http://localhost:8080/api',
+        key: 'demo-key'
+      };
+
+      function renew() {
+        $('.mobile-alerts').alerta('http://localhost:8080/api/alerts/count?status=open', { title: '' });
+
+        setTimeout(renew, 30000);
+      }
+
+      renew();
+    });
+  });
+</script>
