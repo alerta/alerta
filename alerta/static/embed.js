@@ -2,9 +2,7 @@
 
   var config = {
     endpoint: 'http://api.alerta.io',
-    key: null,
-    maxwidth: 200,
-    maxheight: 200
+    key: null
   };
 
   var Alerta = function() {};
@@ -22,7 +20,7 @@
       var base = config.endpoint + '/oembed?url=' + encodeURIComponent(url);
       var key = (config.key ? '&api-key=' + config.key : '');
       var title = (config.title ? '&title=' + encodeURIComponent(config.title) : '');
-      base += '&maxwidth=' + config.maxwidth + '&maxheight=' + config.maxheight + key + title;
+      base += key + title;
 
       $.ajax({
         url: base,
