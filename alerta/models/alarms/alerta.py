@@ -19,7 +19,6 @@ SEVERITY_MAP = {
 }
 DEFAULT_NORMAL_SEVERITY = 'normal'  # 'normal', 'ok', 'cleared'
 DEFAULT_PREVIOUS_SEVERITY = 'indeterminate'
-NORMAL_SEVERITY_LEVEL = 5
 
 COLOR_MAP = {
     'severity': {
@@ -88,6 +87,7 @@ class StateMachine(AlarmModel):
         StateMachine.DEFAULT_STATUS = OPEN
         StateMachine.DEFAULT_NORMAL_SEVERITY = app.config['DEFAULT_NORMAL_SEVERITY'] or DEFAULT_NORMAL_SEVERITY
         StateMachine.DEFAULT_PREVIOUS_SEVERITY = app.config['DEFAULT_PREVIOUS_SEVERITY'] or DEFAULT_PREVIOUS_SEVERITY
+        StateMachine.NORMAL_SEVERITY_LEVEL = StateMachine.Severity[StateMachine.DEFAULT_NORMAL_SEVERITY]
 
     def trend(self, previous, current):
         assert previous in StateMachine.Severity, "'%s' is not a valid severity" % previous
@@ -101,7 +101,6 @@ class StateMachine(AlarmModel):
             return NO_CHANGE
 
     def transition(self, alert, current_status=None, previous_status=None, action=None, **kwargs):
-
         current_status = current_status or StateMachine.DEFAULT_STATUS
         previous_status = previous_status or StateMachine.DEFAULT_STATUS
 
@@ -136,7 +135,7 @@ class StateMachine(AlarmModel):
         # by a pre_receive() plugin and return the current severity and status, accounting
         # for auto-closing normal alerts, otherwise unchanged
         if not action and alert.status != StateMachine.DEFAULT_STATUS:
-            if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
+            if StateMachine.Severity[current_severity] == StateMachine.NORMAL_SEVERITY_LEVEL:
                 return next_state('SET-1', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
             return next_state('SET-*', current_severity, alert.status)
 
@@ -189,18 +188,18 @@ class StateMachine(AlarmModel):
             if action == ACTION_OPEN:
                 return next_state('CLS-1', previous_severity, OPEN)
 
-            if StateMachine.Severity[current_severity] != NORMAL_SEVERITY_LEVEL:
+            if StateMachine.Severity[current_severity] != StateMachine.NORMAL_SEVERITY_LEVEL:
                 if previous_status == SHELVED:
                     return next_state('CLS-2', previous_severity, SHELVED)
                 else:
                     return next_state('CLS-3', previous_severity, OPEN)
 
         # auto-close normal severity alerts from ANY state
-        if StateMachine.Severity[current_severity] == NORMAL_SEVERITY_LEVEL:
+        if StateMachine.Severity[current_severity] == StateMachine.NORMAL_SEVERITY_LEVEL:
             return next_state('CLS-*', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
         if state == EXPIRED:
-            if StateMachine.Severity[current_severity] != NORMAL_SEVERITY_LEVEL:
+            if StateMachine.Severity[current_severity] != StateMachine.NORMAL_SEVERITY_LEVEL:
                 return next_state('EXP-1', current_severity, OPEN)
 
         return next_state('ALL-*', current_severity, current_status)
