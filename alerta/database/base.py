@@ -195,6 +195,11 @@ class Database(Base):
     def get_services(self, query=None, topn=1000):
         raise NotImplementedError
 
+    # GROUPS
+
+    def get_groups(self, query=None, topn=1000):
+        raise NotImplementedError
+
     # TAGS
 
     def get_tags(self, query=None, topn=1000):

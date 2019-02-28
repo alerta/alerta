@@ -497,6 +497,11 @@ class Alert:
     def get_services(query: Query=None) -> List[str]:
         return db.get_services(query)
 
+    # get groups
+    @staticmethod
+    def get_groups(query: Query=None) -> List[str]:
+        return db.get_groups(query)
+
     # get tags
     @staticmethod
     def get_tags(query: Query=None) -> List[str]:

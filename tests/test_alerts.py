@@ -647,6 +647,15 @@ class AlertTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn('services', data)
 
+        # groups
+        response = self.client.get('/groups')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('groups', data)
+        self.assertEqual(data['groups'][0]['environment'], 'Production')
+        self.assertEqual(data['groups'][0]['group'], 'Misc')
+        self.assertEqual(data['groups'][0]['count'], 1)
+
     def test_query_param(self):
         # create alert
         response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)

@@ -574,7 +574,18 @@ class Backend(Database):
         """.format(where=query.where)
         return [{'environment': s.environment, 'service': s.svc, 'count': s.count} for s in self._fetchall(select, query.vars, limit=topn)]
 
-    # SERVICES
+    # GROUPS
+
+    def get_groups(self, query=None, topn=1000):
+        query = query or Query()
+        select = """
+            SELECT environment, "group", count(1) FROM alerts
+            WHERE {where}
+            GROUP BY environment, "group"
+        """.format(where=query.where)
+        return [{'environment': g.environment, 'group': g.group, 'count': g.count} for g in self._fetchall(select, query.vars, limit=topn)]
+
+    # TAGS
 
     def get_tags(self, query=None, topn=1000):
         query = query or Query()
