@@ -753,6 +753,29 @@ class Backend(Database):
             )
         return services
 
+    # GROUPS
+
+    def get_groups(self, query=None, topn=1000):
+        query = query or Query()
+        pipeline = [
+            {'$match': query.where},
+            {'$project': {'environment': 1, 'group': 1}},
+            {'$limit': topn},
+            {'$group': {'_id': {'environment': '$environment', 'group': '$group'}, 'count': {'$sum': 1}}}
+        ]
+        responses = self.get_db().alerts.aggregate(pipeline)
+
+        groups = list()
+        for response in responses:
+            groups.append(
+                {
+                    'environment': response['_id']['environment'],
+                    'group': response['_id']['group'],
+                    'count': response['count']
+                }
+            )
+        return groups
+
     # TAGS
 
     def get_tags(self, query=None, topn=1000):
