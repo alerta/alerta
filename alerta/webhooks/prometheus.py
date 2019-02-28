@@ -59,7 +59,7 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
     customer = labels.pop('customer', None)
     correlate = labels.pop('correlate').split(',') if 'correlate' in labels else None
     service = labels.pop('service', '').split(',')
-    group = labels.pop('job', 'Prometheus')
+    group = labels.pop('group', None) or labels.pop('job', 'Prometheus')
     origin = 'prometheus/' + labels.pop('monitor', '-')
     tags = ['{}={}'.format(k, v) for k, v in labels.items()]  # any labels left over are used for tags
 
