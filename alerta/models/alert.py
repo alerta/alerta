@@ -535,6 +535,7 @@ class Alert:
             event=self.event,
             severity=self.severity,
             status=status,
+            value=self.value,
             text=text,
             change_type='status',
             update_time=datetime.utcnow()
