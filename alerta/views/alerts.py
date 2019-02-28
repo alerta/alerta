@@ -519,6 +519,31 @@ def get_services():
         )
 
 
+# get alert groups
+@api.route('/groups', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.read_alerts)
+@timer(gets_timer)
+@jsonp
+def get_groups():
+    query = qb.from_params(request.args, customers=g.customers)
+    groups = Alert.get_groups(query)
+
+    if groups:
+        return jsonify(
+            status='ok',
+            groups=groups,
+            total=len(groups)
+        )
+    else:
+        return jsonify(
+            status='ok',
+            message='not found',
+            groups=[],
+            total=0
+        )
+
+
 # get alert tags
 @api.route('/tags', methods=['OPTIONS', 'GET'])
 @cross_origin()
