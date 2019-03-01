@@ -544,7 +544,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
 
         # correlated alert, severity change
-        self.fatal_alert['value'] = '99'
+        self.major_alert['value'] = '99'
         response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
 
@@ -559,7 +559,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
-        self.assertListEqual([h['value'] for h in data['alert']['history']], [None, '102', None, '104', '105'])
+        self.assertListEqual([h['value'] for h in data['alert']['history']], ['101', '102', '99', '104', '105'])
         self.assertListEqual([h['type'] for h in data['alert']['history']],
                              ['status', 'value', 'severity', 'severity', 'value'])
 
