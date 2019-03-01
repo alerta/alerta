@@ -20,7 +20,7 @@ def gitlab():
     userinfo_url = current_app.config['GITLAB_URL'] + '/oauth/userinfo'
     gitlab_api_url = current_app.config['GITLAB_URL'] + '/api/v4'
 
-    payload = {
+    data = {
         'client_id': request.json['clientId'],
         'client_secret': current_app.config['OAUTH2_CLIENT_SECRET'],
         'redirect_uri': request.json['redirectUri'],
@@ -28,10 +28,7 @@ def gitlab():
         'code': request.json['code'],
     }
 
-    try:
-        r = requests.post(access_token_url, data=payload)
-    except Exception:
-        raise ApiError('Failed to call GitLab API over HTTPS', 400)
+    r = requests.post(access_token_url, data)
     token = r.json()
 
     headers = {'Authorization': 'Bearer ' + token['access_token']}
