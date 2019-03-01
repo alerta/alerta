@@ -282,7 +282,7 @@ class Alert:
                 id=self.id,
                 event=self.event,
                 severity=self.severity,
-                status=self.status,
+                status=status,
                 value=self.value,
                 text='duplicate alert (with value change)',
                 change_type='value',
