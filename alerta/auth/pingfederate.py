@@ -5,7 +5,6 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.auth.utils import create_token, get_customers
-from alerta.exceptions import ApiError
 from alerta.models.permission import Permission
 from alerta.utils.audit import auth_audit_trail
 
@@ -18,7 +17,7 @@ def pingfederate():
 
     access_token_url = current_app.config['PINGFEDERATE_OPENID_ACCESS_TOKEN_URL']
 
-    payload = {
+    data = {
         'client_id': request.json['clientId'],
         'client_secret': current_app.config['OAUTH2_CLIENT_SECRET'],
         'redirect_uri': request.json['redirectUri'],
@@ -27,10 +26,7 @@ def pingfederate():
         'scope': 'openid email',
     }
 
-    try:
-        r = requests.post(access_token_url, data=payload)
-    except Exception:
-        raise ApiError('Failed to call sso API over HTTPS', 400)
+    r = requests.post(access_token_url, data)
     access_token = r.json()
     encoded = access_token['access_token']
 
