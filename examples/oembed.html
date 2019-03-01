@@ -15,15 +15,20 @@
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 <script src="http://netdna.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
-<script src="http://localhost:8080/api/embed.js"></script>
+
+<!-- Use http://localhost:8080/api/embed.js if you run docker image with alerta. -->
+<script src="http://localhost:8080/embed.js"></script>
+
 <script>
 $(window).on('load', function () {
 
+  // Use http://localhost:8080/api as endpoint, if you run docker image with alerta.
+  //
   // $.alerta.defaults.endpoint = 'http://localhost:8080';
   // $.alerta.defaults.key = 'demo-key';
   // or
   $.alerta.defaults = {
-      endpoint: 'http://localhost:8080/api', // oEmbed endpoint becomes http://localhost:8080/api/oembed
+      endpoint: 'http://localhost:8080', // oEmbed endpoint becomes http://localhost:8080/oembed
       key: 'demo-key'
   };
 
