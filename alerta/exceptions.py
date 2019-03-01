@@ -1,9 +1,10 @@
 
 import traceback
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Union
 
 from flask import Response, current_app, jsonify
 from werkzeug.exceptions import HTTPException
+from werkzeug.routing import RoutingException
 
 
 class AlertaException(IOError):
@@ -93,7 +94,12 @@ def handle_basic_auth_error(error: BasicAuthError) -> Tuple[Response, int, Dict[
     }), error.code, {'WWW-Authenticate': 'Basic realm=%s' % current_app.config['BASIC_AUTH_REALM']}
 
 
-def handle_exception(error: Exception) -> Tuple[Response, int]:
+def handle_exception(error: Exception) -> Union[Tuple[Response, int], Exception]:
+    # RoutingExceptions are used internally to trigger routing
+    # actions, such as slash redirects raising RequestRedirect.
+    if isinstance(error, RoutingException):
+        return error
+
     current_app.logger.exception(error)
     return jsonify({
         'status': 'error',
