@@ -17,6 +17,7 @@ from alerta.utils.hooks import status_change_hook
 from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
+NoneType = type(None)
 
 
 class Alert:
@@ -32,6 +33,9 @@ class Alert:
             raise ValueError('Attribute keys must not contain "." or "$"')
         if isinstance(kwargs.get('value', None), int):
             kwargs['value'] = str(kwargs['value'])
+        for attr in ['create_time', 'receive_time', 'last_receive_time']:
+            if not isinstance(kwargs.get(attr), (datetime, NoneType)):  # type: ignore
+                raise ValueError("Attribute '{}' must be datetime type".format(attr))
 
         self.id = kwargs.get('id', None) or str(uuid4())
         self.resource = resource
