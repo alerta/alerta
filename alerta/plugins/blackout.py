@@ -21,12 +21,17 @@ class BlackoutHandler(PluginBase):
 
     def pre_receive(self, alert):
 
+        if app.config['ALARM_MODEL'] == 'ALERTA':
+            status = 'blackout'
+        else:
+            status = 'OOSRV'  # ISA_18_2
+
         if alert.is_blackout():
             if NOTIFICATION_BLACKOUT:
-                LOG.debug('Set status to "blackout" during blackout period (id=%s)' % alert.id)
-                alert.status = 'blackout'
+                LOG.debug('Set status to "{}" during blackout period (id={})'.format(status, alert.id))
+                alert.status = status
             else:
-                LOG.debug('Suppressed alert during blackout period (id=%s)' % alert.id)
+                LOG.debug('Suppressed alert during blackout period (id={})'.format(alert.id))
                 raise BlackoutPeriod('Suppressed alert during blackout period')
         return alert
 

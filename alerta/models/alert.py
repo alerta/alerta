@@ -240,6 +240,8 @@ class Alert:
 
     def _get_hist_info(self, action=None):
         h_loop = self.get_alert_history(alert=self)
+        if len(h_loop) == 1:
+            return h_loop[0].status, h_loop[0].value, None
         if action == 'unack':
             find = 'ack'
         elif action == 'unshelve':
