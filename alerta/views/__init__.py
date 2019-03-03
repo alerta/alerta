@@ -51,7 +51,10 @@ def config():
     return jsonify({
         'endpoint': absolute_url().rstrip('/'),  # FIXME - shouldn't need to rstrip()
         'alarm_model': {
-            'name': alarm_model.name
+            'name': alarm_model.name,
+            'severity': alarm_model.Severity,
+            'colors': alarm_model.Colors,
+            'status': alarm_model.Status
         },
         'auth_required': current_app.config['AUTH_REQUIRED'],
         'provider': current_app.config['AUTH_PROVIDER'],
@@ -66,8 +69,8 @@ def config():
         'keycloak_realm': current_app.config['KEYCLOAK_REALM'],
         'pingfederate_url': current_app.config['PINGFEDERATE_URL'],
         'site_logo_url': current_app.config['SITE_LOGO_URL'],
-        'severity': alarm_model.Severity,
-        'colors': alarm_model.Colors,
+        'severity': alarm_model.Severity,  # FIXME - moved to alarm model
+        'colors': alarm_model.Colors,  # FIXME - moved to alarm model
         'dates': {
             'shortTime': current_app.config['DATE_FORMAT_SHORT_TIME'],
             'mediumDate': current_app.config['DATE_FORMAT_MEDIUM_DATE'],

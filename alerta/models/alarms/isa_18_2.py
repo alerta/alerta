@@ -7,70 +7,68 @@ https://www.isa.org/store/ansi/isa-182-2016/46962105
 """
 
 # FIXME - probably need to automatically ACK RTN_UNACK alerts based on timeout
+from flask import current_app
 
 from alerta.models.alarms import AlarmModel
 
+CRITICAL = 'Critical'
+HIGH = 'High'
+MEDIUM = 'Medium'
+LOW = 'LOW'
+ADVISORY = 'Advisory'
+OK = 'OK'
+UNKNOWN = 'Unknown'
+
 SEVERITY_MAP = {
-    'Critical': 5,
-    'High': 4,
-    'Medium': 3,
-    'Low': 2,
-    'Advisory': 1,
-    'OK': 0
+    CRITICAL: 5,
+    HIGH: 4,
+    MEDIUM: 3,
+    LOW: 2,
+    ADVISORY: 1,
+    OK: 0
 }
-DEFAULT_NORMAL_SEVERITY = 'OK'
-DEFAULT_PREVIOUS_SEVERITY = 'OK'
+DEFAULT_NORMAL_SEVERITY = OK
+DEFAULT_PREVIOUS_SEVERITY = OK
 
 COLOR_MAP = {
     'severity': {
-        'Critical': 'red',
-        'High': 'orange',
-        'Medium': 'yellow',
-        'Low': 'dodgerblue',
-        'Advisory': 'lightblue',
-        'OK': '#00CC00',  # lime green
-        'unknown': 'silver'
+        CRITICAL: 'red',
+        HIGH: 'orange',
+        MEDIUM: 'yellow',
+        LOW: 'dodgerblue',
+        ADVISORY: 'lightblue',
+        OK: '#00CC00',  # lime green
+        UNKNOWN: 'silver'
     },
     'text': 'black',
     'highlight': 'skyblue '
 }
 
-NORMAL = 'Normal'
-UNACK = 'Unack'
-ACK = 'Ack'
-RTN_UNACK = 'RTN Unack'
-LATCHED_UNACK = 'Latch Unack'
-LATCHED_ACK = 'Latch Ack'
-SHELVED = 'Shelved'
-SUPPRESSED_BY_DESIGN = 'Supp. by Design'  # not used
-OUT_OF_SERVICE = 'Out-of-Service'
+A_NORM = 'NORM'
+B_UNACK = 'UNACK'
+C_ACKED = 'ACKED'
+D_RTNUN = 'RTNUN'
+E_SHLVD = 'SHLVD'
+F_DSUPR = 'DSUPR'
+G_OOSRV = 'OOSRV'
 
-ACTIVE = [
-    UNACK,
-    ACK,
-    RTN_UNACK,
-    LATCHED_UNACK,
-    LATCHED_ACK
-]
-INACTIVE = [
-    NORMAL,
-    SHELVED,
-    SUPPRESSED_BY_DESIGN,
-    OUT_OF_SERVICE
-]
+STATUS_MAP = {
+    A_NORM: 'A',
+    B_UNACK: 'B',
+    C_ACKED: 'C',
+    D_RTNUN: 'D',
+    E_SHLVD: 'E',
+    F_DSUPR: 'F',
+    G_OOSRV: 'G'
+}
 
 MORE_SEVERE = 'moreSevere'
 NO_CHANGE = 'noChange'
 LESS_SEVERE = 'lessSevere'
 
 ACTION_ACK = 'ack'
-ACTION_RESET = 'reset'
-ACTION_UNACK = 'unack'
 ACTION_SHELVE = 'shelve'
 ACTION_UNSHELVE = 'unshelve'
-ACTION_CLOSE = 'close'
-
-# TODO: only enable actions if it's possible to transition
 
 
 class StateMachine(AlarmModel):
@@ -80,12 +78,16 @@ class StateMachine(AlarmModel):
 
         StateMachine.Severity = app.config['SEVERITY_MAP'] or SEVERITY_MAP
         StateMachine.Colors = app.config['COLOR_MAP'] or COLOR_MAP
+        StateMachine.Status = STATUS_MAP
 
-        StateMachine.DEFAULT_STATUS = NORMAL
+        StateMachine.DEFAULT_STATUS = A_NORM
         StateMachine.DEFAULT_NORMAL_SEVERITY = app.config['DEFAULT_NORMAL_SEVERITY'] or DEFAULT_NORMAL_SEVERITY
         StateMachine.DEFAULT_PREVIOUS_SEVERITY = app.config['DEFAULT_PREVIOUS_SEVERITY'] or DEFAULT_PREVIOUS_SEVERITY
 
     def trend(self, previous, current):
+        assert previous in StateMachine.Severity, "'%s' is not a valid severity" % previous
+        assert current in StateMachine.Severity, "'%s' is not a valid severity" % current
+
         if StateMachine.Severity[previous] < StateMachine.Severity[current]:
             return MORE_SEVERE
         elif StateMachine.Severity[previous] > StateMachine.Severity[current]:
@@ -94,77 +96,78 @@ class StateMachine(AlarmModel):
             return NO_CHANGE
 
     def transition(self, alert, current_status=None, previous_status=None, action=None, **kwargs):
-
-        state = previous_status or StateMachine.DEFAULT_STATUS
-        latched = kwargs.get('is_latched', False)
+        state = current_status or StateMachine.DEFAULT_STATUS
 
         current_severity = alert.severity
-        previous_severity = alert.previous_severity
+        previous_severity = alert.previous_severity or StateMachine.DEFAULT_PREVIOUS_SEVERITY
+
+        def next_state(rule, severity, status):
+            current_app.logger.info(
+                'State Transition: Rule {}: STATE={} => SEVERITY={}, STATUS={}'.format(
+                    rule,
+                    state,
+                    severity,
+                    status
+                )
+            )
+            return severity, status
+
+        # Operator Shelve, Any (*) -> Shelve (E)
+        if action == ACTION_SHELVE:
+            return next_state('Operator Shelve, Any (*) -> Shelve (E)', current_severity, E_SHLVD)
+        # Operator Unshelve, Shelve (E) -> Normal (A) or Unack (B)
+        if action == ACTION_UNSHELVE:
+            if current_severity == OK:
+                return next_state('Operator Unshelve, Shelve (E) -> Normal (A)', current_severity, A_NORM)
+            else:
+                return next_state('Operator Unshelve, Shelve (E) -> Unack (B)', current_severity, B_UNACK)
 
         # Alarm Occurs, Normal (A) -> Unack (B)
-        if state == NORMAL:
-            if current_severity != 'OK':
-                return current_severity, UNACK
+        if state == A_NORM:
+            if current_severity != OK:
+                return next_state('Alarm Occurs, Normal (A) -> Unack (B)', current_severity, B_UNACK)
         # Operator Ack, Unack (B) -> Ack (C)
-        if state == UNACK:
+        if state == B_UNACK:
             if action == ACTION_ACK:
-                return current_severity, ACK
+                return next_state('Operator Ack, Unack (B) -> Ack (C)', current_severity, C_ACKED)
         # Re-Alarm, Ack (C) -> Unack (B)
-        if state == ACK:
+        if state == C_ACKED:
             if self.trend(previous_severity, current_severity) == MORE_SEVERE:
-                return current_severity, UNACK
+                if previous_severity != StateMachine.DEFAULT_PREVIOUS_SEVERITY:
+                    return next_state('Re-Alarm, Ack (C) -> Unack (B)', current_severity, B_UNACK)
         # Process RTN Alarm Clears, Ack (C) -> Normal (A)
-        if state == ACK and not latched:
-            if current_severity == 'OK':
-                return current_severity, NORMAL
-        # Process RTN Latched Alarm, Ack (C) -> Latch Ack (F)
-        if state == ACK and latched:
-            if current_severity == 'OK':
-                return current_severity, LATCHED_ACK
+        if state == C_ACKED:
+            if current_severity == OK:
+                return next_state('Process RTN Alarm Clears, Ack (C) -> Normal (A)', current_severity, A_NORM)
         # Process RTN and Alarm Clears, Unack (B) -> RTN Unack (D)
-        if state == UNACK and not latched:
-            if current_severity == 'OK':
-                return current_severity, RTN_UNACK
-        # Process RTN, Unack (B) -> Latch Unack (E)
-        if state == UNACK and latched:
-            if current_severity == 'OK':
-                return current_severity, LATCHED_UNACK
+        if state == B_UNACK:
+            if current_severity == OK:
+                return next_state('Process RTN and Alarm Clears, Unack (B) -> RTN Unack (D)', current_severity, D_RTNUN)
         # Operator Ack, RTN Unack (D) -> Normal (A)
-        if state == RTN_UNACK:
+        if state == D_RTNUN:
             if action == ACTION_ACK:
-                return current_severity, NORMAL
-        # Re-Alarm Unack, RTN Unack (D) -> Unack (B)  # XXX - missing from descriptions?
-        if state == RTN_UNACK:
-            if current_severity != 'OK':
-                return current_severity, UNACK
-        # Operator Resets, Latch Unack (E) -> RTN Unack (D)
-        if state == LATCHED_UNACK:
-            if action == ACTION_RESET:
-                return current_severity, RTN_UNACK
-        # Operator Ack, Latch Unack (E) -> Latch Ack (F)
-        if state == LATCHED_UNACK:
-            if action == ACTION_ACK:
-                return current_severity, LATCHED_ACK
-        # Operator Resets, Latch Ack (F) -> Normal (A)
-        if state == LATCHED_ACK:
-            if action == ACTION_RESET:
-                return current_severity, NORMAL
-        # Shelve (Any->G)
-        if action == ACTION_SHELVE:
-            return current_severity, SHELVED
-        # Unshelve (G->Any)
-        if action == ACTION_UNSHELVE:
-            return current_severity, UNACK
-        # Designed Suppression (Any->H)
+                return next_state(' Operator Ack, RTN Unack (D) -> Normal (A)', current_severity, A_NORM)
+        # Re-Alarm Unack, RTN Unack (D) -> Unack (B)  # FIXME - missing from descriptions?
+        if state == D_RTNUN:
+            if current_severity != OK:
+                return next_state('Re-Alarm Unack, RTN Unack (D) -> Unack (B)', current_severity, B_UNACK)
 
-        # Designed Unsuppression (H->Any)
+        # Return from Suppressed-by-design
+        if state == F_DSUPR:
+            if current_severity == OK:
+                return next_state('Return from Suppressed-by-design, Suppressed-by-design (G) -> Normal (A)', current_severity, A_NORM)
+            else:
+                return next_state('Return from Suppressed-by-design, Suppressed-by-design (G) -> Unack (B)', current_severity, B_UNACK)
 
-        # Remove-from-Service (Any->I)
+        # Return from Out-of-service
+        if state == G_OOSRV:
+            if current_severity == OK:
+                return next_state('Return from Out-of-service, Out-of-service (G) -> Normal (A)', current_severity, A_NORM)
+            else:
+                return next_state('Return from Out-of-service, Out-of-service (G) -> Unack (B)', current_severity, B_UNACK)
 
-        # Return-to-Service (I->Any)
-
-        return current_severity, state
+        return next_state('NOOP', current_severity, current_status)
 
     @staticmethod
     def is_suppressed(alert):
-        return alert.status in [SUPPRESSED_BY_DESIGN, OUT_OF_SERVICE]
+        return alert.status in [F_DSUPR, G_OOSRV]

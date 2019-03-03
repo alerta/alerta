@@ -50,11 +50,20 @@ EXPIRED = 'expired'
 UNKNOWN = 'unknown'
 NOT_VALID = 'notValid'
 
+STATUS_MAP = {
+    OPEN: 'A',
+    ASSIGN: 'B',
+    ACK: 'C',
+    SHELVED: 'D',
+    BLACKOUT: 'E',
+    CLOSED: 'F',
+    EXPIRED: 'G',
+    UNKNOWN: 'H'
+}
 
 MORE_SEVERE = 'moreSevere'
 NO_CHANGE = 'noChange'
 LESS_SEVERE = 'lessSevere'
-
 
 ACTION_OPEN = 'open'
 ACTION_ASSIGN = 'assign'
@@ -83,6 +92,7 @@ class StateMachine(AlarmModel):
 
         StateMachine.Severity = app.config['SEVERITY_MAP'] or SEVERITY_MAP
         StateMachine.Colors = app.config['COLOR_MAP'] or COLOR_MAP
+        StateMachine.Status = STATUS_MAP
 
         StateMachine.DEFAULT_STATUS = OPEN
         StateMachine.DEFAULT_NORMAL_SEVERITY = app.config['DEFAULT_NORMAL_SEVERITY'] or DEFAULT_NORMAL_SEVERITY
