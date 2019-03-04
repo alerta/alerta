@@ -14,7 +14,7 @@ from alerta.models.alarms import AlarmModel
 CRITICAL = 'Critical'
 HIGH = 'High'
 MEDIUM = 'Medium'
-LOW = 'LOW'
+LOW = 'Low'
 ADVISORY = 'Advisory'
 OK = 'OK'
 UNKNOWN = 'Unknown'
@@ -112,19 +112,24 @@ class StateMachine(AlarmModel):
             )
             return severity, status
 
+        # if alert has non-default status then assume state transition has been handled
+        # by a pre_receive() plugin and return the current severity and status
+        if not action and alert.status != StateMachine.DEFAULT_STATUS:
+            return next_state('External State Change, Any (*) -> Any (*)', current_severity, alert.status)
+
         # Operator Shelve, Any (*) -> Shelve (E)
         if action == ACTION_SHELVE:
             return next_state('Operator Shelve, Any (*) -> Shelve (E)', current_severity, E_SHLVD)
         # Operator Unshelve, Shelve (E) -> Normal (A) or Unack (B)
         if action == ACTION_UNSHELVE:
-            if current_severity == OK:
+            if current_severity == StateMachine.DEFAULT_NORMAL_SEVERITY:
                 return next_state('Operator Unshelve, Shelve (E) -> Normal (A)', current_severity, A_NORM)
             else:
                 return next_state('Operator Unshelve, Shelve (E) -> Unack (B)', current_severity, B_UNACK)
 
         # Alarm Occurs, Normal (A) -> Unack (B)
         if state == A_NORM:
-            if current_severity != OK:
+            if current_severity != StateMachine.DEFAULT_NORMAL_SEVERITY:
                 return next_state('Alarm Occurs, Normal (A) -> Unack (B)', current_severity, B_UNACK)
         # Operator Ack, Unack (B) -> Ack (C)
         if state == B_UNACK:
@@ -137,11 +142,11 @@ class StateMachine(AlarmModel):
                     return next_state('Re-Alarm, Ack (C) -> Unack (B)', current_severity, B_UNACK)
         # Process RTN Alarm Clears, Ack (C) -> Normal (A)
         if state == C_ACKED:
-            if current_severity == OK:
+            if current_severity == StateMachine.DEFAULT_NORMAL_SEVERITY:
                 return next_state('Process RTN Alarm Clears, Ack (C) -> Normal (A)', current_severity, A_NORM)
         # Process RTN and Alarm Clears, Unack (B) -> RTN Unack (D)
         if state == B_UNACK:
-            if current_severity == OK:
+            if current_severity == StateMachine.DEFAULT_NORMAL_SEVERITY:
                 return next_state('Process RTN and Alarm Clears, Unack (B) -> RTN Unack (D)', current_severity, D_RTNUN)
         # Operator Ack, RTN Unack (D) -> Normal (A)
         if state == D_RTNUN:
@@ -149,19 +154,19 @@ class StateMachine(AlarmModel):
                 return next_state(' Operator Ack, RTN Unack (D) -> Normal (A)', current_severity, A_NORM)
         # Re-Alarm Unack, RTN Unack (D) -> Unack (B)  # FIXME - missing from descriptions?
         if state == D_RTNUN:
-            if current_severity != OK:
+            if current_severity != StateMachine.DEFAULT_NORMAL_SEVERITY:
                 return next_state('Re-Alarm Unack, RTN Unack (D) -> Unack (B)', current_severity, B_UNACK)
 
-        # Return from Suppressed-by-design
+        # Return from Suppressed-by-design (F) -> Normal (A) or Unack (B)
         if state == F_DSUPR:
-            if current_severity == OK:
+            if current_severity == StateMachine.DEFAULT_NORMAL_SEVERITY:
                 return next_state('Return from Suppressed-by-design, Suppressed-by-design (G) -> Normal (A)', current_severity, A_NORM)
             else:
                 return next_state('Return from Suppressed-by-design, Suppressed-by-design (G) -> Unack (B)', current_severity, B_UNACK)
 
-        # Return from Out-of-service
+        # Return from Out-of-service (G) -> Normal (A) or Unack (B)
         if state == G_OOSRV:
-            if current_severity == OK:
+            if current_severity == StateMachine.DEFAULT_NORMAL_SEVERITY:
                 return next_state('Return from Out-of-service, Out-of-service (G) -> Normal (A)', current_severity, A_NORM)
             else:
                 return next_state('Return from Out-of-service, Out-of-service (G) -> Unack (B)', current_severity, B_UNACK)
