@@ -8,14 +8,14 @@ SEVERITY_MAP = {
     'major': 2,
     'minor': 3,
     'warning': 4,
-    'normal': 5,
-    'ok': 5,
-    'cleared': 5,
     'indeterminate': 5,
     'informational': 6,
-    'debug': 7,
-    'trace': 8,
-    'unknown': 9
+    'normal': 7,
+    'ok': 7,
+    'cleared': 7,
+    'debug': 8,
+    'trace': 9,
+    'unknown': 10
 }
 DEFAULT_NORMAL_SEVERITY = 'normal'  # 'normal', 'ok', 'cleared'
 DEFAULT_PREVIOUS_SEVERITY = 'indeterminate'

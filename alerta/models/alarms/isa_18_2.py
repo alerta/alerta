@@ -6,7 +6,7 @@ https://www.isa.org/store/ansi/isa-182-2016/46962105
 
 """
 
-# FIXME - probably need to automatically ACK RTN_UNACK alerts based on timeout
+
 from flask import current_app
 
 from alerta.models.alarms import AlarmModel
@@ -152,7 +152,7 @@ class StateMachine(AlarmModel):
         if state == D_RTNUN:
             if action == ACTION_ACK:
                 return next_state(' Operator Ack, RTN Unack (D) -> Normal (A)', current_severity, A_NORM)
-        # Re-Alarm Unack, RTN Unack (D) -> Unack (B)  # FIXME - missing from descriptions?
+        # Re-Alarm Unack, RTN Unack (D) -> Unack (B)
         if state == D_RTNUN:
             if current_severity != StateMachine.DEFAULT_NORMAL_SEVERITY:
                 return next_state('Re-Alarm Unack, RTN Unack (D) -> Unack (B)', current_severity, B_UNACK)

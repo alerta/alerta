@@ -108,7 +108,7 @@ class SeverityTestCase(unittest.TestCase):
 
     def test_inactive(self):
 
-        # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=ok, status=closed, trend=noChange
+        # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=ok, status=closed, trend=lessSevere
         response = self.client.post('/alert', data=json.dumps(self.ok_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
@@ -117,7 +117,7 @@ class SeverityTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['previousSeverity'], alarm_model.DEFAULT_PREVIOUS_SEVERITY)
         self.assertEqual(data['alert']['severity'], 'ok')
         self.assertEqual(data['alert']['status'], 'closed')
-        self.assertEqual(data['alert']['trendIndication'], 'noChange')
+        self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
 
         # prevSev=(DEFAULT_PREVIOUS_SEVERITY=indeterminate), sev=informational, status=open, trend=lessSevere
         response = self.client.post('/alert', data=json.dumps(self.inform_alert), headers=self.headers)
