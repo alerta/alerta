@@ -2,7 +2,16 @@ from flask import Blueprint, request
 
 from alerta.exceptions import ApiError
 
-auth = Blueprint('auth', __name__)
+
+class AuthBlueprint(Blueprint):
+
+    def register(self, app, options, first_registration=False):
+        if app.config['AUTH_PROVIDER'] == 'openid':
+            app.config['OIDC_AUTH_URL'] = oidc.get_oidc_configuration(app)['authorization_endpoint']
+        super().register(app, options, first_registration)
+
+
+auth = AuthBlueprint('auth', __name__)
 
 
 try:
@@ -11,7 +20,7 @@ try:
 except ImportError:
     from . import basic  # noqa
 
-from . import azure, github, gitlab, google, keycloak, pingfederate, saml2, userinfo  # noqa
+from . import azure, github, gitlab, google, keycloak, oidc, pingfederate, saml2, userinfo  # noqa
 
 
 @auth.before_request
