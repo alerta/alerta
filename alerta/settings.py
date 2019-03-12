@@ -20,7 +20,7 @@ LOG_HANDLERS = ['console']  # ['console', 'file', 'wsgi']
 LOG_FILE = 'alertad.log'  # NOTE: 'file' must be added to LOG_HANDLERS for logging to work
 LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 LOG_BACKUP_COUNT = 2
-LOG_FORMAT = 'default'
+LOG_FORMAT = 'default'  # ['default', 'simple', 'verbose', 'json'] or any valid logging format
 LOG_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
 
 # API settings
@@ -30,12 +30,12 @@ DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single
 HISTORY_LIMIT = 100  # cap the number of alert history entries
 HISTORY_ON_VALUE_CHANGE = True  # history entry for duplicate alerts if value changes
 
-# MongoDB
+# MongoDB (deprecated, use DATABASE_URL setting)
 MONGO_URI = 'mongodb://localhost:27017/monitoring'
 MONGO_DATABASE = None  # can be used to override default database, above
 MONGO_RAISE_ON_ERROR = True
 
-# PostgreSQL
+# PostgreSQL (deprecated, use DATABASE_URL setting)
 POSTGRES_URI = 'postgres://localhost:5432/monitoring'  # not used (use DATABASE_URL)
 POSTGRES_DB = None
 
@@ -44,9 +44,11 @@ DATABASE_URL = MONGO_URI  # default: MongoDB
 DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
 DATABASE_RAISE_ON_ERROR = MONGO_RAISE_ON_ERROR  # True - terminate, False - ignore and continue
 
+# Search
+DEFAULT_FIELD = 'text'  # default field if no search prefix specified (Postgres only)
+
 # Bulk API
 BULK_QUERY_LIMIT = 100000  # max number of alerts for bulk endpoints
-DEFAULT_FIELD = 'text'  # default field if no search prefix specified (Postgres only)
 CELERY_BROKER_URL = None
 CELERY_RESULT_BACKEND = None
 CELERY_ACCEPT_CONTENT = ['customjson']
@@ -63,28 +65,34 @@ CUSTOMER_VIEWS = False
 BASIC_AUTH_REALM = 'Alerta'
 SIGNUP_ENABLED = True
 
-OAUTH2_CLIENT_ID = None  # Google, GitHub or GitLab OAuth2 client ID and secret
+OAUTH2_CLIENT_ID = None  # Azure, Google, GitHub, GitLab, Keycloak or OpenID OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = None
 ALLOWED_EMAIL_DOMAINS = ['*']
 
+# GitHub OAuth2
 GITHUB_URL = 'https://github.com'
 ALLOWED_GITHUB_ORGS = ['*']
 
+# GitLab OAuth2
 GITLAB_URL = 'https://gitlab.com'
 ALLOWED_GITLAB_GROUPS = ['*']
 
+# BasicAuth using LDAP
 LDAP_URL = ''  # eg. ldap://localhost:389
 LDAP_DOMAINS = {}  # type: Dict[str, str]
 LDAP_DOMAINS_GROUP = {}  # type: Dict[str, str]
 LDAP_DOMAINS_BASEDN = {}  # type: Dict[str, str]
 
+# Microsof Azure Active Directory
 AZURE_TENANT = None
 
+# OpenID Connect
 OIDC_ISSUER_URL = None
 OIDC_AUTH_URL = None
 OIDC_CUSTOM_CLAIM = 'roles'  # JWT claim name whose value is used in role mapping
 ALLOWED_OIDC_ROLES = ['*']
 
+# PingFederate
 PINGFEDERATE_URL = None
 PINGFEDERATE_OPENID_ACCESS_TOKEN_URL = PINGFEDERATE_URL
 PINGFEDERATE_PUBKEY_LOCATION = None
@@ -93,10 +101,12 @@ PINGFEDERATE_OPENID_PAYLOAD_USERNAME = None
 PINGFEDERATE_OPENID_PAYLOAD_EMAIL = None
 PINGFEDERATE_OPENID_PAYLOAD_GROUP = None
 
+# Keycloak
 KEYCLOAK_URL = None
 KEYCLOAK_REALM = None
 ALLOWED_KEYCLOAK_ROLES = ['*']
 
+# SAML 2.0
 SAML2_CONFIG = None
 ALLOWED_SAML2_GROUPS = ['*']
 SAML2_USER_NAME_FORMAT = '{givenName} {surname}'
