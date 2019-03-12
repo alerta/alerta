@@ -141,6 +141,10 @@ DEFAULT_TIMEOUT = 86400
 ALERT_TIMEOUT = DEFAULT_TIMEOUT
 HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
 
+# Housekeeping settings
+DEFAULT_EXPIRED_DELETE_HRS = 2  # hours
+DEFAULT_INFO_DELETE_HRS = 12  # hours
+
 # Send verification emails to new BasicAuth users
 EMAIL_VERIFICATION = False
 SMTP_HOST = 'smtp.gmail.com'

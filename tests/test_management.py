@@ -48,3 +48,8 @@ class AlertTestCase(unittest.TestCase):
         for metric in data['metrics']:
             if metric['name'] == 'total':
                 self.assertGreaterEqual(metric['value'], 1)
+
+    def test_housekeeping(self):
+
+        response = self.client.get('/management/housekeeping', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
