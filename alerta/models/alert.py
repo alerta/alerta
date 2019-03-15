@@ -7,7 +7,7 @@ from typing import Optional  # noqa
 from typing import Any, Dict, List, Tuple, Union
 from uuid import uuid4
 
-from flask import current_app
+from flask import current_app, g
 
 from alerta.app import alarm_model, db
 from alerta.database.base import Query
@@ -278,7 +278,8 @@ class Alert:
                 value=self.value,
                 text='duplicate alert (with status change)',
                 change_type='status',
-                update_time=self.create_time
+                update_time=self.create_time,
+                user=g.user,
             )  # type: Optional[History]
 
             status_change_hook.send(self, status=new_status, text=self.text)
@@ -292,7 +293,8 @@ class Alert:
                 value=self.value,
                 text='duplicate alert (with value change)',
                 change_type='value',
-                update_time=self.create_time
+                update_time=self.create_time,
+                user=g.user
             )
         else:
             history = None
@@ -329,7 +331,8 @@ class Alert:
             value=self.value,
             text='correlated alert',
             change_type='severity',
-            update_time=self.create_time
+            update_time=self.create_time,
+            user=g.user
         )]
 
         if new_status != status:
@@ -362,7 +365,8 @@ class Alert:
             value=self.value,
             text='new alert',
             change_type='new',
-            update_time=self.create_time
+            update_time=self.create_time,
+            user=g.user
         )]
 
         return Alert.from_db(db.create_alert(self))
@@ -395,7 +399,8 @@ class Alert:
             value=self.value,
             text=text,
             change_type='status',
-            update_time=datetime.utcnow()
+            update_time=datetime.utcnow(),
+            user=g.user
         )
         return db.set_status(self.id, status, timeout, history)
 
@@ -421,7 +426,8 @@ class Alert:
             value=self.value,
             text=note,
             change_type='note',
-            update_time=datetime.utcnow()
+            update_time=datetime.utcnow(),
+            user=g.user
         )
         return db.add_history(self.id, history)
 
@@ -524,7 +530,8 @@ class Alert:
                 status='expired',
                 text='expired after timeout',
                 change_type='status',
-                update_time=datetime.utcnow()
+                update_time=datetime.utcnow(),
+                user=g.user
             )
             db.set_status(id, 'expired', timeout=current_app.config['ALERT_TIMEOUT'], history=history)
 
@@ -535,7 +542,8 @@ class Alert:
                 status='open',
                 text='unshelved after timeout',
                 change_type='status',
-                update_time=datetime.utcnow()
+                update_time=datetime.utcnow(),
+                user=g.user
             )
             db.set_status(id, 'open', timeout=current_app.config['ALERT_TIMEOUT'], history=history)
 
@@ -549,7 +557,8 @@ class Alert:
             value=self.value,
             text=text,
             change_type='status',
-            update_time=datetime.utcnow()
+            update_time=datetime.utcnow(),
+            user=g.user
         )]
         return Alert.from_db(db.set_alert(
             id=self.id,
@@ -582,7 +591,8 @@ class Alert:
             value=self.value,
             text=text,
             change_type=action,
-            update_time=datetime.utcnow()
+            update_time=datetime.utcnow(),
+            user=g.user
         )]
         status_change_hook.send(self, status=new_status, text=text)
 

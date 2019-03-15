@@ -510,6 +510,7 @@ class Backend(Database):
                     'attributes': response['attributes'],
                     'origin': response['origin'],
                     'updateTime': response['history']['updateTime'],
+                    'user': response['history'].get('user'),
                     'type': response['history'].get('type', 'unknown'),
                     'customer': response.get('customer')
                 }
@@ -528,6 +529,7 @@ class Backend(Database):
             'tags': 1,
             'attributes': 1,
             'origin': 1,
+            'user': 1,
             'type': 1,
             'history': 1
         }
@@ -561,6 +563,7 @@ class Backend(Database):
                     'attributes': response['attributes'],
                     'origin': response['origin'],
                     'updateTime': response['history']['updateTime'],
+                    'user': response.get('user'),
                     'type': response['history'].get('type', 'unknown'),
                     'customer': response.get('customer', None)
                 }
