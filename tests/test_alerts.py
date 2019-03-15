@@ -104,6 +104,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
+        self.assertEqual(data['alert']['history'][0]['user'], None)
 
         alert_id = data['id']
 

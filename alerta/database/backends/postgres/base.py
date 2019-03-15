@@ -38,7 +38,7 @@ class HistoryAdapter:
                 a.prepare(self.conn)
             return a.getquoted().decode('utf-8')
 
-        return '({}, {}, {}, {}, {}, {}, {}, {}::timestamp)::history'.format(
+        return '({}, {}, {}, {}, {}, {}, {}, {}::timestamp, {})::history'.format(
             quoted(self.history.id),
             quoted(self.history.event),
             quoted(self.history.severity),
@@ -46,7 +46,8 @@ class HistoryAdapter:
             quoted(self.history.value),
             quoted(self.history.text),
             quoted(self.history.change_type),
-            quoted(self.history.update_time)
+            quoted(self.history.update_time),
+            quoted(self.history.user)
         )
 
     def __str__(self):
@@ -55,7 +56,7 @@ class HistoryAdapter:
 
 Record = namedtuple('Record', [
     'id', 'resource', 'event', 'environment', 'severity', 'status', 'service', 'group',
-    'value', 'text', 'tags', 'attributes', 'origin', 'update_time', 'type', 'customer'
+    'value', 'text', 'tags', 'attributes', 'origin', 'update_time', 'user', 'type', 'customer'
 ])
 
 
@@ -409,6 +410,7 @@ class Backend(Database):
                 attributes=h.attributes,
                 origin=h.origin,
                 update_time=h.update_time,
+                user=getattr(h, 'user', None),
                 type=h.type,
                 customer=h.customer
             ) for h in self._fetchall(select, vars(alert), limit=page_size, offset=(page - 1) * page_size)
@@ -439,6 +441,7 @@ class Backend(Database):
                 attributes=h.attributes,
                 origin=h.origin,
                 update_time=h.update_time,
+                user=getattr(h, 'user', None),
                 type=h.type,
                 customer=h.customer
             ) for h in self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
