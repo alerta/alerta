@@ -2,16 +2,23 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'history') THEN
-    CREATE TYPE history AS (
-        id text,
-        event text,
-        severity text,
-        status text,
-        value text,
-        text text,
-        type text,
-        update_time timestamp without time zone
-    );
+        CREATE TYPE history AS (
+            id text,
+            event text,
+            severity text,
+            status text,
+            value text,
+            text text,
+            type text,
+            update_time timestamp without time zone,
+            "user" text
+        );
+    ELSE
+        BEGIN
+            ALTER TYPE history ADD ATTRIBUTE "user" text CASCADE;
+        EXCEPTION
+            WHEN duplicate_column THEN RAISE NOTICE 'user exists in history type';
+        END;
     END IF;
 END$$;
 

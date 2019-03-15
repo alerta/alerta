@@ -15,6 +15,7 @@ class History:
         self.text = kwargs.get('text', None)
         self.change_type = kwargs.get('change_type', kwargs.get('type', None)) or ''
         self.update_time = kwargs.get('update_time', None) or datetime.utcnow()
+        self.user = kwargs.get('user', None)
 
     @property
     def serialize(self):
@@ -27,7 +28,8 @@ class History:
             'value': self.value,
             'text': self.text,
             'type': self.change_type,
-            'updateTime': self.update_time
+            'updateTime': self.update_time,
+            'user': self.user
         }
 
     def __repr__(self):
@@ -44,7 +46,8 @@ class History:
             value=doc.get('value', None),
             text=doc.get('text', None),
             change_type=doc.get('type', None),
-            update_time=doc.get('updateTime', None)
+            update_time=doc.get('updateTime', None),
+            user=doc.get('user', None)
         )
 
     @classmethod
@@ -57,7 +60,8 @@ class History:
             value=rec.value,
             text=rec.text,
             change_type=rec.type,
-            update_time=rec.update_time
+            update_time=rec.update_time,
+            user=getattr(rec, 'user', None)
         )
 
     @classmethod
@@ -86,6 +90,7 @@ class RichHistory:
         self.attributes = kwargs.get('attributes', None) or dict()
         self.origin = kwargs.get('origin', None)
         self.update_time = kwargs.get('update_time', None)
+        self.user = kwargs.get('user', None)
         self.change_type = kwargs.get('change_type', kwargs.get('type', None))
         self.customer = kwargs.get('customer', None)
 
@@ -104,6 +109,7 @@ class RichHistory:
             'attributes': self.attributes,
             'origin': self.origin,
             'updateTime': self.update_time,
+            'user': self.user,
             'type': self.change_type,
             'customer': self.customer
         }
@@ -140,6 +146,7 @@ class RichHistory:
             attributes=doc.get('attributes', dict()),
             origin=doc.get('origin', None),
             update_time=doc.get('updateTime', None),
+            user=doc.get('user', None),
             change_type=doc.get('type', None),
             customer=doc.get('customer', None)
         )
@@ -161,6 +168,7 @@ class RichHistory:
             attributes=dict(rec.attributes),
             origin=rec.origin,
             update_time=rec.update_time,
+            user=getattr(rec, 'user', None),
             change_type=rec.type,
             customer=rec.customer
         )

@@ -54,7 +54,7 @@ class AuthTestCase(unittest.TestCase):
     def test_readwrite_key(self):
 
         payload = {
-            'user': 'rw-demo-key',
+            'user': 'rw-demo-key-user',
             'type': 'read-write'
         }
 
@@ -69,6 +69,8 @@ class AuthTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(self.alert),
                                     content_type='application/json', headers={'Authorization': 'Key ' + rw_api_key})
         self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['history'][0]['user'], 'rw-demo-key-user')
 
         response = self.client.get('/alerts', headers={'Authorization': 'Key ' + rw_api_key})
         self.assertEqual(response.status_code, 200)
@@ -86,7 +88,7 @@ class AuthTestCase(unittest.TestCase):
     def test_readonly_key(self):
 
         payload = {
-            'user': 'ro-demo-key',
+            'user': 'ro-demo-key-user',
             'type': 'read-only'
         }
 
@@ -201,7 +203,7 @@ class AuthTestCase(unittest.TestCase):
 
         # create a customer demo key
         payload = {
-            'user': 'customer-demo-key',
+            'user': 'customer-demo-key-user',
             'type': 'read-only'
         }
 
@@ -252,7 +254,7 @@ class AuthTestCase(unittest.TestCase):
         }
 
         payload = {
-            'user': 'rw-demo-key',
+            'user': 'rw-demo-key-user',
             'type': 'read-write'
         }
 
