@@ -111,7 +111,7 @@ class Database(Base):
     def create_alert(self, alert):
         raise NotImplementedError
 
-    def set_alert(self, id, severity, status, tags, attributes, timeout, previous_severity, history=None):
+    def set_alert(self, id, severity, status, tags, attributes, timeout, previous_severity, update_time, history=None):
         raise NotImplementedError
 
     def get_alert(self, id, customers=None):
@@ -119,7 +119,7 @@ class Database(Base):
 
     # STATUS, TAGS, ATTRIBUTES
 
-    def set_status(self, id, status, timeout, history=None):
+    def set_status(self, id, status, timeout, update_time, history=None):
         raise NotImplementedError
 
     def tag_alert(self, id, tags):
