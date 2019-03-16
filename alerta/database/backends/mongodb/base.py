@@ -196,6 +196,9 @@ class Backend(Database):
         attributes = {'attributes.' + k: v for k, v in alert.attributes.items()}
         update['$set'].update(attributes)
 
+        if alert.update_time:
+            update['$set']['updateTime'] = alert.update_time
+
         if history:
             update['$push'] = {
                 'history': {
@@ -261,6 +264,9 @@ class Backend(Database):
         attributes = {'attributes.' + k: v for k, v in alert.attributes.items()}
         update['$set'].update(attributes)
 
+        if alert.update_time:
+            update['$set']['updateTime'] = alert.update_time
+
         return self.get_db().alerts.find_one_and_update(
             query,
             update=update,
@@ -295,12 +301,13 @@ class Backend(Database):
             'receiveTime': alert.receive_time,
             'lastReceiveId': alert.last_receive_id,
             'lastReceiveTime': alert.last_receive_time,
+            'updateTime': alert.update_time,
             'history': [h.serialize for h in alert.history]
         }
         if self.get_db().alerts.insert_one(data).inserted_id == alert.id:
             return data
 
-    def set_alert(self, id, severity, status, tags, attributes, timeout, previous_severity, history=None):
+    def set_alert(self, id, severity, status, tags, attributes, timeout, previous_severity, update_time, history=None):
         query = {'_id': {'$regex': '^' + id}}
 
         update = {
@@ -309,7 +316,8 @@ class Backend(Database):
                 'status': status,
                 'attributes': attributes,
                 'timeout': timeout,
-                'previousSeverity': previous_severity
+                'previousSeverity': previous_severity,
+                'updateTime': update_time
             },
             '$addToSet': {'tags': {'$each': tags}},
             '$push': {
@@ -339,14 +347,14 @@ class Backend(Database):
 
     # STATUS, TAGS, ATTRIBUTES
 
-    def set_status(self, id, status, timeout, history=None):
+    def set_status(self, id, status, timeout, update_time, history=None):
         """
         Set status and update history.
         """
         query = {'_id': {'$regex': '^' + id}}
 
         update = {
-            '$set': {'status': status, 'timeout': timeout},
+            '$set': {'status': status, 'timeout': timeout, 'updateTime': update_time},
             '$push': {
                 'history': {
                     '$each': [history.serialize],

@@ -210,14 +210,18 @@ class Backend(Database):
                SET status=%(status)s, value=%(value)s, text=%(text)s, timeout=%(timeout)s, raw_data=%(raw_data)s,
                    repeat=%(repeat)s, last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
                    tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)), attributes=attributes || %(attributes)s,
-                   duplicate_count=duplicate_count + 1, history=(%(history)s || history)[1:{limit}]
+                   duplicate_count=duplicate_count + 1, {update_time}, history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND event=%(event)s
                AND severity=%(severity)s
                AND {customer}
          RETURNING *
-        """.format(limit=current_app.config['HISTORY_LIMIT'], customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
+        """.format(
+            limit=current_app.config['HISTORY_LIMIT'],
+            update_time='update_time=%(update_time)s' if alert.update_time else 'update_time=update_time',
+            customer='customer=%(customer)s' if alert.customer else 'customer IS NULL'
+        )
         return self._updateone(update, vars(alert), returning=True)
 
     def correlate_alert(self, alert, history):
@@ -229,13 +233,17 @@ class Backend(Database):
                    repeat=%(repeat)s, previous_severity=%(previous_severity)s, trend_indication=%(trend_indication)s,
                    receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
                    last_receive_time=%(last_receive_time)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
-                   attributes=attributes || %(attributes)s, history=(%(history)s || history)[1:{limit}]
+                   attributes=attributes || %(attributes)s, {update_time}, history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
          RETURNING *
-        """.format(limit=current_app.config['HISTORY_LIMIT'], customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
+        """.format(
+            limit=current_app.config['HISTORY_LIMIT'],
+            update_time='update_time=%(update_time)s' if alert.update_time else 'update_time=update_time',
+            customer='customer=%(customer)s' if alert.customer else 'customer IS NULL'
+        )
         return self._updateone(update, vars(alert), returning=True)
 
     def create_alert(self, alert):
@@ -243,28 +251,29 @@ class Backend(Database):
             INSERT INTO alerts (id, resource, event, environment, severity, correlate, status, service, "group",
                 value, text, tags, attributes, origin, type, create_time, timeout, raw_data, customer,
                 duplicate_count, repeat, previous_severity, trend_indication, receive_time, last_receive_id,
-                last_receive_time, history)
+                last_receive_time, update_time, history)
             VALUES (%(id)s, %(resource)s, %(event)s, %(environment)s, %(severity)s, %(correlate)s, %(status)s,
                 %(service)s, %(group)s, %(value)s, %(text)s, %(tags)s, %(attributes)s, %(origin)s,
                 %(event_type)s, %(create_time)s, %(timeout)s, %(raw_data)s, %(customer)s, %(duplicate_count)s,
                 %(repeat)s, %(previous_severity)s, %(trend_indication)s, %(receive_time)s, %(last_receive_id)s,
-                %(last_receive_time)s, %(history)s::history[])
+                %(last_receive_time)s, %(update_time)s, %(history)s::history[])
             RETURNING *
         """
         return self._insert(insert, vars(alert))
 
-    def set_alert(self, id, severity, status, tags, attributes, timeout, previous_severity, history=None):
+    def set_alert(self, id, severity, status, tags, attributes, timeout, previous_severity, update_time, history=None):
         update = """
             UPDATE alerts
                SET severity=%(severity)s, status=%(status)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
                    attributes=%(attributes)s, timeout=%(timeout)s, previous_severity=%(previous_severity)s,
-                   history=(%(change)s || history)[1:{limit}]
+                   update_time=%(update_time)s, history=(%(change)s || history)[1:{limit}]
              WHERE id=%(id)s OR id LIKE %(like_id)s
          RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
         return self._updateone(update, {'id': id, 'like_id': id + '%', 'severity': severity, 'status': status,
                                         'tags': tags, 'attributes': attributes, 'timeout': timeout,
-                                        'previous_severity': previous_severity, 'change': history}, returning=True)
+                                        'previous_severity': previous_severity, 'update_time': update_time,
+                                        'change': history}, returning=True)
 
     def get_alert(self, id, customers=None):
         select = """
@@ -276,14 +285,14 @@ class Backend(Database):
 
     # STATUS, TAGS, ATTRIBUTES
 
-    def set_status(self, id, status, timeout, history=None):
+    def set_status(self, id, status, timeout, update_time, history=None):
         update = """
             UPDATE alerts
-            SET status=%(status)s, timeout=%(timeout)s, history=(%(change)s || history)[1:{limit}]
+            SET status=%(status)s, timeout=%(timeout)s, update_time=%(update_time)s, history=(%(change)s || history)[1:{limit}]
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
-        return self._updateone(update, {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout, 'change': history}, returning=True)
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout, 'update_time': update_time, 'change': history}, returning=True)
 
     def tag_alert(self, id, tags):
         update = """

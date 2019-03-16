@@ -53,6 +53,12 @@ CREATE TABLE IF NOT EXISTS alerts (
     history history[]
 );
 
+DO $$
+BEGIN
+    ALTER TABLE alerts ADD COLUMN update_time text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "update_time" already exists in alerts.';
+END$$;
 
 CREATE TABLE IF NOT EXISTS blackouts (
     id text PRIMARY KEY,

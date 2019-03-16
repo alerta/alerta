@@ -107,6 +107,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['history'][0]['user'], None)
 
         alert_id = data['id']
+        update_time = data['alert']['updateTime']
 
         # create duplicate alert
         response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
@@ -116,6 +117,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['duplicateCount'], 1)
         self.assertEqual(data['alert']['previousSeverity'], alarm_model.DEFAULT_PREVIOUS_SEVERITY)
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
+        self.assertEqual(data['alert']['updateTime'], update_time)
 
         # correlate alert (same event, diff sev)
         response = self.client.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
@@ -126,6 +128,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['previousSeverity'], self.major_alert['severity'])
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
+        self.assertEqual(data['alert']['updateTime'], update_time)
 
         # de-duplicate
         response = self.client.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
@@ -134,6 +137,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertIn(alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['duplicateCount'], 1)
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
+        self.assertEqual(data['alert']['updateTime'], update_time)
 
         # correlate alert (diff event, same sev)
         response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
@@ -143,6 +147,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['previousSeverity'], self.critical_alert['severity'])
         self.assertEqual(data['alert']['trendIndication'], 'noChange')
+        self.assertEqual(data['alert']['updateTime'], update_time)
 
         # correlate alert (diff event, diff sev)
         response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
@@ -152,6 +157,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['previousSeverity'], self.fatal_alert['severity'])
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
+        self.assertEqual(data['alert']['updateTime'], update_time)
 
         # correlate alert (diff event, diff sev)
         response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
@@ -162,6 +168,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['previousSeverity'], self.major_alert['severity'])
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
+        self.assertEqual(data['alert']['updateTime'], data['alert']['receiveTime'])
 
         # get alert
         response = self.client.get('/alert/' + alert_id)
@@ -205,12 +212,14 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
 
         alert_id = data['id']
+        update_time = data['alert']['updateTime']
 
         # severity != normal -> status=open
         response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['updateTime'], update_time)
 
         # ack alert
         response = self.client.put('/alert/' + alert_id + '/status',
@@ -220,12 +229,18 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'ack')
+        self.assertNotEqual(data['alert']['updateTime'], update_time)
+
+        update_time = data['alert']['updateTime']
 
         # new severity > old severity -> status=open
         response = self.client.post('/alert', data=json.dumps(self.critical_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'open')
+        self.assertNotEqual(data['alert']['updateTime'], update_time)
+
+        update_time = data['alert']['updateTime']
 
         # ack alert (again)
         response = self.client.put('/alert/' + alert_id + '/status',
@@ -235,30 +250,43 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'ack')
+        self.assertNotEqual(data['alert']['updateTime'], update_time)
+
+        update_time = data['alert']['updateTime']
 
         # new severity <= old severity -> status=ack
         response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'ack')
+        self.assertEqual(data['alert']['updateTime'], update_time)
+
+        update_time = data['alert']['updateTime']
 
         # severity == normal -> status=closed
         response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'closed')
+        self.assertNotEqual(data['alert']['updateTime'], update_time)
+
+        update_time = data['alert']['updateTime']
 
         # severity != normal -> status=open
         response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'open')
+        self.assertNotEqual(data['alert']['updateTime'], update_time)
+
+        update_time = data['alert']['updateTime']
 
         # severity = normal -> status=closed
         response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'closed')
+        self.assertNotEqual(data['alert']['updateTime'], update_time)
 
         # delete alert
         response = self.client.delete('/alert/' + alert_id)
