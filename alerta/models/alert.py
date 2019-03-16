@@ -67,6 +67,7 @@ class Alert:
         self.receive_time = kwargs.get('receive_time', None) or datetime.utcnow()
         self.last_receive_id = kwargs.get('last_receive_id', None)
         self.last_receive_time = kwargs.get('last_receive_time', None)
+        self.update_time = kwargs.get('update_time', None)
         self.history = kwargs.get('history', None) or list()
 
     @classmethod
@@ -136,6 +137,7 @@ class Alert:
             'receiveTime': self.receive_time,
             'lastReceiveId': self.last_receive_id,
             'lastReceiveTime': self.last_receive_time,
+            'updateTime': self.update_time,
             'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)]
         }
 
@@ -145,7 +147,7 @@ class Alert:
     def get_body(self, history: bool=True) -> Dict[str, Any]:
         body = self.serialize
         body.update({
-            key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime']
+            key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime', 'updateTime']
         })
         if not history:
             body['history'] = []
@@ -184,6 +186,7 @@ class Alert:
             receive_time=doc.get('receiveTime', None),
             last_receive_id=doc.get('lastReceiveId', None),
             last_receive_time=doc.get('lastReceiveTime', None),
+            update_time=doc.get('updateTime', None),
             history=[History.from_db(h) for h in doc.get('history', list())]
         )
 
@@ -216,6 +219,7 @@ class Alert:
             receive_time=rec.receive_time,
             last_receive_id=rec.last_receive_id,
             last_receive_time=rec.last_receive_time,
+            update_time=getattr(rec, 'update_time'),
             history=[History.from_db(h) for h in rec.history]
         )
 
@@ -281,6 +285,7 @@ class Alert:
                 update_time=self.create_time,
                 user=g.user,
             )  # type: Optional[History]
+            self.update_time = now
 
             status_change_hook.send(self, status=new_status, text=self.text)
 
@@ -337,12 +342,15 @@ class Alert:
 
         if new_status != status:
             status_change_hook.send(self, status=new_status, text=self.text)
+            self.update_time = now
 
         self.status = new_status
         return Alert.from_db(db.correlate_alert(self, history))
 
     # create an alert
     def create(self) -> 'Alert':
+        now = datetime.utcnow()
+
         trend_indication = alarm_model.trend(alarm_model.DEFAULT_PREVIOUS_SEVERITY, self.severity)
 
         _, self.status = alarm_model.transition(
@@ -353,9 +361,10 @@ class Alert:
         self.repeat = False
         self.previous_severity = alarm_model.DEFAULT_PREVIOUS_SEVERITY
         self.trend_indication = trend_indication
-        self.receive_time = datetime.utcnow()
+        self.receive_time = now
         self.last_receive_id = self.id
-        self.last_receive_time = self.receive_time
+        self.last_receive_time = now
+        self.update_time = now
 
         self.history = [History(
             id=self.id,
@@ -390,6 +399,8 @@ class Alert:
 
     # set alert status
     def set_status(self, status: str, text: str='', timeout: int=None) -> 'Alert':
+        now = datetime.utcnow()
+
         timeout = timeout or current_app.config['ALERT_TIMEOUT']
         history = History(
             id=self.id,
@@ -399,10 +410,10 @@ class Alert:
             value=self.value,
             text=text,
             change_type='status',
-            update_time=datetime.utcnow(),
+            update_time=now,
             user=g.user
         )
-        return db.set_status(self.id, status, timeout, history)
+        return db.set_status(self.id, status, timeout, update_time=now, history=history)
 
     # tag an alert
     def tag(self, tags: List[str]) -> bool:
@@ -521,6 +532,7 @@ class Alert:
 
     @staticmethod
     def housekeeping(expired_threshold: int=2, info_threshold: int=12) -> None:
+        now = datetime.utcnow()
         expired, unshelved = db.housekeeping(expired_threshold, info_threshold)
 
         for (id, event, last_receive_id) in expired:
@@ -530,10 +542,10 @@ class Alert:
                 status='expired',
                 text='expired after timeout',
                 change_type='status',
-                update_time=datetime.utcnow(),
+                update_time=now,
                 user=g.user
             )
-            db.set_status(id, 'expired', timeout=current_app.config['ALERT_TIMEOUT'], history=history)
+            db.set_status(id, 'expired', timeout=current_app.config['ALERT_TIMEOUT'], update_time=now, history=history)
 
         for (id, event, last_receive_id) in unshelved:
             history = History(
@@ -542,12 +554,14 @@ class Alert:
                 status='open',
                 text='unshelved after timeout',
                 change_type='status',
-                update_time=datetime.utcnow(),
+                update_time=now,
                 user=g.user
             )
-            db.set_status(id, 'open', timeout=current_app.config['ALERT_TIMEOUT'], history=history)
+            db.set_status(id, 'open', timeout=current_app.config['ALERT_TIMEOUT'], update_time=now, history=history)
 
     def from_status(self, status: str, text: str='', timeout: int=None) -> 'Alert':
+        now = datetime.utcnow()
+
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
         history = [History(
             id=self.id,
@@ -557,7 +571,7 @@ class Alert:
             value=self.value,
             text=text,
             change_type='status',
-            update_time=datetime.utcnow(),
+            update_time=now,
             user=g.user
         )]
         return Alert.from_db(db.set_alert(
@@ -568,10 +582,13 @@ class Alert:
             attributes=self.attributes,
             timeout=timeout,
             previous_severity=self.previous_severity,
+            update_time=now,
             history=history)
         )
 
     def from_action(self, action: str, text: str='', timeout: int=None) -> 'Alert':
+        now = datetime.utcnow()
+
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
 
         status, _, previous_status = self._get_hist_info(action)
@@ -591,7 +608,7 @@ class Alert:
             value=self.value,
             text=text,
             change_type=action,
-            update_time=datetime.utcnow(),
+            update_time=now,
             user=g.user
         )]
         status_change_hook.send(self, status=new_status, text=text)
@@ -604,5 +621,6 @@ class Alert:
             attributes=self.attributes,
             timeout=timeout,
             previous_severity=self.severity if new_severity != self.severity else self.previous_severity,
+            update_time=now,
             history=history)
         )
