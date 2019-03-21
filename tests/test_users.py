@@ -3,6 +3,8 @@ import json
 import unittest
 
 from alerta.app import create_app, db
+from alerta.models.enums import Scope
+from alerta.models.key import ApiKey
 
 
 class UserTestCase(unittest.TestCase):
@@ -11,10 +13,33 @@ class UserTestCase(unittest.TestCase):
 
         test_config = {
             'TESTING': True,
-            'AUTH_REQUIRED': False
+            'AUTH_REQUIRED': True,
+            'ADMIN_USERS': ['admin@alerta.io'],
+            'ALLOWED_EMAIL_DOMAINS': ['alerta.io', 'doe.com']
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
+
+        self.alert = {
+            'event': 'Foo',
+            'resource': 'Bar',
+            'environment': 'Production',
+            'service': ['Quux']
+        }
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
 
     def tearDown(self):
         db.destroy()
@@ -28,13 +53,10 @@ class UserTestCase(unittest.TestCase):
             'roles': ['operator'],
             'text': 'devops user'
         }
-        headers = {
-            'Content-type': 'application/json'
-        }
 
         # create user
-        response = self.client.post('/user', data=json.dumps(payload), headers=headers)
-        self.assertEqual(response.status_code, 201)
+        response = self.client.post('/user', data=json.dumps(payload), headers=self.headers)
+        self.assertEqual(response.status_code, 201, response.data)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['user']['name'], 'John Doe')
         self.assertEqual(data['user']['email'], 'john@doe.com')
@@ -48,12 +70,12 @@ class UserTestCase(unittest.TestCase):
         }
 
         # modify user (assign different role)
-        response = self.client.put('/user/' + user_id, data=json.dumps(payload), headers=headers)
+        response = self.client.put('/user/' + user_id, data=json.dumps(payload), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
 
         # get user
-        response = self.client.get('/user/' + user_id, headers=headers)
+        response = self.client.get('/user/' + user_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['user']['name'], 'John Doe')
@@ -66,12 +88,12 @@ class UserTestCase(unittest.TestCase):
         }
 
         # modify user (assign multiple roles)
-        response = self.client.put('/user/' + user_id, data=json.dumps(payload), headers=headers)
+        response = self.client.put('/user/' + user_id, data=json.dumps(payload), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
 
         # get user
-        response = self.client.get('/user/' + user_id, headers=headers)
+        response = self.client.get('/user/' + user_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['user']['name'], 'John Doe')
@@ -88,12 +110,9 @@ class UserTestCase(unittest.TestCase):
             'roles': ['operator'],
             'text': 'devops user'
         }
-        headers = {
-            'Content-type': 'application/json'
-        }
 
         # create user
-        response = self.client.post('/user', data=json.dumps(payload), headers=headers)
+        response = self.client.post('/user', data=json.dumps(payload), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['user']['name'], 'John Doe')
