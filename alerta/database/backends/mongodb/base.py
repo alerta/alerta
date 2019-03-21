@@ -1274,14 +1274,12 @@ class Backend(Database):
         """
         Set all attributes and unset attributes by using a value of 'null'.
         """
-        update = dict()
-        set_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is not None}
-        if set_value:
-            update['$set'] = set_value
-        unset_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is None}
-        if unset_value:
-            update['$unset'] = unset_value
-
+        from alerta.utils.collections import merge
+        merge(old_attrs, new_attrs)
+        attrs = {k: v for k, v in old_attrs.items() if v is not None}
+        update = {
+            '$set': {'attributes': attrs}
+        }
         response = self.get_db().users.update_one({'_id': {'$regex': '^' + id}}, update=update)
         return response.matched_count > 0
 

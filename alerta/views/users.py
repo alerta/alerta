@@ -187,7 +187,6 @@ def update_user_attributes(user_id):
     admin_audit_trail.send(current_app._get_current_object(), event='user-attributes-updated', message='', user=g.user,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
-    print(request.json)
     if user.update_attributes(request.json['attributes']):
         return jsonify(status='ok')
     else:
