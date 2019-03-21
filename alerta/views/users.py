@@ -6,6 +6,7 @@ from alerta.auth.decorators import permission
 from alerta.auth.utils import not_authorized
 from alerta.exceptions import ApiError
 from alerta.models.enums import Scope
+from alerta.models.permission import Permission
 from alerta.models.user import User
 from alerta.utils.audit import admin_audit_trail, write_audit_trail
 from alerta.utils.response import jsonp
@@ -29,6 +30,12 @@ def create_user():
 
     if User.find_by_email(email=user.email):
         raise ApiError('username already exists', 409)
+
+    want_scopes = Permission.lookup(login=user.email, groups=user.roles)
+    for want_scope in want_scopes:
+        if not Permission.is_in_scope(want_scope, have_scopes=g.scopes):
+            raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
+                want_scope, ','.join(g.scopes)), 403)
 
     try:
         user = user.create()
@@ -129,6 +136,13 @@ def update_user(user_id):
         user_by_email = User.find_by_email(request.json['email'])
         if user_by_email and user_by_email.id != user.id:
             raise ApiError('user with email already exists', 409)
+
+    if request.json.get('roles'):
+        want_scopes = Permission.lookup(login='', groups=request.json['roles'])
+        for want_scope in want_scopes:
+            if not Permission.is_in_scope(want_scope, have_scopes=g.scopes):
+                raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
+                    want_scope, ','.join(g.scopes)), 403)
 
     admin_audit_trail.send(current_app._get_current_object(), event='user-updated', message='', user=g.user,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
