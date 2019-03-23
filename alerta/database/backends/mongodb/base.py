@@ -1,4 +1,4 @@
-
+from collections import defaultdict
 from datetime import datetime, timedelta
 
 from flask import current_app
@@ -722,47 +722,75 @@ class Backend(Database):
 
     def get_environments(self, query=None, topn=1000):
         query = query or Query()
-        pipeline = [
-            {'$match': query.where},
-            {'$project': {'environment': 1}},
-            {'$group': {'_id': '$environment', 'count': {'$sum': 1}}},
-            {'$limit': topn}
-        ]
-        responses = self.get_db().alerts.aggregate(pipeline)
 
-        environments = list()
-        for response in responses:
-            environments.append(
-                {
-                    'environment': response['_id'],
-                    'count': response['count']
-                }
-            )
-        return environments
+        def pipeline(group_by):
+            return [
+                {'$match': query.where},
+                {'$project': {'environment': 1, group_by: 1}},
+                {'$group':
+                 {
+                     '_id': {'environment': '$environment', group_by: '$' + group_by},
+                     'count': {'$sum': 1}
+                 }
+                 },
+                {'$limit': topn}
+            ]
+
+        response_severity = self.get_db().alerts.aggregate(pipeline('severity'))
+        severity_count = defaultdict(list)
+        for r in response_severity:
+            severity_count[r['_id']['environment']].append((r['_id']['severity'], r['count']))
+
+        response_status = self.get_db().alerts.aggregate(pipeline('status'))
+        status_count = defaultdict(list)
+        for r in response_status:
+            status_count[r['_id']['environment']].append((r['_id']['status'], r['count']))
+
+        return [
+            {
+                'environment': env,
+                'severityCounts': dict(severity_count[env]),
+                'statusCounts': dict(status_count[env]),
+                'count': sum(t[1] for t in severity_count[env])
+            } for env in severity_count]
 
     # SERVICES
 
     def get_services(self, query=None, topn=1000):
         query = query or Query()
-        pipeline = [
-            {'$unwind': '$service'},
-            {'$match': query.where},
-            {'$project': {'environment': 1, 'service': 1}},
-            {'$group': {'_id': {'environment': '$environment', 'service': '$service'}, 'count': {'$sum': 1}}},
-            {'$limit': topn}
-        ]
-        responses = self.get_db().alerts.aggregate(pipeline)
 
-        services = list()
-        for response in responses:
-            services.append(
-                {
-                    'environment': response['_id']['environment'],
-                    'service': response['_id']['service'],
-                    'count': response['count']
-                }
-            )
-        return services
+        def pipeline(group_by):
+            return [
+                {'$unwind': '$service'},
+                {'$match': query.where},
+                {'$project': {'environment': 1, 'service': 1, group_by: 1}},
+                {'$group':
+                 {
+                     '_id': {'environment': '$environment', 'service': '$service', group_by: '$' + group_by},
+                     'count': {'$sum': 1}
+                 }
+                 },
+                {'$limit': topn}
+            ]
+
+        response_severity = self.get_db().alerts.aggregate(pipeline('severity'))
+        severity_count = defaultdict(list)
+        for r in response_severity:
+            severity_count[(r['_id']['environment'], r['_id']['service'])].append((r['_id']['severity'], r['count']))
+
+        response_status = self.get_db().alerts.aggregate(pipeline('status'))
+        status_count = defaultdict(list)
+        for r in response_status:
+            status_count[(r['_id']['environment'], r['_id']['service'])].append((r['_id']['status'], r['count']))
+
+        return [
+            {
+                'environment': env,
+                'service': svc,
+                'severityCounts': dict(severity_count[(env, svc)]),
+                'statusCounts': dict(status_count[(env, svc)]),
+                'count': sum(t[1] for t in severity_count[(env, svc)])
+            } for env, svc in severity_count]
 
     # GROUPS
 

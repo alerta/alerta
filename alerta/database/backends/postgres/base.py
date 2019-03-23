@@ -1,6 +1,6 @@
 import time
 import warnings
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from datetime import datetime
 
 import psycopg2
@@ -569,22 +569,63 @@ class Backend(Database):
     def get_environments(self, query=None, topn=1000):
         query = query or Query()
         select = """
-            SELECT environment, count(1) FROM alerts
+            SELECT environment, severity, status, count(1) FROM alerts
             WHERE {where}
-            GROUP BY environment
+            GROUP BY environment, CUBE(severity, status)
         """.format(where=query.where)
-        return [{'environment': e.environment, 'count': e.count} for e in self._fetchall(select, query.vars, limit=topn)]
+        result = self._fetchall(select, query.vars, limit=topn)
+
+        severity_count = defaultdict(list)
+        status_count = defaultdict(list)
+        total_count = dict()
+
+        for row in result:
+            if row.severity and not row.status:
+                severity_count[row.environment].append((row.severity, row.count))
+            if not row.severity and row.status:
+                status_count[row.environment].append((row.status, row.count))
+            if not row.severity and not row.status:
+                total_count[row.environment] = row.count
+
+        return [
+            {
+                'environment': env,
+                'severityCounts': dict(severity_count[env]),
+                'statusCounts': dict(status_count[env]),
+                'count': total_count[env]
+            } for env in severity_count]
 
     # SERVICES
 
     def get_services(self, query=None, topn=1000):
         query = query or Query()
         select = """
-            SELECT environment, svc, count(1) FROM alerts, UNNEST(service) svc
+            SELECT environment, svc, severity, status, count(1) FROM alerts, UNNEST(service) svc
             WHERE {where}
-            GROUP BY environment, svc
+            GROUP BY environment, svc, CUBE(severity, status)
         """.format(where=query.where)
-        return [{'environment': s.environment, 'service': s.svc, 'count': s.count} for s in self._fetchall(select, query.vars, limit=topn)]
+        result = self._fetchall(select, query.vars, limit=topn)
+
+        severity_count = defaultdict(list)
+        status_count = defaultdict(list)
+        total_count = dict()
+
+        for row in result:
+            if row.severity and not row.status:
+                severity_count[(row.environment, row.svc)].append((row.severity, row.count))
+            if not row.severity and row.status:
+                status_count[(row.environment, row.svc)].append((row.status, row.count))
+            if not row.severity and not row.status:
+                total_count[(row.environment, row.svc)] = row.count
+
+        return [
+            {
+                'environment': env,
+                'service': svc,
+                'severityCounts': dict(severity_count[(env, svc)]),
+                'statusCounts': dict(status_count[(env, svc)]),
+                'count': total_count[(env, svc)]
+            } for env, svc in severity_count]
 
     # GROUPS
 
