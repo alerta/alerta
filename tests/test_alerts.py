@@ -86,6 +86,15 @@ class AlertTestCase(unittest.TestCase):
             'correlate': ['node_down', 'node_marginal', 'node_up']
         }
 
+        self.ok2_alert = {
+            'event': 'node_up',
+            'resource': self.resource + '2',
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'ok',
+            'correlate': ['node_down', 'node_marginal', 'node_up']
+        }
+
         self.headers = {
             'Content-type': 'application/json',
             'X-Forwarded-For': '10.0.0.1'
@@ -645,6 +654,10 @@ class AlertTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
 
+        # create 2nd alert
+        response = self.client.post('/alert', data=json.dumps(self.ok2_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
         # counts
         response = self.client.get('/alerts/count')
         self.assertEqual(response.status_code, 200)
@@ -669,12 +682,16 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn('environments', data)
+        self.assertEqual(data['environments'][0]['severityCounts'], {'critical': 1, 'ok': 1})
+        self.assertEqual(data['environments'][0]['statusCounts'], {'open': 1, 'closed': 1})
 
         # service
         response = self.client.get('/services')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn('services', data)
+        self.assertEqual(data['services'][0]['severityCounts'], {'critical': 1, 'ok': 1})
+        self.assertEqual(data['services'][0]['statusCounts'], {'open': 1, 'closed': 1})
 
         # groups
         response = self.client.get('/groups')
@@ -683,7 +700,7 @@ class AlertTestCase(unittest.TestCase):
         self.assertIn('groups', data)
         self.assertEqual(data['groups'][0]['environment'], 'Production')
         self.assertEqual(data['groups'][0]['group'], 'Misc')
-        self.assertEqual(data['groups'][0]['count'], 1)
+        self.assertEqual(data['groups'][0]['count'], 2)
 
     def test_query_param(self):
         # create alert
