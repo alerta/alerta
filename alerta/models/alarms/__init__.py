@@ -20,6 +20,7 @@ class AlarmModel(Base):
     DEFAULT_STATUS = None  # type: str
     DEFAULT_NORMAL_SEVERITY = None  # type: str
     DEFAULT_PREVIOUS_SEVERITY = None  # type: str
+    NORMAL_SEVERITY_LEVEL = None  # type: str
 
     def __init__(self, app=None):
         self.app = None
