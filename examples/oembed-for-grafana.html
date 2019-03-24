@@ -1,0 +1,65 @@
+<style>
+  .alerta-div {width:100%; padding:20px;}
+  .alerta-table {width:100%; border:1px solid lightgrey; text-align:center;}
+</style>
+
+<div class="mobile-alerts" style="width:100%">Loading...</div>
+
+<a href="http://localhost:8080/">Alerta</a>
+
+<!-- Content from http://localhost:8080/api/embed.js -->
+<script type="text/javascript">
+  (function($, window) {
+
+    var config = {
+      endpoint: 'http://api.alerta.io',
+      key: null
+    };
+
+    var Alerta = function() {};
+    Alerta.prototype = {
+      defaults: {}
+    }
+    $.alerta = new Alerta();
+
+    $.fn.alerta = function( url, options ) {
+
+      $.extend(config, $.alerta.defaults, options);
+
+      return this.each(function() {
+
+        var base = config.endpoint + '/oembed?url=' + encodeURIComponent(url);
+        var key = (config.key ? '&api-key=' + config.key : '');
+        var title = (config.title ? '&title=' + encodeURIComponent(config.title) : '');
+        base += key + title;
+
+        $.ajax({
+          url: base,
+          context: this,
+          success: function(data) {
+            $(this).html(data.html);
+          }
+        });
+      });
+    }
+
+    window.Alerta = Alerta;
+  }(jQuery, window));
+  </script>
+
+<script>
+  $(document).ready(function () {
+    $.alerta.defaults = {
+      endpoint: 'http://localhost:8080/api',
+      key: 'demo-key'
+    };
+
+    function renew() {
+      $('.mobile-alerts').alerta('http://localhost:8080/api/alerts/count?status=open', { title: '' });
+
+      setTimeout(renew, 30000);
+    }
+
+    renew();
+  });
+</script>

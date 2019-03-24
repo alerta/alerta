@@ -9,8 +9,11 @@ from alerta.auth.decorators import permission
 from alerta.models.enums import Scope
 from alerta.utils.response import jsonp
 
+from collections import namedtuple
+
 from . import api
 
+Query = namedtuple('Query', ['where', 'vars', 'sort', 'group'])
 
 @api.route('/oembed', defaults={'format': 'json'}, methods=['OPTIONS', 'GET'])
 @api.route('/oembed.<format>', methods=['OPTIONS', 'GET'])
@@ -18,19 +21,9 @@ from . import api
 @permission(Scope.read_oembed)
 @jsonp
 def oembed(format):
-
-    if format != 'json':
-        return jsonify(status='error', message='unsupported format: %s' % format), 400
-
-    if 'url' not in request.args or 'maxwidth' not in request.args \
-            or 'maxheight' not in request.args:
-        return jsonify(status='error', message='missing default parameters: url, maxwidth, maxheight'), 400
-
     try:
         url = request.args['url']
-        width = int(request.args['maxwidth'])
-        height = int(request.args['maxheight'])
-        title = request.args.get('title', 'Alerts')
+        title = request.args['title']
     except Exception as e:
         return jsonify(status='error', message=str(e)), 400
 
@@ -42,11 +35,16 @@ def oembed(format):
 
     if o.path.endswith('/alerts/count'):
         try:
+            qvars = dict()
+            qvars['status'] = 'open'
+            query = Query(where='"status"=%(status)s', vars=qvars, sort='', group='')
             severity_count = db.get_counts_by_severity(query)
         except Exception as e:
             return jsonify(status='error', message=str(e)), 500
 
-        max = 'normal'
+        max = 'none'
+        if severity_count.get('informational', 0) > 0:
+            max = 'informational'
         if severity_count.get('warning', 0) > 0:
             max = 'warning'
         if severity_count.get('minor', 0) > 0:
@@ -59,12 +57,13 @@ def oembed(format):
         html = render_template(
             'oembed/counts.html',
             title=title,
-            width=width,
-            height=height,
             max=max,
             counts=severity_count
         )
-        return jsonify(version='1.0', type='rich', width=width, height=height, title=title, provider_name='Alerta', provider_url=request.url_root, html=html)
+        headers =	{
+          "Access-Control-Allow-Origin": "*"
+        }
+        return jsonify(version='1.0', type='rich', title=title, provider_name='Alerta', provider_url=request.url_root, html=html), 200, headers
 
     elif o.path.endswith('/alerts/top10/count'):
         # TODO: support top10 oembed widget
