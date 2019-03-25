@@ -681,7 +681,7 @@ class Backend(Database):
         select = """
             SELECT *
             FROM blackouts
-            WHERE start_time <= NOW() at time zone 'utc' AND end_time > NOW() at time zone 'utc'
+            WHERE start_time <= %(create_time)s AND end_time > %(create_time)s
               AND environment=%(environment)s
               AND (
                  (resource IS NULL AND service='{}' AND event IS NULL AND "group" IS NULL AND tags='{}')

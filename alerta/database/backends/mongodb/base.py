@@ -882,11 +882,9 @@ class Backend(Database):
         return self.get_db().blackouts.find(query.where)
 
     def is_blackout_period(self, alert):
-        now = datetime.utcnow()
-
         query = dict()
-        query['startTime'] = {'$lte': now}
-        query['endTime'] = {'$gt': now}
+        query['startTime'] = {'$lte': alert.create_time}
+        query['endTime'] = {'$gt': alert.create_time}
 
         query['environment'] = alert.environment
         query['$and'] = [{'$or': [
