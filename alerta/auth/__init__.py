@@ -14,11 +14,16 @@ class AuthBlueprint(Blueprint):
 auth = AuthBlueprint('auth', __name__)
 
 
-try:
-    import ldap  # noqa
-    from . import basic_ldap  # noqa
-except ImportError:
-    from . import basic  # noqa
+def init_auth(app):
+    if app.config['AUTH_PROVIDER'] == 'ldap':
+        try:
+            import ldap  # noqa
+            from . import basic_ldap  # noqa
+        except ImportError as e:
+            raise RuntimeError('Must install python-ldap to use LDAP authentication module')
+    else:
+        from . import basic  # noqa
+
 
 from . import azure, github, gitlab, google, keycloak, oidc, pingfederate, saml2, userinfo  # noqa
 
