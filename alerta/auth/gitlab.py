@@ -43,6 +43,7 @@ def gitlab():
         user_id = profile['sub']
         login = profile['nickname']
         groups = profile.get('groups', [])
+        email = profile.get('email')
         email_verified = profile.get('email_verified', False)
     else:
         r = requests.get(gitlab_api_url + '/user', headers=headers)
@@ -53,6 +54,7 @@ def gitlab():
 
         r = requests.get(gitlab_api_url + '/groups', headers=headers)
         groups = [g['full_path'] for g in r.json()]
+        email = profile.get('email')
         email_verified = True if profile.get('email', None) else False
 
     if not_authorized('ALLOWED_GITLAB_GROUPS', groups):
@@ -65,5 +67,5 @@ def gitlab():
                           resource_id=user_id, type='gitlab', request=request)
 
     token = create_token(user_id=user_id, name=profile.get('name', '@' + login), login=login, provider='gitlab',
-                         customers=customers, groups=groups, email=profile.get('email', None), email_verified=email_verified)
+                         customers=customers, groups=groups, email=email, email_verified=email_verified)
     return jsonify(token=token.tokenize)
