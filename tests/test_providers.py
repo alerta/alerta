@@ -164,6 +164,7 @@ class AuthProvidersTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
+            'OIDC_ISSUER_URL': 'https://gitlab.com',
             'ALLOWED_GITLAB_GROUPS': ['alerta-project']
         }
         self.app = create_app(test_config)
@@ -186,7 +187,7 @@ class AuthProvidersTestCase(unittest.TestCase):
         # add customer mapping
         payload = {
             'customer': 'Alerta IO',
-            'match': 'alertaio'
+            'match': 'satterly'
         }
         response = self.client.post('/customer', data=json.dumps(payload),
                                     content_type='application/json', headers=self.headers)
@@ -200,6 +201,62 @@ class AuthProvidersTestCase(unittest.TestCase):
         }
         """
 
+        discovery_doc = """
+        {
+          "issuer": "https://gitlab.com",
+          "authorization_endpoint": "https://gitlab.com/oauth/authorize",
+          "token_endpoint": "https://gitlab.com/oauth/token",
+          "userinfo_endpoint": "https://gitlab.com/oauth/userinfo",
+          "jwks_uri": "https://gitlab.com/oauth/discovery/keys",
+          "scopes_supported": [
+            "api",
+            "read_user",
+            "sudo",
+            "read_repository",
+            "read_registry",
+            "openid",
+            "profile",
+            "email"
+          ],
+          "response_types_supported": [
+            "code",
+            "token"
+          ],
+          "response_modes_supported": [
+            "query",
+            "fragment"
+          ],
+          "token_endpoint_auth_methods_supported": [
+            "client_secret_basic",
+            "client_secret_post"
+          ],
+          "subject_types_supported": [
+            "public"
+          ],
+          "id_token_signing_alg_values_supported": [
+            "RS256"
+          ],
+          "claim_types_supported": [
+            "normal"
+          ],
+          "claims_supported": [
+            "iss",
+            "sub",
+            "aud",
+            "exp",
+            "iat",
+            "sub_legacy",
+            "name",
+            "nickname",
+            "email",
+            "email_verified",
+            "website",
+            "profile",
+            "picture",
+            "groups"
+          ]
+        }
+        """
         access_token = """
         {
           "access_token": "2152f0d2256fe245a98532e699cc7fae51c24fc85437d0f095246ae0890db0fe",
@@ -249,9 +306,10 @@ class AuthProvidersTestCase(unittest.TestCase):
         }
         """
 
+        m.get('https://gitlab.com/.well-known/openid-configuration', text=discovery_doc)
         m.post(self.app.config['GITLAB_URL'] + '/oauth/token', text=access_token)
         m.get(self.app.config['GITLAB_URL'] + '/oauth/token/info', text=tokeninfo)
-        m.post(self.app.config['GITLAB_URL'] + '/oauth/userinfo', text=userinfo)
+        m.get(self.app.config['GITLAB_URL'] + '/oauth/userinfo', text=userinfo)
 
         response = self.client.post('/auth/gitlab', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
@@ -260,12 +318,12 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'satterly', claims)
-        self.assertEqual(claims['provider'], 'gitlab', claims)
+        self.assertEqual(claims['provider'], 'openid', claims)
         # self.assertEqual(claims['roles'], [], claims)
-        self.assertEqual(claims['groups'],
-                         ['team-alerta', 'alertaio', 'alerta-project',
-                             'team-alerta/core', 'team-alerta/cli', 'team-alerta/sdk'],
-                         claims)
+        # self.assertEqual(claims['groups'],
+        #                  ['team-alerta', 'alertaio', 'alerta-project',
+        #                      'team-alerta/core', 'team-alerta/cli', 'team-alerta/sdk'],
+        #                  claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
         self.assertEqual(claims.get('email_verified'), None, claims)
@@ -277,7 +335,8 @@ class AuthProvidersTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': True,
-            'CUSTOMER_VIEWS': True
+            'CUSTOMER_VIEWS': True,
+            'OIDC_ISSUER_URL': 'https://accounts.google.com'
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -299,7 +358,7 @@ class AuthProvidersTestCase(unittest.TestCase):
         # add customer mapping
         payload = {
             'customer': 'Google Inc.',
-            'match': 'gmail.com'
+            'match': 'nfsatterly@gmail.com'
         }
         response = self.client.post('/customer', data=json.dumps(payload),
                                     content_type='application/json', headers=self.headers)
@@ -377,8 +436,22 @@ class AuthProvidersTestCase(unittest.TestCase):
         }
         """
 
+        userinfo = """
+        {
+          "sub": "104004764824066359390",
+          "name": "Nick Satterly",
+          "given_name": "Nick",
+          "family_name": "Satterly",
+          "picture": "https://lh6.googleusercontent.com/-JSgsn1ilXaE/AAAAAAAAAAI/AAAAAAAAALs/iDTrn1StZ5c/photo.jpg",
+          "email": "nfsatterly@gmail.com",
+          "email_verified": true,
+          "locale": "en-GB"
+        }
+        """
+
         m.get('https://accounts.google.com/.well-known/openid-configuration', text=discovery_doc)
         m.post('https://oauth2.googleapis.com/token', text=access_token)
+        m.get('https://openidconnect.googleapis.com/v1/userinfo', text=userinfo)
 
         response = self.client.post('/auth/google', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
@@ -387,9 +460,9 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims['provider'], 'google', claims)
+        self.assertEqual(claims['provider'], 'openid', claims)
         # self.assertEqual(claims['roles'], [], claims)
-        self.assertEqual(claims['orgs'], ['gmail.com'], claims)
+        # self.assertEqual(claims['orgs'], ['gmail.com'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
         self.assertEqual(claims.get('email_verified'), None, claims)

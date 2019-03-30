@@ -12,7 +12,7 @@ from alerta.utils.audit import auth_audit_trail
 from . import auth
 
 
-@auth.route('/auth/google', methods=['OPTIONS', 'POST'])
+@auth.route('/auth/google1', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def google():
     discovery_doc_url = 'https://accounts.google.com/.well-known/openid-configuration'

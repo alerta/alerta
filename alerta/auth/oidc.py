@@ -26,6 +26,8 @@ def get_oidc_configuration(app):
 
 
 @auth.route('/auth/openid', methods=['OPTIONS', 'POST'])
+@auth.route('/auth/gitlab', methods=['OPTIONS', 'POST'])
+@auth.route('/auth/google', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def openid():
 
@@ -47,12 +49,15 @@ def openid():
     r = requests.get(userinfo_endpoint, headers=headers)
     userinfo = r.json()
 
+    import json
+    print(json.dumps(r.json(), indent=2))
+
     subject = userinfo['sub']
     name = userinfo.get('name')
     nickname = userinfo.get('nickname')
-    login = userinfo.get('preferred_username', nickname or subject)
     email = userinfo.get('email')
     email_verified = userinfo.get('email_verified')
+    login = userinfo.get('preferred_username', nickname or email)
     roles = userinfo.get(current_app.config['OIDC_CUSTOM_CLAIM'], ['user'])
 
     if not_authorized('ALLOWED_OIDC_ROLES', roles):
