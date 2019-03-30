@@ -18,30 +18,35 @@ def pingfederate():
     access_token_url = current_app.config['PINGFEDERATE_OPENID_ACCESS_TOKEN_URL']
 
     data = {
-        'client_id': request.json['clientId'],
-        'client_secret': current_app.config['OAUTH2_CLIENT_SECRET'],
-        'redirect_uri': request.json['redirectUri'],
         'grant_type': 'authorization_code',
         'code': request.json['code'],
-        'scope': 'openid email',
+        'redirect_uri': request.json['redirectUri'],
+        'client_id': request.json['clientId'],
+        'client_secret': current_app.config['OAUTH2_CLIENT_SECRET']
     }
 
     r = requests.post(access_token_url, data)
-    access_token = r.json()
-    encoded = access_token['access_token']
+    token = r.json()
 
     keyfile = open(current_app.config['PINGFEDERATE_PUBKEY_LOCATION'], 'r')
     keystring = keyfile.read()
 
-    decoded = jwt.decode(encoded, keystring, algorithms=current_app.config['PINGFEDERATE_TOKEN_ALGORITHM'])
+    access_token = jwt.decode(
+        token['access_token'],
+        keystring,
+        algorithms=current_app.config['PINGFEDERATE_TOKEN_ALGORITHM']
+    )
 
-    login = decoded[current_app.config['PINGFEDERATE_OPENID_PAYLOAD_USERNAME']]
-    email = decoded[current_app.config['PINGFEDERATE_OPENID_PAYLOAD_EMAIL']]
-    customers = get_customers(login, current_app.config['PINGFEDERATE_OPENID_PAYLOAD_GROUP'])
+    login = access_token[current_app.config['PINGFEDERATE_OPENID_PAYLOAD_USERNAME']]
+    email = access_token[current_app.config['PINGFEDERATE_OPENID_PAYLOAD_EMAIL']]
+    groups = access_token[current_app.config['PINGFEDERATE_OPENID_PAYLOAD_GROUP']]
+
+    customers = get_customers(login, groups=groups)
+    scopes = Permission.lookup(login, roles=groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='pingfederate-login', message='user login via PingFederate',
-                          user=email, customers=customers, scopes=Permission.lookup(login, groups=[]),
-                          resource_id=login, type='pingfederate', request=request)
+                          user=email, customers=customers, scopes=scopes, resource_id=login, type='user', request=request)
 
-    token = create_token(user_id=login, name=email, login=email, provider='openid', customers=customers)
+    token = create_token(user_id=login, name=email, login=email, provider='openid', customers=customers, scopes=scopes,
+                         email=email, email_verified=True, groups=groups)
     return jsonify(token=token.tokenize)

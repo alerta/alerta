@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS perms (
 CREATE TABLE IF NOT EXISTS users (
     id text PRIMARY KEY,
     name text,
-    email text UNIQUE NOT NULL,
+    email text NOT NULL,
     password text NOT NULL,
     status text,
     roles text[],
@@ -173,6 +173,8 @@ CREATE TABLE IF NOT EXISTS users (
     email_verified boolean,
     hash text
 );
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
 
 
 CREATE UNIQUE INDEX IF NOT EXISTS env_res_evt_cust_key ON alerts USING btree (environment, resource, event, (COALESCE(customer, ''::text)));

@@ -50,9 +50,10 @@ def login():
     # Check user is active
     if user.status != 'active':
         raise ApiError('user not active', 403)
+    user.update_last_login()
 
     # Assign customers & update last login time
-    groups = [user.domain]
+    groups = []
     try:
         groups_filters = current_app.config.get('LDAP_DOMAINS_GROUP', {})
         base_dns = current_app.config.get('LDAP_DOMAINS_BASEDN', {})
@@ -68,15 +69,14 @@ def login():
                 groups.append(attributes['cn'][0].decode('utf-8'))
     except ldap.LDAPError as e:
         raise ApiError(str(e), 500)
+    roles = groups or user.roles
 
-    customers = get_customers(user.email, groups=groups)
-    user.update_last_login()
+    customers = get_customers(login=user.email, groups=groups)
+    scopes = Permission.lookup(login=user.email, roles=roles)
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
-                          user=user.email, customers=customers, scopes=Permission.lookup(user.email, groups=user.roles),
-                          resource_id=user.id, type='user', request=request)
+                          user=user.email, customers=customers, scopes=scopes, resource_id=user.id, type='user', request=request)
 
-    # Generate token
-    token = create_token(user_id=user.id, name=user.name, login=user.email, provider='basic_ldap',
-                         customers=customers, roles=user.roles, email=user.email, email_verified=user.email_verified)
+    token = create_token(user_id=user.id, name=user.name, login=user.email, provider='basic_ldap', customers=customers,
+                         scopes=scopes, email=user.email, email_verified=user.email_verified, groups=groups)
     return jsonify(token=token.tokenize)

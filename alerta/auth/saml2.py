@@ -103,12 +103,13 @@ def saml_response_from_idp():
         return _make_response({'status': 'error', 'message': 'User {} is not authorized'.format(email)}, 403)
 
     customers = get_customers(email, groups=[domain])
+    scopes = Permission.lookup(email, groups=groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='saml2-login', message='user login via SAML2',
-                          user=email, customers=customers, scopes=Permission.lookup(email, groups=groups),
-                          resource_id=email, type='saml2', request=request)
+                          user=email, customers=customers, scopes=scopes, resource_id=email, type='saml2', request=request)
 
-    token = create_token(user_id=email, name=name, login=email, provider='saml2', customers=customers, groups=groups)
+    token = create_token(user_id=email, name=name, login=email, provider='saml2',
+                         customers=customers, scopes=scopes, groups=groups)
     return _make_response({'status': 'ok', 'token': token.tokenize}, 200)
 
 
