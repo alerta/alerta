@@ -1,4 +1,3 @@
-
 import requests
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
@@ -15,7 +14,7 @@ def get_oidc_configuration(app):
     issuer_url = app.config['OIDC_ISSUER_URL']
     if not issuer_url:
         raise ApiError('Must define OIDC_ISSUER_URL setting in server configuration.', 503)
-    discovery_doc_url = '{}/.well-known/openid-configuration'.format(issuer_url)
+    discovery_doc_url = issuer_url.strip('/') + '/.well-known/openid-configuration'
 
     r = requests.get(discovery_doc_url)
     config = r.json()
@@ -50,7 +49,8 @@ def openid():
 
     subject = userinfo['sub']
     name = userinfo.get('name')
-    login = userinfo.get('preferred_username')
+    nickname = userinfo.get('nickname')
+    login = userinfo.get('preferred_username', nickname or subject)
     email = userinfo.get('email')
     email_verified = userinfo.get('email_verified')
     roles = userinfo.get(current_app.config['OIDC_CUSTOM_CLAIM'], ['user'])

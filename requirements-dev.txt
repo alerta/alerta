@@ -2,4 +2,5 @@ mypy==0.620
 nose
 pre-commit
 python-dotenv
+requests_mock
 twine
