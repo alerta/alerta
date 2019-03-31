@@ -89,7 +89,9 @@ AZURE_TENANT = None
 # OpenID Connect
 OIDC_ISSUER_URL = None
 OIDC_AUTH_URL = None
-OIDC_CUSTOM_CLAIM = 'roles'  # JWT claim name whose value is used in role mapping
+OIDC_CUSTOM_CLAIM = 'roles'  # (deprecated)
+OIDC_ROLE_CLAIM = OIDC_CUSTOM_CLAIM  # JWT claim name whose value is used in role mapping
+OIDC_GROUP_CLAIM = 'groups'  # JWT claim name whose value is used in customer mapping
 ALLOWED_OIDC_ROLES = ['*']
 
 # PingFederate

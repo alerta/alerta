@@ -99,5 +99,5 @@ class Permission:
             return False
 
     @classmethod
-    def lookup(cls, login: str, groups: List[str]) -> List[Scope]:
-        return [Scope(s) for s in db.get_scopes_by_match(login, matches=groups)]
+    def lookup(cls, login: str, roles: List[str]) -> List[Scope]:
+        return [Scope(s) for s in db.get_scopes_by_match(login, matches=roles)]

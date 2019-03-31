@@ -31,7 +31,7 @@ def create_user():
     if User.find_by_email(email=user.email):
         raise ApiError('username already exists', 409)
 
-    want_scopes = Permission.lookup(login=user.email, groups=user.roles)
+    want_scopes = Permission.lookup(login=user.email, roles=user.roles)
     for want_scope in want_scopes:
         if not Permission.is_in_scope(want_scope, have_scopes=g.scopes):
             raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
@@ -138,7 +138,7 @@ def update_user(user_id):
             raise ApiError('user with email already exists', 409)
 
     if request.json.get('roles'):
-        want_scopes = Permission.lookup(login='', groups=request.json['roles'])
+        want_scopes = Permission.lookup(login='', roles=request.json['roles'])
         for want_scope in want_scopes:
             if not Permission.is_in_scope(want_scope, have_scopes=g.scopes):
                 raise ApiError("Requested scope '{}' not in existing scopes: {}".format(

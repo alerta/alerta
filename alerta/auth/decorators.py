@@ -94,7 +94,7 @@ def permission(scope=None):
 
                 g.user = user.email
                 g.customers = get_customers(user.email, groups=[user.domain])
-                g.scopes = Permission.lookup(user.email, groups=user.roles)  # type: List[Scope]
+                g.scopes = Permission.lookup(user.email, roles=user.roles)  # type: List[Scope]
 
                 if not Permission.is_in_scope(scope, have_scopes=g.scopes):
                     raise BasicAuthError('Missing required scope: %s' % scope.value, 403)
