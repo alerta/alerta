@@ -24,7 +24,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
-            'AZURE_TENANT': 'f24341ef-7a6f-4cff-abb7-99a11ab11127'
+            'OIDC_ISSUER_URL': 'https://sts.windows.net/f24341ef-7a6f-4cff-abb7-99a11ab11127/',
+            # 'AZURE_TENANT': 'f24341ef-7a6f-4cff-abb7-99a11ab11127'
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -124,6 +125,7 @@ class AuthProvidersTestCase(unittest.TestCase):
           "rbac_url": "https://pas.windows.net"
         }
         """
+
         access_token = """
         {
           "token_type": "Bearer",
@@ -139,8 +141,28 @@ class AuthProvidersTestCase(unittest.TestCase):
         }
         """
 
-        m.get('https://login.microsoftonline.com/f24341ef-7a6f-4cff-abb7-99a11ab11127/.well-known/openid-configuration', text=discovery_doc)
+        userinfo = r"""
+        {
+          "aio": "AVQAq/8KAAAAFfowTD/1PFNpiTdO2zhegMtdKv8enA2o5jRatUb6GvYsZg3DXiAwcLnGvLngrqtL1Kb4eInAWXgHIorirIGG2kycNq3C8fLk4jzrgoFl9yA=",
+          "amr": "[\"pwd\"]",
+          "email": "nfsatterly@gmail.com",
+          "family_name": "Satterly",
+          "given_name": "Nick",
+          "idp": "live.com",
+          "ipaddr": "145.14.112.103",
+          "name": "Nick Satterly",
+          "oid": "dca0acab-1727-412b-a03a-0e3a4b6626b1",
+          "sub": "9HYhdw_f767rXNIk52ja_6WMy17PCSLkmqvPHiprscc",
+          "tid": "f24341ef-7a6f-4cff-abb7-99a11ab11127",
+          "unique_name": "live.com#nfsatterly@gmail.com",
+          "uti": "EBafu2Mx2UekJd5Y_24fAA",
+          "ver": "1.0"
+        }
+        """
+
+        m.get('https://sts.windows.net/f24341ef-7a6f-4cff-abb7-99a11ab11127/.well-known/openid-configuration', text=discovery_doc)
         m.post('https://login.microsoftonline.com/f24341ef-7a6f-4cff-abb7-99a11ab11127/oauth2/token', text=access_token)
+        m.get('https://login.microsoftonline.com/f24341ef-7a6f-4cff-abb7-99a11ab11127/openid/userinfo', text=userinfo)
 
         response = self.client.post('/auth/azure', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
@@ -149,12 +171,11 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims['provider'], 'azure', claims)
-        # self.assertEqual(claims['roles'], [], claims)
-        self.assertEqual(claims['orgs'], ['gmail.com'], claims)
+        self.assertEqual(claims['provider'], 'openid', claims)
+        # self.assertEqual(claims['roles'], ['user'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims.get('email_verified'), None, claims)
+        self.assertEqual(claims.get('email_verified'), True, claims)
         self.assertEqual(claims['customers'], ['Alerta IO'], claims)
 
     @requests_mock.mock()
@@ -164,7 +185,9 @@ class AuthProvidersTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
-            'ALLOWED_GITLAB_GROUPS': ['alerta-project']
+            'OIDC_ISSUER_URL': 'https://gitlab.com',
+            'OIDC_CUSTOM_CLAIM': 'groups',
+            'ALLOWED_OIDC_ROLES': ['alerta-project']
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -200,6 +223,62 @@ class AuthProvidersTestCase(unittest.TestCase):
         }
         """
 
+        discovery_doc = """
+        {
+          "issuer": "https://gitlab.com",
+          "authorization_endpoint": "https://gitlab.com/oauth/authorize",
+          "token_endpoint": "https://gitlab.com/oauth/token",
+          "userinfo_endpoint": "https://gitlab.com/oauth/userinfo",
+          "jwks_uri": "https://gitlab.com/oauth/discovery/keys",
+          "scopes_supported": [
+            "api",
+            "read_user",
+            "sudo",
+            "read_repository",
+            "read_registry",
+            "openid",
+            "profile",
+            "email"
+          ],
+          "response_types_supported": [
+            "code",
+            "token"
+          ],
+          "response_modes_supported": [
+            "query",
+            "fragment"
+          ],
+          "token_endpoint_auth_methods_supported": [
+            "client_secret_basic",
+            "client_secret_post"
+          ],
+          "subject_types_supported": [
+            "public"
+          ],
+          "id_token_signing_alg_values_supported": [
+            "RS256"
+          ],
+          "claim_types_supported": [
+            "normal"
+          ],
+          "claims_supported": [
+            "iss",
+            "sub",
+            "aud",
+            "exp",
+            "iat",
+            "sub_legacy",
+            "name",
+            "nickname",
+            "email",
+            "email_verified",
+            "website",
+            "profile",
+            "picture",
+            "groups"
+          ]
+        }
+        """
         access_token = """
         {
           "access_token": "2152f0d2256fe245a98532e699cc7fae51c24fc85437d0f095246ae0890db0fe",
@@ -249,9 +328,10 @@ class AuthProvidersTestCase(unittest.TestCase):
         }
         """
 
+        m.get('https://gitlab.com/.well-known/openid-configuration', text=discovery_doc)
         m.post(self.app.config['GITLAB_URL'] + '/oauth/token', text=access_token)
         m.get(self.app.config['GITLAB_URL'] + '/oauth/token/info', text=tokeninfo)
-        m.post(self.app.config['GITLAB_URL'] + '/oauth/userinfo', text=userinfo)
+        m.get(self.app.config['GITLAB_URL'] + '/oauth/userinfo', text=userinfo)
 
         response = self.client.post('/auth/gitlab', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
@@ -260,15 +340,14 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'satterly', claims)
-        self.assertEqual(claims['provider'], 'gitlab', claims)
-        # self.assertEqual(claims['roles'], [], claims)
+        self.assertEqual(claims['provider'], 'openid', claims)
         self.assertEqual(claims['groups'],
                          ['team-alerta', 'alertaio', 'alerta-project',
                              'team-alerta/core', 'team-alerta/cli', 'team-alerta/sdk'],
                          claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims.get('email_verified'), None, claims)
+        self.assertEqual(claims.get('email_verified'), True, claims)
         self.assertEqual(claims['customers'], ['Alerta IO'], claims)
 
     @requests_mock.mock()
@@ -277,7 +356,8 @@ class AuthProvidersTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': True,
-            'CUSTOMER_VIEWS': True
+            'CUSTOMER_VIEWS': True,
+            'OIDC_ISSUER_URL': 'https://accounts.google.com'
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -377,8 +457,22 @@ class AuthProvidersTestCase(unittest.TestCase):
         }
         """
 
+        userinfo = """
+        {
+          "sub": "104004764824066359390",
+          "name": "Nick Satterly",
+          "given_name": "Nick",
+          "family_name": "Satterly",
+          "picture": "https://lh6.googleusercontent.com/-JSgsn1ilXaE/AAAAAAAAAAI/AAAAAAAAALs/iDTrn1StZ5c/photo.jpg",
+          "email": "nfsatterly@gmail.com",
+          "email_verified": true,
+          "locale": "en-GB"
+        }
+        """
+
         m.get('https://accounts.google.com/.well-known/openid-configuration', text=discovery_doc)
         m.post('https://oauth2.googleapis.com/token', text=access_token)
+        m.get('https://openidconnect.googleapis.com/v1/userinfo', text=userinfo)
 
         response = self.client.post('/auth/google', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
@@ -387,13 +481,220 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims['provider'], 'google', claims)
-        # self.assertEqual(claims['roles'], [], claims)
-        self.assertEqual(claims['orgs'], ['gmail.com'], claims)
+        self.assertEqual(claims['provider'], 'openid', claims)
+        # self.assertEqual(claims['roles'], ['user'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims.get('email_verified'), None, claims)
+        self.assertEqual(claims.get('email_verified'), True, claims)
         self.assertEqual(claims['customers'], ['Google Inc.'], claims)
+
+    @requests_mock.mock()
+    def test_keycloak(self, m):
+
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': True,
+            'CUSTOMER_VIEWS': True,
+            'OIDC_ISSUER_URL': 'http://keycloak.local.alerta.io:9090/auth/realms/master',
+            'OIDC_CUSTOM_CLAIM': 'roles',
+            'ALLOWED_OIDC_ROLES': ['alerta-project']
+        }
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # add customer mapping
+        payload = {
+            'customer': 'Domain Customer',
+            'match': 'alerta.dev'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        authorization_grant = """
+        {
+          "code": "5b48d2b7-78fb-4399-bdd3-d3fa227270fe.9c3393ab-5150-4c5f-b131-b17dfbc098f6.077fc6f0-9eef-4d02-ade8-4220348ad3c4",
+          "clientId": "alerta-ui",
+          "redirectUri": "http://local.alerta.io:8000",
+          "state": "67xpd400cg7"
+        }
+        """
+
+        discovery_doc = """
+        {
+          "issuer": "http://keycloak.local.alerta.io:9090/auth/realms/master",
+          "authorization_endpoint": "http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/auth",
+          "token_endpoint": "http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/token",
+          "token_introspection_endpoint": "http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/token/introspect",
+          "userinfo_endpoint": "http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/userinfo",
+          "end_session_endpoint": "http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/logout",
+          "jwks_uri": "http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/certs",
+          "check_session_iframe": "http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/login-status-iframe.html",
+          "grant_types_supported": [
+            "authorization_code",
+            "implicit",
+            "refresh_token",
+            "password",
+            "client_credentials"
+          ],
+          "response_types_supported": [
+            "code",
+            "none",
+            "id_token",
+            "token",
+            "id_token token",
+            "code id_token",
+            "code token",
+            "code id_token token"
+          ],
+          "subject_types_supported": [
+            "public",
+            "pairwise"
+          ],
+          "id_token_signing_alg_values_supported": [
+            "ES384",
+            "RS384",
+            "HS256",
+            "HS512",
+            "ES256",
+            "RS256",
+            "HS384",
+            "ES512",
+            "RS512"
+          ],
+          "userinfo_signing_alg_values_supported": [
+            "ES384",
+            "RS384",
+            "HS256",
+            "HS512",
+            "ES256",
+            "RS256",
+            "HS384",
+            "ES512",
+            "RS512",
+            "none"
+          ],
+          "request_object_signing_alg_values_supported": [
+            "ES384",
+            "RS384",
+            "ES256",
+            "RS256",
+            "ES512",
+            "RS512",
+            "none"
+          ],
+          "response_modes_supported": [
+            "query",
+            "fragment",
+            "form_post"
+          ],
+          "registration_endpoint": "http://keycloak.local.alerta.io:9090/auth/realms/master/clients-registrations/openid-connect",
+          "token_endpoint_auth_methods_supported": [
+            "private_key_jwt",
+            "client_secret_basic",
+            "client_secret_post",
+            "client_secret_jwt"
+          ],
+          "token_endpoint_auth_signing_alg_values_supported": [
+            "RS256"
+          ],
+          "claims_supported": [
+            "sub",
+            "iss",
+            "auth_time",
+            "name",
+            "given_name",
+            "family_name",
+            "preferred_username",
+            "email"
+          ],
+          "claim_types_supported": [
+            "normal"
+          ],
+          "claims_parameter_supported": false,
+          "scopes_supported": [
+            "openid",
+            "address",
+            "email",
+            "offline_access",
+            "phone",
+            "profile",
+            "roles",
+            "web-origins"
+          ],
+          "request_parameter_supported": true,
+          "request_uri_parameter_supported": true,
+          "code_challenge_methods_supported": [
+            "plain",
+            "S256"
+          ],
+          "tls_client_certificate_bound_access_tokens": true,
+          "introspection_endpoint": "http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/token/introspect"
+        }
+        """
+        access_token = """
+        {
+          "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI2ODZicVdhRzB4Z2owWkxLVEJSWjVxaDItWmJKSHdCYTRlRmx3bncyLUtVIn0.eyJqdGkiOiI2MGRhY2NkNi05OGYzLTQ2NGQtODljMC1lMWI5OGQ3ZTY4MjQiLCJleHAiOjE1NTQwNjIwMTgsIm5iZiI6MCwiaWF0IjoxNTU0MDYxOTU4LCJpc3MiOiJodHRwOi8va2V5Y2xvYWsubG9jYWwuYWxlcnRhLmlvOjkwOTAvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjpbIm1hc3Rlci1yZWFsbSIsImFjY291bnQiXSwic3ViIjoiODlkNzI2M2EtYmQ3Ny00Y2ZjLWJlZjUtMjJlM2Y4ZmVjYzViIiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiYWxlcnRhLXVpIiwiYXV0aF90aW1lIjoxNTU0MDYxOTU3LCJzZXNzaW9uX3N0YXRlIjoiN2VjZWMyODgtZWFmYy00ZTYyLWFhOTUtZmFmMTU3YTMxOGZmIiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyJodHRwOi8vbG9jYWwuYWxlcnRhLmlvOjgwMDAiXSwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImNyZWF0ZS1yZWFsbSIsIm9mZmxpbmVfYWNjZXNzIiwiYWRtaW4iLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7Im1hc3Rlci1yZWFsbSI6eyJyb2xlcyI6WyJ2aWV3LWlkZW50aXR5LXByb3ZpZGVycyIsInZpZXctcmVhbG0iLCJtYW5hZ2UtaWRlbnRpdHktcHJvdmlkZXJzIiwiaW1wZXJzb25hdGlvbiIsImNyZWF0ZS1jbGllbnQiLCJtYW5hZ2UtdXNlcnMiLCJxdWVyeS1yZWFsbXMiLCJ2aWV3LWF1dGhvcml6YXRpb24iLCJxdWVyeS1jbGllbnRzIiwicXVlcnktdXNlcnMiLCJtYW5hZ2UtZXZlbnRzIiwibWFuYWdlLXJlYWxtIiwidmlldy1ldmVudHMiLCJ2aWV3LXVzZXJzIiwidmlldy1jbGllbnRzIiwibWFuYWdlLWF1dGhvcml6YXRpb24iLCJtYW5hZ2UtY2xpZW50cyIsInF1ZXJ5LWdyb3VwcyJdfSwiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJyb2xlcyI6WyJjcmVhdGUtcmVhbG0iLCJvZmZsaW5lX2FjY2VzcyIsImFkbWluIiwidW1hX2F1dGhvcml6YXRpb24iXSwibmFtZSI6Ik5pY2hvbGFzIFNhdHRlcmx5IiwicHJlZmVycmVkX3VzZXJuYW1lIjoibnNhdHRlcmwiLCJnaXZlbl9uYW1lIjoiTmljaG9sYXMiLCJmYW1pbHlfbmFtZSI6IlNhdHRlcmx5IiwiZW1haWwiOiJuZnNAYWxlcnRhLmRldiJ9.ROvp_FpReWVaWUn0pHDIfU6S8ZvxX_nLvIDxxosQCBOFHgGgjk-_VW0vgHBSKqxBbtEmOeSSrcovUToTL_N8emiWgrRteq4ZFhCCFNEXigvZGXCtjp5F-wugkoNM8N7seIlOgGQwH9jGwvV4U2PmOsvF6kl8JHifh5yyyUu3ab4Lxaw5fdT2_-vZocK6FaFGJCGbZ09mzLaubLCBpbgU6nssYlWLDVJfA5iNgfwIGvWCC_OFAP-NAx-BnUP4m3mv7GN2xNDqU4Bjhw5-fANxvWqZZVqS45BFJmdFm1WIhqybu3JIMf29s7ErntU6EoRs88_-pACVMW1-fpZCq_Nt4w",
+          "expires_in": 60,
+          "refresh_expires_in": 1800,
+          "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjZDIwZTQ1Zi0yYzNiLTQ2NzAtOGQwZi0wNzVmOTllNjA5NTUifQ.eyJqdGkiOiJlZWY1MTczMC0zZWM1LTQ4MTktOWY5OC1lYmQyZTc4Y2QwYmIiLCJleHAiOjE1NTQwNjM3NTgsIm5iZiI6MCwiaWF0IjoxNTU0MDYxOTU4LCJpc3MiOiJodHRwOi8va2V5Y2xvYWsubG9jYWwuYWxlcnRhLmlvOjkwOTAvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiaHR0cDovL2tleWNsb2FrLmxvY2FsLmFsZXJ0YS5pbzo5MDkwL2F1dGgvcmVhbG1zL21hc3RlciIsInN1YiI6Ijg5ZDcyNjNhLWJkNzctNGNmYy1iZWY1LTIyZTNmOGZlY2M1YiIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJhbGVydGEtdWkiLCJhdXRoX3RpbWUiOjAsInNlc3Npb25fc3RhdGUiOiI3ZWNlYzI4OC1lYWZjLTRlNjItYWE5NS1mYWYxNTdhMzE4ZmYiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiY3JlYXRlLXJlYWxtIiwib2ZmbGluZV9hY2Nlc3MiLCJhZG1pbiIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsibWFzdGVyLXJlYWxtIjp7InJvbGVzIjpbInZpZXctaWRlbnRpdHktcHJvdmlkZXJzIiwidmlldy1yZWFsbSIsIm1hbmFnZS1pZGVudGl0eS1wcm92aWRlcnMiLCJpbXBlcnNvbmF0aW9uIiwiY3JlYXRlLWNsaWVudCIsIm1hbmFnZS11c2VycyIsInF1ZXJ5LXJlYWxtcyIsInZpZXctYXV0aG9yaXphdGlvbiIsInF1ZXJ5LWNsaWVudHMiLCJxdWVyeS11c2VycyIsIm1hbmFnZS1ldmVudHMiLCJtYW5hZ2UtcmVhbG0iLCJ2aWV3LWV2ZW50cyIsInZpZXctdXNlcnMiLCJ2aWV3LWNsaWVudHMiLCJtYW5hZ2UtYXV0aG9yaXphdGlvbiIsIm1hbmFnZS1jbGllbnRzIiwicXVlcnktZ3JvdXBzIl19LCJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIn0.IJEIKMAhTinHKRMjULLWzbfK-DGkjo0oznYuUOmGhqU",
+          "token_type": "bearer",
+          "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI2ODZicVdhRzB4Z2owWkxLVEJSWjVxaDItWmJKSHdCYTRlRmx3bncyLUtVIn0.eyJqdGkiOiJiNjZlNzEwNi0xMjhiLTRiNDItYjU4Ni1iOGIyYmVkNzU5ZjEiLCJleHAiOjE1NTQwNjIwMTgsIm5iZiI6MCwiaWF0IjoxNTU0MDYxOTU4LCJpc3MiOiJodHRwOi8va2V5Y2xvYWsubG9jYWwuYWxlcnRhLmlvOjkwOTAvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWxlcnRhLXVpIiwic3ViIjoiODlkNzI2M2EtYmQ3Ny00Y2ZjLWJlZjUtMjJlM2Y4ZmVjYzViIiwidHlwIjoiSUQiLCJhenAiOiJhbGVydGEtdWkiLCJhdXRoX3RpbWUiOjE1NTQwNjE5NTcsInNlc3Npb25fc3RhdGUiOiI3ZWNlYzI4OC1lYWZjLTRlNjItYWE5NS1mYWYxNTdhMzE4ZmYiLCJhY3IiOiIxIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInJvbGVzIjpbImNyZWF0ZS1yZWFsbSIsIm9mZmxpbmVfYWNjZXNzIiwiYWRtaW4iLCJ1bWFfYXV0aG9yaXphdGlvbiJdLCJuYW1lIjoiTmljaG9sYXMgU2F0dGVybHkiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJuc2F0dGVybCIsImdpdmVuX25hbWUiOiJOaWNob2xhcyIsImZhbWlseV9uYW1lIjoiU2F0dGVybHkiLCJlbWFpbCI6Im5mc0BhbGVydGEuZGV2In0.W-4pdC3IqpHuwqXZsybZBrIeiSZ701K7bQa_DFS8oOhyVqERnmQdiTdoZuQCQCxhU6XzwGayhNEo3PtCUH6deioWmXo9wWXWBv0d8qbifc3udtGCHv-mXEom9yelYr_bVZaJ941B8AXh3rzhk5JEsBaepUEe2INLVFTxactcmnRYV7YZcU1ouMIoiLM4nyRlR9V5ewxrVn0l_8XHk209cOYbkHxP20HGRekwqbo25wDwHxkjGb1qqu2UdsaAGkyKeiEN-av5YGtUSyAbUkE7PL7EL_wDYXCK7NHT8xMMYjSQ7rGHQ60B4tRvsQ7FUson9G1KnsYvm4o8mLnU4B82rQ",
+          "not-before-policy": 0,
+          "session_state": "7ecec288-eafc-4e62-aa95-faf157a318ff",
+          "scope": "openid profile email"
+        }
+        """
+
+        userinfo = """
+        {
+          "sub": "89d7263a-bd77-4cfc-bef5-22e3f8fecc5b",
+          "email_verified": true,
+          "roles": [
+            "create-realm",
+            "offline_access",
+            "admin",
+            "uma_authorization"
+          ],
+          "name": "Nicholas Satterly",
+          "preferred_username": "nsatterl",
+          "given_name": "Nicholas",
+          "family_name": "Satterly",
+          "email": "nfs@alerta.dev"
+        }
+        """
+
+        m.get('http://keycloak.local.alerta.io:9090/auth/realms/master/.well-known/openid-configuration', text=discovery_doc)
+        m.post('http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/token', text=access_token)
+        m.get('http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/userinfo', text=userinfo)
+
+        response = self.client.post('/auth/keycloak', data=authorization_grant, content_type='application/json')
+        self.assertEqual(response.status_code, 200, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        claims = jwt.decode(data['token'], verify=False)
+
+        self.assertEqual(claims['name'], 'Nicholas Satterly', claims)
+        self.assertEqual(claims['preferred_username'], 'nsatterl', claims)
+        self.assertEqual(claims['provider'], 'openid', claims)
+        self.assertEqual(claims['roles'], ['create-realm', 'offline_access', 'admin', 'uma_authorization'], claims)
+        self.assertEqual(claims['scope'], 'read write', claims)
+        self.assertEqual(claims['email'], 'nfs@alerta.dev', claims)
+        self.assertEqual(claims.get('email_verified'), True, claims)
+        self.assertEqual(claims['customers'], ['Domain Customer'], claims)
 
     @requests_mock.mock()
     def test_openid_auth0(self, m):
@@ -546,11 +847,10 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['name'], 'admin@alerta.dev', claims)
         self.assertEqual(claims['preferred_username'], 'admin', claims)
         self.assertEqual(claims['provider'], 'openid', claims)
-        # self.assertEqual(claims['roles'], [], claims)
-        # self.assertEqual(claims['orgs'], [], claims)
+        # self.assertEqual(claims['roles'], ['user'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'admin@alerta.dev', claims)
-        self.assertEqual(claims.get('email_verified'), None, claims)
+        self.assertEqual(claims.get('email_verified'), False, claims)
         self.assertEqual(claims['customers'], ['Foo Corp'], claims)
 
     @requests_mock.mock()
@@ -560,7 +860,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
-            'OIDC_ISSUER_URL': 'https://dev-490527.okta.com/oauth2/default'
+            'OIDC_ISSUER_URL': 'https://dev-490527.okta.com/oauth2/default',
+            'OIDC_CUSTOM_CLAIM': 'groups'
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -755,9 +1056,8 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nfs@alerta.dev', claims)
         self.assertEqual(claims['provider'], 'openid', claims)
-        self.assertEqual(claims['roles'], ['user'], claims)
-        # self.assertEqual(claims['orgs'], [], claims)
+        self.assertEqual(claims['groups'], ['Everyone'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfs@alerta.dev', claims)
-        self.assertEqual(claims.get('email_verified'), None, claims)
+        self.assertEqual(claims.get('email_verified'), True, claims)
         self.assertEqual(claims['customers'], ['Alerta Dev'], claims)
