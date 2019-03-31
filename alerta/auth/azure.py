@@ -12,7 +12,7 @@ from alerta.utils.audit import auth_audit_trail
 from . import auth
 
 
-@auth.route('/auth/azure', methods=['OPTIONS', 'POST'])
+@auth.route('/auth/azure1', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def azure():
 
@@ -49,12 +49,12 @@ def azure():
     if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[domain]):
         raise ApiError('User %s is not authorized' % email, 403)
 
+    scopes = Permission.lookup(email, groups=[domain])
     customers = get_customers(email, groups=[domain])
 
     auth_audit_trail.send(current_app._get_current_object(), event='azure-login', message='user login via Azure',
-                          user=email, customers=customers, scopes=Permission.lookup(email, groups=[domain]),
-                          resource_id=subject, type='azure', request=request)
+                          user=email, customers=customers, scopes=scopes, resource_id=subject, type='azure', request=request)
 
-    token = create_token(user_id=subject, name=name, login=email, provider='azure', customers=customers,
+    token = create_token(user_id=subject, name=name, login=email, provider='azure', scopes=scopes, customers=customers,
                          orgs=[domain], email=email)
     return jsonify(token=token.tokenize)

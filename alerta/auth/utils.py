@@ -10,7 +10,6 @@ from six import text_type
 from alerta.app import mailer
 from alerta.exceptions import ApiError, NoCustomerMatch
 from alerta.models.customer import Customer
-from alerta.models.permission import Permission
 from alerta.models.token import Jwt
 
 if TYPE_CHECKING:
@@ -47,10 +46,9 @@ def get_customers(login: str, groups: List[str]) -> List[str]:
         return []
 
 
-def create_token(user_id: str, name: str, login: str, provider: str, customers: List[str], orgs: List[str]=None,
-                 groups: List[str]=None, roles: List[str]=None, email: str=None, email_verified: bool=None) -> 'Jwt':
+def create_token(user_id: str, name: str, login: str, provider: str, scopes: List[str], customers: List[str],
+                 email: str=None, email_verified: bool=None, **kwargs) -> 'Jwt':
     now = datetime.utcnow()
-    scopes = Permission.lookup(login, groups=(roles or []) + (groups or []) + (orgs or []))
     return Jwt(
         iss=request.url_root,
         typ='Bearer',
@@ -62,14 +60,12 @@ def create_token(user_id: str, name: str, login: str, provider: str, customers: 
         jti=str(uuid4()),
         name=name,
         preferred_username=login,
-        orgs=orgs,
-        roles=roles,
-        groups=groups,
         provider=provider,
         scopes=scopes,
         email=email,
         email_verified=email_verified,
-        customers=customers
+        customers=customers,
+        **kwargs
     )
 
 

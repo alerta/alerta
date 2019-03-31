@@ -24,7 +24,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
-            'AZURE_TENANT': 'f24341ef-7a6f-4cff-abb7-99a11ab11127'
+            'OIDC_ISSUER_URL': 'https://sts.windows.net/f24341ef-7a6f-4cff-abb7-99a11ab11127/',
+            # 'AZURE_TENANT': 'f24341ef-7a6f-4cff-abb7-99a11ab11127'
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -124,6 +125,7 @@ class AuthProvidersTestCase(unittest.TestCase):
           "rbac_url": "https://pas.windows.net"
         }
         """
+
         access_token = """
         {
           "token_type": "Bearer",
@@ -139,8 +141,28 @@ class AuthProvidersTestCase(unittest.TestCase):
         }
         """
 
-        m.get('https://login.microsoftonline.com/f24341ef-7a6f-4cff-abb7-99a11ab11127/.well-known/openid-configuration', text=discovery_doc)
+        userinfo = r"""
+        {
+          "aio": "AVQAq/8KAAAAFfowTD/1PFNpiTdO2zhegMtdKv8enA2o5jRatUb6GvYsZg3DXiAwcLnGvLngrqtL1Kb4eInAWXgHIorirIGG2kycNq3C8fLk4jzrgoFl9yA=",
+          "amr": "[\"pwd\"]",
+          "email": "nfsatterly@gmail.com",
+          "family_name": "Satterly",
+          "given_name": "Nick",
+          "idp": "live.com",
+          "ipaddr": "145.14.112.103",
+          "name": "Nick Satterly",
+          "oid": "dca0acab-1727-412b-a03a-0e3a4b6626b1",
+          "sub": "9HYhdw_f767rXNIk52ja_6WMy17PCSLkmqvPHiprscc",
+          "tid": "f24341ef-7a6f-4cff-abb7-99a11ab11127",
+          "unique_name": "live.com#nfsatterly@gmail.com",
+          "uti": "EBafu2Mx2UekJd5Y_24fAA",
+          "ver": "1.0"
+        }
+        """
+
+        m.get('https://sts.windows.net/f24341ef-7a6f-4cff-abb7-99a11ab11127/.well-known/openid-configuration', text=discovery_doc)
         m.post('https://login.microsoftonline.com/f24341ef-7a6f-4cff-abb7-99a11ab11127/oauth2/token', text=access_token)
+        m.get('https://login.microsoftonline.com/f24341ef-7a6f-4cff-abb7-99a11ab11127/openid/userinfo', text=userinfo)
 
         response = self.client.post('/auth/azure', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
@@ -149,9 +171,8 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims['provider'], 'azure', claims)
+        self.assertEqual(claims['provider'], 'openid', claims)
         # self.assertEqual(claims['roles'], [], claims)
-        self.assertEqual(claims['orgs'], ['gmail.com'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
         self.assertEqual(claims.get('email_verified'), None, claims)
@@ -165,7 +186,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
             'OIDC_ISSUER_URL': 'https://gitlab.com',
-            'ALLOWED_GITLAB_GROUPS': ['alerta-project']
+            'OIDC_CUSTOM_CLAIM': 'groups',
+            'ALLOWED_OIDC_ROLES': ['alerta-project']
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -319,11 +341,10 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'satterly', claims)
         self.assertEqual(claims['provider'], 'openid', claims)
-        # self.assertEqual(claims['roles'], [], claims)
-        # self.assertEqual(claims['groups'],
-        #                  ['team-alerta', 'alertaio', 'alerta-project',
-        #                      'team-alerta/core', 'team-alerta/cli', 'team-alerta/sdk'],
-        #                  claims)
+        self.assertEqual(claims['groups'],
+                         ['team-alerta', 'alertaio', 'alerta-project',
+                             'team-alerta/core', 'team-alerta/cli', 'team-alerta/sdk'],
+                         claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
         self.assertEqual(claims.get('email_verified'), None, claims)
@@ -461,7 +482,7 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nfsatterly@gmail.com', claims)
         self.assertEqual(claims['provider'], 'openid', claims)
-        # self.assertEqual(claims['roles'], [], claims)
+        # self.assertEqual(claims['roles'], ['user'], claims)
         # self.assertEqual(claims['orgs'], ['gmail.com'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
@@ -619,8 +640,7 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['name'], 'admin@alerta.dev', claims)
         self.assertEqual(claims['preferred_username'], 'admin', claims)
         self.assertEqual(claims['provider'], 'openid', claims)
-        # self.assertEqual(claims['roles'], [], claims)
-        # self.assertEqual(claims['orgs'], [], claims)
+        # self.assertEqual(claims['roles'], ['user'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'admin@alerta.dev', claims)
         self.assertEqual(claims.get('email_verified'), None, claims)
@@ -633,7 +653,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
-            'OIDC_ISSUER_URL': 'https://dev-490527.okta.com/oauth2/default'
+            'OIDC_ISSUER_URL': 'https://dev-490527.okta.com/oauth2/default',
+            'OIDC_CUSTOM_CLAIM': 'groups'
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -828,8 +849,7 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nfs@alerta.dev', claims)
         self.assertEqual(claims['provider'], 'openid', claims)
-        self.assertEqual(claims['roles'], ['user'], claims)
-        # self.assertEqual(claims['orgs'], [], claims)
+        self.assertEqual(claims['groups'], ['Everyone'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfs@alerta.dev', claims)
         self.assertEqual(claims.get('email_verified'), None, claims)
