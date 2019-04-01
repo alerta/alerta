@@ -23,35 +23,11 @@ class AuthProvidersTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': True,
+            'AUTH_PROVIDER': 'azure',
+            # 'OIDC_ISSUER_URL': 'https://sts.windows.net/f24341ef-7a6f-4cff-abb7-99a11ab11127/',
+            'AZURE_TENANT': 'f24341ef-7a6f-4cff-abb7-99a11ab11127',
             'CUSTOMER_VIEWS': True,
-            'OIDC_ISSUER_URL': 'https://sts.windows.net/f24341ef-7a6f-4cff-abb7-99a11ab11127/',
-            # 'AZURE_TENANT': 'f24341ef-7a6f-4cff-abb7-99a11ab11127'
         }
-        self.app = create_app(test_config)
-        self.client = self.app.test_client()
-
-        with self.app.test_request_context('/'):
-            self.app.preprocess_request()
-            self.api_key = ApiKey(
-                user='admin@alerta.io',
-                scopes=[Scope.admin, Scope.read, Scope.write],
-                text='demo-key'
-            )
-            self.api_key.create()
-
-        self.headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
-            'Content-type': 'application/json'
-        }
-
-        # add customer mapping
-        payload = {
-            'customer': 'Alerta IO',
-            'match': 'nfsatterly@gmail.com'
-        }
-        response = self.client.post('/customer', data=json.dumps(payload),
-                                    content_type='application/json', headers=self.headers)
-        self.assertEqual(response.status_code, 201)
 
         authorization_grant = """
         {
@@ -164,31 +140,6 @@ class AuthProvidersTestCase(unittest.TestCase):
         m.post('https://login.microsoftonline.com/f24341ef-7a6f-4cff-abb7-99a11ab11127/oauth2/token', text=access_token)
         m.get('https://login.microsoftonline.com/f24341ef-7a6f-4cff-abb7-99a11ab11127/openid/userinfo', text=userinfo)
 
-        response = self.client.post('/auth/azure', data=authorization_grant, content_type='application/json')
-        self.assertEqual(response.status_code, 200, response.data)
-        data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
-
-        self.assertEqual(claims['name'], 'Nick Satterly', claims)
-        self.assertEqual(claims['preferred_username'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims['provider'], 'openid', claims)
-        # self.assertEqual(claims['roles'], ['user'], claims)
-        self.assertEqual(claims['scope'], 'read write', claims)
-        self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims.get('email_verified'), True, claims)
-        self.assertEqual(claims['customers'], ['Alerta IO'], claims)
-
-    @requests_mock.mock()
-    def test_gitlab(self, m):
-
-        test_config = {
-            'TESTING': True,
-            'AUTH_REQUIRED': True,
-            'CUSTOMER_VIEWS': True,
-            'OIDC_ISSUER_URL': 'https://gitlab.com',
-            'OIDC_CUSTOM_CLAIM': 'groups',
-            'ALLOWED_OIDC_ROLES': ['alerta-project']
-        }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
 
@@ -209,11 +160,38 @@ class AuthProvidersTestCase(unittest.TestCase):
         # add customer mapping
         payload = {
             'customer': 'Alerta IO',
-            'match': 'alertaio'
+            'match': 'nfsatterly@gmail.com'
         }
         response = self.client.post('/customer', data=json.dumps(payload),
                                     content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 201)
+
+        response = self.client.post('/auth/azure', data=authorization_grant, content_type='application/json')
+        self.assertEqual(response.status_code, 200, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        claims = jwt.decode(data['token'], verify=False)
+
+        self.assertEqual(claims['name'], 'Nick Satterly', claims)
+        self.assertEqual(claims['preferred_username'], 'nfsatterly@gmail.com', claims)
+        self.assertEqual(claims['provider'], 'openid', claims)
+        # self.assertEqual(claims['roles'], ['user'], claims)
+        self.assertEqual(claims['scope'], 'read write', claims)
+        self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
+        self.assertEqual(claims.get('email_verified'), True, claims)
+        self.assertEqual(claims['customers'], ['Alerta IO'], claims)
+
+    @requests_mock.mock()
+    def test_gitlab(self, m):
+
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': True,
+            'AUTH_PROVIDER': 'gitlab',
+            # 'OIDC_ISSUER_URL': 'https://gitlab.com',
+            # 'OIDC_CUSTOM_CLAIM': 'groups',
+            'ALLOWED_OIDC_ROLES': ['alerta-project'],
+            'CUSTOMER_VIEWS': True,
+        }
 
         authorization_grant = """
         {
@@ -329,9 +307,35 @@ class AuthProvidersTestCase(unittest.TestCase):
         """
 
         m.get('https://gitlab.com/.well-known/openid-configuration', text=discovery_doc)
-        m.post(self.app.config['GITLAB_URL'] + '/oauth/token', text=access_token)
-        m.get(self.app.config['GITLAB_URL'] + '/oauth/token/info', text=tokeninfo)
-        m.get(self.app.config['GITLAB_URL'] + '/oauth/userinfo', text=userinfo)
+        m.post('https://gitlab.com/oauth/token', text=access_token)
+        m.get('https://gitlab.com/oauth/token/info', text=tokeninfo)
+        m.get('https://gitlab.com/oauth/userinfo', text=userinfo)
+
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # add customer mapping
+        payload = {
+            'customer': 'Alerta IO',
+            'match': 'alertaio'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
 
         response = self.client.post('/auth/gitlab', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
@@ -356,34 +360,10 @@ class AuthProvidersTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': True,
+            'AUTH_PROVIDER': 'google',
+            # 'OIDC_ISSUER_URL': 'https://accounts.google.com',
             'CUSTOMER_VIEWS': True,
-            'OIDC_ISSUER_URL': 'https://accounts.google.com'
         }
-        self.app = create_app(test_config)
-        self.client = self.app.test_client()
-
-        with self.app.test_request_context('/'):
-            self.app.preprocess_request()
-            self.api_key = ApiKey(
-                user='admin@alerta.io',
-                scopes=[Scope.admin, Scope.read, Scope.write],
-                text='demo-key'
-            )
-            self.api_key.create()
-
-        self.headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
-            'Content-type': 'application/json'
-        }
-
-        # add customer mapping
-        payload = {
-            'customer': 'Google Inc.',
-            'match': 'gmail.com'
-        }
-        response = self.client.post('/customer', data=json.dumps(payload),
-                                    content_type='application/json', headers=self.headers)
-        self.assertEqual(response.status_code, 201)
 
         authorization_grant = """
         {
@@ -474,6 +454,32 @@ class AuthProvidersTestCase(unittest.TestCase):
         m.post('https://oauth2.googleapis.com/token', text=access_token)
         m.get('https://openidconnect.googleapis.com/v1/userinfo', text=userinfo)
 
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # add customer mapping
+        payload = {
+            'customer': 'Google Inc.',
+            'match': 'gmail.com'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
         response = self.client.post('/auth/google', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
@@ -494,36 +500,15 @@ class AuthProvidersTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': True,
-            'CUSTOMER_VIEWS': True,
-            'OIDC_ISSUER_URL': 'http://keycloak.local.alerta.io:9090/auth/realms/master',
+            'AUTH_PROVIDER': 'keycloak',
+            'KEYCLOAK_URL': 'http://keycloak.local.alerta.io:9090',
+            'KEYCLOAK_REALM': 'master',
             'OIDC_CUSTOM_CLAIM': 'roles',
-            'ALLOWED_OIDC_ROLES': ['alerta-project']
+            # 'OIDC_ISSUER_URL': 'http://keycloak.local.alerta.io:9090/auth/realms/master',
+            # 'OIDC_ROLE_CLAIM': 'roles',
+            'ALLOWED_OIDC_ROLES': ['alerta-project'],
+            'CUSTOMER_VIEWS': True
         }
-        self.app = create_app(test_config)
-        self.client = self.app.test_client()
-
-        with self.app.test_request_context('/'):
-            self.app.preprocess_request()
-            self.api_key = ApiKey(
-                user='admin@alerta.io',
-                scopes=[Scope.admin, Scope.read, Scope.write],
-                text='demo-key'
-            )
-            self.api_key.create()
-
-        self.headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
-            'Content-type': 'application/json'
-        }
-
-        # add customer mapping
-        payload = {
-            'customer': 'Domain Customer',
-            'match': 'alerta.dev'
-        }
-        response = self.client.post('/customer', data=json.dumps(payload),
-                                    content_type='application/json', headers=self.headers)
-        self.assertEqual(response.status_code, 201)
 
         authorization_grant = """
         {
@@ -682,6 +667,32 @@ class AuthProvidersTestCase(unittest.TestCase):
         m.post('http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/token', text=access_token)
         m.get('http://keycloak.local.alerta.io:9090/auth/realms/master/protocol/openid-connect/userinfo', text=userinfo)
 
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # add customer mapping
+        payload = {
+            'customer': 'Domain Customer',
+            'match': 'alerta.dev'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
         response = self.client.post('/auth/keycloak', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
@@ -702,34 +713,10 @@ class AuthProvidersTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': True,
-            'CUSTOMER_VIEWS': True,
-            'OIDC_ISSUER_URL': 'https://dev-66191jdr.eu.auth0.com/'
+            'AUTH_PROVIDER': 'openid',
+            'OIDC_ISSUER_URL': 'https://dev-66191jdr.eu.auth0.com/',
+            'CUSTOMER_VIEWS': True
         }
-        self.app = create_app(test_config)
-        self.client = self.app.test_client()
-
-        with self.app.test_request_context('/'):
-            self.app.preprocess_request()
-            self.api_key = ApiKey(
-                user='admin@alerta.io',
-                scopes=[Scope.admin, Scope.read, Scope.write],
-                text='demo-key'
-            )
-            self.api_key.create()
-
-        self.headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
-            'Content-type': 'application/json'
-        }
-
-        # add customer mapping
-        payload = {
-            'customer': 'Foo Corp',
-            'match': 'admin'
-        }
-        response = self.client.post('/customer', data=json.dumps(payload),
-                                    content_type='application/json', headers=self.headers)
-        self.assertEqual(response.status_code, 201)
 
         authorization_grant = """
         {
@@ -839,6 +826,32 @@ class AuthProvidersTestCase(unittest.TestCase):
         m.post('https://dev-66191jdr.eu.auth0.com/oauth/token', text=access_token)
         m.get('https://dev-66191jdr.eu.auth0.com/userinfo', text=userinfo)
 
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # add customer mapping
+        payload = {
+            'customer': 'Foo Corp',
+            'match': 'admin'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
         response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
@@ -859,35 +872,12 @@ class AuthProvidersTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': True,
-            'CUSTOMER_VIEWS': True,
+            'AUTH_PROVIDER': 'openid',
             'OIDC_ISSUER_URL': 'https://dev-490527.okta.com/oauth2/default',
-            'OIDC_CUSTOM_CLAIM': 'groups'
+            'OIDC_ROLE_CLAIM': 'groups',
+            # 'OIDC_CUSTOM_CLAIM': 'groups',
+            'CUSTOMER_VIEWS': True,
         }
-        self.app = create_app(test_config)
-        self.client = self.app.test_client()
-
-        with self.app.test_request_context('/'):
-            self.app.preprocess_request()
-            self.api_key = ApiKey(
-                user='admin@alerta.io',
-                scopes=[Scope.admin, Scope.read, Scope.write],
-                text='demo-key'
-            )
-            self.api_key.create()
-
-        self.headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
-            'Content-type': 'application/json'
-        }
-
-        # add customer mapping
-        payload = {
-            'customer': 'Alerta Dev',
-            'match': 'nfs@alerta.dev'
-        }
-        response = self.client.post('/customer', data=json.dumps(payload),
-                                    content_type='application/json', headers=self.headers)
-        self.assertEqual(response.status_code, 201)
 
         authorization_grant = """
         {
@@ -1046,6 +1036,32 @@ class AuthProvidersTestCase(unittest.TestCase):
         m.get('https://dev-490527.okta.com/oauth2/default/.well-known/openid-configuration', text=discovery_doc)
         m.post('https://dev-490527.okta.com/oauth2/default/v1/token', text=access_token)
         m.get('https://dev-490527.okta.com/oauth2/default/v1/userinfo', text=userinfo)
+
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # add customer mapping
+        payload = {
+            'customer': 'Alerta Dev',
+            'match': 'nfs@alerta.dev'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
 
         response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
