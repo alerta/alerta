@@ -48,6 +48,7 @@ setuptools.setup(
         'python-dateutil',
         'pytz',
         'PyJWT',
+        'cryptography',
         'pyyaml',
         'bcrypt'
     ],
