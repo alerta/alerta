@@ -48,13 +48,14 @@ def github():
     if not_authorized('ALLOWED_GITHUB_ORGS', organizations):
         raise ApiError('User %s is not authorized' % login, 403)
 
-    customers = get_customers(login, organizations)
+    scopes = Permission.lookup(login, roles=organizations)
+    customers = get_customers(login, groups=organizations)
 
     auth_audit_trail.send(current_app._get_current_object(), event='github-login', message='user login via GitHub',
-                          user=login, customers=customers, scopes=Permission.lookup(login, groups=organizations),
+                          user=login, customers=customers, scopes=scopes,
                           resource_id=profile['id'], type='github', request=request)
 
     token = create_token(user_id=profile['id'], name=profile.get('name', '@' + login), login=login, provider='github',
-                         customers=customers, orgs=organizations, email=profile.get('email', None),
+                         customers=customers, scopes=scopes, orgs=organizations, email=profile.get('email', None),
                          email_verified=True if 'email' in profile else False)
     return jsonify(token=token.tokenize)

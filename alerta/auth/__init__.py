@@ -25,7 +25,7 @@ def init_auth(app):
         from . import basic  # noqa
 
 
-from . import azure, github, gitlab, google, keycloak, oidc, pingfederate, saml2, userinfo  # noqa
+from . import github, oidc, pingfederate, saml2, userinfo  # noqa
 
 
 @auth.before_request

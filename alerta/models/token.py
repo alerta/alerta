@@ -98,7 +98,7 @@ class Jwt:
         if self.scopes:
             data['scope'] = ' '.join(self.scopes)
 
-        if current_app.config['EMAIL_VERIFICATION']:
+        if self.email_verified is not None:
             data['email_verified'] = self.email_verified
         if current_app.config['CUSTOMER_VIEWS']:
             data['customers'] = self.customers

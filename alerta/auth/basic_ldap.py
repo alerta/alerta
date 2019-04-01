@@ -69,14 +69,15 @@ def login():
     except ldap.LDAPError as e:
         raise ApiError(str(e), 500)
 
+    scopes = Permission.lookup(login=user.email, roles=user.roles)
     customers = get_customers(user.email, groups=groups)
     user.update_last_login()
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
-                          user=user.email, customers=customers, scopes=Permission.lookup(user.email, groups=user.roles),
+                          user=user.email, customers=customers, scopes=scopes,
                           resource_id=user.id, type='user', request=request)
 
     # Generate token
     token = create_token(user_id=user.id, name=user.name, login=user.email, provider='basic_ldap',
-                         customers=customers, roles=user.roles, email=user.email, email_verified=user.email_verified)
+                         customers=customers, scopes=scopes, roles=user.roles, email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)

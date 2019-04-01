@@ -48,16 +48,16 @@ def signup():
         raise ApiError('user not active', 403)
     user.update_last_login()
 
-    # assign customers
+    scopes = Permission.lookup(login=user.email, roles=user.roles)
     customers = get_customers(user.email, groups=[user.domain])
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-signup', message='user signup using BasicAuth',
-                          user=user.email, customers=customers, scopes=Permission.lookup(user.email, groups=user.roles),
+                          user=user.email, customers=customers, scopes=scopes,
                           resource_id=user.id, type='user', request=request)
 
     # generate token
     token = create_token(user_id=user.id, name=user.name, login=user.email, provider='basic',
-                         customers=customers, roles=user.roles, email=user.email, email_verified=user.email_verified)
+                         customers=customers, scopes=scopes, roles=user.roles, email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)
 
 
@@ -89,16 +89,16 @@ def login():
         raise ApiError('user not active', 403)
     user.update_last_login()
 
-    # assign customers
+    scopes = Permission.lookup(login=user.email, roles=user.roles)
     customers = get_customers(user.email, groups=[user.domain])
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-login', message='user login via BasicAuth',
-                          user=user.email, customers=customers, scopes=Permission.lookup(user.email, groups=user.roles),
+                          user=user.email, customers=customers, scopes=scopes,
                           resource_id=user.id, type='user', request=request)
 
     # generate token
     token = create_token(user_id=user.id, name=user.name, login=user.email, provider='basic',
-                         customers=customers, roles=user.roles, email=user.email, email_verified=user.email_verified)
+                         customers=customers, scopes=scopes, roles=user.roles, email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)
 
 
