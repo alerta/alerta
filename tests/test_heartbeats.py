@@ -12,7 +12,8 @@ class HeartbeatTestCase(unittest.TestCase):
 
         test_config = {
             'TESTING': True,
-            'AUTH_REQUIRED': False
+            'AUTH_REQUIRED': False,
+            'HEARTBEAT_TIMEOUT': 240
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -73,3 +74,32 @@ class HeartbeatTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertGreater(data['total'], 0, 'total heartbeats > 0')
+
+    def test_timeout(self):
+
+        # create heartbeat with default timeout
+        response = self.client.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['heartbeat']['timeout'], 240)
+
+        # resend alert with different timeout
+        self.heartbeat['timeout'] = 20
+        response = self.client.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['heartbeat']['timeout'], 20)
+
+        # resend alert with timeout disabled (ie. 0)
+        self.heartbeat['timeout'] = 0
+        response = self.client.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['heartbeat']['timeout'], 0)
+
+        # send heartbeat with different timeout
+        self.heartbeat['timeout'] = 10
+        response = self.client.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['heartbeat']['timeout'], 10)
