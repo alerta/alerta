@@ -37,6 +37,14 @@ class Alert:
             if not isinstance(kwargs.get(attr), (datetime, NoneType)):  # type: ignore
                 raise ValueError("Attribute '{}' must be datetime type".format(attr))
 
+        timeout = kwargs.get('timeout') if kwargs.get('timeout') is not None else current_app.config['ALERT_TIMEOUT']
+        try:
+            timeout = int(timeout)  # type: ignore
+        except ValueError:
+            raise ValueError("Could not convert 'timeout' value of '{}' to an integer".format(timeout))
+        if timeout < 0:
+            raise ValueError("Invalid negative 'timeout' value ({})".format(timeout))
+
         self.id = kwargs.get('id', None) or str(uuid4())
         self.resource = resource
         self.event = event
@@ -55,8 +63,7 @@ class Alert:
         self.origin = kwargs.get('origin', None) or '{}/{}'.format(os.path.basename(sys.argv[0]), platform.uname()[1])
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'exceptionAlert'
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
-        timeout = kwargs.get('timeout')
-        self.timeout = timeout if timeout is not None else current_app.config['ALERT_TIMEOUT']
+        self.timeout = timeout
         self.raw_data = kwargs.get('raw_data', None)
         self.customer = kwargs.get('customer', None)
 
