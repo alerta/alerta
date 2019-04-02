@@ -1,7 +1,10 @@
+import json
+
 import jwt
 import requests
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
+from jwt.algorithms import RSAAlgorithm  # type: ignore
 
 from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
@@ -32,7 +35,11 @@ def get_oidc_configuration(app):
     if config['issuer'] != issuer_url:
         raise ApiError('Issuer Claim does not match Issuer URL used to retrieve OpenID configuration', 503)
 
-    return config
+    jwks_uri = config['jwks_uri']
+    r = requests.get(jwks_uri)
+    keys = {k['kid']: RSAAlgorithm.from_jwk(json.dumps(k)) for k in r.json()['keys']}
+
+    return config, keys
 
 
 @auth.route('/auth/openid', methods=['OPTIONS', 'POST'])
@@ -43,7 +50,7 @@ def get_oidc_configuration(app):
 @cross_origin(supports_credentials=True)
 def openid():
 
-    oidc_configuration = get_oidc_configuration(current_app)
+    oidc_configuration, jwt_key_set = get_oidc_configuration(current_app)
     token_endpoint = oidc_configuration['token_endpoint']
     userinfo_endpoint = oidc_configuration['userinfo_endpoint']
 
@@ -57,10 +64,23 @@ def openid():
     r = requests.post(token_endpoint, data)
     token = r.json()
 
-    id_token = jwt.decode(
-        token['id_token'],
-        verify=False
-    )
+    if 'id_token' in token:
+        if current_app.config['OIDC_VERIFY_TOKEN']:
+            jwt_header = jwt.get_unverified_header(token['id_token'])
+            public_key = jwt_key_set[jwt_header['kid']]
+
+            id_token = jwt.decode(
+                token['id_token'],
+                key=public_key,
+                algorithms=jwt_header['alg']
+            )
+        else:
+            id_token = jwt.decode(
+                token['id_token'],
+                verify=False
+            )
+    else:
+        id_token = {}
 
     headers = {'Authorization': '{} {}'.format(token.get('token_type', 'Bearer'), token['access_token'])}
     r = requests.get(userinfo_endpoint, headers=headers)
