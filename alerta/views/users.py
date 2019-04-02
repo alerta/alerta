@@ -73,7 +73,7 @@ def get_user(user_id):
 @permission()
 @jsonp
 def get_me():
-    user = User.find_by_email(g.user)
+    user = User.find_by_id(g.user_id)
 
     if user:
         return jsonify(status='ok', total=1, user=user.serialize)
@@ -86,7 +86,7 @@ def get_me():
 @permission()
 @jsonp
 def get_me_attributes():
-    user = User.find_by_email(g.user)
+    user = User.find_by_id(g.user_id)
 
     if user:
         return jsonify(status='ok', total=1, attributes=user.attributes)
@@ -166,7 +166,7 @@ def update_me():
     if 'email_verified' in request.json:
         raise ApiError('not allowed to set email verified', 400)
 
-    user = User.find_by_email(g.user)
+    user = User.find_by_id(g.user_id)
 
     if not user:
         raise ApiError('not found', 404)
@@ -215,7 +215,7 @@ def update_me_attributes():
     if not request.json.get('attributes', None):
         raise ApiError("must supply 'attributes' as json data", 400)
 
-    user = User.find_by_email(g.user)
+    user = User.find_by_id(g.user_id)
 
     if not user:
         raise ApiError('not found', 404)

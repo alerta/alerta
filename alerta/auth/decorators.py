@@ -39,6 +39,7 @@ def permission(scope=None):
                 key_info = ApiKey.verify_key(key)
                 if not key_info:
                     raise ApiError("API key parameter '%s' is invalid" % key, 401)
+                g.user_id = None
                 g.user = key_info.user
                 g.customers = [key_info.customer] if key_info.customer else []
                 g.scopes = key_info.scopes  # type: List[Scope]
@@ -62,6 +63,7 @@ def permission(scope=None):
                     raise ApiError('Token has expired', 401)
                 except InvalidAudience:
                     raise ApiError('Invalid audience', 401)
+                g.user_id = jwt.subject
                 g.user = jwt.preferred_username
                 g.customers = jwt.customers
                 g.scopes = jwt.scopes  # type: List[Scope]
@@ -92,6 +94,7 @@ def permission(scope=None):
                 if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
                     raise BasicAuthError('Unauthorized domain', 403)
 
+                g.user_id = user.id
                 g.user = user.email
                 g.customers = get_customers(user.email, groups=[user.domain])
                 g.scopes = Permission.lookup(user.email, roles=user.roles)  # type: List[Scope]
@@ -102,6 +105,7 @@ def permission(scope=None):
                     return f(*args, **kwargs)
 
             if not current_app.config['AUTH_REQUIRED']:
+                g.user_id = None
                 g.user = None
                 g.customers = []
                 g.scopes = []  # type: List[Scope]
