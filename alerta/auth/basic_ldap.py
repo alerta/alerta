@@ -22,8 +22,7 @@ def login():
     except KeyError:
         raise ApiError("must supply 'username' and 'password'", 401)
 
-    username = email.split('@')[0]
-    domain = email.split('@')[1]
+    username, domain = email.split('@')
 
     # Validate LDAP domain
     if domain not in current_app.config['LDAP_DOMAINS']:
@@ -42,14 +41,13 @@ def login():
         raise ApiError(str(e), 500)
 
     # Create user if not yet there
-    user = User.find_by_email(email=email)
+    user = User.find_by_email(email)
     if not user:
-        user = User(username, email, '', ['user'], 'LDAP user', email_verified=True)
-        user.create()
-
-    # Check user is active
-    if user.status != 'active':
-        raise ApiError('user not active', 403)
+        user = User(name=username, email=email, password='', roles=[], text='LDAP user', email_verified=True)
+        try:
+            user = user.create()
+        except Exception as e:
+            ApiError(str(e), 500)
 
     # Assign customers & update last login time
     groups = [user.domain]
@@ -69,15 +67,19 @@ def login():
     except ldap.LDAPError as e:
         raise ApiError(str(e), 500)
 
-    scopes = Permission.lookup(login=user.email, roles=user.roles)
-    customers = get_customers(user.email, groups=groups)
+    # Check user is active
+    if user.status != 'active':
+        raise ApiError('User {} not active'.format(email), 403)
     user.update_last_login()
 
+    scopes = Permission.lookup(login=user.email, roles=user.roles)
+    customers = get_customers(login=user.email, groups=groups)
+
     auth_audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
-                          user=user.email, customers=customers, scopes=scopes,
-                          resource_id=user.id, type='user', request=request)
+                          user=user.email, customers=customers, scopes=scopes, resource_id=user.id, type='user',
+                          request=request)
 
     # Generate token
-    token = create_token(user_id=user.id, name=user.name, login=user.email, provider='basic_ldap',
-                         customers=customers, scopes=scopes, roles=user.roles, email=user.email, email_verified=user.email_verified)
+    token = create_token(user_id=user.id, name=user.name, login=user.email, provider='ldap', customers=customers,
+                         scopes=scopes, roles=user.roles, email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)
