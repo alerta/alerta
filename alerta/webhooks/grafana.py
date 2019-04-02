@@ -1,7 +1,6 @@
 import json
 from typing import Any, Dict
 
-from flask import current_app
 from werkzeug.datastructures import ImmutableMultiDict
 
 from alerta.app import qb
@@ -29,7 +28,7 @@ def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) 
     group = args.get('group', 'Performance')
     origin = args.get('origin', 'Grafana')
     service = args.get('service', 'Grafana')
-    timeout = args.get('timeout', current_app.config['ALERT_TIMEOUT'])
+    timeout = args.get('timeout', type=int)
 
     attributes = match.get('tags', None) or dict()
     attributes = {k.replace('.', '_'): v for (k, v) in attributes.items()}
