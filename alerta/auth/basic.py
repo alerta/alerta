@@ -90,7 +90,7 @@ def login():
     user.update_last_login()
 
     scopes = Permission.lookup(login=user.email, roles=user.roles)
-    customers = get_customers(user.email, groups=[user.domain])
+    customers = get_customers(login=user.email, groups=[user.domain])
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-login', message='user login via BasicAuth',
                           user=user.email, customers=customers, scopes=scopes, resource_id=user.id, type='user',
