@@ -75,7 +75,7 @@ ALLOWED_GITHUB_ORGS = ['*']
 
 # GitLab OAuth2
 GITLAB_URL = 'https://gitlab.com'
-ALLOWED_GITLAB_GROUPS = ['*']
+ALLOWED_GITLAB_GROUPS = None
 
 # BasicAuth using LDAP
 LDAP_URL = ''  # eg. ldap://localhost:389
@@ -86,14 +86,18 @@ LDAP_DOMAINS_BASEDN = {}  # type: Dict[str, str]
 # Microsof Azure Active Directory
 AZURE_TENANT = None
 
+# Keycloak
+KEYCLOAK_URL = None
+KEYCLOAK_REALM = None
+ALLOWED_KEYCLOAK_ROLES = None
+
 # OpenID Connect
 OIDC_ISSUER_URL = None
 OIDC_AUTH_URL = None
 OIDC_VERIFY_TOKEN = False
-OIDC_CUSTOM_CLAIM = 'roles'  # (deprecated)
-OIDC_ROLE_CLAIM = OIDC_CUSTOM_CLAIM  # JWT claim name whose value is used in role mapping
+OIDC_ROLE_CLAIM = OIDC_CUSTOM_CLAIM = 'roles'  # JWT claim name whose value is used in role mapping
 OIDC_GROUP_CLAIM = 'groups'  # JWT claim name whose value is used in customer mapping
-ALLOWED_OIDC_ROLES = ['*']
+ALLOWED_OIDC_ROLES = ALLOWED_GITLAB_GROUPS or ALLOWED_KEYCLOAK_ROLES or ['*']
 
 # PingFederate
 PINGFEDERATE_URL = None
@@ -103,11 +107,6 @@ PINGFEDERATE_TOKEN_ALGORITHM = None
 PINGFEDERATE_OPENID_PAYLOAD_USERNAME = None
 PINGFEDERATE_OPENID_PAYLOAD_EMAIL = None
 PINGFEDERATE_OPENID_PAYLOAD_GROUP = None
-
-# Keycloak
-KEYCLOAK_URL = None
-KEYCLOAK_REALM = None
-ALLOWED_KEYCLOAK_ROLES = ['*']
 
 # SAML 2.0
 SAML2_CONFIG = None

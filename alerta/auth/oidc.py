@@ -19,7 +19,7 @@ def get_oidc_configuration(app):
 
     OIDC_ISSUER_URL_BY_PROVIDER = {
         'azure': 'https://sts.windows.net/{}/'.format(app.config['AZURE_TENANT']),
-        'gitlab': 'https://gitlab.com',
+        'gitlab': app.config['GITLAB_URL'],
         'google': 'https://accounts.google.com',
         'keycloak': '{}/auth/realms/{}'.format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM'])
     }
