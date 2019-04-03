@@ -86,7 +86,8 @@ class Config:
             config['GITLAB_URL'] = os.environ['GITLAB_URL']
 
         if 'ALLOWED_GITLAB_GROUPS' in os.environ:
-            config['ALLOWED_GITLAB_GROUPS'] = os.environ['ALLOWED_GITLAB_GROUPS'].split(',')
+            RuntimeWarning('Deprecated config setting: ALLOWED_GITLAB_GROUPS (use ALLOWED_OIDC_ROLES)')
+            config['ALLOWED_OIDC_ROLES'] = os.environ['ALLOWED_GITLAB_GROUPS'].split(',')
 
         if 'KEYCLOAK_URL' in os.environ:
             config['KEYCLOAK_URL'] = os.environ['KEYCLOAK_URL']
@@ -95,7 +96,14 @@ class Config:
             config['KEYCLOAK_REALM'] = os.environ['KEYCLOAK_REALM']
 
         if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
-            config['ALLOWED_KEYCLOAK_ROLES'] = os.environ['ALLOWED_KEYCLOAK_ROLES'].split(',')
+            RuntimeWarning('Deprecated config setting: ALLOWED_KEYCLOAK_ROLES (use ALLOWED_OIDC_ROLES)')
+            config['ALLOWED_OIDC_ROLES'] = os.environ['ALLOWED_KEYCLOAK_ROLES'].split(',')
+
+        if 'OIDC_ISSUER_URL' in os.environ:
+            config['OIDC_ISSUER_URL'] = os.environ['OIDC_ISSUER_URL']
+
+        if 'ALLOWED_OIDC_ROLES' in os.environ:
+            config['ALLOWED_OIDC_ROLES'] = os.environ['ALLOWED_OIDC_ROLES'].split(',')
 
         if 'PINGFEDERATE_OPENID_ACCESS_TOKEN_URL' in os.environ:
             config['PINGFEDERATE_OPENID_ACCESS_TOKEN_URL'] = os.environ['PINGFEDERATE_OPENID_ACCESS_TOKEN_URL'].split(
