@@ -50,7 +50,7 @@ def login():
             ApiError(str(e), 500)
 
     # Assign customers & update last login time
-    groups = [user.domain]
+    groups = list()
     try:
         groups_filters = current_app.config.get('LDAP_DOMAINS_GROUP', {})
         base_dns = current_app.config.get('LDAP_DOMAINS_BASEDN', {})
@@ -73,7 +73,7 @@ def login():
     user.update_last_login()
 
     scopes = Permission.lookup(login=user.email, roles=user.roles)
-    customers = get_customers(login=user.email, groups=groups)
+    customers = get_customers(login=user.email, groups=[user.domain] + groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
                           user=user.email, customers=customers, scopes=scopes, resource_id=user.id, type='user',

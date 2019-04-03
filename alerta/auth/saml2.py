@@ -102,8 +102,8 @@ def saml_response_from_idp():
     if not_authorized('ALLOWED_SAML2_GROUPS', groups):
         return _make_response({'status': 'error', 'message': 'User {} is not authorized'.format(email)}, 403)
 
-    scopes = Permission.lookup(email, roles=groups)
-    customers = get_customers(email, groups=[domain])
+    scopes = Permission.lookup(login=email, roles=groups)
+    customers = get_customers(login=email, groups=[domain] + groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='saml2-login', message='user login via SAML2',
                           user=email, customers=customers, scopes=scopes,
