@@ -64,7 +64,7 @@ def openid():
     r = requests.post(token_endpoint, data)
     token = r.json()
 
-    if 'id_token' in token:
+    try:
         if current_app.config['OIDC_VERIFY_TOKEN']:
             jwt_header = jwt.get_unverified_header(token['id_token'])
             public_key = jwt_key_set[jwt_header['kid']]
@@ -79,12 +79,16 @@ def openid():
                 token['id_token'],
                 verify=False
             )
-    else:
+    except Exception:
+        current_app.logger.warning('No ID token in OpenID Connect token response.')
         id_token = {}
 
-    headers = {'Authorization': '{} {}'.format(token.get('token_type', 'Bearer'), token['access_token'])}
-    r = requests.get(userinfo_endpoint, headers=headers)
-    userinfo = r.json()
+    try:
+        headers = {'Authorization': '{} {}'.format(token.get('token_type', 'Bearer'), token['access_token'])}
+        r = requests.get(userinfo_endpoint, headers=headers)
+        userinfo = r.json()
+    except Exception:
+        raise ApiError('No access token in OpenID Connect token response.')
 
     subject = userinfo['sub']
     name = userinfo.get('name') or id_token.get('name')
