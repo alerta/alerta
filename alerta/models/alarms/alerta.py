@@ -1,5 +1,6 @@
 from flask import current_app
 
+from alerta.exceptions import InvalidAction
 from alerta.models.alarms import AlarmModel
 
 SEVERITY_MAP = {
@@ -152,13 +153,27 @@ class StateMachine(AlarmModel):
         # state transition determined by operator action, if any, or severity changes
         state = current_status
 
+        if action == ACTION_UNACK:
+            if state == ACK:
+                return next_state('UNACK-1', current_severity, previous_status)
+            else:
+                raise InvalidAction('invalid action for current {} status'.format(state))
+
+        if action == ACTION_UNSHELVE:
+            if state == SHELVED:
+                return next_state('UNSHL-1', current_severity, previous_status)
+            else:
+                raise InvalidAction('invalid action for current {} status'.format(state))
+
         if state == OPEN:
+            if action == ACTION_OPEN:
+                raise InvalidAction('alert is already in {} status'.format(state))
             if action == ACTION_ACK:
-                return next_state('OPN-1', current_severity, ACK)
+                return next_state('OPEN-1', current_severity, ACK)
             if action == ACTION_SHELVE:
-                return next_state('OPN-2', current_severity, SHELVED)
+                return next_state('OPEN-2', current_severity, SHELVED)
             if action == ACTION_CLOSE:
-                return next_state('OPN-3', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
+                return next_state('OPEN-3', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
         if state == ASSIGN:
             pass
@@ -166,37 +181,47 @@ class StateMachine(AlarmModel):
         if state == ACK:
             if action == ACTION_OPEN:
                 return next_state('ACK-1', current_severity, OPEN)
-            if action == ACTION_UNACK:
-                return next_state('ACK-2', current_severity, previous_status)
+            if action == ACTION_ACK:
+                raise InvalidAction('alert is already in {} status'.format(state))
             if action == ACTION_SHELVE:
-                return next_state('ACK-3', current_severity, SHELVED)
+                return next_state('ACK-2', current_severity, SHELVED)
             if action == ACTION_CLOSE:
-                return next_state('ACK-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
+                return next_state('ACK-3', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
             # re-open ack'ed alerts if the severity actually increases
             # not just because the previous severity is the default
             if previous_severity != StateMachine.DEFAULT_PREVIOUS_SEVERITY:
                 if self.trend(previous_severity, current_severity) == MORE_SEVERE:
-                    return next_state('ACK-5', current_severity, OPEN)
+                    return next_state('ACK-4', current_severity, OPEN)
 
         if state == SHELVED:
-            if action == ACTION_UNSHELVE:
-                return next_state('SHL-3', current_severity, previous_status)
+            if action == ACTION_OPEN:
+                return next_state('SHL-1', current_severity, OPEN)
+            if action == ACTION_ACK:
+                raise InvalidAction('invalid action for current {} status'.format(state))
+            if action == ACTION_SHELVE:
+                raise InvalidAction('alert is already in {} status'.format(state))
             if action == ACTION_CLOSE:
-                return next_state('SHL-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
+                return next_state('SHL-2', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
         if state == BLACKOUT:
             if action == ACTION_CLOSE:
-                return next_state('BLK-4', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
+                return next_state('BLK-1', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
             if previous_status != BLACKOUT:
-                return next_state('BLK-5', current_severity, previous_status)
+                return next_state('BLK-2', current_severity, previous_status)
             else:
                 return next_state('BLK-*', current_severity, alert.status)
 
         if state == CLOSED:
             if action == ACTION_OPEN:
                 return next_state('CLS-1', previous_severity, OPEN)
+            if action == ACTION_ACK:
+                raise InvalidAction('invalid action for current {} status'.format(state))
+            if action == ACTION_SHELVE:
+                raise InvalidAction('invalid action for current {} status'.format(state))
+            if action == ACTION_CLOSE:
+                raise InvalidAction('alert is already in {} status'.format(state))
 
             if StateMachine.Severity[current_severity] != StateMachine.NORMAL_SEVERITY_LEVEL:
                 if previous_status == SHELVED:
