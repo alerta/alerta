@@ -261,7 +261,7 @@ class Alert:
             find = None
         for h, h_next in zip(h_loop, h_loop[1:]):
             if not find or h.change_type == find:
-                return h.status, h.value, h_next.status
+                return h_loop[0].status, h_loop[0].value, h_next.status
         return None, None, None
 
     # de-duplicate an alert

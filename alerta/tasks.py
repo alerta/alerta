@@ -1,7 +1,7 @@
 from typing import List
 
 from alerta.app import create_celery_app
-from alerta.exceptions import RejectException
+from alerta.exceptions import InvalidAction, RejectException
 from alerta.models.alert import Alert
 from alerta.utils.api import process_action, process_status
 
@@ -20,6 +20,9 @@ def action_alerts(alerts: List[str], action: str, text: str, timeout: int) -> No
             alert, action, text = process_action(alert, action, text)
             alert = alert.from_action(action, text, timeout)
         except RejectException as e:
+            errors.append(str(e))
+            continue
+        except InvalidAction as e:
             errors.append(str(e))
             continue
         except Exception as e:
