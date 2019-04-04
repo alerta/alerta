@@ -6,8 +6,8 @@ from flask_cors import cross_origin
 
 from alerta.app import qb
 from alerta.auth.decorators import permission
-from alerta.exceptions import (ApiError, BlackoutPeriod, RateLimit,
-                               RejectException)
+from alerta.exceptions import (ApiError, BlackoutPeriod, InvalidAction,
+                               RateLimit, RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 from alerta.models.metrics import Timer, timer
@@ -154,6 +154,8 @@ def action_alert(alert_id):
                                user=g.user, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
                                request=request)
         raise ApiError(str(e), 400)
+    except InvalidAction as e:
+        raise ApiError(str(e), 409)
     except Exception as e:
         raise ApiError(str(e), 500)
 
