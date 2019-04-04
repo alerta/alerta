@@ -86,7 +86,6 @@ class Config:
             config['GITLAB_URL'] = os.environ['GITLAB_URL']
 
         if 'ALLOWED_GITLAB_GROUPS' in os.environ:
-            RuntimeWarning('Deprecated config setting: ALLOWED_GITLAB_GROUPS (use ALLOWED_OIDC_ROLES)')
             config['ALLOWED_OIDC_ROLES'] = os.environ['ALLOWED_GITLAB_GROUPS'].split(',')
 
         if 'KEYCLOAK_URL' in os.environ:
@@ -96,7 +95,6 @@ class Config:
             config['KEYCLOAK_REALM'] = os.environ['KEYCLOAK_REALM']
 
         if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
-            RuntimeWarning('Deprecated config setting: ALLOWED_KEYCLOAK_ROLES (use ALLOWED_OIDC_ROLES)')
             config['ALLOWED_OIDC_ROLES'] = os.environ['ALLOWED_KEYCLOAK_ROLES'].split(',')
 
         if 'OIDC_ISSUER_URL' in os.environ:
