@@ -26,6 +26,11 @@ class BlackoutPeriod(AlertaException):
     pass
 
 
+class InvalidAction(AlertaException):
+    """Invalid or redundant action for the current alert status."""
+    pass
+
+
 class NoCustomerMatch(AlertaException):
     """There was no customer lookup found for the user or group."""
     pass
