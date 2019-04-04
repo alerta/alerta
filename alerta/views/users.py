@@ -19,6 +19,10 @@ from . import api
 @permission(Scope.admin_users)
 @jsonp
 def create_user():
+    if current_app.config['AUTH_PROVIDER'] != 'basic':
+        raise ApiError(
+            'must use {} login flow to create new user'.format(current_app.config['AUTH_PROVIDER']), 400)
+
     try:
         user = User.parse(request.json)
     except Exception as e:
