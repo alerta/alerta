@@ -7,7 +7,7 @@ from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
 
 
-class UserTestCase(unittest.TestCase):
+class UsersTestCase(unittest.TestCase):
 
     def setUp(self):
 

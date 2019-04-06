@@ -6,7 +6,7 @@ from uuid import uuid4
 from alerta.app import alarm_model, create_app, db
 
 
-class AlertTestCase(unittest.TestCase):
+class AlertsTestCase(unittest.TestCase):
 
     def setUp(self):
 
@@ -694,13 +694,22 @@ class AlertTestCase(unittest.TestCase):
         self.assertEqual(data['services'][0]['statusCounts'], {'open': 1, 'closed': 1})
 
         # groups
-        response = self.client.get('/groups')
+        response = self.client.get('/alerts/groups')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn('groups', data)
         self.assertEqual(data['groups'][0]['environment'], 'Production')
         self.assertEqual(data['groups'][0]['group'], 'Misc')
         self.assertEqual(data['groups'][0]['count'], 2)
+
+        # tags
+        response = self.client.get('/alerts/tags')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('tags', data)
+        self.assertEqual(data['tags'][0]['environment'], 'Production')
+        self.assertEqual(data['tags'][0]['tag'], 'foo')
+        self.assertEqual(data['tags'][0]['count'], 1)
 
     def test_query_param(self):
         # create alert

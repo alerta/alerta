@@ -6,7 +6,7 @@ from uuid import uuid4
 from alerta.app import create_app, db
 
 
-class HeartbeatTestCase(unittest.TestCase):
+class HeartbeatsTestCase(unittest.TestCase):
 
     def setUp(self):
 

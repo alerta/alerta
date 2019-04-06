@@ -522,7 +522,7 @@ def get_services():
 
 
 # get alert groups
-@api.route('/groups', methods=['OPTIONS', 'GET'])
+@api.route('/alerts/groups', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.read_alerts)
 @timer(gets_timer)
@@ -547,7 +547,7 @@ def get_groups():
 
 
 # get alert tags
-@api.route('/tags', methods=['OPTIONS', 'GET'])
+@api.route('/alerts/tags', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.read_alerts)
 @timer(gets_timer)

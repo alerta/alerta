@@ -8,6 +8,7 @@ from flask import current_app
 from alerta.app import db
 from alerta.auth import utils
 from alerta.database.base import Query
+from alerta.models.group import Group
 from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
@@ -162,6 +163,9 @@ class User:
 
     def delete(self) -> bool:
         return db.delete_user(self.id)
+
+    def get_groups(self):
+        return [Group.from_db(g) for g in db.get_groups_by_user(self.id)]
 
     @staticmethod
     def check_credentials(username: str, password: str) -> Optional['User']:

@@ -6,7 +6,7 @@ from uuid import uuid4
 from alerta.app import alarm_model, create_app, db
 
 
-class AlertTestCase(unittest.TestCase):
+class ActionsTestCase(unittest.TestCase):
 
     def setUp(self):
 

@@ -136,7 +136,7 @@ class Backend(Database):
     def destroy(self):
         conn = self.connect()
         cursor = conn.cursor()
-        for table in ['alerts', 'blackouts', 'customers', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
+        for table in ['alerts', 'blackouts', 'customers', 'groups', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
             cursor.execute('DROP TABLE IF EXISTS %s' % table)
         conn.commit()
         conn.close()
@@ -627,9 +627,9 @@ class Backend(Database):
                 'count': total_count[(env, svc)]
             } for env, svc in severity_count]
 
-    # GROUPS
+    # ALERT GROUPS
 
-    def get_groups(self, query=None, topn=1000):
+    def get_alert_groups(self, query=None, topn=1000):
         query = query or Query()
         select = """
             SELECT environment, "group", count(1) FROM alerts
@@ -638,9 +638,9 @@ class Backend(Database):
         """.format(where=query.where)
         return [{'environment': g.environment, 'group': g.group, 'count': g.count} for g in self._fetchall(select, query.vars, limit=topn)]
 
-    # TAGS
+    # ALERT TAGS
 
-    def get_tags(self, query=None, topn=1000):
+    def get_alert_tags(self, query=None, topn=1000):
         query = query or Query()
         select = """
             SELECT environment, tag, count(1) FROM alerts, UNNEST(tags) tag
@@ -963,6 +963,87 @@ class Backend(Database):
             WHERE id=%s
         """
         return self._updateone(update, (hash, id))
+
+    # GROUPS
+
+    def create_group(self, group):
+        insert = """
+            INSERT INTO groups (id, name, text)
+            VALUES (%(id)s, %(name)s, %(text)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(group))
+
+    def get_group(self, id):
+        select = """SELECT * FROM groups WHERE id=%s"""
+        return self._fetchone(select, (id,))
+
+    def get_groups(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT * FROM groups
+            WHERE {where}
+        """.format(where=query.where)
+        return self._fetchall(select, query.vars)
+
+    def get_group_users(self, id):
+        select = """
+            SELECT u.id, u.login, u.email, u.name, u.status
+              FROM (SELECT id, UNNEST(users) as uid FROM groups) g
+            INNER JOIN users u on g.uid = u.id
+            WHERE g.id = %s
+        """
+        return self._fetchall(select, (id,))
+
+    def update_group(self, id, **kwargs):
+        update = """
+            UPDATE groups
+            SET
+        """
+        if kwargs.get('name', None) is not None:
+            update += 'name=%(name)s, '
+        if kwargs.get('text', None) is not None:
+            update += 'text=%(text)s, '
+        update += """
+            update_time=NOW() at time zone 'utc'
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs['id'] = id
+        return self._updateone(update, kwargs, returning=True)
+
+    def add_user_to_group(self, group, user):
+        update = """
+            UPDATE groups
+            SET users=ARRAY(SELECT DISTINCT UNNEST(users || %(users)s))
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        return self._updateone(update, {'id': group, 'users': [user]}, returning=True)
+
+    def remove_user_from_group(self, group, user):
+        update = """
+            UPDATE groups
+            SET users=(select array_agg(u) FROM unnest(users) AS u WHERE NOT u=%(user)s )
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        return self._updateone(update, {'id': group, 'user': user}, returning=True)
+
+    def delete_group(self, id):
+        delete = """
+            DELETE FROM groups
+            WHERE id=%s
+            RETURNING id
+        """
+        return self._deleteone(delete, (id,), returning=True)
+
+    def get_groups_by_user(self, user):
+        select = """
+            SELECT * FROM groups
+            WHERE %s=ANY(users)
+        """
+        return self._fetchall(select, (user,))
 
     # PERMISSIONS
 

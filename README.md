@@ -29,7 +29,7 @@ Requirements
 The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 
 - Postgres version 9.5 or better
-- MongoDB version 3.x
+- MongoDB version 3.2 or better
 
 Installation
 ------------

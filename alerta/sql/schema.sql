@@ -174,6 +174,23 @@ CREATE TABLE IF NOT EXISTS users (
     hash text
 );
 
+DO $$
+BEGIN
+    ALTER TABLE users ADD COLUMN login text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column login already exists in users.';
+END$$;
+
+CREATE TABLE IF NOT EXISTS groups (
+    id text PRIMARY KEY,
+    name text UNIQUE NOT NULL,
+    users text[],
+    text text,
+    tags text[],
+    attributes jsonb,
+    update_time timestamp without time zone
+);
+
 
 CREATE UNIQUE INDEX IF NOT EXISTS env_res_evt_cust_key ON alerts USING btree (environment, resource, event, (COALESCE(customer, ''::text)));
 
