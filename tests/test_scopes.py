@@ -8,7 +8,7 @@ from alerta.models.key import ApiKey
 from alerta.models.permission import Permission
 
 
-class ScopeTestCase(unittest.TestCase):
+class ScopesTestCase(unittest.TestCase):
 
     def setUp(self):
 

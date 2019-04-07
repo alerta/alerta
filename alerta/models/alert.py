@@ -530,12 +530,12 @@ class Alert:
     # get groups
     @staticmethod
     def get_groups(query: Query=None) -> List[str]:
-        return db.get_groups(query)
+        return db.get_alert_groups(query)
 
     # get tags
     @staticmethod
     def get_tags(query: Query=None) -> List[str]:
-        return db.get_tags(query)
+        return db.get_alert_tags(query)
 
     @staticmethod
     def housekeeping(expired_threshold: int=2, info_threshold: int=12) -> None:

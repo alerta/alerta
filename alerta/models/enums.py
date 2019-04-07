@@ -17,6 +17,8 @@ class Scope(str, Enum):
     admin_heartbeats = 'admin:heartbeats'
     write_users = 'write:users'
     admin_users = 'admin:users'
+    read_groups = 'read:groups'
+    admin_groups = 'admin:groups'
     read_perms = 'read:perms'
     admin_perms = 'admin:perms'
     read_customers = 'read:customers'
