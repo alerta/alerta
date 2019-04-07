@@ -76,6 +76,7 @@ class Group:
         self.id = kwargs.get('id', str(uuid4()))
         self.name = name
         self.text = text or ''
+        self.count = kwargs.get('count')
 
     @classmethod
     def parse(cls, json: JSON) -> 'Group':
@@ -90,19 +91,21 @@ class Group:
             'id': self.id,
             'href': absolute_url('/group/' + self.id),
             'name': self.name,
-            'text': self.text
+            'text': self.text,
+            'count': self.count
         }
 
     def __repr__(self) -> str:
-        return 'Group(id={!r}, name={!r}, text={!r})'.format(
-            self.id, self.name, self.text)
+        return 'Group(id={!r}, name={!r}, text={!r}, count={!r})'.format(
+            self.id, self.name, self.text, self.count)
 
     @classmethod
     def from_document(cls, doc: Dict[str, Any]) -> 'Group':
         return Group(
             id=doc.get('id', None) or doc.get('_id'),
             name=doc.get('name', None),
-            text=doc.get('text', None)
+            text=doc.get('text', None),
+            count=len(doc.get('users', []))
         )
 
     @classmethod
@@ -110,7 +113,8 @@ class Group:
         return Group(
             id=rec.id,
             name=rec.name,
-            text=rec.text
+            text=rec.text,
+            count=len(rec.users or [])
         )
 
     @classmethod
