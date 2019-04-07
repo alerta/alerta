@@ -195,14 +195,14 @@ class Database(Base):
     def get_services(self, query=None, topn=1000):
         raise NotImplementedError
 
-    # GROUPS
+    # ALERT GROUPS
 
-    def get_groups(self, query=None, topn=1000):
+    def get_alert_groups(self, query=None, topn=1000):
         raise NotImplementedError
 
-    # TAGS
+    # ALERT TAGS
 
-    def get_tags(self, query=None, topn=1000):
+    def get_alert_tags(self, query=None, topn=1000):
         raise NotImplementedError
 
     # BLACKOUTS
@@ -289,6 +289,35 @@ class Database(Base):
         raise NotImplementedError
 
     def set_email_hash(self, id, hash):
+        raise NotImplementedError
+
+    # GROUPS
+
+    def create_group(self, group):
+        raise NotImplementedError
+
+    def get_group(self, id):
+        raise NotImplementedError
+
+    def get_group_users(self, id):
+        raise NotImplementedError
+
+    def get_groups(self, query=None):
+        raise NotImplementedError
+
+    def update_group(self, id, **kwargs):
+        raise NotImplementedError
+
+    def add_user_to_group(self, group, user):
+        raise NotImplementedError
+
+    def remove_user_from_group(self, group, user):
+        raise NotImplementedError
+
+    def delete_group(self, id):
+        raise NotImplementedError
+
+    def get_groups_by_user(self, user):
         raise NotImplementedError
 
     # PERMISSIONS

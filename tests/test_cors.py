@@ -7,7 +7,7 @@ from flask_cors.extension import ACL_ALLOW_HEADERS, ACL_ORIGIN
 from alerta.app import create_app, db
 
 
-class AlertTestCase(unittest.TestCase):
+class HTTPCorsTestCase(unittest.TestCase):
 
     def setUp(self):
 

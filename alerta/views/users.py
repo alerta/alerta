@@ -72,6 +72,32 @@ def get_user(user_id):
         raise ApiError('not found', 404)
 
 
+@api.route('/user/<user_id>/groups', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.admin_users)
+@jsonp
+def get_user_groups(user_id):
+    user = User.find_by_id(user_id)
+    if not user:
+        raise ApiError('not found', 404)
+
+    user_groups = user.get_groups()
+
+    if user_groups:
+        return jsonify(
+            status='ok',
+            groups=[group.serialize for group in user_groups],
+            total=len(user_groups)
+        )
+    else:
+        return jsonify(
+            status='ok',
+            message='not found',
+            groups=[],
+            total=0
+        )
+
+
 @api.route('/user/me', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission()

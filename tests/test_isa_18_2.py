@@ -5,7 +5,7 @@ from alerta.app import alarm_model, create_app, db, plugins
 from alerta.plugins import PluginBase
 
 
-class AlertTestCase(unittest.TestCase):
+class Isa182TestCase(unittest.TestCase):
 
     def setUp(self):
 

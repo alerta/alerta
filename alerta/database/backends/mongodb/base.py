@@ -44,6 +44,7 @@ class Backend(Database):
         db.keys.create_index([('key', ASCENDING)], unique=True)
         db.perms.create_index([('match', ASCENDING)], unique=True)
         db.users.create_index([('email', ASCENDING)], unique=True)
+        db.groups.create_index([('name', ASCENDING)], unique=True)
         db.metrics.create_index([('group', ASCENDING), ('name', ASCENDING)], unique=True)
 
     @property
@@ -792,9 +793,9 @@ class Backend(Database):
                 'count': sum(t[1] for t in severity_count[(env, svc)])
             } for env, svc in severity_count]
 
-    # GROUPS
+    # ALERT GROUPS
 
-    def get_groups(self, query=None, topn=1000):
+    def get_alert_groups(self, query=None, topn=1000):
         query = query or Query()
         pipeline = [
             {'$match': query.where},
@@ -815,13 +816,13 @@ class Backend(Database):
             )
         return groups
 
-    # TAGS
+    # ALERT TAGS
 
-    def get_tags(self, query=None, topn=1000):
+    def get_alert_tags(self, query=None, topn=1000):
         query = query or Query()
         pipeline = [
-            {'$unwind': '$tags'},
             {'$match': query.where},
+            {'$unwind': '$tags'},
             {'$project': {'environment': 1, 'tags': 1}},
             {'$limit': topn},
             {'$group': {'_id': {'environment': '$environment', 'tag': '$tags'}, 'count': {'$sum': 1}}}
@@ -1318,6 +1319,75 @@ class Backend(Database):
             {'_id': id},
             update={'$set': {'hash': hash, 'updateTime': datetime.utcnow()}}
         ).matched_count == 1
+
+    # GROUPS
+
+    def create_group(self, group):
+        data = {
+            '_id': group.id,
+            'name': group.name,
+            'text': group.text
+        }
+        if self.get_db().groups.insert_one(data).inserted_id == group.id:
+            return data
+
+    def get_group(self, id):
+        query = {'_id': id}
+        return self.get_db().groups.find_one(query)
+
+    def get_groups(self, query=None):
+        query = query or Query()
+        return self.get_db().groups.find(query.where)
+
+    def get_group_users(self, id):
+        pipeline = [
+            {'$match': {'_id': id}},
+            {'$unwind': '$users'},
+            {'$lookup': {
+                'from': 'users',
+                'localField': 'users',
+                'foreignField': '_id',
+                'as': 'groupUser'
+            }},
+            {'$project': {'groupUser': 1}}  # u.id, u.login, u.email, u.name, u.status
+        ]
+        responses = self.get_db().groups.aggregate(pipeline)
+
+        users = list()
+        for response in responses:
+            users.append(
+                {
+                    'id': response['groupUser'][0]['_id'],
+                    'login': response['groupUser'][0].get('login'),
+                    'email': response['groupUser'][0]['email'],
+                    'name': response['groupUser'][0]['name'],
+                    'status': response['groupUser'][0]['status']
+                }
+            )
+        return users
+
+    def update_group(self, id, **kwargs):
+        return self.get_db().groups.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
+    def add_user_to_group(self, group, user):
+        response = self.get_db().groups.update_one(
+            {'_id': group}, {'$addToSet': {'users': user}})
+        return response.matched_count > 0
+
+    def remove_user_from_group(self, group, user):
+        response = self.get_db().groups.update_one({'_id': group}, {'$pullAll': {'users': [user]}})
+        return response.matched_count > 0
+
+    def delete_group(self, id):
+        response = self.get_db().groups.delete_one({'_id': id})
+        return True if response.deleted_count == 1 else False
+
+    def get_groups_by_user(self, user):
+        return self.get_db().groups.find({'users': user})
 
     # PERMISSIONS
 

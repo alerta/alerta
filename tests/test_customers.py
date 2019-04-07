@@ -11,7 +11,7 @@ from alerta.models.key import ApiKey
 from alerta.utils.api import assign_customer
 
 
-class AuthTestCase(unittest.TestCase):
+class CustomersTestCase(unittest.TestCase):
 
     def setUp(self):
 

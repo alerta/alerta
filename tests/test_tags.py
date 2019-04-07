@@ -6,7 +6,7 @@ from uuid import uuid4
 from alerta.app import create_app, db
 
 
-class TagTestCase(unittest.TestCase):
+class TagsTestCase(unittest.TestCase):
 
     def setUp(self):
 
