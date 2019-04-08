@@ -1,9 +1,12 @@
 
 import json
 import unittest
+from datetime import datetime
 from uuid import uuid4
 
 from alerta.app import alarm_model, create_app, db
+from alerta.models.alert import Alert
+from alerta.utils.api import process_alert
 
 
 class AlertTestCase(unittest.TestCase):
@@ -713,3 +716,38 @@ class AlertTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEquals(data['total'], 1)
         self.assertEquals(data['alerts'][0]['event'], 'node_up')
+
+    def test_get_body(self):
+        from flask import g
+        with self.app.test_request_context('/'):
+            g.user = 'foo'
+            alert_in = Alert(
+                resource='test1',
+                event='event1',
+                environment='Development',
+                service=['svc1', 'svc2']
+            )
+
+            self.assertTrue(isinstance(alert_in.create_time, datetime))
+            self.assertEqual(alert_in.last_receive_time, None)
+            self.assertTrue(isinstance(alert_in.receive_time, datetime))
+            self.assertEqual(alert_in.update_time, None)
+
+            body = alert_in.get_body()
+            self.assertEqual(type(body['createTime']), str)
+            self.assertEqual(body['lastReceiveTime'], None)
+            self.assertEqual(type(body['receiveTime']), str)
+            self.assertEqual(body['updateTime'], None)
+
+            alert_out = process_alert(alert_in)
+
+            self.assertTrue(isinstance(alert_out.create_time, datetime))
+            self.assertTrue(isinstance(alert_out.last_receive_time, datetime))
+            self.assertTrue(isinstance(alert_out.receive_time, datetime))
+            self.assertTrue(isinstance(alert_out.update_time, datetime))
+
+            body = alert_out.get_body()
+            self.assertEqual(type(body['createTime']), str)
+            self.assertEqual(type(body['lastReceiveTime']), str)
+            self.assertEqual(type(body['receiveTime']), str)
+            self.assertEqual(type(body['updateTime']), str)
