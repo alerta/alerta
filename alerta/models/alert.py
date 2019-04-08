@@ -154,7 +154,7 @@ class Alert:
     def get_body(self, history: bool=True) -> Dict[str, Any]:
         body = self.serialize
         body.update({
-            key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime', 'updateTime']
+            key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime', 'updateTime'] if body[key]
         })
         if not history:
             body['history'] = []
