@@ -181,15 +181,15 @@ class PluginsTestCase(unittest.TestCase):
 
 class CustPlugin1(PluginBase):
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
         alert.attributes['aaa'] = 'pre1'
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         alert.attributes['aaa'] = 'post1'
         return alert
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         alert.tags.extend(['this', 'that', 'the', 'other'])
         alert.attributes['foo'] = 'bar'
         alert.attributes['abc'] = 123
@@ -201,13 +201,13 @@ class CustPlugin1(PluginBase):
 
 class CustPlugin2(PluginBase):
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return alert
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         # alert.tags.extend(['skip?'])
         # status = 'skipped'
         # text = text + '-plugin2'
@@ -216,13 +216,13 @@ class CustPlugin2(PluginBase):
 
 class CustPlugin3(PluginBase):
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return alert
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         alert.tags.extend(['this', 'that', 'more'])
         alert.attributes['baz'] = 'quux'
         if alert.attributes['abc'] == 123:
@@ -235,13 +235,13 @@ class CustPlugin3(PluginBase):
 
 class CustActionPlugin1(PluginBase):
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         return alert, status, text
 
     def take_action(self, alert, action, text, **kwargs):

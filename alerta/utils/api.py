@@ -38,12 +38,13 @@ def add_remote_ip(req: Request, alert: Alert) -> None:
 def process_alert(alert: Alert) -> Alert:
 
     skip_plugins = False
-    for plugin in plugins.routing(alert):
+    routed, config = plugins.routing(alert)
+    for plugin in routed:
         if alert.is_suppressed:
             skip_plugins = True
             break
         try:
-            alert = plugin.pre_receive(alert)
+            alert = plugin.pre_receive(alert, config=config)
         except (RejectException, BlackoutPeriod, RateLimit):
             raise
         except Exception as e:
@@ -65,11 +66,11 @@ def process_alert(alert: Alert) -> Alert:
         raise ApiError(str(e))
 
     updated = None
-    for plugin in plugins.routing(alert):
+    for plugin in routed:
         if skip_plugins:
             break
         try:
-            updated = plugin.post_receive(alert)
+            updated = plugin.post_receive(alert, config=config)
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
                 raise ApiError("Error while running post-receive plugin '{}': {}".format(plugin.name, str(e)))
@@ -88,11 +89,12 @@ def process_alert(alert: Alert) -> Alert:
 def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, str]:
 
     updated = None
-    for plugin in plugins.routing(alert):
+    routed, config = plugins.routing(alert)
+    for plugin in routed:
         if alert.is_suppressed:
             break
         try:
-            updated = plugin.take_action(alert, action, text)
+            updated = plugin.take_action(alert, action, text, config=config)
         except NotImplementedError:
             pass  # plugin does not support action() method
         except RejectException:
@@ -118,11 +120,12 @@ def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, st
 def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, str]:
 
     updated = None
-    for plugin in plugins.routing(alert):
+    routed, config = plugins.routing(alert)
+    for plugin in routed:
         if alert.is_suppressed:
             break
         try:
-            updated = plugin.status_change(alert, status, text)
+            updated = plugin.status_change(alert, status, text, config=config)
         except RejectException:
             raise
         except Exception as e:
