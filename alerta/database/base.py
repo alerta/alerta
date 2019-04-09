@@ -69,7 +69,7 @@ class Database(Base):
     def is_alive(self):
         raise NotImplementedError
 
-    def close(self):
+    def close(self, db):
         raise NotImplementedError('Database engine has no close() method')
 
     def destroy(self):
@@ -83,7 +83,7 @@ class Database(Base):
     def teardown_db(self, exc):
         db = g.pop('db', None)
         if db is not None:
-            self.close()
+            self.close(db)
 
     # ALERTS
 
