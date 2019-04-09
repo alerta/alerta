@@ -63,7 +63,7 @@ class Backend(Database):
             return False
         return True
 
-    def close(self):
+    def close(self, db):
         self.client.close()
 
     def destroy(self):

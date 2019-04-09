@@ -130,8 +130,8 @@ class Backend(Database):
         cursor.execute('SELECT true')
         return cursor.fetchone()
 
-    def close(self):
-        self.get_db().close()
+    def close(self, db):
+        db.close()
 
     def destroy(self):
         conn = self.connect()
