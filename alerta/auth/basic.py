@@ -45,19 +45,19 @@ def signup():
 
     # check user is active & update last login
     if user.status != 'active':
-        raise ApiError('user not active', 403)
+        raise ApiError('User {} not active'.format(user.login), 403)
     user.update_last_login()
 
     groups = [g.name for g in user.get_groups()]
-    scopes = Permission.lookup(login=user.email, roles=user.roles + groups)
-    customers = get_customers(login=user.email, groups=[user.domain] + groups)
+    scopes = Permission.lookup(login=user.login, roles=user.roles + groups)
+    customers = get_customers(login=user.login, groups=[user.domain] + groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-signup', message='user signup using BasicAuth',
-                          user=user.email, customers=customers, scopes=scopes,
+                          user=user.login, customers=customers, scopes=scopes,
                           resource_id=user.id, type='user', request=request)
 
     # generate token
-    token = create_token(user_id=user.id, name=user.name, login=user.email, provider='basic',
+    token = create_token(user_id=user.id, name=user.name, login=user.login, provider='basic',
                          customers=customers, scopes=scopes, roles=user.roles, groups=groups,
                          email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)
@@ -88,19 +88,19 @@ def login():
 
     # check user is active & update last login
     if user.status != 'active':
-        raise ApiError('User {} not active'.format(user.email), 403)
+        raise ApiError('User {} not active'.format(user.login), 403)
     user.update_last_login()
 
     groups = [g.name for g in user.get_groups()]
-    scopes = Permission.lookup(login=user.email, roles=user.roles + groups)
-    customers = get_customers(login=user.email, groups=[user.domain] + groups)
+    scopes = Permission.lookup(login=user.login, roles=user.roles + groups)
+    customers = get_customers(login=user.login, groups=[user.domain] + groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-login', message='user login via BasicAuth',
-                          user=user.email, customers=customers, scopes=scopes, resource_id=user.id, type='user',
+                          user=user.login, customers=customers, scopes=scopes, resource_id=user.id, type='user',
                           request=request)
 
     # generate token
-    token = create_token(user_id=user.id, name=user.name, login=user.email, provider='basic',
+    token = create_token(user_id=user.id, name=user.name, login=user.login, provider='basic',
                          customers=customers, scopes=scopes, roles=user.roles, groups=groups,
                          email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)

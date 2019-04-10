@@ -729,7 +729,7 @@ class AlertsTestCase(unittest.TestCase):
     def test_get_body(self):
         from flask import g
         with self.app.test_request_context('/'):
-            g.user = 'foo'
+            g.login = 'foo'
             alert_in = Alert(
                 resource='test1',
                 event='event1',

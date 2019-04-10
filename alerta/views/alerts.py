@@ -46,7 +46,7 @@ def receive():
     add_remote_ip(request, alert)
 
     def audit_trail_alert(event: str):
-        write_audit_trail.send(current_app._get_current_object(), event=event, message=alert.text, user=g.user,
+        write_audit_trail.send(current_app._get_current_object(), event=event, message=alert.text, user=g.login,
                                customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     try:
@@ -63,7 +63,7 @@ def receive():
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    write_audit_trail.send(current_app._get_current_object(), event='alert-received', message=alert.text, user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='alert-received', message=alert.text, user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert:
@@ -112,13 +112,13 @@ def set_status(alert_id):
         alert = alert.from_status(status, text, timeout)
     except RejectException as e:
         write_audit_trail.send(current_app._get_current_object(), event='alert-status-rejected', message=alert.text,
-                               user=g.user, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                               user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
                                request=request)
         raise ApiError(str(e), 400)
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    write_audit_trail.send(current_app._get_current_object(), event='alert-status-changed', message=text, user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='alert-status-changed', message=text, user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
     if alert:
         return jsonify(status='ok')
@@ -151,7 +151,7 @@ def action_alert(alert_id):
         alert = alert.from_action(action, text, timeout)
     except RejectException as e:
         write_audit_trail.send(current_app._get_current_object(), event='alert-action-rejected', message=alert.text,
-                               user=g.user, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                               user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
                                request=request)
         raise ApiError(str(e), 400)
     except InvalidAction as e:
@@ -159,7 +159,7 @@ def action_alert(alert_id):
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    write_audit_trail.send(current_app._get_current_object(), event='alert-actioned', message=text, user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='alert-actioned', message=text, user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert:
@@ -186,7 +186,7 @@ def tag_alert(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    write_audit_trail.send(current_app._get_current_object(), event='alert-tagged', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='alert-tagged', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert.tag(tags):
@@ -213,7 +213,7 @@ def untag_alert(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    write_audit_trail.send(current_app._get_current_object(), event='alert-untagged', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='alert-untagged', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert.untag(tags):
@@ -240,7 +240,7 @@ def update_attributes(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    write_audit_trail.send(current_app._get_current_object(), event='alert-attributes-updated', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='alert-attributes-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert.update_attributes(attributes):
@@ -266,7 +266,7 @@ def add_note(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    write_audit_trail.send(current_app._get_current_object(), event='alert-note-added', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='alert-note-added', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert.add_note(note):
@@ -288,7 +288,7 @@ def delete_alert(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    write_audit_trail.send(current_app._get_current_object(), event='alert-deleted', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='alert-deleted', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert.delete():

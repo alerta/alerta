@@ -871,9 +871,9 @@ class Backend(Database):
 
     def create_user(self, user):
         insert = """
-            INSERT INTO users (id, name, email, password, status, roles, attributes,
+            INSERT INTO users (id, name, login, password, email, status, roles, attributes,
                 create_time, last_login, text, update_time, email_verified)
-            VALUES (%(id)s, %(name)s, %(email)s, %(password)s, %(status)s, %(roles)s, %(attributes)s, %(create_time)s,
+            VALUES (%(id)s, %(name)s, %(login)s, %(password)s, %(email)s, %(status)s, %(roles)s, %(attributes)s, %(create_time)s,
                 %(last_login)s, %(text)s, %(update_time)s, %(email_verified)s)
             RETURNING *
         """
@@ -914,10 +914,12 @@ class Backend(Database):
         """
         if kwargs.get('name', None) is not None:
             update += 'name=%(name)s, '
-        if kwargs.get('email', None) is not None:
-            update += 'email=%(email)s, '
+        if kwargs.get('login', None) is not None:
+            update += 'login=%(login)s, '
         if kwargs.get('password', None) is not None:
             update += 'password=%(password)s, '
+        if kwargs.get('email', None) is not None:
+            update += 'email=%(email)s, '
         if kwargs.get('status', None) is not None:
             update += 'status=%(status)s, '
         if kwargs.get('roles', None) is not None:

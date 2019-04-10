@@ -46,7 +46,7 @@ def custom(webhook):
 
             text = 'alert received via {} webhook'.format(webhook)
             write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text,
-                                   user=g.user, customers=g.customers, scopes=g.scopes, resource_id=alert.id,
+                                   user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id,
                                    type='alert', request=request)
             alerts.append(alert)
 
@@ -57,7 +57,7 @@ def custom(webhook):
 
     else:
         text = 'request received via {} webhook'.format(webhook)
-        write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text, user=g.user,
-                               customers=g.customers, scopes=g.scopes, resource_id=None, type='user-defined',
-                               request=request)
+        write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text,
+                               user=g.login, customers=g.customers, scopes=g.scopes, resource_id=None,
+                               type='user-defined', request=request)
         return rv

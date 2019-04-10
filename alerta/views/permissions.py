@@ -36,7 +36,7 @@ def create_perm():
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='permission-created', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='permission-created', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=perm.id, type='permission', request=request)
 
     if perm:
@@ -114,7 +114,7 @@ def update_perm(perm_id):
     if not perm:
         raise ApiError('not found', 404)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='permission-updated', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='permission-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=perm.id, type='permission', request=request)
 
     if perm.update(**request.json):
@@ -133,7 +133,7 @@ def delete_perm(perm_id):
     if not perm:
         raise ApiError('not found', 404)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='permission-deleted', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='permission-deleted', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=perm.id, type='permission', request=request)
 
     if perm.delete():

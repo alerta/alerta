@@ -92,9 +92,9 @@ class SlackWebhook(WebhookBase):
             raise ApiError('Unsupported #slack action', 400)
 
         text = 'alert updated via slack webhook'
-        write_audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text, user=g.user,
-                               customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
-                               request=request)
+        write_audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text,
+                               user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id,
+                               type='alert', request=request)
 
         response = build_slack_response(alert, action, user, payload)
         return jsonify(**response), 201
