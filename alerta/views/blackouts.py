@@ -25,9 +25,9 @@ def create_blackout():
         raise ApiError(str(e), 400)
 
     if Scope.admin in g.scopes or Scope.admin_blackouts in g.scopes:
-        blackout.user = blackout.user or g.user
+        blackout.user = blackout.user or g.login
     else:
-        blackout.user = g.user
+        blackout.user = g.login
 
     blackout.customer = assign_customer(wanted=blackout.customer, permission=Scope.admin_blackouts)
 
@@ -36,7 +36,7 @@ def create_blackout():
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    write_audit_trail.send(current_app._get_current_object(), event='blackout-created', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='blackout-created', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout', request=request)
 
     if blackout:
@@ -100,10 +100,10 @@ def update_blackout(blackout_id):
         raise ApiError('not found', 404)
 
     update = request.json
-    update['user'] = g.user
+    update['user'] = g.login
     update['customer'] = assign_customer(wanted=update.get('customer'), permission=Scope.admin_blackouts)
 
-    write_audit_trail.send(current_app._get_current_object(), event='blackout-updated', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='blackout-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout',
                            request=request)
 
@@ -124,7 +124,7 @@ def delete_blackout(blackout_id):
     if not blackout:
         raise ApiError('not found', 404)
 
-    write_audit_trail.send(current_app._get_current_object(), event='blackout-deleted', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='blackout-deleted', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout', request=request)
 
     if blackout.delete():

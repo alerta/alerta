@@ -16,20 +16,18 @@ JSON = Dict[str, Any]
 
 class User:
     """
-    User model for BasicAuth only.
+    User model for all auth providers.
     """
 
-    def __init__(self, name: str, email: str, password: str, roles: List[str], text: str, **kwargs) -> None:
-
-        if not email:
-            raise ValueError('Missing mandatory value for "email"')
-        if '@' not in email:
-            raise ValueError('Value for "email" not valid: %s' % email)
+    def __init__(self, name: str, login: str, password: str, email: str, roles: List[str], text: str, **kwargs) -> None:
+        if not login:
+            raise ValueError('Missing mandatory value for "login"')
 
         self.id = kwargs.get('id', None) or str(uuid4())
         self.name = name or ''
-        self.email = email  # => g.user
+        self.login = login  # => g.login
         self.password = password  # NB: hashed password
+        self.email = email
         self.status = kwargs.get('status', None) or 'active'  # 'active', 'inactive', 'unknown'
         self.roles = ['admin'] if self.email in current_app.config['ADMIN_USERS'] else (roles or ['user'])
         self.attributes = kwargs.get('attributes', None) or dict()
@@ -41,7 +39,10 @@ class User:
 
     @property
     def domain(self) -> Optional[str]:
-        return self.email.split('@')[1] if '@' in self.email else None
+        try:
+            return self.email.split('@')[1]
+        except AttributeError:
+            return None
 
     @property
     def is_active(self) -> bool:
@@ -51,8 +52,9 @@ class User:
     def parse(cls, json: JSON) -> 'User':
         return User(
             name=json['name'],
-            email=json['email'],
+            login=json.get('login', None) or json.get('email', None),
             password=utils.generate_password_hash(json.get('password', '')),
+            email=json.get('email', None),
             status=json.get('status', None),
             roles=json.get('roles', list()),
             attributes=json.get('attributes', dict()),
@@ -69,6 +71,7 @@ class User:
             'id': self.id,
             'href': absolute_url('/user/' + self.id),
             'name': self.name,
+            'login': self.login,
             'email': self.email,
             'domain': self.domain,
             'provider': 'basic',
@@ -83,8 +86,8 @@ class User:
         }
 
     def __repr__(self) -> str:
-        return 'User(id={!r}, name={!r}, email={!r}, status={!r}, roles={!r}, email_verified={!r})'.format(
-            self.id, self.name, self.email, self.status, ','.join(self.roles), self.email_verified
+        return 'User(id={!r}, name={!r}, login={!r}, status={!r}, roles={!r}, email_verified={!r})'.format(
+            self.id, self.name, self.login, self.status, ','.join(self.roles), self.email_verified
         )
 
     @classmethod
@@ -92,8 +95,9 @@ class User:
         return User(
             id=doc.get('id', None) or doc.get('_id'),
             name=doc.get('name', None),
-            email=doc.get('email', None) or doc.get('login', None),
+            login=doc.get('login', None) or doc.get('email', None) or 'n/a',
             password=doc.get('password', None),
+            email=doc.get('email', None),
             status=doc.get('status', None),
             roles=doc.get('roles', list()),
             attributes=doc.get('attributes', dict()),
@@ -109,8 +113,9 @@ class User:
         return User(
             id=rec.id,
             name=rec.name,
-            email=rec.email,
+            login=rec.login or rec.email or 'n/a',
             password=rec.password,
+            email=rec.email,
             status=rec.status,
             roles=rec.roles,
             attributes=dict(rec.attributes),

@@ -28,7 +28,7 @@ def create_customer():
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='customer-created', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='customer-created', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=customer.id, type='customer', request=request)
 
     if customer:
@@ -89,7 +89,7 @@ def update_customer(customer_id):
     if not customer:
         raise ApiError('not found', 404)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='customer-updated', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='customer-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=customer.id, type='customer', request=request)
 
     if customer.update(**request.json):
@@ -108,7 +108,7 @@ def delete_customer(customer_id):
     if not customer:
         raise ApiError('not found', 404)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='customer-deleted', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='customer-deleted', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=customer.id, type='customer', request=request)
 
     if customer.delete():

@@ -85,10 +85,11 @@ def user(username, password, all):
     def create_user(admin):
         user = User(
             name=admin,
-            email=admin,
+            login=admin,
             password=generate_password_hash(password),
             roles=[],
             text='Admin user created by alertad script',
+            email='',
             email_verified=True
         )
         try:

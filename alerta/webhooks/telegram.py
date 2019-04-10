@@ -93,9 +93,8 @@ class TelegramWebhook(WebhookBase):
 
             text = 'alert updated via telegram webhook'
             write_audit_trail.send(current_app._get_current_object(), event='webhook-updated', message=text,
-                                   user=g.user,
-                                   customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
-                                   request=request)
+                                   user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id,
+                                   type='alert', request=request)
 
             return jsonify(status='ok')
         else:

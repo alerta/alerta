@@ -24,9 +24,9 @@ def create_key():
         raise ApiError(str(e), 400)
 
     if Scope.admin in g.scopes or Scope.admin_keys in g.scopes:
-        key.user = key.user or g.user
+        key.user = key.user or g.login
     else:
-        key.user = g.user
+        key.user = g.login
 
     key.customer = assign_customer(wanted=key.customer, permission=Scope.admin_keys)
 
@@ -43,7 +43,7 @@ def create_key():
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    write_audit_trail.send(current_app._get_current_object(), event='apikey-created', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='apikey-created', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=key.id, type='apikey', request=request)
 
     if key:
@@ -62,7 +62,7 @@ def get_key(key):
     elif Scope.admin in g.scopes or Scope.admin_keys in g.scopes:
         key = ApiKey.find_by_id(key)
     else:
-        user = g.get('user', None)
+        user = g.get('login', None)
         key = ApiKey.find_by_id(key, user)
 
     if key:
@@ -80,10 +80,10 @@ def list_keys():
         keys = ApiKey.find_all()
     elif Scope.admin in g.scopes or Scope.admin_keys in g.scopes:
         keys = ApiKey.find_all()
-    elif not g.get('user', None):
+    elif not g.get('login', None):
         raise ApiError("Must define 'user' to list user keys", 400)
     else:
-        keys = ApiKey.find_by_user(g.user)
+        keys = ApiKey.find_by_user(user=g.login)
 
     if keys:
         return jsonify(
@@ -113,7 +113,7 @@ def update_key(key):
     elif Scope.admin in g.scopes or Scope.admin_keys in g.scopes:
         key = ApiKey.find_by_id(key)
     else:
-        key = ApiKey.find_by_id(key, g.user)
+        key = ApiKey.find_by_id(key, user=g.login)
 
     if not key:
         raise ApiError('not found', 404)
@@ -126,7 +126,7 @@ def update_key(key):
             raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
                 want_scope, ','.join(g.scopes)), 403)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='apikey-updated', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='apikey-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=key.id, type='apikey', request=request)
 
     if key.update(**request.json):
@@ -145,7 +145,7 @@ def delete_key(key):
     if not key:
         raise ApiError('not found', 404)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='apikey-deleted', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='apikey-deleted', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=key.id, type='apikey', request=request)
 
     if key.delete():
