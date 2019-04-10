@@ -102,7 +102,10 @@ def openid():
         role_claim: userinfo.get(role_claim) or id_token.get(role_claim, []),
         group_claim: userinfo.get(group_claim) or id_token.get(group_claim, []),
     }
+
     login = userinfo.get('preferred_username', nickname or email)
+    if not login:
+        raise ApiError("Must support one of the following OpenID claims: 'preferred_username', 'nickname' or 'email'", 400)
 
     user = User.find_by_id(id=subject)
     if not user:
