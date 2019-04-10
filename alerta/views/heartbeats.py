@@ -31,7 +31,7 @@ def create_heartbeat():
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    write_audit_trail.send(current_app._get_current_object(), event='heartbeat-created', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='heartbeat-created', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=heartbeat.id, type='heartbeat', request=request)
 
     if heartbeat:
@@ -88,7 +88,7 @@ def delete_heartbeat(heartbeat_id):
     if not heartbeat:
         raise ApiError('not found', 404)
 
-    write_audit_trail.send(current_app._get_current_object(), event='heartbeat-deleted', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='heartbeat-deleted', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=heartbeat.id, type='heartbeat', request=request)
 
     if heartbeat.delete():

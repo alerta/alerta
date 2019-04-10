@@ -113,7 +113,7 @@ class RequestFilter(logging.Filter):
             record.reqargs = request.args
             record.data = request.get_data(as_text=True)
             record.remote_addr = request.remote_addr
-            record.user = g.user if hasattr(g, 'user') else None
+            record.user = g.login if hasattr(g, 'login') else None
 
         if hasattr(record, 'method'):
             if record.method in self.methods:

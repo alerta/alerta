@@ -28,7 +28,7 @@ def create_group():
     except Exception as e:
         raise ApiError(str(e), 500)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='group-created', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='group-created', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=group.id, type='group', request=request)
 
     if group:
@@ -110,7 +110,7 @@ def update_group(group_id):
     if not group:
         raise ApiError('not found', 404)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='group-updated', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='group-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=group.id, type='group', request=request)
 
     if group.update(**request.json):
@@ -132,7 +132,7 @@ def add_user_to_group(group_id, user_id):
     if not user:
         raise ApiError('invalid user', 400)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='user-attributes-updated', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='user-attributes-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
     if group.add_user(user_id):
@@ -154,7 +154,7 @@ def remove_user_from_group(group_id, user_id):
     if not user:
         raise ApiError('invalid user', 400)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='user-attributes-updated', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='user-attributes-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
     if group.remove_user(user_id):
@@ -173,7 +173,7 @@ def delete_group(group_id):
     if not group:
         raise ApiError('not found', 404)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='group-deleted', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='group-deleted', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=group.id, type='group', request=request)
 
     if group.delete():

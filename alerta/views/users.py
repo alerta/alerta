@@ -50,7 +50,7 @@ def create_user():
     if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
         user.send_confirmation()
 
-    admin_audit_trail.send(current_app._get_current_object(), event='user-created', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='user-created', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
     if user:
@@ -174,7 +174,7 @@ def update_user(user_id):
                 raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
                     want_scope, ','.join(g.scopes)), 403)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='user-updated', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='user-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
     if user.update(**request.json):
@@ -206,7 +206,7 @@ def update_me():
         if user_by_email and user_by_email.id != user.id:
             raise ApiError('user with email already exists', 409)
 
-    write_audit_trail.send(current_app._get_current_object(), event='user-me-updated', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='user-me-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
     if user.update(**request.json):
@@ -228,7 +228,7 @@ def update_user_attributes(user_id):
     if not user:
         raise ApiError('not found', 404)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='user-attributes-updated', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='user-attributes-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
     if user.update_attributes(request.json['attributes']):
@@ -250,7 +250,7 @@ def update_me_attributes():
     if not user:
         raise ApiError('not found', 404)
 
-    write_audit_trail.send(current_app._get_current_object(), event='user-me-attributes-updated', message='', user=g.user,
+    write_audit_trail.send(current_app._get_current_object(), event='user-me-attributes-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
     if user.update_attributes(request.json['attributes']):
@@ -269,7 +269,7 @@ def delete_user(user_id):
     if not user:
         raise ApiError('not found', 404)
 
-    admin_audit_trail.send(current_app._get_current_object(), event='user-deleted', message='', user=g.user,
+    admin_audit_trail.send(current_app._get_current_object(), event='user-deleted', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
     if user.delete():

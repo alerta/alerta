@@ -43,7 +43,8 @@ def login():
     # Create user if not yet there
     user = User.find_by_email(email)
     if not user:
-        user = User(name=username, email=email, password='', roles=[], text='LDAP user', email_verified=True)
+        user = User(name=username, login=email, password='', email=email,
+                    roles=[], text='LDAP user', email_verified=True)
         try:
             user = user.create()
         except Exception as e:

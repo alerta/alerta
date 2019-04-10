@@ -102,13 +102,16 @@ def openid():
         role_claim: userinfo.get(role_claim) or id_token.get(role_claim, []),
         group_claim: userinfo.get(group_claim) or id_token.get(group_claim, []),
     }
+    login = userinfo.get('preferred_username', nickname or email)
 
     user = User.find_by_id(id=subject)
     if not user:
-        user = User(id=subject, name=name, email=email, password='', roles=[], text='', email_verified=email_verified)
+        user = User(id=subject, name=name, login=login, password='', email=email,
+                    roles=[], text='', email_verified=email_verified)
         user.create()
+    else:
+        user.update(login=login, email=email)
 
-    login = userinfo.get('preferred_username', nickname or email)
     roles = custom_claims[role_claim] or user.roles
     groups = custom_claims[group_claim]
 

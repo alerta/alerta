@@ -290,7 +290,7 @@ class Alert:
                 text='duplicate alert (with status change)',
                 change_type='status',
                 update_time=self.create_time,
-                user=g.user,
+                user=g.login,
             )  # type: Optional[History]
             self.update_time = now
 
@@ -306,7 +306,7 @@ class Alert:
                 text='duplicate alert (with value change)',
                 change_type='value',
                 update_time=self.create_time,
-                user=g.user
+                user=g.login
             )
         else:
             history = None
@@ -344,7 +344,7 @@ class Alert:
             text='correlated alert',
             change_type='severity',
             update_time=self.create_time,
-            user=g.user
+            user=g.login
         )]
 
         if new_status != status:
@@ -382,7 +382,7 @@ class Alert:
             text='new alert',
             change_type='new',
             update_time=self.create_time,
-            user=g.user
+            user=g.login
         )]
 
         return Alert.from_db(db.create_alert(self))
@@ -418,7 +418,7 @@ class Alert:
             text=text,
             change_type='status',
             update_time=now,
-            user=g.user
+            user=g.login
         )
         return db.set_status(self.id, status, timeout, update_time=now, history=history)
 
@@ -445,7 +445,7 @@ class Alert:
             text=note,
             change_type='note',
             update_time=datetime.utcnow(),
-            user=g.user
+            user=g.login
         )
         return db.add_history(self.id, history)
 
@@ -550,7 +550,7 @@ class Alert:
                 text='expired after timeout',
                 change_type='status',
                 update_time=now,
-                user=g.user
+                user=g.login
             )
             db.set_status(id, 'expired', timeout=current_app.config['ALERT_TIMEOUT'], update_time=now, history=history)
 
@@ -562,7 +562,7 @@ class Alert:
                 text='unshelved after timeout',
                 change_type='status',
                 update_time=now,
-                user=g.user
+                user=g.login
             )
             db.set_status(id, 'open', timeout=current_app.config['ALERT_TIMEOUT'], update_time=now, history=history)
 
@@ -579,7 +579,7 @@ class Alert:
             text=text,
             change_type='status',
             update_time=now,
-            user=g.user
+            user=g.login
         )]
         return Alert.from_db(db.set_alert(
             id=self.id,
@@ -616,7 +616,7 @@ class Alert:
             text=text,
             change_type=action,
             update_time=now,
-            user=g.user
+            user=g.login
         )]
         status_change_hook.send(self, status=new_status, text=text)
 

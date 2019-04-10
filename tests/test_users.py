@@ -116,8 +116,9 @@ class UsersTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['user']['name'], 'John Doe')
-        self.assertEqual(data['user']['email'], 'john@doe.com')
+        self.assertEqual(data['user']['login'], 'john@doe.com')
         self.assertEqual(data['user']['roles'], ['operator'])
+        self.assertEqual(data['user']['email'], 'john@doe.com')
         self.assertEqual(data['user']['email_verified'], False)
 
         payload = {
@@ -127,7 +128,7 @@ class UsersTestCase(unittest.TestCase):
 
         # login using new user
         response = self.client.post('/auth/login', data=json.dumps(payload), content_type='application/json')
-        # self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn('token', data)
 
