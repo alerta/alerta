@@ -47,7 +47,7 @@ def get_customers(login: str, groups: List[str]) -> List[str]:
 
 
 def create_token(user_id: str, name: str, login: str, provider: str, customers: List[str], scopes: List[str],
-                 email: str=None, email_verified: bool=None, **kwargs) -> 'Jwt':
+                 email: str=None, email_verified: bool=None, picture: str=None, **kwargs) -> 'Jwt':
     now = datetime.utcnow()
     return Jwt(
         iss=request.url_root,
@@ -61,10 +61,11 @@ def create_token(user_id: str, name: str, login: str, provider: str, customers: 
         name=name,
         preferred_username=login,
         email=email,
+        email_verified=email_verified,
         provider=provider,
         scopes=scopes,
-        email_verified=email_verified,
         customers=customers,
+        picture=picture,
         **kwargs
     )
 
