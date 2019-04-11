@@ -95,6 +95,7 @@ def openid():
     nickname = userinfo.get('nickname')
     email = userinfo.get('email') or id_token.get('email')
     email_verified = userinfo.get('email_verified', id_token.get('email_verified', bool(email)))
+    picture = userinfo.get('picture') or id_token.get('picture')
 
     role_claim = current_app.config['OIDC_ROLE_CLAIM']
     group_claim = current_app.config['OIDC_GROUP_CLAIM']
@@ -132,5 +133,5 @@ def openid():
                           user=login, customers=customers, scopes=scopes, resource_id=subject, type='user', request=request)
 
     token = create_token(user_id=subject, name=name, login=login, provider='openid', customers=customers,
-                         scopes=scopes, email=email, email_verified=email_verified, **custom_claims)
+                         scopes=scopes, email=email, email_verified=email_verified, picture=picture, **custom_claims)
     return jsonify(token=token.tokenize)
