@@ -24,16 +24,17 @@ class Jwt:
         self.issued_at = iat
         self.jwt_id = jti
 
-        self.name = kwargs.get('name', None)
-        self.preferred_username = kwargs.get('preferred_username', None)
-        self.email = kwargs.get('email', None)
-        self.provider = kwargs.get('provider', None)
+        self.name = kwargs.get('name')
+        self.preferred_username = kwargs.get('preferred_username')
+        self.email = kwargs.get('email')
+        self.provider = kwargs.get('provider')
         self.orgs = kwargs.get('orgs', list())
         self.groups = kwargs.get('groups', list())
         self.roles = kwargs.get('roles', list())
         self.scopes = kwargs.get('scopes', list())
-        self.email_verified = kwargs.get('email_verified', None)
-        self.customers = kwargs.get('customers', None)
+        self.email_verified = kwargs.get('email_verified')
+        self.picture = kwargs.get('picture')
+        self.customers = kwargs.get('customers')
 
     @classmethod
     def parse(cls, token: str, key: str=None, verify: bool=True, algorithm: str='HS256') -> 'Jwt':
@@ -66,6 +67,7 @@ class Jwt:
             roles=json.get('roles', list()),
             scopes=json.get('scope', '').split(' '),  # eg. scope='read write' => scopes=['read', 'write']
             email_verified=json.get('email_verified', None),
+            picture=json.get('picture', None),
             customers=[json['customer']] if 'customer' in json else json.get('customers', list())
         )
 
@@ -100,6 +102,8 @@ class Jwt:
 
         if self.email_verified is not None:
             data['email_verified'] = self.email_verified
+        if self.picture is not None:
+            data['picture'] = self.picture
         if current_app.config['CUSTOMER_VIEWS']:
             data['customers'] = self.customers
         return data
