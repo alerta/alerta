@@ -161,6 +161,7 @@ class StateMachine(AlarmModel):
 
         if action == ACTION_UNSHELVE:
             if state == SHELVED:
+                # as per ISA 18.2 recommendation 11.7.3 manually unshelved alarms transition to previous status
                 return next_state('UNSHL-1', current_severity, previous_status)
             else:
                 raise InvalidAction('invalid action for current {} status'.format(state))

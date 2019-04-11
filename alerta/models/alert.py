@@ -547,7 +547,7 @@ class Alert:
                 id=last_receive_id,
                 event=event,
                 status='expired',
-                text='expired after timeout',
+                text='auto-expired after timeout',
                 change_type='status',
                 update_time=now,
                 user=g.login
@@ -555,11 +555,12 @@ class Alert:
             db.set_status(id, 'expired', timeout=current_app.config['ALERT_TIMEOUT'], update_time=now, history=history)
 
         for (id, event, last_receive_id) in unshelved:
+            # as per ISA 18.2 recommendation 11.7.3 auto-unshelved alarms transition to open, not previous status
             history = History(
                 id=last_receive_id,
                 event=event,
                 status='open',
-                text='unshelved after timeout',
+                text='auto-unshelved after timeout',
                 change_type='status',
                 update_time=now,
                 user=g.login
