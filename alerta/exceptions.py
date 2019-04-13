@@ -21,6 +21,11 @@ class RateLimit(AlertaException):
     pass
 
 
+class HeartbeatReceived(AlertaException):
+    """Alert was not processed because it was converted into a heartbeat."""
+    pass
+
+
 class BlackoutPeriod(AlertaException):
     """Alert was not processed because it was sent during a blackout period."""
     pass
