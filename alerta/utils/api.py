@@ -5,8 +5,8 @@ from typing import Optional, Tuple
 from flask import Request, current_app, g
 
 from alerta.app import plugins
-from alerta.exceptions import (ApiError, BlackoutPeriod, RateLimit,
-                               RejectException)
+from alerta.exceptions import (ApiError, BlackoutPeriod, HeartbeatReceived,
+                               RateLimit, RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 
@@ -44,7 +44,7 @@ def process_alert(alert: Alert) -> Alert:
             break
         try:
             alert = plugin.pre_receive(alert)
-        except (RejectException, BlackoutPeriod, RateLimit):
+        except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit):
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
