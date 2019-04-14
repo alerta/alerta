@@ -60,6 +60,7 @@ setuptools.setup(
         ],
         'alerta.plugins': [
             'reject = alerta.plugins.reject:RejectPolicy',
+            'heartbeat = alerta.plugins.heartbeat:HeartbeatReceiver',
             'blackout = alerta.plugins.blackout:BlackoutHandler'
         ],
         'alerta.webhooks': [

@@ -178,6 +178,22 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['history'][3]['text'],
                          'ticket resolved by bob (ticket #12345)', data['alert']['history'])
 
+    def test_heartbeat_alert(self):
+
+        self.heartbeat_alert = {
+            'event': 'Heartbeat',
+            'resource': 'hb01',
+            'environment': 'Production',
+            'service': ['Svc1'],
+            'severity': 'informational',
+        }
+
+        # create alert
+        response = self.client.post('/alert', json=self.heartbeat_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 202)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], 'Alert converted to heartbeat')
+
 
 class CustPlugin1(PluginBase):
 
