@@ -12,8 +12,6 @@ The Alerta monitoring tool was developed with the following aims in mind:
 
 ![webui](/docs/images/alerta-webui-v7.jpg?raw=true)
 
-Related projects can be found on the Alerta Org Repo at <https://github.com/alerta/>.
-
 ----
 
 Python 2.7 support is EOL
@@ -97,19 +95,19 @@ reporting errors to [Sentry](https://sentry.io):
 Troubleshooting
 ---------------
 
-Problems following a direct upgrade from versions 4.x to 5.x could be
-related to the flattening of the directory structure for the app. An
-example `app.wsgi` file which works for both release 4 and 5 is as
-follows:
+Enable debug log output by setting `DEBUG=True` in the API server
+configuration:
 
 ```
-#!/usr/bin/env python
+DEBUG=True
 
-try:
-    from alerta import app  # alerta >= 5.0
-except Exception:
-    from alerta.app import app  # alerta < 5.0
+LOG_HANDLERS = ['console','file']
+LOG_FORMAT = 'verbose'
+LOG_FILE = '$HOME/alertad.log'
 ```
+
+It can also be helpful to check the web browser developer console for
+JavaScript logging, network problems and API error responses.
 
 Tests
 -----
