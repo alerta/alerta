@@ -4,7 +4,8 @@ from flask_cors import cross_origin
 
 from alerta.app import custom_webhooks
 from alerta.auth.decorators import permission
-from alerta.exceptions import ApiError, RejectException
+from alerta.exceptions import (ApiError, BlackoutPeriod, HeartbeatReceived,
+                               RateLimit, RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 from alerta.utils.api import add_remote_ip, assign_customer, process_alert
@@ -37,10 +38,25 @@ def custom(webhook):
             alert.customer = assign_customer(wanted=alert.customer)
             add_remote_ip(request, alert)
 
+            def audit_trail_alert(event: str):
+                write_audit_trail.send(current_app._get_current_object(), event=event, message=alert.text, user=g.login,
+                                       customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                                       request=request)
+
             try:
                 alert = process_alert(alert)
             except RejectException as e:
+                audit_trail_alert(event='alert-rejected')
                 raise ApiError(str(e), 403)
+            except RateLimit as e:
+                audit_trail_alert(event='alert-rate-limited')
+                return jsonify(status='error', message=str(e), id=alert.id), 429
+            except HeartbeatReceived as e:
+                audit_trail_alert(event='alert-heartbeat')
+                return jsonify(status='ok', message=str(e), id=alert.id), 202
+            except BlackoutPeriod as e:
+                audit_trail_alert(event='alert-blackout')
+                return jsonify(status='ok', message=str(e), id=alert.id), 202
             except Exception as e:
                 raise ApiError(str(e), 500)
 

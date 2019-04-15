@@ -103,3 +103,76 @@ class HeartbeatsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['heartbeat']['timeout'], 10)
+
+    def test_heartbeat_from_alert(self):
+
+        heartbeat_alert = {
+            'event': 'Heartbeat',
+            'resource': 'net01',
+            'environment': 'Production',
+            'service': ['Svc1'],
+            'origin': 'test/hb',
+            'timeout': 500
+        }
+
+        response = self.client.post('/alert', data=json.dumps(heartbeat_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 202, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], 'Alert converted to heartbeat')
+
+        response = self.client.get('/heartbeats?origin=test/hb')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['heartbeats'][0]['origin'], 'test/hb')
+        self.assertEqual(data['heartbeats'][0]['timeout'], 500)
+
+        prometheus_alert = r"""
+        {
+          "receiver": "alerta",
+          "status": "firing",
+          "alerts": [
+            {
+              "status": "firing",
+              "labels": {
+                "alertname": "Heartbeat",
+                "dc": "eu-west-1",
+                "environment": "Production",
+                "monitor": "codelab",
+                "region": "EU",
+                "service": "Prometheus",
+                "severity": "informational"
+              },
+              "annotations": {},
+              "startsAt": "2019-04-15T14:14:22.012771244Z",
+              "endsAt": "0001-01-01T00:00:00Z",
+              "generatorURL": "http://96b678727a4b:9090/graph?g0.expr=vector%281%29\u0026g0.tab=1"
+            }
+          ],
+          "groupLabels": {
+            "alertname": "Heartbeat"
+          },
+          "commonLabels": {
+            "alertname": "Heartbeat",
+            "dc": "eu-west-1",
+            "environment": "Production",
+            "monitor": "codelab",
+            "region": "EU",
+            "service": "Prometheus",
+            "severity": "informational"
+          },
+          "commonAnnotations": {},
+          "externalURL": "http://316cdde530cd:9093",
+          "version": "4",
+          "groupKey": "{}:{alertname=\"Heartbeat\"}"
+        }
+        """
+
+        response = self.client.post('/webhooks/prometheus', data=prometheus_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 202)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], 'Alert converted to heartbeat')
+
+        response = self.client.get('/heartbeats?origin=prometheus/codelab')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(sorted(data['heartbeats'][0]['tags']), sorted(['dc=eu-west-1', 'region=EU']))
