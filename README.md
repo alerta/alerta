@@ -1,4 +1,4 @@
-Alerta Release 6.6
+Alerta Release 7.0
 ==================
 
 [![Build Status](https://travis-ci.org/alerta/alerta.png)](https://travis-ci.org/alerta/alerta)
@@ -10,7 +10,7 @@ The Alerta monitoring tool was developed with the following aims in mind:
 *   minimal **CONFIGURATION** that easily accepts alerts from any source
 *   quick at-a-glance **VISUALISATION** with drill-down to detail
 
-![console](/docs/images/alert-list-rel32.png?raw=true)
+![webui](/docs/images/alerta-webui-v7.jpg?raw=true)
 
 Related projects can be found on the Alerta Org Repo at <https://github.com/alerta/>.
 
@@ -132,7 +132,7 @@ License
 -------
 
     Alerta monitoring system and console
-    Copyright 2012-2018 Nick Satterly
+    Copyright 2012-2019 Nick Satterly
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
