@@ -41,7 +41,7 @@ class User:
     def domain(self) -> Optional[str]:
         try:
             return self.email.split('@')[1]
-        except AttributeError:
+        except (IndexError, AttributeError):
             return None
 
     @property
