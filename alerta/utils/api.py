@@ -55,10 +55,12 @@ def process_alert(alert: Alert) -> Alert:
             raise SyntaxError("Plugin '%s' pre-receive hook did not return modified alert" % plugin.name)
 
     try:
-        if alert.is_duplicate():
-            alert = alert.deduplicate()
-        elif alert.is_correlated():
-            alert = alert.update()
+        is_duplicate = alert.is_duplicate()
+        is_correlated = alert.is_correlated()
+        if is_duplicate:
+            alert = alert.deduplicate(is_duplicate)
+        elif is_correlated:
+            alert = alert.update(is_correlated)
         else:
             alert = alert.create()
     except Exception as e:

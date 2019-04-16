@@ -121,7 +121,8 @@ class Backend(Database):
             'severity': alert.severity,
             'customer': alert.customer
         }
-        return bool(self.get_db().alerts.find_one(query))
+        r = self.get_db().alerts.find_one(query, projection={'_id': 1})
+        return r['_id'] if r else False
 
     def is_correlated(self, alert):
         query = {
@@ -138,7 +139,8 @@ class Backend(Database):
                 }],
             'customer': alert.customer
         }
-        return bool(self.get_db().alerts.find_one(query))
+        r = self.get_db().alerts.find_one(query, projection={'_id': 1})
+        return r['_id'] if r else False
 
     def is_flapping(self, alert, window=1800, count=2):
         """

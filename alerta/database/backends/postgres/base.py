@@ -171,7 +171,8 @@ class Backend(Database):
                AND severity=%(severity)s
                AND {customer}
             """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
-        return bool(self._fetchone(select, vars(alert)))
+        r = self._fetchone(select, vars(alert))
+        return r.id if r else False
 
     def is_correlated(self, alert):
         select = """
@@ -181,7 +182,8 @@ class Backend(Database):
                 OR (event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
         """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
-        return bool(self._fetchone(select, vars(alert)))
+        r = self._fetchone(select, vars(alert))
+        return r.id if r else False
 
     def is_flapping(self, alert, window=1800, count=2):
         """
