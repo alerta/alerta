@@ -237,11 +237,13 @@ class Alert:
         elif isinstance(r, tuple):
             return cls.from_record(r)
 
-    def is_duplicate(self) -> bool:
-        return db.is_duplicate(self)
+    def is_duplicate(self) -> Optional['Alert']:
+        """Return duplicate alert or None"""
+        return Alert.from_db(db.is_duplicate(self))
 
-    def is_correlated(self) -> bool:
-        return db.is_correlated(self)
+    def is_correlated(self) -> Optional['Alert']:
+        """Return correlated alert or None"""
+        return Alert.from_db(db.is_correlated(self))
 
     def is_flapping(self, window: int=1800, count: int=2) -> bool:
         return db.is_flapping(self, window, count)
@@ -281,20 +283,22 @@ class Alert:
         self.last_receive_time = now
 
         if new_status != status:
+            text = 'duplicate alert (with status change)'
+            r = status_change_hook.send(duplicate_of, status=new_status, text=text)
+            _, (_, new_status, text) = r[0]
+            self.update_time = now
+
             history = History(
                 id=self.id,
                 event=self.event,
                 severity=self.severity,
                 status=new_status,
                 value=self.value,
-                text='duplicate alert (with status change)',
+                text=text,
                 change_type='status',
                 update_time=self.create_time,
                 user=g.login,
             )  # type: Optional[History]
-
-            status_change_hook.send(Alert.find_by_id(duplicate_of), status=new_status, text=self.text)
-            self.update_time = now
 
         elif current_app.config['HISTORY_ON_VALUE_CHANGE'] and self.value != previous_value:
             history = History(
@@ -334,6 +338,12 @@ class Alert:
         self.receive_time = now
         self.last_receive_id = self.id
         self.last_receive_time = now
+        text = 'correlated alert'
+
+        if new_status != status:
+            r = status_change_hook.send(correlate_with, status=new_status, text=text)
+            _, (_, new_status, text) = r[0]
+            self.update_time = now
 
         history = [History(
             id=self.id,
@@ -341,15 +351,11 @@ class Alert:
             severity=self.severity,
             status=new_status,
             value=self.value,
-            text='correlated alert',
+            text=text,
             change_type='severity',
             update_time=self.create_time,
             user=g.login
         )]
-
-        if new_status != status:
-            status_change_hook.send(Alert.find_by_id(correlate_with), status=new_status, text=self.text)
-            self.update_time = now
 
         self.status = new_status
         return Alert.from_db(db.correlate_alert(self, history))
@@ -608,6 +614,9 @@ class Alert:
             action=action
         )
 
+        r = status_change_hook.send(self, status=new_status, text=text)
+        _, (_, new_status, text) = r[0]
+
         history = [History(
             id=self.id,
             event=self.event,
@@ -619,7 +628,6 @@ class Alert:
             update_time=now,
             user=g.login
         )]
-        status_change_hook.send(self, status=new_status, text=text)
 
         return Alert.from_db(db.set_alert(
             id=self.id,

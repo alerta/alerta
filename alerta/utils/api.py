@@ -56,13 +56,14 @@ def process_alert(alert: Alert) -> Alert:
 
     try:
         is_duplicate = alert.is_duplicate()
-        is_correlated = alert.is_correlated()
         if is_duplicate:
             alert = alert.deduplicate(is_duplicate)
-        elif is_correlated:
-            alert = alert.update(is_correlated)
         else:
-            alert = alert.create()
+            is_correlated = alert.is_correlated()
+            if is_correlated:
+                alert = alert.update(is_correlated)
+            else:
+                alert = alert.create()
     except Exception as e:
         raise ApiError(str(e))
 
