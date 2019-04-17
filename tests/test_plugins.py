@@ -105,7 +105,7 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['attributes']['aaa'], 'post1')
 
         # alert status, tags, attributes and history text modified by plugin1 & plugin2
-        self.assertEqual(data['alert']['status'], 'assigned')
+        self.assertEqual(data['alert']['status'], 'assign')
         self.assertEqual(sorted(data['alert']['tags']), sorted(
             ['three', 'four', 'this', 'that', 'the', 'other', 'more']))
         self.assertEqual(data['alert']['attributes']['foo'], 'bar')
@@ -123,6 +123,7 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['tags'], [])
+        self.assertEqual(data['alert']['attributes'], {'aaa': 'post1', 'ip': '127.0.0.1'})
 
         alert_id = data['id']
 
@@ -141,7 +142,7 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'assign')
         self.assertEqual(sorted(data['alert']['tags']), sorted(['this', 'the', 'other', 'that', 'more']))
         self.assertEqual(data['alert']['history'][1]['text'],
-                         'ticket created by bob (ticket #12345)', data['alert']['history'])
+                         'ticket created by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
 
         # update ticket for alert
         payload = {
@@ -159,7 +160,7 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'assign')
         self.assertEqual(data['alert']['attributes']['up'], 'down')
         self.assertEqual(data['alert']['history'][2]['text'],
-                         'ticket updated by bob (ticket #12345)', data['alert']['history'])
+                         'ticket updated by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
 
         # update ticket for alert
         payload = {
@@ -176,7 +177,7 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'closed')
         self.assertIn('true', data['alert']['tags'])
         self.assertEqual(data['alert']['history'][3]['text'],
-                         'ticket resolved by bob (ticket #12345)', data['alert']['history'])
+                         'ticket resolved by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
 
     def test_heartbeat_alert(self):
 
@@ -210,8 +211,9 @@ class CustPlugin1(PluginBase):
         alert.attributes['foo'] = 'bar'
         alert.attributes['abc'] = 123
         alert.attributes['xyz'] = 'up'
-        status = 'assign'
+
         text = text + '-plugin1'
+
         return alert, status, text
 
 
@@ -244,8 +246,12 @@ class CustPlugin3(PluginBase):
         if alert.attributes['abc'] == 123:
             alert.attributes['abc'] = None
         alert.attributes['xyz'] = 'down'
-        status = 'assigned'
+
+        if status == 'ack':
+            status = 'assign'
+
         text = text + '-plugin3'
+
         return alert, status, text
 
 
@@ -263,7 +269,7 @@ class CustActionPlugin1(PluginBase):
     def take_action(self, alert, action, text, **kwargs):
 
         if action == 'createTicket':
-            alert.status = 'assign'
+            alert.status = 'ack'
             text = text + ' (ticket #12345)'
 
         if action == 'updateTicket':
