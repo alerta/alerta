@@ -20,7 +20,10 @@ class PluginBase:
 
     @abc.abstractmethod
     def pre_receive(self, alert: 'Alert') -> 'Alert':
-        """Pre-process an alert based on alert properties or reject it by raising RejectException."""
+        """
+        Pre-process an alert based on alert properties or reject it
+        by raising RejectException or BlackoutPeriod.
+        """
         raise NotImplementedError
 
     @abc.abstractmethod
