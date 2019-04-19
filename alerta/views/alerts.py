@@ -12,8 +12,8 @@ from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 from alerta.models.metrics import Timer, timer
 from alerta.models.switch import Switch
-from alerta.utils.api import (add_remote_ip, assign_customer, process_action,
-                              process_alert, process_status)
+from alerta.utils.api import (assign_customer, process_action, process_alert,
+                              process_status)
 from alerta.utils.audit import write_audit_trail
 from alerta.utils.paging import Page
 from alerta.utils.response import jsonp
@@ -43,7 +43,6 @@ def receive():
         raise ApiError(str(e), 400)
 
     alert.customer = assign_customer(wanted=alert.customer)
-    add_remote_ip(request, alert)
 
     def audit_trail_alert(event: str):
         write_audit_trail.send(current_app._get_current_object(), event=event, message=alert.text, user=g.login,

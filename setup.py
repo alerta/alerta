@@ -59,6 +59,7 @@ setuptools.setup(
             'alertad = alerta.commands:cli'
         ],
         'alerta.plugins': [
+            'remote_ip = alerta.plugins.remote_ip:RemoteIpAddr',
             'reject = alerta.plugins.reject:RejectPolicy',
             'heartbeat = alerta.plugins.heartbeat:HeartbeatReceiver',
             'blackout = alerta.plugins.blackout:BlackoutHandler'

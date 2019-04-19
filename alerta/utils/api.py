@@ -2,7 +2,7 @@
 import logging
 from typing import Optional, Tuple
 
-from flask import Request, current_app, g
+from flask import current_app, g
 
 from alerta.app import plugins
 from alerta.exceptions import (ApiError, BlackoutPeriod, HeartbeatReceived,
@@ -26,13 +26,6 @@ def assign_customer(wanted: str=None, permission: Scope=Scope.admin_alerts) -> O
         else:
             return customers[0]
     return None
-
-
-def add_remote_ip(req: Request, alert: Alert) -> None:
-    if req.headers.getlist('X-Forwarded-For'):
-        alert.attributes.update(ip=req.headers.getlist('X-Forwarded-For')[0])
-    else:
-        alert.attributes.update(ip=req.remote_addr)
 
 
 def process_alert(alert: Alert) -> Alert:
