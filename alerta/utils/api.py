@@ -30,13 +30,17 @@ def assign_customer(wanted: str=None, permission: Scope=Scope.admin_alerts) -> O
 
 def process_alert(alert: Alert) -> Alert:
 
+    wanted_plugins, wanted_config = plugins.routing(alert)
+
     skip_plugins = False
-    for plugin in plugins.routing(alert):
+    for plugin in wanted_plugins:
         if alert.is_suppressed:
             skip_plugins = True
             break
         try:
-            alert = plugin.pre_receive(alert)
+            alert = plugin.pre_receive(alert, config=wanted_config)
+        except TypeError:
+            alert = plugin.pre_receive(alert)  # for backward compatibility
         except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit):
             raise
         except Exception as e:
@@ -61,11 +65,13 @@ def process_alert(alert: Alert) -> Alert:
         raise ApiError(str(e))
 
     updated = None
-    for plugin in plugins.routing(alert):
+    for plugin in wanted_plugins:
         if skip_plugins:
             break
         try:
-            updated = plugin.post_receive(alert)
+            updated = plugin.post_receive(alert, config=wanted_config)
+        except TypeError:
+            updated = plugin.post_receive(alert)  # for backward compatibility
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
                 raise ApiError("Error while running post-receive plugin '{}': {}".format(plugin.name, str(e)))
@@ -83,12 +89,14 @@ def process_alert(alert: Alert) -> Alert:
 
 def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, str]:
 
+    wanted_plugins, wanted_config = plugins.routing(alert)
+
     updated = None
-    for plugin in plugins.routing(alert):
+    for plugin in wanted_plugins:
         if alert.is_suppressed:
             break
         try:
-            updated = plugin.take_action(alert, action, text)
+            updated = plugin.take_action(alert, action, text, config=wanted_config)
         except NotImplementedError:
             pass  # plugin does not support action() method
         except RejectException:
@@ -113,12 +121,16 @@ def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, st
 
 def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, str]:
 
+    wanted_plugins, wanted_config = plugins.routing(alert)
+
     updated = None
-    for plugin in plugins.routing(alert):
+    for plugin in wanted_plugins:
         if alert.is_suppressed:
             break
         try:
-            updated = plugin.status_change(alert, status, text)
+            updated = plugin.status_change(alert, status, text, config=wanted_config)
+        except TypeError:
+            updated = plugin.status_change(alert, status, text)  # for backward compatibility
         except RejectException:
             raise
         except Exception as e:

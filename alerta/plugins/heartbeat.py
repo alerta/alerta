@@ -13,7 +13,7 @@ class HeartbeatReceiver(PluginBase):
     them into heartbeats and will return a 202 Accept HTTP status code.
     """
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
 
         if alert.event == 'Heartbeat':
             hb = Heartbeat(
@@ -27,10 +27,10 @@ class HeartbeatReceiver(PluginBase):
 
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         return
 
     def take_action(self, alert, action, text, **kwargs):

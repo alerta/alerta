@@ -2,11 +2,9 @@ import logging
 import os
 
 from alerta.exceptions import BlackoutPeriod
-from alerta.plugins import PluginBase, app
+from alerta.plugins import PluginBase
 
 LOG = logging.getLogger('alerta.plugins')
-
-NOTIFICATION_BLACKOUT = os.environ.get('NOTIFICATION_BLACKOUT') or app.config.get('NOTIFICATION_BLACKOUT', True)
 
 
 class BlackoutHandler(PluginBase):
@@ -19,12 +17,16 @@ class BlackoutHandler(PluginBase):
     any plugins for further notification.
     """
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
 
-        if app.config['ALARM_MODEL'] == 'ALERTA':
+        config = kwargs['config']
+
+        if config['ALARM_MODEL'] == 'ALERTA':
             status = 'blackout'
         else:
             status = 'OOSRV'  # ISA_18_2
+
+        NOTIFICATION_BLACKOUT = os.environ.get('NOTIFICATION_BLACKOUT') or config.get('NOTIFICATION_BLACKOUT', True)
 
         if alert.is_blackout():
             if NOTIFICATION_BLACKOUT:
@@ -35,10 +37,10 @@ class BlackoutHandler(PluginBase):
                 raise BlackoutPeriod('Suppressed alert during blackout period')
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         return
 
     def take_action(self, alert, action, text, **kwargs):

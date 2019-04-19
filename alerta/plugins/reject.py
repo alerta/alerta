@@ -3,17 +3,9 @@ import os
 import re
 
 from alerta.exceptions import RejectException
-from alerta.plugins import PluginBase, app
+from alerta.plugins import PluginBase
 
 LOG = logging.getLogger('alerta.plugins')
-
-ORIGIN_BLACKLIST = os.environ['ORIGIN_BLACKLIST'].split(',') \
-    if 'ORIGIN_BLACKLIST' in os.environ else app.config.get('ORIGIN_BLACKLIST', [])
-ALLOWED_ENVIRONMENTS = os.environ['ALLOWED_ENVIRONMENTS'].split(',') \
-    if 'ALLOWED_ENVIRONMENTS' in os.environ else app.config.get('ALLOWED_ENVIRONMENTS', [])
-
-ORIGIN_BLACKLIST_REGEX = [re.compile(x) for x in ORIGIN_BLACKLIST]
-ALLOWED_ENVIRONMENT_REGEX = [re.compile(x) for x in ALLOWED_ENVIRONMENTS]
 
 
 class RejectPolicy(PluginBase):
@@ -25,7 +17,17 @@ class RejectPolicy(PluginBase):
     2) service - must supply a value for service. Any value is acceptable.
     """
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
+
+        config = kwargs['config']
+
+        ORIGIN_BLACKLIST = os.environ['ORIGIN_BLACKLIST'].split(',') \
+            if 'ORIGIN_BLACKLIST' in os.environ else config.get('ORIGIN_BLACKLIST', [])
+        ALLOWED_ENVIRONMENTS = os.environ['ALLOWED_ENVIRONMENTS'].split(',') \
+            if 'ALLOWED_ENVIRONMENTS' in os.environ else config.get('ALLOWED_ENVIRONMENTS', [])
+
+        ORIGIN_BLACKLIST_REGEX = [re.compile(x) for x in ORIGIN_BLACKLIST]
+        ALLOWED_ENVIRONMENT_REGEX = [re.compile(x) for x in ALLOWED_ENVIRONMENTS]
 
         if any(regex.match(alert.origin) for regex in ORIGIN_BLACKLIST_REGEX):
             LOG.warning("[POLICY] Alert origin '%s' has been blacklisted", alert.origin)
@@ -42,10 +44,10 @@ class RejectPolicy(PluginBase):
 
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         return
 
     def take_action(self, alert, action, text, **kwargs):

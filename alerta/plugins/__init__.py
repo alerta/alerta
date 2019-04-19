@@ -19,7 +19,7 @@ class PluginBase:
             LOG.info('\n{}\n'.format(self.__doc__))
 
     @abc.abstractmethod
-    def pre_receive(self, alert: 'Alert') -> 'Alert':
+    def pre_receive(self, alert: 'Alert', **kwargs) -> 'Alert':
         """
         Pre-process an alert based on alert properties or reject it
         by raising RejectException or BlackoutPeriod.
@@ -27,12 +27,12 @@ class PluginBase:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def post_receive(self, alert: 'Alert') -> Optional['Alert']:
+    def post_receive(self, alert: 'Alert', **kwargs) -> Optional['Alert']:
         """Send an alert to another service or notify users."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def status_change(self, alert: 'Alert', status: str, text: str) -> Any:
+    def status_change(self, alert: 'Alert', status: str, text: str, **kwargs) -> Any:
         """Trigger integrations based on status changes."""
         raise NotImplementedError
 
@@ -48,4 +48,4 @@ class FakeApp:
         self.config = config.get_user_config()
 
 
-app = FakeApp()  # used for plugin config only
+app = FakeApp()  # used for plugin config only (deprecated, use kwargs['config'])

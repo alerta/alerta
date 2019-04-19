@@ -4,7 +4,7 @@ import unittest
 from uuid import uuid4
 
 from alerta.app import create_app, db, plugins
-from alerta.plugins import PluginBase
+from alerta.plugins import PluginBase, app
 
 
 class PluginsTestCase(unittest.TestCase):
@@ -55,6 +55,7 @@ class PluginsTestCase(unittest.TestCase):
             'Content-type': 'application/json'
         }
 
+        plugins.plugins['old1'] = OldPlugin1()
         plugins.plugins['test1'] = CustPlugin1()
         plugins.plugins['test2'] = CustPlugin2()
         plugins.plugins['test3'] = CustPlugin3()
@@ -102,12 +103,13 @@ class PluginsTestCase(unittest.TestCase):
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['attributes']['old'], 'post1')
         self.assertEqual(data['alert']['attributes']['aaa'], 'post1')
 
         # alert status, tags, attributes and history text modified by plugin1 & plugin2
         self.assertEqual(data['alert']['status'], 'assign')
         self.assertEqual(sorted(data['alert']['tags']), sorted(
-            ['three', 'four', 'this', 'that', 'the', 'other', 'more']))
+            ['Development', 'Production', 'more', 'other', 'that', 'the', 'this']))
         self.assertEqual(data['alert']['attributes']['foo'], 'bar')
         self.assertEqual(data['alert']['attributes']['baz'], 'quux')
         self.assertNotIn('abc', data['alert']['attributes'])
@@ -122,8 +124,8 @@ class PluginsTestCase(unittest.TestCase):
         response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['tags'], [])
-        self.assertEqual(data['alert']['attributes'], {'aaa': 'post1', 'ip': '127.0.0.1'})
+        self.assertEqual(data['alert']['tags'], ['Production', 'Development'])
+        self.assertEqual(data['alert']['attributes'], {'aaa': 'post1', 'ip': '127.0.0.1', 'old': 'post1'})
 
         alert_id = data['id']
 
@@ -140,7 +142,8 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'assign')
-        self.assertEqual(sorted(data['alert']['tags']), sorted(['this', 'the', 'other', 'that', 'more']))
+        self.assertEqual(sorted(data['alert']['tags']), sorted(
+            ['Development', 'Production', 'more', 'other', 'that', 'the', 'this']))
         self.assertEqual(data['alert']['history'][1]['text'],
                          'ticket created by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
 
@@ -196,17 +199,33 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['message'], 'Alert converted to heartbeat')
 
 
-class CustPlugin1(PluginBase):
+class OldPlugin1(PluginBase):
 
     def pre_receive(self, alert):
-        alert.attributes['aaa'] = 'pre1'
+        ALLOWED_ENVIRONMENTS = app.config['ALLOWED_ENVIRONMENTS']
+        alert.attributes['old'] = 'pre1'
+        alert.tags = ALLOWED_ENVIRONMENTS
         return alert
 
     def post_receive(self, alert):
-        alert.attributes['aaa'] = 'post1'
+        alert.attributes['old'] = 'post1'
         return alert
 
     def status_change(self, alert, status, text):
+        return alert, status, text
+
+
+class CustPlugin1(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        alert.attributes['aaa'] = 'pre1'
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        alert.attributes['aaa'] = 'post1'
+        return alert
+
+    def status_change(self, alert, status, text, **kwargs):
         alert.tags.extend(['this', 'that', 'the', 'other'])
         alert.attributes['foo'] = 'bar'
         alert.attributes['abc'] = 123
@@ -219,13 +238,13 @@ class CustPlugin1(PluginBase):
 
 class CustPlugin2(PluginBase):
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return alert
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         # alert.tags.extend(['skip?'])
         # status = 'skipped'
         # text = text + '-plugin2'
@@ -234,13 +253,13 @@ class CustPlugin2(PluginBase):
 
 class CustPlugin3(PluginBase):
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return alert
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         alert.tags.extend(['this', 'that', 'more'])
         alert.attributes['baz'] = 'quux'
         if alert.attributes['abc'] == 123:
@@ -257,13 +276,13 @@ class CustPlugin3(PluginBase):
 
 class CustActionPlugin1(PluginBase):
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         return alert, status, text
 
     def take_action(self, alert, action, text, **kwargs):

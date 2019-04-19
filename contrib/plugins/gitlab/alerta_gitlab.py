@@ -15,17 +15,18 @@ GITLAB_ACCESS_TOKEN = os.environ.get('GITLAB_PERSONAL_ACCESS_TOKEN') or app.conf
 
 class GitlabIssue(PluginBase):
 
-    def __init__(self):
+    def __init__(self, name=None):
 
         self.headers = {'Private-Token': GITLAB_ACCESS_TOKEN}
+        super().__init__()
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return alert
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         return alert, status, text
 
     def take_action(self, alert, action, text, **kwargs):
