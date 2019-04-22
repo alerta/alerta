@@ -26,6 +26,24 @@ class PluginBase:
         """
         raise NotImplementedError
 
+    def pre_dedup(self, alert: 'Alert', duplicate: 'Alert', **kwargs):
+        raise NotImplementedError
+
+    def deduped(self, alert: 'Alert', **kwargs):
+        raise NotImplementedError
+
+    def pre_update(self, alert: 'Alert', correlated: 'Alert', **kwargs):
+        raise NotImplementedError
+
+    def updated(self, alert: 'Alert', **kwargs):
+        raise NotImplementedError
+
+    def pre_create(self, alert: 'Alert', **kwargs):
+        raise NotImplementedError
+
+    def created(self, alert: 'Alert', **kwargs):
+        raise NotImplementedError
+
     @abc.abstractmethod
     def post_receive(self, alert: 'Alert') -> Optional['Alert']:
         """Send an alert to another service or notify users."""
@@ -38,6 +56,12 @@ class PluginBase:
 
     def take_action(self, alert: 'Alert', action: str, text: str, **kwargs) -> Any:
         """Trigger integrations based on external actions. (optional)"""
+        raise NotImplementedError
+
+    def pre_delete(self, alert: 'Alert', **kwargs):
+        raise NotImplementedError
+
+    def deleted(self, alert: 'Alert', **kwargs):
         raise NotImplementedError
 
 

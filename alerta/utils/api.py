@@ -50,13 +50,19 @@ def process_alert(alert: Alert) -> Alert:
     try:
         is_duplicate = alert.is_duplicate()
         if is_duplicate:
+            # beforeDuplicate hook
             alert = alert.deduplicate(is_duplicate)
+            # after duplicate hook
         else:
             is_correlated = alert.is_correlated()
             if is_correlated:
+                # before updated hook
                 alert = alert.update(is_correlated)
+                # after updated hook
             else:
+                # before created hook
                 alert = alert.create()
+                # after created hook
     except Exception as e:
         raise ApiError(str(e))
 
