@@ -45,10 +45,10 @@ class PluginBase:
 
         if key in os.environ:
             rv = os.environ[key]
-            if type == list:
-                return rv.split(',')
-            elif type == bool:
+            if type == bool:
                 return rv.lower() in ['yes', 'on', 'true', 't', '1']
+            elif type == list:
+                return rv.split(',')
             elif type is not None:
                 try:
                     rv = type(rv)
@@ -70,4 +70,4 @@ class FakeApp:
         self.config = config.get_user_config()
 
 
-app = FakeApp()  # used for plugin config only (deprecated, use kwargs['config'])
+app = FakeApp()  # used for plugin config only (deprecated, use kwargs['config'] or get_config(..., **kwargs))

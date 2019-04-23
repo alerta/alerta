@@ -158,6 +158,23 @@ class RoutingTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['attributes']['default']['str'], 'setting')
         self.assertEqual(data['alert']['attributes']['default']['dict'], dict(baz='quux'))
 
+    def test_config_precedence(self):
+
+        os.environ['var1'] = 'env1'
+        self.app.config.update({
+            'var1': 'setting1',
+            'var2': 'setting2'
+        })
+
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.tier1_tc_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        self.assertEqual(data['alert']['attributes']['precedence']['var1'], 'env1')
+        self.assertEqual(data['alert']['attributes']['precedence']['var2'], 'setting2')
+        self.assertEqual(data['alert']['attributes']['precedence']['var3'], 'default3')
+
     def test_routing(self):
 
         # create alert (pagerduty key for Tyrell Corporation)
@@ -230,6 +247,11 @@ class DummyConfigPlugin(PluginBase):
             'list': self.get_config('LIST_DEFAULT', default=['j', 'k'], type=list, **kwargs),
             'str': self.get_config('STR_DEFAULT', default='setting', type=str, **kwargs),
             'dict': self.get_config('DICT_DEFAULT', default={'baz': 'quux'}, type=json.loads, **kwargs)
+        }
+        alert.attributes['precedence'] = {
+            'var1': self.get_config('var1', default='default1', **kwargs),
+            'var2': self.get_config('var2', default='default2', **kwargs),
+            'var3': self.get_config('var3', default='default3', **kwargs),
         }
         return alert
 
