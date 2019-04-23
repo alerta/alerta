@@ -1,4 +1,5 @@
 import json
+import os
 import unittest
 
 import pkg_resources
@@ -108,9 +109,54 @@ class RoutingTestCase(unittest.TestCase):
         # create dummy plugins
         plugins.plugins['pagerduty'] = DummyPagerDutyPlugin()
         plugins.plugins['slack'] = DummySlackPlugin()
+        plugins.plugins['config'] = DummyConfigPlugin()
 
     def tearDown(self):
         self.dist._ep_map.clear()
+
+    def test_config(self):
+
+        os.environ['BOOL_ENVVAR'] = 'yes'
+        os.environ['INT_ENVVAR'] = '2020'
+        os.environ['FLOAT_ENVVAR'] = '0.99'
+        os.environ['LIST_ENVVAR'] = 'up,down,left,right'
+        os.environ['STR_ENVVAR'] = 'a string with spaces'
+        os.environ['DICT_ENVVAR'] = '{"key":"value", "key2": "value2" }'
+
+        self.app.config.update({
+            'BOOL_SETTING': True,
+            'INT_SETTING': 1001,
+            'FLOAT_SETTING': 7.07,
+            'LIST_SETTING': ['a', 2, 'z'],
+            'STR_SETTING': ' long string with spaces',
+            'DICT_SETTING': {'a': 'dict', 'with': 'three', 'keys': 3},
+        })
+
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.tier1_tc_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        self.assertEqual(data['alert']['attributes']['env']['bool'], True)
+        self.assertEqual(data['alert']['attributes']['env']['int'], 2020)
+        self.assertEqual(data['alert']['attributes']['env']['float'], 0.99)
+        self.assertEqual(data['alert']['attributes']['env']['list'], ['up', 'down', 'left', 'right'])
+        self.assertEqual(data['alert']['attributes']['env']['str'], 'a string with spaces')
+        self.assertEqual(data['alert']['attributes']['env']['dict'], dict(key='value', key2='value2'))
+
+        self.assertEqual(data['alert']['attributes']['setting']['bool'], True)
+        self.assertEqual(data['alert']['attributes']['setting']['int'], 1001)
+        self.assertEqual(data['alert']['attributes']['setting']['float'], 7.07)
+        self.assertEqual(data['alert']['attributes']['setting']['list'], ['a', 2, 'z'])
+        self.assertEqual(data['alert']['attributes']['setting']['str'], ' long string with spaces')
+        self.assertEqual(data['alert']['attributes']['setting']['dict'], {'a': 'dict', 'with': 'three', 'keys': 3})
+
+        self.assertEqual(data['alert']['attributes']['default']['bool'], False)
+        self.assertEqual(data['alert']['attributes']['default']['int'], 999)
+        self.assertEqual(data['alert']['attributes']['default']['float'], 5.55)
+        self.assertEqual(data['alert']['attributes']['default']['list'], ['j', 'k'])
+        self.assertEqual(data['alert']['attributes']['default']['str'], 'setting')
+        self.assertEqual(data['alert']['attributes']['default']['dict'], dict(baz='quux'))
 
     def test_routing(self):
 
@@ -155,6 +201,44 @@ class RoutingTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertNotIn('NOTIFY', data['alert']['attributes'])
         self.assertNotIn('API_KEY', data['alert']['attributes'])
+
+
+class DummyConfigPlugin(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        self.kwargs = kwargs
+
+        alert.attributes['env'] = {
+            'bool': self.get_config('BOOL_ENVVAR', default=False, type=bool),
+            'int': self.get_config('INT_ENVVAR', default=100, type=int),
+            'float': self.get_config('FLOAT_ENVVAR', default=1.001, type=float),
+            'list': self.get_config('LIST_ENVVAR', default=['a', 'b', 'c'], type=list),
+            'str': self.get_config('STR_ENVVAR', default='environment', type=str),
+            'dict': self.get_config('DICT_ENVVAR', default={'foo': 'bar'}, type=json.loads)
+        }
+        alert.attributes['setting'] = {
+            'bool': self.get_config('BOOL_SETTING', default=False, type=bool),
+            'int': self.get_config('INT_SETTING', default=999, type=int),
+            'float': self.get_config('FLOAT_SETTING', default=5.55, type=float),
+            'list': self.get_config('LIST_SETTING', default=['j', 'k'], type=list),
+            'str': self.get_config('STR_SETTING', default='setting', type=str),
+            'dict': self.get_config('DICT_SETTING', default={'baz': 'quux'}, type=json.loads)
+        }
+        alert.attributes['default'] = {
+            'bool': self.get_config('BOOL_DEFAULT', default=False, type=bool),
+            'int': self.get_config('INT_DEFAULT', default=999, type=int),
+            'float': self.get_config('FLOAT_DEFAULT', default=5.55, type=float),
+            'list': self.get_config('LIST_DEFAULT', default=['j', 'k'], type=list),
+            'str': self.get_config('STR_DEFAULT', default='setting', type=str),
+            'dict': self.get_config('DICT_DEFAULT', default={'baz': 'quux'}, type=json.loads)
+        }
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        return alert
+
+    def status_change(self, alert, status, text, **kwargs):
+        return alert, status, text
 
 
 class DummyPagerDutyPlugin(PluginBase):
@@ -209,7 +293,8 @@ def rules(alert, plugins, **kwargs):
             plugins['remote_ip'],
             plugins['reject'],
             plugins['blackout'],
-            plugins['pagerduty']
+            plugins['pagerduty'],
+            plugins['config']
         ], dict(API_KEY=config['PD_API_KEYS'][alert.customer])
 
     elif alert.customer in TIER_TWO_CUSTOMERS:
@@ -218,7 +303,8 @@ def rules(alert, plugins, **kwargs):
             plugins['remote_ip'],
             plugins['reject'],
             plugins['blackout'],
-            plugins['slack']
+            plugins['slack'],
+            plugins['config']
         ], dict(API_KEY=config['SLACK_API_KEYS'][alert.customer])
 
     else:
@@ -226,5 +312,6 @@ def rules(alert, plugins, **kwargs):
         return [
             plugins['remote_ip'],
             plugins['reject'],
-            plugins['blackout']
+            plugins['blackout'],
+            plugins['config']
         ]

@@ -1,5 +1,4 @@
 import logging
-import os
 
 from alerta.exceptions import BlackoutPeriod
 from alerta.plugins import PluginBase
@@ -18,15 +17,14 @@ class BlackoutHandler(PluginBase):
     """
 
     def pre_receive(self, alert, **kwargs):
+        self.kwargs = kwargs
 
-        config = kwargs['config']
+        NOTIFICATION_BLACKOUT = self.get_config('NOTIFICATION_BLACKOUT', default=True, type=bool)
 
-        if config['ALARM_MODEL'] == 'ALERTA':
+        if self.get_config('ALARM_MODEL') == 'ALERTA':
             status = 'blackout'
         else:
             status = 'OOSRV'  # ISA_18_2
-
-        NOTIFICATION_BLACKOUT = os.environ.get('NOTIFICATION_BLACKOUT') or config.get('NOTIFICATION_BLACKOUT', True)
 
         if alert.is_blackout():
             if NOTIFICATION_BLACKOUT:

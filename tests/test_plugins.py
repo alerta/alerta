@@ -1,5 +1,6 @@
 
 import json
+import os
 import unittest
 from uuid import uuid4
 
@@ -16,6 +17,8 @@ class PluginsTestCase(unittest.TestCase):
             'AUTH_REQUIRED': False,
             'PLUGINS': ['reject']
         }
+        os.environ['ALLOWED_ENVIRONMENTS'] = 'Production,Staging,Development'
+
         self.app = create_app(test_config)
         self.client = self.app.test_client()
 

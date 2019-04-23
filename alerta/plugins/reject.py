@@ -1,5 +1,4 @@
 import logging
-import os
 import re
 
 from alerta.exceptions import RejectException
@@ -18,13 +17,10 @@ class RejectPolicy(PluginBase):
     """
 
     def pre_receive(self, alert, **kwargs):
+        self.kwargs = kwargs
 
-        config = kwargs['config']
-
-        ORIGIN_BLACKLIST = os.environ['ORIGIN_BLACKLIST'].split(',') \
-            if 'ORIGIN_BLACKLIST' in os.environ else config.get('ORIGIN_BLACKLIST', [])
-        ALLOWED_ENVIRONMENTS = os.environ['ALLOWED_ENVIRONMENTS'].split(',') \
-            if 'ALLOWED_ENVIRONMENTS' in os.environ else config.get('ALLOWED_ENVIRONMENTS', [])
+        ORIGIN_BLACKLIST = self.get_config('ORIGIN_BLACKLIST', default=[], type=list)
+        ALLOWED_ENVIRONMENTS = self.get_config('ALLOWED_ENVIRONMENTS', default=[], type=list)
 
         ORIGIN_BLACKLIST_REGEX = [re.compile(x) for x in ORIGIN_BLACKLIST]
         ALLOWED_ENVIRONMENT_REGEX = [re.compile(x) for x in ALLOWED_ENVIRONMENTS]
