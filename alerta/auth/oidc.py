@@ -29,15 +29,24 @@ def get_oidc_configuration(app):
         raise ApiError('Must define Issuer URL (OIDC_ISSUER_URL) in server configuration to use OpenID Connect.', 503)
     discovery_doc_url = issuer_url.strip('/') + '/.well-known/openid-configuration'
 
-    r = requests.get(discovery_doc_url)
-    config = r.json()
+    try:
+        r = requests.get(discovery_doc_url)
+        config = r.json()
+    except Exception as e:
+        raise ApiError('Could not get OpenID configuration from well known URL: {}'.format(str(e)), 503)
 
     if config['issuer'] != issuer_url:
         raise ApiError('Issuer Claim does not match Issuer URL used to retrieve OpenID configuration', 503)
 
-    jwks_uri = config['jwks_uri']
-    r = requests.get(jwks_uri)
-    keys = {k['kid']: RSAAlgorithm.from_jwk(json.dumps(k)) for k in r.json()['keys']}
+    if app.config['OIDC_VERIFY_TOKEN']:
+        try:
+            jwks_uri = config['jwks_uri']
+            r = requests.get(jwks_uri)
+            keys = {k['kid']: RSAAlgorithm.from_jwk(json.dumps(k)) for k in r.json()['keys']}
+        except Exception as e:
+            raise ApiError('Could not get OpenID JWT Key Set from JWKS URL: {}'.format(str(e)), 503)
+    else:
+        keys = {}
 
     return config, keys
 
