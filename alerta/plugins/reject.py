@@ -17,10 +17,9 @@ class RejectPolicy(PluginBase):
     """
 
     def pre_receive(self, alert, **kwargs):
-        self.kwargs = kwargs
 
-        ORIGIN_BLACKLIST = self.get_config('ORIGIN_BLACKLIST', default=[], type=list)
-        ALLOWED_ENVIRONMENTS = self.get_config('ALLOWED_ENVIRONMENTS', default=[], type=list)
+        ORIGIN_BLACKLIST = self.get_config('ORIGIN_BLACKLIST', default=[], type=list, **kwargs)
+        ALLOWED_ENVIRONMENTS = self.get_config('ALLOWED_ENVIRONMENTS', default=[], type=list, **kwargs)
 
         ORIGIN_BLACKLIST_REGEX = [re.compile(x) for x in ORIGIN_BLACKLIST]
         ALLOWED_ENVIRONMENT_REGEX = [re.compile(x) for x in ALLOWED_ENVIRONMENTS]

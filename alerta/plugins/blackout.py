@@ -17,11 +17,9 @@ class BlackoutHandler(PluginBase):
     """
 
     def pre_receive(self, alert, **kwargs):
-        self.kwargs = kwargs
+        NOTIFICATION_BLACKOUT = self.get_config('NOTIFICATION_BLACKOUT', default=True, type=bool, **kwargs)
 
-        NOTIFICATION_BLACKOUT = self.get_config('NOTIFICATION_BLACKOUT', default=True, type=bool)
-
-        if self.get_config('ALARM_MODEL') == 'ALERTA':
+        if self.get_config('ALARM_MODEL', **kwargs) == 'ALERTA':
             status = 'blackout'
         else:
             status = 'OOSRV'  # ISA_18_2

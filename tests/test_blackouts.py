@@ -601,9 +601,7 @@ class BlackoutsTestCase(unittest.TestCase):
 class Blackout(PluginBase):
 
     def pre_receive(self, alert, **kwargs):
-        self.kwargs = kwargs
-
-        NOTIFICATION_BLACKOUT = self.get_config('NOTIFICATION_BLACKOUT', default=True, type=bool)
+        NOTIFICATION_BLACKOUT = self.get_config('NOTIFICATION_BLACKOUT', default=True, type=bool, **kwargs)
 
         if alert.is_blackout():
             if NOTIFICATION_BLACKOUT:

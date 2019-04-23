@@ -19,8 +19,6 @@ class PluginBase:
         if self.__doc__:
             LOG.info('\n{}\n'.format(self.__doc__))
 
-        self.kwargs = {}
-
     @abc.abstractmethod
     def pre_receive(self, alert: 'Alert', **kwargs) -> 'Alert':
         """
@@ -43,17 +41,14 @@ class PluginBase:
         """Trigger integrations based on external actions. (optional)"""
         raise NotImplementedError
 
-    def get_config(self, key, default=None, type=None):
-
-        if not self.kwargs:
-            raise RuntimeError('Must initialize kwargs before calling get_config()')
+    def get_config(self, key, default=None, type=None, **kwargs):
 
         if key in os.environ:
             rv = os.environ[key]
             if type == list:
                 return rv.split(',')
             elif type == bool:
-                return rv.lower() in ['yes', 'true', 't', '1']
+                return rv.lower() in ['yes', 'on', 'true', 't', '1']
             elif type is not None:
                 try:
                     rv = type(rv)
@@ -61,7 +56,11 @@ class PluginBase:
                     rv = default
             return rv
 
-        return self.kwargs['config'].get(key, default)
+        try:
+            rv = kwargs['config'].get(key, default)
+        except KeyError:
+            rv = default
+        return rv
 
 
 class FakeApp:

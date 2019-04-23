@@ -206,31 +206,30 @@ class RoutingTestCase(unittest.TestCase):
 class DummyConfigPlugin(PluginBase):
 
     def pre_receive(self, alert, **kwargs):
-        self.kwargs = kwargs
 
         alert.attributes['env'] = {
-            'bool': self.get_config('BOOL_ENVVAR', default=False, type=bool),
-            'int': self.get_config('INT_ENVVAR', default=100, type=int),
-            'float': self.get_config('FLOAT_ENVVAR', default=1.001, type=float),
-            'list': self.get_config('LIST_ENVVAR', default=['a', 'b', 'c'], type=list),
-            'str': self.get_config('STR_ENVVAR', default='environment', type=str),
-            'dict': self.get_config('DICT_ENVVAR', default={'foo': 'bar'}, type=json.loads)
+            'bool': self.get_config('BOOL_ENVVAR', default=False, type=bool, **kwargs),
+            'int': self.get_config('INT_ENVVAR', default=100, type=int, **kwargs),
+            'float': self.get_config('FLOAT_ENVVAR', default=1.001, type=float, **kwargs),
+            'list': self.get_config('LIST_ENVVAR', default=['a', 'b', 'c'], type=list, **kwargs),
+            'str': self.get_config('STR_ENVVAR', default='environment', type=str, **kwargs),
+            'dict': self.get_config('DICT_ENVVAR', default={'foo': 'bar'}, type=json.loads, **kwargs)
         }
         alert.attributes['setting'] = {
-            'bool': self.get_config('BOOL_SETTING', default=False, type=bool),
-            'int': self.get_config('INT_SETTING', default=999, type=int),
-            'float': self.get_config('FLOAT_SETTING', default=5.55, type=float),
-            'list': self.get_config('LIST_SETTING', default=['j', 'k'], type=list),
-            'str': self.get_config('STR_SETTING', default='setting', type=str),
-            'dict': self.get_config('DICT_SETTING', default={'baz': 'quux'}, type=json.loads)
+            'bool': self.get_config('BOOL_SETTING', default=False, type=bool, **kwargs),
+            'int': self.get_config('INT_SETTING', default=999, type=int, **kwargs),
+            'float': self.get_config('FLOAT_SETTING', default=5.55, type=float, **kwargs),
+            'list': self.get_config('LIST_SETTING', default=['j', 'k'], type=list, **kwargs),
+            'str': self.get_config('STR_SETTING', default='setting', type=str, **kwargs),
+            'dict': self.get_config('DICT_SETTING', default={'baz': 'quux'}, type=json.loads, **kwargs)
         }
         alert.attributes['default'] = {
-            'bool': self.get_config('BOOL_DEFAULT', default=False, type=bool),
-            'int': self.get_config('INT_DEFAULT', default=999, type=int),
-            'float': self.get_config('FLOAT_DEFAULT', default=5.55, type=float),
-            'list': self.get_config('LIST_DEFAULT', default=['j', 'k'], type=list),
-            'str': self.get_config('STR_DEFAULT', default='setting', type=str),
-            'dict': self.get_config('DICT_DEFAULT', default={'baz': 'quux'}, type=json.loads)
+            'bool': self.get_config('BOOL_DEFAULT', default=False, type=bool, **kwargs),
+            'int': self.get_config('INT_DEFAULT', default=999, type=int, **kwargs),
+            'float': self.get_config('FLOAT_DEFAULT', default=5.55, type=float, **kwargs),
+            'list': self.get_config('LIST_DEFAULT', default=['j', 'k'], type=list, **kwargs),
+            'str': self.get_config('STR_DEFAULT', default='setting', type=str, **kwargs),
+            'dict': self.get_config('DICT_DEFAULT', default={'baz': 'quux'}, type=json.loads, **kwargs)
         }
         return alert
 
@@ -247,9 +246,8 @@ class DummyPagerDutyPlugin(PluginBase):
         return alert
 
     def post_receive(self, alert, **kwargs):
-        config = kwargs.pop('config', {})
         alert.attributes['NOTIFY'] = 'pagerduty'
-        alert.attributes['API_KEY'] = config['API_KEY']
+        alert.attributes['API_KEY'] = self.get_config('API_KEY', **kwargs)
         return alert
 
     def status_change(self, alert, status, text, **kwargs):
@@ -262,9 +260,8 @@ class DummySlackPlugin(PluginBase):
         return alert
 
     def post_receive(self, alert, **kwargs):
-        config = kwargs.pop('config', {})
         alert.attributes['NOTIFY'] = 'slack'
-        alert.attributes['API_KEY'] = config['API_KEY']
+        alert.attributes['API_KEY'] = self.get_config('API_KEY', **kwargs)
         return alert
 
     def status_change(self, alert, status, text, **kwargs):
