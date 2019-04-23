@@ -49,6 +49,7 @@ def debug():
 @api.route('/config', methods=['GET'])
 def config():
     return jsonify({
+        'debug': current_app.debug,
         'endpoint': absolute_url().rstrip('/'),  # FIXME - shouldn't need to rstrip()
         'alarm_model': {
             'name': alarm_model.name,
