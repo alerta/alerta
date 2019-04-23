@@ -178,6 +178,8 @@ ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
 DO $$
 BEGIN
     ALTER TABLE users ADD COLUMN login text;
+    UPDATE users SET login = email;
+    ALTER TABLE users ALTER COLUMN login SET NOT NULL;
 EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column login already exists in users.';
 END$$;
