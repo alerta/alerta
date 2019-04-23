@@ -1,5 +1,6 @@
-import logging
 import abc
+import logging
+import os
 from typing import Optional, TYPE_CHECKING, Any
 
 from six import add_metaclass
@@ -19,7 +20,7 @@ class PluginBase:
             LOG.info('\n{}\n'.format(self.__doc__))
 
     @abc.abstractmethod
-    def pre_receive(self, alert: 'Alert') -> 'Alert':
+    def pre_receive(self, alert: 'Alert', **kwargs) -> 'Alert':
         """
         Pre-process an alert based on alert properties or reject it
         by raising RejectException or BlackoutPeriod.
@@ -27,18 +28,39 @@ class PluginBase:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def post_receive(self, alert: 'Alert') -> Optional['Alert']:
+    def post_receive(self, alert: 'Alert', **kwargs) -> Optional['Alert']:
         """Send an alert to another service or notify users."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def status_change(self, alert: 'Alert', status: str, text: str) -> Any:
+    def status_change(self, alert: 'Alert', status: str, text: str, **kwargs) -> Any:
         """Trigger integrations based on status changes."""
         raise NotImplementedError
 
     def take_action(self, alert: 'Alert', action: str, text: str, **kwargs) -> Any:
         """Trigger integrations based on external actions. (optional)"""
         raise NotImplementedError
+
+    def get_config(self, key, default=None, type=None, **kwargs):
+
+        if key in os.environ:
+            rv = os.environ[key]
+            if type == bool:
+                return rv.lower() in ['yes', 'on', 'true', 't', '1']
+            elif type == list:
+                return rv.split(',')
+            elif type is not None:
+                try:
+                    rv = type(rv)
+                except ValueError:
+                    rv = default
+            return rv
+
+        try:
+            rv = kwargs['config'].get(key, default)
+        except KeyError:
+            rv = default
+        return rv
 
 
 class FakeApp:
@@ -48,4 +70,4 @@ class FakeApp:
         self.config = config.get_user_config()
 
 
-app = FakeApp()  # used for plugin config only
+app = FakeApp()  # used for plugin config only (deprecated, use kwargs['config'] or get_config(..., **kwargs))

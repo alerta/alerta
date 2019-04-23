@@ -27,14 +27,14 @@ def rules(alert, plugins):
             plugins['reject'],
             plugins['blackout'],
             plugins['pagerduty']
-        ]
+        ], {'foo': 'bar'}
     elif alert.customer in TIER_TWO_CUSTOMERS:
         # Tier 2 customers handled via Slack
         return [
             plugins['reject'],
             plugins['blackout'],
             plugins['slack']
-        ]
+        ], {'baz', 'quux'}
     else:
         # Tier 3 customers get "best effort"
         return [
