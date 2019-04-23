@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS perms (
 CREATE TABLE IF NOT EXISTS users (
     id text PRIMARY KEY,
     name text,
-    email text UNIQUE NOT NULL,
+    email text UNIQUE,
     password text NOT NULL,
     status text,
     roles text[],
@@ -173,6 +173,7 @@ CREATE TABLE IF NOT EXISTS users (
     email_verified boolean,
     hash text
 );
+ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
 
 DO $$
 BEGIN
