@@ -101,8 +101,9 @@ class StateMachine(AlarmModel):
         StateMachine.NORMAL_SEVERITY_LEVEL = StateMachine.Severity[StateMachine.DEFAULT_NORMAL_SEVERITY]
 
     def trend(self, previous, current):
-        assert previous in StateMachine.Severity, "'%s' is not a valid severity" % previous
-        assert current in StateMachine.Severity, "'%s' is not a valid severity" % current
+        valid_severities = sorted(StateMachine.Severity, key=StateMachine.Severity.get)
+        assert previous in StateMachine.Severity, 'Severity is not one of %s' % ', '.join(valid_severities)
+        assert current in StateMachine.Severity, 'Severity is not one of %s' % ', '.join(valid_severities)
 
         if StateMachine.Severity[previous] > StateMachine.Severity[current]:
             return MORE_SEVERE
@@ -118,7 +119,8 @@ class StateMachine(AlarmModel):
         current_severity = alert.severity
         previous_severity = alert.previous_severity or StateMachine.DEFAULT_PREVIOUS_SEVERITY
 
-        assert current_severity in StateMachine.Severity, "'%s' is not a valid severity" % current_severity
+        valid_severities = sorted(StateMachine.Severity, key=StateMachine.Severity.get)
+        assert current_severity in StateMachine.Severity, 'Severity is not one of %s' % ', '.join(valid_severities)
 
         def next_state(rule, severity, status):
             current_app.logger.info(
