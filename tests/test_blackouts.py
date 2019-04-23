@@ -1,5 +1,5 @@
-
 import json
+import os
 import unittest
 from datetime import datetime
 
@@ -130,7 +130,8 @@ class BlackoutsTestCase(unittest.TestCase):
 
     def test_suppress_blackout(self):
 
-        plugins.plugins['blackout'] = SuppressionBlackout()
+        os.environ['NOTIFICATION_BLACKOUT'] = 'False'
+        plugins.plugins['blackout'] = Blackout()
 
         self.headers = {
             'Authorization': 'Key %s' % self.admin_api_key.key,
@@ -171,7 +172,8 @@ class BlackoutsTestCase(unittest.TestCase):
 
     def test_notification_blackout(self):
 
-        plugins.plugins['blackout'] = NotificationBlackout()
+        os.environ['NOTIFICATION_BLACKOUT'] = 'True'
+        plugins.plugins['blackout'] = Blackout()
 
         self.headers = {
             'Authorization': 'Key %s' % self.admin_api_key.key,
@@ -328,7 +330,8 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'shelved')
 
         # create a blackout
-        plugins.plugins['blackout'] = NotificationBlackout()
+        os.environ['NOTIFICATION_BLACKOUT'] = 'yes'
+        plugins.plugins['blackout'] = Blackout()
 
         blackout = {
             'environment': 'Production',
@@ -423,7 +426,8 @@ class BlackoutsTestCase(unittest.TestCase):
 
     def test_whole_environment_blackout(self):
 
-        plugins.plugins['blackout'] = SuppressionBlackout()
+        os.environ['NOTIFICATION_BLACKOUT'] = 'False'
+        plugins.plugins['blackout'] = Blackout()
 
         self.headers = {
             'Authorization': 'Key %s' % self.admin_api_key.key,
@@ -465,7 +469,8 @@ class BlackoutsTestCase(unittest.TestCase):
 
     def test_combination_blackout(self):
 
-        plugins.plugins['blackout'] = SuppressionBlackout()
+        os.environ['NOTIFICATION_BLACKOUT'] = 'False'
+        plugins.plugins['blackout'] = Blackout()
 
         self.headers = {
             'Authorization': 'Key %s' % self.admin_api_key.key,
@@ -529,7 +534,8 @@ class BlackoutsTestCase(unittest.TestCase):
     def test_edit_blackout(self):
 
         # create new blackout
-        plugins.plugins['blackout'] = SuppressionBlackout()
+        os.environ['NOTIFICATION_BLACKOUT'] = 'False'
+        plugins.plugins['blackout'] = Blackout()
 
         self.headers = {
             'Authorization': 'Key %s' % self.admin_api_key.key,
@@ -592,29 +598,20 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(data['blackout']['text'], 'administratively down')
 
 
-class SuppressionBlackout(PluginBase):
+class Blackout(PluginBase):
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
+        NOTIFICATION_BLACKOUT = self.get_config('NOTIFICATION_BLACKOUT', default=True, type=bool, **kwargs)
+
         if alert.is_blackout():
-            raise BlackoutPeriod('Suppressed alert during blackout period')
+            if NOTIFICATION_BLACKOUT:
+                alert.status = 'blackout'
+            else:
+                raise BlackoutPeriod('Suppressed alert during blackout period')
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return alert
 
-    def status_change(self, alert, status, text):
-        return
-
-
-class NotificationBlackout(PluginBase):
-
-    def pre_receive(self, alert):
-        if alert.is_blackout():
-            alert.status = 'blackout'
-        return alert
-
-    def post_receive(self, alert):
-        return alert
-
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         return

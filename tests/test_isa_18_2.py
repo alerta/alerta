@@ -724,13 +724,13 @@ class Isa182TestCase(unittest.TestCase):
 
 class NotificationBlackout(PluginBase):
 
-    def pre_receive(self, alert):
+    def pre_receive(self, alert, **kwargs):
         if alert.is_blackout():
             alert.status = 'OOSRV'
         return alert
 
-    def post_receive(self, alert):
+    def post_receive(self, alert, **kwargs):
         return alert
 
-    def status_change(self, alert, status, text):
+    def status_change(self, alert, status, text, **kwargs):
         return
