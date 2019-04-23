@@ -85,8 +85,9 @@ class StateMachine(AlarmModel):
         StateMachine.DEFAULT_PREVIOUS_SEVERITY = app.config['DEFAULT_PREVIOUS_SEVERITY'] or DEFAULT_PREVIOUS_SEVERITY
 
     def trend(self, previous, current):
-        assert previous in StateMachine.Severity, "'%s' is not a valid severity" % previous
-        assert current in StateMachine.Severity, "'%s' is not a valid severity" % current
+        valid_severities = sorted(StateMachine.Severity, key=StateMachine.Severity.get)
+        assert previous in StateMachine.Severity, 'Severity is not one of %s' % ', '.join(valid_severities)
+        assert current in StateMachine.Severity, 'Severity is not one of %s' % ', '.join(valid_severities)
 
         if StateMachine.Severity[previous] < StateMachine.Severity[current]:
             return MORE_SEVERE

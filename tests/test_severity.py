@@ -270,4 +270,4 @@ class SeverityTestCase(unittest.TestCase):
                 process_alert(Alert(resource='foo', event='bar',
                                     environment='Development', service=['Svc'], severity='baz'))
             exc = e.exception
-            self.assertEqual(str(exc), '\'baz\' is not a valid severity')
+            self.assertEqual(str(exc)[:64], 'Severity is not one of security, critical, major, minor, warning')
