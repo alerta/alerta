@@ -166,8 +166,8 @@ class Backend(Database):
 
     def dedup_alert(self, alert, history):
         """
-        Update alert value, text and rawData, increment duplicate count and set repeat=True, and
-        keep track of last receive id and time but don't append to history unless status changes.
+        Update alert status, service, value, text, timeout and rawData, increment duplicate count and set
+        repeat=True, and keep track of last receive id and time but don't append to history unless status changes.
         """
         query = {
             'environment': alert.environment,
@@ -181,6 +181,7 @@ class Backend(Database):
         update = {
             '$set': {
                 'status': alert.status,
+                'service': alert.service,
                 'value': alert.value,
                 'text': alert.text,
                 'timeout': alert.timeout,
@@ -239,6 +240,7 @@ class Backend(Database):
                 'event': alert.event,
                 'severity': alert.severity,
                 'status': alert.status,
+                'service': alert.service,
                 'value': alert.value,
                 'text': alert.text,
                 'createTime': alert.create_time,
