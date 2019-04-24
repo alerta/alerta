@@ -28,7 +28,7 @@ class AlertsTestCase(unittest.TestCase):
             'event': 'node_down',
             'resource': self.resource,
             'environment': 'Production',
-            'service': ['Network'],
+            'service': ['Network', 'Shared'],
             'severity': 'critical',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
             'tags': ['foo'],
@@ -47,7 +47,7 @@ class AlertsTestCase(unittest.TestCase):
             'event': 'node_marginal',
             'resource': self.resource,
             'environment': 'Production',
-            'service': ['Network'],
+            'service': ['Network', 'Shared'],
             'severity': 'major',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
             'timeout': 40
@@ -114,6 +114,7 @@ class AlertsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], self.resource)
         self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['service'], ['Network', 'Shared'])
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
         self.assertEqual(data['alert']['history'][0]['user'], None)
@@ -126,6 +127,7 @@ class AlertsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
+        self.assertEqual(data['alert']['service'], ['Network', 'Shared'])
         self.assertEqual(data['alert']['duplicateCount'], 1)
         self.assertEqual(data['alert']['previousSeverity'], alarm_model.DEFAULT_PREVIOUS_SEVERITY)
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
@@ -137,6 +139,7 @@ class AlertsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['service'], ['Network'])
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['previousSeverity'], self.major_alert['severity'])
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
@@ -147,6 +150,7 @@ class AlertsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
+        self.assertEqual(data['alert']['service'], ['Network'])
         self.assertEqual(data['alert']['duplicateCount'], 1)
         self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
         self.assertEqual(data['alert']['updateTime'], update_time)
@@ -156,6 +160,7 @@ class AlertsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
+        self.assertEqual(data['alert']['service'], ['Network', 'Shared'])
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['previousSeverity'], self.critical_alert['severity'])
         self.assertEqual(data['alert']['trendIndication'], 'noChange')
@@ -166,6 +171,7 @@ class AlertsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
+        self.assertEqual(data['alert']['service'], ['Network', 'Shared'])
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['previousSeverity'], self.fatal_alert['severity'])
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
@@ -177,6 +183,7 @@ class AlertsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['status'], 'closed')
+        self.assertEqual(data['alert']['service'], ['Network'])
         self.assertEqual(data['alert']['duplicateCount'], 0)
         self.assertEqual(data['alert']['previousSeverity'], self.major_alert['severity'])
         self.assertEqual(data['alert']['trendIndication'], 'lessSevere')
