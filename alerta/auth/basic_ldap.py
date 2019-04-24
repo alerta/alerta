@@ -28,7 +28,7 @@ def login():
     if domain not in current_app.config['LDAP_DOMAINS']:
         raise ApiError('unauthorized domain', 403)
 
-    userdn = current_app.config['LDAP_DOMAINS'][domain] % username
+    userdn = current_app.config['LDAP_DOMAINS'][domain].format(username)
 
     # Attempt LDAP AUTH
     try:
