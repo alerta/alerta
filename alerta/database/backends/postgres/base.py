@@ -201,14 +201,15 @@ class Backend(Database):
 
     def dedup_alert(self, alert, history):
         """
-        Update alert value, text and rawData, increment duplicate count and set repeat=True, and
-        keep track of last receive id and time but don't append to history unless status changes.
+        Update alert status, service, value, text, timeout and rawData, increment duplicate count and set
+        repeat=True, and keep track of last receive id and time but don't append to history unless status changes.
         """
         alert.history = history
         update = """
             UPDATE alerts
-               SET status=%(status)s, value=%(value)s, text=%(text)s, timeout=%(timeout)s, raw_data=%(raw_data)s,
-                   repeat=%(repeat)s, last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
+               SET status=%(status)s, service=%(service)s, value=%(value)s, text=%(text)s,
+                   timeout=%(timeout)s, raw_data=%(raw_data)s, repeat=%(repeat)s,
+                   last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
                    tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)), attributes=attributes || %(attributes)s,
                    duplicate_count=duplicate_count + 1, {update_time}, history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
@@ -228,10 +229,10 @@ class Backend(Database):
         alert.history = history
         update = """
             UPDATE alerts
-               SET event=%(event)s, severity=%(severity)s, status=%(status)s, value=%(value)s, text=%(text)s,
-                   create_time=%(create_time)s, timeout=%(timeout)s, raw_data=%(raw_data)s, duplicate_count=%(duplicate_count)s,
-                   repeat=%(repeat)s, previous_severity=%(previous_severity)s, trend_indication=%(trend_indication)s,
-                   receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
+               SET event=%(event)s, severity=%(severity)s, status=%(status)s, service=%(service)s, value=%(value)s,
+                   text=%(text)s, create_time=%(create_time)s, timeout=%(timeout)s, raw_data=%(raw_data)s,
+                   duplicate_count=%(duplicate_count)s, repeat=%(repeat)s, previous_severity=%(previous_severity)s,
+                   trend_indication=%(trend_indication)s, receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
                    last_receive_time=%(last_receive_time)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
                    attributes=attributes || %(attributes)s, {update_time}, history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
