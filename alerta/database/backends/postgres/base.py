@@ -1243,7 +1243,7 @@ class Backend(Database):
         select = """
             SELECT id, event, last_receive_id
               FROM alerts
-             WHERE status NOT IN ('expired','shelved') AND timeout!=0
+             WHERE status NOT IN ('shelved', 'closed', 'expired') AND timeout!=0
                AND (last_receive_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """
         expired = self._fetchall(select, {})

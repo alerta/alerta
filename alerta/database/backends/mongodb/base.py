@@ -1574,7 +1574,7 @@ class Backend(Database):
                 'event': 1, 'status': 1, 'lastReceiveId': 1, 'timeout': 1,
                 'expireTime': {'$add': ['$lastReceiveTime', {'$multiply': ['$timeout', 1000]}]}}
              },
-            {'$match': {'status': {'$nin': ['expired', 'shelved']}, 'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {
+            {'$match': {'status': {'$nin': ['shelved', 'closed', 'expired']}, 'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {
                 '$ne': 0}}}
         ]
         expired = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
