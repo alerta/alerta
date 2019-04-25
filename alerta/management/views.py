@@ -143,17 +143,18 @@ def health_check():
 @cross_origin()
 @permission(Scope.admin_management)
 def housekeeping():
-    DEFAULT_EXPIRED_DELETE_HRS = current_app.config['DEFAULT_EXPIRED_DELETE_HRS']
-    DEFAULT_INFO_DELETE_HRS = current_app.config['DEFAULT_INFO_DELETE_HRS']
+    DEFAULT_EXPIRED_HK_HRS = current_app.config['DEFAULT_EXPIRED_HK_HRS']
+    DEFAULT_INFO_HK_HRS = current_app.config['DEFAULT_INFO_HK_HRS']
+    HOUSEKEEPING_ACTION = current_app.config['HOUSEKEEPING_ACTION']
 
     try:
-        expired_threshold = int(request.args.get('expired', DEFAULT_EXPIRED_DELETE_HRS))
-        info_threshold = int(request.args.get('info', DEFAULT_INFO_DELETE_HRS))
+        expired_threshold = int(request.args.get('expired', DEFAULT_EXPIRED_HK_HRS))
+        info_threshold = int(request.args.get('info', DEFAULT_INFO_HK_HRS))
     except Exception as e:
         raise ApiError(str(e), 400)
 
     try:
-        Alert.housekeeping(expired_threshold, info_threshold)
+        Alert.housekeeping(expired_threshold, info_threshold, action=HOUSEKEEPING_ACTION)
         return jsonify(status='ok')
     except Exception as e:
         raise ApiError('HOUSEKEEPING FAILED: %s' % e, 503)

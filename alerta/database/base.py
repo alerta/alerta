@@ -376,7 +376,7 @@ class Database(Base):
 
     # HOUSEKEEPING
 
-    def housekeeping(self, expired_threshold, info_threshold):
+    def housekeeping(self, expired_threshold, info_threshold, action='delete'):
         raise NotImplementedError
 
 

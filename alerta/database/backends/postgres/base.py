@@ -1214,17 +1214,30 @@ class Backend(Database):
 
     # HOUSEKEEPING
 
-    def housekeeping(self, expired_threshold, info_threshold):
+    def housekeeping(self, expired_threshold, info_threshold, action='delete'):
         # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
         # and 'informational' alerts older than "info_threshold" hours
-        delete = """
-            DELETE FROM alerts
-             WHERE (status IN ('closed', 'expired')
-                    AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(expired_threshold)s hours'))
-                OR (severity='informational'
-                    AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(info_threshold)s hours'))
-        """
-        self._deleteall(delete, {'expired_threshold': expired_threshold, 'info_threshold': info_threshold})
+
+        if action == 'delete':
+            delete = """
+                DELETE FROM alerts
+                 WHERE (status IN ('closed', 'expired')
+                        AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(expired_threshold)s hours'))
+                    OR (severity='informational'
+                        AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(info_threshold)s hours'))
+            """
+            self._deleteall(delete, {'expired_threshold': expired_threshold, 'info_threshold': info_threshold})
+
+        if action == 'close':
+            update = """
+                UPDATE alerts
+                   SET status='closed'
+                 WHERE (status IN ('expired')
+                        AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(expired_threshold)s hours'))
+                    OR (severity='informational'
+                        AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(info_threshold)s hours'))
+            """
+            self._updateall(update, {'expired_threshold': expired_threshold, 'info_threshold': info_threshold})
 
         # get list of alerts to be newly expired
         select = """

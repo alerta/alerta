@@ -144,8 +144,9 @@ ALERT_TIMEOUT = DEFAULT_TIMEOUT
 HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
 
 # Housekeeping settings
-DEFAULT_EXPIRED_DELETE_HRS = 2  # hours
-DEFAULT_INFO_DELETE_HRS = 12  # hours
+DEFAULT_EXPIRED_HK_HRS = 2  # hours
+DEFAULT_INFO_HK_HRS = 12  # hours
+HOUSEKEEPING_ACTION = 'delete'  # 'delete' or 'close'
 
 # Send verification emails to new BasicAuth users
 EMAIL_VERIFICATION = False

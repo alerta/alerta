@@ -544,9 +544,9 @@ class Alert:
         return db.get_alert_tags(query)
 
     @staticmethod
-    def housekeeping(expired_threshold: int=2, info_threshold: int=12) -> None:
+    def housekeeping(expired_threshold: int=2, info_threshold: int=12, action: str='delete') -> None:
         now = datetime.utcnow()
-        expired, unshelved = db.housekeeping(expired_threshold, info_threshold)
+        expired, unshelved = db.housekeeping(expired_threshold, info_threshold, action)
 
         for (id, event, last_receive_id) in expired:
             history = History(
