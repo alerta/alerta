@@ -658,69 +658,6 @@ class AlertsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['timeout'], 120)
 
-    def test_aggregations(self):
-
-        # create alert
-        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
-        self.assertEqual(response.status_code, 201)
-
-        # create 2nd alert
-        response = self.client.post('/alert', data=json.dumps(self.ok2_alert), headers=self.headers)
-        self.assertEqual(response.status_code, 201)
-
-        # counts
-        response = self.client.get('/alerts/count')
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertIn('statusCounts', data)
-        self.assertIn('severityCounts', data)
-
-        # top 10 count
-        response = self.client.get('/alerts/top10/count')
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertIn('top10', data)
-
-        # top 10 flapping
-        response = self.client.get('/alerts/top10/flapping')
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertIn('top10', data)
-
-        # environments
-        response = self.client.get('/environments')
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertIn('environments', data)
-        self.assertEqual(data['environments'][0]['severityCounts'], {'critical': 1, 'ok': 1})
-        self.assertEqual(data['environments'][0]['statusCounts'], {'open': 1, 'closed': 1})
-
-        # service
-        response = self.client.get('/services')
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertIn('services', data)
-        self.assertEqual(data['services'][0]['severityCounts'], {'critical': 1, 'ok': 1})
-        self.assertEqual(data['services'][0]['statusCounts'], {'open': 1, 'closed': 1})
-
-        # groups
-        response = self.client.get('/alerts/groups')
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertIn('groups', data)
-        self.assertEqual(data['groups'][0]['environment'], 'Production')
-        self.assertEqual(data['groups'][0]['group'], 'Misc')
-        self.assertEqual(data['groups'][0]['count'], 2)
-
-        # tags
-        response = self.client.get('/alerts/tags')
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertIn('tags', data)
-        self.assertEqual(data['tags'][0]['environment'], 'Production')
-        self.assertEqual(data['tags'][0]['tag'], 'foo')
-        self.assertEqual(data['tags'][0]['count'], 1)
-
     def test_query_param(self):
         # create alert
         response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
