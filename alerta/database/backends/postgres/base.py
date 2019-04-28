@@ -892,6 +892,10 @@ class Backend(Database):
         """.format(where=query.where)
         return self._fetchall(select, query.vars)
 
+    def get_user_by_username(self, username):
+        select = """SELECT * FROM users WHERE login=%s OR email=%s"""
+        return self._fetchone(select, (username, username))
+
     def get_user_by_email(self, email):
         select = """SELECT * FROM users WHERE email=%s"""
         return self._fetchone(select, (email,))

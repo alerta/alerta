@@ -270,6 +270,9 @@ class Database(Base):
     def get_users(self, query=None):
         raise NotImplementedError
 
+    def get_user_by_username(self, username):
+        raise NotImplementedError
+
     def get_user_by_email(self, email):
         raise NotImplementedError
 

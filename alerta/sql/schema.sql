@@ -177,7 +177,7 @@ ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
 
 DO $$
 BEGIN
-    ALTER TABLE users ADD COLUMN login text;
+    ALTER TABLE users ADD COLUMN login text UNIQUE;
     UPDATE users SET login = email;
     ALTER TABLE users ALTER COLUMN login SET NOT NULL;
 EXCEPTION

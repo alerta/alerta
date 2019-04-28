@@ -76,21 +76,24 @@ def keys():
 @click.option('--all', is_flag=True, help='Create users for all admins')
 @with_appcontext
 def user(username, password, all):
-    """Create admin users."""
+    """Create admin users (BasicAuth only)."""
+    if current_app.config['AUTH_PROVIDER'] != 'basic':
+        raise click.UsageError('Not required for {} admin users'.format(current_app.config['AUTH_PROVIDER']))
     if username and username not in current_app.config['ADMIN_USERS']:
         raise click.UsageError('User {} not an admin'.format(username))
     if not username and not all:
         raise click.UsageError('Missing option "--username".')
 
     def create_user(admin):
+        email = admin if '@' in admin else None
         user = User(
-            name=admin,
+            name='Admin user',
             login=admin,
             password=generate_password_hash(password),
-            roles=[],
-            text='Admin user created by alertad script',
-            email='',
-            email_verified=True
+            roles=['admin'],
+            text='Created by alertad script',
+            email=email,
+            email_verified=bool(email)
         )
         try:
             db.get_db()  # init db on global app context
@@ -114,7 +117,7 @@ def users():
     for admin in current_app.config['ADMIN_USERS']:
         try:
             db.get_db()  # init db on global app context
-            user = User.find_by_email(admin)
+            user = User.find_by_username(admin)
         except Exception as e:
             click.echo('ERROR: {}'.format(e))
         else:
