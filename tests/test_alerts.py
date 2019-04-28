@@ -4,8 +4,9 @@ import unittest
 from datetime import datetime
 from uuid import uuid4
 
-from alerta.app import alarm_model, create_app, db
+from alerta.app import alarm_model, create_app, db, plugins
 from alerta.models.alert import Alert
+from alerta.plugins import PluginBase
 from alerta.utils.api import process_alert
 
 
@@ -33,6 +34,15 @@ class AlertsTestCase(unittest.TestCase):
             'correlate': ['node_down', 'node_marginal', 'node_up'],
             'tags': ['foo'],
             'attributes': {'foo': 'abc def', 'bar': 1234, 'baz': False},
+        }
+        self.fatal_alert_no_attributes = {
+            'event': 'node_down',
+            'resource': self.resource,
+            'environment': 'Production',
+            'service': ['Network', 'Shared'],
+            'severity': 'critical',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'tags': ['foo']
         }
         self.critical_alert = {
             'event': 'node_marginal',
@@ -519,6 +529,38 @@ class AlertsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['tags'], ['bar'])
 
+    def test_alert_no_attributes(self):
+
+        plugins.plugins['remote_ip'] = DummyRemoteIPPlugin()
+
+        # create alert with no attributes
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert_no_attributes), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['attributes'], {})
+
+        alert_id = data['id']
+
+        # ack alert, status change
+        response = self.client.put('/alert/' + alert_id + '/status',
+                                   data=json.dumps({'status': 'ack'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'ack')
+        self.assertEqual(data['alert']['attributes'], {})
+
+        # close alert, action
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps({'action': 'close'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'closed')
+        self.assertEqual(data['alert']['attributes'], {})
+
     def test_alert_attributes(self):
 
         # create alert with custom attributes
@@ -704,3 +746,15 @@ class AlertsTestCase(unittest.TestCase):
             self.assertEqual(type(body['lastReceiveTime']), str)
             self.assertEqual(type(body['receiveTime']), str)
             self.assertEqual(type(body['updateTime']), str)
+
+
+class DummyRemoteIPPlugin(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        return alert
+
+    def status_change(self, alert, status, text, **kwargs):
+        return alert, status, text
