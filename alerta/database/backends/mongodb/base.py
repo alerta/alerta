@@ -399,8 +399,9 @@ class Backend(Database):
         if unset_value:
             update['$unset'] = unset_value
 
-        response = self.get_db().alerts.update_one({'_id': {'$regex': '^' + id}}, update=update)
-        return response.matched_count > 0
+        if update:
+            response = self.get_db().alerts.update_one({'_id': {'$regex': '^' + id}}, update=update)
+            return response.matched_count > 0
 
     def delete_alert(self, id):
         response = self.get_db().alerts.delete_one({'_id': {'$regex': '^' + id}})
