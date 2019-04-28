@@ -32,8 +32,8 @@ def create_user():
     if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError('unauthorized domain', 403)
 
-    if User.find_by_email(email=user.email):
-        raise ApiError('username already exists', 409)
+    if User.find_by_username(username=user.email):
+        raise ApiError('user with that email already exists', 409)
 
     want_scopes = Permission.lookup(login=user.email, roles=user.roles)
     for want_scope in want_scopes:
@@ -165,7 +165,7 @@ def update_user(user_id):
     if request.json.get('email'):
         user_by_email = User.find_by_email(request.json['email'])
         if user_by_email and user_by_email.id != user.id:
-            raise ApiError('user with email already exists', 409)
+            raise ApiError('user with that email already exists', 409)
 
     if request.json.get('roles'):
         want_scopes = Permission.lookup(login='', roles=request.json['roles'])
@@ -202,9 +202,9 @@ def update_me():
         raise ApiError('not found', 404)
 
     if 'email' in request.json:
-        user_by_email = User.find_by_email(request.json['email'])
+        user_by_email = User.find_by_email(email=request.json['email'])
         if user_by_email and user_by_email.id != user.id:
-            raise ApiError('user with email already exists', 409)
+            raise ApiError('user with that email already exists', 409)
 
     write_audit_trail.send(current_app._get_current_object(), event='user-me-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
