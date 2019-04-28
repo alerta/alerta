@@ -45,7 +45,7 @@ class Backend(Database):
         db.perms.create_index([('match', ASCENDING)], unique=True)
         db.users.drop_indexes()
         db.users.create_index([('login', ASCENDING)], unique=True,
-                              partialFilterExpression={'email': {'$type': 'string'}})
+                              partialFilterExpression={'login': {'$type': 'string'}})
         db.users.create_index([('email', ASCENDING)], unique=True,
                               partialFilterExpression={'email': {'$type': 'string'}})
         db.groups.create_index([('name', ASCENDING)], unique=True)
