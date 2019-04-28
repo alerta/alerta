@@ -30,8 +30,8 @@ def signup():
     if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError('unauthorized domain', 403)
 
-    if User.find_by_email(email=user.email):
-        raise ApiError('username already exists', 409)
+    if User.find_by_username(username=user.email):
+        raise ApiError('user with that email already exists', 409)
 
     try:
         user = user.create()

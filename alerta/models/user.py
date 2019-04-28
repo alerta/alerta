@@ -141,6 +141,11 @@ class User:
         return User.from_db(db.get_user(id))
 
     @staticmethod
+    def find_by_username(username: str) -> Optional['User']:
+        """A username may be a login id or an email address."""
+        return User.from_db(db.get_user_by_username(username))
+
+    @staticmethod
     def find_by_email(email: str) -> Optional['User']:
         return User.from_db(db.get_user_by_email(email))
 
@@ -174,7 +179,7 @@ class User:
 
     @staticmethod
     def check_credentials(username: str, password: str) -> Optional['User']:
-        user = User.find_by_email(email=username)
+        user = User.find_by_username(username)
         if user and user.verify_password(password):
             return user
         return None

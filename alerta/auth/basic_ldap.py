@@ -41,7 +41,7 @@ def login():
         raise ApiError(str(e), 500)
 
     # Create user if not yet there
-    user = User.find_by_email(email)
+    user = User.find_by_username(username=email)
     if not user:
         user = User(name=username, login=email, password='', email=email,
                     roles=[], text='LDAP user', email_verified=True)

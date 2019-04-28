@@ -43,7 +43,10 @@ class Backend(Database):
         db.heartbeats.create_index([('origin', ASCENDING), ('customer', ASCENDING)], unique=True)
         db.keys.create_index([('key', ASCENDING)], unique=True)
         db.perms.create_index([('match', ASCENDING)], unique=True)
-        db.users.create_index([('email', ASCENDING)], unique=True)
+        db.users.drop_indexes()
+        db.users.create_index([('login', ASCENDING)], unique=True)
+        db.users.create_index([('email', ASCENDING)], unique=True,
+                              partialFilterExpression={'email': {'$type': 'string'}})
         db.groups.create_index([('name', ASCENDING)], unique=True)
         db.metrics.create_index([('group', ASCENDING), ('name', ASCENDING)], unique=True)
 
@@ -1241,8 +1244,9 @@ class Backend(Database):
         data = {
             '_id': user.id,
             'name': user.name,
-            'email': user.email,
+            'login': user.login,
             'password': user.password,
+            'email': user.email,
             'status': user.status,
             'roles': user.roles,
             'attributes': user.attributes,
@@ -1265,10 +1269,16 @@ class Backend(Database):
         query = query or Query()
         return self.get_db().users.find(query.where)
 
+    def get_user_by_username(self, username):
+        if not username:
+            return
+        query = {'$or': [{'login': username}, {'email': username}]}
+        return self.get_db().users.find_one(query)
+
     def get_user_by_email(self, email):
         if not email:
             return
-        query = {'$or': [{'email': email}, {'login': email}]}
+        query = {'email': email}
         return self.get_db().users.find_one(query)
 
     def get_user_by_hash(self, hash):
