@@ -42,7 +42,6 @@ setuptools.setup(
         'Flask-Compress>=1.4.0',
         'raven[flask]>=6.2.1',
         'pymongo>=3.0',
-        'psycopg2',
         'pyparsing',
         'requests',
         'python-dateutil',
@@ -52,6 +51,10 @@ setuptools.setup(
         'pyyaml',
         'bcrypt'
     ],
+    extras_require={
+        'mongodb': ['pymongo>=3.0'],
+        'postgres': ['psycopg2']
+    },
     include_package_data=True,
     zip_safe=False,
     entry_points={
