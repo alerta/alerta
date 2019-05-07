@@ -49,10 +49,10 @@ To install the Alerta server and client run:
 
 To install the web console run:
 
-    $ wget -O alerta-web.tgz https://github.com/alerta/angular-alerta-webui/tarball/master
-    $ tar zxvf alerta-web.tgz
-    $ cd alerta-angular-alerta-webui-*/app
-    $ python -m http.server 8000
+    $ wget https://github.com/alerta/alerta-webui/releases/latest/download/alerta-webui.tar.gz
+    $ tar zxvf alerta-webui.tar.gz
+    $ cd dist
+    $ python3 -m http.server 8000
 
     >> browse to http://localhost:8000
 
@@ -89,7 +89,7 @@ reporting errors to [Sentry](https://sentry.io):
     $ export FLASK_APP=alerta FLASK_ENV=development
     $ export DATABASE_URL=postgres://localhost:5432/alerta5
     $ export SENTRY_DSN=https://8b56098250544fb78b9578d8af2a7e13:fa9d628da9c4459c922293db72a3203f@sentry.io/153768
-    $ pip install -e .
+    $ pip install -e .[postgres]
     $ flask run --debugger --port 8080 --with-threads --reload
 
 Troubleshooting
@@ -115,7 +115,7 @@ Tests
 To run the tests using a local Postgres database run:
 
     $ pip install -r requirements.txt
-    $ pip install -e .
+    $ pip install -e .[postgres]
     $ createdb test5
     $ ALERTA_SVR_CONF_FILE= DATABASE_URL=postgres:///test5 nosetests
 
