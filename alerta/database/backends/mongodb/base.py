@@ -1566,12 +1566,15 @@ class Backend(Database):
     def housekeeping(self, expired_threshold, info_threshold):
         # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
         # and 'informational' alerts older than "info_threshold" hours
-        expired_hours_ago = datetime.utcnow() - timedelta(hours=expired_threshold)
-        self.get_db().alerts.remove(
-            {'status': {'$in': ['closed', 'expired']}, 'lastReceiveTime': {'$lt': expired_hours_ago}})
 
-        info_hours_ago = datetime.utcnow() - timedelta(hours=info_threshold)
-        self.get_db().alerts.remove({'severity': 'informational', 'lastReceiveTime': {'$lt': info_hours_ago}})
+        if expired_threshold:
+            expired_hours_ago = datetime.utcnow() - timedelta(hours=expired_threshold)
+            self.get_db().alerts.remove(
+                {'status': {'$in': ['closed', 'expired']}, 'lastReceiveTime': {'$lt': expired_hours_ago}})
+
+        if info_threshold:
+            info_hours_ago = datetime.utcnow() - timedelta(hours=info_threshold)
+            self.get_db().alerts.remove({'severity': 'informational', 'lastReceiveTime': {'$lt': info_hours_ago}})
 
         # get list of alerts to be newly expired
         pipeline = [
