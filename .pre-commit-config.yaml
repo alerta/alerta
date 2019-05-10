@@ -1,8 +1,11 @@
 repos:
+-   repo: https://github.com/pre-commit/mirrors-autopep8
+    rev: v1.4.4
+    hooks:
+    -   id: autopep8
 -   repo: https://github.com/pre-commit/pre-commit-hooks.git
     rev: v2.2.1
     hooks:
-    -   id: autopep8-wrapper
     -   id: check-added-large-files
     -   id: check-ast
     -   id: check-byte-order-marker
