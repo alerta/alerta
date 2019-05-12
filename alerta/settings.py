@@ -165,7 +165,7 @@ SITE_LOGO_URL = ''  # URL to company logo
 DATE_FORMAT_SHORT_TIME = 'HH:mm'  # eg. 09:24
 DATE_FORMAT_MEDIUM_DATE = 'EEE d MMM HH:mm'  # eg. Tue 9 Oct 09:24
 DATE_FORMAT_LONG_DATE = 'd/M/yyyy h:mm:ss.sss a'  # eg. 9/10/2018 9:24:03.036 AM
-DEFAULT_AUDIO_FILE = None  # must exist on client at relative path eg. `/audio/Bike Horn.mp3'
+DEFAULT_AUDIO_FILE = None  # must exist on client at relative path eg. '/audio/alert_high-intensity.ogg' or URL
 COLUMNS = [
     'severity', 'status', 'lastReceiveTime', 'timeoutLeft', 'duplicateCount',
     'customer', 'environment', 'service', 'resource', 'event', 'value'
