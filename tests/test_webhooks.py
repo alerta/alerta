@@ -68,7 +68,22 @@ class WebhooksTestCase(unittest.TestCase):
               "SignatureVersion" : "1",
               "Signature" : "Wui8ZxaiH1IXLGJOTonbzc9lUaoq5HN3e2tPaX7G122R4r9P+Gbs01gOUsKMjPFiOwdvLT5rQjJwczb+1F6r6kt4qhU3i1qMHlDjdnXF6rYDzP0u1RUJgX/b3Asb6V5w9SEiTCHlsF7ZInYn99lTOQOI7je4tYv8V9kVlzuynKmr7TGwKmxQc84UoIR9Nb7gU5ZXgOfoY64iZzY8nDssS8rLBTVNTGNVacJWCsIz5RLX41gUhAKNNdCW9dfI6G/cqMc+FFKqVAgYPTwnH/0hdx7jKei5fzyXUOzSSmAFxdUPN+DfwHemrfDzk8enALq7LIbR+HmbhtdSQaiXVAChkg==",
               "SigningCertURL" : "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-6aad65c2f9911b05cd53efda11f913f9.pem",
-              "UnsubscribeURL" : "https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:eu-west-1:496780030265:alerta-test:6590056b-77a0-495f-83a1-53fbba126544"
+              "UnsubscribeURL" : "https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:eu-west-1:1234567890:alerta-test:6590056b-77a0-495f-83a1-53fbba126544"
+            }
+        """
+
+        self.cloudwatch_insufficient_data = r"""
+            {
+              "Type" : "Notification",
+              "MessageId" : "3a6a339c-60fc-5718-875e-66cf50fbf89a",
+              "TopicArn" : "arn:aws:sns:eu-west-1:1234567890:alerta-test",
+              "Subject" : "INSUFFICIENT_DATA: \"NotificationCount\" in EU (Ireland)",
+              "Message" : "{\"AlarmName\":\"notificationCountAlarm\",\"AlarmDescription\":\"number of notifications exceeded\",\"AWSAccountId\":\"1234567890\",\"NewStateValue\":\"INSUFFICIENT_DATA\",\"NewStateReason\":\"Insufficient Data: 10 datapoints were unknown.\",\"StateChangeTime\":\"2019-05-13T08:41:43.548+0000\",\"Region\":\"EU (Ireland)\",\"OldStateValue\":\"ALARM\",\"Trigger\":{\"MetricName\":\"NumberOfNotificationsDelivered\",\"Namespace\":\"AWS/SNS\",\"StatisticType\":\"Statistic\",\"Statistic\":\"AVERAGE\",\"Unit\":null,\"Dimensions\":[{\"value\":\"alerta-test\",\"name\":\"TopicName\"}],\"Period\":300,\"EvaluationPeriods\":10,\"ComparisonOperator\":\"GreaterThanOrEqualToThreshold\",\"Threshold\":0.0,\"TreatMissingData\":\"\",\"EvaluateLowSampleCountPercentile\":\"\"}}",
+              "Timestamp" : "2019-05-13T08:41:43.567Z",
+              "SignatureVersion" : "1",
+              "Signature" : "ebq83SatlvuSq9HIsZdVw1P11K2/axeXMxuEJXEq8S1mNg7h8WVHAcWjauiwr6IvrFglJkuEhcfIVgkomJ4Ijmbz5cJY8Pt0zrRkBvl2z9W7vrdeG3ZIqFf13ki64C7gBpWzyxSh6p1MEAzAjpR13maRvZYB7XH5G5+QjYgZ1dbu4Pt4gtdJNTND5bnXTgkJvccTLeGnHi4cYFP3UkvQPWfKbjTBpkgnHcakeKFHZaxvtU72qhYWcldbqxTAHhjf8LY2p4PE+yRzXiMgqDo1437skFe73IIlb+lqw2NCn0VLyP5VWJFExzl7WRrprmAi4CJzZXRDfFFxaQpTMzTgkA==",
+              "SigningCertURL" : "https://sns.eu-west-1.amazonaws.com/SimpleNotificationService-6aad65c2f9911b05cd53efda11f913f9.pem",
+              "UnsubscribeURL" : "https://sns.eu-west-1.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:eu-west-1:1234567890:alerta-test:6e8ae9aa-983b-4a47-9821-f02a4ef3a519"
             }
         """
 
@@ -604,6 +619,20 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['group'], 'AWS/S3')
         self.assertEqual(data['alert']['value'], 'ALARM')
         self.assertEqual(data['alert']['text'], 'bucket bytes size exceeded')
+        self.assertEqual(data['alert']['tags'], ['EU (Ireland)'])
+        self.assertEqual(data['alert']['origin'], 'arn:aws:sns:eu-west-1:1234567890:alerta-test')
+
+        # notification
+        response = self.client.post('/webhooks/cloudwatch',
+                                    data=self.cloudwatch_insufficient_data, content_type='text/plain; charset=UTF-8')
+        self.assertEqual(response.status_code, 201, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'TopicName:alerta-test')
+        self.assertEqual(data['alert']['event'], 'notificationCountAlarm')
+        self.assertEqual(data['alert']['service'], ['1234567890'])
+        self.assertEqual(data['alert']['group'], 'AWS/SNS')
+        self.assertEqual(data['alert']['value'], 'INSUFFICIENT_DATA')
+        self.assertEqual(data['alert']['text'], 'number of notifications exceeded')
         self.assertEqual(data['alert']['tags'], ['EU (Ireland)'])
         self.assertEqual(data['alert']['origin'], 'arn:aws:sns:eu-west-1:1234567890:alerta-test')
 
