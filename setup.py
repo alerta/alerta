@@ -31,6 +31,7 @@ setuptools.setup(
     version=read('VERSION'),
     description='Alerta server WSGI application',
     long_description=read('README.md'),
+    long_description_content_type='text/markdown',
     url='https://github.com/guardian/alerta',
     license='Apache License 2.0',
     author='Nick Satterly',
