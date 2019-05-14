@@ -56,9 +56,9 @@ def receive():
     except RateLimit as e:
         audit_trail_alert(event='alert-rate-limited')
         return jsonify(status='error', message=str(e), id=alert.id), 429
-    except HeartbeatReceived as e:
+    except HeartbeatReceived as heartbeat:
         audit_trail_alert(event='alert-heartbeat')
-        return jsonify(status='ok', message=str(e), id=alert.id), 202
+        return jsonify(status='ok', message=str(heartbeat), id=heartbeat.id), 202
     except BlackoutPeriod as e:
         audit_trail_alert(event='alert-blackout')
         return jsonify(status='ok', message=str(e), id=alert.id), 202
