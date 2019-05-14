@@ -23,7 +23,10 @@ class RateLimit(AlertaException):
 
 class HeartbeatReceived(AlertaException):
     """Alert was not processed because it was converted into a heartbeat."""
-    pass
+
+    def __init__(self, id):
+        self.id = id
+        super().__init__('Alert converted to heartbeat')
 
 
 class BlackoutPeriod(AlertaException):

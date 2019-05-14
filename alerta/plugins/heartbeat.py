@@ -22,8 +22,8 @@ class HeartbeatReceiver(PluginBase):
                 timeout=alert.timeout,
                 customer=alert.customer
             )
-            hb.create()
-            raise HeartbeatReceived('Alert converted to heartbeat')
+            r = hb.create()
+            raise HeartbeatReceived(r.id)
 
         return alert
 
