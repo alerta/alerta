@@ -73,7 +73,7 @@ def login():
         raise ApiError('User {} not active'.format(email), 403)
     user.update_last_login()
 
-    scopes = Permission.lookup(login=user.email, roles=user.roles)
+    scopes = Permission.lookup(login=user.email, roles=user.roles + groups)
     customers = get_customers(login=user.email, groups=[user.domain] + groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
