@@ -35,7 +35,7 @@ setuptools.setup(
     url='https://github.com/guardian/alerta',
     license='Apache License 2.0',
     author='Nick Satterly',
-    author_email='nick.satterly@theguardian.com',
+    author_email='nick.satterly@gmail.com',
     packages=setuptools.find_packages(exclude=['tests']),
     install_requires=[
         'Flask>=0.10.1',
@@ -87,7 +87,8 @@ setuptools.setup(
     keywords='alert monitoring system wsgi application api',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
-        'Environment :: Console',
+        'Environment :: Web Environment',
+        'Environment :: Plugins',
         'Framework :: Flask',
         'Intended Audience :: Information Technology',
         'Intended Audience :: System Administrators',
