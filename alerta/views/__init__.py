@@ -55,7 +55,12 @@ def config():
             'name': alarm_model.name,
             'severity': alarm_model.Severity,
             'colors': alarm_model.Colors,
-            'status': alarm_model.Status
+            'status': alarm_model.Status,
+            'defaults': {
+                'status': alarm_model.DEFAULT_STATUS,
+                'normal_severity': alarm_model.DEFAULT_NORMAL_SEVERITY,
+                'previous_severity': alarm_model.DEFAULT_PREVIOUS_SEVERITY
+            }
         },
         'auth_required': current_app.config['AUTH_REQUIRED'],
         'provider': current_app.config['AUTH_PROVIDER'],
