@@ -48,7 +48,7 @@ class Logger:
                 'disable_existing_loggers': False,
                 'formatters': {
                     'default': {
-                        'format': logging.BASIC_FORMAT
+                        '()': 'alerta.utils.logging.CustomFormatter'
                     },
                     'simple': {
                         'format': '%(levelname)s %(message)s'
@@ -106,14 +106,6 @@ class RequestFilter(logging.Filter):
         super().__init__()
 
     def filter(self, record):
-        if flask.has_request_context():
-            record.endpoint = request.endpoint
-            record.method = request.method
-            record.url = request.url
-            record.reqargs = request.args
-            record.data = request.get_data(as_text=True)
-            record.remote_addr = request.remote_addr
-            record.user = g.login if hasattr(g, 'login') else None
 
         if hasattr(record, 'method'):
             if record.method in self.methods:
@@ -122,11 +114,43 @@ class RequestFilter(logging.Filter):
             return True
 
 
+class CustomFormatter(logging.Formatter):
+
+    def __init__(self):
+
+        self.formatters = {
+            'alerta': '%(asctime)s %(name)s[%(process)d]: [%(levelname)s] %(message)s [in %(pathname)s:%(lineno)d]',
+            'flask': '%(asctime)s %(name)s[%(process)d]: [%(levelname)s] %(message)s',
+            'request': '%(asctime)s %(name)s[%(process)d]: [%(levelname)s] %(message)s request_id=%(request_id)s ip=%(remote_addr)s',
+            'urllib3': '%(asctime)s %(name)s[%(process)d]: [%(levelname)s] %(message)s',
+            'werkzeug': '%(asctime)s %(name)s[%(process)d]: %(message)s'
+        }
+        self.default_formatter = logging.BASIC_FORMAT
+        super().__init__()
+
+    def format(self, record):
+
+        fmt = record.name.split('.').pop(0)
+        if flask.has_request_context():
+            record.request_id = g.request_id if hasattr(g, 'request_id') else '-'
+            record.endpoint = request.endpoint
+            record.method = request.method
+            record.url = request.url
+            record.reqargs = request.args
+            record.data = request.get_data(as_text=True)
+            record.remote_addr = request.remote_addr
+            record.user = g.login if hasattr(g, 'login') else None
+            fmt = 'request'
+
+        formatter = logging.Formatter(self.formatters.get(fmt, self.default_formatter))
+        return formatter.format(record)
+
+
 class JSONFormatter(logging.Formatter):
 
     RECORD_ATTRS = [
-        'name', 'levelno', 'levelname', 'pathname', 'filename', 'module', 'lineno',
-        'funcName', 'created', 'thread', 'threadName', 'process',  # 'message',
+        'request_id', 'name', 'levelno', 'levelname', 'pathname', 'filename', 'module',
+        'lineno', 'funcName', 'created', 'thread', 'threadName', 'process',  # 'message',
         'endpoint', 'method', 'url', 'reqargs', 'data', 'remote_addr', 'user'
     ]
 

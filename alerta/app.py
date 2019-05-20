@@ -16,9 +16,11 @@ from alerta.utils.key import ApiKeyHelper
 from alerta.utils.logging import Logger
 from alerta.utils.mailer import Mailer
 from alerta.utils.plugin import Plugins
+from alerta.utils.tracing import Tracing
 from alerta.utils.webhook import CustomWebhooks
 
 config = Config()
+tracing = Tracing()
 logger = Logger()
 hooks = HookTrigger()
 audit = AuditTrail()
@@ -44,6 +46,7 @@ def create_app(config_override: Dict[str, Any]=None, environment: str=None) -> F
     config.init_app(app)
     app.config.update(config_override or {})
 
+    tracing.setup_tracing(app)
     logger.setup_logging(app)
 
     if app.config['USE_PROXYFIX']:
