@@ -2,7 +2,7 @@
 import traceback
 from typing import Any, Dict, Tuple, Union
 
-from flask import Response, current_app, jsonify
+from flask import Response, current_app, g, jsonify
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import RoutingException
 
@@ -53,6 +53,7 @@ class BaseError(Exception):
         if code is not None:
             self.code = code
         self.errors = errors
+        self.request_id = g.request_id if hasattr(g, 'request_id') else None
 
 
 class ApiError(BaseError):
@@ -94,7 +95,8 @@ def handle_api_error(error: ApiError) -> Tuple[Response, int]:
         'status': 'error',
         'message': error.message,
         'code': error.code,
-        'errors': error.errors
+        'errors': error.errors,
+        'requestId': error.request_id
     }), error.code
 
 
@@ -103,7 +105,8 @@ def handle_basic_auth_error(error: BasicAuthError) -> Tuple[Response, int, Dict[
         'status': 'error',
         'message': error.message,
         'code': error.code,
-        'errors': error.errors
+        'errors': error.errors,
+        'requestId': error.request_id
     }), error.code, {'WWW-Authenticate': 'Basic realm=%s' % current_app.config['BASIC_AUTH_REALM']}
 
 
@@ -120,5 +123,6 @@ def handle_exception(error: Exception) -> Union[Tuple[Response, int], Exception]
         'code': 500,
         'errors': [
             traceback.format_exc()
-        ]
+        ],
+        'requestId': g.request_id
     }), 500

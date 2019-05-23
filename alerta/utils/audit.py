@@ -1,11 +1,12 @@
 import json
+import os
+import uuid
 from datetime import datetime
 from typing import Any, List
-from uuid import uuid4
 
 import blinker
 import requests
-from flask import Flask
+from flask import Flask, g
 
 from alerta.utils.format import CustomJSONEncoder
 
@@ -80,7 +81,7 @@ class AuditTrail:
     def _fmt(category: str, event: str, message: str, user: str, customers: List[str], scopes: List[str],
              resource_id: str, type: str, request: Any, **extra: Any) -> str:
         return json.dumps({
-            'id': str(uuid4()),
+            'id': str(uuid.uuid4()),
             '@timestamp': datetime.utcnow(),
             'event': event,
             'category': category,
@@ -95,6 +96,7 @@ class AuditTrail:
                 'type': type
             },
             'request': {
+                'id': g.request_id if hasattr(g, 'request_id') else None,
                 'endpoint': request.endpoint,
                 'method': request.method,
                 'url': request.url,
