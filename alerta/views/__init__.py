@@ -1,12 +1,12 @@
+from flask import Blueprint, current_app, jsonify, request
 
 from alerta.app import alarm_model, custom_webhooks
 from alerta.exceptions import ApiError
 from alerta.utils.response import absolute_url
-from flask import Blueprint, request, jsonify, current_app
 
 api = Blueprint('api', __name__)
 
-from . import alerts, blackouts, customers, groups, heartbeats, keys, permissions, users, oembed  # noqa
+from . import alerts, blackouts, customers, groups, heartbeats, keys, oembed, permissions, users  # noqa
 
 try:
     from . import bulk  # noqa
