@@ -552,7 +552,7 @@ class BlackoutsTestCase(unittest.TestCase):
             'resource': 'node404',
             'service': ['Network', 'Web'],
             'startTime': '2019-01-01T00:00:00.000Z',
-            'endTime': '2019-12-31T23:59:59.999Z'
+            'endTime': '2049-12-31T23:59:59.999Z'
         }
         response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
         self.assertEqual(response.status_code, 201)
@@ -560,10 +560,16 @@ class BlackoutsTestCase(unittest.TestCase):
 
         blackout_id = data['id']
 
+        # suppress alert
+        response = self.client.post('/alert', data=json.dumps(self.prod_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 202)
+
         # extend blackout period & change environment
         update = {
             'environment': 'Development',
-            'endTime': '2020-12-31T23:59:59.999Z'
+            'event': None,
+            'tags': [],
+            'endTime': '2099-12-31T23:59:59.999Z'
         }
         response = self.client.put('/blackout/' + blackout_id, data=json.dumps(update), headers=self.headers)
         self.assertEqual(response.status_code, 200)
@@ -579,7 +585,11 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(data['blackout']['service'], ['Network', 'Web'])
         self.assertEqual(data['blackout']['group'], None)
         self.assertEqual(data['blackout']['startTime'], '2019-01-01T00:00:00.000Z')
-        self.assertEqual(data['blackout']['endTime'], '2020-12-31T23:59:59.999Z')
+        self.assertEqual(data['blackout']['endTime'], '2099-12-31T23:59:59.999Z')
+
+        # suppress alert
+        response = self.client.post('/alert', data=json.dumps(self.dev_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 202)
 
     def test_user_info(self):
 
