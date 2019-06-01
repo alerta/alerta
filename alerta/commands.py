@@ -62,7 +62,7 @@ def keys():
     for admin in current_app.config['ADMIN_USERS']:
         try:
             db.get_db()  # init db on global app context
-            keys = ApiKey.find_by_user(admin)
+            keys = [k for k in ApiKey.find_by_user(admin) if Scope.admin in k.scopes]
         except Exception as e:
             click.echo('ERROR: {}'.format(e))
         else:
