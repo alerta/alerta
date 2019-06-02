@@ -74,7 +74,6 @@ class User:
             'login': self.login,
             'email': self.email,
             'domain': self.domain,
-            'provider': 'basic',
             'status': self.status,
             'roles': self.roles,
             'attributes': self.attributes,
