@@ -1592,7 +1592,7 @@ class Backend(Database):
             {'$match': {'status': 'shelved'}},
             {'$unwind': '$history'},
             {'$match': {
-                'history.type': 'action',
+                'history.type': 'shelve',
                 'history.status': 'shelved'
             }},
             {'$sort': {'history.updateTime': -1}},
