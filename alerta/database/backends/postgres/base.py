@@ -1252,7 +1252,7 @@ class Backend(Database):
             SELECT DISTINCT ON (a.id) a.id, a.event, a.last_receive_id, h.update_time, a.timeout
               FROM alerts a, UNNEST(history) h
              WHERE a.status='shelved'
-               AND h.type='action'
+               AND h.type='shelve'
                AND h.status='shelved'
           ORDER BY a.id, h.update_time DESC
         )
