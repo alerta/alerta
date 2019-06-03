@@ -101,7 +101,8 @@ def openid():
 
     subject = userinfo['sub']
     name = userinfo.get('name') or id_token.get('name')
-    nickname = userinfo.get('nickname')
+    username = userinfo.get('preferred_username') or id_token.get('preferred_username')
+    nickname = userinfo.get('nickname') or id_token.get('nickname')
     email = userinfo.get('email') or id_token.get('email')
     email_verified = userinfo.get('email_verified', id_token.get('email_verified', bool(email)))
     picture = userinfo.get('picture') or id_token.get('picture')
@@ -113,7 +114,7 @@ def openid():
         group_claim: userinfo.get(group_claim) or id_token.get(group_claim, []),
     }
 
-    login = userinfo.get('preferred_username', nickname or email)
+    login = username or nickname or email
     if not login:
         raise ApiError("Must support one of the following OpenID claims: 'preferred_username', 'nickname' or 'email'", 400)
 
