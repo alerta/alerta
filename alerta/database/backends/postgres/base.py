@@ -1241,9 +1241,9 @@ class Backend(Database):
         select = """
             SELECT id, event, last_receive_id
               FROM alerts
-             WHERE status NOT IN ('expired','shelved') AND timeout!=0
+             WHERE status NOT IN ('expired','shelved') AND COALESCE(timeout, {timeout})!=0
                AND (last_receive_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
-        """
+        """.format(timeout=current_app.config['ALERT_TIMEOUT'])
         expired = self._fetchall(select, {})
 
         # get list of alerts to be unshelved
@@ -1258,7 +1258,7 @@ class Backend(Database):
         )
         SELECT id, event, last_receive_id
           FROM shelved
-         WHERE (update_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
+         WHERE timeout!=0 AND (update_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """
         unshelved = self._fetchall(select, {})
 
