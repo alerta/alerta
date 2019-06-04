@@ -236,6 +236,8 @@ class StateMachine(AlarmModel):
             return next_state('CLS-*', StateMachine.DEFAULT_NORMAL_SEVERITY, CLOSED)
 
         if state == EXPIRED:
+            if action and action != ACTION_OPEN:
+                raise InvalidAction('invalid action for current {} status'.format(state))
             if StateMachine.Severity[current_severity] != StateMachine.NORMAL_SEVERITY_LEVEL:
                 return next_state('EXP-1', current_severity, OPEN)
 
