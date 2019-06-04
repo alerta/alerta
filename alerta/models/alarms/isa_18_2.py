@@ -40,8 +40,7 @@ COLOR_MAP = {
         OK: '#00CC00',  # lime green
         UNKNOWN: 'silver'
     },
-    'text': 'black',
-    'highlight': 'skyblue '
+    'text': 'black'
 }
 
 A_NORM = 'NORM'

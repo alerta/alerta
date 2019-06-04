@@ -37,8 +37,7 @@ COLOR_MAP = {
         'trace': '#7554BF',  # violet
         'unknown': 'silver'
     },
-    'text': 'black',
-    'highlight': 'skyblue '
+    'text': 'black'
 }
 
 OPEN = 'open'
