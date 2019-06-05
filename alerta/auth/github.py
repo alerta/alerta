@@ -6,6 +6,7 @@ from flask_cors import cross_origin
 from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
 from alerta.models.permission import Permission
+from alerta.models.user import User
 from alerta.utils.audit import auth_audit_trail
 
 from . import auth
@@ -27,35 +28,58 @@ def github():
         current_app.config['OAUTH2_CLIENT_SECRET'].split(',')
     ))
     client_secret = client_lookup.get(request.json['clientId'], None)
-    params = {
-        'client_id': request.json['clientId'],
+    data = {
+        'grant_type': 'authorization_code',
+        'code': request.json['code'],
         'redirect_uri': request.json['redirectUri'],
+        'client_id': request.json['clientId'],
         'client_secret': client_secret,
-        'code': request.json['code']
     }
+    r = requests.post(access_token_url, data, headers={'Accept': 'application/json'})
+    token = r.json()
 
-    headers = {'Accept': 'application/json'}
-    r = requests.get(access_token_url, headers=headers, params=params)
-    access_token = r.json()
-
-    r = requests.get(github_api_url + '/user', params=access_token)
+    headers = {'Authorization': 'token {}'.format(token['access_token'])}
+    r = requests.get(github_api_url + '/user', headers=headers)
     profile = r.json()
 
-    r = requests.get(github_api_url + '/user/orgs', params=access_token)  # list public and private Github orgs
+    r = requests.get(github_api_url + '/user/orgs', headers=headers)  # list public and private Github orgs
     organizations = [o['login'] for o in r.json()]
-    login = profile['login']
+
+    subject = str(profile['id'])
+    name = profile['name']
+    username = '@' + profile['login']
+    email = profile['email']
+    email_verified = True if email else False
+    picture = profile['avatar_url']
+
+    login = username or email
+    if not login:
+        raise ApiError("Must allow access to GitHub user profile information: 'login' or 'email'", 400)
+
+    user = User.find_by_id(id=subject)
+    if not user:
+        user = User(id=subject, name=name, login=login, password='', email=email,
+                    roles=[], text='', email_verified=email_verified)
+        user.create()
+    else:
+        user.update(login=login, email=email)
+
+    roles = organizations or user.roles
+    groups = organizations
+
+    if user.status != 'active':
+        raise ApiError('User {} is not active'.format(login), 403)
 
     if not_authorized('ALLOWED_GITHUB_ORGS', organizations):
-        raise ApiError('User %s is not authorized' % login, 403)
+        raise ApiError('User {} is not authorized'.format(login), 403)
+    user.update_last_login()
 
-    scopes = Permission.lookup(login, roles=organizations)
-    customers = get_customers(login, groups=organizations)
+    scopes = Permission.lookup(login, roles)
+    customers = get_customers(login, groups=[user.domain] + groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='github-login', message='user login via GitHub',
-                          user=login, customers=customers, scopes=scopes,
-                          resource_id=profile['id'], type='github', request=request)
+                          user=login, customers=customers, scopes=scopes, resource_id=subject, type='user', request=request)
 
-    token = create_token(user_id=profile['id'], name=profile.get('name', '@' + login), login=login, provider='github',
-                         customers=customers, scopes=scopes, orgs=organizations, email=profile.get('email', None),
-                         email_verified=True if 'email' in profile else False)
+    token = create_token(user_id=subject, name=name, login=login, provider='github', customers=customers,
+                         scopes=scopes, orgs=organizations, email=email, email_verified=email_verified, picture=picture)
     return jsonify(token=token.tokenize)
