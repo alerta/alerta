@@ -222,6 +222,148 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['customers'], ['Alerta IO'], claims)
 
     @requests_mock.mock()
+    def test_github(self, m):
+
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': True,
+            'AUTH_PROVIDER': 'github',
+            # 'GITHUB_URL': 'https://github.com',
+            'OAUTH2_CLIENT_ID': '',
+            'OAUTH2_CLIENT_SECRET': '',
+            'ALLOWED_GITHUB_ORGS': ['alerta'],
+            'CUSTOMER_VIEWS': True,
+        }
+
+        authorization_grant = """
+        {
+          "code": "342633785949fc9da249",
+          "clientId": "4f846ebb21eec62ebdf0",
+          "redirectUri": "http://local.alerta.io:8000"
+        }
+        """
+
+        access_token = """
+        {
+          "access_token": "ef0b62b3d7f14ca003008dcaee2b313265fa6199",
+          "token_type": "bearer",
+          "scope": "read:org,user:email"
+        }
+        """
+
+        profile = """
+        {
+          "login": "satterly",
+          "id": 615058,
+          "node_id": "MDQ6VXNlcgYxNTA1Nw==",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/615057?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/satterly",
+          "html_url": "https://github.com/satterly",
+          "followers_url": "https://api.github.com/users/satterly/followers",
+          "following_url": "https://api.github.com/users/satterly/following{/other_user}",
+          "gists_url": "https://api.github.com/users/satterly/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/satterly/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/satterly/subscriptions",
+          "organizations_url": "https://api.github.com/users/satterly/orgs",
+          "repos_url": "https://api.github.com/users/satterly/repos",
+          "events_url": "https://api.github.com/users/satterly/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/satterly/received_events",
+          "type": "User",
+          "site_admin": false,
+          "name": "Nick Satterly",
+          "company": "@alerta",
+          "blog": "",
+          "location": "Stockholm",
+          "email": null,
+          "hireable": null,
+          "bio": null,
+          "public_repos": 29,
+          "public_gists": 18,
+          "followers": 76,
+          "following": 4,
+          "created_at": "2011-02-12T23:45:35Z",
+          "updated_at": "2019-05-15T14:27:25Z"
+        }
+        """
+
+        orgs = """
+        [
+          {
+            "login": "ganglia",
+            "id": 360097,
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjM2MDA5Nw==",
+            "url": "https://api.github.com/orgs/ganglia",
+            "repos_url": "https://api.github.com/orgs/ganglia/repos",
+            "events_url": "https://api.github.com/orgs/ganglia/events",
+            "hooks_url": "https://api.github.com/orgs/ganglia/hooks",
+            "issues_url": "https://api.github.com/orgs/ganglia/issues",
+            "members_url": "https://api.github.com/orgs/ganglia/members{/member}",
+            "public_members_url": "https://api.github.com/orgs/ganglia/public_members{/member}",
+            "avatar_url": "https://avatars2.githubusercontent.com/u/360097?v=4",
+            "description": null
+          },
+          {
+            "login": "alerta",
+            "id": 5067139,
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjUwNjcxMzk=",
+            "url": "https://api.github.com/orgs/alerta",
+            "repos_url": "https://api.github.com/orgs/alerta/repos",
+            "events_url": "https://api.github.com/orgs/alerta/events",
+            "hooks_url": "https://api.github.com/orgs/alerta/hooks",
+            "issues_url": "https://api.github.com/orgs/alerta/issues",
+            "members_url": "https://api.github.com/orgs/alerta/members{/member}",
+            "public_members_url": "https://api.github.com/orgs/alerta/public_members{/member}",
+            "avatar_url": "https://avatars1.githubusercontent.com/u/5067139?v=4",
+            "description": "@alertaio"
+          }
+        ]
+        """
+
+        m.post('https://github.com/login/oauth/access_token', text=access_token)
+        m.get('https://api.github.com/user', text=profile)
+        m.get('https://api.github.com/user/orgs', text=orgs)
+
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # add customer mapping
+        payload = {
+            'customer': 'Alerta IO',
+            'match': 'alerta'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.post('/auth/github', data=authorization_grant, content_type='application/json')
+        self.assertEqual(response.status_code, 200, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        claims = jwt.decode(data['token'], verify=False)
+
+        self.assertEqual(claims['name'], 'Nick Satterly', claims)
+        self.assertEqual(claims['preferred_username'], '@satterly', claims)
+        self.assertEqual(claims['provider'], 'github', claims)
+        self.assertEqual(claims['orgs'], ['ganglia', 'alerta'], claims)
+        self.assertEqual(claims['scope'], 'read write', claims)
+        self.assertEqual(claims.get('email_verified'), False, claims)
+        self.assertEqual(claims['customers'], ['Alerta IO'], claims)
+
+    @requests_mock.mock()
     def test_gitlab(self, m):
 
         test_config = {
