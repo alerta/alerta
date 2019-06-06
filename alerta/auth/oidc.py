@@ -18,7 +18,7 @@ from . import auth
 def get_oidc_configuration(app):
 
     OIDC_ISSUER_URL_BY_PROVIDER = {
-        'azure': 'https://sts.windows.net/{}/'.format(app.config['AZURE_TENANT']),
+        'azure': 'https://login.microsoftonline.com//{}/v2.0'.format(app.config['AZURE_TENANT']),
         'gitlab': app.config['GITLAB_URL'],
         'google': 'https://accounts.google.com',
         'keycloak': '{}/auth/realms/{}'.format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM'])
@@ -35,8 +35,8 @@ def get_oidc_configuration(app):
     except Exception as e:
         raise ApiError('Could not get OpenID configuration from well known URL: {}'.format(str(e)), 503)
 
-    if config['issuer'] != issuer_url:
-        raise ApiError('Issuer Claim does not match Issuer URL used to retrieve OpenID configuration', 503)
+    #if config['issuer'] != issuer_url:
+    #    raise ApiError('Issuer Claim does not match Issuer URL used to retrieve OpenID configuration: {}'.format(issuer_url), 503)
 
     if app.config['OIDC_VERIFY_TOKEN']:
         try:
@@ -69,6 +69,7 @@ def openid():
         'redirect_uri': request.json['redirectUri'],
         'client_id': request.json['clientId'],
         'client_secret': current_app.config['OAUTH2_CLIENT_SECRET'],
+        'scope' : 'openid profile email',
     }
     r = requests.post(token_endpoint, data)
     token = r.json()
@@ -103,7 +104,7 @@ def openid():
     name = userinfo.get('name') or id_token.get('name')
     username = userinfo.get('preferred_username') or id_token.get('preferred_username')
     nickname = userinfo.get('nickname') or id_token.get('nickname')
-    email = userinfo.get('email') or id_token.get('email')
+    email = userinfo.get('email') or id_token.get('email') or username
     email_verified = userinfo.get('email_verified', id_token.get('email_verified', bool(email)))
     picture = userinfo.get('picture') or id_token.get('picture')
 
@@ -114,7 +115,7 @@ def openid():
         group_claim: userinfo.get(group_claim) or id_token.get(group_claim, []),
     }
 
-    login = username or nickname or email
+    login = email
     if not login:
         raise ApiError("Must support one of the following OpenID claims: 'preferred_username', 'nickname' or 'email'", 400)
 
