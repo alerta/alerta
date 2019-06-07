@@ -84,7 +84,7 @@ LDAP_DOMAINS_GROUP = {}  # type: Dict[str, str]
 LDAP_DOMAINS_BASEDN = {}  # type: Dict[str, str]
 
 # Microsof Azure Active Directory
-AZURE_TENANT = None
+AZURE_TENANT = None  # "common", "organizations", "consumers" or tenant ID
 
 # Keycloak
 KEYCLOAK_URL = None
