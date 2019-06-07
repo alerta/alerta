@@ -18,7 +18,7 @@ from . import auth
 def get_oidc_configuration(app):
 
     OIDC_ISSUER_URL_BY_PROVIDER = {
-        'azure': 'https://sts.windows.net/{}/'.format(app.config['AZURE_TENANT']),
+        'azure': 'https://login.microsoftonline.com/{}/v2.0'.format(app.config['AZURE_TENANT']),
         'gitlab': app.config['GITLAB_URL'],
         'google': 'https://accounts.google.com',
         'keycloak': '{}/auth/realms/{}'.format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM'])
@@ -35,7 +35,7 @@ def get_oidc_configuration(app):
     except Exception as e:
         raise ApiError('Could not get OpenID configuration from well known URL: {}'.format(str(e)), 503)
 
-    if config['issuer'] != issuer_url:
+    if config['issuer'].format(tenantid=app.config['AZURE_TENANT']) != issuer_url:
         raise ApiError('Issuer Claim does not match Issuer URL used to retrieve OpenID configuration', 503)
 
     if app.config['OIDC_VERIFY_TOKEN']:
@@ -72,6 +72,10 @@ def openid():
     }
     r = requests.post(token_endpoint, data)
     token = r.json()
+
+    if 'error' in token:
+        error_text = token.get('error_description') or token['error']
+        raise ApiError(error_text)
 
     try:
         if current_app.config['OIDC_VERIFY_TOKEN']:
