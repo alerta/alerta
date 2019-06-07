@@ -18,14 +18,13 @@ class AuthProvidersTestCase(unittest.TestCase):
         db.destroy()
 
     @requests_mock.mock()
-    def test_azure(self, m):
+    def test_azure_v1(self, m):
 
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': True,
-            'AUTH_PROVIDER': 'azure',
-            # 'OIDC_ISSUER_URL': 'https://sts.windows.net/f24341ef-7a6f-4cff-abb7-99a11ab11127/',
-            'AZURE_TENANT': 'f24341ef-7a6f-4cff-abb7-99a11ab11127',
+            'AUTH_PROVIDER': 'openid',
+            'OIDC_ISSUER_URL': 'https://sts.windows.net/f24341ef-7a6f-4cff-abb7-99a11ab11127/',
             'CUSTOMER_VIEWS': True,
         }
 
@@ -207,7 +206,7 @@ class AuthProvidersTestCase(unittest.TestCase):
                                     content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 201)
 
-        response = self.client.post('/auth/azure', data=authorization_grant, content_type='application/json')
+        response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
         claims = jwt.decode(data['token'], verify=False)
@@ -220,6 +219,235 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
         self.assertEqual(claims.get('email_verified'), True, claims)
         self.assertEqual(claims['customers'], ['Alerta IO'], claims)
+
+    @requests_mock.mock()
+    def test_azure_v2(self, m):
+
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': True,
+            'AUTH_PROVIDER': 'azure',
+            'AZURE_TENANT': 'common',
+            'CUSTOMER_VIEWS': True,
+        }
+
+        authorization_grant = """
+        {
+          "code": "Mfd029b75-69e8-db17-b6c8-9062cafb6d06",
+          "clientId": "00bb046a-36d9-4411-b93a-2f10fb35f0b5",
+          "redirectUri": "http://localhost:8000",
+          "state": "kr8y390mokk"
+        }
+        """
+
+        discovery_doc = """
+        {
+          "authorization_endpoint": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+          "token_endpoint": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+          "token_endpoint_auth_methods_supported": [
+            "client_secret_post",
+            "private_key_jwt",
+            "client_secret_basic"
+          ],
+          "jwks_uri": "https://login.microsoftonline.com/common/discovery/v2.0/keys",
+          "response_modes_supported": [
+            "query",
+            "fragment",
+            "form_post"
+          ],
+          "subject_types_supported": [
+            "pairwise"
+          ],
+          "id_token_signing_alg_values_supported": [
+            "RS256"
+          ],
+          "http_logout_supported": true,
+          "frontchannel_logout_supported": true,
+          "end_session_endpoint": "https://login.microsoftonline.com/common/oauth2/v2.0/logout",
+          "response_types_supported": [
+            "code",
+            "id_token",
+            "code id_token",
+            "id_token token"
+          ],
+          "scopes_supported": [
+            "openid",
+            "profile",
+            "email",
+            "offline_access"
+          ],
+          "issuer": "https://login.microsoftonline.com/{tenantid}/v2.0",
+          "claims_supported": [
+            "sub",
+            "iss",
+            "cloud_instance_name",
+            "cloud_instance_host_name",
+            "cloud_graph_host_name",
+            "msgraph_host",
+            "aud",
+            "exp",
+            "iat",
+            "auth_time",
+            "acr",
+            "nonce",
+            "preferred_username",
+            "name",
+            "tid",
+            "ver",
+            "at_hash",
+            "c_hash",
+            "email"
+          ],
+          "request_uri_parameter_supported": false,
+          "userinfo_endpoint": "https://graph.microsoft.com/oidc/userinfo",
+          "tenant_region_scope": null,
+          "cloud_instance_name": "microsoftonline.com",
+          "cloud_graph_host_name": "graph.windows.net",
+          "msgraph_host": "graph.microsoft.com",
+          "rbac_url": "https://pas.windows.net"
+        }
+        """
+
+        jwks_uri = """
+        {
+          "keys": [
+            {
+              "kty": "RSA",
+              "use": "sig",
+              "kid": "HBxl9mAe6gxavCkcoOU2THsDNa0",
+              "x5t": "HBxl9mAe6gxavCkcoOU2THsDNa0",
+              "n": "0afCaiPd_xl_ewZGfOkxKwYPfI4Efu0COfzajK_gnviWk7w3R-88Dmb0j24DSn1qVR3ptCnA1-QUfUMyhvl8pT5-t7oRkLNPzp0hVV-dAG3ZoMaSEMW0wapshA6LVGROpBncDmc66hx5-t3eOFA24fiKfQiv2TJth3Y9jhHnLe7GBOoomWYx_pJiEG3mhYFIt7shaEwNcEjo34vr1WWzRm8D8gogjrJWd1moyeGftWLzvfp9e79QwHYJv907vQbFrT7LYuy8g7-Rpxujgumw2mx7CewcCZXwPiZ-raM3Ap1FhINiGpd5mbbYrFDDFIWAjWPUY6KNvXtc24yUfZr4MQ",
+              "e": "AQAB",
+              "x5c": [
+                "MIIDBTCCAe2gAwIBAgIQWcq84CdVhKVEcKbZdMOMGjANBgkqhkiG9w0BAQsFADAtMSswKQYDVQQDEyJhY2NvdW50cy5hY2Nlc3Njb250cm9sLndpbmRvd3MubmV0MB4XDTE5MDMxNDAwMDAwMFoXDTIxMDMxNDAwMDAwMFowLTErMCkGA1UEAxMiYWNjb3VudHMuYWNjZXNzY29udHJvbC53aW5kb3dzLm5ldDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANGnwmoj3f8Zf3sGRnzpMSsGD3yOBH7tAjn82oyv4J74lpO8N0fvPA5m9I9uA0p9alUd6bQpwNfkFH1DMob5fKU+fre6EZCzT86dIVVfnQBt2aDGkhDFtMGqbIQOi1RkTqQZ3A5nOuocefrd3jhQNuH4in0Ir9kybYd2PY4R5y3uxgTqKJlmMf6SYhBt5oWBSLe7IWhMDXBI6N+L69Vls0ZvA/IKII6yVndZqMnhn7Vi8736fXu/UMB2Cb/dO70Gxa0+y2LsvIO/kacbo4LpsNpsewnsHAmV8D4mfq2jNwKdRYSDYhqXeZm22KxQwxSFgI1j1GOijb17XNuMlH2a+DECAwEAAaMhMB8wHQYDVR0OBBYEFIkZ5wrSV8lohIsreOmig7h5wQDkMA0GCSqGSIb3DQEBCwUAA4IBAQAd8sKZLwZBocM4pMIRKarK60907jQCOi1m449WyToUcYPXmU7wrjy9fkYwJdC5sniItVBJ3RIQbF/hyjwnRoIaEcWYMAftBnH+c19WIuiWjR3EHnIdxmSopezl/9FaTNghbKjZtrKK+jL/RdkMY9uWxwUFLjTAtMm24QOt2+CGntBA9ohQUgiML/mlUpf4qEqa2/Lh+bjiHl3smg4TwuIl0i/TMN9Rg7UgQ6BnqfgiuMl6BtBiatNollwgGNI2zJEi47MjdeMf8+C3tXs//asqqlqJCyVLwN7AN47ynYmkl89MleOfKIojhrGRxryZG2nRjD9u/kZbPJ8e3JE9px67"
+              ],
+              "issuer": "https://login.microsoftonline.com/{tenantid}/v2.0"
+            },
+            {
+              "kty": "RSA",
+              "use": "sig",
+              "kid": "CtfQC8Le-8NsC7oC2zQkZpcrfOc",
+              "x5t": "CtfQC8Le-8NsC7oC2zQkZpcrfOc",
+              "n": "jmRWLbot3VWk7VHgzdUS0Oac_FY4ffz-fXyqlFFByYxYcI2X1Bm51kBfw7YDvDxTEew5yGECElKCUaNoe4eWc0OCrLNTisjLJ3oS0XhR0DDKm8iB15ciyCpJxHoqhN9_fBjpaOBucKKNzKWU0dBu8biX_vS3h0hr2Bc6M5G9YVPIWBrOGPfwzUrk3d3gikyNF8lTvxWFzUj9yuUhuwlD2UuAEtwwKT0LC7aZz-GjuRwUxnuNNSlPie3imrlGeII1tnILNJ7bC3dJvoTr9M9lptAThDkFFahpssSsCir4dBkViDTMsDw5CC9jtPWKTwH33P6fSrcwxl0gZJKpFNlGyw",
+              "e": "AQAB",
+              "x5c": [
+                "MIIDBTCCAe2gAwIBAgIQIKS1IbCfX7xH/fHDCq11ljANBgkqhkiG9w0BAQsFADAtMSswKQYDVQQDEyJhY2NvdW50cy5hY2Nlc3Njb250cm9sLndpbmRvd3MubmV0MB4XDTE5MDQyNDAwMDAwMFoXDTIxMDQyNDAwMDAwMFowLTErMCkGA1UEAxMiYWNjb3VudHMuYWNjZXNzY29udHJvbC53aW5kb3dzLm5ldDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAI5kVi26Ld1VpO1R4M3VEtDmnPxWOH38/n18qpRRQcmMWHCNl9QZudZAX8O2A7w8UxHsOchhAhJSglGjaHuHlnNDgqyzU4rIyyd6EtF4UdAwypvIgdeXIsgqScR6KoTff3wY6WjgbnCijcyllNHQbvG4l/70t4dIa9gXOjORvWFTyFgazhj38M1K5N3d4IpMjRfJU78Vhc1I/crlIbsJQ9lLgBLcMCk9Cwu2mc/ho7kcFMZ7jTUpT4nt4pq5RniCNbZyCzSe2wt3Sb6E6/TPZabQE4Q5BRWoabLErAoq+HQZFYg0zLA8OQgvY7T1ik8B99z+n0q3MMZdIGSSqRTZRssCAwEAAaMhMB8wHQYDVR0OBBYEFFjkfvrQ97CY5HSyrhd98vkwj0SuMA0GCSqGSIb3DQEBCwUAA4IBAQAHVEnT+HZIxZc2jIdPqKcwCyCR4t44dsDTLYpvLB87iAJHckWgSblqgi/2hgW773PURIFSVWZbyT+/EgDPy0Bd+SHn0P9f4dOSrEWK6Ug3/GsOnUzooJ4SNcP91Shv5y5n5kCcZuglpnTBil85q+ZgB44CXQ5dPzDlZgO2IcCi2ZCYPGZUvKWSFnkQa0pjXu6wAArj1wWGbX7LuaPsSkOD1MK0A1/ve9V9kTeYr0fmmP+hD2TtOY+5fcv9oMbMQuL99Pwr+erjN3dDz7bQ0SDK+E8cerYgorHqjSIxbgH55yR9M1ca8sRriTl8Ah0rLAp/JIpFzn35oyrzCf6zzzWh"
+              ],
+              "issuer": "https://login.microsoftonline.com/{tenantid}/v2.0"
+            },
+            {
+              "kty": "RSA",
+              "use": "sig",
+              "kid": "u4OfNFPHwEBosHjtrauObV84LnY",
+              "x5t": "u4OfNFPHwEBosHjtrauObV84LnY",
+              "n": "oRRQG-ib30x09eWtDpL0wWahA-hgjc0lWoQU4lwBFjXV2PfPImiAvwxOxNG34Mgnw3K9huBYLsrvOQAbMdBmE8lwz8DFKMWqHqoH3xSqDGhIYFobQDiVRkkecpberH5hqJauSD7PiwDBSQ_RCDIjb0SOmSTpZR97Ws4k1z9158VRf4BUbGjzVt4tUAz_y2cI5JsXQfcgAPB3voP8eunxGwZ_iM8evw3hUOw7-nuiPyts7HSkvV6GMwrXfOymY_w07mYxw_2LnKInfsWBtcRIDG-Nrsj237LgtBhK7TkzuVrguq__-bkDwwF3qTRXGAX9KrwY4huRxDRslMIg30Hqgw",
+              "e": "AQAB",
+              "x5c": [
+                "MIIDBTCCAe2gAwIBAgIQdEMOjSqDVbdN3mzb2IumCzANBgkqhkiG9w0BAQsFADAtMSswKQYDVQQDEyJhY2NvdW50cy5hY2Nlc3Njb250cm9sLndpbmRvd3MubmV0MB4XDTE5MDYwNDAwMDAwMFoXDTIxMDYwNDAwMDAwMFowLTErMCkGA1UEAxMiYWNjb3VudHMuYWNjZXNzY29udHJvbC53aW5kb3dzLm5ldDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKEUUBvom99MdPXlrQ6S9MFmoQPoYI3NJVqEFOJcARY11dj3zyJogL8MTsTRt+DIJ8NyvYbgWC7K7zkAGzHQZhPJcM/AxSjFqh6qB98UqgxoSGBaG0A4lUZJHnKW3qx+YaiWrkg+z4sAwUkP0QgyI29Ejpkk6WUfe1rOJNc/defFUX+AVGxo81beLVAM/8tnCOSbF0H3IADwd76D/Hrp8RsGf4jPHr8N4VDsO/p7oj8rbOx0pL1ehjMK13zspmP8NO5mMcP9i5yiJ37FgbXESAxvja7I9t+y4LQYSu05M7la4Lqv//m5A8MBd6k0VxgF/Sq8GOIbkcQ0bJTCIN9B6oMCAwEAAaMhMB8wHQYDVR0OBBYEFNRP0Lf6MDeL11RDH0uL7H+/JqtLMA0GCSqGSIb3DQEBCwUAA4IBAQCJKR1nxp9Ij/yisCmDG7bdN1yHj/2HdVvyLfCCyReRfkB3cnTZVaIOBy5occGkdmsYJ+q8uqczkoCMAz3gvvq1c0msKEiNpqWNeU2aRXqyL3QZJ/GBmUK1I0tINPVv8j7znm0DcvHHXFvhzS8E4s8ai8vQkcpyac/7Z4PN43HtjDnkZo9Zxm7JahHshrhA8sSPvsuC4dQAcHbOrLbHG+HIo3Tq2pNl7mfQ9fVJ2FxbqlzPYr/rK8H2GTA6N55SuP3KTNvyL3RnMa3hXmGTdG1dpMFzD/IE623h/BqY6j29PyQC/+MUD4UCZ6KW9oIzpi27pKQagH1i1jpBU/ceH6AW"
+              ],
+              "issuer": "https://login.microsoftonline.com/{tenantid}/v2.0"
+            },
+            {
+              "kty": "RSA",
+              "use": "sig",
+              "kid": "M6pX7RHoraLsprfJeRCjSxuURhc",
+              "x5t": "M6pX7RHoraLsprfJeRCjSxuURhc",
+              "n": "xHScZMPo8FifoDcrgncWQ7mGJtiKhrsho0-uFPXg-OdnRKYudTD7-Bq1MDjcqWRf3IfDVjFJixQS61M7wm9wALDj--lLuJJ9jDUAWTA3xWvQLbiBM-gqU0sj4mc2lWm6nPfqlyYeWtQcSC0sYkLlayNgX4noKDaXivhVOp7bwGXq77MRzeL4-9qrRYKjuzHfZL7kNBCsqO185P0NI2Jtmw-EsqYsrCaHsfNRGRrTvUHUq3hWa859kK_5uNd7TeY2ZEwKVD8ezCmSfR59ZzyxTtuPpkCSHS9OtUvS3mqTYit73qcvprjl3R8hpjXLb8oftfpWr3hFRdpxrwuoQEO4QQ",
+              "e": "AQAB",
+              "x5c": [
+                "MIIC8TCCAdmgAwIBAgIQfEWlTVc1uINEc9RBi6qHMjANBgkqhkiG9w0BAQsFADAjMSEwHwYDVQQDExhsb2dpbi5taWNyb3NvZnRvbmxpbmUudXMwHhcNMTgxMDE0MDAwMDAwWhcNMjAxMDE0MDAwMDAwWjAjMSEwHwYDVQQDExhsb2dpbi5taWNyb3NvZnRvbmxpbmUudXMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDEdJxkw+jwWJ+gNyuCdxZDuYYm2IqGuyGjT64U9eD452dEpi51MPv4GrUwONypZF/ch8NWMUmLFBLrUzvCb3AAsOP76Uu4kn2MNQBZMDfFa9AtuIEz6CpTSyPiZzaVabqc9+qXJh5a1BxILSxiQuVrI2BfiegoNpeK+FU6ntvAZervsxHN4vj72qtFgqO7Md9kvuQ0EKyo7Xzk/Q0jYm2bD4SypiysJoex81EZGtO9QdSreFZrzn2Qr/m413tN5jZkTApUPx7MKZJ9Hn1nPLFO24+mQJIdL061S9LeapNiK3vepy+muOXdHyGmNctvyh+1+laveEVF2nGvC6hAQ7hBAgMBAAGjITAfMB0GA1UdDgQWBBQ5TKadw06O0cvXrQbXW0Nb3M3h/DANBgkqhkiG9w0BAQsFAAOCAQEAI48JaFtwOFcYS/3pfS5+7cINrafXAKTL+/+he4q+RMx4TCu/L1dl9zS5W1BeJNO2GUznfI+b5KndrxdlB6qJIDf6TRHh6EqfA18oJP5NOiKhU4pgkF2UMUw4kjxaZ5fQrSoD9omjfHAFNjradnHA7GOAoF4iotvXDWDBWx9K4XNZHWvD11Td66zTg5IaEQDIZ+f8WS6nn/98nAVMDtR9zW7Te5h9kGJGfe6WiHVaGRPpBvqC4iypGHjbRwANwofZvmp5wP08hY1CsnKY5tfP+E2k/iAQgKKa6QoxXToYvP7rsSkglak8N5g/+FJGnq4wP6cOzgZpjdPMwaVt5432GA=="
+              ],
+              "issuer": "https://login.microsoftonline.com/{tenantid}/v2.0"
+            },
+            {
+              "kty": "RSA",
+              "use": "sig",
+              "kid": "1LTMzakihiRla_8z2BEJVXeWMqo",
+              "x5t": "1LTMzakihiRla_8z2BEJVXeWMqo",
+              "n": "3sKcJSD4cHwTY5jYm5lNEzqk3wON1CaARO5EoWIQt5u-X-ZnW61CiRZpWpfhKwRYU153td5R8p-AJDWT-NcEJ0MHU3KiuIEPmbgJpS7qkyURuHRucDM2lO4L4XfIlvizQrlyJnJcd09uLErZEO9PcvKiDHoois2B4fGj7CsAe5UZgExJvACDlsQSku2JUyDmZUZP2_u_gCuqNJM5o0hW7FKRI3MFoYCsqSEmHnnumuJ2jF0RHDRWQpodhlAR6uKLoiWHqHO3aG7scxYMj5cMzkpe1Kq_Dm5yyHkMCSJ_JaRhwymFfV_SWkqd3n-WVZT0ADLEq0RNi9tqZ43noUnO_w",
+              "e": "AQAB",
+              "x5c": [
+                "MIIDYDCCAkigAwIBAgIJAIB4jVVJ3BeuMA0GCSqGSIb3DQEBCwUAMCkxJzAlBgNVBAMTHkxpdmUgSUQgU1RTIFNpZ25pbmcgUHVibGljIEtleTAeFw0xNjA0MDUxNDQzMzVaFw0yMTA0MDQxNDQzMzVaMCkxJzAlBgNVBAMTHkxpdmUgSUQgU1RTIFNpZ25pbmcgUHVibGljIEtleTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAN7CnCUg+HB8E2OY2JuZTRM6pN8DjdQmgETuRKFiELebvl/mZ1utQokWaVqX4SsEWFNed7XeUfKfgCQ1k/jXBCdDB1NyoriBD5m4CaUu6pMlEbh0bnAzNpTuC+F3yJb4s0K5ciZyXHdPbixK2RDvT3Lyogx6KIrNgeHxo+wrAHuVGYBMSbwAg5bEEpLtiVMg5mVGT9v7v4ArqjSTOaNIVuxSkSNzBaGArKkhJh557pridoxdERw0VkKaHYZQEerii6Ilh6hzt2hu7HMWDI+XDM5KXtSqvw5ucsh5DAkifyWkYcMphX1f0lpKnd5/llWU9AAyxKtETYvbameN56FJzv8CAwEAAaOBijCBhzAdBgNVHQ4EFgQU9IdLLpbC2S8Wn1MCXsdtFac9SRYwWQYDVR0jBFIwUIAU9IdLLpbC2S8Wn1MCXsdtFac9SRahLaQrMCkxJzAlBgNVBAMTHkxpdmUgSUQgU1RTIFNpZ25pbmcgUHVibGljIEtleYIJAIB4jVVJ3BeuMAsGA1UdDwQEAwIBxjANBgkqhkiG9w0BAQsFAAOCAQEAXk0sQAib0PGqvwELTlflQEKS++vqpWYPW/2gCVCn5shbyP1J7z1nT8kE/ZDVdl3LvGgTMfdDHaRF5ie5NjkTHmVOKbbHaWpTwUFbYAFBJGnx+s/9XSdmNmW9GlUjdpd6lCZxsI6888r0ptBgKINRRrkwMlq3jD1U0kv4JlsIhafUIOqGi4+hIDXBlY0F/HJPfUU75N885/r4CCxKhmfh3PBM35XOch/NGC67fLjqLN+TIWLoxnvil9m3jRjqOA9u50JUeDGZABIYIMcAdLpI2lcfru4wXcYXuQul22nAR7yOyGKNOKULoOTE4t4AeGRqCogXSxZgaTgKSBhvhE+MGg=="
+              ],
+              "issuer": "https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0"
+            },
+            {
+              "kty": "RSA",
+              "use": "sig",
+              "kid": "xP_zn6I1YkXcUUmlBoPuXTGsaxk",
+              "x5t": "xP_zn6I1YkXcUUmlBoPuXTGsaxk",
+              "n": "2pWatafeb3mB0A73-Z-URwrubwDldWvivRu19GNC61MBOb3fZ4I4lyhUhNuS7aJRPJIFB6zl-HFx1nHpGg74BHe0z9skODHYZEACd2iKBIet55DdduIe1CXsZ9keyEmNaGv3XS4OW_7IDM0j5wR9OHugUifkH3PQIcFvTYanHmXojTmgjIOWoz7y0okpyN9-FbZRzdfx-ej-njaj5gR8r69muwO5wlTbIG20V40R6zYh-QODMUpayy7jDGFGw5vjFH9Ca0tLZcNQq__JKE_mp-0fODOAQobOrBUoASFkyCd95BVW7KJrndvW7ofRWaCTuZZOy5SnU4asbjMrgxFZFw",
+              "e": "AQAB",
+              "x5c": [
+                "MIIDYDCCAkigAwIBAgIJAJzCyTLC+DjJMA0GCSqGSIb3DQEBCwUAMCkxJzAlBgNVBAMTHkxpdmUgSUQgU1RTIFNpZ25pbmcgUHVibGljIEtleTAeFw0xNjA3MTMyMDMyMTFaFw0yMTA3MTIyMDMyMTFaMCkxJzAlBgNVBAMTHkxpdmUgSUQgU1RTIFNpZ25pbmcgUHVibGljIEtleTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANqVmrWn3m95gdAO9/mflEcK7m8A5XVr4r0btfRjQutTATm932eCOJcoVITbku2iUTySBQes5fhxcdZx6RoO+AR3tM/bJDgx2GRAAndoigSHreeQ3XbiHtQl7GfZHshJjWhr910uDlv+yAzNI+cEfTh7oFIn5B9z0CHBb02Gpx5l6I05oIyDlqM+8tKJKcjffhW2Uc3X8fno/p42o+YEfK+vZrsDucJU2yBttFeNEes2IfkDgzFKWssu4wxhRsOb4xR/QmtLS2XDUKv/yShP5qftHzgzgEKGzqwVKAEhZMgnfeQVVuyia53b1u6H0Vmgk7mWTsuUp1OGrG4zK4MRWRcCAwEAAaOBijCBhzAdBgNVHQ4EFgQU11z579/IePwuc4WBdN4L0ljG4CUwWQYDVR0jBFIwUIAU11z579/IePwuc4WBdN4L0ljG4CWhLaQrMCkxJzAlBgNVBAMTHkxpdmUgSUQgU1RTIFNpZ25pbmcgUHVibGljIEtleYIJAJzCyTLC+DjJMAsGA1UdDwQEAwIBxjANBgkqhkiG9w0BAQsFAAOCAQEAiASLEpQseGNahE+9f9PQgmX3VgjJerNjXr1zXWXDJfFE31DxgsxddjcIgoBL9lwegOHHvwpzK1ecgH45xcJ0Z/40OgY8NITqXbQRfdgLrEGJCoyOQEbjb5PW5k2aOdn7LBxvDsH6Y8ax26v+EFMPh3G+xheh6bfoIRSK1b+44PfoDZoJ9NfJibOZ4Cq+wt/yOvpMYQDB/9CNo18wmA3RCLYjf2nAc7RO0PDYHSIq5QDWV+1awmXDKgIdRpYPpRtn9KFXQkpCeEc/lDTG+o6n7nC40wyjioyR6QmHGvNkMR4VfSoTKCTnFATyDpI1bqU2K7KNjUEsCYfwybFB8d6mjQ=="
+              ],
+              "issuer": "https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0"
+            }
+          ]
+        }
+        """
+
+        access_token = """
+        {
+          "token_type": "Bearer",
+          "scope": "openid profile email",
+          "expires_in": 3600,
+          "ext_expires_in": 3600,
+          "access_token": "EwBgA8l6BAAURSN/FHlDW5xN74t6GzbtsBBeBUYAAbQf93kT154CH65oNmvIxyehXU7dBZGBBt2jjbo6uCks4dZIVGkhZ+H3y7E3pYRR3aFNI1km+mzX3Emvs8HGC/0ESsJWOJof9tid6S6dlW0w912+6bmhF48W7T/CasERLLDQhaOtP6FrR5h3igGr64PlHd+JImiWltawHhNIbEmVmqyeDjjBI7J4/rOYEaJXneQu+POi8q+pQXGCx4ePB8OkeDzXuOAI7HcwWSNJlcFa5F8uL4vceQqpnCq9locH/xjNVPAKSqdD4DaLDTKcrPlE8hstQfq+NPuZIEksyzzl9QwUetrY7dEH39ihPogos1A5xHQ4wL1NuHMQW8y4fFcDZgAACPb3lig0AL5lMAIUV0FekjhyzKxZ1o2CD4WtriaYx0eF3j6i4jcd9HnhzZsJaOEQfyS22zKbzcNrkcVaB3z3nCkeBc2hN/1t/zGaH47iaWMkxo8YMp6EMUKX+vLBb7a4hohMRQA+B7LEvrrGSzS+TL5TrmI/m6ypfWI83Vwj7xvo3ESNK2BHJ/cTlJoecKgKsBaqkdgCjv3il38NJ30ekcQpNEwngpexEj63Ar5urZFlisZ3ZULbjaSx1J5nENxh1uFM3yNt1YLs4ttvUvgH+0n6/LC/9JjUcx910ix6GUELRSXOqp5DNGqKDcyYv8BaR5FcE5l99nXjOSSt8J0gWeJ4yA5to3CoGIglX5u9ZWHQdchjUsdMCIAmISqA0Y0O0VKWKg+T6N4qE1fg7nhLYjjwfp/I+t2kZ5fvnUlj+IC3iRB74CWVXtYGpMGHUMqQB2TtqBLImx9bSFlR/Q3MCeE2KEwVMbKv4zjx1XoBQguXijKFeY0PyEzlWgiGSSBNARJfD52v4FGQKJh5QCoo6SlC+Y6rIHf5R0sg1gAb4cquXuQ5TFix9MStK+WwW5j18pmYWGJn9ZY2+cDdT9OozcJ0oAF71GZv1ygGPl8WmwBFNZKzgtDXxYNbd7GxO1SG6Ag8RphoL4p/crS44RC/XTdCKR7SacNycV2ADSWdQ6S652bBsNdZ79f+tRGAAx2bO3rp0j6Vk94AiQNDWX7lQZmRMqQ52nLb0WwR9JpPUyMpgQexitHFpw7sW3YC",
+          "id_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjFMVE16YWtpaGlSbGFfOHoyQkVKVlhlV01xbyJ9.eyJ2ZXIiOiIyLjAiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vOTE4ODA0MGQtNmM2Ny00YzViLWIxMTItMzZhMzA0YjY2ZGFkL3YyLjAiLCJzdWIiOiJBQUFBQUFBQUFBQUFBQUFBQUFBQUFGUXRFVFZJeEpISjdIVTRpTkJVbGVNIiwiYXVkIjoiMDBiYjA0NmEtMzZkOS00NDExLWI5M2EtMmYxMGZiMzVmMGI1IiwiZXhwIjoxNTU5OTgwOTQ5LCJpYXQiOjE1NTk4OTQyNDksIm5iZiI6MTU1OTg5NDI0OSwibmFtZSI6Ik5pY2sgU2F0dGVybHkiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJuaWNrLnNhdHRlcmx5QGhvdG1haWwuY29tIiwib2lkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTA2OTYtNmYzYjQ1NmVjY2QxIiwiZW1haWwiOiJuaWNrLnNhdHRlcmx5QGhvdG1haWwuY29tIiwidGlkIjoiOTE4ODA0MGQtNmM2Ny00YzViLWIxMTItMzZhMzA0YjY2ZGFkIiwiYWlvIjoiRGZ6UjgwRFpEVWMxaSp0cHVacXJoVUd4Snh5eHJzUW5PZVp5V040KnZNIWY1NDB0SklpdXdkcDR0azdyejZIdDNjIWtLWWk5WDFLRzhiT0UhVGhrN1BFVHRCZVNxOWt1U291YnJ2TWdUZHhSd1ZrRUhSSU8xcFFiMlNkcUJ2ZXZkU0Q2Y0M1YktUUTFBUTZqTGxuR1dZOCQifQ.G03Jyl5o-lKSAixQ8SBU71BT7FrsR3FXcbpcdQ7EHMeF9RG7MgVeqeUsr0iXHsFdxqyxpNttGj_7E2tGHqTdlqe66Nbj7IrwhjQymT32hte17fzwENKeu2k7yqNI5HsY0_iSzqKOgglDy5LXNqY9OA5L69UaMyp2txVUTLCh0WOWgtlAtLs0YSnow_HgJstgkKZZRTrNmTDaf86YOEAl9ATHOLPPWeacNjh2JkDgL4vVlNFkE_DJkpB6Iw-ARMi34dulp8BFdpD0Y6bpw9F8QqeFLcmLXvd15u7Xg0oEQSI22-FqRm5xA8JQ09pxrusvi6xc3yjqy8VUCd8RZDrsXg"
+        }
+        """
+
+        userinfo = r"""
+        {
+          "sub": "AAAAAAAAAAAAAAAAAAAAAFQtETVIxJHJ7HU4iNBUleM"
+        }
+        """
+
+        m.get('https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration', text=discovery_doc)
+        m.get('https://login.microsoftonline.com/common/discovery/v2.0/keys', text=jwks_uri)
+        m.post('https://login.microsoftonline.com/common/oauth2/v2.0/token', text=access_token)
+        m.get('https://graph.microsoft.com/oidc/userinfo', text=userinfo)
+
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # add customer mapping
+        payload = {
+            'customer': 'Hotmail',
+            'match': 'hotmail.com'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
+        self.assertEqual(response.status_code, 200, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        claims = jwt.decode(data['token'], verify=False)
+
+        self.assertEqual(claims['name'], 'Nick Satterly', claims)
+        self.assertEqual(claims['preferred_username'], 'nick.satterly@hotmail.com', claims)
+        self.assertEqual(claims['provider'], 'openid', claims)
+        # self.assertEqual(claims['roles'], ['user'], claims)
+        self.assertEqual(claims['scope'], 'read write', claims)
+        self.assertEqual(claims['email'], 'nick.satterly@hotmail.com', claims)
+        self.assertEqual(claims.get('email_verified'), True, claims)
+        self.assertEqual(claims['customers'], ['Hotmail'], claims)
 
     @requests_mock.mock()
     def test_github(self, m):
