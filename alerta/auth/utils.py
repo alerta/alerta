@@ -11,6 +11,7 @@ from alerta.app import mailer
 from alerta.exceptions import ApiError, NoCustomerMatch
 from alerta.models.customer import Customer
 from alerta.models.token import Jwt
+from alerta.utils.response import absolute_url
 
 if TYPE_CHECKING:
     from alerta.models.user import User  # noqa
@@ -53,7 +54,7 @@ def create_token(user_id: str, name: str, login: str, provider: str, customers: 
         iss=request.url_root,
         typ='Bearer',
         sub=user_id,
-        aud=current_app.config.get('OAUTH2_CLIENT_ID', None) or request.url_root,
+        aud=current_app.config.get('OAUTH2_CLIENT_ID') or current_app.config.get('SAML2_ENTITY_ID') or absolute_url(),
         exp=(now + timedelta(days=current_app.config['TOKEN_EXPIRE_DAYS'])),
         nbf=now,
         iat=now,
@@ -119,19 +120,3 @@ def confirm_email_token(token: str, salt: str=None, expiration: int=900) -> str:
         raise ApiError('confirmation token invalid', 400, errors=['invalid_request', str(e)])
 
     return email
-
-
-def deepmerge(first: Dict[str, Any], second: Dict[str, Any]) -> Dict[str, Any]:
-    result = {}
-    for key in first.keys():
-        if key in second:
-            if isinstance(first[key], dict) and isinstance(second[key], dict):
-                result[key] = deepmerge(first[key], second[key])
-            else:
-                result[key] = second[key]
-        else:
-            result[key] = first[key]
-    for key, value in second.items():
-        if key not in first:  # already processed above
-            result[key] = value
-    return result
