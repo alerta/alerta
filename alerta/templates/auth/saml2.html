@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Authenticating...</title>
+  <script type="application/javascript">
+    window.opener.postMessage({{ message | tojson }}, '{{ origin }}');
+    window.close();
+  </script>
+</head>
+<body>
+
+</body>
+</html>

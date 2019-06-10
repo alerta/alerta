@@ -25,8 +25,15 @@ def init_auth(app):
     else:
         from . import basic  # noqa
 
+    if app.config['AUTH_PROVIDER'] == 'saml2':
+        try:
+            import saml2
+            from . import saml2
+        except ImportError as e:
+            raise RuntimeError('Must install pysaml2 to use SAML2 authentication module')
 
-from . import github, oidc, pingfederate, saml2, userinfo  # noqa
+
+from . import github, oidc, pingfederate, userinfo  # noqa
 
 
 @auth.before_request
