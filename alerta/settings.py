@@ -57,7 +57,7 @@ CELERY_RESULT_SERIALIZER = 'customjson'
 
 # Authentication settings
 AUTH_REQUIRED = False
-AUTH_PROVIDER = 'basic'  # basic (default), github, gitlab, google, keycloak, pingfederate, saml2
+AUTH_PROVIDER = 'basic'  # basic (default), ldap, github, openid, saml2, azure, gitlab, google, keycloak
 ADMIN_USERS = []  # type: List[str]
 USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includes 'read'
 CUSTOMER_VIEWS = False
@@ -65,7 +65,7 @@ CUSTOMER_VIEWS = False
 BASIC_AUTH_REALM = 'Alerta'
 SIGNUP_ENABLED = True
 
-OAUTH2_CLIENT_ID = None  # Azure, Google, GitHub, GitLab, Keycloak or OpenID OAuth2 client ID and secret
+OAUTH2_CLIENT_ID = None  # OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = None
 ALLOWED_EMAIL_DOMAINS = ['*']
 
@@ -98,15 +98,6 @@ OIDC_VERIFY_TOKEN = False
 OIDC_ROLE_CLAIM = OIDC_CUSTOM_CLAIM = 'roles'  # JWT claim name whose value is used in role mapping
 OIDC_GROUP_CLAIM = 'groups'  # JWT claim name whose value is used in customer mapping
 ALLOWED_OIDC_ROLES = ALLOWED_GITLAB_GROUPS or ALLOWED_KEYCLOAK_ROLES or ['*']
-
-# PingFederate
-PINGFEDERATE_URL = None
-PINGFEDERATE_OPENID_ACCESS_TOKEN_URL = PINGFEDERATE_URL
-PINGFEDERATE_PUBKEY_LOCATION = None
-PINGFEDERATE_TOKEN_ALGORITHM = None
-PINGFEDERATE_OPENID_PAYLOAD_USERNAME = None
-PINGFEDERATE_OPENID_PAYLOAD_EMAIL = None
-PINGFEDERATE_OPENID_PAYLOAD_GROUP = None
 
 # SAML 2.0
 SAML2_ENTITY_ID = None
