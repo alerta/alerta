@@ -5,6 +5,8 @@ import jwt
 from flask import current_app, request
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
+from alerta.utils.response import absolute_url
+
 dt = datetime.datetime
 
 
@@ -44,7 +46,7 @@ class Jwt:
                 key=key or current_app.config['SECRET_KEY'],
                 verify=verify,
                 algorithms=algorithm,
-                audience=current_app.config['OAUTH2_CLIENT_ID'] or request.url_root
+                audience=current_app.config['OAUTH2_CLIENT_ID'] or current_app.config['SAML2_ENTITY_ID'] or  absolute_url()
             )
         except (DecodeError, ExpiredSignature, InvalidAudience):
             raise
