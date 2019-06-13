@@ -1,4 +1,5 @@
 
+import sys
 import ldap
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
@@ -17,12 +18,19 @@ from . import auth
 def login():
     # Retrieve required fields from client request
     try:
-        email = request.json.get('username', None) or request.json['email']
+        login = request.json.get('username', None) or request.json['email']
         password = request.json['password']
     except KeyError:
         raise ApiError("must supply 'username' and 'password'", 401)
 
-    username, domain = email.split('@')
+    email = ''
+    email_verified = False
+    if '\\' in login:
+        domain, username = login.split('\\')
+    else: 
+        username, domain = login.split('@')
+        email = login
+        email_verified = True
 
     # Validate LDAP domain
     if domain not in current_app.config['LDAP_DOMAINS']:
@@ -40,11 +48,20 @@ def login():
     except Exception as e:
         raise ApiError(str(e), 500)
 
+    # Get email address from LDAP
+    if not email_verified:
+        try:
+            ldap_result = ldap_connection.search_s(userdn, ldap.SCOPE_SUBTREE,'(objectClass=*)',['mail'])
+            email = ldap_result[0][1]['mail'][0].decode(sys.stdout.encoding)
+            email_verified = True
+        except:
+            email = '{}@{}'.format(username, domain)
+
     # Create user if not yet there
-    user = User.find_by_username(username=email)
+    user = User.find_by_username(username=login)
     if not user:
-        user = User(name=username, login=email, password='', email=email,
-                    roles=[], text='LDAP user', email_verified=True)
+        user = User(name=username, login=login, password='', email=email,
+                    roles=[], text='LDAP user', email_verified=email_verified)
         try:
             user = user.create()
         except Exception as e:
@@ -70,14 +87,14 @@ def login():
 
     # Check user is active
     if user.status != 'active':
-        raise ApiError('User {} not active'.format(email), 403)
+        raise ApiError('User {} not active'.format(login), 403)
     user.update_last_login()
 
-    scopes = Permission.lookup(login=user.email, roles=user.roles + groups)
-    customers = get_customers(login=user.email, groups=[user.domain] + groups)
+    scopes = Permission.lookup(login=login, roles=user.roles + groups)
+    customers = get_customers(login=login, groups=[user.domain] + groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
-                          user=user.email, customers=customers, scopes=scopes, resource_id=user.id, type='user',
+                          user=login, customers=customers, scopes=scopes, resource_id=user.id, type='user',
                           request=request)
 
     # Generate token
