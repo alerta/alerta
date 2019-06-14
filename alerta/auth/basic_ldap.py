@@ -23,10 +23,10 @@ def login():
     except KeyError:
         raise ApiError("must supply 'username' and 'password'", 401)
 
-    email = ''
-    email_verified = False
     if '\\' in login:
         domain, username = login.split('\\')
+        email = ''
+        email_verified = False
     else: 
         username, domain = login.split('@')
         email = login
