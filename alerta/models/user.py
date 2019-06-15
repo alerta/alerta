@@ -40,7 +40,10 @@ class User:
     @property
     def domain(self) -> Optional[str]:
         try:
-            return self.email.split('@')[1]
+            if '\\' in self.login:
+                return self.login.split('\\')[0]
+            else:
+                return self.email.split('@')[1]
         except (IndexError, AttributeError):
             return None
 
