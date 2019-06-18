@@ -20,20 +20,20 @@ def init_auth(app):
         try:
             import ldap  # noqa
             from . import basic_ldap  # noqa
-        except ImportError as e:
+        except ImportError:
             raise RuntimeError('Must install python-ldap to use LDAP authentication module')
     else:
         from . import basic  # noqa
 
     if app.config['AUTH_PROVIDER'] == 'saml2':
         try:
-            import saml2
-            from . import saml2
-        except ImportError as e:
+            import saml2  # noqa
+            from . import saml  # noqa
+        except ImportError:
             raise RuntimeError('Must install pysaml2 to use SAML2 authentication module')
 
 
-from . import github, oidc, pingfederate, userinfo  # noqa
+from . import github, oidc, userinfo  # noqa
 
 
 @auth.before_request
