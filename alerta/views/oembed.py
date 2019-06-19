@@ -1,5 +1,5 @@
 
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from flask import current_app, jsonify, render_template, request
 from flask_cors import cross_origin
@@ -9,11 +9,8 @@ from alerta.auth.decorators import permission
 from alerta.models.enums import Scope
 from alerta.utils.response import jsonp
 
-from collections import namedtuple
-
 from . import api
 
-Query = namedtuple('Query', ['where', 'vars', 'sort', 'group'])
 
 @api.route('/oembed', defaults={'format': 'json'}, methods=['OPTIONS', 'GET'])
 @api.route('/oembed.<format>', methods=['OPTIONS', 'GET'])
@@ -29,15 +26,12 @@ def oembed(format):
 
     try:
         o = urlparse(url)
-        query = qb.from_params(request.args)
     except Exception as e:
-        return jsonify(status='error', message=str(e)), 500
+        return jsonify(status='error', message=str(e)), 400
 
     if o.path.endswith('/alerts/count'):
         try:
-            qvars = dict()
-            qvars['status'] = 'open'
-            query = Query(where='"status"=%(status)s', vars=qvars, sort='', group='')
+            query = qb.from_dict(parse_qs(o.query))
             severity_count = db.get_counts_by_severity(query)
         except Exception as e:
             return jsonify(status='error', message=str(e)), 500
@@ -60,8 +54,8 @@ def oembed(format):
             max=max,
             counts=severity_count
         )
-        headers =	{
-          "Access-Control-Allow-Origin": "*"
+        headers = {
+            'Access-Control-Allow-Origin': '*'
         }
         return jsonify(version='1.0', type='rich', title=title, provider_name='Alerta', provider_url=request.url_root, html=html), 200, headers
 
