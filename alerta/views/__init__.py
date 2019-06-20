@@ -69,6 +69,8 @@ def config():
         'email_verification': current_app.config['EMAIL_VERIFICATION'],
         'client_id': current_app.config['OAUTH2_CLIENT_ID'],
         'azure_tenant': current_app.config['AZURE_TENANT'],
+        'aws_region': current_app.config['AWS_REGION'],
+        'cognito_domain': current_app.config['COGNITO_DOMAIN'],
         'github_url': current_app.config['GITHUB_URL'],
         'gitlab_url': current_app.config['GITLAB_URL'],
         'keycloak_url': current_app.config['KEYCLOAK_URL'],

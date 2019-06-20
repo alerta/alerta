@@ -53,7 +53,7 @@ class BaseError(Exception):
         if code is not None:
             self.code = code
         self.errors = errors
-        self.request_id = g.request_id if hasattr(g, 'request_id') else None
+        self.request_id = None
 
 
 class ApiError(BaseError):

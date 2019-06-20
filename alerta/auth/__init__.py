@@ -6,7 +6,7 @@ from alerta.exceptions import ApiError
 class AuthBlueprint(Blueprint):
 
     def register(self, app, options, first_registration=False):
-        if app.config['AUTH_PROVIDER'] == 'openid':
+        if app.config['AUTH_PROVIDER'] in ['openid', 'azure', 'cognito', 'gitlab', 'keycloak']:
             oidc_config, _ = oidc.get_oidc_configuration(app)
             app.config['OIDC_AUTH_URL'] = oidc_config['authorization_endpoint']
         super().register(app, options, first_registration)
