@@ -57,7 +57,7 @@ CELERY_RESULT_SERIALIZER = 'customjson'
 
 # Authentication settings
 AUTH_REQUIRED = False
-AUTH_PROVIDER = 'basic'  # basic (default), ldap, github, openid, saml2, azure, gitlab, google, keycloak
+AUTH_PROVIDER = 'basic'  # basic (default), ldap, github, openid, saml2, azure, cognito, gitlab, google, keycloak
 ADMIN_USERS = []  # type: List[str]
 USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includes 'read'
 CUSTOMER_VIEWS = False
@@ -68,6 +68,11 @@ SIGNUP_ENABLED = True
 OAUTH2_CLIENT_ID = None  # OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = None
 ALLOWED_EMAIL_DOMAINS = ['*']
+
+# Amazon Cognito
+AWS_REGION = 'us-east-1'  # US East - N. Virginia (default)
+COGNITO_USER_POOL_ID = None
+COGNITO_DOMAIN = None
 
 # GitHub OAuth2
 GITHUB_URL = 'https://github.com'
@@ -83,8 +88,8 @@ LDAP_DOMAINS = {}  # type: Dict[str, str]
 LDAP_DOMAINS_GROUP = {}  # type: Dict[str, str]
 LDAP_DOMAINS_BASEDN = {}  # type: Dict[str, str]
 
-# Microsof Azure Active Directory
-AZURE_TENANT = None  # "common", "organizations", "consumers" or tenant ID
+# Microsoft Identity Platform (v2.0)
+AZURE_TENANT = 'common'  # "common", "organizations", "consumers" or tenant ID
 
 # Keycloak
 KEYCLOAK_URL = None

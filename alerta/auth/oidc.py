@@ -2,6 +2,7 @@ import json
 
 import jwt
 import requests
+
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from jwt.algorithms import RSAAlgorithm  # type: ignore
@@ -19,6 +20,7 @@ def get_oidc_configuration(app):
 
     OIDC_ISSUER_URL_BY_PROVIDER = {
         'azure': 'https://login.microsoftonline.com/{}/v2.0'.format(app.config['AZURE_TENANT']),
+        'cognito': 'https://cognito-idp.{}.amazonaws.com/{}'.format(app.config['AWS_REGION'], app.config['COGNITO_USER_POOL_ID']),
         'gitlab': app.config['GITLAB_URL'],
         'google': 'https://accounts.google.com',
         'keycloak': '{}/auth/realms/{}'.format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM'])
@@ -34,6 +36,10 @@ def get_oidc_configuration(app):
         config = r.json()
     except Exception as e:
         raise ApiError('Could not get OpenID configuration from well known URL: {}'.format(str(e)), 503)
+
+    if 'issuer' not in config:
+        error = config.get('error') or config.get('message') or config
+        raise ApiError('OpenID Connect issuer response invalid: {}'.format(error))
 
     if config['issuer'].format(tenantid=app.config['AZURE_TENANT']) != issuer_url:
         raise ApiError('Issuer Claim does not match Issuer URL used to retrieve OpenID configuration', 503)
