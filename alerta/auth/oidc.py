@@ -115,6 +115,7 @@ def openid():
     nickname = userinfo.get('nickname') or id_token.get('nickname')
     email = userinfo.get('email') or id_token.get('email')
     email_verified = userinfo.get('email_verified', id_token.get('email_verified', bool(email)))
+    email_verified = True if email_verified == "true" else email_verified  # Cognito returns string boolean
     picture = userinfo.get('picture') or id_token.get('picture')
 
     role_claim = current_app.config['OIDC_ROLE_CLAIM']

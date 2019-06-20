@@ -18,6 +18,127 @@ class AuthProvidersTestCase(unittest.TestCase):
         db.destroy()
 
     @requests_mock.mock()
+    def test_amazon_cognito(self, m):
+
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': True,
+            'AUTH_PROVIDER': 'cognito',
+            'AWS_REGION': 'eu-west-1',
+            'COGNITO_USER_POOL_ID': 'eu-west-1_BMkhxuZsn',
+            'COGNITO_DOMAIN': 'alerta-webui',
+            'CUSTOMER_VIEWS': True,
+        }
+
+        authorization_grant = """
+        {
+          "code": "9273a057-f70a-4056-b6b9-20f4f768db05",
+          "clientId": "6gms81dft7up216pqnv7pcq194",
+          "redirectUri": "http://localhost:8000",
+          "state": "mlmie0tj03i"
+        }
+        """
+
+        discovery_doc = """
+        {
+          "authorization_endpoint": "https://alerta-webui.auth.eu-west-1.amazoncognito.com/oauth2/authorize",
+          "id_token_signing_alg_values_supported": [
+            "RS256"
+          ],
+          "issuer": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_BMkhxuZsn",
+          "jwks_uri": "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_BMkhxuZsn/.well-known/jwks.json",
+          "response_types_supported": [
+            "code",
+            "token",
+            "token id_token"
+          ],
+          "scopes_supported": [
+            "openid",
+            "email",
+            "phone",
+            "profile"
+          ],
+          "subject_types_supported": [
+            "public"
+          ],
+          "token_endpoint": "https://alerta-webui.auth.eu-west-1.amazoncognito.com/oauth2/token",
+          "token_endpoint_auth_methods_supported": [
+            "client_secret_basic",
+            "client_secret_post"
+          ],
+          "userinfo_endpoint": "https://alerta-webui.auth.eu-west-1.amazoncognito.com/oauth2/userInfo"
+        }
+        """
+
+        access_token = """
+        {
+          "id_token": "eyJraWQiOiJUWnhDZzJCMEZqRTAyaEFhWnRuXC9XSE9abURiaG5sXC91amlGdDd6aWhzOHc9IiwiYWxnIjoiUlMyNTYifQ.eyJhdF9oYXNoIjoiWW9ENFpfY0FKWUVUNTBUNnZpYVlkUSIsInN1YiI6IjM4ZmFmMWU4LTYzODQtNDU5OC04MWI1LTg0ZjQzZTkxYjNkYyIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuZXUtd2VzdC0xLmFtYXpvbmF3cy5jb21cL2V1LXdlc3QtMV9CTWtoeHVac24iLCJjb2duaXRvOnVzZXJuYW1lIjoic2F0dGVybHkiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzYXR0ZXJseSIsImdpdmVuX25hbWUiOiJOaWNrIiwicGljdHVyZSI6Imh0dHBzOlwvXC9hdmF0YWFhcnMuaW9cLyIsImF1ZCI6IjZnbXM4MWRmdDd1cDIxNnBxbnY3cGNxMTk0IiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE1NjEwNDI2OTksIm5hbWUiOiJOaWNrIFNhdHRlcmx5IiwiZXhwIjoxNTYxMDQ2Mjk5LCJpYXQiOjE1NjEwNDI2OTksImZhbWlseV9uYW1lIjoiU2F0dGVybHkiLCJlbWFpbCI6Im5mc2F0dGVybHkrMkBnbWFpbC5jb20ifQ.OgRHqVXzC5QCcUiioPPUJaA4O6X98XhWHPYhmjs5GzQCeSaUPVT3j45NyKqNDpkUKX3R-sijw57A4tc3MMHzr8EnLKAyr445GpqchCVGq0ntNixy0WamM073MvVSXN9ST2BZI4bu84AiGWV4D9YiqnhPt_kUEhaRxwvf9CDXPECLjlh-LHmQp5w06vI_itAJ_n6mEVHACXRNdQfSLhHbr4znWqOnQW40BP3gU3i-RulMJWjJGgDl94-dIfhqzvwRX0_k3Fnq7iYm1oz2DC8XvNiQqNCwt9Qfv7fU_pLTZkxTA2EBE3RiQnlgH4RNhZFrF_cH4kH8KRO2Hpoai57sVA",
+          "access_token": "eyJraWQiOiJVeTEyVzZzOXNrZUJ3SGxBREtsdm5hVUp3TURFRjFxbmtGR01XOWU3NjFFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIzOGZhZjFlOC02Mzg0LTQ1OTgtODFiNS04NGY0M2U5MWIzZGMiLCJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiYXV0aF90aW1lIjoxNTYxMDQyNjk5LCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuZXUtd2VzdC0xLmFtYXpvbmF3cy5jb21cL2V1LXdlc3QtMV9CTWtoeHVac24iLCJleHAiOjE1NjEwNDYyOTksImlhdCI6MTU2MTA0MjY5OSwidmVyc2lvbiI6MiwianRpIjoiZWZkZjBmYzgtYWEwNi00M2I5LThkMmMtN2Y3MjY2OTgyZjFkIiwiY2xpZW50X2lkIjoiNmdtczgxZGZ0N3VwMjE2cHFudjdwY3ExOTQiLCJ1c2VybmFtZSI6InNhdHRlcmx5In0.QhNLAYaEG1c69yJq9-839FJ5q-Sq70IGlHFT2HeGzN_Qxx_qLBH_lZ5VNKPXxyeVAjP2Rj5EMWO0F1ygN8LrqgWaBTXw2Uw3BrfBwtfBVqQW4OFl0jg97FKrEAK9YT25zCm9HkCBdIeKVrhdY4-44w-5_JuBPevW9yzcZ5ApX5zpk4Z4aXGa32l8NYZAObxU3TDxPsCM4LKZVs7Slc1f2vzT93dll2jYg2_K6Kz9IFQkIfmRhxbNdwOsqXn3cHTtajEG-tHXG8Epsiy0ssiA1H9PQRE1It_LNMcc1RE-A34Yr1s0YGeqi10ntw-W2crtXzo-AS1YQ-gAkluAjeKe4A",
+          "refresh_token": "eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAifQ.JxxBNOUNsqi4aGIaXVg6BqxYMKbeLEFCsKg2STYi7afj_vyTNbX1tQABb9ADiY9McOIcXyZzD2LM6ZcA1gkDqIkhoYnXsZOCWYWgy9USBnxu7kqK4aw7hVdYziF0gV9spxCCtweu9gGbcIcJFt5343dvHvDsIUSrOpMqgnIcOA_sUrA69KVkJPwehn6nvnilhwREoTbmmVDNyBphnUFI_cwLShS-jxtQSjqiYO_dFmwGBgDc7yBMdQmAzr5O52Zr9qxjyfjdy_acNLU8H31vIsDFfvahnj4n4Zf0lv-iEf8cqJcC4Fyp6Hz3_oJ4tu2FqQtqjG7QgVqQn5Vl5kfKyw.7a6qH9tAWvVexLyL.aiObMwNcnu1nlSD8-J4vCeAvrpCH-6R_QOkO0Ho0vmcDbDsorZbrSzrtVt18FBCfh6ul_R8AMCj4bLtdIU60kyZwxeArXx3qlZ0MmomnTLv3ulKkN2MQPKd0FyYSe3jeT6jL5TuBf2r8gZejkhW4JEufYpuAjz9xkf-QU1n7kRRykWKKsOl-QKW71xgKfVHceeeaFjMWk78HH5DM2M9nDIkBgJoFVCRrcn247Yjqy-vzB5zTSyKF9fCc5KlnGJ5n6TgsUuOMHoGX7KoUIVMKIAv76PjR7idjPFKti0XGu406iqplGOS7yngQI6-lm2hghx5Rbqu7wP8UnXKLouLlmRNmwCgcKnD7IHYHQU-cScktJedhdoYqHSyJAFqAPL6tmWzcu1X2IPxCtftTM6ute21Xp2Zs9V_abonooRZa7Dbjr5A_Kj8HFmCBy5QU54KOTn-VM6O_Af5sP-i2vOaTHSQ-ITOODnt6tK-B01UcK-jNmJVRL486NGF90G9EgkUOKAtHVu1oiLWTxC9JNgo9Kc01kloKrUkFK1ByHxdCYykUR2Nq8QsuKcpovYbRVXtakgY2WR6jJaRmu_LcDrKO2J1keglChvpoxmoTbBhSrAFOslvlHdalOqoyHxGYYXf-zfrIzhuiIJSUgQKlWYT4NPOLRIzBUhifbRZEPuC047CRGUt5XytgJLavYtgF9sMJecEKMFLBRQk9A1gwqvlp74ZgbFE2w4z34C8FGpcFjczE66JqWHb9SlRyqhpD-2_2YT7PHSoZiNpekNbeVD9QPYCr2YTIveCsQpEBqg-i1onylk0SAB7Sz8Fj8DUZAbhrtEMTX6JlUKujr1gWZmej4VhAlQ9YyEXLE82KGYiRj28OcJ2ROaHoI-wdZQdSeYR7JM_rVOFICaj9CZu3UrEBfVOO7O-sPs12uqiA73dHkKFwO3470L8ogC5uFN78AXwyA6kMdDFsxoKPulCqdqF5HrV2Hc14SJU8QrW16F9nkrqttQSDgJCVZkw3J7kyFpU7UCxtY2E1-ZD-lw6lGgc33rcMSDz4T35RVpMH0cd3JMqN-VgoPbWn7m9-oxSQ4cZoa4q02xheKBwBxPRR5ico5yJvYisi5T_xT3HDtzSD-bwIzqSneRHTmk87MRJzVkH1OW1yG2PAAmAGidgYrAj8WYm39vXJd8yFyRZLM8HHKI2P13B0Wo4s.adI0hTNlVZlzeI4HQByqaQ",
+          "expires_in": 3600,
+          "token_type": "Bearer"
+        }
+        """
+
+        userinfo = r"""
+        {
+          "sub": "38faf1e8-6384-4598-81b5-84f43e91b3dc",
+          "email_verified": "true",
+          "name": "Nick Satterly",
+          "preferred_username": "satterly",
+          "given_name": "Nick",
+          "family_name": "Satterly",
+          "email": "nfsatterly+2@gmail.com",
+          "picture": "https://avataaars.io/",
+          "username": "satterly"
+        }
+        """
+
+        m.get('https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_BMkhxuZsn/.well-known/openid-configuration', text=discovery_doc)
+        m.post('https://alerta-webui.auth.eu-west-1.amazoncognito.com/oauth2/token', text=access_token)
+        m.get('https://alerta-webui.auth.eu-west-1.amazoncognito.com/oauth2/userInfo', text=userinfo)
+
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # add customer mapping
+        payload = {
+            'customer': 'Alphabet',
+            'match': 'gmail.com'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
+        self.assertEqual(response.status_code, 200, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        claims = jwt.decode(data['token'], verify=False)
+
+        self.assertEqual(claims['name'], 'Nick Satterly', claims)
+        self.assertEqual(claims['preferred_username'], 'satterly', claims)
+        self.assertEqual(claims['provider'], 'openid', claims)
+        # self.assertEqual(claims['roles'], ['user'], claims)
+        self.assertEqual(claims['scope'], 'read write', claims)
+        self.assertEqual(claims['email'], 'nfsatterly+2@gmail.com', claims)
+        self.assertEqual(claims.get('email_verified'), True, claims)
+        self.assertEqual(claims['customers'], ['Alphabet'], claims)
+
+    @requests_mock.mock()
     def test_azure_v1(self, m):
 
         test_config = {
