@@ -19,6 +19,7 @@ def get_oidc_configuration(app):
 
     OIDC_ISSUER_URL_BY_PROVIDER = {
         'azure': 'https://login.microsoftonline.com/{}/v2.0'.format(app.config['AZURE_TENANT']),
+        'cognito': 'https://cognito-idp.{}.amazonaws.com/{}'.format(app.config['AWS_REGION'], app.config['COGNITO_USER_POOL_ID']),
         'gitlab': app.config['GITLAB_URL'],
         'google': 'https://accounts.google.com',
         'keycloak': '{}/auth/realms/{}'.format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM'])
@@ -34,6 +35,10 @@ def get_oidc_configuration(app):
         config = r.json()
     except Exception as e:
         raise ApiError('Could not get OpenID configuration from well known URL: {}'.format(str(e)), 503)
+
+    if 'issuer' not in config:
+        error = config.get('error') or config.get('message') or config
+        raise ApiError('OpenID Connect issuer response invalid: {}'.format(error))
 
     if config['issuer'].format(tenantid=app.config['AZURE_TENANT']) != issuer_url:
         raise ApiError('Issuer Claim does not match Issuer URL used to retrieve OpenID configuration', 503)
@@ -109,6 +114,7 @@ def openid():
     nickname = userinfo.get('nickname') or id_token.get('nickname')
     email = userinfo.get('email') or id_token.get('email')
     email_verified = userinfo.get('email_verified', id_token.get('email_verified', bool(email)))
+    email_verified = True if email_verified == 'true' else email_verified  # Cognito returns string boolean
     picture = userinfo.get('picture') or id_token.get('picture')
 
     role_claim = current_app.config['OIDC_ROLE_CLAIM']
@@ -146,6 +152,7 @@ def openid():
     auth_audit_trail.send(current_app._get_current_object(), event='openid-login', message='user login via OpenID Connect',
                           user=login, customers=customers, scopes=scopes, resource_id=subject, type='user', request=request)
 
-    token = create_token(user_id=subject, name=name, login=login, provider='openid', customers=customers,
-                         scopes=scopes, email=email, email_verified=email_verified, picture=picture, **custom_claims)
+    token = create_token(user_id=subject, name=name, login=login, provider=current_app.config['AUTH_PROVIDER'],
+                         customers=customers, scopes=scopes, email=email, email_verified=email_verified,
+                         picture=picture, **custom_claims)
     return jsonify(token=token.tokenize)
