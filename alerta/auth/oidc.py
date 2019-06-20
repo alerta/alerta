@@ -2,7 +2,6 @@ import json
 
 import jwt
 import requests
-
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from jwt.algorithms import RSAAlgorithm  # type: ignore
@@ -115,7 +114,7 @@ def openid():
     nickname = userinfo.get('nickname') or id_token.get('nickname')
     email = userinfo.get('email') or id_token.get('email')
     email_verified = userinfo.get('email_verified', id_token.get('email_verified', bool(email)))
-    email_verified = True if email_verified == "true" else email_verified  # Cognito returns string boolean
+    email_verified = True if email_verified == 'true' else email_verified  # Cognito returns string boolean
     picture = userinfo.get('picture') or id_token.get('picture')
 
     role_claim = current_app.config['OIDC_ROLE_CLAIM']
@@ -153,6 +152,7 @@ def openid():
     auth_audit_trail.send(current_app._get_current_object(), event='openid-login', message='user login via OpenID Connect',
                           user=login, customers=customers, scopes=scopes, resource_id=subject, type='user', request=request)
 
-    token = create_token(user_id=subject, name=name, login=login, provider='openid', customers=customers,
-                         scopes=scopes, email=email, email_verified=email_verified, picture=picture, **custom_claims)
+    token = create_token(user_id=subject, name=name, login=login, provider=current_app.config['AUTH_PROVIDER'],
+                         customers=customers, scopes=scopes, email=email, email_verified=email_verified,
+                         picture=picture, **custom_claims)
     return jsonify(token=token.tokenize)

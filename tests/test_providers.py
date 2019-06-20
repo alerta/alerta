@@ -131,7 +131,7 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'satterly', claims)
-        self.assertEqual(claims['provider'], 'openid', claims)
+        self.assertEqual(claims['provider'], 'cognito', claims)
         # self.assertEqual(claims['roles'], ['user'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfsatterly+2@gmail.com', claims)
@@ -563,7 +563,7 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nick.satterly@hotmail.com', claims)
-        self.assertEqual(claims['provider'], 'openid', claims)
+        self.assertEqual(claims['provider'], 'azure', claims)
         # self.assertEqual(claims['roles'], ['user'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nick.satterly@hotmail.com', claims)
@@ -893,7 +893,7 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'satterly', claims)
-        self.assertEqual(claims['provider'], 'openid', claims)
+        self.assertEqual(claims['provider'], 'gitlab', claims)
         self.assertEqual(claims['groups'],
                          ['team-alerta', 'alertaio', 'alerta-project',
                              'team-alerta/core', 'team-alerta/cli', 'team-alerta/sdk'],
@@ -1060,7 +1060,7 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         self.assertEqual(claims['name'], 'Nick Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims['provider'], 'openid', claims)
+        self.assertEqual(claims['provider'], 'google', claims)
         # self.assertEqual(claims['roles'], ['user'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
@@ -1289,7 +1289,7 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         self.assertEqual(claims['name'], 'Nicholas Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nsatterl', claims)
-        self.assertEqual(claims['provider'], 'openid', claims)
+        self.assertEqual(claims['provider'], 'keycloak', claims)
         self.assertEqual(claims['roles'], ['create-realm', 'devops', 'admin'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nick@alerta.dev', claims)
