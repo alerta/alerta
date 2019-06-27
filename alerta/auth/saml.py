@@ -96,7 +96,7 @@ def saml_response_from_idp():
         raise ApiError('User {} is not active'.format(email), 403)
 
     groups = identity.get('groups', [])
-    if not_authorized('ALLOWED_SAML2_GROUPS', groups) and not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
+    if not_authorized('ALLOWED_SAML2_GROUPS', groups) or not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         message = {'status': 'error', 'message': 'User {} is not authorized'.format(email)}
         return render_template('auth/saml2.html', message=message, origin=origin), 403
 
