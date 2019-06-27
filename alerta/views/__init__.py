@@ -89,6 +89,10 @@ def config():
         },
         'columns': current_app.config['COLUMNS'],
         'sort_by': current_app.config['SORT_LIST_BY'],
+        'indicators': {
+            'severity': current_app.config['ASI_SEVERITY'],
+            'queries': current_app.config['ASI_QUERIES']
+        },
         'actions': current_app.config['ACTIONS'],
         'tracking_id': current_app.config['GOOGLE_TRACKING_ID'],
         'refresh_interval': current_app.config['AUTO_REFRESH_INTERVAL']
