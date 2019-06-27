@@ -142,7 +142,7 @@ def openid():
     if user.status != 'active':
         raise ApiError('User {} is not active'.format(login), 403)
 
-    if not_authorized('ALLOWED_OIDC_ROLES', roles) and not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
+    if not_authorized('ALLOWED_OIDC_ROLES', roles) or not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
         raise ApiError('User {} is not authorized'.format(login), 403)
     user.update_last_login()
 

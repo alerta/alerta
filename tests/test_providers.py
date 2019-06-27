@@ -721,7 +721,7 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_PROVIDER': 'gitlab',
             # 'OIDC_ISSUER_URL': 'https://gitlab.com',
             # 'OIDC_CUSTOM_CLAIM': 'groups',
-            'ALLOWED_OIDC_ROLES': ['alerta-project'],
+            'ALLOWED_GITLAB_GROUPS': ['alerta-project'],
             'CUSTOMER_VIEWS': True,
         }
 
@@ -1241,6 +1241,7 @@ class AuthProvidersTestCase(unittest.TestCase):
           "roles": [
             "create-realm",
             "devops",
+            "alerta-project",
             "admin"
           ],
           "name": "Nicholas Satterly",
@@ -1290,7 +1291,7 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['name'], 'Nicholas Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nsatterl', claims)
         self.assertEqual(claims['provider'], 'keycloak', claims)
-        self.assertEqual(claims['roles'], ['create-realm', 'devops', 'admin'], claims)
+        self.assertEqual(claims['roles'], ['create-realm', 'devops', 'alerta-project', 'admin'], claims)
         self.assertEqual(claims['scope'], 'read write', claims)
         self.assertEqual(claims['email'], 'nick@alerta.dev', claims)
         self.assertEqual(claims.get('email_verified'), True, claims)
