@@ -170,7 +170,19 @@ COLUMNS = [
     'customer', 'environment', 'service', 'resource', 'event', 'value'
 ]
 SORT_LIST_BY = 'lastReceiveTime'  # newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
-# list of custom actions
+
+# Alert Status Indicators
+ASI_SEVERITY = [
+    'critical', 'major', 'minor', 'warning', 'indeterminate', 'informational'
+]
+ASI_QUERIES = [
+    {'text': 'Production', 'query': [['environment', 'Production']]},
+    {'text': 'Development', 'query': [['environment', 'Development']]},
+    {'text': 'Heartbeats', 'query': {'q': 'event:Heartbeat'}},
+    {'text': 'Misc.', 'query': 'group=Misc'},
+]
+
+# List of custom actions
 ACTIONS = []  # type: List[str]
 GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
