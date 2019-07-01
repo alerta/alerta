@@ -47,6 +47,9 @@ def get_saml2_config():
     if current_app.config['SAML2_ENTITY_ID']:
         saml_settings['entityid'] = current_app.config['SAML2_ENTITY_ID']
 
+    if current_app.config['SAML2_CONFIG'].get('metadata'):
+        saml_settings['metadata'] = current_app.config['SAML2_CONFIG']['metadata']
+
     merge(saml_settings, current_app.config['SAML2_CONFIG'])  # allow settings override
 
     config.load(saml_settings)
@@ -119,4 +122,4 @@ def saml_response_from_idp():
 @auth.route('/auth/saml/metadata.xml', methods=['GET'])
 def saml_metadata():
     descriptor = saml2.metadata.entity_descriptor(get_saml2_config())
-    return Response(descriptor, content_type='text/xml; charset=utf-8')
+    return Response(str(descriptor), content_type='text/xml; charset=utf-8')
