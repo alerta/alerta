@@ -15,7 +15,7 @@ except ImportError:
 
 class Mailer:
 
-    def __init__(self, app: Flask=None) -> None:
+    def __init__(self, app: Flask = None) -> None:
         self.app = None
         if app is not None:
             self.register(app)
@@ -29,7 +29,7 @@ class Mailer:
         self.ssl_cert_file = app.config['SSL_CERT_FILE']
 
         self.mail_from = app.config['MAIL_FROM']
-        self.smtp_username = app.config.get('SMTP_USERNAME', self.mail_from)
+        self.smtp_username = app.config.get('SMTP_USERNAME') or self.mail_from
         self.smtp_password = app.config['SMTP_PASSWORD']
 
         self.smtp_use_ssl = app.config['SMTP_USE_SSL']
