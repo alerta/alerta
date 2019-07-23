@@ -86,6 +86,10 @@ ACTION_ALL = [
 
 class StateMachine(AlarmModel):
 
+    @property
+    def valid_severities(self):
+        return sorted(StateMachine.Severity, key=StateMachine.Severity.get)
+
     def register(self, app):
         from alerta.management.views import __version__
         self.name = 'Alerta %s' % __version__
@@ -97,12 +101,19 @@ class StateMachine(AlarmModel):
         StateMachine.DEFAULT_STATUS = OPEN
         StateMachine.DEFAULT_NORMAL_SEVERITY = app.config['DEFAULT_NORMAL_SEVERITY'] or DEFAULT_NORMAL_SEVERITY
         StateMachine.DEFAULT_PREVIOUS_SEVERITY = app.config['DEFAULT_PREVIOUS_SEVERITY'] or DEFAULT_PREVIOUS_SEVERITY
+
+        if StateMachine.DEFAULT_NORMAL_SEVERITY not in StateMachine.Severity:
+            raise RuntimeError('DEFAULT_NORMAL_SEVERITY ({}) is not one of {}'.format(
+                StateMachine.DEFAULT_NORMAL_SEVERITY, ', '.join(self.valid_severities)))
+        if StateMachine.DEFAULT_PREVIOUS_SEVERITY not in StateMachine.Severity:
+            raise RuntimeError('DEFAULT_PREVIOUS_SEVERITY ({}) is not one of {}'.format(
+                StateMachine.DEFAULT_PREVIOUS_SEVERITY, ', '.join(self.valid_severities)))
+
         StateMachine.NORMAL_SEVERITY_LEVEL = StateMachine.Severity[StateMachine.DEFAULT_NORMAL_SEVERITY]
 
     def trend(self, previous, current):
-        valid_severities = sorted(StateMachine.Severity, key=StateMachine.Severity.get)
-        assert previous in StateMachine.Severity, 'Severity is not one of %s' % ', '.join(valid_severities)
-        assert current in StateMachine.Severity, 'Severity is not one of %s' % ', '.join(valid_severities)
+        if previous not in StateMachine.Severity or current not in StateMachine.Severity:
+            return NO_CHANGE
 
         if StateMachine.Severity[previous] > StateMachine.Severity[current]:
             return MORE_SEVERE
