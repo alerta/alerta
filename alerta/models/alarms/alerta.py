@@ -130,7 +130,8 @@ class StateMachine(AlarmModel):
         previous_severity = alert.previous_severity or StateMachine.DEFAULT_PREVIOUS_SEVERITY
 
         valid_severities = sorted(StateMachine.Severity, key=StateMachine.Severity.get)
-        assert current_severity in StateMachine.Severity, 'Severity is not one of %s' % ', '.join(valid_severities)
+        assert current_severity in StateMachine.Severity, 'Severity ({}) is not one of {}'.format(
+            current_severity, ', '.join(valid_severities))
 
         def next_state(rule, severity, status):
             current_app.logger.info(
