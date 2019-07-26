@@ -87,6 +87,7 @@ LDAP_URL = ''  # eg. ldap://localhost:389
 LDAP_DOMAINS = {}  # type: Dict[str, str]
 LDAP_DOMAINS_GROUP = {}  # type: Dict[str, str]
 LDAP_DOMAINS_BASEDN = {}  # type: Dict[str, str]
+LDAP_TLS_ALLOW_SELFSIGNED = False
 
 # Microsoft Identity Platform (v2.0)
 AZURE_TENANT = 'common'  # "common", "organizations", "consumers" or tenant ID

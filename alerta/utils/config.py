@@ -88,6 +88,9 @@ class Config:
         if 'ALLOWED_GITLAB_GROUPS' in os.environ:
             config['ALLOWED_OIDC_ROLES'] = os.environ['ALLOWED_GITLAB_GROUPS'].split(',')
 
+        if 'LDAP_TLS_ALLOW_SELFSIGNED' in os.environ:
+            config['LDAP_TLS_ALLOW_SELFSIGNED'] = True if os.environ['LDAP_TLS_ALLOW_SELFSIGNED'] == 'True' else False
+
         if 'KEYCLOAK_URL' in os.environ:
             config['KEYCLOAK_URL'] = os.environ['KEYCLOAK_URL']
 
