@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from werkzeug.datastructures import ImmutableMultiDict
 
-from alerta.app import qb
+from alerta.app import alarm_model, qb
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
 from alerta.utils.api import process_alert
@@ -19,7 +19,7 @@ def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) 
     if alert['state'] == 'alerting':
         severity = alerting_severity
     elif alert['state'] == 'ok':
-        severity = 'normal'
+        severity = alarm_model.DEFAULT_NORMAL_SEVERITY
     else:
         severity = 'indeterminate'
 
@@ -77,7 +77,7 @@ class GrafanaWebhook(WebhookBase):
 
             alerts = []
             for updateAlert in existingAlerts:
-                updateAlert.severity = 'normal'
+                updateAlert.severity = alarm_model.DEFAULT_NORMAL_SEVERITY
                 updateAlert.status = 'closed'
 
                 try:

@@ -1,5 +1,6 @@
 from typing import Any, Dict
 
+from alerta.app import alarm_model
 from alerta.models.alert import Alert
 
 from . import WebhookBase
@@ -21,7 +22,7 @@ class PingdomWebhook(WebhookBase):
             severity = 'warning'
 
         if payload['current_state'] == 'UP':
-            severity = 'normal'
+            severity = alarm_model.DEFAULT_NORMAL_SEVERITY
 
         return Alert(
             resource=payload['check_name'],

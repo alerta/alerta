@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 from typing import Any, Dict
 
+from alerta.app import alarm_model
 from alerta.models.alert import Alert
 
 from . import WebhookBase
@@ -23,7 +24,7 @@ class CloudWatchWebhook(WebhookBase):
         elif state == 'INSUFFICIENT_DATA':
             return 'warning'
         elif state == 'OK':
-            return 'normal'
+            return alarm_model.DEFAULT_NORMAL_SEVERITY
         else:
             return 'unknown'
 

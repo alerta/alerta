@@ -5,6 +5,7 @@ from typing import Any, Dict
 import pytz
 from dateutil.parser import parse as parse_date
 
+from alerta.app import alarm_model
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
 
@@ -46,7 +47,7 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
         severity = labels.pop('severity', 'warning')
         create_time = starts_at
     elif status == 'resolved':
-        severity = 'normal'
+        severity = alarm_model.DEFAULT_NORMAL_SEVERITY
         create_time = ends_at
     else:
         severity = 'unknown'
