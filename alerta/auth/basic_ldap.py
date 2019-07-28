@@ -17,7 +17,7 @@ from . import auth
 @cross_origin(supports_credentials=True)
 def login():
     # Allow LDAP server to use a self signed certificate
-    if current_app.config['LDAP_TLS_ALLOW_SELFSIGNED']:
+    if current_app.config['LDAP_ALLOW_SELF_SIGNED_CERT']:
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
 
     # Retrieve required fields from client request
