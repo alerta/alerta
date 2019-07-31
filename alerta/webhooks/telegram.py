@@ -76,10 +76,10 @@ class TelegramWebhook(WebhookBase):
 
             customers = g.get('customers', None)
             alert = Alert.find_by_id(alert_id, customers=customers)
-            if not alert:
-                jsonify(status='error', message='alert not found for Telegram message')
-
             action = command.lstrip('/')
+            if not alert and action != 'blackout':
+                return jsonify(status='error', message='alert not found for Telegram message')
+
             if action in ['open', 'ack', 'close']:
                 alert.set_status(status=action, text='status change via Telegram')
             elif action in ['watch', 'unwatch']:
