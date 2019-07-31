@@ -825,6 +825,13 @@ class WebhooksTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
 
+        # command=/ack with bogus telegram_alert_id
+        response = self.client.post('/webhooks/telegram', data=self.telegram_ack %
+                                    'bogus-id-this-shouldnt-exist', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'error')
+
     def test_custom_webhook(self):
 
         # setup custom webhook
