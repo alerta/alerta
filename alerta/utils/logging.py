@@ -79,7 +79,7 @@ class Logger:
                     },
                     'file': {
                         'class': 'logging.handlers.RotatingFileHandler',
-                        'formatter': 'json',
+                        'formatter': log_format,
                         'filters': ['requests'],
                         'filename': log_file,
                         'maxBytes': app.config['LOG_MAX_BYTES'],
