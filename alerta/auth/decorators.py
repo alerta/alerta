@@ -24,7 +24,7 @@ def permission(scope=None):
         def wrapped(*args, **kwargs):
 
             # API Key (Authorization: Key <key>)
-            if 'Authorization' in request.headers:
+            if 'Authorization' in request.headers and request.headers['Authorization'].startswith('Key '):
                 auth_header = request.headers['Authorization']
                 m = re.match(r'Key (\S+)', auth_header)
                 key = m.group(1) if m else None
