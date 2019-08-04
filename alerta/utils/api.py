@@ -87,16 +87,19 @@ def process_alert(alert: Alert) -> Alert:
     return alert
 
 
-def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, str]:
+def process_action(alert: Alert, action: str, text: str, timeout: int) -> Tuple[Alert, str, str]:
 
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None
+    updated_bc = None #new Backwards compatability variable
     for plugin in wanted_plugins:
         if alert.is_suppressed:
             break
         try:
-            updated = plugin.take_action(alert, action, text, config=wanted_config)
+            updated = plugin.take_action(alert, action, text, timeout, config=wanted_config)
+        except TypeError:
+            updated_bc = plugin.take_action(alert, status, text, config=wanted_config)  # for backward compatibility
         except NotImplementedError:
             pass  # plugin does not support action() method
         except RejectException:
@@ -108,7 +111,10 @@ def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, st
                 logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
         if updated:
             try:
-                alert, action, text = updated
+                if updatedBc != None:
+                    alert, action, text = updated_bc #for backward compatibility
+                else:
+                    alert, action, text, timeout = updated
             except Exception:
                 alert = updated
 
@@ -116,7 +122,7 @@ def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, st
     new_attrs = {k: v for k, v in alert.attributes.items() if v is not None}
     alert.attributes = new_attrs
 
-    return alert, action, text
+    return alert, action, text, timeout
 
 
 def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, str]:
