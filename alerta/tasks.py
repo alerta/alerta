@@ -17,7 +17,7 @@ def action_alerts(alerts: List[str], action: str, text: str, timeout: int) -> No
 
         try:
             previous_status = alert.status
-            alert, action, text = process_action(alert, action, text)
+            alert, action, text, timeout = process_action(alert, action, text, timeout)
             alert = alert.from_action(action, text, timeout)
         except RejectException as e:
             errors.append(str(e))
