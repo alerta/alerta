@@ -1,5 +1,4 @@
 import json
-import os
 import uuid
 from datetime import datetime
 from typing import Any, List
@@ -20,7 +19,7 @@ auth_audit_trail = audit_signals.signal('auth')
 
 class AuditTrail:
 
-    def __init__(self, app: Flask=None) -> None:
+    def __init__(self, app: Flask = None) -> None:
         self.app = app
         if app is not None:
             self.init_app(app)
