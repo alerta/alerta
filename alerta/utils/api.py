@@ -87,8 +87,8 @@ def process_alert(alert: Alert) -> Alert:
     return alert
 
 
-def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, str]:
-
+def process_action(alert: Alert, action: str, text: str, time_out: int) -> Tuple[Alert, str, str, int]:
+    #named variable time_out so doesnt conflict with kwargs name
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None
@@ -96,7 +96,7 @@ def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, st
         if alert.is_suppressed:
             break
         try:
-            updated = plugin.take_action(alert, action, text, config=wanted_config)
+            updated = plugin.take_action(alert, action, text, config=wanted_config, timeout=time_out)
         except NotImplementedError:
             pass  # plugin does not support action() method
         except RejectException:
@@ -108,7 +108,10 @@ def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, st
                 logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
         if updated:
             try:
-                alert, action, text = updated
+                try:
+                    alert, action, text, time_out = updated #Try to see if timeout gets returned
+                except Exception:
+                    alert, action, text = updated    #if timeout does not get returned, try default behavior
             except Exception:
                 alert = updated
 
@@ -116,7 +119,7 @@ def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, st
     new_attrs = {k: v for k, v in alert.attributes.items() if v is not None}
     alert.attributes = new_attrs
 
-    return alert, action, text
+    return alert, action, text, time_out
 
 
 def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, str]:

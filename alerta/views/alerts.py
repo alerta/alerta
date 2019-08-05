@@ -149,7 +149,7 @@ def action_alert(alert_id):
         raise ApiError('not found', 404)
 
     try:
-        alert, action, text = process_action(alert, action, text)
+        alert, action, text, timeout = process_action(alert, action, text, timeout)
         alert = alert.from_action(action, text, timeout)
     except RejectException as e:
         write_audit_trail.send(current_app._get_current_object(), event='alert-action-rejected', message=alert.text,
