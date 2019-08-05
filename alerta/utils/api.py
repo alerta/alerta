@@ -109,9 +109,9 @@ def process_action(alert: Alert, action: str, text: str, time_out: int) -> Tuple
         if updated:
             try:
                 try:
-                    alert, action, text, time_out = updated #Try to see if timeout gets returned
-                except Exception:
                     alert, action, text = updated    #if timeout does not get returned, try default behavior
+                except Exception:
+                    alert, action, text, time_out = updated #Try to see if timeout gets returned
             except Exception:
                 alert = updated
 
