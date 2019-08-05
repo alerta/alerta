@@ -1,9 +1,8 @@
 import abc
 import logging
-from typing import Any, Union, Dict
+from typing import Any, Dict, Union
 
-from flask import Blueprint, request, current_app
-from six import add_metaclass
+from flask import Blueprint, current_app, request
 from werkzeug.datastructures import ImmutableMultiDict
 
 from alerta.models.alert import Alert
@@ -28,10 +27,9 @@ def before_request():
 LOG = logging.getLogger('alerta.webhooks')
 
 
-@add_metaclass(abc.ABCMeta)
-class WebhookBase:
+class WebhookBase(metaclass=abc.ABCMeta):
 
-    def __init__(self, name: str=None) -> None:
+    def __init__(self, name: str = None) -> None:
         self.name = name or self.__module__
         if self.__doc__:
             LOG.info('\n{}\n'.format(self.__doc__))
