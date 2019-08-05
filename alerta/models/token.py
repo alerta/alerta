@@ -2,7 +2,7 @@ import datetime
 from typing import Any, Dict
 
 import jwt
-from flask import current_app, request
+from flask import current_app
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
 from alerta.utils.response import absolute_url
@@ -15,7 +15,7 @@ class Jwt:
     JSON Web Token (JWT): https://tools.ietf.org/html/rfc7519
     """
 
-    def __init__(self, iss: str, typ: str, sub: str, aud: str, exp: dt, nbf: dt, iat: dt, jti: str=None, **kwargs) -> None:
+    def __init__(self, iss: str, typ: str, sub: str, aud: str, exp: dt, nbf: dt, iat: dt, jti: str = None, **kwargs) -> None:
 
         self.issuer = iss
         self.type = typ
@@ -39,14 +39,14 @@ class Jwt:
         self.customers = kwargs.get('customers')
 
     @classmethod
-    def parse(cls, token: str, key: str=None, verify: bool=True, algorithm: str='HS256') -> 'Jwt':
+    def parse(cls, token: str, key: str = None, verify: bool = True, algorithm: str = 'HS256') -> 'Jwt':
         try:
             json = jwt.decode(
                 token,
                 key=key or current_app.config['SECRET_KEY'],
                 verify=verify,
                 algorithms=algorithm,
-                audience=current_app.config['OAUTH2_CLIENT_ID'] or current_app.config['SAML2_ENTITY_ID'] or  absolute_url()
+                audience=current_app.config['OAUTH2_CLIENT_ID'] or current_app.config['SAML2_ENTITY_ID'] or absolute_url()
             )
         except (DecodeError, ExpiredSignature, InvalidAudience):
             raise
