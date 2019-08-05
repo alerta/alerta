@@ -99,7 +99,7 @@ def process_action(alert: Alert, action: str, text: str, timeout: int) -> Tuple[
         try:
             updated = plugin.take_action(alert, action, text, timeout, config=wanted_config)
         except TypeError:
-            updated_bc = plugin.take_action(alert, status, text, config=wanted_config)  # for backward compatibility
+            updated_bc = plugin.take_action(alert, action, text, config=wanted_config)  # for backward compatibility
         except NotImplementedError:
             pass  # plugin does not support action() method
         except RejectException:
