@@ -1,9 +1,7 @@
 import abc
 import logging
 import os
-from typing import Optional, TYPE_CHECKING, Any
-
-from six import add_metaclass
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from alerta.models.alert import Alert  # noqa
@@ -11,8 +9,7 @@ if TYPE_CHECKING:
 LOG = logging.getLogger('alerta.plugins')
 
 
-@add_metaclass(abc.ABCMeta)
-class PluginBase:
+class PluginBase(metaclass=abc.ABCMeta):
 
     def __init__(self, name=None):
         self.name = name or self.__module__
