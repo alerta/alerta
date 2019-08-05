@@ -111,7 +111,7 @@ def process_action(alert: Alert, action: str, text: str, timeout: int) -> Tuple[
                 logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
         if updated:
             try:
-                if updatedBc != None:
+                if updated_bc != None:
                     alert, action, text = updated_bc #for backward compatibility
                 else:
                     alert, action, text, timeout = updated
