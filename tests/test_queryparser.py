@@ -22,7 +22,7 @@ class PostgresQueryTestCase(unittest.TestCase):
         # default field (ie. "text") contains phrase
         string = r'''"quick brown"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '"text" ~* \'\yquick brown\y\'')
+        self.assertEqual(r, r'"text" ~* \'\yquick brown\y\'')
 
     def test_field_names(self):
 
@@ -44,7 +44,7 @@ class PostgresQueryTestCase(unittest.TestCase):
         # field exact match
         string = r'''author:"John Smith"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '"author" ~* \'\yJohn Smith\y\'')
+        self.assertEqual(r, r'"author" ~* \'\yJohn Smith\y\'')
 
         # # any attribute contains word or phrase
         # string = r'''attributes.\*:(quick brown)'''
@@ -54,14 +54,14 @@ class PostgresQueryTestCase(unittest.TestCase):
         # attribute field has non-null value
         string = r'''_exists_:title'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '"attributes"::jsonb ? \'title\'')
+        self.assertEqual(r, r'"attributes"::jsonb ? \'title\'')
 
     def test_wildcards(self):
 
         # ? = single character, * = one or more characters
         string = r'''text:qu?ck bro*'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '("text" ~* \'\yqu.?ck\y\' OR "text" ~* \'\ybro.*\y\')')
+        self.assertEqual(r, r'("text" ~* \'\yqu.?ck\y\' OR "text" ~* \'\ybro.*\y\')')
 
     def test_regular_expressions(self):
 
