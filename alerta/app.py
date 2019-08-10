@@ -35,7 +35,7 @@ key_helper = ApiKeyHelper()
 db = Database()
 qb = QueryBuilder()
 # Sentry will grab DSN from SENTRY_DSN environment variable.
-sentry_sdk.init(None, integrations=[FlaskIntegration()])
+sentry_sdk.init(integrations=[FlaskIntegration()])
 
 mailer = Mailer()
 plugins = Plugins()
