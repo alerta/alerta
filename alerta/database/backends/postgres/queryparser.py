@@ -146,8 +146,8 @@ one_sided_range = Group((GTE | GT | LTE | LT)('op') + valid_word('bound'))('ones
 
 term = (_range | one_sided_range | regex | wildcard | phrase | single_term)
 
-clause << (Optional(field_name + COLON, default='__default_field__')('field') +
-           (term('term') | Group(LPAR + query_expr + RPAR)('subquery')))
+clause << (Optional(field_name + COLON, default='__default_field__')('field')
+           + (term('term') | Group(LPAR + query_expr + RPAR)('subquery')))
 
 clause.addParseAction(SearchTerm)
 

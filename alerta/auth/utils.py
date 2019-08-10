@@ -31,9 +31,9 @@ except ImportError:  # Google App Engine
 
 
 def not_authorized(allowed_setting: str, groups: List[str]) -> bool:
-    return (current_app.config['AUTH_REQUIRED'] and
-            not ('*' in current_app.config[allowed_setting] or
-                 set(current_app.config[allowed_setting]).intersection(set(groups))))
+    return (current_app.config['AUTH_REQUIRED']
+            and not ('*' in current_app.config[allowed_setting]
+                     or set(current_app.config[allowed_setting]).intersection(set(groups))))
 
 
 def get_customers(login: str, groups: List[str]) -> List[str]:

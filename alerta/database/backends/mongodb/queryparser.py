@@ -162,8 +162,8 @@ one_sided_range = Group(mongo_op('op') + valid_word('bound'))('onesidedrange')
 
 term = (_range | one_sided_range | regex | wildcard | phrase | single_term)
 
-clause << (Optional(field_name + COLON, default='__default_field__')('field') +
-           (term('term') | Group(LPAR + query_expr + RPAR)('subquery')))
+clause << (Optional(field_name + COLON, default='__default_field__')('field')
+           + (term('term') | Group(LPAR + query_expr + RPAR)('subquery')))
 
 clause.addParseAction(SearchTerm)
 
