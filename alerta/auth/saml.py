@@ -4,7 +4,6 @@ import saml2.config
 import saml2.entity
 import saml2.metadata
 import saml2.saml
-
 from flask import (Response, current_app, make_response, render_template,
                    request)
 from flask_cors import cross_origin

@@ -33,7 +33,7 @@ def init_auth(app):
             raise RuntimeError('Must install pysaml2 to use SAML2 authentication module')
 
 
-from . import github, oidc, userinfo  # noqa
+from . import github, oidc, userinfo   # noqa isort:skip
 
 
 @auth.before_request

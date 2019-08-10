@@ -9,7 +9,7 @@ from alerta.models.alert import Alert
 
 webhooks = Blueprint('webhooks', __name__)
 
-from . import custom  # noqa
+from . import custom  # noqa isort:skip
 
 JSON = Dict[str, Any]
 
