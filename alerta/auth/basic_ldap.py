@@ -1,5 +1,6 @@
 
 import sys
+
 import ldap
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
@@ -31,7 +32,7 @@ def login():
         domain, username = login.split('\\')
         email = ''
         email_verified = False
-    else: 
+    else:
         username, domain = login.split('@')
         email = login
         email_verified = True
@@ -55,10 +56,10 @@ def login():
     # Get email address from LDAP
     if not email_verified:
         try:
-            ldap_result = ldap_connection.search_s(userdn, ldap.SCOPE_SUBTREE,'(objectClass=*)',['mail'])
+            ldap_result = ldap_connection.search_s(userdn, ldap.SCOPE_SUBTREE, '(objectClass=*)', ['mail'])
             email = ldap_result[0][1]['mail'][0].decode(sys.stdout.encoding)
             email_verified = True
-        except:
+        except Exception:
             email = '{}@{}'.format(username, domain)
 
     # Create user if not yet there

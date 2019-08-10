@@ -10,7 +10,7 @@ dt = datetime.datetime
 
 
 class CustomJSONEncoder(json.JSONEncoder):
-    def default(self, o: Any) -> Any:
+    def default(self, o: Any) -> Any:  # pylint: disable=method-hidden
         from alerta.models.alert import Alert, History
         if isinstance(o, datetime.datetime):
             return DateTime.iso8601(o)
