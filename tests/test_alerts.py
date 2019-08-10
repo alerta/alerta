@@ -709,8 +709,8 @@ class AlertsTestCase(unittest.TestCase):
         response = self.client.get('/alerts?q=event:node_up')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEquals(data['total'], 1)
-        self.assertEquals(data['alerts'][0]['event'], 'node_up')
+        self.assertEqual(data['total'], 1)
+        self.assertEqual(data['alerts'][0]['event'], 'node_up')
 
     def test_get_body(self):
         from flask import g
