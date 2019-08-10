@@ -1,6 +1,6 @@
 import uuid
 
-from flask import Flask, request, g
+from flask import Flask, g, request
 
 
 class Tracing:
@@ -16,10 +16,11 @@ class Tracing:
 
     @staticmethod
     def get_request_id():
+        headers = request.headers
         request_id = (
-            request.headers.get('X-Request-ID') or
-            request.headers.get('X-Amzn-Trace-Id') or
-            str(uuid.uuid4())
+            headers.get('X-Request-ID')
+            or headers.get('X-Amzn-Trace-Id')
+            or str(uuid.uuid4())
         )
         g.request_id = request_id
 
