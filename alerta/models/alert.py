@@ -148,10 +148,10 @@ class Alert:
             'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)]
         }
 
-    def get_id(self, short: bool=False) -> str:
+    def get_id(self, short: bool = False) -> str:
         return self.id[:8] if short else self.id
 
-    def get_body(self, history: bool=True) -> Dict[str, Any]:
+    def get_body(self, history: bool = True) -> Dict[str, Any]:
         body = self.serialize
         body.update({
             key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime', 'updateTime'] if body[key]
@@ -245,7 +245,7 @@ class Alert:
         """Return correlated alert or None"""
         return Alert.from_db(db.is_correlated(self))
 
-    def is_flapping(self, window: int=1800, count: int=2) -> bool:
+    def is_flapping(self, window: int = 1800, count: int = 2) -> bool:
         return db.is_flapping(self, window, count)
 
     def get_status_and_value(self):
@@ -395,7 +395,7 @@ class Alert:
 
     # retrieve an alert
     @staticmethod
-    def find_by_id(id: str, customers: List[str]=None) -> 'Alert':
+    def find_by_id(id: str, customers: List[str] = None) -> 'Alert':
         return Alert.from_db(db.get_alert(id, customers))
 
     def is_blackout(self) -> bool:
@@ -411,7 +411,7 @@ class Alert:
         return alarm_model.is_suppressed(self)
 
     # set alert status
-    def set_status(self, status: str, text: str='', timeout: int=None) -> 'Alert':
+    def set_status(self, status: str, text: str = '', timeout: int = None) -> 'Alert':
         now = datetime.utcnow()
 
         timeout = timeout or current_app.config['ALERT_TIMEOUT']
@@ -481,7 +481,7 @@ class Alert:
 
     # search alerts
     @staticmethod
-    def find_all(query: Query=None, page: int=1, page_size: int=1000) -> List['Alert']:
+    def find_all(query: Query = None, page: int = 1, page_size: int = 1000) -> List['Alert']:
         return [Alert.from_db(alert) for alert in db.get_alerts(query, page, page_size)]
 
     @staticmethod
@@ -490,61 +490,61 @@ class Alert:
 
     # list alert history
     @staticmethod
-    def get_history(query: Query=None, page=1, page_size=1000) -> List[RichHistory]:
+    def get_history(query: Query = None, page=1, page_size=1000) -> List[RichHistory]:
         return [RichHistory.from_db(hist) for hist in db.get_history(query, page, page_size)]
 
     # get total count
     @staticmethod
-    def get_count(query: Query=None) -> Dict[str, Any]:
+    def get_count(query: Query = None) -> Dict[str, Any]:
         return db.get_count(query)
 
     # get severity counts
     @staticmethod
-    def get_counts_by_severity(query: Query=None) -> Dict[str, Any]:
+    def get_counts_by_severity(query: Query = None) -> Dict[str, Any]:
         return db.get_counts_by_severity(query)
 
     # get status counts
     @staticmethod
-    def get_counts_by_status(query: Query=None) -> Dict[str, Any]:
+    def get_counts_by_status(query: Query = None) -> Dict[str, Any]:
         return db.get_counts_by_status(query)
 
     # top 10 alerts
     @staticmethod
-    def get_top10_count(query: Query=None) -> List[Dict[str, Any]]:
+    def get_top10_count(query: Query = None) -> List[Dict[str, Any]]:
         return db.get_topn_count(query, topn=10)
 
     # top 10 flapping
     @staticmethod
-    def get_top10_flapping(query: Query=None) -> List[Dict[str, Any]]:
+    def get_top10_flapping(query: Query = None) -> List[Dict[str, Any]]:
         return db.get_topn_flapping(query, topn=10)
 
     # top 10 standing
     @staticmethod
-    def get_top10_standing(query: Query=None) -> List[Dict[str, Any]]:
+    def get_top10_standing(query: Query = None) -> List[Dict[str, Any]]:
         return db.get_topn_standing(query, topn=10)
 
     # get environments
     @staticmethod
-    def get_environments(query: Query=None) -> List[str]:
+    def get_environments(query: Query = None) -> List[str]:
         return db.get_environments(query)
 
     # get services
     @staticmethod
-    def get_services(query: Query=None) -> List[str]:
+    def get_services(query: Query = None) -> List[str]:
         return db.get_services(query)
 
     # get groups
     @staticmethod
-    def get_groups(query: Query=None) -> List[str]:
+    def get_groups(query: Query = None) -> List[str]:
         return db.get_alert_groups(query)
 
     # get tags
     @staticmethod
-    def get_tags(query: Query=None) -> List[str]:
+    def get_tags(query: Query = None) -> List[str]:
         return db.get_alert_tags(query)
 
     @staticmethod
-    def housekeeping(expired_threshold: int=2, info_threshold: int=12) -> None:
+    def housekeeping(expired_threshold: int = 2, info_threshold: int = 12) -> None:
         now = datetime.utcnow()
         expired, unshelved = db.housekeeping(expired_threshold, info_threshold)
 
@@ -573,7 +573,7 @@ class Alert:
             )
             db.set_status(id, 'open', timeout=current_app.config['ALERT_TIMEOUT'], update_time=now, history=history)
 
-    def from_status(self, status: str, text: str='', timeout: int=None) -> 'Alert':
+    def from_status(self, status: str, text: str = '', timeout: int = None) -> 'Alert':
         now = datetime.utcnow()
 
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
@@ -600,7 +600,7 @@ class Alert:
             history=history)
         )
 
-    def from_action(self, action: str, text: str='', timeout: int=None) -> 'Alert':
+    def from_action(self, action: str, text: str = '', timeout: int = None) -> 'Alert':
         now = datetime.utcnow()
 
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']

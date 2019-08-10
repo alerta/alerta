@@ -44,7 +44,7 @@ class Scope(str, Enum):
             return None
 
     @staticmethod
-    def from_str(action: str, resource: str=None):
+    def from_str(action: str, resource: str = None):
         """Return a scope based on the supplied action and resource.
 
         :param action: the scope action eg. read, write or admin

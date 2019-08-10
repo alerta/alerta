@@ -5,7 +5,7 @@ from flask import Flask
 
 class Config:
 
-    def __init__(self, app: Flask=None) -> None:
+    def __init__(self, app: Flask = None) -> None:
         self.app = None
         if app:
             self.init_app(app)

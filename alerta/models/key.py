@@ -14,7 +14,7 @@ JSON = Dict[str, Any]
 
 class ApiKey:
 
-    def __init__(self, user: str, scopes: List[Scope], text: str='', expire_time: datetime=None, customer: str=None, **kwargs) -> None:
+    def __init__(self, user: str, scopes: List[Scope], text: str = '', expire_time: datetime = None, customer: str = None, **kwargs) -> None:
 
         self.id = kwargs.get('id', None) or str(uuid4())
         self.key = kwargs.get('key', None) or key_helper.generate()
@@ -110,14 +110,14 @@ class ApiKey:
         return ApiKey.from_db(db.create_key(self))
 
     @staticmethod
-    def find_by_id(key: str, user: str=None) -> Optional['ApiKey']:
+    def find_by_id(key: str, user: str = None) -> Optional['ApiKey']:
         """
         Get API key details.
         """
         return ApiKey.from_db(db.get_key(key, user))
 
     @staticmethod
-    def find_all(query: Query=None) -> List['ApiKey']:
+    def find_all(query: Query = None) -> List['ApiKey']:
         """
         List all API keys.
         """

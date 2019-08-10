@@ -152,7 +152,7 @@ class User:
         return User.from_db(db.get_user_by_email(email))
 
     @staticmethod
-    def find_all(query: Query=None) -> List['User']:
+    def find_all(query: Query = None) -> List['User']:
         return [User.from_db(user) for user in db.get_users(query)]
 
     def update_last_login(self) -> bool:
