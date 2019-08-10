@@ -13,7 +13,7 @@ take_action_hook = hook_signals.signal('take-action')
 
 class HookTrigger:
 
-    def __init__(self, app: Flask=None) -> None:
+    def __init__(self, app: Flask = None) -> None:
         self.app = app
         if app is not None:
             self.init_app(app)

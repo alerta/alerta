@@ -132,7 +132,7 @@ class Group:
         return Group.from_db(db.get_group(id))
 
     @staticmethod
-    def find_all(query: Query=None) -> List['Group']:
+    def find_all(query: Query = None) -> List['Group']:
         return [Group.from_db(group) for group in db.get_groups(query)]
 
     def update(self, **kwargs) -> 'Group':

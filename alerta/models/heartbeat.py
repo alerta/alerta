@@ -20,7 +20,7 @@ JSON = Dict[str, Any]
 
 class Heartbeat:
 
-    def __init__(self, origin: str=None, tags: List[str]=None, create_time: datetime=None, timeout: int=None, customer: str=None, **kwargs) -> None:
+    def __init__(self, origin: str = None, tags: List[str] = None, create_time: datetime = None, timeout: int = None, customer: str = None, **kwargs) -> None:
 
         timeout = timeout if timeout is not None else current_app.config['HEARTBEAT_TIMEOUT']
         try:
@@ -134,12 +134,12 @@ class Heartbeat:
 
     # retrieve an heartbeat
     @staticmethod
-    def find_by_id(id: str, customers: List[str]=None) -> Optional['Heartbeat']:
+    def find_by_id(id: str, customers: List[str] = None) -> Optional['Heartbeat']:
         return Heartbeat.from_db(db.get_heartbeat(id, customers))
 
     # search heartbeats
     @staticmethod
-    def find_all(query: Query=None) -> List['Heartbeat']:
+    def find_all(query: Query = None) -> List['Heartbeat']:
         return [Heartbeat.from_db(heartbeat) for heartbeat in db.get_heartbeats(query)]
 
     # delete a heartbeat

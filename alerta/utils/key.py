@@ -12,7 +12,7 @@ from alerta.models.enums import Scope
 
 class ApiKeyHelper:
 
-    def __init__(self, app: Flask=None) -> None:
+    def __init__(self, app: Flask = None) -> None:
         self.app = app
         if app is not None:
             self.init_app(app)
