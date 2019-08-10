@@ -71,7 +71,7 @@ class Permission:
         return Permission.from_db(db.get_perm(id))
 
     @staticmethod
-    def find_all(query: Query=None) -> List['Permission']:
+    def find_all(query: Query = None) -> List['Permission']:
         return [Permission.from_db(perm) for perm in db.get_perms(query)]
 
     def update(self, **kwargs) -> 'Permission':

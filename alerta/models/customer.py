@@ -67,7 +67,7 @@ class Customer:
         return Customer.from_db(db.get_customer(id))
 
     @staticmethod
-    def find_all(query: Query=None) -> List['Customer']:
+    def find_all(query: Query = None) -> List['Customer']:
         return [Customer.from_db(customer) for customer in db.get_customers(query)]
 
     def update(self, **kwargs) -> 'Customer':
