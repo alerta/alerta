@@ -138,7 +138,7 @@ clause = Forward()
 field_name = valid_word()('fieldname')
 single_term = valid_word()('singleterm')
 phrase = QuotedString('"', unquoteResults=True)('phrase')
-wildcard = Regex('[a-z0-9]*[\?\*][a-z0-9]*')('wildcard')
+wildcard = Regex(r'[a-z0-9]*[\?\*][a-z0-9]*')('wildcard')
 wildcard.setParseAction(
     lambda t: t[0].replace('?', '.?').replace('*', '.*')
 )
