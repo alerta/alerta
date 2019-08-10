@@ -24,7 +24,7 @@ def custom(webhook):
     try:
         rv = custom_webhooks.webhooks[webhook].incoming(
             query_string=request.args,
-            payload=request.get_json() or request.get_data(as_text=True) or request.form
+            payload=request.get_json() or request.form or request.get_data(as_text=True)
         )
     except Exception as e:
         raise ApiError(str(e), 400)
