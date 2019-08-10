@@ -25,5 +25,5 @@ https://github.com/alerta/alerta/wiki/Python-3
 
 """)
 
-from .app import create_app  # noqa
+from .app import create_app  # noqa isort:skip
 app = create_app()
