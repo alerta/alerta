@@ -32,10 +32,10 @@ class HookTrigger:
         # not used
         pass
 
-    def process_status_change(self, alert, status, text):
+    def process_status_change(self, alert, status, text, timeout):
         from alerta.utils.api import process_status
         try:
-            alert, status, text = process_status(alert, status, text)
+            alert, status, text, timeout = process_status(alert, status, text, timeout)
         except RejectException as e:
             raise ApiError(str(e), 400)
         except Exception as e:
@@ -44,7 +44,7 @@ class HookTrigger:
         alert.tag(alert.tags)
         alert.update_attributes(alert.attributes)
 
-        return alert, status, text
+        return alert, status, text, timeout
 
     def process_take_action(self, alert, action, text):
         # not used

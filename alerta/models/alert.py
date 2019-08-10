@@ -284,8 +284,8 @@ class Alert:
 
         if new_status != status:
             text = 'duplicate alert (with status change)'
-            r = status_change_hook.send(duplicate_of, status=new_status, text=text)
-            _, (_, new_status, text) = r[0]
+            r = status_change_hook.send(duplicate_of, status=new_status, text=text, timeout=self.timeout)
+            _, (_, new_status, text, timeout) = r[0]
             self.update_time = now
 
             history = History(
@@ -341,8 +341,8 @@ class Alert:
         text = 'correlated alert'
 
         if new_status != status:
-            r = status_change_hook.send(correlate_with, status=new_status, text=text)
-            _, (_, new_status, text) = r[0]
+            r = status_change_hook.send(correlate_with, status=new_status, text=text, timeout=self.timeout)
+            _, (_, new_status, text, timeout) = r[0]
             self.update_time = now
 
         history = [History(
@@ -614,8 +614,8 @@ class Alert:
             action=action
         )
 
-        r = status_change_hook.send(self, status=new_status, text=text)
-        _, (_, new_status, text) = r[0]
+        r = status_change_hook.send(self, status=new_status, text=text, timeout=timeout)
+        _, (_, new_status, text, timeout) = r[0]
 
         history = [History(
             id=self.id,
