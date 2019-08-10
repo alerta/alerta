@@ -13,9 +13,11 @@ def load_alarm_model(model):
 
 
 class AlarmModel(Base):
+    name = None
 
     Severity = {}  # type: ignore
     Colors = {}  # type: ignore
+    Status = {}  # type: ignore
 
     DEFAULT_STATUS = None  # type: str
     DEFAULT_NORMAL_SEVERITY = None  # type: str
