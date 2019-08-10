@@ -73,7 +73,7 @@ class ApiKey:
             id=doc.get('id', None) or doc.get('_id'),
             key=doc.get('key', None) or doc.get('_id'),
             user=doc.get('user', None),
-            scopes=[Scope(s) for s in doc.get('scopes', None)] or key_helper.type_to_scopes(
+            scopes=[Scope(s) for s in doc.get('scopes', list())] or key_helper.type_to_scopes(
                 doc.get('user', None), doc.get('type', None)) or list(),
             text=doc.get('text', None),
             expire_time=doc.get('expireTime', None),
