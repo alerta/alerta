@@ -1,9 +1,10 @@
 from typing import Any, Dict
 
+import sentry_sdk
 from flask import Flask
 from flask_compress import Compress
 from flask_cors import CORS
-from raven.contrib.flask import Sentry
+from sentry_sdk.integrations.flask import FlaskIntegration
 from werkzeug.contrib.fixers import ProxyFix
 
 from alerta.database.base import Database, QueryBuilder
@@ -33,13 +34,15 @@ key_helper = ApiKeyHelper()
 
 db = Database()
 qb = QueryBuilder()
-sentry = Sentry()
+# Sentry will grab DSN from SENTRY_DSN environment variable.
+sentry_sdk.init(integrations=[FlaskIntegration()])
+
 mailer = Mailer()
 plugins = Plugins()
 custom_webhooks = CustomWebhooks()
 
 
-def create_app(config_override: Dict[str, Any]=None, environment: str=None) -> Flask:
+def create_app(config_override: Dict[str, Any] = None, environment: str = None) -> Flask:
 
     app = Flask(__name__)
     app.config['ENVIRONMENT'] = environment
@@ -63,7 +66,6 @@ def create_app(config_override: Dict[str, Any]=None, environment: str=None) -> F
 
     db.init_db(app)
     qb.init_app(app)
-    sentry.init_app(app)
 
     mailer.register(app)
     plugins.register(app)
@@ -94,7 +96,7 @@ except ImportError:
     pass
 
 
-def create_celery_app(app: Flask=None) -> 'Celery':
+def create_celery_app(app: Flask = None) -> 'Celery':
 
     from alerta.utils.format import register_custom_serializer
     register_custom_serializer()
