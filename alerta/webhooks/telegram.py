@@ -15,7 +15,7 @@ JSON = Dict[str, Any]
 def send_message_reply(alert: Alert, action: str, user: str, data: JSON) -> None:
     try:
         import telepot  # type: ignore
-    except ImportError as e:
+    except ImportError:
         current_app.logger.warning("You have configured Telegram but 'telepot' client is not installed", exc_info=True)
         return
 
@@ -57,7 +57,7 @@ def send_message_reply(alert: Alert, action: str, user: str, data: JSON) -> None
             msg_identifier=(chat_id, message_id), text=message,
             parse_mode='Markdown', reply_markup={'inline_keyboard': inline_keyboard}
         )
-    except Exception as e:
+    except Exception:
         current_app.logger.warning('Error sending reply message', exc_info=True)
 
 
