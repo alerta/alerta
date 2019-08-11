@@ -341,7 +341,7 @@ class AuthTestCase(unittest.TestCase):
 
         # authenticate using basic auth
         headers = {
-            'Authorization': 'Basic ' + base64.b64encode('napoleon@bonaparte.fr:blackforest'.encode('utf-8')).decode(),
+            'Authorization': 'Basic ' + base64.b64encode(b'napoleon@bonaparte.fr:blackforest').decode(),
             'Content-type': 'application/json'
         }
 

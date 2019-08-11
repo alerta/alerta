@@ -28,7 +28,7 @@ class StackDriverWebhook(WebhookBase):
             try:
                 content = json.loads(incident['documentation']['content'])
                 incident.update(content)
-            except Exception as e:
+            except Exception:
                 current_app.logger.warning("Invalid documentation content: '{}'".format(incident['documentation']))
 
         service = []
