@@ -73,7 +73,7 @@ class Mailer:
 
         except smtplib.SMTPException as e:
             current_app.logger.error('Failed to send email : %s', str(e))
-        except (socket.error, socket.herror, socket.gaierror) as e:
+        except (OSError, socket.herror, socket.gaierror) as e:
             current_app.logger.error('Mail server connection error: %s', str(e))
             return
         except Exception as e:
