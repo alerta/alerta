@@ -45,7 +45,7 @@ clean:
 	rm -Rf build dist *.egg-info
 
 test:
-	ALERTA_SVR_CONF_FILE= nosetests tests
+	ALERTA_SVR_CONF_FILE= pytest
 
 run:
 	alertad run --port 8080 --with-threads --reload

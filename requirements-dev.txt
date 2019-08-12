@@ -1,6 +1,7 @@
 mypy==0.620
-nose
 pre-commit
+pytest
+pytest-cov
 python-dotenv
 requests_mock
 twine
