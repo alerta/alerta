@@ -117,7 +117,7 @@ To run the tests using a local Postgres database run:
     $ pip install -r requirements.txt
     $ pip install -e .[postgres]
     $ createdb test5
-    $ ALERTA_SVR_CONF_FILE= DATABASE_URL=postgres:///test5 nosetests
+    $ ALERTA_SVR_CONF_FILE= DATABASE_URL=postgres:///test5 pytest
 
 Cloud Deployment
 ----------------
