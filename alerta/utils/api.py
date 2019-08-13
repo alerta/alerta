@@ -113,7 +113,7 @@ def process_action(alert: Alert, action: str, text: str, timeout: int) -> Tuple[
                     alert, action, text, timeout = updated
                 else:
                     alert = updated
-            except Exception:
+            except Exception as e:
                 logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
 
     # remove keys from attributes with None values
