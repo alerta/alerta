@@ -107,12 +107,14 @@ def process_action(alert: Alert, action: str, text: str, timeout: int) -> Tuple[
                 logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
         if updated:
             try:
-                try:
-                    alert, action, text = updated    #if timeout does not get returned, try default behavior
-                except Exception:
-                    alert, action, text, timeout = updated #Try to see if timeout gets returned
+                if len(updated) == 3:
+                    alert, action, text = updated   
+                elif len(updated) == 4: 
+                    alert, action, text, timeout = updated
+                else:
+                    alert = updated
             except Exception:
-                alert = updated
+                logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
 
     # remove keys from attributes with None values
     new_attrs = {k: v for k, v in alert.attributes.items() if v is not None}
