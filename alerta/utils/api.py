@@ -108,8 +108,8 @@ def process_action(alert: Alert, action: str, text: str, timeout: int) -> Tuple[
         if updated:
             try:
                 if len(updated) == 3:
-                    alert, action, text = updated   
-                elif len(updated) == 4: 
+                    alert, action, text = updated
+                elif len(updated) == 4:
                     alert, action, text, timeout = updated
                 else:
                     alert = updated
