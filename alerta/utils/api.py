@@ -87,8 +87,7 @@ def process_alert(alert: Alert) -> Alert:
     return alert
 
 
-def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, str]:
-
+def process_action(alert: Alert, action: str, text: str, timeout: int) -> Tuple[Alert, str, str, int]:
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None
@@ -96,7 +95,7 @@ def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, st
         if alert.is_suppressed:
             break
         try:
-            updated = plugin.take_action(alert, action, text, config=wanted_config)
+            updated = plugin.take_action(alert, action, text, timeout=timeout, config=wanted_config)
         except NotImplementedError:
             pass  # plugin does not support action() method
         except RejectException:
@@ -108,15 +107,20 @@ def process_action(alert: Alert, action: str, text: str) -> Tuple[Alert, str, st
                 logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
         if updated:
             try:
-                alert, action, text = updated
-            except Exception:
-                alert = updated
+                if len(updated) == 3:
+                    alert, action, text = updated
+                elif len(updated) == 4:
+                    alert, action, text, timeout = updated
+                else:
+                    alert = updated
+            except Exception as e:
+                logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
 
     # remove keys from attributes with None values
     new_attrs = {k: v for k, v in alert.attributes.items() if v is not None}
     alert.attributes = new_attrs
 
-    return alert, action, text
+    return alert, action, text, timeout
 
 
 def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, str]:
