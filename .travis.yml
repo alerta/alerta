@@ -29,6 +29,8 @@ install:
   - pip install .
 
 script:
+  - pip install coveralls
   - python -m mypy alerta/
   - pre-commit run -a
   - pytest --cov=alerta
+  - coveralls
