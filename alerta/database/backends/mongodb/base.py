@@ -1569,12 +1569,12 @@ class Backend(Database):
 
         if expired_threshold:
             expired_hours_ago = datetime.utcnow() - timedelta(hours=expired_threshold)
-            self.get_db().alerts.remove(
+            self.get_db().alerts.delete_many(
                 {'status': {'$in': ['closed', 'expired']}, 'lastReceiveTime': {'$lt': expired_hours_ago}})
 
         if info_threshold:
             info_hours_ago = datetime.utcnow() - timedelta(hours=info_threshold)
-            self.get_db().alerts.remove({'severity': 'informational', 'lastReceiveTime': {'$lt': info_hours_ago}})
+            self.get_db().alerts.delete_many({'severity': 'informational', 'lastReceiveTime': {'$lt': info_hours_ago}})
 
         # get list of alerts to be newly expired
         pipeline = [
