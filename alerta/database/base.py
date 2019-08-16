@@ -18,6 +18,8 @@ def get_backend(app):
     db_uri = app.config['DATABASE_URL']
     backend = urlparse(db_uri).scheme
 
+    if backend.startswith('mongodb'):
+        backend = 'mongodb'
     if backend == 'postgresql':
         backend = 'postgres'
     return backend
