@@ -509,7 +509,7 @@ class AlertsTestCase(unittest.TestCase):
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['tags'], ['foo', 'bar'])
+        self.assertEqual(sorted(data['alert']['tags']), ['bar', 'foo'])
 
         # duplicate tag is a no-op
         response = self.client.put('/alert/' + alert_id + '/tag',
@@ -518,7 +518,7 @@ class AlertsTestCase(unittest.TestCase):
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['tags'], ['foo', 'bar'])
+        self.assertEqual(sorted(data['alert']['tags']), ['bar', 'foo'])
 
         # delete tag
         response = self.client.put('/alert/' + alert_id + '/untag',
