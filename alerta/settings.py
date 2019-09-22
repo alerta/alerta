@@ -119,6 +119,7 @@ API_KEY_EXPIRE_DAYS = 365  # 1 year
 # Audit Log
 AUDIT_TRAIL = ['admin']  # possible categories are 'admin', 'write', and 'auth'
 AUDIT_LOG = None  # set to True to log to application logger
+AUDIT_LOG_REDACT = True  # redact sensitive data before logging
 AUDIT_URL = None  # send audit log events via webhook URL
 
 # CORS settings
