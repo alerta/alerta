@@ -124,6 +124,15 @@ class ScopesTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
 
+        # try invalid scopes
+        update = {
+            'scopes': ['foo:bar']
+        }
+        response = self.client.put('/perm/' + perm_id, data=json.dumps(update), headers=headers)
+        self.assertEqual(response.status_code, 400)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], "'foo:bar' is not a valid Scope")
+
         # change perm
         update = {
             'match': 'read-write'
