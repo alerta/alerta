@@ -47,12 +47,12 @@ class AuditTrail:
 
     def _log_response(self, app: Flask, category: str, event: str, message: str, user: str, customers: List[str],
                       scopes: List[str], resource_id: str, type: str, request: Any, **extra: Any) -> None:
-        app.logger.info(self._fmt(category, event, message, user, customers,
+        app.logger.info(self._fmt(app, category, event, message, user, customers,
                                   scopes, resource_id, type, request, **extra))
 
     def _webhook_response(self, app: Flask, category: str, event: str, message: str, user: str, customers: List[str],
                           scopes: List[str], resource_id: str, type: str, request: Any, **extra: Any) -> None:
-        payload = self._fmt(category, event, message, user, customers, scopes, resource_id, type, request, **extra)
+        payload = self._fmt(app, category, event, message, user, customers, scopes, resource_id, type, request, **extra)
         try:
             requests.post(self.audit_url, data=payload, timeout=2)
         except Exception as e:
@@ -77,8 +77,16 @@ class AuditTrail:
         self._webhook_response(app, 'auth', **kwargs)
 
     @staticmethod
-    def _fmt(category: str, event: str, message: str, user: str, customers: List[str], scopes: List[str],
+    def _fmt(app, category: str, event: str, message: str, user: str, customers: List[str], scopes: List[str],
              resource_id: str, type: str, request: Any, **extra: Any) -> str:
+
+        def get_redacted_data(r):
+            data = r.get_json()
+            if app.config['AUDIT_LOG_REDACT']:
+                if 'password' in data:
+                    data['password'] = '[REDACTED]'
+            return json.dumps(data)
+
         return json.dumps({
             'id': str(uuid.uuid4()),
             '@timestamp': datetime.utcnow(),
@@ -100,7 +108,7 @@ class AuditTrail:
                 'method': request.method,
                 'url': request.url,
                 'args': request.args.to_dict(),
-                'data': request.get_data(as_text=True),
+                'data': get_redacted_data(request),
                 'ipAddress': request.remote_addr
             },
             'extra': extra
