@@ -42,7 +42,7 @@ def create_perm():
     if perm:
         return jsonify(status='ok', id=perm.id, permission=perm.serialize), 201
     else:
-        raise ApiError('create API key failed', 500)
+        raise ApiError('create permission failed', 500)
 
 
 @api.route('/perm/<perm_id>', methods=['OPTIONS', 'GET'])
@@ -108,6 +108,10 @@ def list_perms():
 def update_perm(perm_id):
     if not request.json:
         raise ApiError('nothing to change', 400)
+
+    for s in request.json.get('scopes', []):
+        if s not in list(Scope):
+            raise ApiError("'{}' is not a valid Scope".format(s), 400)
 
     perm = Permission.find_by_id(perm_id)
 
