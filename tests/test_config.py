@@ -150,7 +150,7 @@ class TestValidator(unittest.TestCase):
 
     def test_get_user_config_allowed_gitlab_groups(self):
         os.environ["ALLOWED_GITLAB_GROUPS"] = "['*','gitlab.org']"
-        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_GITLAB_GROUPS'], ['*', 'gitlab.org'])
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['*', 'gitlab.org'])
 
     def test_get_user_config_keycloak_url(self):
         os.environ["KEYCLOAK_URL"] = "https://keycloak.com"
@@ -162,7 +162,7 @@ class TestValidator(unittest.TestCase):
 
     def test_get_user_config_allowed_keycloak_roles(self):
         os.environ["ALLOWED_KEYCLOAK_ROLES"] = "['user','admin']"
-        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_KEYCLOAK_ROLES'], ['user', 'admin'])
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['user', 'admin'])
 
     def test_get_user_config_oidc_issuer_url(self):
         os.environ["OIDC_ISSUER_URL"] = "https://oidc.com"
