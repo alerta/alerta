@@ -142,4 +142,64 @@ class TestValidator(unittest.TestCase):
 
     def test_get_user_config_allowed_github_orgs(self):
         os.environ["ALLOWED_GITHUB_ORGS"] = "['*','github.org']"
-        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_GITHUB_ORGS'], ['*','github.org'])
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_GITHUB_ORGS'], ['*', 'github.org'])
+
+    def test_get_user_config_gitlab_url(self):
+        os.environ["GITLAB_URL"] = "https://gitlab.com"
+        self.assertEqual(self.TestConfig.get_user_config()['GITLAB_URL'], 'https://gitlab.com')
+
+    def test_get_user_config_allowed_gitlab_groups(self):
+        os.environ["ALLOWED_GITLAB_GROUPS"] = "['*','gitlab.org']"
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_GITLAB_GROUPS'], ['*', 'gitlab.org'])
+
+    def test_get_user_config_keycloak_url(self):
+        os.environ["KEYCLOAK_URL"] = "https://keycloak.com"
+        self.assertEqual(self.TestConfig.get_user_config()['KEYCLOAK_URL'], 'https://keycloak.com')
+
+    def test_get_user_config_keycloak_realm(self):
+        os.environ["KEYCLOAK_REALM"] = "realm"
+        self.assertEqual(self.TestConfig.get_user_config()['KEYCLOAK_REALM'], 'realm')
+
+    def test_get_user_config_allowed_keycloak_roles(self):
+        os.environ["ALLOWED_KEYCLOAK_ROLES"] = "['user','admin']"
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_KEYCLOAK_ROLES'], ['user', 'admin'])
+
+    def test_get_user_config_oidc_issuer_url(self):
+        os.environ["OIDC_ISSUER_URL"] = "https://oidc.com"
+        self.assertEqual(self.TestConfig.get_user_config()['OIDC_ISSUER_URL'], 'https://oidc.com')
+
+    def test_get_user_config_allowed_oidc_roles(self):
+        os.environ["ALLOWED_OIDC_ROLES"] = "['user','admin']"
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['user', 'admin'])
+
+    def test_get_user_config_cors_origins(self):
+        os.environ["CORS_ORIGINS"] = "['http://localhost','http://localhost:8000','https://*.local.alerta.io:8080']"
+        self.assertEqual(self.TestConfig.get_user_config()['CORS_ORIGINS'], ['http://localhost', 'http://localhost:8000', 'https://*.local.alerta.io:8080'])
+
+    def test_get_user_config_mail_from(self):
+        os.environ["MAIL_FROM"] = "name@namesen.com"
+        self.assertEqual(self.TestConfig.get_user_config()['MAIL_FROM'], 'name@namesen.com')
+
+    def test_get_user_config_smtp_password(self):
+        os.environ["SMTP_PASSWORD"] = "smtppassword"
+        self.assertEqual(self.TestConfig.get_user_config()['SMTP_PASSWORD'], 'smtppassword')
+
+    def test_get_user_config_google_tracking_id(self):
+        os.environ["GOOGLE_TRACKING_ID"] = "fdkngfjunfnjf984375"
+        self.assertEqual(self.TestConfig.get_user_config()['GOOGLE_TRACKING_ID'], 'fdkngfjunfnjf984375')
+
+    def test_get_user_config_plugins(self):
+        os.environ["PLUGINS"] = "['remote_ip','reject']"
+        self.assertEqual(self.TestConfig.get_user_config()['PLUGINS'], ['remote_ip', 'reject'])
+
+    def test_get_user_config_alert_timeout(self):
+        os.environ["ALERT_TIMEOUT"] = "300"
+        self.assertEqual(self.TestConfig.get_user_config()['ALERT_TIMEOUT'], 300)
+
+    def test_get_user_config_heartbeat_timeout(self):
+        os.environ["HEARTBEAT_TIMEOUT"] = "300"
+        self.assertEqual(self.TestConfig.get_user_config()['HEARTBEAT_TIMEOUT'], 300)
+
+    def test_get_user_config_api_key_expire_days(self):
+        os.environ["API_KEY_EXPIRE_DAYS"] = "365"
+        self.assertEqual(self.TestConfig.get_user_config()['API_KEY_EXPIRE_DAYS'], 365)
