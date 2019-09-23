@@ -50,7 +50,8 @@ setuptools.setup(
         'PyJWT',
         'cryptography',
         'pyyaml',
-        'bcrypt'
+        'bcrypt',
+        'voluptuous'
     ],
     extras_require={
         'mongodb': ['pymongo>=3.0'],
