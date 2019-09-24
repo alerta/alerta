@@ -11,6 +11,9 @@ class TestValidator(unittest.TestCase):
         self.TestValidator = Validator()
         self.TestConfig = Config()
 
+    def tearDown(self):
+        pass
+
     def test_boolean_validator(self):
         self.assertEqual(self.TestValidator.boolean_validator('1'), True)
         self.assertEqual(self.TestValidator.boolean_validator('true'), True)

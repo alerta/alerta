@@ -41,6 +41,7 @@ class Config:
 
     @staticmethod
     def get_user_config():
+        Validate = Validator()
         from flask import Config
         config = Config('/')
 
@@ -59,7 +60,7 @@ class Config:
 
         if 'BASE_URL' in os.environ:
             try:
-                config['BASE_URL'] = Validator().url_validator(
+                config['BASE_URL'] = Validate.url_validator(
                     os.environ['BASE_URL'])
 
                 LOG.info(
@@ -82,7 +83,7 @@ class Config:
 
         if 'SECRET_KEY' in os.environ:
             try:
-                config['SECRET_KEY'] = Validator().string_validator(
+                config['SECRET_KEY'] = Validate.string_validator(
                     os.environ['SECRET_KEY'])
 
                 LOG.info(
@@ -104,7 +105,7 @@ class Config:
         config['DATABASE_URL'] = database_url or config['DATABASE_URL']
         if config['DATABASE_URL']:
             try:
-                config['DATABASE_URL'] = Validator().url_validator(
+                config['DATABASE_URL'] = Validate.url_validator(
                     os.environ['DATABASE_URL'])
 
                 LOG.info(
@@ -117,7 +118,7 @@ class Config:
         if 'DATABASE_NAME' in os.environ:
             config['DATABASE_NAME'] = os.environ['DATABASE_NAME']
             try:
-                config['DATABASE_NAME'] = Validator().string_validator(
+                config['DATABASE_NAME'] = Validate.string_validator(
                     str(os.environ['DATABASE_NAME']))
 
                 LOG.info(
@@ -140,7 +141,7 @@ class Config:
 
         if 'AUTH_PROVIDER' in os.environ:
             try:
-                config['AUTH_PROVIDER'] = Validator().string_validator(
+                config['AUTH_PROVIDER'] = Validate.string_validator(
                     str(os.environ['AUTH_PROVIDER']))
 
                 LOG.info(
@@ -153,7 +154,7 @@ class Config:
         if 'ADMIN_USERS' in os.environ:
             try:
                 list_data = ast.literal_eval(os.environ['ADMIN_USERS'])
-                valid_list = Validator().list_validator(list_data)
+                valid_list = Validate.list_validator(list_data)
                 strSchema = Schema([str])
                 config['ADMIN_USERS'] = strSchema(valid_list)
 
@@ -188,7 +189,7 @@ class Config:
 
         if 'OAUTH2_CLIENT_ID' in os.environ:
             try:
-                config['OAUTH2_CLIENT_ID'] = Validator().string_validator(
+                config['OAUTH2_CLIENT_ID'] = Validate.string_validator(
                     os.environ['OAUTH2_CLIENT_ID'])
 
                 LOG.info(
@@ -200,7 +201,7 @@ class Config:
 
         if 'OAUTH2_CLIENT_SECRET' in os.environ:
             try:
-                config['OAUTH2_CLIENT_SECRET'] = Validator().string_validator(
+                config['OAUTH2_CLIENT_SECRET'] = Validate.string_validator(
                     os.environ['OAUTH2_CLIENT_SECRET'])
 
                 LOG.info('Environment variable OAUTH2_CLIENT_SECRET parsed with value %s',
@@ -214,7 +215,7 @@ class Config:
             try:
                 list_data = ast.literal_eval(
                     os.environ['ALLOWED_EMAIL_DOMAINS'])
-                valid_list = Validator().list_validator(list_data)
+                valid_list = Validate.list_validator(list_data)
                 domainSchema = Schema([str])
                 config['ALLOWED_EMAIL_DOMAINS'] = domainSchema(valid_list)
 
@@ -227,7 +228,7 @@ class Config:
 
         if 'AZURE_TENANT' in os.environ:
             try:
-                config['AZURE_TENANT'] = Validator().string_validator(
+                config['AZURE_TENANT'] = Validate.string_validator(
                     os.environ['AZURE_TENANT'])
 
                 LOG.info(
@@ -239,7 +240,7 @@ class Config:
 
         if 'GITHUB_URL' in os.environ:
             try:
-                config['GITHUB_URL'] = Validator().url_validator(
+                config['GITHUB_URL'] = Validate.url_validator(
                     os.environ['GITHUB_URL'])
 
                 LOG.info(
@@ -252,7 +253,7 @@ class Config:
         if 'ALLOWED_GITHUB_ORGS' in os.environ:
             try:
                 list_data = ast.literal_eval(os.environ['ALLOWED_GITHUB_ORGS'])
-                valid_list = Validator().list_validator(list_data)
+                valid_list = Validate.list_validator(list_data)
                 strSchema = Schema([str])
                 config['ALLOWED_GITHUB_ORGS'] = strSchema(valid_list)
 
@@ -265,7 +266,7 @@ class Config:
 
         if 'GITLAB_URL' in os.environ:
             try:
-                config['GITLAB_URL'] = Validator().url_validator(
+                config['GITLAB_URL'] = Validate.url_validator(
                     os.environ['GITLAB_URL'])
 
                 LOG.info(
@@ -278,7 +279,7 @@ class Config:
         if 'ALLOWED_GITLAB_GROUPS' in os.environ:
             try:
                 list_data = ast.literal_eval(os.environ['ALLOWED_GITLAB_GROUPS'])
-                valid_list = Validator().list_validator(list_data)
+                valid_list = Validate.list_validator(list_data)
                 strSchema = Schema([str])
                 config['ALLOWED_OIDC_ROLES'] = strSchema(valid_list)
 
@@ -291,7 +292,7 @@ class Config:
 
         if 'KEYCLOAK_URL' in os.environ:
             try:
-                config['KEYCLOAK_URL'] = Validator().url_validator(
+                config['KEYCLOAK_URL'] = Validate.url_validator(
                     os.environ['KEYCLOAK_URL'])
 
                 LOG.info(
@@ -303,7 +304,7 @@ class Config:
 
         if 'KEYCLOAK_REALM' in os.environ:
             try:
-                config['KEYCLOAK_REALM'] = Validator().string_validator(
+                config['KEYCLOAK_REALM'] = Validate.string_validator(
                     os.environ['KEYCLOAK_REALM'])
 
                 LOG.info(
@@ -316,7 +317,7 @@ class Config:
         if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
             try:
                 list_data = ast.literal_eval(os.environ['ALLOWED_KEYCLOAK_ROLES'])
-                valid_list = Validator().list_validator(list_data)
+                valid_list = Validate.list_validator(list_data)
                 strSchema = Schema([str])
                 config['ALLOWED_OIDC_ROLES'] = strSchema(valid_list)
 
@@ -329,7 +330,7 @@ class Config:
 
         if 'OIDC_ISSUER_URL' in os.environ:
             try:
-                config['OIDC_ISSUER_URL'] = Validator().url_validator(
+                config['OIDC_ISSUER_URL'] = Validate.url_validator(
                     os.environ['OIDC_ISSUER_URL'])
 
                 LOG.info(
@@ -342,7 +343,7 @@ class Config:
         if 'ALLOWED_OIDC_ROLES' in os.environ:
             try:
                 list_data = ast.literal_eval(os.environ['ALLOWED_OIDC_ROLES'])
-                valid_list = Validator().list_validator(list_data)
+                valid_list = Validate.list_validator(list_data)
                 strSchema = Schema([str])
                 config['ALLOWED_OIDC_ROLES'] = strSchema(valid_list)
 
@@ -356,7 +357,7 @@ class Config:
         if 'CORS_ORIGINS' in os.environ:
             try:
                 list_data = ast.literal_eval(os.environ['CORS_ORIGINS'])
-                valid_list = Validator().list_validator(list_data)
+                valid_list = Validate.list_validator(list_data)
                 urlSchema = Schema([Url()])
                 config['CORS_ORIGINS'] = urlSchema(valid_list)
 
@@ -369,7 +370,7 @@ class Config:
 
         if 'MAIL_FROM' in os.environ:
             try:
-                config['MAIL_FROM'] = Validator().email_validator(
+                config['MAIL_FROM'] = Validate.email_validator(
                     os.environ['MAIL_FROM'])
 
                 LOG.info(
@@ -381,7 +382,7 @@ class Config:
 
         if 'SMTP_PASSWORD' in os.environ:
             try:
-                config['SMTP_PASSWORD'] = Validator().string_validator(
+                config['SMTP_PASSWORD'] = Validate.string_validator(
                     os.environ['SMTP_PASSWORD'])
 
                 LOG.info(
@@ -393,7 +394,7 @@ class Config:
 
         if 'GOOGLE_TRACKING_ID' in os.environ:
             try:
-                config['GOOGLE_TRACKING_ID'] = Validator().string_validator(
+                config['GOOGLE_TRACKING_ID'] = Validate.string_validator(
                     os.environ['GOOGLE_TRACKING_ID'])
 
                 LOG.info(
@@ -406,7 +407,7 @@ class Config:
         if 'PLUGINS' in os.environ:
             try:
                 list_data = ast.literal_eval(os.environ['PLUGINS'])
-                valid_list = Validator().list_validator(list_data)
+                valid_list = Validate.list_validator(list_data)
                 urlSchema = Schema([str])
                 config['PLUGINS'] = urlSchema(valid_list)
 
@@ -419,7 +420,7 @@ class Config:
 
         if 'ALERT_TIMEOUT' in os.environ:
             try:
-                config['ALERT_TIMEOUT'] = Validator().integer_validator(
+                config['ALERT_TIMEOUT'] = Validate.integer_validator(
                     int(os.environ['ALERT_TIMEOUT']))
 
                 LOG.info('Environment variable ALERT_TIMEOUT parsed with value %s', str(
@@ -431,7 +432,7 @@ class Config:
 
         if 'HEARTBEAT_TIMEOUT' in os.environ:
             try:
-                config['HEARTBEAT_TIMEOUT'] = Validator().integer_validator(
+                config['HEARTBEAT_TIMEOUT'] = Validate.integer_validator(
                     int(os.environ['HEARTBEAT_TIMEOUT']))
 
                 LOG.info('Environment variable HEARTBEAT_TIMEOUT parsed with value %s', str(
@@ -443,7 +444,7 @@ class Config:
 
         if 'API_KEY_EXPIRE_DAYS' in os.environ:
             try:
-                config['API_KEY_EXPIRE_DAYS'] = Validator().integer_validator(
+                config['API_KEY_EXPIRE_DAYS'] = Validate.integer_validator(
                     int(os.environ['API_KEY_EXPIRE_DAYS']))
 
                 LOG.info('Environment variable API_KEY_EXPIRE_DAYS parsed with value %s', str(
