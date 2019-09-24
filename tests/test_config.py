@@ -1,6 +1,6 @@
 import os
 import unittest
-from alerta.utils.config import Config, Validator
+from alerta.utils.config import Config, Validate
 
 
 class TestValidator(unittest.TestCase):
@@ -8,21 +8,72 @@ class TestValidator(unittest.TestCase):
     Test the environment variables
     """
     def setUp(self):
-        self.TestValidator = Validator()
+        self.TestValidator = Validate()
+
+    def tearDown(self):
+        pass
+
+    def test_get_variable(self):
+        os.environ["DEBUG"] = "1"
+        self.assertEqual(self.TestValidator.get_variable('DEBUG'), '1')
+        os.environ["DEBUG"] = "true"
+        self.assertEqual(self.TestValidator.get_variable('DEBUG'), 'true')
+
+    def test_boolean_validator(self):
+        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', '1'), True)
+        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', 'true'), True)
+        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', 'True'), True)
+        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', 'false'), False)
+        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', 'False'), False)
+        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', '0'), False)
+        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', "[0]"), False)
+
+    def test_url_validator(self):
+        self.assertEqual(self.TestValidator.validate_url('BASE_URL', 'https://alerta.io'), 'https://alerta.io')
+        self.assertEqual(self.TestValidator.validate_url('BASE_URL', ' '), None)
+        self.assertEqual(self.TestValidator.validate_url('BASE_URL', 'none'), None)
+        self.assertEqual(self.TestValidator.validate_url('BASE_URL', 'localhost.com'), None)
+        self.assertEqual(self.TestValidator.validate_url('BASE_URL', 'https://*.alerta.io'), 'https://*.alerta.io')
+        self.assertEqual(self.TestValidator.validate_url('BASE_URL', 'http://localhost.com'), 'http://localhost.com')
+        self.assertEqual(self.TestValidator.validate_url('BASE_URL', ['http://localhost.com']), ['http://localhost.com'])
+        self.assertEqual(self.TestValidator.validate_url('BASE_URL', ['http://localhost.com', 'https://localhost.com']), ['http://localhost.com', 'https://localhost.com'])
+
+    def test_string_validator(self):
+        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', 'changeme'), 'changeme')
+        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', ' '), ' ')
+        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', '[changeme]'), '[changeme]')
+        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', 'jgfeujksegf7837546'), 'jgfeujksegf7837546')
+        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', ['one', 'two']), ['one', 'two'])
+        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', ['one', 2]), None)
+
+    def test_email_validator(self):
+        self.assertEqual(self.TestValidator.validate_email('MAIL_FROM', 'name@namesen.com'), 'name@namesen.com')
+        self.assertEqual(self.TestValidator.validate_email('MAIL_FROM', 'name'), None)
+        self.assertEqual(self.TestValidator.validate_email('MAIL_FROM', 'namesen.com'), None)
+        self.assertEqual(self.TestValidator.validate_email('MAIL_FROM', '@namesen.com'), None)
+
+    def test_integer_validator(self):
+        self.assertEqual(self.TestValidator.validate_integer('ALERT_TIMEOUT', '2'), 2)
+        self.assertEqual(self.TestValidator.validate_integer('ALERT_TIMEOUT', 'two'), None)
+        self.assertEqual(self.TestValidator.validate_integer('ALERT_TIMEOUT', '[two]'), None)
+
+    def test_list_validator(self):
+        self.assertEqual(self.TestValidator.validate_list('ADMIN_USERS', "['admin']"), ['admin'])
+        self.assertEqual(self.TestValidator.validate_list('ADMIN_USERS', "['admin', 'admin@adminsen.com']"), ['admin', 'admin@adminsen.com'])
+        self.assertEqual(self.TestValidator.validate_list('ADMIN_USERS', "admin"), ['admin'])
+        self.assertEqual(self.TestValidator.validate_list('ADMIN_USERS', "admin,name"), ['admin', 'name'])
+
+
+class TestConfig(unittest.TestCase):
+    """
+    Test the environment variables
+    """
+    def setUp(self):
         self.TestConfig = Config()
 
     def tearDown(self):
         pass
 
-    def test_boolean_validator(self):
-        self.assertEqual(self.TestValidator.boolean_validator('1'), True)
-        self.assertEqual(self.TestValidator.boolean_validator('true'), True)
-        self.assertEqual(self.TestValidator.boolean_validator('True'), True)
-        self.assertEqual(self.TestValidator.boolean_validator('false'), False)
-        self.assertEqual(self.TestValidator.boolean_validator('False'), False)
-        self.assertEqual(self.TestValidator.boolean_validator('0'), False)
-        self.assertEqual(self.TestValidator.boolean_validator(0), None)
-        self.assertEqual(self.TestValidator.boolean_validator("[0]"), None)
 
     def test_get_user_config_debug(self):
         os.environ["DEBUG"] = "1"
@@ -34,17 +85,20 @@ class TestValidator(unittest.TestCase):
         os.environ["DEBUG"] = "0"
         self.assertEqual(self.TestConfig.get_user_config()['DEBUG'], False)
         os.environ["DEBUG"] = "off"
-        self.assertEqual(self.TestConfig.get_user_config()['DEBUG'], None)
+        self.assertEqual(self.TestConfig.get_user_config()['DEBUG'], False)
 
     def test_get_user_config_base_url(self):
+        os.environ["BASE_URL"] = "https://alerta.io"
+        self.assertEqual(self.TestConfig.get_user_config()['BASE_URL'], os.environ["BASE_URL"])
+
         os.environ["BASE_URL"] = "https://alerta.io"
         self.assertEqual(self.TestConfig.get_user_config()['BASE_URL'], 'https://alerta.io')
         os.environ["BASE_URL"] = "https://*.alerta.io"
         self.assertEqual(self.TestConfig.get_user_config()['BASE_URL'], 'https://*.alerta.io')
         os.environ["BASE_URL"] = ""
-        self.assertEqual(self.TestConfig.get_user_config()['BASE_URL'], '')
+        self.assertEqual(self.TestConfig.get_user_config()['BASE_URL'], None)
         os.environ["BASE_URL"] = "none"
-        self.assertEqual(self.TestConfig.get_user_config()['BASE_URL'], '')
+        self.assertEqual(self.TestConfig.get_user_config()['BASE_URL'], None)
 
     def test_get_user_config_use_proxyfix(self):
         os.environ["USE_PROXYFIX"] = "1"
@@ -56,9 +110,12 @@ class TestValidator(unittest.TestCase):
         os.environ["USE_PROXYFIX"] = "0"
         self.assertEqual(self.TestConfig.get_user_config()['USE_PROXYFIX'], False)
         os.environ["USE_PROXYFIX"] = "off"
-        self.assertEqual(self.TestConfig.get_user_config()['USE_PROXYFIX'], None)
+        self.assertEqual(self.TestConfig.get_user_config()['USE_PROXYFIX'], False)
 
     def test_get_user_config_secret_key(self):
+        os.environ["SECRET_KEY"] = "changeme"
+        self.assertEqual(self.TestConfig.get_user_config()['SECRET_KEY'], os.environ["SECRET_KEY"])
+
         self.assertEqual(self.TestConfig.get_user_config()['SECRET_KEY'], 'changeme')
         os.environ["SECRET_KEY"] = "jgfeujksegf7837546"
         self.assertEqual(self.TestConfig.get_user_config()['SECRET_KEY'], 'jgfeujksegf7837546')
@@ -68,6 +125,9 @@ class TestValidator(unittest.TestCase):
         self.assertEqual(self.TestConfig.get_user_config()['DATABASE_URL'], 'mongodb://db:27017/monitoring')
 
     def test_get_user_config_database_name(self):
+        os.environ["DATABASE_NAME"] = "alerta"
+        self.assertEqual(self.TestConfig.get_user_config()['DATABASE_NAME'], os.environ["DATABASE_NAME"])
+
         os.environ["DATABASE_NAME"] = ""
         self.assertEqual(self.TestConfig.get_user_config()['DATABASE_NAME'], '')
         os.environ["DATABASE_NAME"] = "alerta"
@@ -83,17 +143,25 @@ class TestValidator(unittest.TestCase):
         os.environ["AUTH_REQUIRED"] = "0"
         self.assertEqual(self.TestConfig.get_user_config()['AUTH_REQUIRED'], False)
         os.environ["AUTH_REQUIRED"] = "off"
-        self.assertEqual(self.TestConfig.get_user_config()['AUTH_REQUIRED'], None)
+        self.assertEqual(self.TestConfig.get_user_config()['AUTH_REQUIRED'], False)
 
     def test_get_user_config_auth_provider(self):
+        os.environ["AUTH_PROVIDER"] = "basic"
+        self.assertEqual(self.TestConfig.get_user_config()['AUTH_PROVIDER'], os.environ["AUTH_PROVIDER"])
+
         os.environ["AUTH_PROVIDER"] = "basic"
         self.assertEqual(self.TestConfig.get_user_config()['AUTH_PROVIDER'], "basic")
         os.environ["AUTH_PROVIDER"] = "github"
         self.assertEqual(self.TestConfig.get_user_config()['AUTH_PROVIDER'], "github")
 
     def test_get_user_config_admin_users(self):
+        # Checking for backward compatibility
+        os.environ["ADMIN_USERS"] = 'norman,name@namesen.com'
+        self.assertEqual(self.TestConfig.get_user_config()['ADMIN_USERS'], ['norman', 'name@namesen.com'])
+
+        # Testing new parsing
         os.environ["ADMIN_USERS"] = "['norman','name@namesen.com']"
-        self.assertEqual(self.TestConfig.get_user_config()['ADMIN_USERS'], ['norman','name@namesen.com'])
+        self.assertEqual(self.TestConfig.get_user_config()['ADMIN_USERS'], ['norman', 'name@namesen.com'])
 
     def test_get_user_config_signup_enabled(self):
         os.environ["SIGNUP_ENABLED"] = "1"
@@ -105,7 +173,7 @@ class TestValidator(unittest.TestCase):
         os.environ["SIGNUP_ENABLED"] = "0"
         self.assertEqual(self.TestConfig.get_user_config()['SIGNUP_ENABLED'], False)
         os.environ["SIGNUP_ENABLED"] = "off"
-        self.assertEqual(self.TestConfig.get_user_config()['SIGNUP_ENABLED'], None)
+        self.assertEqual(self.TestConfig.get_user_config()['SIGNUP_ENABLED'], False)
 
     def test_get_user_config_customer_views(self):
         os.environ["CUSTOMER_VIEWS"] = "1"
@@ -119,17 +187,30 @@ class TestValidator(unittest.TestCase):
         os.environ["CUSTOMER_VIEWS"] = "0"
         self.assertEqual(self.TestConfig.get_user_config()['CUSTOMER_VIEWS'], False)
         os.environ["CUSTOMER_VIEWS"] = "off"
-        self.assertEqual(self.TestConfig.get_user_config()['CUSTOMER_VIEWS'], None)
+        self.assertEqual(self.TestConfig.get_user_config()['CUSTOMER_VIEWS'], False)
 
     def test_get_user_config_oauth_client_id(self):
+        os.environ["OAUTH2_CLIENT_ID"] = "hhewkepwa78r57t4t65nk"
+        self.assertEqual(self.TestConfig.get_user_config()['OAUTH2_CLIENT_ID'], os.environ["OAUTH2_CLIENT_ID"])
+
         os.environ["OAUTH2_CLIENT_ID"] = "hhewkepwa78r57t4t65nk"
         self.assertEqual(self.TestConfig.get_user_config()['OAUTH2_CLIENT_ID'], 'hhewkepwa78r57t4t65nk')
 
     def test_get_user_config_oauth_client_secret(self):
         os.environ["OAUTH2_CLIENT_SECRET"] = "secretkey"
+        self.assertEqual(self.TestConfig.get_user_config()['OAUTH2_CLIENT_SECRET'], os.environ["OAUTH2_CLIENT_SECRET"])
+
+        os.environ["OAUTH2_CLIENT_SECRET"] = "secretkey"
         self.assertEqual(self.TestConfig.get_user_config()['OAUTH2_CLIENT_SECRET'], 'secretkey')
 
     def test_get_user_config_allowed_email_domains(self):
+        # Checking for backward compatibility
+        os.environ["ALLOWED_EMAIL_DOMAINS"] = '*'
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_EMAIL_DOMAINS'], ['*'])
+        os.environ["ALLOWED_EMAIL_DOMAINS"] = '*,gitlab.org'
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_EMAIL_DOMAINS'], ['*', 'gitlab.org'])
+
+        # Testing new parsing
         os.environ["ALLOWED_EMAIL_DOMAINS"] = "['*']"
         self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_EMAIL_DOMAINS'], ['*'])
         os.environ["ALLOWED_EMAIL_DOMAINS"] = "['github.com']"
@@ -137,61 +218,130 @@ class TestValidator(unittest.TestCase):
 
     def test_get_user_config_azure_tenant(self):
         os.environ["AZURE_TENANT"] = "common"
+        self.assertEqual(self.TestConfig.get_user_config()['AZURE_TENANT'], os.environ["AZURE_TENANT"])
+
+        os.environ["AZURE_TENANT"] = "common"
         self.assertEqual(self.TestConfig.get_user_config()['AZURE_TENANT'], 'common')
 
     def test_get_user_config_github_url(self):
         os.environ["GITHUB_URL"] = "https://github.com"
+        self.assertEqual(self.TestConfig.get_user_config()['GITHUB_URL'], os.environ["GITHUB_URL"])
+
+        os.environ["GITHUB_URL"] = "https://github.com"
         self.assertEqual(self.TestConfig.get_user_config()['GITHUB_URL'], 'https://github.com')
 
     def test_get_user_config_allowed_github_orgs(self):
+        # Checking for backward compatibility
+        os.environ["ALLOWED_GITHUB_ORGS"] = '*'
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_GITHUB_ORGS'], ['*'])
+        os.environ["ALLOWED_GITHUB_ORGS"] = '*,github.org'
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_GITHUB_ORGS'], ['*', 'github.org'])
+
+        # Testing new parsing
         os.environ["ALLOWED_GITHUB_ORGS"] = "['*','github.org']"
         self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_GITHUB_ORGS'], ['*', 'github.org'])
 
     def test_get_user_config_gitlab_url(self):
         os.environ["GITLAB_URL"] = "https://gitlab.com"
+        self.assertEqual(self.TestConfig.get_user_config()['GITLAB_URL'], os.environ["GITLAB_URL"])
+
+        os.environ["GITLAB_URL"] = "https://gitlab.com"
         self.assertEqual(self.TestConfig.get_user_config()['GITLAB_URL'], 'https://gitlab.com')
 
     def test_get_user_config_allowed_gitlab_groups(self):
+        # Checking for backward compatibility
+        os.environ["ALLOWED_GITLAB_GROUPS"] = '*'
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['*'])
+        os.environ["ALLOWED_GITLAB_GROUPS"] = '*,gitlab.org'
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['*', 'gitlab.org'])
+
+        # Testing new parsing
         os.environ["ALLOWED_GITLAB_GROUPS"] = "['*','gitlab.org']"
         self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['*', 'gitlab.org'])
 
     def test_get_user_config_keycloak_url(self):
         os.environ["KEYCLOAK_URL"] = "https://keycloak.com"
+        self.assertEqual(self.TestConfig.get_user_config()['KEYCLOAK_URL'], os.environ["KEYCLOAK_URL"])
+
+        os.environ["KEYCLOAK_URL"] = "https://keycloak.com"
         self.assertEqual(self.TestConfig.get_user_config()['KEYCLOAK_URL'], 'https://keycloak.com')
 
     def test_get_user_config_keycloak_realm(self):
         os.environ["KEYCLOAK_REALM"] = "realm"
+        self.assertEqual(self.TestConfig.get_user_config()['KEYCLOAK_REALM'], os.environ["KEYCLOAK_REALM"])
+
+        os.environ["KEYCLOAK_REALM"] = "realm"
         self.assertEqual(self.TestConfig.get_user_config()['KEYCLOAK_REALM'], 'realm')
 
     def test_get_user_config_allowed_keycloak_roles(self):
+        # Checking for backward compatibility
+        os.environ["ALLOWED_KEYCLOAK_ROLES"] = 'user'
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['user'])
+        os.environ["ALLOWED_KEYCLOAK_ROLES"] = 'user,admin'
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['user', 'admin'])
+
+        # Testing new parsing
         os.environ["ALLOWED_KEYCLOAK_ROLES"] = "['user','admin']"
         self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['user', 'admin'])
 
     def test_get_user_config_oidc_issuer_url(self):
         os.environ["OIDC_ISSUER_URL"] = "https://oidc.com"
+        self.assertEqual(self.TestConfig.get_user_config()['OIDC_ISSUER_URL'], os.environ["OIDC_ISSUER_URL"])
+
+        os.environ["OIDC_ISSUER_URL"] = "https://oidc.com"
         self.assertEqual(self.TestConfig.get_user_config()['OIDC_ISSUER_URL'], 'https://oidc.com')
 
     def test_get_user_config_allowed_oidc_roles(self):
+        # Checking for backward compatibility
+        os.environ["ALLOWED_OIDC_ROLES"] = 'user'
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['user'])
+        os.environ["ALLOWED_OIDC_ROLES"] = 'user,admin'
+        self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['user', 'admin'])
+
+        # Testing new parsing
         os.environ["ALLOWED_OIDC_ROLES"] = "['user','admin']"
         self.assertEqual(self.TestConfig.get_user_config()['ALLOWED_OIDC_ROLES'], ['user', 'admin'])
 
     def test_get_user_config_cors_origins(self):
+        # Checking for backward compatibility
+        os.environ["CORS_ORIGINS"] = 'http://localhost'
+        self.assertEqual(self.TestConfig.get_user_config()['CORS_ORIGINS'], ['http://localhost'])
+        os.environ["CORS_ORIGINS"] = 'http://localhost,http://localhost:8000,https://*.local.alerta.io:8080'
+        self.assertEqual(self.TestConfig.get_user_config()['CORS_ORIGINS'], ['http://localhost', 'http://localhost:8000', 'https://*.local.alerta.io:8080'])
+
+        # Testing new parsing
         os.environ["CORS_ORIGINS"] = "['http://localhost','http://localhost:8000','https://*.local.alerta.io:8080']"
         self.assertEqual(self.TestConfig.get_user_config()['CORS_ORIGINS'], ['http://localhost', 'http://localhost:8000', 'https://*.local.alerta.io:8080'])
 
     def test_get_user_config_mail_from(self):
         os.environ["MAIL_FROM"] = "name@namesen.com"
+        self.assertEqual(self.TestConfig.get_user_config()['MAIL_FROM'], os.environ["MAIL_FROM"])
+
+        os.environ["MAIL_FROM"] = "name@namesen.com"
         self.assertEqual(self.TestConfig.get_user_config()['MAIL_FROM'], 'name@namesen.com')
 
     def test_get_user_config_smtp_password(self):
+        os.environ["SMTP_PASSWORD"] = "smtppassword"
+        self.assertEqual(self.TestConfig.get_user_config()['SMTP_PASSWORD'], os.environ["SMTP_PASSWORD"])
+
         os.environ["SMTP_PASSWORD"] = "smtppassword"
         self.assertEqual(self.TestConfig.get_user_config()['SMTP_PASSWORD'], 'smtppassword')
 
     def test_get_user_config_google_tracking_id(self):
         os.environ["GOOGLE_TRACKING_ID"] = "fdkngfjunfnjf984375"
+        self.assertEqual(self.TestConfig.get_user_config()['GOOGLE_TRACKING_ID'], os.environ["GOOGLE_TRACKING_ID"])
+
+        os.environ["GOOGLE_TRACKING_ID"] = "fdkngfjunfnjf984375"
         self.assertEqual(self.TestConfig.get_user_config()['GOOGLE_TRACKING_ID'], 'fdkngfjunfnjf984375')
 
     def test_get_user_config_plugins(self):
+        # Checking for backward compatibility
+        os.environ["PLUGINS"] = 'remote_ip'
+        self.assertEqual(self.TestConfig.get_user_config()['PLUGINS'], ['remote_ip'])
+        os.environ["PLUGINS"] = 'remote_ip,reject'
+        self.assertEqual(self.TestConfig.get_user_config()['PLUGINS'], ['remote_ip','reject'])
+
+        # Testing new parsing
         os.environ["PLUGINS"] = "['remote_ip','reject']"
         self.assertEqual(self.TestConfig.get_user_config()['PLUGINS'], ['remote_ip', 'reject'])
 

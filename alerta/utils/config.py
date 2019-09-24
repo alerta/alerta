@@ -8,22 +8,122 @@ import ast
 LOG = logging.getLogger('alerta.config')
 
 
-class Validator:
+class Validate:
     def __init__(self):
         self.string_validator = Schema(str)
         self.integer_validator = Schema(int)
         self.list_validator = Schema(list)
-        self.dict_validator = Schema(dict)
         self.url_validator = Schema(Url())
         self.email_validator = Schema(Email())
 
-    @staticmethod
-    def boolean_validator(bool):
-        if bool == 'True' or bool == 'true' or bool == '1':
-            return True
-        elif bool == 'False' or bool == 'false' or bool == '0':
-            return False
+    def get_variable(self, variable_name):
+        environment_string = os.environ[variable_name]
+
+        return environment_string
+
+    def validate_boolean(self, variable_name, boolean_string):
+        if boolean_string == 'True' or boolean_string == 'true' or boolean_string == '1':
+            variable_value = True
+            LOG.info(
+                f'Environment variable {variable_name} parsed with value {variable_value}')
+
+        elif boolean_string == 'False' or boolean_string == 'false' or boolean_string == '0':
+            variable_value = False
+            LOG.info(
+                f'Environment variable {variable_name} parsed with value {variable_value}')
+
         else:
+            variable_value = False
+            LOG.error(
+                f'Environment variable {variable_name} parsed with value {variable_value}')
+
+        return variable_value
+
+    def validate_url(self, variable_name, url_string):
+        try:
+            if isinstance(url_string, list):
+                variable_value = []
+                for item in url_string:
+                    self.url_validator(item)
+                variable_value = url_string
+
+            else:
+                variable_value = self.url_validator(url_string)
+
+            LOG.info(
+                f'Environment variable {variable_name} parsed with value {variable_value}')
+            return variable_value
+
+        except Exception as e:
+            LOG.error(
+                f'Unable to parse environment variable {variable_name} {str(e)}')
+            return None
+
+    def validate_string(self, variable_name, string_string):
+        try:
+            if isinstance(string_string, list):
+                variable_value = []
+                for item in string_string:
+                    self.string_validator(item)
+                variable_value = string_string
+
+            else:
+                variable_value = self.string_validator(string_string)
+
+            LOG.info(
+                f'Environment variable {variable_name} parsed with value {variable_value}')
+            return variable_value
+
+        except Exception as e:
+            LOG.error(
+                f'Unable to parse environment variable {variable_name} {str(e)}')
+            return None
+
+    def validate_email(self, variable_name, email_string):
+        try:
+            variable_value = self.email_validator(email_string)
+
+            LOG.info(
+                f'Environment variable {variable_name} parsed with value {variable_value}')
+            return variable_value
+
+        except Exception as e:
+            LOG.error(
+                f'Unable to parse environment variable {variable_name} {str(e)}')
+            return None
+
+    def validate_integer(self, variable_name, integer_string):
+        try:
+            variable_value = self.integer_validator(int(integer_string))
+
+            LOG.info(
+                f'Environment variable {variable_name} parsed with value {variable_value}')
+            return variable_value
+
+        except Exception as e:
+            LOG.error(
+                f'Unable to parse environment variable {variable_name} {str(e)}')
+            return None
+
+    def validate_list(self, variable_name, list_string):
+        try:
+            # For backward compatibility
+            if '[' in list_string and ']' in list_string:
+
+                list_data = ast.literal_eval(list_string)
+                variable_value = self.list_validator(list_data)
+
+            else:
+                list_data = list_string.split(',')
+                variable_value = self.list_validator(list_data)
+
+            LOG.info(
+                f'Environment variable {variable_name} parsed with value {variable_value}')
+            return variable_value
+
+        except Exception as e:
+            LOG.error(
+                f'Unable to parse environment variable {variable_name} {str(e)}')
             return None
 
 
@@ -34,14 +134,13 @@ class Config:
         if app:
             self.init_app(app)
 
-
     def init_app(self, app: Flask) -> None:
         config = self.get_user_config()
         app.config.update(config)
 
     @staticmethod
     def get_user_config():
-        Validate = Validator()
+        Valid = Validate()
         from flask import Config
         config = Config('/')
 
@@ -50,48 +149,20 @@ class Config:
         config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
 
         if 'DEBUG' in os.environ:
-            config['DEBUG'] = Validator.boolean_validator(os.environ['DEBUG'])
-
-            if config['DEBUG'] is True or config['DEBUG'] is False:
-                LOG.info('Environment variable DEBUG parsed with value %s', config['DEBUG'])
-
-            else:
-                LOG.error('Environment variable DEBUG parsed with value %s', config['DEBUG'])
+            config['DEBUG'] = Valid.validate_boolean(
+                'DEBUG', Valid.get_variable('DEBUG'))
 
         if 'BASE_URL' in os.environ:
-            try:
-                config['BASE_URL'] = Validate.url_validator(
-                    os.environ['BASE_URL'])
-
-                LOG.info(
-                    'Environment variable BASE_URL parsed with value %s', config['BASE_URL'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable BASE_URL %s', str(e))
+            config['BASE_URL'] = Valid.validate_url(
+                'BASE_URL', Valid.get_variable('BASE_URL'))
 
         if 'USE_PROXYFIX' in os.environ:
-            config['USE_PROXYFIX'] = Validator.boolean_validator(
-                os.environ['USE_PROXYFIX'])
-
-            if config['USE_PROXYFIX'] is True or config['USE_PROXYFIX'] is False:
-                LOG.info(
-                    'Environment variable USE_PROXYFIX parsed with value %s', config['USE_PROXYFIX'])
-            else:
-                LOG.error(
-                    'Unable to parse environment variable USE_PROXYFIX with value %s', config['USE_PROXYFIX'])
+            config['USE_PROXYFIX'] = Valid.validate_boolean(
+                'USE_PROXYFIX', Valid.get_variable('USE_PROXYFIX'))
 
         if 'SECRET_KEY' in os.environ:
-            try:
-                config['SECRET_KEY'] = Validate.string_validator(
-                    os.environ['SECRET_KEY'])
-
-                LOG.info(
-                    'Environment variable SECRET_KEY parsed with value %s', config['SECRET_KEY'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable SECRET_KEY %s', str(e))
+            config['SECRET_KEY'] = Valid.validate_string(
+                'SECRET_KEY', Valid.get_variable('SECRET_KEY'))
 
         database_url = (
             os.environ.get('DATABASE_URL', None)
@@ -103,356 +174,134 @@ class Config:
         )
         # Use app config for DATABASE_URL if no env var from above override it
         config['DATABASE_URL'] = database_url or config['DATABASE_URL']
-        if config['DATABASE_URL']:
-            try:
-                config['DATABASE_URL'] = Validate.url_validator(
-                    os.environ['DATABASE_URL'])
 
-                LOG.info(
-                    'Environment variable DATABASE_URL parsed with value %s', config['DATABASE_URL'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable DATABASE_URL %s', str(e))
+        if config['DATABASE_URL'] in os.environ:
+            config['DATABASE_URL'] = Valid.validate_url(
+                'DATABASE_URL', Valid.get_variable('DATABASE_URL'))
 
         if 'DATABASE_NAME' in os.environ:
-            config['DATABASE_NAME'] = os.environ['DATABASE_NAME']
-            try:
-                config['DATABASE_NAME'] = Validate.string_validator(
-                    str(os.environ['DATABASE_NAME']))
-
-                LOG.info(
-                    'Environment variable DATABASE_NAME parsed with value %s', config['DATABASE_NAME'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable DATABASE_NAME %s', str(e))
+            config['DATABASE_NAME'] = Valid.validate_string(
+                'DATABASE_NAME', Valid.get_variable('DATABASE_NAME'))
 
         if 'AUTH_REQUIRED' in os.environ:
-            config['AUTH_REQUIRED'] = Validator.boolean_validator(
-                os.environ['AUTH_REQUIRED'])
-
-            if config['AUTH_REQUIRED'] is True or config['AUTH_REQUIRED'] is False:
-                LOG.info(
-                    'Environment variable AUTH_REQUIRED parsed with value %s', config['AUTH_REQUIRED'])
-            else:
-                LOG.error(
-                    'Unable to parse environment variable AUTH_REQUIRED with value %s', config['AUTH_REQUIRED'])
+            config['AUTH_REQUIRED'] = Valid.validate_boolean(
+                'AUTH_REQUIRED', Valid.get_variable('AUTH_REQUIRED'))
 
         if 'AUTH_PROVIDER' in os.environ:
-            try:
-                config['AUTH_PROVIDER'] = Validate.string_validator(
-                    str(os.environ['AUTH_PROVIDER']))
-
-                LOG.info(
-                    'Environment variable AUTH_PROVIDER parsed with value %s', config['AUTH_PROVIDER'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable AUTH_PROVIDER %s', str(e))
+            config['AUTH_PROVIDER'] = Valid.validate_string(
+                'AUTH_PROVIDER', Valid.get_variable('AUTH_PROVIDER'))
 
         if 'ADMIN_USERS' in os.environ:
-            try:
-                list_data = ast.literal_eval(os.environ['ADMIN_USERS'])
-                valid_list = Validate.list_validator(list_data)
-                strSchema = Schema([str])
-                config['ADMIN_USERS'] = strSchema(valid_list)
-
-                LOG.info(
-                    'Environment variable ADMIN_USERS parsed with value %s', config['ADMIN_USERS'])
-
-            except Exception:
-                LOG.error(
-                    'Unable to parse environment variable ADMIN_USERS with value %s', config['ADMIN_USERS'])
+            list = Valid.validate_list(
+                'ADMIN_USERS', Valid.get_variable('ADMIN_USERS'))
+            config['ADMIN_USERS'] = Valid.validate_string(
+                'ADMIN_USERS', list)
 
         if 'SIGNUP_ENABLED' in os.environ:
-            config['SIGNUP_ENABLED'] = Validator.boolean_validator(
-                os.environ['SIGNUP_ENABLED'])
-
-            if config['SIGNUP_ENABLED'] is True or config['SIGNUP_ENABLED'] is False:
-                LOG.info(
-                    'Environment variable SIGNUP_ENABLED parsed with value %s', config['SIGNUP_ENABLED'])
-            else:
-                LOG.error(
-                    'Unable to parse environment variable SIGNUP_ENABLED with value %s', config['SIGNUP_ENABLED'])
+            config['SIGNUP_ENABLED'] = Valid.validate_boolean(
+                'SIGNUP_ENABLED', Valid.get_variable('SIGNUP_ENABLED'))
 
         if 'CUSTOMER_VIEWS' in os.environ:
-            config['CUSTOMER_VIEWS'] = Validator.boolean_validator(
-                os.environ['CUSTOMER_VIEWS'])
-
-            if config['CUSTOMER_VIEWS'] is True or config['CUSTOMER_VIEWS'] is False:
-                LOG.info(
-                    'Environment variable CUSTOMER_VIEWS parsed with value %s', config['CUSTOMER_VIEWS'])
-            else:
-                LOG.error(
-                    'Unable to parse environment variable CUSTOMER_VIEWS with value %s', config['CUSTOMER_VIEWS'])
+            config['CUSTOMER_VIEWS'] = Valid.validate_boolean(
+                'CUSTOMER_VIEWS', Valid.get_variable('CUSTOMER_VIEWS'))
 
         if 'OAUTH2_CLIENT_ID' in os.environ:
-            try:
-                config['OAUTH2_CLIENT_ID'] = Validate.string_validator(
-                    os.environ['OAUTH2_CLIENT_ID'])
-
-                LOG.info(
-                    'Environment variable OAUTH2_CLIENT_ID parsed with value %s', config['OAUTH2_CLIENT_ID'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable OAUTH2_CLIENT_ID %s', str(e))
+            config['OAUTH2_CLIENT_ID'] = Valid.validate_string(
+                'OAUTH2_CLIENT_ID', Valid.get_variable('OAUTH2_CLIENT_ID'))
 
         if 'OAUTH2_CLIENT_SECRET' in os.environ:
-            try:
-                config['OAUTH2_CLIENT_SECRET'] = Validate.string_validator(
-                    os.environ['OAUTH2_CLIENT_SECRET'])
-
-                LOG.info('Environment variable OAUTH2_CLIENT_SECRET parsed with value %s',
-                            config['OAUTH2_CLIENT_SECRET'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable OAUTH2_CLIENT_SECRET %s', str(e))
+            config['OAUTH2_CLIENT_SECRET'] = Valid.validate_string(
+                'OAUTH2_CLIENT_SECRET', Valid.get_variable('OAUTH2_CLIENT_SECRET'))
 
         if 'ALLOWED_EMAIL_DOMAINS' in os.environ:
-            try:
-                list_data = ast.literal_eval(
-                    os.environ['ALLOWED_EMAIL_DOMAINS'])
-                valid_list = Validate.list_validator(list_data)
-                domainSchema = Schema([str])
-                config['ALLOWED_EMAIL_DOMAINS'] = domainSchema(valid_list)
-
-                LOG.info('Environment variable ALLOWED_EMAIL_DOMAINS parsed with value %s',
-                            config['ALLOWED_EMAIL_DOMAINS'])
-
-            except Exception:
-                LOG.error(
-                    'Unable to parse environment variable ALLOWED_EMAIL_DOMAINS with value %s', config['ALLOWED_EMAIL_DOMAINS'])
+            list = Valid.validate_list(
+                'ALLOWED_EMAIL_DOMAINS', Valid.get_variable('ALLOWED_EMAIL_DOMAINS'))
+            config['ALLOWED_EMAIL_DOMAINS'] = Valid.validate_string(
+                'ALLOWED_EMAIL_DOMAINS', list)
 
         if 'AZURE_TENANT' in os.environ:
-            try:
-                config['AZURE_TENANT'] = Validate.string_validator(
-                    os.environ['AZURE_TENANT'])
-
-                LOG.info(
-                    'Environment variable AZURE_TENANT parsed with value %s', config['AZURE_TENANT'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable AZURE_TENANT %s', str(e))
+            config['AZURE_TENANT'] = Valid.validate_string(
+                'AZURE_TENANT', Valid.get_variable('AZURE_TENANT'))
 
         if 'GITHUB_URL' in os.environ:
-            try:
-                config['GITHUB_URL'] = Validate.url_validator(
-                    os.environ['GITHUB_URL'])
-
-                LOG.info(
-                    'Environment variable GITHUB_URL parsed with value %s', config['GITHUB_URL'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable GITHUB_URL %s', str(e))
+            config['GITHUB_URL'] = Valid.validate_url(
+                'GITHUB_URL', Valid.get_variable('GITHUB_URL'))
 
         if 'ALLOWED_GITHUB_ORGS' in os.environ:
-            try:
-                list_data = ast.literal_eval(os.environ['ALLOWED_GITHUB_ORGS'])
-                valid_list = Validate.list_validator(list_data)
-                strSchema = Schema([str])
-                config['ALLOWED_GITHUB_ORGS'] = strSchema(valid_list)
-
-                LOG.info(
-                    'Environment variable ALLOWED_GITHUB_ORGS parsed with value %s', config['ALLOWED_GITHUB_ORGS'])
-
-            except Exception:
-                LOG.error(
-                    'Unable to parse environment variable ALLOWED_GITHUB_ORGS with value %s', config['ALLOWED_GITHUB_ORGS'])
+            list = Valid.validate_list(
+                'ALLOWED_GITHUB_ORGS', Valid.get_variable('ALLOWED_GITHUB_ORGS'))
+            config['ALLOWED_GITHUB_ORGS'] = Valid.validate_string(
+                'ALLOWED_GITHUB_ORGS', list)
 
         if 'GITLAB_URL' in os.environ:
-            try:
-                config['GITLAB_URL'] = Validate.url_validator(
-                    os.environ['GITLAB_URL'])
-
-                LOG.info(
-                    'Environment variable GITLAB_URL parsed with value %s', config['GITLAB_URL'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable GITLAB_URL %s', str(e))
+            config['GITLAB_URL'] = Valid.validate_url(
+                'GITLAB_URL', Valid.get_variable('GITLAB_URL'))
 
         if 'ALLOWED_GITLAB_GROUPS' in os.environ:
-            try:
-                list_data = ast.literal_eval(os.environ['ALLOWED_GITLAB_GROUPS'])
-                valid_list = Validate.list_validator(list_data)
-                strSchema = Schema([str])
-                config['ALLOWED_OIDC_ROLES'] = strSchema(valid_list)
-
-                LOG.info(
-                    'Environment variable ALLOWED_GITLAB_GROUPS parsed with value %s', config['ALLOWED_OIDC_ROLES'])
-
-            except Exception:
-                LOG.error(
-                    'Unable to parse environment variable ALLOWED_GITLAB_GROUPS with value %s', config['ALLOWED_OIDC_ROLES'])
+            list = Valid.validate_list(
+                'ALLOWED_GITLAB_GROUPS', Valid.get_variable('ALLOWED_GITLAB_GROUPS'))
+            config['ALLOWED_OIDC_ROLES'] = Valid.validate_string(
+                'ALLOWED_GITLAB_GROUPS', list)
 
         if 'KEYCLOAK_URL' in os.environ:
-            try:
-                config['KEYCLOAK_URL'] = Validate.url_validator(
-                    os.environ['KEYCLOAK_URL'])
-
-                LOG.info(
-                    'Environment variable KEYCLOAK_URL parsed with value %s', config['KEYCLOAK_URL'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable KEYCLOAK_URL %s', str(e))
+            config['KEYCLOAK_URL'] = Valid.validate_url(
+                'KEYCLOAK_URL', Valid.get_variable('KEYCLOAK_URL'))
 
         if 'KEYCLOAK_REALM' in os.environ:
-            try:
-                config['KEYCLOAK_REALM'] = Validate.string_validator(
-                    os.environ['KEYCLOAK_REALM'])
-
-                LOG.info(
-                    'Environment variable KEYCLOAK_REALM parsed with value %s', config['KEYCLOAK_REALM'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable KEYCLOAK_REALM %s', str(e))
+            config['KEYCLOAK_REALM'] = Valid.validate_string(
+                'KEYCLOAK_REALM', Valid.get_variable('KEYCLOAK_REALM'))
 
         if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
-            try:
-                list_data = ast.literal_eval(os.environ['ALLOWED_KEYCLOAK_ROLES'])
-                valid_list = Validate.list_validator(list_data)
-                strSchema = Schema([str])
-                config['ALLOWED_OIDC_ROLES'] = strSchema(valid_list)
-
-                LOG.info(
-                    'Environment variable ALLOWED_KEYCLOAK_ROLES parsed with value %s', config['ALLOWED_KEYCLOAK_ROLES'])
-
-            except Exception:
-                LOG.error(
-                    'Unable to parse environment variable ALLOWED_KEYCLOAK_ROLES with value %s', config['ALLOWED_KEYCLOAK_ROLES'])
+            list = Valid.validate_list(
+                'ALLOWED_KEYCLOAK_ROLES', Valid.get_variable('ALLOWED_KEYCLOAK_ROLES'))
+            config['ALLOWED_OIDC_ROLES'] = Valid.validate_string(
+                'ALLOWED_KEYCLOAK_ROLES', list)
 
         if 'OIDC_ISSUER_URL' in os.environ:
-            try:
-                config['OIDC_ISSUER_URL'] = Validate.url_validator(
-                    os.environ['OIDC_ISSUER_URL'])
-
-                LOG.info(
-                    'Environment variable OIDC_ISSUER_URL parsed with value %s', config['OIDC_ISSUER_URL'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable OIDC_ISSUER_URL %s', str(e))
+            config['OIDC_ISSUER_URL'] = Valid.validate_url(
+                'OIDC_ISSUER_URL', Valid.get_variable('OIDC_ISSUER_URL'))
 
         if 'ALLOWED_OIDC_ROLES' in os.environ:
-            try:
-                list_data = ast.literal_eval(os.environ['ALLOWED_OIDC_ROLES'])
-                valid_list = Validate.list_validator(list_data)
-                strSchema = Schema([str])
-                config['ALLOWED_OIDC_ROLES'] = strSchema(valid_list)
-
-                LOG.info(
-                    'Environment variable ALLOWED_OIDC_ROLES parsed with value %s', config['ALLOWED_OIDC_ROLES'])
-
-            except Exception:
-                LOG.error(
-                    'Unable to parse environment variable ALLOWED_OIDC_ROLES with value %s', config['ALLOWED_OIDC_ROLES'])
+            list = Valid.validate_list(
+                'ALLOWED_OIDC_ROLES', Valid.get_variable('ALLOWED_OIDC_ROLES'))
+            config['ALLOWED_OIDC_ROLES'] = Valid.validate_string(
+                'ALLOWED_OIDC_ROLES', list)
 
         if 'CORS_ORIGINS' in os.environ:
-            try:
-                list_data = ast.literal_eval(os.environ['CORS_ORIGINS'])
-                valid_list = Validate.list_validator(list_data)
-                urlSchema = Schema([Url()])
-                config['CORS_ORIGINS'] = urlSchema(valid_list)
-
-                LOG.info(
-                    'Environment variable CORS_ORIGINS parsed with value %s', config['CORS_ORIGINS'])
-
-            except Exception:
-                LOG.error(
-                    'Unable to parse environment variable CORS_ORIGINS with value %s', config['CORS_ORIGINS'])
+            list = Valid.validate_list(
+                'CORS_ORIGINS', Valid.get_variable('CORS_ORIGINS'))
+            config['CORS_ORIGINS'] = Valid.validate_url(
+                'CORS_ORIGINS', list)
 
         if 'MAIL_FROM' in os.environ:
-            try:
-                config['MAIL_FROM'] = Validate.email_validator(
-                    os.environ['MAIL_FROM'])
-
-                LOG.info(
-                    'Environment variable MAIL_FROM parsed with value %s', config['MAIL_FROM'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable MAIL_FROM %s', str(e))
+            config['MAIL_FROM'] = Valid.validate_email(
+                'MAIL_FROM', Valid.get_variable('MAIL_FROM'))
 
         if 'SMTP_PASSWORD' in os.environ:
-            try:
-                config['SMTP_PASSWORD'] = Validate.string_validator(
-                    os.environ['SMTP_PASSWORD'])
-
-                LOG.info(
-                    'Environment variable SMTP_PASSWORD parsed with value %s', config['SMTP_PASSWORD'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable SMTP_PASSWORD %s', str(e))
+            config['SMTP_PASSWORD'] = Valid.validate_string(
+                'SMTP_PASSWORD', Valid.get_variable('SMTP_PASSWORD'))
 
         if 'GOOGLE_TRACKING_ID' in os.environ:
-            try:
-                config['GOOGLE_TRACKING_ID'] = Validate.string_validator(
-                    os.environ['GOOGLE_TRACKING_ID'])
-
-                LOG.info(
-                    'Environment variable GOOGLE_TRACKING_ID parsed with value %s', config['GOOGLE_TRACKING_ID'])
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable GOOGLE_TRACKING_ID %s', str(e))
+            config['GOOGLE_TRACKING_ID'] = Valid.validate_string(
+                'GOOGLE_TRACKING_ID', Valid.get_variable('GOOGLE_TRACKING_ID'))
 
         if 'PLUGINS' in os.environ:
-            try:
-                list_data = ast.literal_eval(os.environ['PLUGINS'])
-                valid_list = Validate.list_validator(list_data)
-                urlSchema = Schema([str])
-                config['PLUGINS'] = urlSchema(valid_list)
-
-                LOG.info(
-                    'Environment variable PLUGINS parsed with value %s', config['PLUGINS'])
-
-            except Exception:
-                LOG.error(
-                    'Unable to parse environment variable PLUGINS with value %s', config['PLUGINS'])
+            list = Valid.validate_list(
+                'PLUGINS', Valid.get_variable('PLUGINS'))
+            config['PLUGINS'] = Valid.validate_string(
+                'PLUGINS', list)
 
         if 'ALERT_TIMEOUT' in os.environ:
-            try:
-                config['ALERT_TIMEOUT'] = Validate.integer_validator(
-                    int(os.environ['ALERT_TIMEOUT']))
-
-                LOG.info('Environment variable ALERT_TIMEOUT parsed with value %s', str(
-                    config['ALERT_TIMEOUT']))
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable ALERT_TIMEOUT %s', str(e))
+            config['ALERT_TIMEOUT'] = Valid.validate_integer(
+                'ALERT_TIMEOUT', Valid.get_variable('ALERT_TIMEOUT'))
 
         if 'HEARTBEAT_TIMEOUT' in os.environ:
-            try:
-                config['HEARTBEAT_TIMEOUT'] = Validate.integer_validator(
-                    int(os.environ['HEARTBEAT_TIMEOUT']))
-
-                LOG.info('Environment variable HEARTBEAT_TIMEOUT parsed with value %s', str(
-                    config['HEARTBEAT_TIMEOUT']))
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable HEARTBEAT_TIMEOUT %s', str(e))
+            config['HEARTBEAT_TIMEOUT'] = Valid.validate_integer(
+                'HEARTBEAT_TIMEOUT', Valid.get_variable('HEARTBEAT_TIMEOUT'))
 
         if 'API_KEY_EXPIRE_DAYS' in os.environ:
-            try:
-                config['API_KEY_EXPIRE_DAYS'] = Validate.integer_validator(
-                    int(os.environ['API_KEY_EXPIRE_DAYS']))
-
-                LOG.info('Environment variable API_KEY_EXPIRE_DAYS parsed with value %s', str(
-                    config['API_KEY_EXPIRE_DAYS']))
-
-            except Exception as e:
-                LOG.error(
-                    'Unable to parse environment variable API_KEY_EXPIRE_DAYS %s', str(e))
+            config['API_KEY_EXPIRE_DAYS'] = Valid.validate_integer(
+                'API_KEY_EXPIRE_DAYS', Valid.get_variable('API_KEY_EXPIRE_DAYS'))
 
         # Runtime config check
         if config['CUSTOMER_VIEWS'] and not config['AUTH_REQUIRED']:
