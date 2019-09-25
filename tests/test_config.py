@@ -13,55 +13,39 @@ class TestValidator(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_get_variable(self):
-        os.environ["DEBUG"] = "1"
-        self.assertEqual(self.TestValidator.get_variable('DEBUG'), '1')
-        os.environ["DEBUG"] = "true"
-        self.assertEqual(self.TestValidator.get_variable('DEBUG'), 'true')
-
     def test_boolean_validator(self):
-        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', '1'), True)
-        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', 'true'), True)
-        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', 'True'), True)
-        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', 'false'), False)
-        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', 'False'), False)
-        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', '0'), False)
-        self.assertEqual(self.TestValidator.validate_boolean('DEBUG', "[0]"), False)
+        self.assertEqual(self.TestValidator.validate_boolean('1'), True)
+        self.assertEqual(self.TestValidator.validate_boolean('true'), True)
+        self.assertEqual(self.TestValidator.validate_boolean('True'), True)
+        self.assertEqual(self.TestValidator.validate_boolean('false'), False)
+        self.assertEqual(self.TestValidator.validate_boolean('False'), False)
+        self.assertEqual(self.TestValidator.validate_boolean('0'), False)
 
     def test_url_validator(self):
-        self.assertEqual(self.TestValidator.validate_url('BASE_URL', 'https://alerta.io'), 'https://alerta.io')
-        self.assertEqual(self.TestValidator.validate_url('BASE_URL', ' '), None)
-        self.assertEqual(self.TestValidator.validate_url('BASE_URL', 'none'), None)
-        self.assertEqual(self.TestValidator.validate_url('BASE_URL', 'localhost.com'), None)
-        self.assertEqual(self.TestValidator.validate_url('BASE_URL', 'https://*.alerta.io'), 'https://*.alerta.io')
-        self.assertEqual(self.TestValidator.validate_url('BASE_URL', 'http://localhost.com'), 'http://localhost.com')
-        self.assertEqual(self.TestValidator.validate_url('BASE_URL', ['http://localhost.com']), ['http://localhost.com'])
-        self.assertEqual(self.TestValidator.validate_url('BASE_URL', ['http://localhost.com', 'https://localhost.com']), ['http://localhost.com', 'https://localhost.com'])
+        self.assertEqual(self.TestValidator.validate_url('https://alerta.io'), 'https://alerta.io')
+        self.assertEqual(self.TestValidator.validate_url('https://*.alerta.io'), 'https://*.alerta.io')
+        self.assertEqual(self.TestValidator.validate_url('http://localhost.com'), 'http://localhost.com')
+        self.assertEqual(self.TestValidator.validate_url(['http://localhost.com']), ['http://localhost.com'])
+        self.assertEqual(self.TestValidator.validate_url(['http://localhost.com', 'https://localhost.com']), ['http://localhost.com', 'https://localhost.com'])
 
     def test_string_validator(self):
-        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', 'changeme'), 'changeme')
-        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', ' '), ' ')
-        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', '[changeme]'), '[changeme]')
-        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', 'jgfeujksegf7837546'), 'jgfeujksegf7837546')
-        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', ['one', 'two']), ['one', 'two'])
-        self.assertEqual(self.TestValidator.validate_string('SECRET_KEY', ['one', 2]), None)
+        self.assertEqual(self.TestValidator.validate_string('changeme'), 'changeme')
+        self.assertEqual(self.TestValidator.validate_string(' '), ' ')
+        self.assertEqual(self.TestValidator.validate_string('[changeme]'), '[changeme]')
+        self.assertEqual(self.TestValidator.validate_string('jgfeujksegf7837546'), 'jgfeujksegf7837546')
+        self.assertEqual(self.TestValidator.validate_string(['one', 'two']), ['one', 'two'])
 
     def test_email_validator(self):
-        self.assertEqual(self.TestValidator.validate_email('MAIL_FROM', 'name@namesen.com'), 'name@namesen.com')
-        self.assertEqual(self.TestValidator.validate_email('MAIL_FROM', 'name'), None)
-        self.assertEqual(self.TestValidator.validate_email('MAIL_FROM', 'namesen.com'), None)
-        self.assertEqual(self.TestValidator.validate_email('MAIL_FROM', '@namesen.com'), None)
+        self.assertEqual(self.TestValidator.validate_email('name@namesen.com'), 'name@namesen.com')
 
     def test_integer_validator(self):
-        self.assertEqual(self.TestValidator.validate_integer('ALERT_TIMEOUT', '2'), 2)
-        self.assertEqual(self.TestValidator.validate_integer('ALERT_TIMEOUT', 'two'), None)
-        self.assertEqual(self.TestValidator.validate_integer('ALERT_TIMEOUT', '[two]'), None)
+        self.assertEqual(self.TestValidator.validate_integer('2'), 2)
 
     def test_list_validator(self):
-        self.assertEqual(self.TestValidator.validate_list('ADMIN_USERS', "['admin']"), ['admin'])
-        self.assertEqual(self.TestValidator.validate_list('ADMIN_USERS', "['admin', 'admin@adminsen.com']"), ['admin', 'admin@adminsen.com'])
-        self.assertEqual(self.TestValidator.validate_list('ADMIN_USERS', "admin"), ['admin'])
-        self.assertEqual(self.TestValidator.validate_list('ADMIN_USERS', "admin,name"), ['admin', 'name'])
+        self.assertEqual(self.TestValidator.validate_list("['admin']"), ['admin'])
+        self.assertEqual(self.TestValidator.validate_list("['admin', 'admin@adminsen.com']"), ['admin', 'admin@adminsen.com'])
+        self.assertEqual(self.TestValidator.validate_list("admin"), ['admin'])
+        self.assertEqual(self.TestValidator.validate_list("admin,name"), ['admin', 'name'])
 
 
 class TestConfig(unittest.TestCase):
@@ -73,7 +57,6 @@ class TestConfig(unittest.TestCase):
 
     def tearDown(self):
         pass
-
 
     def test_get_user_config_debug(self):
         os.environ["DEBUG"] = "1"
@@ -95,10 +78,6 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(self.TestConfig.get_user_config()['BASE_URL'], 'https://alerta.io')
         os.environ["BASE_URL"] = "https://*.alerta.io"
         self.assertEqual(self.TestConfig.get_user_config()['BASE_URL'], 'https://*.alerta.io')
-        os.environ["BASE_URL"] = ""
-        self.assertEqual(self.TestConfig.get_user_config()['BASE_URL'], None)
-        os.environ["BASE_URL"] = "none"
-        self.assertEqual(self.TestConfig.get_user_config()['BASE_URL'], None)
 
     def test_get_user_config_use_proxyfix(self):
         os.environ["USE_PROXYFIX"] = "1"
@@ -339,7 +318,7 @@ class TestConfig(unittest.TestCase):
         os.environ["PLUGINS"] = 'remote_ip'
         self.assertEqual(self.TestConfig.get_user_config()['PLUGINS'], ['remote_ip'])
         os.environ["PLUGINS"] = 'remote_ip,reject'
-        self.assertEqual(self.TestConfig.get_user_config()['PLUGINS'], ['remote_ip','reject'])
+        self.assertEqual(self.TestConfig.get_user_config()['PLUGINS'], ['remote_ip', 'reject'])
 
         # Testing new parsing
         os.environ["PLUGINS"] = "['remote_ip','reject']"

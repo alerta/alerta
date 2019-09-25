@@ -1,8 +1,9 @@
 import os
 from flask import Flask
-from voluptuous import Schema, Url, Email
+from voluptuous import Schema, Url, Email, TypeInvalid, MultipleInvalid
 import logging
 import ast
+from typing import List
 
 
 LOG = logging.getLogger('alerta.config')
@@ -16,30 +17,17 @@ class Validate:
         self.url_validator = Schema(Url())
         self.email_validator = Schema(Email())
 
-    def get_variable(self, variable_name):
-        environment_string = os.environ[variable_name]
-
-        return environment_string
-
-    def validate_boolean(self, variable_name, boolean_string):
-        if boolean_string == 'True' or boolean_string == 'true' or boolean_string == '1':
+    def validate_boolean(self, boolean_string: str) -> bool:
+        if boolean_string.lower() in ['true', '1', 'yes', 'y', 'on']:
             variable_value = True
-            LOG.info(
-                f'Environment variable {variable_name} parsed with value {variable_value}')
-
-        elif boolean_string == 'False' or boolean_string == 'false' or boolean_string == '0':
+        elif boolean_string.lower() in ['false', '0', 'no', 'n', 'off']:
             variable_value = False
-            LOG.info(
-                f'Environment variable {variable_name} parsed with value {variable_value}')
-
         else:
-            variable_value = False
-            LOG.error(
-                f'Environment variable {variable_name} parsed with value {variable_value}')
+            raise ValueError('Could not parse boolean from environment variable')
 
         return variable_value
 
-    def validate_url(self, variable_name, url_string):
+    def validate_url(self, url_string: str) -> (str, List[str]):
         try:
             if isinstance(url_string, list):
                 variable_value = []
@@ -50,16 +38,12 @@ class Validate:
             else:
                 variable_value = self.url_validator(url_string)
 
-            LOG.info(
-                f'Environment variable {variable_name} parsed with value {variable_value}')
             return variable_value
 
-        except Exception as e:
-            LOG.error(
-                f'Unable to parse environment variable {variable_name} {str(e)}')
-            return None
+        except (TypeInvalid, MultipleInvalid) as e:
+            raise RuntimeError('Unable to validate environment variable %s' % (e))
 
-    def validate_string(self, variable_name, string_string):
+    def validate_string(self, string_string: str) -> (str, List[str]):
         try:
             if isinstance(string_string, list):
                 variable_value = []
@@ -70,61 +54,43 @@ class Validate:
             else:
                 variable_value = self.string_validator(string_string)
 
-            LOG.info(
-                f'Environment variable {variable_name} parsed with value {variable_value}')
             return variable_value
 
-        except Exception as e:
-            LOG.error(
-                f'Unable to parse environment variable {variable_name} {str(e)}')
-            return None
+        except (TypeInvalid, MultipleInvalid) as e:
+            raise RuntimeError('Unable to validate environment variable %s' % (e))
 
-    def validate_email(self, variable_name, email_string):
+    def validate_email(self, email_string: str) -> str:
         try:
             variable_value = self.email_validator(email_string)
 
-            LOG.info(
-                f'Environment variable {variable_name} parsed with value {variable_value}')
             return variable_value
 
-        except Exception as e:
-            LOG.error(
-                f'Unable to parse environment variable {variable_name} {str(e)}')
-            return None
+        except (TypeInvalid, MultipleInvalid) as e:
+            raise RuntimeError('Unable to validate environment variable %s' % (e))
 
-    def validate_integer(self, variable_name, integer_string):
+    def validate_integer(self, integer_string: str) -> int:
         try:
             variable_value = self.integer_validator(int(integer_string))
 
-            LOG.info(
-                f'Environment variable {variable_name} parsed with value {variable_value}')
             return variable_value
 
-        except Exception as e:
-            LOG.error(
-                f'Unable to parse environment variable {variable_name} {str(e)}')
-            return None
+        except (TypeInvalid, MultipleInvalid) as e:
+            raise RuntimeError('Unable to validate environment variable %s' % (e))
 
-    def validate_list(self, variable_name, list_string):
+    def validate_list(self, list_string: str) -> List:
         try:
-            # For backward compatibility
-            if '[' in list_string and ']' in list_string:
+            list_data = ast.literal_eval(list_string)
+            variable_value = self.list_validator(list_data)
 
-                list_data = ast.literal_eval(list_string)
-                variable_value = self.list_validator(list_data)
-
-            else:
+            return variable_value
+        except (ValueError, TypeInvalid, MultipleInvalid, SyntaxError):
+            try:
+                # For backward compatibility
                 list_data = list_string.split(',')
                 variable_value = self.list_validator(list_data)
-
-            LOG.info(
-                f'Environment variable {variable_name} parsed with value {variable_value}')
-            return variable_value
-
-        except Exception as e:
-            LOG.error(
-                f'Unable to parse environment variable {variable_name} {str(e)}')
-            return None
+                return variable_value
+            except (TypeInvalid, MultipleInvalid) as e:
+                raise RuntimeError('Unable to validate environment variable %s' % (e))
 
 
 class Config:
@@ -140,7 +106,7 @@ class Config:
 
     @staticmethod
     def get_user_config():
-        Valid = Validate()
+        valid = Validate()
         from flask import Config
         config = Config('/')
 
@@ -149,20 +115,16 @@ class Config:
         config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
 
         if 'DEBUG' in os.environ:
-            config['DEBUG'] = Valid.validate_boolean(
-                'DEBUG', Valid.get_variable('DEBUG'))
+            config['DEBUG'] = valid.validate_boolean(os.environ['DEBUG'])
 
         if 'BASE_URL' in os.environ:
-            config['BASE_URL'] = Valid.validate_url(
-                'BASE_URL', Valid.get_variable('BASE_URL'))
+            config['BASE_URL'] = valid.validate_url(os.environ['BASE_URL'])
 
         if 'USE_PROXYFIX' in os.environ:
-            config['USE_PROXYFIX'] = Valid.validate_boolean(
-                'USE_PROXYFIX', Valid.get_variable('USE_PROXYFIX'))
+            config['USE_PROXYFIX'] = valid.validate_boolean(os.environ['USE_PROXYFIX'])
 
         if 'SECRET_KEY' in os.environ:
-            config['SECRET_KEY'] = Valid.validate_string(
-                'SECRET_KEY', Valid.get_variable('SECRET_KEY'))
+            config['SECRET_KEY'] = valid.validate_string(os.environ['SECRET_KEY'])
 
         database_url = (
             os.environ.get('DATABASE_URL', None)
@@ -176,140 +138,102 @@ class Config:
         config['DATABASE_URL'] = database_url or config['DATABASE_URL']
 
         if config['DATABASE_URL'] in os.environ:
-            config['DATABASE_URL'] = Valid.validate_url(
-                'DATABASE_URL', Valid.get_variable('DATABASE_URL'))
+            config['DATABASE_URL'] = valid.validate_url(os.environ['DATABASE_URL'])
 
         if 'DATABASE_NAME' in os.environ:
-            config['DATABASE_NAME'] = Valid.validate_string(
-                'DATABASE_NAME', Valid.get_variable('DATABASE_NAME'))
+            config['DATABASE_NAME'] = valid.validate_string(os.environ['DATABASE_NAME'])
 
         if 'AUTH_REQUIRED' in os.environ:
-            config['AUTH_REQUIRED'] = Valid.validate_boolean(
-                'AUTH_REQUIRED', Valid.get_variable('AUTH_REQUIRED'))
+            config['AUTH_REQUIRED'] = valid.validate_boolean(os.environ['AUTH_REQUIRED'])
 
         if 'AUTH_PROVIDER' in os.environ:
-            config['AUTH_PROVIDER'] = Valid.validate_string(
-                'AUTH_PROVIDER', Valid.get_variable('AUTH_PROVIDER'))
+            config['AUTH_PROVIDER'] = valid.validate_string(os.environ['AUTH_PROVIDER'])
 
         if 'ADMIN_USERS' in os.environ:
-            list = Valid.validate_list(
-                'ADMIN_USERS', Valid.get_variable('ADMIN_USERS'))
-            config['ADMIN_USERS'] = Valid.validate_string(
-                'ADMIN_USERS', list)
+            list = valid.validate_list(os.environ['ADMIN_USERS'])
+            config['ADMIN_USERS'] = valid.validate_string(list)
 
         if 'SIGNUP_ENABLED' in os.environ:
-            config['SIGNUP_ENABLED'] = Valid.validate_boolean(
-                'SIGNUP_ENABLED', Valid.get_variable('SIGNUP_ENABLED'))
+            config['SIGNUP_ENABLED'] = valid.validate_boolean(os.environ['SIGNUP_ENABLED'])
 
         if 'CUSTOMER_VIEWS' in os.environ:
-            config['CUSTOMER_VIEWS'] = Valid.validate_boolean(
-                'CUSTOMER_VIEWS', Valid.get_variable('CUSTOMER_VIEWS'))
+            config['CUSTOMER_VIEWS'] = valid.validate_boolean(os.environ['CUSTOMER_VIEWS'])
 
         if 'OAUTH2_CLIENT_ID' in os.environ:
-            config['OAUTH2_CLIENT_ID'] = Valid.validate_string(
-                'OAUTH2_CLIENT_ID', Valid.get_variable('OAUTH2_CLIENT_ID'))
+            config['OAUTH2_CLIENT_ID'] = valid.validate_string(os.environ['OAUTH2_CLIENT_ID'])
 
         if 'OAUTH2_CLIENT_SECRET' in os.environ:
-            config['OAUTH2_CLIENT_SECRET'] = Valid.validate_string(
-                'OAUTH2_CLIENT_SECRET', Valid.get_variable('OAUTH2_CLIENT_SECRET'))
+            config['OAUTH2_CLIENT_SECRET'] = valid.validate_string(os.environ['OAUTH2_CLIENT_SECRET'])
 
         if 'ALLOWED_EMAIL_DOMAINS' in os.environ:
-            list = Valid.validate_list(
-                'ALLOWED_EMAIL_DOMAINS', Valid.get_variable('ALLOWED_EMAIL_DOMAINS'))
-            config['ALLOWED_EMAIL_DOMAINS'] = Valid.validate_string(
-                'ALLOWED_EMAIL_DOMAINS', list)
+            list = valid.validate_list(os.environ['ALLOWED_EMAIL_DOMAINS'])
+            config['ALLOWED_EMAIL_DOMAINS'] = valid.validate_string(list)
 
         if 'AZURE_TENANT' in os.environ:
-            config['AZURE_TENANT'] = Valid.validate_string(
-                'AZURE_TENANT', Valid.get_variable('AZURE_TENANT'))
+            config['AZURE_TENANT'] = valid.validate_string(os.environ['AZURE_TENANT'])
 
         if 'GITHUB_URL' in os.environ:
-            config['GITHUB_URL'] = Valid.validate_url(
-                'GITHUB_URL', Valid.get_variable('GITHUB_URL'))
+            config['GITHUB_URL'] = valid.validate_url(os.environ['GITHUB_URL'])
 
         if 'ALLOWED_GITHUB_ORGS' in os.environ:
-            list = Valid.validate_list(
-                'ALLOWED_GITHUB_ORGS', Valid.get_variable('ALLOWED_GITHUB_ORGS'))
-            config['ALLOWED_GITHUB_ORGS'] = Valid.validate_string(
-                'ALLOWED_GITHUB_ORGS', list)
+            list = valid.validate_list(os.environ['ALLOWED_GITHUB_ORGS'])
+            config['ALLOWED_GITHUB_ORGS'] = valid.validate_string(list)
 
         if 'GITLAB_URL' in os.environ:
-            config['GITLAB_URL'] = Valid.validate_url(
-                'GITLAB_URL', Valid.get_variable('GITLAB_URL'))
+            config['GITLAB_URL'] = valid.validate_url(os.environ['GITLAB_URL'])
 
         if 'ALLOWED_GITLAB_GROUPS' in os.environ:
-            list = Valid.validate_list(
-                'ALLOWED_GITLAB_GROUPS', Valid.get_variable('ALLOWED_GITLAB_GROUPS'))
-            config['ALLOWED_OIDC_ROLES'] = Valid.validate_string(
-                'ALLOWED_GITLAB_GROUPS', list)
+            list = valid.validate_list(os.environ['ALLOWED_GITLAB_GROUPS'])
+            config['ALLOWED_OIDC_ROLES'] = valid.validate_string(list)
 
         if 'KEYCLOAK_URL' in os.environ:
-            config['KEYCLOAK_URL'] = Valid.validate_url(
-                'KEYCLOAK_URL', Valid.get_variable('KEYCLOAK_URL'))
+            config['KEYCLOAK_URL'] = valid.validate_url(os.environ['KEYCLOAK_URL'])
 
         if 'KEYCLOAK_REALM' in os.environ:
-            config['KEYCLOAK_REALM'] = Valid.validate_string(
-                'KEYCLOAK_REALM', Valid.get_variable('KEYCLOAK_REALM'))
+            config['KEYCLOAK_REALM'] = valid.validate_string(os.environ['KEYCLOAK_REALM'])
 
         if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
-            list = Valid.validate_list(
-                'ALLOWED_KEYCLOAK_ROLES', Valid.get_variable('ALLOWED_KEYCLOAK_ROLES'))
-            config['ALLOWED_OIDC_ROLES'] = Valid.validate_string(
-                'ALLOWED_KEYCLOAK_ROLES', list)
+            list = valid.validate_list(os.environ['ALLOWED_KEYCLOAK_ROLES'])
+            config['ALLOWED_OIDC_ROLES'] = valid.validate_string(list)
 
         if 'OIDC_ISSUER_URL' in os.environ:
-            config['OIDC_ISSUER_URL'] = Valid.validate_url(
-                'OIDC_ISSUER_URL', Valid.get_variable('OIDC_ISSUER_URL'))
+            config['OIDC_ISSUER_URL'] = valid.validate_url(os.environ['OIDC_ISSUER_URL'])
 
         if 'ALLOWED_OIDC_ROLES' in os.environ:
-            list = Valid.validate_list(
-                'ALLOWED_OIDC_ROLES', Valid.get_variable('ALLOWED_OIDC_ROLES'))
-            config['ALLOWED_OIDC_ROLES'] = Valid.validate_string(
-                'ALLOWED_OIDC_ROLES', list)
+            list = valid.validate_list(os.environ['ALLOWED_OIDC_ROLES'])
+            config['ALLOWED_OIDC_ROLES'] = valid.validate_string(list)
 
         if 'CORS_ORIGINS' in os.environ:
-            list = Valid.validate_list(
-                'CORS_ORIGINS', Valid.get_variable('CORS_ORIGINS'))
-            config['CORS_ORIGINS'] = Valid.validate_url(
-                'CORS_ORIGINS', list)
+            list = valid.validate_list(os.environ['CORS_ORIGINS'])
+            config['CORS_ORIGINS'] = valid.validate_url(list)
 
         if 'MAIL_FROM' in os.environ:
-            config['MAIL_FROM'] = Valid.validate_email(
-                'MAIL_FROM', Valid.get_variable('MAIL_FROM'))
+            config['MAIL_FROM'] = valid.validate_email(os.environ['MAIL_FROM'])
 
         if 'SMTP_PASSWORD' in os.environ:
-            config['SMTP_PASSWORD'] = Valid.validate_string(
-                'SMTP_PASSWORD', Valid.get_variable('SMTP_PASSWORD'))
+            config['SMTP_PASSWORD'] = valid.validate_string(os.environ['SMTP_PASSWORD'])
 
         if 'GOOGLE_TRACKING_ID' in os.environ:
-            config['GOOGLE_TRACKING_ID'] = Valid.validate_string(
-                'GOOGLE_TRACKING_ID', Valid.get_variable('GOOGLE_TRACKING_ID'))
+            config['GOOGLE_TRACKING_ID'] = valid.validate_string(os.environ['GOOGLE_TRACKING_ID'])
 
         if 'PLUGINS' in os.environ:
-            list = Valid.validate_list(
-                'PLUGINS', Valid.get_variable('PLUGINS'))
-            config['PLUGINS'] = Valid.validate_string(
-                'PLUGINS', list)
+            list = valid.validate_list(os.environ['PLUGINS'])
+            config['PLUGINS'] = valid.validate_string(list)
 
         if 'ALERT_TIMEOUT' in os.environ:
-            config['ALERT_TIMEOUT'] = Valid.validate_integer(
-                'ALERT_TIMEOUT', Valid.get_variable('ALERT_TIMEOUT'))
+            config['ALERT_TIMEOUT'] = valid.validate_integer(os.environ['ALERT_TIMEOUT'])
 
         if 'HEARTBEAT_TIMEOUT' in os.environ:
-            config['HEARTBEAT_TIMEOUT'] = Valid.validate_integer(
-                'HEARTBEAT_TIMEOUT', Valid.get_variable('HEARTBEAT_TIMEOUT'))
+            config['HEARTBEAT_TIMEOUT'] = valid.validate_integer(os.environ['HEARTBEAT_TIMEOUT'])
 
         if 'API_KEY_EXPIRE_DAYS' in os.environ:
-            config['API_KEY_EXPIRE_DAYS'] = Valid.validate_integer(
-                'API_KEY_EXPIRE_DAYS', Valid.get_variable('API_KEY_EXPIRE_DAYS'))
+            config['API_KEY_EXPIRE_DAYS'] = valid.validate_integer(os.environ['API_KEY_EXPIRE_DAYS'])
 
         # Runtime config check
         if config['CUSTOMER_VIEWS'] and not config['AUTH_REQUIRED']:
-            raise RuntimeError(
-                'Must enable authentication to use customer views')
+            raise RuntimeError('Must enable authentication to use customer views')
 
         if config['CUSTOMER_VIEWS'] and not config['ADMIN_USERS']:
-            raise RuntimeError(
-                'Customer views is enabled but there are no admin users')
+            raise RuntimeError('Customer views is enabled but there are no admin users')
 
         return config
