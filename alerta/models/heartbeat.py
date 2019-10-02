@@ -50,10 +50,10 @@ class Heartbeat:
 
     @property
     def status(self) -> str:
-        if self.latency > MAX_LATENCY:
-            return 'slow'
-        elif self.since.total_seconds() > self.timeout:
+        if self.since.total_seconds() > self.timeout:
             return 'expired'  # aka 'stale'
+        elif self.latency > MAX_LATENCY:
+            return 'slow'
         else:
             return 'ok'
 
