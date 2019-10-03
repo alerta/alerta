@@ -143,6 +143,30 @@ class WebhooksTestCase(unittest.TestCase):
         }
         """
 
+        self.grafana_with_rule_tags = """
+        {
+          "evalMatches": [
+            {
+              "value": 23644.5,
+              "metric": "Battery Voltage (millivolts)",
+              "tags": null
+            }
+          ],
+          "message": "Battery Voltage dropped below 23.7 Volts, please investigate",
+          "ruleId": 58,
+          "ruleName": "Testing -> Battery Voltage alert",
+          "ruleUrl": "https://grafana.logreposit.com/d/Rs6E_oHWk/playground?fullscreen&edit&tab=alert&panelId=2&orgId=1",
+          "state": "alerting",
+          "tags": {
+            "enabled": "true",
+            "relay": "7",
+            "on-alerting": "relay-on",
+            "on-ok": "ignore"
+          },
+          "title": "[Alerting] TEST -> Battery Voltage alert"
+        }
+        """
+
         self.graylog_notification = """
         {
             "check_result": {
@@ -689,6 +713,21 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['group'], 'Performance')
         self.assertEqual(data['alert']['text'],
                          'Load is peaking. Make sure the traffic is real and spin up more webfronts')
+
+        # rule tags alert
+        response = self.client.post('/webhooks/grafana', data=self.grafana_with_rule_tags, headers=self.headers)
+        # self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+        self.assertEqual(data['alert']['resource'], 'Battery Voltage (millivolts)')
+        self.assertEqual(data['alert']['event'], 'Testing -> Battery Voltage alert')
+        self.assertEqual(data['alert']['group'], 'Performance')
+        self.assertEqual(data['alert']['text'],
+                         'Battery Voltage dropped below 23.7 Volts, please investigate')
+        self.assertDictEqual(data['alert']['attributes'], {
+            'enabled': 'true', 'ip': '192.168.1.1', 'on-alerting': 'relay-on', 'on-ok': 'ignore', 'relay': '7', 'ruleId': '58',
+            'ruleUrl': '<a href="https://grafana.logreposit.com/d/Rs6E_oHWk/playground?fullscreen&edit&tab=alert&panelId=2&orgId=1" target="_blank">Rule</a>'
+        })
 
     def test_graylog_webhook(self):
         # graylog alert

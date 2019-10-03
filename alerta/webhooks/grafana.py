@@ -7,6 +7,7 @@ from alerta.app import alarm_model, qb
 from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
 from alerta.utils.api import process_alert
+from alerta.utils.collections import merge
 
 from . import WebhookBase
 
@@ -30,8 +31,10 @@ def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) 
     service = args.get('service', 'Grafana')
     timeout = args.get('timeout', type=int)
 
-    attributes = match.get('tags', None) or dict()
-    attributes = {k.replace('.', '_'): v for (k, v) in attributes.items()}
+    alert_rule_tags = alert.get('tags', None) or dict()
+    eval_match_tags = match.get('tags', None) or dict()
+    merge(alert_rule_tags, eval_match_tags)
+    attributes = {k.replace('.', '_'): v for (k, v) in alert_rule_tags.items()}
 
     attributes['ruleId'] = str(alert['ruleId'])
     if 'ruleUrl' in alert:
