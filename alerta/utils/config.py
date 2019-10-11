@@ -5,7 +5,6 @@ import logging
 import ast
 from typing import List
 
-
 LOG = logging.getLogger('alerta.config')
 
 
@@ -13,7 +12,9 @@ class Validate:
     def __init__(self):
         self.string_validator = Schema(str)
         self.integer_validator = Schema(int)
-        self.list_validator = Schema(list)
+        self.list_string_validator = Schema([str])
+        self.list_integer_validator = Schema([int])
+        self.list_url_validator = Schema([Url()])
         self.url_validator = Schema(Url())
         self.email_validator = Schema(Email())
 
@@ -43,16 +44,9 @@ class Validate:
         except (TypeInvalid, MultipleInvalid) as e:
             raise RuntimeError('Unable to validate environment variable %s' % (e))
 
-    def validate_string(self, string_string: str) -> (str, List[str]):
+    def validate_string(self, string_string: str) -> str:
         try:
-            if isinstance(string_string, list):
-                variable_value = []
-                for item in string_string:
-                    self.string_validator(item)
-                variable_value = string_string
-
-            else:
-                variable_value = self.string_validator(string_string)
+            variable_value = self.string_validator(string_string)
 
             return variable_value
 
@@ -77,17 +71,35 @@ class Validate:
         except (TypeInvalid, MultipleInvalid) as e:
             raise RuntimeError('Unable to validate environment variable %s' % (e))
 
-    def validate_list(self, list_string: str) -> List:
+    def validate_list(self, list_string: str, list_type: str) -> List:
         try:
             list_data = ast.literal_eval(list_string)
-            variable_value = self.list_validator(list_data)
+
+            if list_type == 'string':
+                variable_value = self.list_string_validator(list_data)
+
+            elif list_type == 'url':
+                variable_value = self.list_url_validator(list_data)
+
+            elif list_type == 'integer':
+                variable_value = self.list_integer_validator(list_data)
 
             return variable_value
         except (ValueError, TypeInvalid, MultipleInvalid, SyntaxError):
             try:
                 # For backward compatibility
                 list_data = list_string.split(',')
-                variable_value = self.list_validator(list_data)
+
+                if list_type == 'string':
+                    variable_value = self.list_string_validator(list_data)
+
+                elif list_type == 'url':
+                    variable_value = self.list_url_validator(list_data)
+
+                elif list_type == 'integer':
+                    numbers = [int(x) for x in list_data]
+                    variable_value = self.list_integer_validator(numbers)
+
                 return variable_value
             except (TypeInvalid, MultipleInvalid) as e:
                 raise RuntimeError('Unable to validate environment variable %s' % (e))
@@ -150,8 +162,7 @@ class Config:
             config['AUTH_PROVIDER'] = valid.validate_string(os.environ['AUTH_PROVIDER'])
 
         if 'ADMIN_USERS' in os.environ:
-            list = valid.validate_list(os.environ['ADMIN_USERS'])
-            config['ADMIN_USERS'] = valid.validate_string(list)
+            config['ADMIN_USERS'] = valid.validate_list(os.environ['ADMIN_USERS'], 'string')
 
         if 'SIGNUP_ENABLED' in os.environ:
             config['SIGNUP_ENABLED'] = valid.validate_boolean(os.environ['SIGNUP_ENABLED'])
@@ -166,8 +177,7 @@ class Config:
             config['OAUTH2_CLIENT_SECRET'] = valid.validate_string(os.environ['OAUTH2_CLIENT_SECRET'])
 
         if 'ALLOWED_EMAIL_DOMAINS' in os.environ:
-            list = valid.validate_list(os.environ['ALLOWED_EMAIL_DOMAINS'])
-            config['ALLOWED_EMAIL_DOMAINS'] = valid.validate_string(list)
+            config['ALLOWED_EMAIL_DOMAINS'] = valid.validate_list(os.environ['ALLOWED_EMAIL_DOMAINS'], 'string')
 
         if 'AZURE_TENANT' in os.environ:
             config['AZURE_TENANT'] = valid.validate_string(os.environ['AZURE_TENANT'])
@@ -176,15 +186,13 @@ class Config:
             config['GITHUB_URL'] = valid.validate_url(os.environ['GITHUB_URL'])
 
         if 'ALLOWED_GITHUB_ORGS' in os.environ:
-            list = valid.validate_list(os.environ['ALLOWED_GITHUB_ORGS'])
-            config['ALLOWED_GITHUB_ORGS'] = valid.validate_string(list)
+            config['ALLOWED_GITHUB_ORGS'] = valid.validate_list(os.environ['ALLOWED_GITHUB_ORGS'], 'string')
 
         if 'GITLAB_URL' in os.environ:
             config['GITLAB_URL'] = valid.validate_url(os.environ['GITLAB_URL'])
 
         if 'ALLOWED_GITLAB_GROUPS' in os.environ:
-            list = valid.validate_list(os.environ['ALLOWED_GITLAB_GROUPS'])
-            config['ALLOWED_OIDC_ROLES'] = valid.validate_string(list)
+            config['ALLOWED_OIDC_ROLES'] = valid.validate_list(os.environ['ALLOWED_GITLAB_GROUPS'], 'string')
 
         if 'KEYCLOAK_URL' in os.environ:
             config['KEYCLOAK_URL'] = valid.validate_url(os.environ['KEYCLOAK_URL'])
@@ -193,19 +201,16 @@ class Config:
             config['KEYCLOAK_REALM'] = valid.validate_string(os.environ['KEYCLOAK_REALM'])
 
         if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
-            list = valid.validate_list(os.environ['ALLOWED_KEYCLOAK_ROLES'])
-            config['ALLOWED_OIDC_ROLES'] = valid.validate_string(list)
+            config['ALLOWED_OIDC_ROLES'] = valid.validate_list(os.environ['ALLOWED_KEYCLOAK_ROLES'], 'string')
 
         if 'OIDC_ISSUER_URL' in os.environ:
             config['OIDC_ISSUER_URL'] = valid.validate_url(os.environ['OIDC_ISSUER_URL'])
 
         if 'ALLOWED_OIDC_ROLES' in os.environ:
-            list = valid.validate_list(os.environ['ALLOWED_OIDC_ROLES'])
-            config['ALLOWED_OIDC_ROLES'] = valid.validate_string(list)
+            config['ALLOWED_OIDC_ROLES'] = valid.validate_list(os.environ['ALLOWED_OIDC_ROLES'], 'string')
 
         if 'CORS_ORIGINS' in os.environ:
-            list = valid.validate_list(os.environ['CORS_ORIGINS'])
-            config['CORS_ORIGINS'] = valid.validate_url(list)
+            config['CORS_ORIGINS'] = valid.validate_list(os.environ['CORS_ORIGINS'], 'url')
 
         if 'MAIL_FROM' in os.environ:
             config['MAIL_FROM'] = valid.validate_email(os.environ['MAIL_FROM'])
@@ -217,8 +222,7 @@ class Config:
             config['GOOGLE_TRACKING_ID'] = valid.validate_string(os.environ['GOOGLE_TRACKING_ID'])
 
         if 'PLUGINS' in os.environ:
-            list = valid.validate_list(os.environ['PLUGINS'])
-            config['PLUGINS'] = valid.validate_string(list)
+            config['PLUGINS'] = valid.validate_list(os.environ['PLUGINS'], 'string')
 
         if 'ALERT_TIMEOUT' in os.environ:
             config['ALERT_TIMEOUT'] = valid.validate_integer(os.environ['ALERT_TIMEOUT'])

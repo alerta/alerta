@@ -25,15 +25,12 @@ class TestValidator(unittest.TestCase):
         self.assertEqual(self.TestValidator.validate_url('https://alerta.io'), 'https://alerta.io')
         self.assertEqual(self.TestValidator.validate_url('https://*.alerta.io'), 'https://*.alerta.io')
         self.assertEqual(self.TestValidator.validate_url('http://localhost.com'), 'http://localhost.com')
-        self.assertEqual(self.TestValidator.validate_url(['http://localhost.com']), ['http://localhost.com'])
-        self.assertEqual(self.TestValidator.validate_url(['http://localhost.com', 'https://localhost.com']), ['http://localhost.com', 'https://localhost.com'])
 
     def test_string_validator(self):
         self.assertEqual(self.TestValidator.validate_string('changeme'), 'changeme')
         self.assertEqual(self.TestValidator.validate_string(' '), ' ')
         self.assertEqual(self.TestValidator.validate_string('[changeme]'), '[changeme]')
         self.assertEqual(self.TestValidator.validate_string('jgfeujksegf7837546'), 'jgfeujksegf7837546')
-        self.assertEqual(self.TestValidator.validate_string(['one', 'two']), ['one', 'two'])
 
     def test_email_validator(self):
         self.assertEqual(self.TestValidator.validate_email('name@namesen.com'), 'name@namesen.com')
@@ -42,16 +39,22 @@ class TestValidator(unittest.TestCase):
         self.assertEqual(self.TestValidator.validate_integer('2'), 2)
 
     def test_list_validator(self):
-        self.assertEqual(self.TestValidator.validate_list("['admin']"), ['admin'])
-        self.assertEqual(self.TestValidator.validate_list("['admin', 'admin@adminsen.com']"), ['admin', 'admin@adminsen.com'])
-        self.assertEqual(self.TestValidator.validate_list("admin"), ['admin'])
-        self.assertEqual(self.TestValidator.validate_list("admin,name"), ['admin', 'name'])
+        self.assertEqual(self.TestValidator.validate_list("['admin']", 'string'), ['admin'])
+        self.assertEqual(self.TestValidator.validate_list("['admin', 'admin@adminsen.com']", 'string'), ['admin', 'admin@adminsen.com'])
+        self.assertEqual(self.TestValidator.validate_list("admin", 'string'), ['admin'])
+        self.assertEqual(self.TestValidator.validate_list("admin,name", 'string'), ['admin', 'name'])
+        self.assertEqual(self.TestValidator.validate_list("['http://localhost.com']", 'url'), ['http://localhost.com'])
+        self.assertEqual(self.TestValidator.validate_list("['http://localhost.com', 'https://localhost.com']", 'url'), ['http://localhost.com', 'https://localhost.com'])
+        self.assertEqual(self.TestValidator.validate_list("['one', 'two']", 'string'), ['one', 'two'])
+        self.assertEqual(self.TestValidator.validate_list("[1, 2]", 'integer'), [1, 2])
+        self.assertEqual(self.TestValidator.validate_list("1,2", 'integer'), [1, 2])
 
 
 class TestConfig(unittest.TestCase):
     """
     Test the environment variables
     """
+
     def setUp(self):
         self.TestConfig = Config()
 
