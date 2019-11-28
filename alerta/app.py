@@ -5,7 +5,7 @@ from flask import Flask
 from flask_compress import Compress
 from flask_cors import CORS
 from sentry_sdk.integrations.flask import FlaskIntegration
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from alerta.database.base import Database, QueryBuilder
 from alerta.exceptions import ExceptionHandlers
