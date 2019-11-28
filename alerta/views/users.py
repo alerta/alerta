@@ -174,10 +174,12 @@ def update_user(user_id):
                 raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
                     want_scope, ','.join(g.scopes)), 403)
 
+    resp = user.update(**request.json)
+
     admin_audit_trail.send(current_app._get_current_object(), event='user-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
-    if user.update(**request.json):
+    if resp:
         return jsonify(status='ok')
     else:
         raise ApiError('failed to update user', 500)
@@ -206,10 +208,12 @@ def update_me():
         if user_by_email and user_by_email.id != user.id:
             raise ApiError('user with that email already exists', 409)
 
+    resp = user.update(**request.json)
+
     write_audit_trail.send(current_app._get_current_object(), event='user-me-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
-    if user.update(**request.json):
+    if resp:
         return jsonify(status='ok')
     else:
         raise ApiError('failed to update user', 500)
@@ -250,10 +254,12 @@ def update_me_attributes():
     if not user:
         raise ApiError('not found', 404)
 
+    resp = user.update_attributes(request.json['attributes'])
+
     write_audit_trail.send(current_app._get_current_object(), event='user-me-attributes-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
-    if user.update_attributes(request.json['attributes']):
+    if resp:
         return jsonify(status='ok')
     else:
         raise ApiError('failed to update attributes', 500)
