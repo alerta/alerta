@@ -15,6 +15,8 @@ from alerta.utils.response import absolute_url
 
 from .utils import Query
 
+import re
+
 MAX_RETRIES = 5
 
 
@@ -423,6 +425,14 @@ class Backend(Database):
 
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()
+
+        where_clause = query.where
+
+        if ( "id" in where_clause):
+            where_clause = where_clause.replace("AND (","AND (alerts.")
+
+        query = query._replace(where=where_clause)
+
         select = """
             SELECT resource, environment, service, "group", tags, attributes, origin, customer, history, h.*
               FROM alerts, unnest(history[1:{limit}]) h
