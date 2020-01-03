@@ -428,7 +428,7 @@ class Backend(Database):
 
         where_clause = query.where
 
-        if ( "id" in where_clause):
+        if ("id" in where_clause):
             where_clause = where_clause.replace("AND (","AND (alerts.")
 
         query = query._replace(where=where_clause)
