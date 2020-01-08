@@ -172,6 +172,7 @@ COLUMNS = [
     'customer', 'environment', 'service', 'resource', 'event', 'value'
 ]
 SORT_LIST_BY = 'lastReceiveTime'  # newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
+DEFAULT_FILTER = {'status': ['open', 'ack']}
 
 # Alert Status Indicators
 ASI_SEVERITY = [
