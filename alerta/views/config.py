@@ -49,6 +49,7 @@ def config():
         },
         'columns': current_app.config['COLUMNS'],
         'sort_by': current_app.config['SORT_LIST_BY'],
+        'filter': current_app.config['DEFAULT_FILTER'],
         'indicators': {
             'severity': current_app.config['ASI_SEVERITY'],
             'queries': current_app.config['ASI_QUERIES']
