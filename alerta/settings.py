@@ -100,6 +100,7 @@ ALLOWED_KEYCLOAK_ROLES = None
 # OpenID Connect
 OIDC_ISSUER_URL = None
 OIDC_AUTH_URL = None
+OIDC_LOGOUT_URL = None
 OIDC_VERIFY_TOKEN = False
 OIDC_ROLE_CLAIM = OIDC_CUSTOM_CLAIM = 'roles'  # JWT claim name whose value is used in role mapping
 OIDC_GROUP_CLAIM = 'groups'  # JWT claim name whose value is used in customer mapping
