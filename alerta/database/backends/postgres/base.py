@@ -423,6 +423,14 @@ class Backend(Database):
 
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()
+        if 'id' in query.vars:
+            select = """
+                SELECT a.id
+                  FROM alerts a, unnest(history[1:{limit}]) h
+                 WHERE h.id LIKE %(id)s
+            """.format(limit=current_app.config['HISTORY_LIMIT'])
+            query.vars['id'] = self._fetchone(select, query.vars)
+
         select = """
             SELECT resource, environment, service, "group", tags, attributes, origin, customer, history, h.*
               FROM alerts, unnest(history[1:{limit}]) h
