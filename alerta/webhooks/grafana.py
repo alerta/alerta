@@ -24,7 +24,7 @@ def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) 
     else:
         severity = 'indeterminate'
 
-    environment = args.get('environment', 'Production')  # TODO: verify at create?
+    environment = args.get('environment', 'Production')
     event_type = args.get('event_type', 'performanceAlert')
     group = args.get('group', 'Performance')
     origin = args.get('origin', 'Grafana')
@@ -32,9 +32,13 @@ def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) 
     timeout = args.get('timeout', type=int)
 
     alert_rule_tags = alert.get('tags', None) or dict()
+    print(alert_rule_tags)
     eval_match_tags = match.get('tags', None) or dict()
+    print(eval_match_tags)
     merge(alert_rule_tags, eval_match_tags)
+    print(alert_rule_tags)
     attributes = {k.replace('.', '_'): v for (k, v) in alert_rule_tags.items()}
+    print(attributes)
 
     attributes['ruleId'] = str(alert['ruleId'])
     if 'ruleUrl' in alert:
