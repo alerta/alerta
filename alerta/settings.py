@@ -141,9 +141,10 @@ DEFAULT_PREVIOUS_SEVERITY = None
 COLOR_MAP = {}  # type: Dict[str, Any]
 
 # Timeout settings
-DEFAULT_TIMEOUT = 86400
+DEFAULT_TIMEOUT = 86400  # seconds
 ALERT_TIMEOUT = DEFAULT_TIMEOUT
 HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
+HEARTBEAT_MAX_LATENCY = 2000  # ms
 
 # Housekeeping settings
 DEFAULT_EXPIRED_DELETE_HRS = 2  # hours (0 hours = do not delete)
