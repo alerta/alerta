@@ -13,8 +13,6 @@ from alerta.database.base import Query
 from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
-MAX_LATENCY = 2000  # ms
-
 JSON = Dict[str, Any]
 
 
@@ -23,6 +21,8 @@ class Heartbeat:
     def __init__(self, origin: str = None, tags: List[str] = None, create_time: datetime = None, timeout: int = None, customer: str = None, **kwargs) -> None:
 
         timeout = timeout if timeout is not None else current_app.config['HEARTBEAT_TIMEOUT']
+        max_latency = current_app.config['HEARTBEAT_MAX_LATENCY']
+
         try:
             timeout = int(timeout)
         except ValueError:
@@ -30,12 +30,20 @@ class Heartbeat:
         if timeout < 0:
             raise ValueError("Invalid negative 'timeout' value ({})".format(timeout))
 
+        try:
+            max_latency = int(max_latency)
+        except ValueError:
+            raise ValueError("Could not convert 'max_latency' value of '{}' to an integer".format(timeout))
+        if timeout < 0:
+            raise ValueError("Invalid negative 'max_latency' value ({})".format(timeout))
+
         self.id = kwargs.get('id', str(uuid4()))
         self.origin = origin or '{}/{}'.format(os.path.basename(sys.argv[0]), platform.uname()[1])
         self.tags = tags or list()
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'Heartbeat'
         self.create_time = create_time or datetime.utcnow()
         self.timeout = timeout
+        self.max_latency = max_latency
         self.receive_time = kwargs.get('receive_time', None) or datetime.utcnow()
         self.customer = customer
 
@@ -52,7 +60,7 @@ class Heartbeat:
     def status(self) -> str:
         if self.since.total_seconds() > self.timeout:
             return 'expired'  # aka 'stale'
-        elif self.latency > MAX_LATENCY:
+        elif self.latency > self.max_latency:
             return 'slow'
         else:
             return 'ok'
@@ -84,6 +92,7 @@ class Heartbeat:
             'type': self.event_type,
             'createTime': self.create_time,
             'timeout': self.timeout,
+            'maxLatency': self.max_latency,
             'receiveTime': self.receive_time,
             'customer': self.customer,
             'latency': self.latency,
