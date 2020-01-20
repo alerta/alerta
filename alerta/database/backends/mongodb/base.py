@@ -1434,11 +1434,15 @@ class Backend(Database):
         return True if response.deleted_count == 1 else False
 
     def get_scopes_by_match(self, login, matches):
+        ADMIN_SCOPES = [Scope.admin, Scope.read, Scope.write]
+
         if login in current_app.config['ADMIN_USERS']:
-            return [Scope.admin, Scope.read, Scope.write]
+            return ADMIN_SCOPES
 
         scopes = list()
         for match in matches:
+            if match == 'admin':
+                return ADMIN_SCOPES
             if match == 'user':
                 scopes.extend(current_app.config['USER_DEFAULT_SCOPES'])
             response = self.get_db().perms.find_one({'match': match}, projection={'scopes': 1, '_id': 0})
