@@ -1292,7 +1292,7 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['preferred_username'], 'nsatterl', claims)
         self.assertEqual(claims['provider'], 'keycloak', claims)
         self.assertEqual(claims['roles'], ['create-realm', 'devops', 'alerta-project', 'admin'], claims)
-        self.assertEqual(claims['scope'], 'read write', claims)
+        self.assertEqual(claims['scope'], 'admin read write', claims)
         self.assertEqual(claims['email'], 'nick@alerta.dev', claims)
         self.assertEqual(claims.get('email_verified'), True, claims)
         self.assertEqual(claims['customers'], ['Domain Customer'], claims)
