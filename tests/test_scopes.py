@@ -148,3 +148,13 @@ class ScopesTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['permission']['scopes'], [Scope.write, Scope.read])
         self.assertEqual(data['permission']['match'], 'read-write')
+
+    def test_roles(self):
+
+        login = 'user_who_wants_to_be_admin@alerta.io'
+        roles = ['admin']
+
+        with self.app.test_request_context():
+            scopes = Permission.lookup(login, roles)
+
+        self.assertEqual(scopes, [Scope.admin, Scope.read, Scope.write])
