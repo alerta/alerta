@@ -7,7 +7,7 @@ from pymongo.errors import ConnectionFailure
 
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
-from alerta.models.enums import Scope
+from alerta.models.enums import ADMIN_SCOPES
 
 from .utils import Query
 
@@ -1435,10 +1435,12 @@ class Backend(Database):
 
     def get_scopes_by_match(self, login, matches):
         if login in current_app.config['ADMIN_USERS']:
-            return [Scope.admin, Scope.read, Scope.write]
+            return ADMIN_SCOPES
 
         scopes = list()
         for match in matches:
+            if match == 'admin':
+                return ADMIN_SCOPES
             if match == 'user':
                 scopes.extend(current_app.config['USER_DEFAULT_SCOPES'])
             response = self.get_db().perms.find_one({'match': match}, projection={'scopes': 1, '_id': 0})

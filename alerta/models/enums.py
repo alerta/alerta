@@ -57,3 +57,6 @@ class Scope(str, Enum):
             return Scope('{}:{}'.format(action, resource))
         else:
             return Scope(action)
+
+
+ADMIN_SCOPES = [Scope.admin, Scope.read, Scope.write]
