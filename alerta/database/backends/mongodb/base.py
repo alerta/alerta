@@ -7,7 +7,7 @@ from pymongo.errors import ConnectionFailure
 
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
-from alerta.models.enums import Scope
+from alerta.models.enums import ADMIN_SCOPES
 
 from .utils import Query
 
@@ -1434,8 +1434,6 @@ class Backend(Database):
         return True if response.deleted_count == 1 else False
 
     def get_scopes_by_match(self, login, matches):
-        ADMIN_SCOPES = [Scope.admin, Scope.read, Scope.write]
-
         if login in current_app.config['ADMIN_USERS']:
             return ADMIN_SCOPES
 
