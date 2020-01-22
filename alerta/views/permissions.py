@@ -75,6 +75,11 @@ def list_perms():
         scopes=current_app.config['USER_DEFAULT_SCOPES']
     )
 
+    guest_perm = Permission(
+        match='guest',
+        scopes=[Scope.read_alerts]
+    )
+
     # add system-defined roles 'admin' and 'user'
     if 'scopes' in request.args:
         want_scopes = request.args.getlist('scopes')
@@ -82,9 +87,12 @@ def list_perms():
             perms.append(admin_perm)
         if set(user_perm.scopes) & set(want_scopes):
             perms.append(user_perm)
+        if set(guest_perm.scopes) & set(want_scopes):
+            perms.append(guest_perm)
     else:
         perms.append(admin_perm)
         perms.append(user_perm)
+        perms.append(guest_perm)
 
     if perms:
         return jsonify(
