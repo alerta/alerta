@@ -1,4 +1,3 @@
-
 from flask import current_app
 from werkzeug.datastructures import MultiDict
 

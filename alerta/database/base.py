@@ -1,4 +1,3 @@
-
 from importlib import import_module
 from typing import NamedTuple
 from urllib.parse import urlparse

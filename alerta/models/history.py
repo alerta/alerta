@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 from alerta.utils.response import absolute_url

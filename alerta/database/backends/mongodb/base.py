@@ -1154,6 +1154,7 @@ class Backend(Database):
                 '$set': {
                     'origin': heartbeat.origin,
                     'tags': heartbeat.tags,
+                    'attributes': heartbeat.attributes,
                     'type': heartbeat.event_type,
                     'createTime': heartbeat.create_time,
                     'timeout': heartbeat.timeout,
