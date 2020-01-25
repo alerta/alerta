@@ -123,6 +123,13 @@ CREATE TABLE IF NOT EXISTS heartbeats (
     customer text
 );
 
+DO $$
+BEGIN
+    ALTER TABLE heartbeats ADD COLUMN attributes jsonb;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "attributes" already exists in heartbeats.';
+END$$;
+
 
 CREATE TABLE IF NOT EXISTS keys (
     id text PRIMARY KEY,

@@ -1,4 +1,3 @@
-
 from pyparsing import (CaselessKeyword, Forward, Group, Literal, Optional,
                        ParseException, ParserElement, QuotedString, Regex,
                        Suppress, Word, infixNotation, opAssoc, printables)

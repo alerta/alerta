@@ -1,4 +1,3 @@
-
 from urllib.parse import parse_qs, urlparse
 
 from flask import current_app, jsonify, render_template, request

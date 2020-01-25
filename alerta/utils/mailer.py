@@ -1,4 +1,3 @@
-
 from flask import Flask, current_app
 
 try:
