@@ -1,4 +1,3 @@
-
 def merge(dict1, dict2):
     """
     Merge two dictionaries.

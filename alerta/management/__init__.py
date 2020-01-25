@@ -1,4 +1,3 @@
-
 from flask import Blueprint
 
 mgmt = Blueprint('mgmt', __name__)

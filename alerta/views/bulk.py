@@ -1,4 +1,3 @@
-
 from flask import jsonify, request
 from flask_cors import cross_origin
 

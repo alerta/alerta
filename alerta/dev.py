@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 BUILD_NUMBER = 'DEV'
