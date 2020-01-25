@@ -839,6 +839,8 @@ class Backend(Database):
             UPDATE keys
             SET
         """
+        if 'user' in kwargs:
+            update += '"user"=%(user)s, '
         if 'scopes' in kwargs:
             update += 'scopes=%(scopes)s, '
         if 'text' in kwargs:
