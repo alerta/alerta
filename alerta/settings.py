@@ -60,6 +60,7 @@ AUTH_REQUIRED = False
 AUTH_PROVIDER = 'basic'  # basic (default), ldap, github, openid, saml2, azure, cognito, gitlab, google, keycloak
 ADMIN_USERS = []  # type: List[str]
 USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includes 'read'
+GUEST_DEFAULT_SCOPES = ['read:alerts']
 CUSTOMER_VIEWS = False
 
 BASIC_AUTH_REALM = 'Alerta'

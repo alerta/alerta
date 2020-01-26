@@ -1444,6 +1444,8 @@ class Backend(Database):
                 return ADMIN_SCOPES
             if match == 'user':
                 scopes.extend(current_app.config['USER_DEFAULT_SCOPES'])
+            if match == 'guest':
+                scopes.extend(current_app.config['GUEST_DEFAULT_SCOPES'])
             response = self.get_db().perms.find_one({'match': match}, projection={'scopes': 1, '_id': 0})
             if response:
                 scopes.extend(response['scopes'])
