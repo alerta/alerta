@@ -100,7 +100,7 @@ def user(username, password, all):
         except Exception as e:
             click.echo('ERROR: {}'.format(e))
         else:
-            click.echo('{} {}'.format(user.id, user.name))
+            click.echo('{} {}'.format(user.id, user.login))
 
     if all:
         for admin in current_app.config['ADMIN_USERS']:
@@ -121,7 +121,7 @@ def users():
             click.echo('ERROR: {}'.format(e))
         else:
             if user:
-                click.echo('{} {}'.format(user.id, user.name))
+                click.echo('{} {}'.format(user.id, user.login))
 
 
 if __name__ == '__main__':
