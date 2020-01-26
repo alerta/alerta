@@ -22,7 +22,7 @@ def create_perm():
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    if perm.match in ['admin', 'user']:
+    if perm.match in ['admin', 'user', 'guest']:
         raise ApiError('{} role already exists'.format(perm.match), 409)
 
     for want_scope in perm.scopes:
@@ -73,17 +73,24 @@ def list_perms():
         match='user',
         scopes=current_app.config['USER_DEFAULT_SCOPES']
     )
+    guest_perm = Permission(
+        match='guest',
+        scopes=current_app.config['GUEST_DEFAULT_SCOPES']
+    )
 
-    # add system-defined roles 'admin' and 'user'
+    # add system-defined roles 'admin', 'user' and 'guest
     if 'scopes' in request.args:
         want_scopes = request.args.getlist('scopes')
         if set(admin_perm.scopes) & set(want_scopes):
             perms.append(admin_perm)
         if set(user_perm.scopes) & set(want_scopes):
             perms.append(user_perm)
+        if set(guest_perm.scopes) & set(want_scopes):
+            perms.append(guest_perm)
     else:
         perms.append(admin_perm)
         perms.append(user_perm)
+        perms.append(guest_perm)
 
     if perms:
         return jsonify(
