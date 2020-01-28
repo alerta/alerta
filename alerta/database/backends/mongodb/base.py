@@ -638,7 +638,7 @@ class Backend(Database):
             {'$limit': topn}
         ]
 
-        responses = self.get_db().alerts.aggregate(pipeline)
+        responses = self.get_db().alerts.aggregate(pipeline, allowDiskUse=True)
 
         top = list()
         for response in responses:
@@ -675,7 +675,7 @@ class Backend(Database):
             {'$limit': topn}
         ]
 
-        responses = self.get_db().alerts.aggregate(pipeline)
+        responses = self.get_db().alerts.aggregate(pipeline, allowDiskUse=True)
 
         top = list()
         for response in responses:
@@ -711,7 +711,7 @@ class Backend(Database):
             {'$limit': topn}
         ]
 
-        responses = self.get_db().alerts.aggregate(pipeline)
+        responses = self.get_db().alerts.aggregate(pipeline, allowDiskUse=True)
         top = list()
         for response in responses:
             top.append(
