@@ -891,11 +891,19 @@ class Backend(Database):
 
     def is_blackout_period(self, alert):
         query = dict()
-        query['startTime'] = {'$lte': alert.create_time}
-        query['endTime'] = {'$gt': alert.create_time}
-
         query['environment'] = alert.environment
-        query['$and'] = [{'$or': [
+        query['$and'] = [
+            {'$or': [
+                {'$and': [
+                    {'startTime': {'$lte': alert.create_time}},
+                    {'endTime': {'$gt': alert.create_time}}
+                ]},
+                {'$and': [
+                    {'startTime': {'$lte': alert.last_receive_time}},
+                    {'endTime': {'$gt': alert.last_receive_time}}
+                ]},
+            ]},
+            {'$or': [
             {
                 'resource': None,
                 'service': None,
