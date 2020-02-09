@@ -5,3 +5,4 @@ pytest-cov
 python-dotenv
 requests_mock
 twine
+wheel
