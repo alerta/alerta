@@ -34,7 +34,7 @@ class Mailer:
         self.smtp_use_ssl = app.config['SMTP_USE_SSL']
         self.smtp_starttls = app.config['SMTP_STARTTLS']
 
-    def send_email(self, email: str, subject: str, body: str) -> None:
+    def send_email(self, email: str, subject: str, body: str, mime: str = 'plain') -> None:
 
         msg = MIMEMultipart('related')
         msg['Subject'] = subject
@@ -42,7 +42,7 @@ class Mailer:
         msg['To'] = email
         msg.preamble = subject
 
-        msg_text = MIMEText(body, 'plain', 'utf-8')
+        msg_text = MIMEText(body, mime, 'utf-8')
         msg.attach(msg_text)
 
         try:
