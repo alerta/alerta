@@ -45,6 +45,7 @@ class NoCustomerMatch(AlertaException):
 
 class BaseError(Exception):
     code = 500
+    description = 'Unhandled exception'
 
     def __init__(self, message, code=None, errors=None):
         super().__init__(message)
