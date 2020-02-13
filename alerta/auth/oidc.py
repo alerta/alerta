@@ -127,8 +127,8 @@ def openid():
     role_claim = current_app.config['OIDC_ROLE_CLAIM']
     group_claim = current_app.config['OIDC_GROUP_CLAIM']
     custom_claims = {
-+        'role_claim': deep_get(userinfo, role_claim) or deep_get(id_token, role_claim) or [],
-+        'group_claim': deep_get(userinfo, group_claim) or deep_get(id_token, group_claim) or [],
++        'role_claim': _deep_get(userinfo, role_claim) or _deep_get(id_token, role_claim) or [],
++        'group_claim': _deep_get(userinfo, group_claim) or _deep_get(id_token, group_claim) or [],
     }
 
     login = username or nickname or email
