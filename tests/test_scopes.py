@@ -14,9 +14,11 @@ class ScopesTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': True,
-            'ADMIN_USERS': ['admin@alerta.io', 'sys@alerta.io']
+            'ADMIN_USERS': ['admin@alerta.io', 'sys@alerta.io'],
+            'DEFAULT_ADMIN_ROLE': 'ops',
+            'ADMIN_ROLES': ['ops', 'devops']
         }
-        self.app = create_app(test_config)
+        self.app = create_app(test_config, environment='development')
         self.client = self.app.test_client()
 
         def make_key(user, scopes=None, type=None, text=''):
@@ -150,16 +152,30 @@ class ScopesTestCase(unittest.TestCase):
 
     def test_system_roles(self):
 
-        login = 'user_who_wants_to_be_admin@alerta.io'
-        roles = ['admin']
+        login = 'admin@alerta.io'
+        roles = ['no-ops', 'team']
+
+        with self.app.test_request_context():
+            scopes = Permission.lookup(login, roles)
+        self.assertEqual(scopes, [Scope.admin, Scope.read, Scope.write])
+
+        login = 'dev_who_wants_to_be_admin@alerta.io'
+        roles = ['web', 'ops']
 
         with self.app.test_request_context():
             scopes = Permission.lookup(login, roles)
         self.assertEqual(scopes, [Scope.admin, Scope.read, Scope.write])
 
         login = 'user_who_wants_default_user_scopes@alerta.io'
-        roles = ['user']
+        roles = ['dev', 'engineer']
 
         with self.app.test_request_context():
             scopes = Permission.lookup(login, roles)
         self.assertEqual(scopes, [Scope.read, Scope.write])
+
+        login = 'guest_user@alerta.io'
+        roles = ['guest']
+
+        with self.app.test_request_context():
+            scopes = Permission.lookup(login, roles)
+        self.assertEqual(scopes, [Scope.read_alerts])

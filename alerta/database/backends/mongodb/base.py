@@ -1440,7 +1440,7 @@ class Backend(Database):
 
         scopes = list()
         for match in matches:
-            if match == 'admin':
+            if match in current_app.config['ADMIN_ROLES']:
                 return ADMIN_SCOPES
             if match == 'user':
                 scopes.extend(current_app.config['USER_DEFAULT_SCOPES'])
