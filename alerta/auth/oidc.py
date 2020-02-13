@@ -117,18 +117,18 @@ def openid():
     email_verified = True if email_verified == 'true' else email_verified  # Cognito returns string boolean
     picture = userinfo.get('picture') or id_token.get('picture')
  
-    def _deep_get(data, key, default=None):
+    def _deep_get(data, key):
         from functools import reduce
         if type(key) is list:
-            return reduce(lambda d, k: d.get(k) if d else None, key, data) or default
+            return reduce(lambda d, k: d.get(k) if d else None, key, data)
         else:
-            data.get(key, default)
+            data.get(key)
 
     role_claim = current_app.config['OIDC_ROLE_CLAIM']
     group_claim = current_app.config['OIDC_GROUP_CLAIM']
     custom_claims = {
-        'role_claim': _deep_get(userinfo, role_claim) or _deep_get(id_token, role_claim, []),
-        'group_claim': _deep_get(userinfo, group_claim) or _deep_get(id_token, group_claim, []),
++        'role_claim': deep_get(userinfo, role_claim) or deep_get(id_token, role_claim) or [],
++        'group_claim': deep_get(userinfo, group_claim) or deep_get(id_token, group_claim) or [],
     }
 
     login = username or nickname or email
