@@ -116,12 +116,19 @@ def openid():
     email_verified = userinfo.get('email_verified', id_token.get('email_verified', bool(email)))
     email_verified = True if email_verified == 'true' else email_verified  # Cognito returns string boolean
     picture = userinfo.get('picture') or id_token.get('picture')
+ 
+    def _deep_get(data, key, default=None):
+        from functools import reduce
+        if type(key) is list:
+            return reduce(lambda d, k: d.get(k) if d else None, key, data) or default
+        else:
+            data.get(key, default)
 
     role_claim = current_app.config['OIDC_ROLE_CLAIM']
     group_claim = current_app.config['OIDC_GROUP_CLAIM']
     custom_claims = {
-        role_claim: userinfo.get(role_claim) or id_token.get(role_claim, []),
-        group_claim: userinfo.get(group_claim) or id_token.get(group_claim, []),
+        'role_claim': _deep_get(userinfo, role_claim) or _deep_get(id_token, role_claim, []),
+        'group_claim': _deep_get(userinfo, group_claim) or _deep_get(id_token, group_claim, []),
     }
 
     login = username or nickname or email
@@ -136,8 +143,8 @@ def openid():
     else:
         user.update(login=login, email=email)
 
-    roles = custom_claims[role_claim] or user.roles
-    groups = custom_claims[group_claim]
+    roles = custom_claims['role_claim'] or user.roles
+    groups = custom_claims['group_claim']
 
     if user.status != 'active':
         raise ApiError('User {} is not active'.format(login), 403)
