@@ -7,6 +7,7 @@ from alerta.auth.utils import generate_password_hash
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
 from alerta.models.user import User
+from alerta.settings import DEFAULT_ADMIN_ROLE
 
 
 def _create_app(info):
@@ -89,7 +90,7 @@ def user(username, password, all):
             name='Admin user',
             login=admin,
             password=generate_password_hash(password),
-            roles=['admin'],
+            roles=[DEFAULT_ADMIN_ROLE],
             text='Created by alertad script',
             email=email,
             email_verified=bool(email)
