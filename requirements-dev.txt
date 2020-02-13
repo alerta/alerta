@@ -1,4 +1,4 @@
-mypy==0.620
+mypy
 pre-commit
 pytest
 pytest-cov

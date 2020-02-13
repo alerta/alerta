@@ -95,7 +95,7 @@ def send_password_reset(user: 'User', token: str) -> None:
            '{url}\n\n' \
            'You\'re receiving this email because you asked for a password reset of an Alerta account.' \
            ' If this wasn\'t you, please ignore this email.'.format(
-               name=user.name, email=user.email, url=link(request.referrer, 'reset', token)
+               url=link(request.referrer, 'reset', token)
            )
     mailer.send_email(user.email, subject, body=text)
 

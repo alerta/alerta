@@ -1,6 +1,6 @@
 from flask import current_app
 
-from alerta.exceptions import InvalidAction
+from alerta.exceptions import ApiError, InvalidAction
 from alerta.models.alarms import AlarmModel
 
 SEVERITY_MAP = {
@@ -130,8 +130,8 @@ class StateMachine(AlarmModel):
         previous_severity = alert.previous_severity or StateMachine.DEFAULT_PREVIOUS_SEVERITY
 
         valid_severities = sorted(StateMachine.Severity, key=StateMachine.Severity.get)
-        assert current_severity in StateMachine.Severity, 'Severity ({}) is not one of {}'.format(
-            current_severity, ', '.join(valid_severities))
+        if current_severity not in StateMachine.Severity:
+            raise ApiError('Severity ({}) is not one of {}'.format(current_severity, ', '.join(valid_severities)), 400)
 
         def next_state(rule, severity, status):
             current_app.logger.info(
