@@ -67,6 +67,8 @@ def openid():
     oidc_configuration, jwt_key_set = get_oidc_configuration(current_app)
     token_endpoint = oidc_configuration['token_endpoint']
     userinfo_endpoint = oidc_configuration['userinfo_endpoint']
+    role_claim = current_app.config['OIDC_ROLE_CLAIM']
+    group_claim = current_app.config['OIDC_GROUP_CLAIM']
 
     data = {
         'grant_type': 'authorization_code',
@@ -101,6 +103,34 @@ def openid():
         current_app.logger.warning('No ID token in OpenID Connect token response.')
         id_token = {}
 
+    # keycloak specific: roles and groups in access_token
+    try:
+        if current_app.config['OIDC_VERIFY_TOKEN']:
+            jwt_header = jwt.get_unverified_header(token['id_token'])
+            public_key = jwt_key_set[jwt_header['kid']]
+
+            access_token = jwt.decode(
+                token['access_token'],
+                key=public_key,
+                algorithms=jwt_header['alg']
+            )
+        else:
+            access_token = jwt.decode(
+                token['access_token'],
+                verify=False
+            )
+
+        audience = access_token.get('aud')
+        keycloak_claims = {
+            role_claim: access_token.get('realm_access', {}).get(role_claim, []) +
+                        access_token.get('resource_access', {}).get(audience, {}).get(role_claim, []),
+            group_claim: access_token.get('realm_access', {}).get(group_claim, []) +
+                         access_token.get('resource_access', {}).get(audience, {}).get(group_claim, []),
+        }
+    except Exception:
+        current_app.logger.warning('No access token in OpenID Connect token response.')
+        keycloak_claims = {}
+
     try:
         headers = {'Authorization': '{} {}'.format(token.get('token_type', 'Bearer'), token['access_token'])}
         r = requests.get(userinfo_endpoint, headers=headers)
@@ -116,19 +146,10 @@ def openid():
     email_verified = userinfo.get('email_verified', id_token.get('email_verified', bool(email)))
     email_verified = True if email_verified == 'true' else email_verified  # Cognito returns string boolean
     picture = userinfo.get('picture') or id_token.get('picture')
- 
-    def _deep_get(data, key):
-        from functools import reduce
-        if type(key) is list:
-            return reduce(lambda d, k: d.get(k) if d else None, key, data)
-        else:
-            data.get(key)
 
-    role_claim = current_app.config['OIDC_ROLE_CLAIM']
-    group_claim = current_app.config['OIDC_GROUP_CLAIM']
     custom_claims = {
-+        'role_claim': _deep_get(userinfo, role_claim) or _deep_get(id_token, role_claim) or [],
-+        'group_claim': _deep_get(userinfo, group_claim) or _deep_get(id_token, group_claim) or [],
+        role_claim: keycloak_claims.get(role_claim) or userinfo.get(role_claim) or id_token.get(role_claim) or [],
+        group_claim: keycloak_claims.get(group_claim) or userinfo.get(group_claim) or id_token.get(group_claim) or [],
     }
 
     login = username or nickname or email
@@ -143,8 +164,8 @@ def openid():
     else:
         user.update(login=login, email=email)
 
-    roles = custom_claims['role_claim'] or user.roles
-    groups = custom_claims['group_claim']
+    roles = custom_claims[role_claim] or user.roles
+    groups = custom_claims[group_claim]
 
     if user.status != 'active':
         raise ApiError('User {} is not active'.format(login), 403)
