@@ -76,6 +76,7 @@ class ExceptionHandlers:
 
 
 def handle_http_error(error: HTTPException) -> Tuple[Response, int]:
+    error.code = error.code or 500
     if error.code >= 500:
         current_app.logger.exception(error)
     return jsonify({
