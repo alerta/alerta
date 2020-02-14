@@ -63,7 +63,7 @@ class PagerDutyWebhook(WebhookBase):
     See https://v2.developer.pagerduty.com/docs/webhooks-v2-overview
     """
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
 
         updated = False
         if payload and 'messages' in payload:

@@ -27,7 +27,7 @@ class CloudWatchWebhook(WebhookBase):
         else:
             return 'unknown'
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
         notification = json.loads(payload)
 
         if notification['Type'] == 'SubscriptionConfirmation':

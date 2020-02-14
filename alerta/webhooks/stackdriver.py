@@ -17,7 +17,7 @@ class StackDriverWebhook(WebhookBase):
     See https://cloud.google.com/monitoring/support/notification-options#webhooks
     """
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
 
         incident = payload['incident']
         state = incident['state']

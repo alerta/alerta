@@ -106,7 +106,7 @@ class PrometheusWebhook(WebhookBase):
     See https://prometheus.io/docs/operating/integrations/#alertmanager-webhook-receiver
     """
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
 
         if payload and 'alerts' in payload:
             external_url = payload.get('externalURL')

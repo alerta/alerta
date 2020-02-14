@@ -14,7 +14,7 @@ class PingdomWebhook(WebhookBase):
     See https://www.pingdom.com/resources/webhooks/
     """
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
 
         if payload['importance_level'] == 'HIGH':
             severity = 'critical'
