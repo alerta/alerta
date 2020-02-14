@@ -63,7 +63,7 @@ class GrafanaWebhook(WebhookBase):
     See http://docs.grafana.org/alerting/notifications/#webhook
     """
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
 
         if payload and payload['state'] == 'alerting':
             return [parse_grafana(payload, match, query_string) for match in payload.get('evalMatches', [])]

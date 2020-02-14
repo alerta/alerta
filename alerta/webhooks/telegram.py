@@ -67,7 +67,7 @@ class TelegramWebhook(WebhookBase):
     See https://core.telegram.org/bots/api
     """
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
 
         if 'callback_query' in payload:
             author = payload['callback_query']['from']
