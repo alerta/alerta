@@ -13,7 +13,7 @@ class NewRelicWebhook(WebhookBase):
     See https://docs.newrelic.com/docs/alerts/new-relic-alerts/managing-notification-channels/notification-channels-control-where-send-alerts
     """
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
 
         if 'version' not in payload:
             raise ValueError('New Relic Legacy Alerting is not supported')

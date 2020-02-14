@@ -75,7 +75,7 @@ class SlackWebhook(WebhookBase):
     See https://api.slack.com/slack-apps
     """
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
 
         alert_id, user, action = parse_slack(payload)
 

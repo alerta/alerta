@@ -589,6 +589,24 @@ class WebhooksTestCase(unittest.TestCase):
         }
         """
 
+        self.vmware_vrealize = """
+        {
+           "startDate":1369757346267,
+           "criticality":"ALERT_CRITICALITY_LEVEL_WARNING",
+           "resourceId":"sample-object-uuid",
+           "alertId":"sample-alert-uuid",
+           "status":"ACTIVE",
+           "subType":"ALERT_SUBTYPE_AVAILABILITY_PROBLEM",
+           "cancelDate":1369757346267,
+           "resourceKind":"sample-object-type",
+           "adapterKind":"sample-adapter-type",
+           "type":"ALERT_TYPE_APPLICATION_PROBLEM",
+           "resourceName":"sample-object-name",
+           "updateDate":1369757346267,
+           "info":"sample-info"
+        }
+        """
+
         self.headers = {
             'Content-type': 'application/json',
             'X-Forwarded-For': ['10.1.1.1', '172.16.1.1', '192.168.1.1'],
@@ -831,6 +849,23 @@ class WebhooksTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'error')
 
+    def test_vmware_webhook(self):
+
+        custom_webhooks.webhooks['vmware'] = VmwareWebhook()
+
+        # create alert
+        response = self.client.post('/webhooks/vmware/sample-alert-uuid', data=self.vmware_vrealize, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['id'], 'sample-alert-uuid')
+        self.assertEqual(data['alert']['resource'], 'sample-object-name')
+        self.assertEqual(data['alert']['event'], 'ALERT_SUBTYPE_AVAILABILITY_PROBLEM')
+        self.assertEqual(data['alert']['service'], ['sample-object-type'])
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['group'], 'sample-object-type')
+        self.assertEqual(data['alert']['type'], 'ALERT_TYPE_APPLICATION_PROBLEM')
+        self.assertEqual(data['alert']['text'], 'sample-info')
+
     def test_custom_webhook(self):
 
         # setup custom webhook
@@ -841,11 +876,14 @@ class WebhooksTestCase(unittest.TestCase):
         custom_webhooks.webhooks['userdefined'] = DummyUserDefinedWebhook()
 
         # test json payload
-        response = self.client.post('/webhooks/json?foo=bar', json={'baz': 'quux'}, content_type='application/json')
+        response = self.client.post('/webhooks/json/bar/baz?foo=bar', json={'baz': 'quux'}, content_type='application/json')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'bar')
         self.assertEqual(data['alert']['event'], 'quux')
+        self.assertEqual(data['alert']['attributes']['path'], 'bar/baz')
+        self.assertEqual(data['alert']['attributes']['qs'], {'foo': 'bar'})
+        self.assertEqual(data['alert']['attributes']['data'], {'baz': 'quux'})
 
         # test text data
         response = self.client.post('/webhooks/text?foo', data='this is raw data', content_type='text/plain')
@@ -884,20 +922,45 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['teapot'], True)
 
 
+class VmwareWebhook(WebhookBase):
+
+    def incoming(self, path, query_string, payload):
+        if payload['criticality'] == 'ALERT_CRITICALITY_LEVEL_WARNING':
+            severity = 'critical'
+        else:
+            severity = 'normal'
+        return Alert(
+            id=payload['alertId'],
+            resource=payload['resourceName'],
+            event=payload['subType'],
+            environment='Production',
+            service=[payload['resourceKind']],
+            severity=severity,
+            group=payload['resourceKind'],
+            type=payload['type'],
+            text=payload['info']
+        )
+
+
 class DummyJsonWebhook(WebhookBase):
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
         return Alert(
             resource=query_string['foo'],
             event=payload['baz'],
             environment='Production',
-            service=['Foo']
+            service=['Foo'],
+            attributes={
+                'path': path,
+                'qs': query_string,
+                'data': payload
+            }
         )
 
 
 class DummyTextWebhook(WebhookBase):
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
         return Alert(
             resource=query_string.get('foo') or 'nofoo',
             event=payload,
@@ -930,7 +993,7 @@ class DummyMultiPartFormWebhook(WebhookBase):
 
 class DummyUserDefinedWebhook(WebhookBase):
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
         return jsonify(
             status='ok',
             message='This is a test user-defined response',
