@@ -67,6 +67,7 @@ def openid():
     oidc_configuration, jwt_key_set = get_oidc_configuration(current_app)
     token_endpoint = oidc_configuration['token_endpoint']
     userinfo_endpoint = oidc_configuration['userinfo_endpoint']
+    client_id = current_app.config['OIDC_CLIENT_ID']
     role_claim = current_app.config['OIDC_ROLE_CLAIM']
     group_claim = current_app.config['OIDC_GROUP_CLAIM']
 
@@ -120,12 +121,11 @@ def openid():
                 verify=False
             )
 
-        audience = access_token.get('aud')
         keycloak_claims = {
             role_claim: access_token.get('realm_access', {}).get(role_claim, []) +
-                        access_token.get('resource_access', {}).get(audience, {}).get(role_claim, []),
+                        access_token.get('resource_access', {}).get(client_id, {}).get(role_claim, []),
             group_claim: access_token.get('realm_access', {}).get(group_claim, []) +
-                         access_token.get('resource_access', {}).get(audience, {}).get(group_claim, []),
+                         access_token.get('resource_access', {}).get(client_id, {}).get(group_claim, []),
         }
     except Exception:
         current_app.logger.warning('No access token in OpenID Connect token response.')
