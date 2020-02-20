@@ -136,7 +136,7 @@ def openid():
     else:
         user.update(login=login, email=email)
 
-    roles = custom_claims[role_claim] or user.roles
+    roles = custom_claims[role_claim] + user.roles
     groups = custom_claims[group_claim]
 
     if user.status != 'active':
