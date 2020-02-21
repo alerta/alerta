@@ -174,7 +174,7 @@ DATE_FORMAT_SHORT_TIME = 'HH:mm'  # eg. 09:24
 DEFAULT_AUDIO_FILE = None  # must exist on client at relative path eg. '/audio/alert_high-intensity.ogg' or URL
 COLUMNS = [
     'severity', 'status', 'lastReceiveTime', 'timeoutLeft', 'duplicateCount',
-    'customer', 'environment', 'service', 'resource', 'event', 'value'
+    'customer', 'environment', 'service', 'resource', 'event', 'value', 'text'
 ]
 SORT_LIST_BY = 'lastReceiveTime'  # newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
 DEFAULT_FILTER = {'status': ['open', 'ack']}
