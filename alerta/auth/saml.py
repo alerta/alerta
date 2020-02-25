@@ -107,11 +107,12 @@ def saml_response_from_idp():
     customers = get_customers(login=user.email, groups=[user.domain] + groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='saml2-login', message='user login via SAML2',
-                          user=user.email, customers=customers, scopes=scopes, resource_id=user.id, type='user',
-                          request=request)
+                          user=user.email, customers=customers, scopes=scopes, roles=user.roles, groups=groups,
+                          resource_id=user.id, type='user', request=request)
 
-    token = create_token(user_id=user.id, name=user.name, login=user.email, provider='saml2', customers=customers,
-                         scopes=scopes, roles=user.roles, email=user.email, email_verified=user.email_verified)
+    token = create_token(user_id=user.id, name=user.name, login=user.email, provider='saml2',
+                         customers=customers, scopes=scopes, roles=user.roles, groups=groups,
+                         email=user.email, email_verified=user.email_verified)
 
     message = {'status': 'ok', 'token': token.tokenize}
     return render_template('auth/saml2.html', message=message, origin=origin), 200
