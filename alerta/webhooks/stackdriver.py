@@ -1,5 +1,4 @@
 import json
-from datetime import datetime
 from typing import Any, Dict
 
 from flask import current_app
@@ -31,23 +30,21 @@ class StackDriverWebhook(WebhookBase):
             except Exception:
                 current_app.logger.warning("Invalid documentation content: '{}'".format(incident['documentation']))
 
-        service = []
         status = None
-        create_time = None  # type: ignore
         severity = incident.get('severity', 'critical')
 
-        if incident['policy_name']:
-            service.append(incident['policy_name'])
-
         if state == 'open':
-            create_time = datetime.utcfromtimestamp(incident['started_at'])
+            status = None
         elif state == 'acknowledged':
             status = 'ack'
         elif state == 'closed':
             severity = 'ok'
-            create_time = datetime.utcfromtimestamp(incident['ended_at'])
         else:
             severity = 'indeterminate'
+
+        service = []
+        if incident['policy_name']:
+            service.append(incident['policy_name'])
 
         return Alert(
             resource=incident['resource_name'],
@@ -61,11 +58,13 @@ class StackDriverWebhook(WebhookBase):
             attributes={
                 'incidentId': incident['incident_id'],
                 'resourceId': incident['resource_id'],
-                'moreInfo': '<a href="%s" target="_blank">Stackdriver Console</a>' % incident['url']
+                'moreInfo': '<a href="%s" target="_blank">Stackdriver Console</a>' % incident['url'],
+                'startedAt': incident['started_at'],
+                'endedAt': incident['ended_at']
+
             },
             customer=incident.get('customer'),
             origin=incident.get('origin', 'Stackdriver'),
             event_type='stackdriverAlert',
-            create_time=create_time,
             raw_data=payload
         )
