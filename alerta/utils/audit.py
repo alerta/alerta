@@ -85,6 +85,8 @@ class AuditTrail:
             if data and app.config['AUDIT_LOG_REDACT']:
                 if 'password' in data:
                     data['password'] = '[REDACTED]'
+            if app.config['AUDIT_LOG_JSON']:
+                return data
             return json.dumps(data)
 
         return json.dumps({
