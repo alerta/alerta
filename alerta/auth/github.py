@@ -63,9 +63,6 @@ def github():
     else:
         user.update(login=login, email=email)
 
-    roles = organizations or user.roles
-    groups = organizations
-
     if user.status != 'active':
         raise ApiError('User {} is not active'.format(login), 403)
 
@@ -73,12 +70,14 @@ def github():
         raise ApiError('User {} is not authorized'.format(login), 403)
     user.update_last_login()
 
-    scopes = Permission.lookup(login, roles)
-    customers = get_customers(login, groups=[user.domain] + groups)
+    scopes = Permission.lookup(login, roles=user.roles + organizations)
+    customers = get_customers(login, groups=[user.domain] + organizations)
 
     auth_audit_trail.send(current_app._get_current_object(), event='github-login', message='user login via GitHub',
-                          user=login, customers=customers, scopes=scopes, resource_id=subject, type='user', request=request)
+                          user=login, customers=customers, scopes=scopes, roles=user.roles, orgs=organizations,
+                          resource_id=subject, type='user', request=request)
 
-    token = create_token(user_id=subject, name=name, login=login, provider='github', customers=customers,
-                         scopes=scopes, orgs=organizations, email=email, email_verified=email_verified, picture=picture)
+    token = create_token(user_id=subject, name=name, login=login, provider='github',
+                         customers=customers, scopes=scopes, roles=user.roles, orgs=organizations,
+                         email=email, email_verified=email_verified, picture=picture)
     return jsonify(token=token.tokenize)
