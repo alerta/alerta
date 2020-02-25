@@ -35,3 +35,6 @@ class AckedBy(PluginBase):
         if action == 'unack':
             alert.attributes['acked-by'] = None
         return alert
+
+    def delete(self, alert, **kwargs) -> bool:
+        raise NotImplementedError

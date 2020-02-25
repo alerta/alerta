@@ -38,6 +38,10 @@ class PluginBase(metaclass=abc.ABCMeta):
         """Trigger integrations based on external actions. (optional)"""
         raise NotImplementedError
 
+    def delete(self, alert: 'Alert', **kwargs) -> bool:
+        """Trigger integrations when an alert is deleted. (optional)"""
+        raise NotImplementedError
+
     def get_config(self, key, default=None, type=None, **kwargs):
 
         if key in os.environ:

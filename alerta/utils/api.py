@@ -152,3 +152,24 @@ def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, st
     alert.attributes = new_attrs
 
     return alert, status, text
+
+
+def process_delete(alert: Alert) -> bool:
+
+    wanted_plugins, wanted_config = plugins.routing(alert)
+
+    delete = True
+    for plugin in wanted_plugins:
+        try:
+            delete = delete and plugin.delete(alert, config=wanted_config)
+        except NotImplementedError:
+            pass  # plugin does not support delete() method
+        except RejectException:
+            raise
+        except Exception as e:
+            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                raise ApiError("Error while running delete plugin '{}': {}".format(plugin.name, str(e)))
+            else:
+                logging.error("Error while running delete plugin '{}': {}".format(plugin.name, str(e)))
+
+    return delete and alert.delete()
