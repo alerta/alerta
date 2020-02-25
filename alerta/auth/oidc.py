@@ -146,13 +146,14 @@ def openid():
         raise ApiError('User {} is not authorized'.format(login), 403)
     user.update_last_login()
 
-    scopes = Permission.lookup(login, roles)
+    scopes = Permission.lookup(login, roles=roles)
     customers = get_customers(login, groups=[user.domain] + groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='openid-login', message='user login via OpenID Connect',
-                          user=login, customers=customers, scopes=scopes, resource_id=subject, type='user', request=request)
+                          user=login, customers=customers, scopes=scopes, **custom_claims,
+                          resource_id=subject, type='user', request=request)
 
     token = create_token(user_id=subject, name=name, login=login, provider=current_app.config['AUTH_PROVIDER'],
-                         customers=customers, scopes=scopes, email=email, email_verified=email_verified,
-                         picture=picture, **custom_claims)
+                         customers=customers, scopes=scopes, **custom_claims,
+                         email=email, email_verified=email_verified, picture=picture)
     return jsonify(token=token.tokenize)
