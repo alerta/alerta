@@ -184,6 +184,27 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['history'][3]['text'],
                          'ticket resolved by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
 
+    def test_delete(self):
+
+        plugins.plugins['delete1'] = CustDeletePlugin1()
+        plugins.plugins['delete2'] = CustDeletePlugin2()
+
+        # create alert
+        response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        alert_id = data['id']
+
+        # delete alert
+        response = self.client.delete('/alert/' + alert_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+
+        # check deleted
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 404)
+
     def test_heartbeat_alert(self):
 
         self.heartbeat_alert = {
@@ -304,3 +325,39 @@ class CustActionPlugin1(PluginBase):
             text = text + ' (ticket #12345)'
 
         return alert, action, text
+
+
+class CustDeletePlugin1(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        return
+
+    def status_change(self, alert, status, text, **kwargs):
+        return alert, status, text
+
+    def take_action(self, alert, action, text, **kwargs):
+        return alert, action, text
+
+    def delete(self, alert, **kwargs):
+        return True
+
+
+class CustDeletePlugin2(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        return
+
+    def status_change(self, alert, status, text, **kwargs):
+        return alert, status, text
+
+    def take_action(self, alert, action, text, **kwargs):
+        return alert, action, text
+
+    def delete(self, alert, **kwargs):
+        return True
