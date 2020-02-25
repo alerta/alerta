@@ -217,7 +217,7 @@ class Database(Base):
     def get_blackouts(self, query=None):
         raise NotImplementedError
 
-    def is_blackout_period(self, alert):
+    def is_blackout_period(self, alert, compare_time):
         raise NotImplementedError
 
     def update_blackout(self, id, **kwargs):

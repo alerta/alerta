@@ -681,11 +681,11 @@ class Backend(Database):
         """.format(where=query.where)
         return self._fetchall(select, query.vars)
 
-    def is_blackout_period(self, alert):
+    def is_blackout_period(self, alert, compare_time):
         select = """
             SELECT *
             FROM blackouts
-            WHERE start_time <= %(create_time)s AND end_time > %(create_time)s
+            WHERE start_time <= %(compare_time)s AND end_time > %(compare_time)s
               AND environment=%(environment)s
               AND (
                  (resource IS NULL AND service='{}' AND event IS NULL AND "group" IS NULL AND tags='{}')
@@ -724,7 +724,7 @@ class Backend(Database):
         """
         if current_app.config['CUSTOMER_VIEWS']:
             select += ' AND (customer IS NULL OR customer=%(customer)s)'
-        if self._fetchone(select, vars(alert)):
+        if self._fetchone(select, {**vars(alert), **{'compare_time': compare_time}}):
             return True
         return False
 

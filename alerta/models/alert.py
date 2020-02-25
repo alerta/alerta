@@ -402,7 +402,19 @@ class Alert:
         if not current_app.config['NOTIFICATION_BLACKOUT']:
             if self.severity in current_app.config['BLACKOUT_ACCEPT']:
                 return False
-        return db.is_blackout_period(self)
+
+        print('{} < {} - {} = {}'.format(self.timeout, self.receive_time, self.create_time, self.receive_time - self.create_time))
+
+        if self.timeout < (self.receive_time - self.create_time).seconds:
+            # if an alert is received within its timeout period
+            # assume that it is not a resend and use create time
+            # to determine blackout status
+            return db.is_blackout_period(self, self.create_time)
+        else:
+            # if the alert is received after create_time + timeout
+            # then assume it is a resend and use the receive time
+            # to determine blackout status
+            return db.is_blackout_period(self, self.receive_time)
 
     @property
     def is_suppressed(self) -> bool:
