@@ -1,9 +1,6 @@
 import datetime
 from typing import Any, Dict
 
-import pytz
-from dateutil.parser import parse as parse_date
-
 from alerta.app import alarm_model
 from alerta.exceptions import ApiError
 from alerta.models.alert import Alert
@@ -36,21 +33,12 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
         except Exception:
             annotations[k] = v
 
-    starts_at = parse_date(alert['startsAt'])
-    if alert['endsAt'] != '0001-01-01T00:00:00Z':
-        ends_at = parse_date(alert['endsAt'])
-    else:
-        ends_at = None  # type: ignore
-
     if status == 'firing':
         severity = labels.pop('severity', 'warning')
-        create_time = starts_at
     elif status == 'resolved':
         severity = alarm_model.DEFAULT_NORMAL_SEVERITY
-        create_time = ends_at
     else:
         severity = 'unknown'
-        create_time = ends_at or starts_at
 
     # labels
     resource = labels.pop('exported_instance', None) or labels.pop('instance', 'n/a')
@@ -68,6 +56,7 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
     except ValueError:
         timeout = None
 
+    # annotations
     value = annotations.pop('value', None)
     summary = annotations.pop('summary', None)
     description = annotations.pop('description', None)
@@ -77,7 +66,13 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
         annotations['externalUrl'] = external_url  # needed as raw URL for bi-directional integration
     if 'generatorURL' in alert:
         annotations['moreInfo'] = '<a href="{}" target="_blank">Prometheus Graph</a>'.format(alert['generatorURL'])
-    attributes = annotations  # any annotations left over are used for attributes
+
+    # attributes
+    attributes = {
+        'startsAt': alert['startsAt'],
+        'endsAt': alert['endsAt']
+    }
+    attributes.update(annotations)  # any annotations left over are used for attributes
 
     return Alert(
         resource=resource,
@@ -93,7 +88,6 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
         attributes=attributes,
         origin=origin,
         event_type='prometheusAlert',
-        create_time=create_time.astimezone(tz=pytz.UTC).replace(tzinfo=None),
         timeout=timeout,
         raw_data=alert,
         tags=tags
