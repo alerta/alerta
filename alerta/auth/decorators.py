@@ -3,11 +3,14 @@ import re
 from functools import wraps
 from typing import TYPE_CHECKING
 
+import mohawk
 from flask import current_app, g, request
 from jwt import DecodeError, ExpiredSignature, InvalidAudience
 
+from alerta.auth.hmac import HmacAuth
 from alerta.auth.utils import get_customers, not_authorized
 from alerta.exceptions import ApiError, BasicAuthError
+from alerta.models.enums import ADMIN_SCOPES
 from alerta.models.key import ApiKey
 from alerta.models.permission import Permission
 from alerta.models.token import Jwt
@@ -48,6 +51,18 @@ def permission(scope=None):
                     raise ApiError('Missing required scope: %s' % scope.value, 403)
                 else:
                     return f(*args, **kwargs)
+
+            # Hawk HMAC Signature (Authorization: Hawk mac=...)
+            if request.headers.get('Authorization', '').startswith('Hawk'):
+                try:
+                    receiver = HmacAuth.authenticate(request)
+                except mohawk.exc.HawkFail as e:
+                    raise ApiError(str(e), 401)
+
+                g.user_id = None
+                g.login = receiver.parsed_header.get('id')
+                g.customers = []
+                g.scopes = ADMIN_SCOPES
 
             # Bearer Token
             auth_header = request.headers.get('Authorization', '')
