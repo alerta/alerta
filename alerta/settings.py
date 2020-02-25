@@ -68,6 +68,14 @@ CUSTOMER_VIEWS = False
 BASIC_AUTH_REALM = 'Alerta'
 SIGNUP_ENABLED = True
 
+HMAC_AUTH_CREDENTIALS = [
+    # {
+    #     'id': 'AKID001',  # access key id
+    #     'key': 'supersecret',  # secret key
+    #     'algorithm': 'sha256'  # valid hmac algorithm eg. sha256, sha384, sha512
+    # }
+]  # type: List[Dict[str, Any]]
+
 OAUTH2_CLIENT_ID = None  # OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = None
 ALLOWED_EMAIL_DOMAINS = ['*']
