@@ -1076,6 +1076,7 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_PROVIDER': 'keycloak',
             'KEYCLOAK_URL': 'http://keycloak.local.alerta.io:9090',
             'KEYCLOAK_REALM': 'master',
+            'OIDC_CLIENT_ID': 'alerta-ui',
             'OIDC_CUSTOM_CLAIM': 'roles',
             # 'OIDC_ISSUER_URL': 'http://keycloak.local.alerta.io:9090/auth/realms/master',
             # 'OIDC_ROLE_CLAIM': 'roles',
@@ -1311,8 +1312,8 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['name'], 'Nicholas Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nsatterl', claims)
         self.assertEqual(claims['provider'], 'keycloak', claims)
-        self.assertSetEqual(set(claims['roles']), set(['create-realm', 'devops', 'alerta-project', 'admin', 'realm_role_1',
-                                                       'realm_role_2', 'resource_role_1', 'resource_role_2']), claims)
+        self.assertSetEqual(set(claims['roles']), {'create-realm', 'devops', 'alerta-project', 'admin', 'realm_role_1',
+                                                   'realm_role_2', 'resource_role_1', 'resource_role_2'}, claims)
         self.assertEqual(claims['scope'], 'admin read write', claims)
         self.assertEqual(claims['email'], 'nick@alerta.dev', claims)
         self.assertEqual(claims.get('email_verified'), True, claims)
