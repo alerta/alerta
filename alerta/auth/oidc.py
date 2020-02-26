@@ -148,8 +148,8 @@ def openid():
     picture = userinfo.get('picture') or id_token.get('picture')
 
     custom_claims = {
-        role_claim: keycloak_claims.get(role_claim) or userinfo.get(role_claim) or id_token.get(role_claim) or [],
-        group_claim: keycloak_claims.get(group_claim) or userinfo.get(group_claim) or id_token.get(group_claim) or [],
+        role_claim: keycloak_claims.get(role_claim, []) + userinfo.get(role_claim, []) + id_token.get(role_claim, []),
+        group_claim: keycloak_claims.get(group_claim, []) + userinfo.get(group_claim, []) + id_token.get(group_claim, []),
     }
 
     login = username or nickname or email
