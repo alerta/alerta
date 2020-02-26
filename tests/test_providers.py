@@ -1230,7 +1230,27 @@ class AuthProvidersTestCase(unittest.TestCase):
           "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ2ZTY3NUpULWlsdXJQWWdUbDMtQ0htWmFwLVZ0LXVjTWJFdjNudktjNkljIn0.eyJqdGkiOiI0MjIzMGI4My1hOGM4LTQ0ODEtYWE5My1mMjMwNzk5YWVjMmQiLCJleHAiOjE1NTQxNTc4NTMsIm5iZiI6MCwiaWF0IjoxNTU0MTU3NzkzLCJpc3MiOiJodHRwOi8va2V5Y2xvYWsubG9jYWwuYWxlcnRhLmlvOjkwOTAvYXV0aC9yZWFsbXMvbWFzdGVyIiwiYXVkIjoiYWxlcnRhLXVpIiwic3ViIjoiNGVlYWExMjItMDhkOC00N2JjLWI2ZDAtMDEwNDgxYzA1NWM1IiwidHlwIjoiSUQiLCJhenAiOiJhbGVydGEtdWkiLCJhdXRoX3RpbWUiOjE1NTQxNTc3ODQsInNlc3Npb25fc3RhdGUiOiI2NmExNDIyYS1jYjI4LTQ3MmMtYWE3NC1iOGIxM2I1MDhkZGMiLCJhY3IiOiIwIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInJvbGVzIjpbImNyZWF0ZS1yZWFsbSIsImRldm9wcyIsImFkbWluIl0sIm5hbWUiOiJOaWNob2xhcyBTYXR0ZXJseSIsInByZWZlcnJlZF91c2VybmFtZSI6Im5zYXR0ZXJsIiwiZ2l2ZW5fbmFtZSI6Ik5pY2hvbGFzIiwiZmFtaWx5X25hbWUiOiJTYXR0ZXJseSIsImVtYWlsIjoibmlja0BhbGVydGEuZGV2In0.H78MN_uRbniCEE6zOKFH9v2l5O_-JaNiP3W7CYiUR2sbA5H0e_vnFRy93A_RhKGiXBdEq-Lop6aE-BPgGgZpBR-G0wi9y0-pPRr3K3UHIL7z8ozUerXJ3g5DzQu3zFyHF9v62ew12YtBzRwebl2mW0_32_zEMlQPs3AzN2LxsjQT5QBV7nzygO_5xfgfA55guiBvJ8D8be13__wO-iQsFnnnFGK6JEbNDTM-M0JXqt4FtRfSEOdCjKRdLSUIfReTo1k2FrD2gtoVOcTOzUN6FCUefa8E52Xy3sgrWSHGUoE9brfoOvzoponiHUVCmbnPhHRTqBOSMZyfDw28v6z63Q",
           "not-before-policy": 0,
           "session_state": "66a1422a-cb28-472c-aa74-b8b13b508ddc",
-          "scope": "openid email profile"
+          "scope": "openid email profile",
+          "realm_access": {
+            "roles": [
+              "realm_role_1",
+              "realm_role_2"
+            ]
+          },
+          "resource_access": {
+            "alerta-ui": {
+              "roles": [
+                "resource_role_1",
+                "resource_role_2"
+              ]
+            },
+            "other": {
+              "roles": [
+                "resource_role_3",
+                "resource_role_4"
+              ]
+            }
+          }
         }
         """
 
@@ -1291,7 +1311,8 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['name'], 'Nicholas Satterly', claims)
         self.assertEqual(claims['preferred_username'], 'nsatterl', claims)
         self.assertEqual(claims['provider'], 'keycloak', claims)
-        self.assertEqual(claims['roles'], ['create-realm', 'devops', 'alerta-project', 'admin'], claims)
+        self.assertEqual(claims['roles'], ['create-realm', 'devops', 'alerta-project', 'admin', 'realm_role_1',
+                                           'realm_role_2', 'resource_role_1', 'resource_role_2'], claims)
         self.assertEqual(claims['scope'], 'admin read write', claims)
         self.assertEqual(claims['email'], 'nick@alerta.dev', claims)
         self.assertEqual(claims.get('email_verified'), True, claims)
