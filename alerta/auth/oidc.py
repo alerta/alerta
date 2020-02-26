@@ -67,9 +67,9 @@ def openid():
     oidc_configuration, jwt_key_set = get_oidc_configuration(current_app)
     token_endpoint = oidc_configuration['token_endpoint']
     userinfo_endpoint = oidc_configuration['userinfo_endpoint']
-    client_id = current_app.config['OIDC_CLIENT_ID']
-    role_claim = current_app.config['OIDC_ROLE_CLAIM']
-    group_claim = current_app.config['OIDC_GROUP_CLAIM']
+    client_id = current_app.config.get('OIDC_CLIENT_ID')
+    role_claim = current_app.config.get('OIDC_ROLE_CLAIM')
+    group_claim = current_app.config.get('OIDC_GROUP_CLAIM')
 
     data = {
         'grant_type': 'authorization_code',
