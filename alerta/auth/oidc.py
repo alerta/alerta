@@ -127,8 +127,8 @@ def openid():
             group_claim: access_token.get('realm_access', {}).get(group_claim, []) +
                          access_token.get('resource_access', {}).get(client_id, {}).get(group_claim, []),
         }
-    except Exception:
-        current_app.logger.warning('No access token in OpenID Connect token response.')
+    except Exception as err:
+        current_app.logger.warning('No access token in OpenID Connect token response: %s', err)
         keycloak_claims = {}
 
     try:
