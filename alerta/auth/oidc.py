@@ -105,8 +105,8 @@ def openid():
         id_token = {}
 
     # keycloak specific: roles and groups in access_token
-    try:
-        if current_app.config['OIDC_VERIFY_TOKEN']:
+    #try:
+    if current_app.config['OIDC_VERIFY_TOKEN']:
             jwt_header = jwt.get_unverified_header(token['id_token'])
             public_key = jwt_key_set[jwt_header['kid']]
 
@@ -115,21 +115,21 @@ def openid():
                 key=public_key,
                 algorithms=jwt_header['alg']
             )
-        else:
+    else:
             access_token = jwt.decode(
                 token['access_token'],
                 verify=False
             )
 
-        keycloak_claims = {
+    keycloak_claims = {
             role_claim: access_token.get('realm_access', {}).get(role_claim, []) +
                         access_token.get('resource_access', {}).get(client_id, {}).get(role_claim, []),
             group_claim: access_token.get('realm_access', {}).get(group_claim, []) +
                          access_token.get('resource_access', {}).get(client_id, {}).get(group_claim, []),
-        }
-    except Exception as err:
-        current_app.logger.warning('No access token in OpenID Connect token response: %s', err)
-        keycloak_claims = {}
+    }
+    #except Exception:
+    #    current_app.logger.warning('No access token in OpenID Connect token response.')
+    #    keycloak_claims = {}
 
     try:
         headers = {'Authorization': '{} {}'.format(token.get('token_type', 'Bearer'), token['access_token'])}
