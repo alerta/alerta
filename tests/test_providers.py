@@ -720,7 +720,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'AUTH_PROVIDER': 'gitlab',
             # 'OIDC_ISSUER_URL': 'https://gitlab.com',
-            # 'OIDC_CUSTOM_CLAIM': 'groups',
+            'OIDC_CUSTOM_CLAIM': 'groups',
+            'OIDC_ROLE_CLAIM': 'groups',
             'ALLOWED_GITLAB_GROUPS': ['alerta-project'],
             'CUSTOMER_VIEWS': True,
         }
