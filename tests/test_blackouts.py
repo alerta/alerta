@@ -531,6 +531,36 @@ class BlackoutsTestCase(unittest.TestCase):
         response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.dev_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        # create blackout (only for resources with a particular tag)
+        blackout = {
+            'environment': 'Development',
+            'resource': 'node404',
+            'tags': ['level=40']
+        }
+        response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        blackout_id = data['id']
+
+        # do not suppress alert
+        response = self.client.post('/alert', data=json.dumps(self.dev_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        self.dev_alert['tags'].append('level=40')
+
+        # suppress alert
+        response = self.client.post('/alert', data=json.dumps(self.dev_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 202)
+
+        # remove blackout
+        response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
     def test_edit_blackout(self):
 
         # create new blackout
