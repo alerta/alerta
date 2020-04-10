@@ -18,9 +18,10 @@ SECRET_KEY = 'changeme'
 LOG_CONFIG_FILE = ''
 LOG_HANDLERS = ['console']  # ['console', 'file', 'wsgi']
 LOG_FILE = 'alertad.log'  # NOTE: 'file' must be added to LOG_HANDLERS for logging to work
+LOG_LEVEL = 'WARNING'  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 LOG_BACKUP_COUNT = 2
-LOG_FORMAT = 'default'  # ['default', 'simple', 'verbose', 'json'] or any valid logging format
+LOG_FORMAT = 'default'  # 'default', 'simple', 'verbose', 'json' or any valid logging format
 LOG_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
 
 # API settings
