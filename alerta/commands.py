@@ -30,13 +30,14 @@ def cli():
 @cli.command('key', short_help='Create an admin API key')
 @click.option('--username', '-u', help='Admin user')
 @click.option('--key', '-K', 'want_key', help='API key (default=random string)')
+@click.option('--scope', 'scopes', multiple=True, help='List of permissions eg. admin:keys, write:alerts')
 @click.option('--duration', metavar='SECONDS', type=int, help='Duration API key is valid')
 @click.option('--text', help='Description of API key use')
 @click.option('--customer', help='Customer')
 @click.option('--all', is_flag=True, help='Create API keys for all admins')
 @click.option('--force', is_flag=True, help='Do not skip if API key already exists')
 @with_appcontext
-def key(username, want_key, duration, text, customer, all, force):
+def key(username, want_key, scopes, duration, text, customer, all, force):
     """
     Create an admin API key.
     """
@@ -46,14 +47,15 @@ def key(username, want_key, duration, text, customer, all, force):
     if all and want_key:
         raise click.UsageError('Can only set API key with "--username".')
 
-    text = text or 'Admin key created by alertad script'
+    scopes = [Scope(s) for s in scopes] or [Scope.admin, Scope.write, Scope.read]
     expires = datetime.utcnow() + timedelta(seconds=duration) if duration else None
+    text = text or 'Created by alertad script'
 
     def create_key(admin, key=None):
         key = ApiKey(
             user=admin,
             key=key,
-            scopes=[Scope.admin, Scope.write, Scope.read],
+            scopes=scopes,
             expire_time=expires,
             text=text,
             customer=customer
@@ -67,7 +69,7 @@ def key(username, want_key, duration, text, customer, all, force):
 
     if all:
         for admin in current_app.config['ADMIN_USERS']:
-            keys = [k for k in ApiKey.find_by_user(admin) if Scope.admin in k.scopes]
+            keys = [k for k in ApiKey.find_by_user(admin) if k.scopes == scopes]
             if keys and not force:
                 key = keys[0]
             else:
@@ -75,7 +77,7 @@ def key(username, want_key, duration, text, customer, all, force):
             click.echo('{:40} {}'.format(key.key, key.user))
 
     elif username:
-        keys = [k for k in ApiKey.find_by_user(username) if Scope.admin in k.scopes]
+        keys = [k for k in ApiKey.find_by_user(username) if k.scopes == scopes]
         if want_key:
             found_key = [k for k in keys if k.key == want_key]
             if found_key:
