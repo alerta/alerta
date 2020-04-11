@@ -53,13 +53,14 @@ class SearchTerm:
     def __repr__(self):
         # print([t for t in self.tokens.items()])
         if 'singleterm' in self.tokens:
+            tokens_fieldname = self.tokens.fieldname.replace('_.', 'attributes.')
             if self.tokens.fieldname == '_exists_':
                 return '{{ "attributes.{}": {{ "$exists": true }} }}'.format(self.tokens.singleterm)
             else:
                 if self.tokens.field[0] == '__default_field__':
                     return '{{ "{}": {{ "{}": "{}" }} }}'.format('__default_field__', '__default_operator__', self.tokens.singleterm)
                 else:
-                    return '{{ "{}": {{ "$regex": "{}" }} }}'.format(self.tokens.field[0], self.tokens.singleterm)
+                    return '{{ "{}": {{ "$regex": "{}" }} }}'.format(tokens_fieldname, self.tokens.singleterm)
         if 'phrase' in self.tokens:
             if self.tokens.field[0] == '__default_field__':
                 return '{{ "{}": {{ "{}": "{}" }} }}'.format('__default_field__', '__default_operator__', self.tokens.phrase)
@@ -102,9 +103,10 @@ class SearchTerm:
                 self.tokens.onesidedrange.bound
             )
         if 'subquery' in self.tokens:
-            if self.tokens.field[0] != '__default_field__':
+            tokens_field0 = self.tokens.field[0].replace('_.', 'attributes.')
+            if tokens_field0 != '__default_field__':
                 return '{}'.format(self.tokens.subquery[0])\
-                    .replace('__default_field__', self.tokens.field[0])\
+                    .replace('__default_field__', tokens_field0)\
                     .replace('__default_operator__', '$regex')
             else:
                 return '{}'.format(self.tokens.subquery[0])
@@ -181,9 +183,9 @@ class QueryParser:
     DEFAULT_OPERATOR = '$regex'
 
     def parse(self, query, default_field=None, default_operator=None):
-        self.default_field = default_field or QueryParser.DEFAULT_FIELD
-        self.default_operator = default_operator or QueryParser.DEFAULT_OPERATOR
+        default_field = default_field or QueryParser.DEFAULT_FIELD
+        default_operator = default_operator or QueryParser.DEFAULT_OPERATOR
 
         return repr(query_expr.parseString(query)[0])\
-            .replace('__default_field__', self.default_field)\
-            .replace('__default_operator__', self.default_operator)
+            .replace('__default_field__', default_field)\
+            .replace('__default_operator__', default_operator)
