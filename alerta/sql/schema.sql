@@ -17,7 +17,7 @@ BEGIN
         BEGIN
             ALTER TYPE history ADD ATTRIBUTE "user" text CASCADE;
         EXCEPTION
-            WHEN duplicate_column THEN RAISE NOTICE 'user exists in history type';
+            WHEN duplicate_column THEN RAISE NOTICE 'column "user" already exists in history type.';
         END;
     END IF;
 END$$;
@@ -60,6 +60,19 @@ EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column "update_time" already exists in alerts.';
 END$$;
 
+CREATE TABLE IF NOT EXISTS notes (
+    id text PRIMARY KEY,
+    text text,
+    "user" text,
+    attributes jsonb,
+    type text NOT NULL,
+    create_time timestamp without time zone NOT NULL,
+    update_time timestamp without time zone,
+    alert text,
+    customer text
+);
+
+
 CREATE TABLE IF NOT EXISTS blackouts (
     id text PRIMARY KEY,
     priority integer NOT NULL,
@@ -92,14 +105,14 @@ DO $$
 BEGIN
     ALTER TABLE blackouts ADD COLUMN create_time timestamp without time zone;
 EXCEPTION
-    WHEN duplicate_column THEN RAISE NOTICE 'column create_time already exists in blackouts.';
+    WHEN duplicate_column THEN RAISE NOTICE 'column "create_time" already exists in blackouts.';
 END$$;
 
 DO $$
 BEGIN
     ALTER TABLE blackouts ADD COLUMN text text;
 EXCEPTION
-    WHEN duplicate_column THEN RAISE NOTICE 'column text already exists in blackouts.';
+    WHEN duplicate_column THEN RAISE NOTICE 'column "text" already exists in blackouts.';
 END$$;
 
 
@@ -188,7 +201,7 @@ BEGIN
     UPDATE users SET login = email;
     ALTER TABLE users ALTER COLUMN login SET NOT NULL;
 EXCEPTION
-    WHEN duplicate_column THEN RAISE NOTICE 'column login already exists in users.';
+    WHEN duplicate_column THEN RAISE NOTICE 'column "login" already exists in users.';
 END$$;
 
 CREATE TABLE IF NOT EXISTS groups (

@@ -15,8 +15,9 @@ from alerta.utils.api import (assign_customer, process_action, process_alert,
                               process_delete, process_status)
 from alerta.utils.audit import write_audit_trail
 from alerta.utils.paging import Page
-from alerta.utils.response import jsonp
+from alerta.utils.response import absolute_url, jsonp
 
+from ..models.note import Note
 from . import api
 
 receive_timer = Timer('alerts', 'received', 'Received alerts', 'Total time and number of received alerts')
@@ -248,33 +249,6 @@ def update_attributes(alert_id):
         return jsonify(status='ok')
     else:
         raise ApiError('failed to update attributes', 500)
-
-
-# add note
-@api.route('/alert/<alert_id>/note', methods=['OPTIONS', 'PUT'])
-@cross_origin()
-@permission(Scope.write_alerts)
-@jsonp
-def add_note(alert_id):
-    note = request.json.get('note', None)
-
-    if not note:
-        raise ApiError("must supply 'note' text")
-
-    customers = g.get('customers', None)
-    alert = Alert.find_by_id(alert_id, customers)
-
-    if not alert:
-        raise ApiError('not found', 404)
-
-    write_audit_trail.send(current_app._get_current_object(), event='alert-note-added', message='', user=g.login,
-                           customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
-
-    if alert.add_note(note):
-        return jsonify(status='ok')
-    else:
-        raise ApiError('failed to add note to alert', 500)
-
 
 # delete
 @api.route('/alert/<alert_id>', methods=['OPTIONS', 'DELETE'])
@@ -580,3 +554,119 @@ def get_tags():
             tags=[],
             total=0
         )
+
+
+# add note
+@api.route('/alert/<alert_id>/note', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@permission(Scope.write_alerts)
+@jsonp
+def add_note(alert_id):
+    note_text = request.json.get('note', None)
+
+    if not note_text:
+        raise ApiError("must supply 'note' text")
+
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
+
+    if not alert:
+        raise ApiError('not found', 404)
+
+    note = alert.add_note(note_text, alert.customer)
+
+    write_audit_trail.send(current_app._get_current_object(), event='alert-note-added', message='', user=g.login,
+                           customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note', request=request)
+
+    if note:
+        return jsonify(status='ok', id=note.id, note=note.serialize), 201, {'Location': absolute_url('/alert/{}/note/{}'.format(alert.id, note.id))}
+    else:
+        raise ApiError('failed to add note for alert', 500)
+
+
+# list notes for an alert
+@api.route('/alert/<alert_id>/notes', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.read_alerts)
+@jsonp
+def get_notes(alert_id):
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
+
+    if not alert:
+        raise ApiError('not found', 404)
+
+    notes = alert.get_alert_notes()
+
+    if notes:
+        return jsonify(
+            status='ok',
+            notes=[note.serialize for note in notes],
+            total=len(notes)
+        )
+    else:
+        return jsonify(
+            status='ok',
+            message='not found',
+            notes=[],
+            total=0
+        )
+
+
+# update note
+@api.route('/alert/<alert_id>/note/<note_id>', methods=['OPTIONS', 'PUT'])
+@cross_origin()
+@permission(Scope.write_alerts)
+@jsonp
+def update_note(alert_id, note_id):
+    if not request.json:
+        raise ApiError('nothing to change', 400)
+
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
+
+    if not alert:
+        raise ApiError('not found', 404)
+
+    note = Note.find_by_id(note_id)
+
+    if not note:
+        raise ApiError('not found', 404)
+
+    update = request.json
+    update['user'] = g.login
+
+    write_audit_trail.send(current_app._get_current_object(), event='alert-note-updated', message='', user=g.login,
+                           customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note',
+                           request=request)
+
+    if note.update(**update):
+        return jsonify(status='ok')
+    else:
+        raise ApiError('failed to update note', 500)
+
+
+# delete note
+@api.route('/alert/<alert_id>/note/<note_id>', methods=['OPTIONS', 'DELETE'])
+@cross_origin()
+@permission(Scope.write_alerts)
+@jsonp
+def delete_note(alert_id, note_id):
+    customers = g.get('customers', None)
+    alert = Alert.find_by_id(alert_id, customers)
+
+    if not alert:
+        raise ApiError('not found', 404)
+
+    note = Note.find_by_id(note_id)
+
+    if not note:
+        raise ApiError('not found', 404)
+
+    write_audit_trail.send(current_app._get_current_object(), event='alert-note-deleted', message='', user=g.login,
+                           customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note', request=request)
+
+    if note.delete():
+        return jsonify(status='ok')
+    else:
+        raise ApiError('failed to delete note', 500)

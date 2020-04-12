@@ -364,6 +364,29 @@ class Database(Base):
     def get_customers_by_match(self, login, matches):
         raise NotImplementedError
 
+    # NOTES
+
+    def create_note(self, note):
+        raise NotImplementedError
+
+    def get_note(self, id):
+        raise NotImplementedError
+
+    def get_notes(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_alert_notes(self, id, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_customer_notes(self, id, page=None, page_size=None):
+        raise NotImplementedError
+
+    def update_note(self, id, **kwargs):
+        raise NotImplementedError
+
+    def delete_note(self, id):
+        raise NotImplementedError
+
     # METRICS
 
     def get_metrics(self, type=None):
