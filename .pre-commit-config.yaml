@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/mirrors-autopep8
-    rev: v1.5
+    rev: v1.5.1
     hooks:
     -   id: autopep8
 -   repo: https://github.com/pre-commit/pre-commit-hooks.git
@@ -27,7 +27,7 @@ repos:
     -   id: requirements-txt-fixer
     -   id: trailing-whitespace
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v1.26.2
+    rev: v1.27.0
     hooks:
     -   id: pyupgrade
         args: ['--py3-plus']

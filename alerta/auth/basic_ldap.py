@@ -27,7 +27,7 @@ def login():
     except KeyError:
         raise ApiError("must supply 'username' and 'password'", 401)
 
-    try: 
+    try:
         if '\\' in login:
             domain, username = login.split('\\')
             email = ''
@@ -37,7 +37,7 @@ def login():
             email = login
             email_verified = True
     except ValueError:
-        raise ApiError("expected username with domain", 401)
+        raise ApiError('expected username with domain', 401)
 
     # Validate LDAP domain
     if domain not in current_app.config['LDAP_DOMAINS']:
