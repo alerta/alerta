@@ -71,7 +71,7 @@ class QueryParserTestCase(unittest.TestCase):
                 'value': 'johno',
                 'text': 'panic: this is a foo alert',
                 'tags': ['aaa', 'bbb', 'ccc'],
-                'attributes': {'region': 'NORAM'},
+                'attributes': {'region': 'EMEA'},
                 'origin': 'alpha',
                 'timeout': 100,
                 'rawData': ''
@@ -178,6 +178,9 @@ class QueryParserTestCase(unittest.TestCase):
         self.assertEqual(self._search(q='_exists_:region'), 4)
         self.assertEqual(self._search(q='service:Shared'), 4)
         self.assertEqual(self._search(q='tags:aaa'), 3)
+        self.assertEqual(self._search(q='attributes.region:EMEA'), 2)
+        self.assertEqual(self._search(q='_.region:EMEA'), 2)
+        self.assertEqual(self._search(q='_.region:(EMEA LATAM)'), 3)
 
     def test_wildcards(self):
         self.assertEqual(self._search(q='f*'), 4)

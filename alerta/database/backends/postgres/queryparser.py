@@ -57,6 +57,9 @@ class SearchTerm:
                 return '"attributes"::jsonb ? \'{}\''.format(self.tokens.singleterm)
             elif self.tokens.fieldname in ['correlate', 'service', 'tags']:
                 return '\'{}\'=ANY("{}")'.format(self.tokens.singleterm, self.tokens.field[0])
+            elif self.tokens.attr:
+                tokens_attr = self.tokens.attr.replace('_', 'attributes')
+                return '"{}"::jsonb ->>\'{}\' ILIKE \'%%{}%%\''.format(tokens_attr, self.tokens.fieldname, self.tokens.singleterm)
             else:
                 return '"{}" ILIKE \'%%{}%%\''.format(self.tokens.field[0], self.tokens.singleterm)
         if 'phrase' in self.tokens:
@@ -96,7 +99,12 @@ class SearchTerm:
                 self.tokens.onesidedrange.bound
             )
         if 'subquery' in self.tokens:
-            return '{}'.format(self.tokens.subquery[0]).replace('__default_field__', self.tokens.field[0])
+            if self.tokens.attr:
+                tokens_attr = 'attributes' if self.tokens.attr == '_' else self.tokens.attr
+                tokens_fieldname = '"{}"::jsonb ->>\'{}\''.format(tokens_attr, self.tokens.fieldname)
+            else:
+                tokens_fieldname = '"{}"'.format(self.tokens.fieldname or self.tokens.field[0])
+            return '{}'.format(self.tokens.subquery[0]).replace('"__default_field__"', tokens_fieldname)
 
         raise ParseException('Search term did not match query syntax: %s' % self.tokens)
 
@@ -108,7 +116,7 @@ class SearchTerm:
 
 
 LBRACK, RBRACK, LBRACE, RBRACE, TILDE, CARAT = map(Literal, '[]{}~^')
-LPAR, RPAR, COLON = map(Suppress, '():')
+LPAR, RPAR, COLON, DOT = map(Suppress, '():.')
 and_, or_, not_, to_ = map(CaselessKeyword, 'AND OR NOT TO'.split())
 keyword = and_ | or_ | not_ | to_
 
@@ -116,14 +124,14 @@ query_expr = Forward()
 
 required_modifier = Literal('+')('required')
 prohibit_modifier = Literal('-')('prohibit')
-special_characters = '=><(){}[]^"~*?:\\/'
+special_characters = '=><(){}[]^"~*?:\\/.'
 valid_word = Word(printables, excludeChars=special_characters).setName('word')
 valid_word.setParseAction(
     lambda t: t[0].replace('\\\\', chr(127)).replace('\\', '').replace(chr(127), '\\')
 )
 
 clause = Forward()
-field_name = valid_word()('fieldname')
+field_name = (Optional(valid_word()('attr') + DOT)) + valid_word()('fieldname')
 single_term = valid_word()('singleterm')
 phrase = QuotedString('"', unquoteResults=True)('phrase')
 wildcard = Regex(r'[a-z0-9]*[\?\*][a-z0-9]*')('wildcard')
@@ -164,6 +172,5 @@ class QueryParser:
     DEFAULT_FIELD = 'text'
 
     def parse(self, query, default_field=None):
-        self.default_field = default_field or QueryParser.DEFAULT_FIELD
-
-        return repr(query_expr.parseString(query)[0]).replace('__default_field__', self.default_field)
+        default_field = default_field or QueryParser.DEFAULT_FIELD
+        return repr(query_expr.parseString(query)[0]).replace('__default_field__', default_field)
