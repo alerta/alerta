@@ -56,6 +56,26 @@ class PostgresQueryTestCase(unittest.TestCase):
         r = self.parser.parse(string)
         self.assertEqual(r, '"attributes"::jsonb ? \'title\'')
 
+        # attribute contains word
+        string = r'''foo.vendor:cisco'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '"foo"::jsonb ->>\'vendor\' ILIKE \'%%cisco%%\'')
+
+        # attribute contains word ("_" shortcut)
+        string = r'''_.vendor:cisco'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '"attributes"::jsonb ->>\'vendor\' ILIKE \'%%cisco%%\'')
+
+        # attribute contains either words (default operator)
+        string = r'''attributes.vendor:(cisco juniper)'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '("attributes"::jsonb ->>\'vendor\' ILIKE \'%%cisco%%\' OR "attributes"::jsonb ->>\'vendor\' ILIKE \'%%juniper%%\')')
+
+        # attribute contains either words ("_" shortcut, default operator)
+        string = r'''_.vendor:(cisco juniper)'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '("attributes"::jsonb ->>\'vendor\' ILIKE \'%%cisco%%\' OR "attributes"::jsonb ->>\'vendor\' ILIKE \'%%juniper%%\')')
+
     def test_wildcards(self):
 
         # ? = single character, * = one or more characters
@@ -188,6 +208,26 @@ class MongoQueryTestCase(unittest.TestCase):
         string = r'''_exists_:title'''
         r = self.parser.parse(string)
         self.assertEqual(r, '{ "attributes.title": { "$exists": true } }')
+
+        # attribute contains word
+        string = r'''foo.vendor:cisco'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '{ "foo.vendor": { "$regex": "cisco" } }')
+
+        # attribute contains word ("_" shortcut)
+        string = r'''_.vendor:cisco'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '{ "attributes.vendor": { "$regex": "cisco" } }')
+
+        # attribute contains either words (default operator)
+        string = r'''attributes.vendor:(cisco juniper)'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '{ "$or": [{ "attributes.vendor": { "$regex": "cisco" } }, { "attributes.vendor": { "$regex": "juniper" } }] }')
+
+        # attribute contains either words ("_" shortcut, default operator)
+        string = r'''_.vendor:(cisco juniper)'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '{ "$or": [{ "attributes.vendor": { "$regex": "cisco" } }, { "attributes.vendor": { "$regex": "juniper" } }] }')
 
     def test_wildcards(self):
 
