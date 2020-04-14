@@ -1250,10 +1250,10 @@ class Backend(Database):
         select = """
             SELECT id, event, last_receive_id
               FROM alerts
-             WHERE status NOT IN ('expired','shelved') AND COALESCE(timeout, {timeout})!=0
+             WHERE status NOT IN ('expired','ack','shelved') AND COALESCE(timeout, {timeout})!=0
                AND (last_receive_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """.format(timeout=current_app.config['ALERT_TIMEOUT'])
-        expired = self._fetchall(select, {})
+        has_expired = self._fetchall(select, {})
 
         # get list of alerts to be unshelved
         select = """
@@ -1269,9 +1269,25 @@ class Backend(Database):
           FROM shelved
          WHERE timeout!=0 AND (update_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """
-        unshelved = self._fetchall(select, {})
+        unshelve = self._fetchall(select, {})
 
-        return (expired, unshelved)
+        # get list of alerts to be unack'ed
+        select = """
+        WITH acked AS (
+            SELECT DISTINCT ON (a.id) a.id, a.event, a.last_receive_id, h.update_time, a.timeout
+              FROM alerts a, UNNEST(history) h
+             WHERE a.status='ack'
+               AND h.type='ack'
+               AND h.status='ack'
+          ORDER BY a.id, h.update_time DESC
+        )
+        SELECT id, event, last_receive_id
+          FROM acked
+         WHERE timeout!=0 AND (update_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
+        """
+        unack = self._fetchall(select, {})
+
+        return has_expired, unshelve + unack
 
     # SQL HELPERS
 
