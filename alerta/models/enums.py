@@ -60,3 +60,22 @@ class Scope(str, Enum):
 
 
 ADMIN_SCOPES = [Scope.admin, Scope.read, Scope.write]
+
+
+class ChangeType(str, Enum):
+
+    open = 'open'
+    assign = 'assign'
+    ack = 'ack'
+    unack = 'unack'
+    shelve = 'shelve'
+    unshelve = 'unshelve'
+    close = 'close'
+
+    new = 'new'
+    action = 'action'
+    status = 'status'
+    value = 'value'
+    severity = 'severity'
+    timeout = 'timeout'
+    expired = 'expired'
