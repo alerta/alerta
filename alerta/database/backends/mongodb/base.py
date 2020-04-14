@@ -1587,10 +1587,10 @@ class Backend(Database):
                 'event': 1, 'status': 1, 'lastReceiveId': 1, 'timeout': 1,
                 'expireTime': {'$add': ['$lastReceiveTime', {'$multiply': ['$timeout', 1000]}]}}
              },
-            {'$match': {'status': {'$nin': ['expired', 'shelved']}, 'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {
+            {'$match': {'status': {'$nin': ['expired', 'ack', 'shelved']}, 'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {
                 '$ne': 0}}}
         ]
-        expired = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
+        has_expired = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
 
         # get list of alerts to be unshelved
         pipeline = [
@@ -1615,6 +1615,31 @@ class Backend(Database):
             }},
             {'$match': {'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {'$ne': 0}}}
         ]
-        unshelved = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
+        unshelve = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
 
-        return (expired, unshelved)
+        # get list of alerts to be unack'ed
+        pipeline = [
+            {'$match': {'status': 'ack'}},
+            {'$unwind': '$history'},
+            {'$match': {
+                'history.type': 'ack',
+                'history.status': 'ack'
+            }},
+            {'$sort': {'history.updateTime': -1}},
+            {'$group': {
+                '_id': '$_id',
+                'event': {'$first': '$event'},
+                'lastReceiveId': {'$first': '$lastReceiveId'},
+                'updateTime': {'$first': '$history.updateTime'},
+                'timeout': {'$first': '$timeout'}
+            }},
+            {'$project': {
+                'event': 1,
+                'lastReceiveId': 1,
+                'expireTime': {'$add': ['$updateTime', {'$multiply': ['$timeout', 1000]}]}
+            }},
+            {'$match': {'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {'$ne': 0}}}
+        ]
+        unack = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
+
+        return has_expired, unshelve + unack
