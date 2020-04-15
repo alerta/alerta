@@ -573,7 +573,7 @@ def add_note(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    note = alert.add_note(note_text, alert.customer)
+    note = alert.add_note(note_text)
 
     write_audit_trail.send(current_app._get_current_object(), event='alert-note-added', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note', request=request)
@@ -656,12 +656,12 @@ def delete_note(alert_id, note_id):
     alert = Alert.find_by_id(alert_id, customers)
 
     if not alert:
-        raise ApiError('not found', 404)
+        raise ApiError('alert not found', 404)
 
     note = Note.find_by_id(note_id)
 
     if not note:
-        raise ApiError('not found', 404)
+        raise ApiError('note not found', 404)
 
     write_audit_trail.send(current_app._get_current_object(), event='alert-note-deleted', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note', request=request)

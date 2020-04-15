@@ -80,3 +80,15 @@ class ChangeType(str, Enum):
     note = 'note'
     timeout = 'timeout'
     expired = 'expired'
+
+
+class NoteType(str, Enum):
+
+    alert = 'alert'
+    blackout = 'blackout'
+    customer = 'customer'
+    group = 'group'
+    heartbeat = 'heartbeat'
+    key = 'api-key'
+    perm = 'permission'
+    user = 'user'

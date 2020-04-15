@@ -531,36 +531,8 @@ class Alert:
         return db.get_alert_tags(query)
 
     # add note
-    def add_note(self, text: str, customer: str) -> Note:
-        note = Note(
-            text=text,
-            user=g.login,
-            attributes=dict(
-                resource=self.resource,
-                event=self.event,
-                environment=self.environment,
-                severity=self.severity,
-                status=self.status
-            ),
-            note_type='alert',
-            alert=self.id,
-            customer=customer
-        )
-
-        history = History(
-            id=note.id,
-            event=self.event,
-            severity=self.severity,
-            status=self.status,
-            value=self.value,
-            text=text,
-            change_type=ChangeType.note,
-            update_time=datetime.utcnow(),
-            user=g.login
-        )
-        db.add_history(self.id, history)
-
-        return note.create()
+    def add_note(self, text: str) -> Note:
+        return Note.from_alert(self, text)
 
     # get notes for alert
     def get_alert_notes(self, page: int = 1, page_size: int = 100) -> List['Note']:
