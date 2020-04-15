@@ -1498,6 +1498,54 @@ class Backend(Database):
 
         raise NoCustomerMatch("No customer lookup configured for user '{}' or '{}'".format(login, ','.join(matches)))
 
+    # NOTES
+
+    def create_note(self, note):
+        data = {
+            '_id': note.id,
+            'text': note.text,
+            'user': note.user,
+            'attributes': note.attributes,
+            'type': note.note_type,
+            'createTime': note.create_time,
+            'updateTime': note.update_time,
+            'alert': note.alert
+        }
+        if note.customer:
+            data['customer'] = note.customer
+
+        if self.get_db().notes.insert_one(data).inserted_id == note.id:
+            return data
+
+    def get_note(self, id):
+        query = {'_id': id}
+        return self.get_db().notes.find_one(query)
+
+    def get_notes(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        return self.get_db().notes.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+
+    def get_alert_notes(self, id, page=None, page_size=None):
+        if len(id) == 8:
+            query = {'alert': {'$regex': '^' + id}}
+        else:
+            query = {'alert': id}
+        return self.get_db().notes.find(query).skip((page - 1) * page_size).limit(page_size)
+
+    def get_customer_notes(self, customer, page=None, page_size=None):
+        return self.get_db().notes.find({'customer': customer}).skip((page - 1) * page_size).limit(page_size)
+
+    def update_note(self, id, **kwargs):
+        return self.get_db().notes.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
+    def delete_note(self, id):
+        response = self.get_db().notes.delete_one({'_id': id})
+        return True if response.deleted_count == 1 else False
+
     # METRICS
 
     def get_metrics(self, type=None):
