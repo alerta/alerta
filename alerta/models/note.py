@@ -2,8 +2,12 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
+from flask import g
+
 from alerta.app import db
 from alerta.database.base import Query
+from alerta.models.enums import ChangeType, NoteType
+from alerta.models.history import History
 from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
@@ -17,8 +21,8 @@ class Note:
         self.id = kwargs.get('id', str(uuid4()))
         self.text = text
         self.user = user
+        self.note_type = note_type
         self.attributes = kwargs.get('attributes', None) or dict()
-        self.note_type = note_type  # 'open', 'ack', 'close', 'note'
         self.create_time = kwargs['create_time'] if 'create_time' in kwargs else datetime.utcnow()
         self.update_time = kwargs.get('update_time')
         self.alert = kwargs.get('alert')
@@ -97,6 +101,37 @@ class Note:
 
     def create(self) -> 'Note':
         return Note.from_db(db.create_note(self))
+
+    @staticmethod
+    def from_alert(alert, text):
+        note = Note(
+            text=text,
+            user=g.user,
+            note_type=NoteType.alert,
+            attributes=dict(
+                resource=alert.resource,
+                event=alert.event,
+                environment=alert.environment,
+                severity=alert.severity,
+                status=alert.status
+            ),
+            alert=alert.id,
+            customer=alert.customer
+        )
+
+        history = History(
+            id=note.id,
+            event=alert.event,
+            severity=alert.severity,
+            status=alert.status,
+            value=alert.value,
+            text=text,
+            change_type=ChangeType.note,
+            update_time=datetime.utcnow(),
+            user=g.login
+        )
+        db.add_history(alert.id, history)
+        return note.create()
 
     @staticmethod
     def find_by_id(id: str) -> Optional['Note']:
