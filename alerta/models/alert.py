@@ -12,6 +12,7 @@ from alerta.app import alarm_model, db
 from alerta.database.base import Query
 from alerta.models.enums import ChangeType
 from alerta.models.history import History, RichHistory
+from alerta.models.note import Note
 from alerta.utils.format import DateTime
 from alerta.utils.hooks import status_change_hook
 from alerta.utils.response import absolute_url
@@ -162,7 +163,8 @@ class Alert:
 
     def __repr__(self) -> str:
         return 'Alert(id={!r}, environment={!r}, resource={!r}, event={!r}, severity={!r}, status={!r}, customer={!r})'.format(
-            self.id, self.environment, self.resource, self.event, self.severity, self.status, self.customer)
+            self.id, self.environment, self.resource, self.event, self.severity, self.status, self.customer
+        )
 
     @classmethod
     def from_document(cls, doc: Dict[str, Any]) -> 'Alert':
@@ -440,21 +442,6 @@ class Alert:
     def update_attributes(self, attributes: Dict[str, Any]) -> bool:
         return db.update_attributes(self.id, self.attributes, attributes)
 
-    # add note
-    def add_note(self, note: str) -> bool:
-        history = History(
-            id=self.id,
-            event=self.event,
-            severity=self.severity,
-            status=self.status,
-            value=self.value,
-            text=note,
-            change_type='note',
-            update_time=datetime.utcnow(),
-            user=g.login
-        )
-        return db.add_history(self.id, history)
-
     # delete an alert
     def delete(self) -> bool:
         return db.delete_alert(self.id)
@@ -542,6 +529,43 @@ class Alert:
     @staticmethod
     def get_tags(query: Query = None) -> List[str]:
         return db.get_alert_tags(query)
+
+    # add note
+    def add_note(self, text: str, customer: str) -> Note:
+        note = Note(
+            text=text,
+            user=g.login,
+            attributes=dict(
+                resource=self.resource,
+                event=self.event,
+                environment=self.environment,
+                severity=self.severity,
+                status=self.status
+            ),
+            note_type='alert',
+            alert=self.id,
+            customer=customer
+        )
+
+        history = History(
+            id=note.id,
+            event=self.event,
+            severity=self.severity,
+            status=self.status,
+            value=self.value,
+            text=text,
+            change_type=ChangeType.note,
+            update_time=datetime.utcnow(),
+            user=g.login
+        )
+        db.add_history(self.id, history)
+
+        return note.create()
+
+    # get notes for alert
+    def get_alert_notes(self, page: int = 1, page_size: int = 100) -> List['Note']:
+        notes = db.get_alert_notes(self.id, page, page_size)
+        return [Note.from_db(note) for note in notes]
 
     @staticmethod
     def housekeeping(expired_threshold: int = 2, info_threshold: int = 12) -> None:

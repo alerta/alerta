@@ -77,5 +77,6 @@ class ChangeType(str, Enum):
     status = 'status'
     value = 'value'
     severity = 'severity'
+    note = 'note'
     timeout = 'timeout'
     expired = 'expired'

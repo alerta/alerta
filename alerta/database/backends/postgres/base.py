@@ -1187,6 +1187,75 @@ class Backend(Database):
 
         raise NoCustomerMatch("No customer lookup configured for user '{}' or '{}'".format(login, ','.join(matches)))
 
+    # NOTES
+
+    def create_note(self, note):
+        insert = """
+            INSERT INTO notes (id, text, "user", attributes, type,
+                create_time, update_time, alert, customer)
+            VALUES (%(id)s, %(text)s, %(user)s, %(attributes)s, %(note_type)s,
+                %(create_time)s, %(update_time)s, %(alert)s, %(customer)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(note))
+
+    def get_note(self, id):
+        select = """
+            SELECT * FROM notes
+            WHERE id=%s
+        """
+        return self._fetchone(select, (id,))
+
+    def get_notes(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        select = """
+            SELECT * FROM notes
+             WHERE {where}
+          ORDER BY {order}
+        """.format(where=query.where, order=query.sort or 'create_time')
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_alert_notes(self, id, page=None, page_size=None):
+        select = """
+            SELECT * FROM notes
+             WHERE alert ~* (%s)
+        """
+        return self._fetchall(select, (id,), limit=page_size, offset=(page - 1) * page_size)
+
+    def get_customer_notes(self, customer, page=None, page_size=None):
+        select = """
+            SELECT * FROM notes
+             WHERE customer=%s
+        """
+        return self._fetchall(select, (customer,), limit=page_size, offset=(page - 1) * page_size)
+
+    def update_note(self, id, **kwargs):
+        update = """
+            UPDATE notes
+            SET
+        """
+        if kwargs.get('text', None) is not None:
+            update += 'text=%(text)s, '
+        if kwargs.get('attributes', None) is not None:
+            update += 'attributes=attributes || %(attributes)s, '
+        update += """
+            "user"=COALESCE(%(user)s, "user"),
+            update_time=NOW() at time zone 'utc'
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs['id'] = id
+        kwargs['user'] = kwargs.get('user')
+        return self._updateone(update, kwargs, returning=True)
+
+    def delete_note(self, id):
+        delete = """
+            DELETE FROM notes
+            WHERE id=%s
+            RETURNING id
+        """
+        return self._deleteone(delete, (id,), returning=True)
+
     # METRICS
 
     def get_metrics(self, type=None):
