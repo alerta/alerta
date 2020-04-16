@@ -14,8 +14,9 @@ class HeartbeatReceiver(PluginBase):
     """
 
     def pre_receive(self, alert, **kwargs):
+        HEARTBEAT_EVENTS = self.get_config('HEARTBEAT_EVENTS', default=['Heartbeat'], type=list, **kwargs)
 
-        if alert.event == 'Heartbeat':
+        if alert.event in HEARTBEAT_EVENTS:
             hb = Heartbeat(
                 origin=alert.origin,
                 tags=alert.tags,
