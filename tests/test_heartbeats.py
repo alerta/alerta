@@ -12,7 +12,9 @@ class HeartbeatsTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': False,
-            'HEARTBEAT_TIMEOUT': 240
+            'HEARTBEAT_TIMEOUT': 240,
+            'HEARTBEAT_EVENTS': ['Heartbeat', 'Watchdog'],
+            'PLUGINS': ['heartbeat']
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -106,7 +108,7 @@ class HeartbeatsTestCase(unittest.TestCase):
     def test_heartbeat_from_alert(self):
 
         heartbeat_alert = {
-            'event': 'Heartbeat',
+            'event': 'Watchdog',
             'resource': 'net01',
             'environment': 'Production',
             'service': ['Svc1'],
