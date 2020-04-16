@@ -285,8 +285,7 @@ class Alert:
         self.last_receive_time = now
 
         if new_status != status:
-            text = 'duplicate alert (with status change)'
-            r = status_change_hook.send(duplicate_of, status=new_status, text=text)
+            r = status_change_hook.send(duplicate_of, status=new_status, text=self.text)
             _, (_, new_status, text) = r[0]
             self.update_time = now
 
@@ -309,7 +308,7 @@ class Alert:
                 severity=self.severity,
                 status=status,
                 value=self.value,
-                text='duplicate alert (with value change)',
+                text=self.text,
                 change_type=ChangeType.value,
                 update_time=self.create_time,
                 user=g.login
@@ -340,12 +339,13 @@ class Alert:
         self.receive_time = now
         self.last_receive_id = self.id
         self.last_receive_time = now
-        text = 'correlated alert'
 
         if new_status != status:
-            r = status_change_hook.send(correlate_with, status=new_status, text=text)
+            r = status_change_hook.send(correlate_with, status=new_status, text=self.text)
             _, (_, new_status, text) = r[0]
             self.update_time = now
+        else:
+            text = self.text
 
         history = [History(
             id=self.id,
@@ -387,7 +387,7 @@ class Alert:
             severity=self.severity,
             status=self.status,
             value=self.value,
-            text='new alert',
+            text=self.text,
             change_type=ChangeType.new,
             update_time=self.create_time,
             user=g.login
@@ -549,7 +549,7 @@ class Alert:
                 id=last_receive_id,
                 event=event,
                 status='expired',
-                text='marked for deletion',
+                text='',
                 change_type=ChangeType.expired,
                 update_time=now,
                 user=g.login
@@ -562,7 +562,7 @@ class Alert:
                 id=last_receive_id,
                 event=event,
                 status='open',
-                text='re-open after timeout',
+                text='',
                 change_type=ChangeType.timeout,
                 update_time=now,
                 user=g.login
