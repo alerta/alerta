@@ -1,8 +1,8 @@
-import saml2.client
-import saml2.config
-import saml2.entity
-import saml2.metadata
-import saml2.saml
+import saml2.client  # pylint: disable=import-error
+import saml2.config  # pylint: disable=import-error
+import saml2.entity  # pylint: disable=import-error
+import saml2.metadata  # pylint: disable=import-error
+import saml2.saml  # pylint: disable=import-error
 from flask import (Response, current_app, make_response, render_template,
                    request)
 from flask_cors import cross_origin
