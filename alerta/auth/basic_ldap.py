@@ -1,6 +1,6 @@
 import sys
 
-import ldap
+import ldap  # pylint: disable=import-error
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
