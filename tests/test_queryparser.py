@@ -1,15 +1,21 @@
 import unittest
 
-from alerta.database.backends.mongodb.queryparser import \
-    QueryParser as MongoQueryParser
-from alerta.database.backends.postgres.queryparser import \
-    QueryParser as PostgresQueryParser
+
+def skip_postgres():
+    try:
+        import psycopg2  # noqa
+    except ImportError:
+        return True
+    return False
 
 
 class PostgresQueryTestCase(unittest.TestCase):
 
     def setUp(self):
 
+        self.skipTest(skip_postgres())
+        from alerta.database.backends.postgres.queryparser import \
+            QueryParser as PostgresQueryParser
         self.parser = PostgresQueryParser()
 
     def test_word_and_phrase_terms(self):
@@ -159,10 +165,21 @@ class PostgresQueryTestCase(unittest.TestCase):
             r, '(("status" ILIKE \'%%active%%\' OR "status" ILIKE \'%%pending%%\') OR ("title" ILIKE \'%%full%%\' OR "title" ILIKE \'%%text%%\'))')
 
 
+def skip_mongodb():
+    try:
+        import pymongo  # noqa
+    except ImportError:
+        return True
+    return False
+
+
 class MongoQueryTestCase(unittest.TestCase):
 
     def setUp(self):
 
+        self.skipTest(skip_mongodb())
+        from alerta.database.backends.mongodb.queryparser import \
+            QueryParser as MongoQueryParser
         self.parser = MongoQueryParser()
 
     def test_word_and_phrase_terms(self):

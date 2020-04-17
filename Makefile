@@ -70,9 +70,7 @@ hooks: $(PRE_COMMIT)
 
 ## test			- Run unit tests.
 test: $(TOX) $(PYTEST)
-	createdb alerta || true
 	$(TOX) $(toxparams)
-	dropdb alerta
 
 ## run			- Run application.
 run:
