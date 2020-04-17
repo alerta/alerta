@@ -113,12 +113,15 @@ JavaScript logging, network problems and API error responses.
 Tests
 -----
 
-To run the tests using a local Postgres database run:
+To run the *all* the tests there must be a local Postgres
+and MongoDB database running. Then run:
 
-    $ pip install -r requirements.txt
-    $ pip install -e .[postgres]
-    $ createdb test5
-    $ ALERTA_SVR_CONF_FILE= DATABASE_URL=postgres:///test5 pytest
+    $ TOXENV=ALL make test
+
+To just run the Postgres or MongoDB tests run:
+
+    $ TOXENV=postgres make test
+    $ TOXENV=mongodb make test
 
 Cloud Deployment
 ----------------
@@ -131,7 +134,7 @@ License
 -------
 
     Alerta monitoring system and console
-    Copyright 2012-2019 Nick Satterly
+    Copyright 2012-2020 Nick Satterly
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
