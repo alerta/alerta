@@ -129,8 +129,9 @@ def update_key(key):
     admin_audit_trail.send(current_app._get_current_object(), event='apikey-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=key.id, type='apikey', request=request)
 
-    if key.update(**request.json):
-        return jsonify(status='ok')
+    updated = key.update(**request.json)
+    if updated:
+        return jsonify(status='ok', key=updated.serialize)
     else:
         raise ApiError('failed to update API key', 500)
 
