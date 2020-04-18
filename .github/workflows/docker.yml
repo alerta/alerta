@@ -9,19 +9,25 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      REPOSITORY_URL: docker.pkg.github.com
+      IMAGE_NAME: ${{ github.repository }}/alerta-api
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Variables
+        id: vars
+        run: echo "::set-output name=SHORT_COMMIT_ID::$(git rev-parse --short HEAD)"
       - name: Build image
         run: >-
           docker build
-          -t alerta/alerta/api
-          -t docker.pkg.github.com/alerta/alerta/api:${{ github.sha }}
-          -t docker.pkg.github.com/alerta/alerta/api:latest .
+          -t $IMAGE_NAME
+          -t $REPOSITORY_URL/$IMAGE_NAME:${{ steps.vars.outputs.SHORT_COMMIT_ID }}
+          -t $REPOSITORY_URL/$IMAGE_NAME:latest .
       - name: Docker Login
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: docker login docker.pkg.github.com
+          DOCKER_USERNAME: ${{ github.actor }}
+          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: docker login $REPOSITORY_URL --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD"
       - name: Publish Image
-        run: docker push docker.pkg.github.com/alerta/alerta/api
+        run: docker push $REPOSITORY_URL/$IMAGE_NAME
