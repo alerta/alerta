@@ -562,7 +562,7 @@ def get_tags():
 @permission(Scope.write_alerts)
 @jsonp
 def add_note(alert_id):
-    note_text = request.json.get('note', None)
+    note_text = request.json.get('text') or request.json.get('note')
 
     if not note_text:
         raise ApiError("must supply 'note' text")
@@ -640,8 +640,9 @@ def update_note(alert_id, note_id):
                            customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note',
                            request=request)
 
-    if note.update(**update):
-        return jsonify(status='ok')
+    updated = note.update(**update)
+    if updated:
+        return jsonify(status='ok', note=updated.serialize)
     else:
         raise ApiError('failed to update note', 500)
 

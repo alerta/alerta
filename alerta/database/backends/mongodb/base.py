@@ -1536,6 +1536,7 @@ class Backend(Database):
         return self.get_db().notes.find({'customer': customer}).skip((page - 1) * page_size).limit(page_size)
 
     def update_note(self, id, **kwargs):
+        kwargs['updateTime'] = datetime.utcnow()
         return self.get_db().notes.find_one_and_update(
             {'_id': id},
             update={'$set': kwargs},
