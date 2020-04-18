@@ -106,7 +106,7 @@ class Note:
     def from_alert(alert, text):
         note = Note(
             text=text,
-            user=g.user,
+            user=g.login,
             note_type=NoteType.alert,
             attributes=dict(
                 resource=alert.resource,
