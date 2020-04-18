@@ -1,0 +1,27 @@
+name: Docker Build and Push
+
+on:
+  push:
+    branches: [ master, release/* ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build image
+        run: >-
+          docker build
+          -t alerta/alerta/api
+          -t docker.pkg.github.com/alerta/alerta/api:${{ github.sha }}
+          -t docker.pkg.github.com/alerta/alerta/api:latest .
+      - name: Docker Login
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: docker login docker.pkg.github.com
+      - name: Publish Image
+        run: docker push docker.pkg.github.com/alerta/alerta/api
