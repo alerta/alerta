@@ -174,13 +174,13 @@ def update_user(user_id):
                 raise ApiError("Requested scope '{}' not in existing scopes: {}".format(
                     want_scope, ','.join(g.scopes)), 403)
 
-    resp = user.update(**request.json)
+    updated = user.update(**request.json)
 
     admin_audit_trail.send(current_app._get_current_object(), event='user-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
-    if resp:
-        return jsonify(status='ok')
+    if updated:
+        return jsonify(status='ok', user=updated.serialize)
     else:
         raise ApiError('failed to update user', 500)
 
@@ -208,13 +208,13 @@ def update_me():
         if user_by_email and user_by_email.id != user.id:
             raise ApiError('user with that email already exists', 409)
 
-    resp = user.update(**request.json)
+    updated = user.update(**request.json)
 
     write_audit_trail.send(current_app._get_current_object(), event='user-me-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=user.id, type='user', request=request)
 
-    if resp:
-        return jsonify(status='ok')
+    if updated:
+        return jsonify(status='ok', user=updated.serialize)
     else:
         raise ApiError('failed to update user', 500)
 

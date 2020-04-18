@@ -106,8 +106,9 @@ def update_blackout(blackout_id):
                            customers=g.customers, scopes=g.scopes, resource_id=blackout.id, type='blackout',
                            request=request)
 
-    if blackout.update(**update):
-        return jsonify(status='ok')
+    updated = blackout.update(**update)
+    if updated:
+        return jsonify(status='ok', blackout=updated.serialize)
     else:
         raise ApiError('failed to update blackout', 500)
 

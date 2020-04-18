@@ -113,8 +113,9 @@ def update_group(group_id):
     admin_audit_trail.send(current_app._get_current_object(), event='group-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=group.id, type='group', request=request)
 
-    if group.update(**request.json):
-        return jsonify(status='ok')
+    updated = group.update(**request.json)
+    if updated:
+        return jsonify(status='ok', group=updated.serialize)
     else:
         raise ApiError('failed to update user group', 500)
 

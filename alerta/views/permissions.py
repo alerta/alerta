@@ -128,8 +128,9 @@ def update_perm(perm_id):
     admin_audit_trail.send(current_app._get_current_object(), event='permission-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=perm.id, type='permission', request=request)
 
-    if perm.update(**request.json):
-        return jsonify(status='ok')
+    updated = perm.update(**request.json)
+    if updated:
+        return jsonify(status='ok', permission=updated.serialize)
     else:
         raise ApiError('failed to update permission', 500)
 
