@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 ADMIN_USER=${ADMIN_USERS%%,*}
 ADMIN_PASSWORD=${ADMIN_PASSWORD:-alerta}
