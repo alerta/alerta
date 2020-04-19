@@ -1,6 +1,7 @@
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
+from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.enums import Scope
@@ -76,10 +77,11 @@ def get_key(key):
 @permission(Scope.read_keys)
 @jsonp
 def list_keys():
+    query = qb.from_params(request.args, customers=g.customers)
     if not current_app.config['AUTH_REQUIRED']:
-        keys = ApiKey.find_all()
+        keys = ApiKey.find_all(query)
     elif Scope.admin in g.scopes or Scope.admin_keys in g.scopes:
-        keys = ApiKey.find_all()
+        keys = ApiKey.find_all(query)
     elif not g.get('login', None):
         raise ApiError("Must define 'user' to list user keys", 400)
     else:
