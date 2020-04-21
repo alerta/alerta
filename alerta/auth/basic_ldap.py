@@ -80,7 +80,7 @@ def login():
         ) if _dn is not None]
 
         if len(ldap_users) > 1:
-            raise ApiError('invalid search query for domain'.format(domain), 500)
+            raise ApiError('invalid search query for domain "{}"'.format(domain), 500)
         elif len(ldap_users) == 0:
             raise ApiError('invalid username or password', 401)
 
