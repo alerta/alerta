@@ -3,8 +3,6 @@ name: Docker Build and Push
 on:
   push:
     branches: [ master, release/* ]
-  pull_request:
-    branches: [ master ]
 
 env:
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -29,7 +27,7 @@ jobs:
           -t $REPOSITORY_URL/$IMAGE_NAME:latest .
       - name: Docker Login
         env:
-          DOCKER_USERNAME: ${{ github.actor }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: docker login $REPOSITORY_URL --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD"
       - name: Publish Image
