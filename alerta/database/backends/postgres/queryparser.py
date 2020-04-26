@@ -1,4 +1,4 @@
-from pyparsing import (CaselessKeyword, Forward, Group, Literal, Optional,
+from pyparsing import (Forward, Group, Keyword, Literal, Optional,
                        ParseException, ParserElement, QuotedString, Regex,
                        Suppress, Word, infixNotation, opAssoc, printables)
 
@@ -36,6 +36,8 @@ class SearchAnd(BinaryOperation):
 class SearchOr(BinaryOperation):
 
     def __repr__(self):
+        if getattr(self.rhs, 'op', None) == 'NOT':
+            return '({} AND {})'.format(self.lhs, self.rhs)
         return '({} OR {})'.format(self.lhs, self.rhs)
 
 
@@ -117,14 +119,17 @@ class SearchTerm:
 
 LBRACK, RBRACK, LBRACE, RBRACE, TILDE, CARAT = map(Literal, '[]{}~^')
 LPAR, RPAR, COLON, DOT = map(Suppress, '():.')
-and_, or_, not_, to_ = map(CaselessKeyword, 'AND OR NOT TO'.split())
-keyword = and_ | or_ | not_ | to_
+
+AND = Keyword('AND') | Literal('&&')
+OR = Keyword('OR') | Literal('||')
+NOT = Keyword('NOT') | Literal('!')
+TO = Keyword('TO')
 
 query_expr = Forward()
 
 required_modifier = Literal('+')('required')
 prohibit_modifier = Literal('-')('prohibit')
-special_characters = '=><(){}[]^"~*?:\\/.'
+special_characters = '=><(){}[]^"~*?:\\/.&|'
 valid_word = Word(printables, excludeChars=special_characters).setName('word')
 valid_word.setParseAction(
     lambda t: t[0].replace('\\\\', chr(127)).replace('\\', '').replace(chr(127), '\\')
@@ -143,7 +148,7 @@ regex = QuotedString('/', unquoteResults=True)('regex')
 _all = Literal('*')
 lower_range = Group((LBRACK('inclusive') | LBRACE('exclusive')) + (valid_word | _all)('lowerbound'))
 upper_range = Group((valid_word | _all)('upperbound') + (RBRACK('inclusive') | RBRACE('esclusive')))
-_range = (lower_range + to_ + upper_range)('range')
+_range = (lower_range + TO + upper_range)('range')
 
 GT = Literal('>')
 GTE = Literal('>=')
@@ -161,9 +166,9 @@ clause.addParseAction(SearchTerm)
 query_expr << infixNotation(clause,
                             [
                                 (required_modifier | prohibit_modifier, 1, opAssoc.RIGHT, SearchModifier),
-                                ((not_ | '!').setParseAction(lambda: 'NOT'), 1, opAssoc.RIGHT, SearchNot),
-                                ((and_ | '&&').setParseAction(lambda: 'AND'), 2, opAssoc.LEFT, SearchAnd),
-                                (Optional(or_ | '||').setParseAction(lambda: 'OR'), 2, opAssoc.LEFT, SearchOr),
+                                (NOT.setParseAction(lambda: 'NOT'), 1, opAssoc.RIGHT, SearchNot),
+                                (AND.setParseAction(lambda: 'AND'), 2, opAssoc.LEFT, SearchAnd),
+                                (Optional(OR).setParseAction(lambda: 'OR'), 2, opAssoc.LEFT, SearchOr),
                             ])
 
 

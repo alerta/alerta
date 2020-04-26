@@ -28,7 +28,7 @@ Requirements
 The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 
 - Postgres version 9.5 or better
-- MongoDB version 3.2 or better
+- MongoDB version 3.2 or better (4.0.7 required for full query syntax support)
 
 Installation
 ------------
@@ -122,6 +122,11 @@ To just run the Postgres or MongoDB tests run:
 
     $ TOXENV=postgres make test
     $ TOXENV=mongodb make test
+
+To run a single test run something like:
+
+    $ TOXENV="mongodb -- tests/test_search.py::QueryParserTestCase::test_boolean_operators" make test
+    $ TOXENV="postgres -- tests/test_queryparser.py::PostgresQueryTestCase::test_boolean_operators" make test
 
 Cloud Deployment
 ----------------
