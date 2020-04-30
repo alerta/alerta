@@ -2,7 +2,10 @@ import json
 import unittest
 from uuid import uuid4
 
+import requests_mock
+
 from alerta.app import create_app, db
+from alerta.utils.response import base_url
 
 
 class ForwarderTestCase(unittest.TestCase):
@@ -18,11 +21,14 @@ class ForwarderTestCase(unittest.TestCase):
         }
 
         FWD_DESTINATIONS = [
-            # ('http://localhost:9000', {'username': 'user', 'password': 'pa55w0rd', 'timeout': 10}, ['alerts', 'actions']),  # BasicAuth
-            ('https://httpbin.org/anything', dict(username='foo', password='bar', ssl_verify=False), ['*']),
-            # ('http://localhost:9000', {'key': 'access-key', 'secret': 'secret-key'}, ['alerts', 'actions']),  # Hawk HMAC
-            # ('http://localhost:9000', {'key': 'my-api-key'}, ['alerts', 'actions']),  # API key
-            # ('http://localhost:9000', {'token': 'bearer-token'}, ['alerts', 'actions']),  # Bearer token
+            ('http://localhost:9000', {'username': 'user', 'password': 'pa55w0rd', 'timeout': 10}, ['alerts', 'actions']),  # BasicAuth
+            # ('https://httpbin.org/anything', dict(username='foo', password='bar', ssl_verify=False), ['*']),
+            ('http://localhost:9001', {
+                'key': 'e3b8afc0-db18-4c51-865d-b95322742c5e',
+                'secret': 'MDhjZGMyYTRkY2YyNjk1MTEyMWFlNmM3Y2UxZDU1ZjIK'
+            }, ['actions']),  # Hawk HMAC
+            ('http://localhost:9002', {'key': 'demo-key'}, ['delete']),  # API key
+            ('http://localhost:9003', {'token': 'bearer-token'}, ['*']),  # Bearer token
         ]
 
         test_config['FWD_DESTINATIONS'] = FWD_DESTINATIONS
@@ -32,173 +38,205 @@ class ForwarderTestCase(unittest.TestCase):
 
         self.resource = str(uuid4()).upper()[:8]
 
-        self.reject_alert = {
+        self.major_alert = {
             'event': 'node_marginal',
-            'resource': self.resource,
-            'environment': 'Production',
-            'service': [],  # alert will be rejected because service not defined
-            'severity': 'warning',
-            'correlate': ['node_down', 'node_marginal', 'node_up'],
-            'tags': ['one', 'two']
-        }
-
-        self.accept_alert = {
-            'event': 'node_marginal',
-            'resource': self.resource,
-            'environment': 'Production',
-            'service': ['Network'],  # alert will be accepted because service defined
-            'severity': 'warning',
-            'correlate': ['node_down', 'node_marginal', 'node_up'],
-            'tags': ['three', 'four']
-        }
-
-        self.critical_alert = {
-            'event': 'node_down',
             'resource': self.resource,
             'environment': 'Production',
             'service': ['Network'],
-            'severity': 'critical',
+            'severity': 'major',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
-            'tags': []
+            'timeout': 40
         }
-
-        self.headers = {
-            'Content-type': 'application/json'
+        self.warn_alert = {
+            'event': 'node_marginal',
+            'resource': self.resource,
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'warning',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 50
+        }
+        self.normal_alert = {
+            'event': 'node_up',
+            'resource': self.resource,
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'normal',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 100
         }
 
     def tearDown(self):
         db.destroy()
 
-    def test_forward_alert(self):
+    @requests_mock.mock()
+    def test_forward_alert(self, m):
 
-        # create alert that will be rejected
-        response = self.client.post('/alert', data=json.dumps(self.reject_alert), headers=self.headers)
-        self.assertEqual(response.status_code, 403)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['status'], 'error')
-        self.assertEqual(data['message'], '[POLICY] Alert must define a service')
+        ok_response = """
+        {"status": "ok"}
+        """
+        m.post('http://localhost:9000/alert', text=ok_response)
+        m.post('http://localhost:9001/alert', text=ok_response)
+        m.post('http://localhost:9002/alert', text=ok_response)
+        m.post('http://localhost:9003/alert', text=ok_response)
 
-        # create alert that will be accepted
-        response = self.client.post('/alert', data=json.dumps(self.accept_alert), headers=self.headers)
+        headers = {
+            'Content-type': 'application/json',
+            'Origin': 'http://localhost:5000',
+            'X-Alerta-Loop': 'http://localhost:5000',
+        }
+        response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
-        self.assertRegex(data['id'], '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 
-    def test_forward_ack(self):
+        history = m.request_history
+        self.assertEqual(history[0].port, 9000)
+        self.assertEqual(history[1].port, 9003)
 
-        # create alert that will be accepted
-        response = self.client.post('/alert', data=json.dumps(self.accept_alert), headers=self.headers)
+    @requests_mock.mock()
+    def test_forward_action(self, m):
+
+        ok_response = """
+        {"status": "ok"}
+        """
+        m.post('http://localhost:9000/alert', text=ok_response)
+        m.post('http://localhost:9003/alert', text=ok_response)
+
+        # create alert
+        headers = {
+            'Content-type': 'application/json'
+        }
+        response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=headers)
         self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'open')
+
+        alert_id = data['id']
+
+        m.put('http://localhost:9000/alert/{}/action'.format(alert_id), text=ok_response)
+        m.put('http://localhost:9001/alert/{}/action'.format(alert_id), text=ok_response)
+        m.put('http://localhost:9002/alert/{}/action'.format(alert_id), text=ok_response)
+        m.put('http://localhost:9003/alert/{}/action'.format(alert_id), text=ok_response)
+
+        headers = {
+            'Content-type': 'application/json',
+            'Origin': 'http://localhost:8000'
+        }
+        response = self.client.put('/alert/{}/action'.format(alert_id), data=json.dumps({'action': 'ack'}), headers=headers)
+        self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
-        self.assertRegex(data['id'], '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
-        self.assertEqual(data['alert']['attributes']['aaa'], 'post1')
 
-        alert_id = data['id']
+        history = m.request_history
+        self.assertEqual(history[0].port, 9000)
+        self.assertEqual(history[1].port, 9003)
+        self.assertEqual(history[2].port, 9000)
+        self.assertEqual(history[3].port, 9001)
+        self.assertEqual(history[4].port, 9003)
 
-        # ack alert
-        response = self.client.put('/alert/' + alert_id + '/status',
-                                   data=json.dumps({'status': 'ack', 'text': 'input'}), headers=self.headers)
-        self.assertEqual(response.status_code, 200)
-        response = self.client.get('/alert/' + alert_id)
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['attributes']['old'], 'post1')
-        self.assertEqual(data['alert']['attributes']['aaa'], 'post1')
+    @requests_mock.mock()
+    def test_forward_delete(self, m):
 
-        # alert status, tags, attributes and history text modified by plugin1 & plugin2
-        self.assertEqual(data['alert']['status'], 'assign')
-        self.assertEqual(sorted(data['alert']['tags']), sorted(
-            ['Development', 'Production', 'more', 'other', 'that', 'the', 'this']))
-        self.assertEqual(data['alert']['attributes']['foo'], 'bar')
-        self.assertEqual(data['alert']['attributes']['baz'], 'quux')
-        self.assertNotIn('abc', data['alert']['attributes'])
-        self.assertEqual(data['alert']['attributes']['xyz'], 'down')
-        self.assertEqual(data['alert']['history'][-1]['text'], 'input-plugin1-plugin3')
-
-    def test_forward_action(self):
+        ok_response = """
+        {"status": "ok"}
+        """
+        m.post('http://localhost:9000/alert', text=ok_response)
+        m.post('http://localhost:9003/alert', text=ok_response)
 
         # create alert
-        response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
+        headers = {
+            'Content-type': 'application/json'
+        }
+        response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['tags'], ['Production', 'Development'])
-        self.assertEqual(data['alert']['attributes'], {'aaa': 'post1', 'ip': '127.0.0.1', 'old': 'post1'})
+        self.assertEqual(data['alert']['status'], 'open')
 
         alert_id = data['id']
 
-        # create ticket for alert
-        payload = {
-            'action': 'createTicket',
-            'text': 'ticket created by bob'
+        m.delete('http://localhost:9002/alert/{}'.format(alert_id), text=ok_response)
+        m.delete('http://localhost:9003/alert/{}'.format(alert_id), text=ok_response)
+
+        headers = {
+            'Content-type': 'application/json',
+            'Origin': 'http://localhost:8000'
         }
-        response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
-        self.assertEqual(response.status_code, 200)
-
-        # check status=assign
-        response = self.client.get('/alert/' + alert_id)
+        response = self.client.delete('/alert/{}'.format(alert_id), headers=headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['status'], 'assign')
-        self.assertEqual(sorted(data['alert']['tags']), sorted(
-            ['Development', 'Production', 'more', 'other', 'that', 'the', 'this']))
-        self.assertEqual(data['alert']['history'][1]['text'],
-                         'ticket created by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
+        self.assertEqual(data['status'], 'ok')
 
-        # update ticket for alert
-        payload = {
-            'action': 'updateTicket',
-            'text': 'ticket updated by bob'
-        }
-        response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
+        history = m.request_history
+        self.assertEqual(history[0].port, 9000)
+        self.assertEqual(history[1].port, 9003)
+        self.assertEqual(history[2].port, 9002)
+        self.assertEqual(history[3].port, 9003)
 
-        # check no change in status, new alert text
-        response = self.client.get('/alert/' + alert_id)
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['status'], 'assign')
-        self.assertEqual(data['alert']['attributes']['up'], 'down')
-        self.assertEqual(data['alert']['history'][2]['text'],
-                         'ticket updated by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
-
-        # update ticket for alert
-        payload = {
-            'action': 'resolveTicket',
-            'text': 'ticket resolved by bob'
-        }
-        response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
-        self.assertEqual(response.status_code, 200)
-
-        # check status=closed
-        response = self.client.get('/alert/' + alert_id)
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['status'], 'closed')
-        self.assertIn('true', data['alert']['tags'])
-        self.assertEqual(data['alert']['history'][3]['text'],
-                         'ticket resolved by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
-
-    def test_forward_delete(self):
-
-        # create alert
-        response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
-        self.assertEqual(response.status_code, 201)
-        data = json.loads(response.data.decode('utf-8'))
-
-        alert_id = data['id']
-
-        # delete alert
-        response = self.client.delete('/alert/' + alert_id, headers=self.headers)
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.data.decode('utf-8'))
-
-        # check deleted
-        response = self.client.get('/alert/' + alert_id)
-        self.assertEqual(response.status_code, 404)
-
-    def test_forward_heartbeat(self):
+    @requests_mock.mock()
+    def test_forward_heartbeat(self, m):
         # FIXME: currently not possible
         pass
+
+    @requests_mock.mock()
+    def test_already_processed(self, m):
+        # Alert is not processed locally or forwarded when an Alerta server
+        # receives an alert which it has already processed. This is
+        # determined by checking to see if the BASE_URL of the server
+        # is already in the X-Alerta-Loop header. A 202 is returned because
+        # the alert was accepted, even though it wasn't processed.
+
+        ok_response = """
+        {"status": "ok"}
+        """
+        m.post('http://localhost:9000/alert', text=ok_response)
+        m.post('http://localhost:9001/alert', text=ok_response)
+        m.post('http://localhost:9002/alert', text=ok_response)
+        m.post('http://localhost:9003/alert', text=ok_response)
+
+        headers = {
+            'Content-type': 'application/json',
+            'Origin': 'http://localhost:5000',
+            'X-Alerta-Loop': 'http://localhost:8080,http://localhost:5000',
+        }
+        response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=headers)
+        self.assertEqual(response.status_code, 202)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+        self.assertEqual(data['message'], 'Alert forwarded by http://localhost:5000 already processed by http://localhost:8080')
+
+        self.assertEqual(m.called, False)
+
+    @requests_mock.mock()
+    def test_forward_loop(self, m):
+        # Alert is processed locally but not forwarded on to the remote
+        # because it is already in the X-Alerta-Loop header. A 201 is
+        # returned because the alert has been received and processed.
+
+        ok_response = """
+        {"status": "ok"}
+        """
+        m.post('http://localhost:9000/alert', text=ok_response)
+        m.post('http://localhost:9001/alert', text=ok_response)
+        m.post('http://localhost:9002/alert', text=ok_response)
+        m.post('http://localhost:9003/alert', text=ok_response)
+
+        headers = {
+            'Content-type': 'application/json',
+            'X-Alerta-Loop': 'http://localhost:9000,http://localhost:9001,http://localhost:9002,http://localhost:9003',
+        }
+        response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+
+        self.assertEqual(m.called, False)
+
+    def test_do_not_forward(self):
+        # check forwarding rule for remote
+        pass
+
+    def test_base_url(self):
+
+        with self.app.test_request_context('/'):
+            self.assertEqual(base_url(), 'http://localhost:8080')

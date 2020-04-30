@@ -36,7 +36,8 @@ class Forwarder(PluginBase):
     def pre_receive(self, alert: 'Alert', **kwargs) -> 'Alert':
 
         if is_in_xloop(base_url()):
-            raise ForwardingLoop('Alert forwarded by {} already processed by {}'.format(request.origin, base_url()))
+            http_origin = request.origin or '(unknown)'
+            raise ForwardingLoop('Alert forwarded by {} already processed by {}'.format(http_origin, base_url()))
         return alert
 
     def post_receive(self, alert: 'Alert', **kwargs) -> Optional['Alert']:
@@ -68,8 +69,9 @@ class Forwarder(PluginBase):
     def take_action(self, alert: 'Alert', action: str, text: str, **kwargs) -> Any:
 
         if is_in_xloop(base_url()):
+            http_origin = request.origin or '(unknown)'
             raise ForwardingLoop('Action {} forwarded by {} already processed by {}'.format(
-                action, request.origin, base_url())
+                action, http_origin, base_url())
             )
 
         for remote, auth, actions in self.get_config('FWD_DESTINATIONS', default=[], type=list, **kwargs):
@@ -96,13 +98,15 @@ class Forwarder(PluginBase):
     def delete(self, alert: 'Alert', **kwargs) -> bool:
 
         if is_in_xloop(base_url()):
-            raise ForwardingLoop('Delete forwarded by {} already processed by {}'.format(request.origin, base_url()))
+            http_origin = request.origin or '(unknown)'
+            raise ForwardingLoop('Delete forwarded by {} already processed by {}'.format(http_origin, base_url()))
 
         for remote, auth, actions in self.get_config('FWD_DESTINATIONS', default=[], type=list, **kwargs):
+            print('{} actions={}'.format(remote, actions))
             if is_in_xloop(remote):
                 LOG.debug('Forward [action=delete]: {} ; Remote {} already processed delete. Skip.'.format(alert.id, remote))
                 continue
-            if not ('*' in actions or 'actions' in actions or 'delete' in actions):
+            if not ('*' in actions or 'delete' in actions):
                 LOG.debug('Forward [action=delete]: {} ; Remote {} not configured for deletes. Skip.'.format(alert.id, remote))
                 continue
 
