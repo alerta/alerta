@@ -33,6 +33,11 @@ class BlackoutPeriod(AlertaException):
     pass
 
 
+class ForwardingLoop(AlertaException):
+    """Forwarding loop detected."""
+    pass
+
+
 class InvalidAction(AlertaException):
     """Invalid or redundant action for the current alert status."""
     pass

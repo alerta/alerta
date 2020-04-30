@@ -69,7 +69,8 @@ setuptools.setup(
             'reject = alerta.plugins.reject:RejectPolicy',
             'heartbeat = alerta.plugins.heartbeat:HeartbeatReceiver',
             'blackout = alerta.plugins.blackout:BlackoutHandler',
-            'acked_by = alerta.plugins.acked_by:AckedBy'
+            'acked_by = alerta.plugins.acked_by:AckedBy',
+            'forwarder = alerta.plugins.forwarder:Forwarder'
         ],
         'alerta.webhooks': [
             'cloudwatch = alerta.webhooks.cloudwatch:CloudWatchWebhook',

@@ -1,6 +1,5 @@
 from functools import wraps
-from os.path import join as path_join
-from urllib.parse import urljoin, urlparse, urlunparse
+from urllib.parse import urljoin
 
 from flask import current_app, request
 
@@ -21,11 +20,12 @@ def jsonp(func):
 
 
 def absolute_url(path: str = '') -> str:
-    # ensure that "path" (see urlparse result) part of url has both leading and trailing slashes
-    conf_base_url = urlunparse([(x if i != 2 else path_join('/', x, ''))
-                                for i, x in enumerate(urlparse(current_app.config.get('BASE_URL', '/')))])
     try:
-        base_url = urljoin(request.base_url, conf_base_url)
-    except RuntimeError:  # Working outside of request context
-        base_url = conf_base_url
-    return urljoin(base_url, path.lstrip('/'))
+        base_url = current_app.config.get('BASE_URL', request.url_root)
+    except Exception:
+        base_url = '/'
+    return urljoin(base_url, path) if path else base_url
+
+
+def base_url():
+    return absolute_url(path='')
