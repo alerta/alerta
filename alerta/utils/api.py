@@ -4,8 +4,8 @@ from typing import Optional, Tuple
 from flask import current_app, g
 
 from alerta.app import plugins
-from alerta.exceptions import (ApiError, BlackoutPeriod, HeartbeatReceived,
-                               RateLimit, RejectException)
+from alerta.exceptions import (ApiError, BlackoutPeriod, ForwardingLoop,
+                               HeartbeatReceived, RateLimit, RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 
@@ -40,7 +40,7 @@ def process_alert(alert: Alert) -> Alert:
             alert = plugin.pre_receive(alert, config=wanted_config)
         except TypeError:
             alert = plugin.pre_receive(alert)  # for backward compatibility
-        except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit):
+        except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit, ForwardingLoop):
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
@@ -97,23 +97,21 @@ def process_action(alert: Alert, action: str, text: str, timeout: int) -> Tuple[
             updated = plugin.take_action(alert, action, text, timeout=timeout, config=wanted_config)
         except NotImplementedError:
             pass  # plugin does not support action() method
-        except RejectException:
+        except (RejectException, ForwardingLoop):
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
                 raise ApiError("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
             else:
                 logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
-        if updated:
-            try:
-                if len(updated) == 3:
-                    alert, action, text = updated
-                elif len(updated) == 4:
-                    alert, action, text, timeout = updated
-                else:
-                    alert = updated
-            except Exception as e:
-                logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
+
+        if isinstance(updated, Alert):
+            updated = updated, action, text, timeout
+        if isinstance(updated, tuple):
+            if len(updated) == 4:
+                alert, action, text, timeout = updated
+            elif len(updated) == 3:
+                alert, action, text = updated
 
     # remove keys from attributes with None values
     new_attrs = {k: v for k, v in alert.attributes.items() if v is not None}

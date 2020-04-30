@@ -5,8 +5,9 @@ from flask_cors import cross_origin
 
 from alerta.app import qb
 from alerta.auth.decorators import permission
-from alerta.exceptions import (ApiError, BlackoutPeriod, HeartbeatReceived,
-                               InvalidAction, RateLimit, RejectException)
+from alerta.exceptions import (ApiError, BlackoutPeriod, ForwardingLoop,
+                               HeartbeatReceived, InvalidAction, RateLimit,
+                               RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 from alerta.models.metrics import Timer, timer
@@ -62,6 +63,8 @@ def receive():
     except BlackoutPeriod as e:
         audit_trail_alert(event='alert-blackout')
         return jsonify(status='ok', message=str(e), id=alert.id), 202
+    except ForwardingLoop as e:
+        return jsonify(status='ok', message=str(e)), 202
     except Exception as e:
         raise ApiError(str(e), 500)
 
@@ -158,6 +161,8 @@ def action_alert(alert_id):
         raise ApiError(str(e), 400)
     except InvalidAction as e:
         raise ApiError(str(e), 409)
+    except ForwardingLoop as e:
+        return jsonify(status='ok', message=str(e)), 202
     except Exception as e:
         raise ApiError(str(e), 500)
 

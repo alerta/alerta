@@ -17,7 +17,6 @@ repos:
     -   id: debug-statements
     -   id: double-quote-string-fixer
     -   id: end-of-file-fixer
-    -   id: flake8
     -   id: fix-encoding-pragma
         args: ['--remove']
     -   id: pretty-format-json
@@ -26,6 +25,10 @@ repos:
         args: ['--django']
     -   id: requirements-txt-fixer
     -   id: trailing-whitespace
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: 3.7.7
+    hooks:
+    -   id: flake8
 -   repo: https://github.com/asottile/pyupgrade
     rev: v1.27.0
     hooks:
