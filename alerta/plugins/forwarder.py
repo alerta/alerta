@@ -102,7 +102,6 @@ class Forwarder(PluginBase):
             raise ForwardingLoop('Delete forwarded by {} already processed by {}'.format(http_origin, base_url()))
 
         for remote, auth, actions in self.get_config('FWD_DESTINATIONS', default=[], type=list, **kwargs):
-            print('{} actions={}'.format(remote, actions))
             if is_in_xloop(remote):
                 LOG.debug('Forward [action=delete]: {} ; Remote {} already processed delete. Skip.'.format(alert.id, remote))
                 continue
