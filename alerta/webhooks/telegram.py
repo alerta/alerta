@@ -85,7 +85,10 @@ class TelegramWebhook(WebhookBase):
             elif action in ['watch', 'unwatch']:
                 alert.untag(tags=['{}:{}'.format(action, user)])
             elif action == 'blackout':
-                environment, resource, event = command.split('|', 2)
+                # new style paremeters: only alert_id
+                environment = alert.environment
+                resource = alert.resource
+                event = alert.event
                 blackout = Blackout(environment, resource=resource, event=event)
                 blackout.create()
 
