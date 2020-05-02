@@ -45,7 +45,7 @@ setuptools.setup(
         'Flask-Cors>=3.0.2',
         'mohawk',
         'PyJWT',
-        'pymongo>=3.0',
+        'pymongo>=3.6',
         'pyparsing',
         'python-dateutil',
         'pytz',
