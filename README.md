@@ -28,7 +28,7 @@ Requirements
 The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 
 - Postgres version 9.5 or better
-- MongoDB version 3.2 or better (4.0.7 required for full query syntax support)
+- MongoDB version 3.6 or better (4.0.7 required for full query syntax support)
 
 Installation
 ------------
