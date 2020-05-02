@@ -593,7 +593,7 @@ class Backend(Database):
         Return total number of alerts that meet the query filter.
         """
         query = query or Query()
-        return self.get_db().alerts.find(query.where).count()
+        return self.get_db().alerts.count_documents(query.where)
 
     def get_counts(self, query=None, group=None):
         query = query or Query()
