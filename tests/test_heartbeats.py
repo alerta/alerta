@@ -84,14 +84,14 @@ class HeartbeatsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['heartbeat']['timeout'], 240)
 
-        # resend alert with different timeout
+        # resend heartbeat with different timeout
         self.heartbeat['timeout'] = 20
         response = self.client.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['heartbeat']['timeout'], 20)
 
-        # resend alert with timeout disabled (ie. 0)
+        # resend heartbeat with timeout disabled (ie. 0)
         self.heartbeat['timeout'] = 0
         response = self.client.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
         self.assertEqual(response.status_code, 201)
