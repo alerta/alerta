@@ -1,1 +1,3 @@
-from alerta import app  # noqa: F401
+from alerta import create_app
+
+app = create_app()
