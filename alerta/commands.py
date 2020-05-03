@@ -1,10 +1,12 @@
 import sys
 from datetime import datetime, timedelta
+from typing import Any, Dict
 
 import click
-from flask import current_app
+from flask import Flask, current_app
 from flask.cli import FlaskGroup, with_appcontext
 
+from alerta.app import config, db, qb
 from alerta.auth.utils import generate_password_hash
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
@@ -13,12 +15,19 @@ from alerta.settings import DEFAULT_ADMIN_ROLE
 from alerta.version import __version__
 
 
-def _create_app(info):
-    from alerta.app import create_app
-    return create_app()
+def create_app(config_override: Dict[str, Any] = None, environment: str = None) -> Flask:
+    app = Flask(__name__)
+    app.config['ENVIRONMENT'] = environment
+    config.init_app(app)
+    app.config.update(config_override or {})
+
+    db.init_db(app)
+    qb.init_app(app)
+
+    return app
 
 
-@click.group(cls=FlaskGroup, create_app=_create_app, add_version_option=False)
+@click.group(cls=FlaskGroup, create_app=create_app, add_version_option=False)
 @click.version_option(version=__version__)
 def cli():
     """
