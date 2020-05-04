@@ -6,7 +6,7 @@ import click
 from flask import Flask, current_app
 from flask.cli import FlaskGroup, with_appcontext
 
-from alerta.app import config, db, qb
+from alerta.app import config, db, key_helper, qb
 from alerta.auth.utils import generate_password_hash
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
@@ -23,6 +23,7 @@ def create_app(config_override: Dict[str, Any] = None, environment: str = None) 
 
     db.init_db(app)
     qb.init_app(app)
+    key_helper.init_app(app)
 
     return app
 
