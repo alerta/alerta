@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  alerta-web-mom:
+    image: alerta/alerta-beta
+    ports:
+      - 8081:80
+
+  alerta-api-mom:
+    build: .
+    image: alerta-api
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@mom-db/mom
+    depends_on:
+      - mom-db
+    ports:
+      - 8080:8080
+
+  alerta-web-mlm:
+    image: alerta/alerta-beta
+    ports:
+      - 9081:80
+
+  alerta-api-mlm:
+    build: .
+    image: alerta-api
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@mlm-db/mlm
+    depends_on:
+      - mlm-db
+    ports:
+      - 9080:8080
+
+  mom-db:
+    image: postgres
+    volumes:
+      - ./pg-data-mom:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: mom
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: always
+
+  mlm-db:
+    image: postgres
+    volumes:
+      - ./pg-data-mlm:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: mlm
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: always

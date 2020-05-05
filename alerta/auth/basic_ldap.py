@@ -1,7 +1,6 @@
-
 import sys
 
-import ldap
+import ldap  # pylint: disable=import-error
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
@@ -28,14 +27,17 @@ def login():
     except KeyError:
         raise ApiError("must supply 'username' and 'password'", 401)
 
-    if '\\' in login:
-        domain, username = login.split('\\')
-        email = ''
-        email_verified = False
-    else:
-        username, domain = login.split('@')
-        email = login
-        email_verified = True
+    try:
+        if '\\' in login:
+            domain, username = login.split('\\')
+            email = ''
+            email_verified = False
+        else:
+            username, domain = login.split('@')
+            email = login
+            email_verified = True
+    except ValueError:
+        raise ApiError('expected username with domain', 401)
 
     # Validate LDAP domain
     if domain not in current_app.config['LDAP_DOMAINS']:
@@ -99,10 +101,11 @@ def login():
     customers = get_customers(login=login, groups=[user.domain] + groups)
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
-                          user=login, customers=customers, scopes=scopes, resource_id=user.id, type='user',
-                          request=request)
+                          user=login, customers=customers, scopes=scopes, roles=user.roles, groups=groups,
+                          resource_id=user.id, type='user', request=request)
 
     # Generate token
-    token = create_token(user_id=user.id, name=user.name, login=user.email, provider='ldap', customers=customers,
-                         scopes=scopes, roles=user.roles, email=user.email, email_verified=user.email_verified)
+    token = create_token(user_id=user.id, name=user.name, login=user.email, provider='ldap',
+                         customers=customers, scopes=scopes, roles=user.roles, groups=groups,
+                         email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize)

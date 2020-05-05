@@ -1,4 +1,3 @@
-
 import datetime
 import traceback
 from typing import Any, Optional
@@ -46,7 +45,7 @@ def custom_json_dumps(obj: object) -> str:
 
 
 def register_custom_serializer() -> None:
-    from kombu.serialization import register
+    from kombu.serialization import register  # pylint: disable=import-error
     register('customjson', custom_json_dumps, json.loads,
              content_type='application/x-customjson',
              content_encoding='utf-8')

@@ -13,7 +13,7 @@ class GraylogWebhook(WebhookBase):
     See http://docs.graylog.org/en/3.0/pages/streams/alerts.html#http-alert-notification
     """
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
 
         return Alert(
             resource=payload['stream']['title'],

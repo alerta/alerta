@@ -1,4 +1,3 @@
-
 import os
 import platform
 import sys
@@ -11,7 +10,9 @@ from flask import current_app, g
 
 from alerta.app import alarm_model, db
 from alerta.database.base import Query
+from alerta.models.enums import ChangeType
 from alerta.models.history import History, RichHistory
+from alerta.models.note import Note
 from alerta.utils.format import DateTime
 from alerta.utils.hooks import status_change_hook
 from alerta.utils.response import absolute_url
@@ -162,7 +163,8 @@ class Alert:
 
     def __repr__(self) -> str:
         return 'Alert(id={!r}, environment={!r}, resource={!r}, event={!r}, severity={!r}, status={!r}, customer={!r})'.format(
-            self.id, self.environment, self.resource, self.event, self.severity, self.status, self.customer)
+            self.id, self.environment, self.resource, self.event, self.severity, self.status, self.customer
+        )
 
     @classmethod
     def from_document(cls, doc: Dict[str, Any]) -> 'Alert':
@@ -255,10 +257,10 @@ class Alert:
         h_loop = self.get_alert_history(alert=self)
         if len(h_loop) == 1:
             return h_loop[0].status, h_loop[0].value, None
-        if action == 'unack':
-            find = 'ack'
-        elif action == 'unshelve':
-            find = 'shelve'
+        if action == ChangeType.unack:
+            find = ChangeType.ack
+        elif action == ChangeType.unshelve:
+            find = ChangeType.shelve
         else:
             find = None
         for h, h_next in zip(h_loop, h_loop[1:]):
@@ -283,8 +285,7 @@ class Alert:
         self.last_receive_time = now
 
         if new_status != status:
-            text = 'duplicate alert (with status change)'
-            r = status_change_hook.send(duplicate_of, status=new_status, text=text)
+            r = status_change_hook.send(duplicate_of, status=new_status, text=self.text)
             _, (_, new_status, text) = r[0]
             self.update_time = now
 
@@ -295,7 +296,7 @@ class Alert:
                 status=new_status,
                 value=self.value,
                 text=text,
-                change_type='status',
+                change_type=ChangeType.status,
                 update_time=self.create_time,
                 user=g.login,
             )  # type: Optional[History]
@@ -307,8 +308,8 @@ class Alert:
                 severity=self.severity,
                 status=status,
                 value=self.value,
-                text='duplicate alert (with value change)',
-                change_type='value',
+                text=self.text,
+                change_type=ChangeType.value,
                 update_time=self.create_time,
                 user=g.login
             )
@@ -338,12 +339,13 @@ class Alert:
         self.receive_time = now
         self.last_receive_id = self.id
         self.last_receive_time = now
-        text = 'correlated alert'
 
         if new_status != status:
-            r = status_change_hook.send(correlate_with, status=new_status, text=text)
+            r = status_change_hook.send(correlate_with, status=new_status, text=self.text)
             _, (_, new_status, text) = r[0]
             self.update_time = now
+        else:
+            text = self.text
 
         history = [History(
             id=self.id,
@@ -352,7 +354,7 @@ class Alert:
             status=new_status,
             value=self.value,
             text=text,
-            change_type='severity',
+            change_type=ChangeType.severity,
             update_time=self.create_time,
             user=g.login
         )]
@@ -385,8 +387,8 @@ class Alert:
             severity=self.severity,
             status=self.status,
             value=self.value,
-            text='new alert',
-            change_type='new',
+            text=self.text,
+            change_type=ChangeType.new,
             update_time=self.create_time,
             user=g.login
         )]
@@ -422,7 +424,7 @@ class Alert:
             status=status,
             value=self.value,
             text=text,
-            change_type='status',
+            change_type=ChangeType.status,
             update_time=now,
             user=g.login
         )
@@ -439,21 +441,6 @@ class Alert:
     # update alert attributes
     def update_attributes(self, attributes: Dict[str, Any]) -> bool:
         return db.update_attributes(self.id, self.attributes, attributes)
-
-    # add note
-    def add_note(self, note: str) -> bool:
-        history = History(
-            id=self.id,
-            event=self.event,
-            severity=self.severity,
-            status=self.status,
-            value=self.value,
-            text=note,
-            change_type='note',
-            update_time=datetime.utcnow(),
-            user=g.login
-        )
-        return db.add_history(self.id, history)
 
     # delete an alert
     def delete(self) -> bool:
@@ -543,31 +530,40 @@ class Alert:
     def get_tags(query: Query = None) -> List[str]:
         return db.get_alert_tags(query)
 
+    # add note
+    def add_note(self, text: str) -> Note:
+        return Note.from_alert(self, text)
+
+    # get notes for alert
+    def get_alert_notes(self, page: int = 1, page_size: int = 100) -> List['Note']:
+        notes = db.get_alert_notes(self.id, page, page_size)
+        return [Note.from_db(note) for note in notes]
+
     @staticmethod
     def housekeeping(expired_threshold: int = 2, info_threshold: int = 12) -> None:
         now = datetime.utcnow()
-        expired, unshelved = db.housekeeping(expired_threshold, info_threshold)
+        has_expired, has_timedout = db.housekeeping(expired_threshold, info_threshold)
 
-        for (id, event, last_receive_id) in expired:
+        for (id, event, last_receive_id) in has_expired:
             history = History(
                 id=last_receive_id,
                 event=event,
                 status='expired',
-                text='auto-expired after timeout',
-                change_type='status',
+                text='',
+                change_type=ChangeType.expired,
                 update_time=now,
                 user=g.login
             )
             db.set_status(id, 'expired', timeout=current_app.config['ALERT_TIMEOUT'], update_time=now, history=history)
 
-        for (id, event, last_receive_id) in unshelved:
+        for (id, event, last_receive_id) in has_timedout:
             # as per ISA 18.2 recommendation 11.7.3 auto-unshelved alarms transition to open, not previous status
             history = History(
                 id=last_receive_id,
                 event=event,
                 status='open',
-                text='auto-unshelved after timeout',
-                change_type='status',
+                text='',
+                change_type=ChangeType.timeout,
                 update_time=now,
                 user=g.login
             )
@@ -584,7 +580,7 @@ class Alert:
             status=status,
             value=self.value,
             text=text,
-            change_type='status',
+            change_type=ChangeType.status,
             update_time=now,
             user=g.login
         )]
@@ -617,6 +613,11 @@ class Alert:
         r = status_change_hook.send(self, status=new_status, text=text)
         _, (_, new_status, text) = r[0]
 
+        try:
+            change_type = ChangeType(action)
+        except ValueError:
+            change_type = ChangeType.action
+
         history = [History(
             id=self.id,
             event=self.event,
@@ -624,7 +625,7 @@ class Alert:
             status=new_status,
             value=self.value,
             text=text,
-            change_type=action,
+            change_type=change_type,
             update_time=now,
             user=g.login
         )]

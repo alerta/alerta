@@ -28,10 +28,13 @@ class AckedBy(PluginBase):
 
     def take_action(self, alert, action, text, **kwargs):
 
-        if action == 'ack':
+        if action == 'ack' and g.login:
             watch = 'watch:' + g.login
             alert.tags.append(watch)
             alert.attributes['acked-by'] = g.login
         if action == 'unack':
             alert.attributes['acked-by'] = None
         return alert
+
+    def delete(self, alert, **kwargs) -> bool:
+        raise NotImplementedError

@@ -35,9 +35,9 @@ class WebhookBase(metaclass=abc.ABCMeta):
             LOG.info('\n{}\n'.format(self.__doc__))
 
     @abc.abstractmethod
-    def incoming(self, query_string: ImmutableMultiDict, payload: Any) -> Union[Alert, JSON]:
+    def incoming(self, path: str, query_string: ImmutableMultiDict, payload: Any) -> Union[Alert, JSON]:
         """
-        Parse webhook query string and/or payload in JSON or plain text and
+        Parse webhook path, query string and/or payload in JSON or plain text and
         return an alert or a custom JSON response.
         """
         raise NotImplementedError

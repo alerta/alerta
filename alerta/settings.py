@@ -6,7 +6,7 @@
 #
 # Further information on settings can be found at https://docs.alerta.io
 
-from typing import Any, Dict, List  # noqa
+from typing import Any, Dict, List, Tuple  # noqa
 
 DEBUG = False
 
@@ -18,9 +18,10 @@ SECRET_KEY = 'changeme'
 LOG_CONFIG_FILE = ''
 LOG_HANDLERS = ['console']  # ['console', 'file', 'wsgi']
 LOG_FILE = 'alertad.log'  # NOTE: 'file' must be added to LOG_HANDLERS for logging to work
+LOG_LEVEL = 'WARNING'  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 LOG_BACKUP_COUNT = 2
-LOG_FORMAT = 'default'  # ['default', 'simple', 'verbose', 'json'] or any valid logging format
+LOG_FORMAT = 'default'  # 'default', 'simple', 'verbose', 'json' or any valid logging format
 LOG_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
 
 # API settings
@@ -59,11 +60,22 @@ CELERY_RESULT_SERIALIZER = 'customjson'
 AUTH_REQUIRED = False
 AUTH_PROVIDER = 'basic'  # basic (default), ldap, github, openid, saml2, azure, cognito, gitlab, google, keycloak
 ADMIN_USERS = []  # type: List[str]
+DEFAULT_ADMIN_ROLE = 'admin'
+ADMIN_ROLES = [DEFAULT_ADMIN_ROLE]
 USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includes 'read'
+GUEST_DEFAULT_SCOPES = ['read:alerts']
 CUSTOMER_VIEWS = False
 
 BASIC_AUTH_REALM = 'Alerta'
 SIGNUP_ENABLED = True
+
+HMAC_AUTH_CREDENTIALS = [
+    # {
+    #     'id': '',  # access key id  => $ uuidgen | tr '[:upper:]' '[:lower:]'
+    #     'key': '',  # secret key => $ date | md5 | base64
+    #     'algorithm': 'sha256'  # valid hmac algorithm eg. sha256, sha384, sha512
+    # }
+]  # type: List[Dict[str, Any]]
 
 OAUTH2_CLIENT_ID = None  # OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = None
@@ -100,6 +112,7 @@ ALLOWED_KEYCLOAK_ROLES = None
 # OpenID Connect
 OIDC_ISSUER_URL = None
 OIDC_AUTH_URL = None
+OIDC_LOGOUT_URL = None
 OIDC_VERIFY_TOKEN = False
 OIDC_ROLE_CLAIM = OIDC_CUSTOM_CLAIM = 'roles'  # JWT claim name whose value is used in role mapping
 OIDC_GROUP_CLAIM = 'groups'  # JWT claim name whose value is used in customer mapping
@@ -120,6 +133,7 @@ API_KEY_EXPIRE_DAYS = 365  # 1 year
 AUDIT_TRAIL = ['admin']  # possible categories are 'admin', 'write', and 'auth'
 AUDIT_LOG = None  # set to True to log to application logger
 AUDIT_LOG_REDACT = True  # redact sensitive data before logging
+AUDIT_LOG_JSON = False  # log alert data as JSON object
 AUDIT_URL = None  # send audit log events via webhook URL
 
 # CORS settings
@@ -140,9 +154,10 @@ DEFAULT_PREVIOUS_SEVERITY = None
 COLOR_MAP = {}  # type: Dict[str, Any]
 
 # Timeout settings
-DEFAULT_TIMEOUT = 86400
+DEFAULT_TIMEOUT = 86400  # seconds
 ALERT_TIMEOUT = DEFAULT_TIMEOUT
 HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
+HEARTBEAT_MAX_LATENCY = 2000  # ms
 
 # Housekeeping settings
 DEFAULT_EXPIRED_DELETE_HRS = 2  # hours (0 hours = do not delete)
@@ -163,15 +178,16 @@ SMTP_PASSWORD = ''  # password for MAIL_FROM (or SMTP_USERNAME if used)
 
 # Web console settings
 SITE_LOGO_URL = ''  # URL to company logo
+DATE_FORMAT_LONG_DATE = 'ddd D MMM, YYYY HH:mm:ss.SSS Z'  # eg. Tue 9 Oct, 2018 09:24.036 +02:00
+DATE_FORMAT_MEDIUM_DATE = 'ddd D MMM HH:mm'  # eg. Tue 9 Oct 09:24
 DATE_FORMAT_SHORT_TIME = 'HH:mm'  # eg. 09:24
-DATE_FORMAT_MEDIUM_DATE = 'EEE d MMM HH:mm'  # eg. Tue 9 Oct 09:24
-DATE_FORMAT_LONG_DATE = 'd/M/yyyy h:mm:ss.sss a'  # eg. 9/10/2018 9:24:03.036 AM
 DEFAULT_AUDIO_FILE = None  # must exist on client at relative path eg. '/audio/alert_high-intensity.ogg' or URL
 COLUMNS = [
     'severity', 'status', 'lastReceiveTime', 'timeoutLeft', 'duplicateCount',
-    'customer', 'environment', 'service', 'resource', 'event', 'value'
+    'customer', 'environment', 'service', 'resource', 'event', 'value', 'text'
 ]
 SORT_LIST_BY = 'lastReceiveTime'  # newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
+DEFAULT_FILTER = {'status': ['open', 'ack']}
 
 # Alert Status Indicators
 ASI_SEVERITY = [
@@ -190,7 +206,7 @@ GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
 
 # Plugins
-PLUGINS = ['remote_ip', 'reject', 'heartbeat', 'blackout']
+PLUGINS = ['remote_ip', 'reject', 'heartbeat', 'blackout', 'forwarder']
 PLUGINS_RAISE_ON_ERROR = True  # raise RuntimeError exception on first failure
 
 # reject plugin settings
@@ -203,3 +219,14 @@ BLACKOUT_DURATION = 3600  # default period = 1 hour
 NOTIFICATION_BLACKOUT = False  # True - set alert status=blackout, False - do not process alert (default)
 BLACKOUT_ACCEPT = []  # type: List[str]
 # BLACKOUT_ACCEPT = ['normal', 'ok', 'cleared']  # list of severities accepted during blackout period
+
+# northbound interface
+FWD_DESTINATIONS = [
+    # ('http://localhost:9000', {'username': 'user', 'password': 'pa55w0rd', 'timeout': 10}, ['alerts', 'actions']),  # BasicAuth
+    # ('https://httpbin.org/anything', dict(username='foo', password='bar', ssl_verify=False), ['alerts', 'actions']),
+    # ('http://localhost:9000', {'key': 'access-key', 'secret': 'secret-key'}, ['alerts', 'actions']),  # Hawk HMAC
+    # ('http://localhost:9000', {'key': 'my-api-key'}, ['alerts', 'actions']),  # API key
+    # ('http://localhost:9000', {'token': 'bearer-token'}, ['alerts', 'actions']),  # Bearer token
+]  # type: List[Tuple]
+
+# valid actions=['*', 'alerts', 'actions', 'open', 'assign', 'ack', 'unack', 'shelve', 'unshelve', 'close', 'delete']

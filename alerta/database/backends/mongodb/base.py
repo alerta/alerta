@@ -7,7 +7,7 @@ from pymongo.errors import ConnectionFailure
 
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
-from alerta.models.enums import Scope
+from alerta.models.enums import ADMIN_SCOPES
 
 from .utils import Query
 
@@ -593,7 +593,7 @@ class Backend(Database):
         Return total number of alerts that meet the query filter.
         """
         query = query or Query()
-        return self.get_db().alerts.find(query.where).count()
+        return self.get_db().alerts.count_documents(query.where)
 
     def get_counts(self, query=None, group=None):
         query = query or Query()
@@ -638,7 +638,7 @@ class Backend(Database):
             {'$limit': topn}
         ]
 
-        responses = self.get_db().alerts.aggregate(pipeline)
+        responses = self.get_db().alerts.aggregate(pipeline, allowDiskUse=True)
 
         top = list()
         for response in responses:
@@ -675,7 +675,7 @@ class Backend(Database):
             {'$limit': topn}
         ]
 
-        responses = self.get_db().alerts.aggregate(pipeline)
+        responses = self.get_db().alerts.aggregate(pipeline, allowDiskUse=True)
 
         top = list()
         for response in responses:
@@ -711,7 +711,7 @@ class Backend(Database):
             {'$limit': topn}
         ]
 
-        responses = self.get_db().alerts.aggregate(pipeline)
+        responses = self.get_db().alerts.aggregate(pipeline, allowDiskUse=True)
         top = list()
         for response in responses:
             top.append(
@@ -1154,6 +1154,7 @@ class Backend(Database):
                 '$set': {
                     'origin': heartbeat.origin,
                     'tags': heartbeat.tags,
+                    'attributes': heartbeat.attributes,
                     'type': heartbeat.event_type,
                     'createTime': heartbeat.create_time,
                     'timeout': heartbeat.timeout,
@@ -1435,12 +1436,16 @@ class Backend(Database):
 
     def get_scopes_by_match(self, login, matches):
         if login in current_app.config['ADMIN_USERS']:
-            return [Scope.admin, Scope.read, Scope.write]
+            return ADMIN_SCOPES
 
         scopes = list()
         for match in matches:
+            if match in current_app.config['ADMIN_ROLES']:
+                return ADMIN_SCOPES
             if match == 'user':
                 scopes.extend(current_app.config['USER_DEFAULT_SCOPES'])
+            if match == 'guest':
+                scopes.extend(current_app.config['GUEST_DEFAULT_SCOPES'])
             response = self.get_db().perms.find_one({'match': match}, projection={'scopes': 1, '_id': 0})
             if response:
                 scopes.extend(response['scopes'])
@@ -1492,6 +1497,55 @@ class Backend(Database):
             return customers
 
         raise NoCustomerMatch("No customer lookup configured for user '{}' or '{}'".format(login, ','.join(matches)))
+
+    # NOTES
+
+    def create_note(self, note):
+        data = {
+            '_id': note.id,
+            'text': note.text,
+            'user': note.user,
+            'attributes': note.attributes,
+            'type': note.note_type,
+            'createTime': note.create_time,
+            'updateTime': note.update_time,
+            'alert': note.alert
+        }
+        if note.customer:
+            data['customer'] = note.customer
+
+        if self.get_db().notes.insert_one(data).inserted_id == note.id:
+            return data
+
+    def get_note(self, id):
+        query = {'_id': id}
+        return self.get_db().notes.find_one(query)
+
+    def get_notes(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        return self.get_db().notes.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+
+    def get_alert_notes(self, id, page=None, page_size=None):
+        if len(id) == 8:
+            query = {'alert': {'$regex': '^' + id}}
+        else:
+            query = {'alert': id}
+        return self.get_db().notes.find(query).skip((page - 1) * page_size).limit(page_size)
+
+    def get_customer_notes(self, customer, page=None, page_size=None):
+        return self.get_db().notes.find({'customer': customer}).skip((page - 1) * page_size).limit(page_size)
+
+    def update_note(self, id, **kwargs):
+        kwargs['updateTime'] = datetime.utcnow()
+        return self.get_db().notes.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
+    def delete_note(self, id):
+        response = self.get_db().notes.delete_one({'_id': id})
+        return True if response.deleted_count == 1 else False
 
     # METRICS
 
@@ -1582,10 +1636,10 @@ class Backend(Database):
                 'event': 1, 'status': 1, 'lastReceiveId': 1, 'timeout': 1,
                 'expireTime': {'$add': ['$lastReceiveTime', {'$multiply': ['$timeout', 1000]}]}}
              },
-            {'$match': {'status': {'$nin': ['expired', 'shelved']}, 'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {
+            {'$match': {'status': {'$nin': ['expired', 'ack', 'shelved']}, 'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {
                 '$ne': 0}}}
         ]
-        expired = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
+        has_expired = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
 
         # get list of alerts to be unshelved
         pipeline = [
@@ -1610,6 +1664,31 @@ class Backend(Database):
             }},
             {'$match': {'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {'$ne': 0}}}
         ]
-        unshelved = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
+        unshelve = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
 
-        return (expired, unshelved)
+        # get list of alerts to be unack'ed
+        pipeline = [
+            {'$match': {'status': 'ack'}},
+            {'$unwind': '$history'},
+            {'$match': {
+                'history.type': 'ack',
+                'history.status': 'ack'
+            }},
+            {'$sort': {'history.updateTime': -1}},
+            {'$group': {
+                '_id': '$_id',
+                'event': {'$first': '$event'},
+                'lastReceiveId': {'$first': '$lastReceiveId'},
+                'updateTime': {'$first': '$history.updateTime'},
+                'timeout': {'$first': '$timeout'}
+            }},
+            {'$project': {
+                'event': 1,
+                'lastReceiveId': 1,
+                'expireTime': {'$add': ['$updateTime', {'$multiply': ['$timeout', 1000]}]}
+            }},
+            {'$match': {'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {'$ne': 0}}}
+        ]
+        unack = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
+
+        return has_expired, unshelve + unack

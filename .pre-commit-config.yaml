@@ -1,10 +1,10 @@
 repos:
 -   repo: https://github.com/pre-commit/mirrors-autopep8
-    rev: v1.4.4
+    rev: v1.5.1
     hooks:
     -   id: autopep8
 -   repo: https://github.com/pre-commit/pre-commit-hooks.git
-    rev: v2.2.3
+    rev: v2.5.0
     hooks:
     -   id: check-added-large-files
     -   id: check-ast
@@ -17,7 +17,6 @@ repos:
     -   id: debug-statements
     -   id: double-quote-string-fixer
     -   id: end-of-file-fixer
-    -   id: flake8
     -   id: fix-encoding-pragma
         args: ['--remove']
     -   id: pretty-format-json
@@ -26,13 +25,17 @@ repos:
         args: ['--django']
     -   id: requirements-txt-fixer
     -   id: trailing-whitespace
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: 3.7.7
+    hooks:
+    -   id: flake8
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v1.22.0
+    rev: v1.27.0
     hooks:
     -   id: pyupgrade
         args: ['--py3-plus']
 -   repo: https://github.com/asottile/seed-isort-config
-    rev: v1.9.2
+    rev: v1.9.4
     hooks:
     -   id: seed-isort-config
 -   repo: https://github.com/pre-commit/mirrors-isort

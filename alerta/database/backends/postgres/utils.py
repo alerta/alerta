@@ -89,7 +89,7 @@ class QueryBuilderImpl(QueryBuilder):
         # id
         ids = params.getlist('id')
         if len(ids) == 1:
-            query.append('AND (id LIKE %(id)s OR last_receive_id LIKE %(id)s)')
+            query.append('AND (alerts.id LIKE %(id)s OR last_receive_id LIKE %(id)s)')
             qvars['id'] = ids[0] + '%'
         elif ids:
             query.append('AND (id ~* (%(regex_id)s) OR last_receive_id ~* (%(regex_id)s))')

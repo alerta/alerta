@@ -1,4 +1,3 @@
-
 import base64
 import hashlib
 import hmac
@@ -7,7 +6,7 @@ from typing import List
 
 from flask import Flask
 
-from alerta.models.enums import Scope
+from alerta.models.enums import ADMIN_SCOPES, Scope
 
 
 class ApiKeyHelper:
@@ -36,7 +35,7 @@ class ApiKeyHelper:
 
     def type_to_scopes(self, user: str, key_type: str) -> List[Scope]:
         if user in self.admin_users:
-            return [Scope.admin, Scope.read, Scope.write]
+            return ADMIN_SCOPES
         if key_type == 'read-write':
             return [Scope.read, Scope.write]
         if key_type == 'read-only':

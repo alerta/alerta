@@ -1,4 +1,3 @@
-
 import json
 import unittest
 from uuid import uuid4
@@ -13,7 +12,9 @@ class HeartbeatsTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': False,
-            'HEARTBEAT_TIMEOUT': 240
+            'HEARTBEAT_TIMEOUT': 240,
+            'HEARTBEAT_EVENTS': ['Heartbeat', 'Watchdog'],
+            'PLUGINS': ['heartbeat']
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -83,14 +84,14 @@ class HeartbeatsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['heartbeat']['timeout'], 240)
 
-        # resend alert with different timeout
+        # resend heartbeat with different timeout
         self.heartbeat['timeout'] = 20
         response = self.client.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['heartbeat']['timeout'], 20)
 
-        # resend alert with timeout disabled (ie. 0)
+        # resend heartbeat with timeout disabled (ie. 0)
         self.heartbeat['timeout'] = 0
         response = self.client.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
         self.assertEqual(response.status_code, 201)
@@ -107,7 +108,7 @@ class HeartbeatsTestCase(unittest.TestCase):
     def test_heartbeat_from_alert(self):
 
         heartbeat_alert = {
-            'event': 'Heartbeat',
+            'event': 'Watchdog',
             'resource': 'net01',
             'environment': 'Production',
             'service': ['Svc1'],

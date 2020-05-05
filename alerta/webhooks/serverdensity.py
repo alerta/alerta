@@ -13,7 +13,7 @@ class ServerDensityWebhook(WebhookBase):
     See https://support.serverdensity.com/hc/en-us/articles/360001067183-Setting-up-webhooks
     """
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
 
         if payload['fixed']:
             severity = 'ok'

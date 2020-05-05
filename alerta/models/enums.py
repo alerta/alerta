@@ -57,3 +57,38 @@ class Scope(str, Enum):
             return Scope('{}:{}'.format(action, resource))
         else:
             return Scope(action)
+
+
+ADMIN_SCOPES = [Scope.admin, Scope.read, Scope.write]
+
+
+class ChangeType(str, Enum):
+
+    open = 'open'
+    assign = 'assign'
+    ack = 'ack'
+    unack = 'unack'
+    shelve = 'shelve'
+    unshelve = 'unshelve'
+    close = 'close'
+
+    new = 'new'
+    action = 'action'
+    status = 'status'
+    value = 'value'
+    severity = 'severity'
+    note = 'note'
+    timeout = 'timeout'
+    expired = 'expired'
+
+
+class NoteType(str, Enum):
+
+    alert = 'alert'
+    blackout = 'blackout'
+    customer = 'customer'
+    group = 'group'
+    heartbeat = 'heartbeat'
+    key = 'api-key'
+    perm = 'permission'
+    user = 'user'

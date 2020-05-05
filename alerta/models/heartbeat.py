@@ -1,4 +1,3 @@
-
 import os
 import platform
 import sys
@@ -13,8 +12,6 @@ from alerta.database.base import Query
 from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
-MAX_LATENCY = 2000  # ms
-
 JSON = Dict[str, Any]
 
 
@@ -22,7 +19,13 @@ class Heartbeat:
 
     def __init__(self, origin: str = None, tags: List[str] = None, create_time: datetime = None, timeout: int = None, customer: str = None, **kwargs) -> None:
 
+        if any(['.' in key for key in kwargs.get('attributes', dict()).keys()]) \
+                or any(['$' in key for key in kwargs.get('attributes', dict()).keys()]):
+            raise ValueError('Attribute keys must not contain "." or "$"')
+
         timeout = timeout if timeout is not None else current_app.config['HEARTBEAT_TIMEOUT']
+        max_latency = current_app.config['HEARTBEAT_MAX_LATENCY']
+
         try:
             timeout = int(timeout)
         except ValueError:
@@ -30,12 +33,21 @@ class Heartbeat:
         if timeout < 0:
             raise ValueError("Invalid negative 'timeout' value ({})".format(timeout))
 
+        try:
+            max_latency = int(max_latency)
+        except ValueError:
+            raise ValueError("Could not convert 'max_latency' value of '{}' to an integer".format(timeout))
+        if timeout < 0:
+            raise ValueError("Invalid negative 'max_latency' value ({})".format(timeout))
+
         self.id = kwargs.get('id', str(uuid4()))
         self.origin = origin or '{}/{}'.format(os.path.basename(sys.argv[0]), platform.uname()[1])
         self.tags = tags or list()
+        self.attributes = kwargs.get('attributes', None) or dict()
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'Heartbeat'
         self.create_time = create_time or datetime.utcnow()
         self.timeout = timeout
+        self.max_latency = max_latency
         self.receive_time = kwargs.get('receive_time', None) or datetime.utcnow()
         self.customer = customer
 
@@ -50,10 +62,10 @@ class Heartbeat:
 
     @property
     def status(self) -> str:
-        if self.latency > MAX_LATENCY:
-            return 'slow'
-        elif self.since.total_seconds() > self.timeout:
+        if self.since.total_seconds() > self.timeout:
             return 'expired'  # aka 'stale'
+        elif self.latency > self.max_latency:
+            return 'slow'
         else:
             return 'ok'
 
@@ -63,12 +75,15 @@ class Heartbeat:
             raise ValueError('tags must be a list')
         if not isinstance(json.get('timeout') if json.get('timeout', None) is not None else 0, int):
             raise ValueError('timeout must be an integer')
+        if not isinstance(json.get('attributes', {}), dict):
+            raise ValueError('attributes must be a JSON object')
         if json.get('customer', None) == '':
             raise ValueError('customer must not be an empty string')
 
         return Heartbeat(
             origin=json.get('origin', None),
             tags=json.get('tags', list()),
+            attributes=json.get('attributes', dict()),
             create_time=DateTime.parse(json['createTime']) if 'createTime' in json else None,
             timeout=json.get('timeout', None),
             customer=json.get('customer', None)
@@ -81,9 +96,11 @@ class Heartbeat:
             'href': absolute_url('/heartbeat/' + self.id),
             'origin': self.origin,
             'tags': self.tags,
+            'attributes': self.attributes,
             'type': self.event_type,
             'createTime': self.create_time,
             'timeout': self.timeout,
+            'maxLatency': self.max_latency,
             'receiveTime': self.receive_time,
             'customer': self.customer,
             'latency': self.latency,
@@ -101,6 +118,7 @@ class Heartbeat:
             id=doc.get('id', None) or doc.get('_id'),
             origin=doc.get('origin', None),
             tags=doc.get('tags', list()),
+            attributes=doc.get('attributes', dict()),
             event_type=doc.get('type', None),
             create_time=doc.get('createTime', None),
             timeout=doc.get('timeout', None),
@@ -114,6 +132,7 @@ class Heartbeat:
             id=rec.id,
             origin=rec.origin,
             tags=rec.tags,
+            attributes=dict(getattr(rec, 'attributes') or ()),
             event_type=rec.type,
             create_time=rec.create_time,
             timeout=rec.timeout,

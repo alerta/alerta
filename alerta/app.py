@@ -5,7 +5,7 @@ from flask import Flask
 from flask_compress import Compress
 from flask_cors import CORS
 from sentry_sdk.integrations.flask import FlaskIntegration
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from alerta.database.base import Database, QueryBuilder
 from alerta.exceptions import ExceptionHandlers
@@ -53,7 +53,7 @@ def create_app(config_override: Dict[str, Any] = None, environment: str = None) 
     logger.setup_logging(app)
 
     if app.config['USE_PROXYFIX']:
-        app.wsgi_app = ProxyFix(app.wsgi_app)
+        app.wsgi_app = ProxyFix(app.wsgi_app)  # type: ignore
 
     hooks.init_app(app)
     audit.init_app(app)

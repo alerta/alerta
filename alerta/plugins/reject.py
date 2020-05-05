@@ -47,3 +47,6 @@ class RejectPolicy(PluginBase):
 
     def take_action(self, alert, action, text, **kwargs):
         raise NotImplementedError
+
+    def delete(self, alert, **kwargs) -> bool:
+        raise NotImplementedError

@@ -1,4 +1,3 @@
-
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
@@ -7,6 +6,7 @@ from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.enums import Scope
 from alerta.models.permission import Permission
+from alerta.settings import DEFAULT_ADMIN_ROLE
 from alerta.utils.audit import admin_audit_trail
 from alerta.utils.response import jsonp
 
@@ -23,7 +23,7 @@ def create_perm():
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    if perm.match in ['admin', 'user']:
+    if perm.match in [DEFAULT_ADMIN_ROLE, 'user', 'guest']:
         raise ApiError('{} role already exists'.format(perm.match), 409)
 
     for want_scope in perm.scopes:
@@ -67,24 +67,31 @@ def list_perms():
     perms = Permission.find_all(query)
 
     admin_perm = Permission(
-        match='admin',
+        match=DEFAULT_ADMIN_ROLE,
         scopes=[Scope.admin]
     )
     user_perm = Permission(
         match='user',
         scopes=current_app.config['USER_DEFAULT_SCOPES']
     )
+    guest_perm = Permission(
+        match='guest',
+        scopes=current_app.config['GUEST_DEFAULT_SCOPES']
+    )
 
-    # add system-defined roles 'admin' and 'user'
+    # add system-defined roles 'admin', 'user' and 'guest
     if 'scopes' in request.args:
         want_scopes = request.args.getlist('scopes')
         if set(admin_perm.scopes) & set(want_scopes):
             perms.append(admin_perm)
         if set(user_perm.scopes) & set(want_scopes):
             perms.append(user_perm)
+        if set(guest_perm.scopes) & set(want_scopes):
+            perms.append(guest_perm)
     else:
         perms.append(admin_perm)
         perms.append(user_perm)
+        perms.append(guest_perm)
 
     if perms:
         return jsonify(
@@ -121,8 +128,9 @@ def update_perm(perm_id):
     admin_audit_trail.send(current_app._get_current_object(), event='permission-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=perm.id, type='permission', request=request)
 
-    if perm.update(**request.json):
-        return jsonify(status='ok')
+    updated = perm.update(**request.json)
+    if updated:
+        return jsonify(status='ok', permission=updated.serialize)
     else:
         raise ApiError('failed to update permission', 500)
 

@@ -38,20 +38,22 @@ setuptools.setup(
     author_email='nick.satterly@gmail.com',
     packages=setuptools.find_packages(exclude=['tests']),
     install_requires=[
+        'bcrypt',
+        'cryptography',
         'Flask>=0.10.1',
-        'Flask-Cors>=3.0.2',
         'Flask-Compress>=1.4.0',
-        'sentry-sdk[flask]>=0.10.2',
-        'pymongo>=3.0',
+        'Flask-Cors>=3.0.2',
+        'mohawk',
+        'PyJWT',
+        'pymongo>=3.6',
         'pyparsing',
-        'requests',
         'python-dateutil',
         'pytz',
-        'PyJWT',
-        'cryptography',
         'pyyaml',
-        'bcrypt',
-        'voluptuous'
+        'requests',
+        'requests-hawk',
+        'sentry-sdk[flask]>=0.10.2',
+        'voluptuous',
     ],
     extras_require={
         'mongodb': ['pymongo>=3.0'],
@@ -68,7 +70,8 @@ setuptools.setup(
             'reject = alerta.plugins.reject:RejectPolicy',
             'heartbeat = alerta.plugins.heartbeat:HeartbeatReceiver',
             'blackout = alerta.plugins.blackout:BlackoutHandler',
-            'acked_by = alerta.plugins.acked_by:AckedBy'
+            'acked_by = alerta.plugins.acked_by:AckedBy',
+            'forwarder = alerta.plugins.forwarder:Forwarder'
         ],
         'alerta.webhooks': [
             'cloudwatch = alerta.webhooks.cloudwatch:CloudWatchWebhook',
@@ -95,6 +98,7 @@ setuptools.setup(
         'Intended Audience :: System Administrators',
         'Intended Audience :: Telecommunications Industry',
         'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.5',

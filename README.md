@@ -28,7 +28,7 @@ Requirements
 The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 
 - Postgres version 9.5 or better
-- MongoDB version 3.2 or better
+- MongoDB version 3.6 or better (4.0.7 required for full query syntax support)
 
 Installation
 ------------
@@ -113,12 +113,20 @@ JavaScript logging, network problems and API error responses.
 Tests
 -----
 
-To run the tests using a local Postgres database run:
+To run the *all* the tests there must be a local Postgres
+and MongoDB database running. Then run:
 
-    $ pip install -r requirements.txt
-    $ pip install -e .[postgres]
-    $ createdb test5
-    $ ALERTA_SVR_CONF_FILE= DATABASE_URL=postgres:///test5 pytest
+    $ TOXENV=ALL make test
+
+To just run the Postgres or MongoDB tests run:
+
+    $ TOXENV=postgres make test
+    $ TOXENV=mongodb make test
+
+To run a single test run something like:
+
+    $ TOXENV="mongodb -- tests/test_search.py::QueryParserTestCase::test_boolean_operators" make test
+    $ TOXENV="postgres -- tests/test_queryparser.py::PostgresQueryTestCase::test_boolean_operators" make test
 
 Cloud Deployment
 ----------------
@@ -131,7 +139,7 @@ License
 -------
 
     Alerta monitoring system and console
-    Copyright 2012-2019 Nick Satterly
+    Copyright 2012-2020 Nick Satterly
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

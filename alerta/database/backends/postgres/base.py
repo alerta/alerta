@@ -9,7 +9,7 @@ from psycopg2.extras import Json, NamedTupleCursor, register_composite
 
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
-from alerta.models.enums import Scope
+from alerta.models.enums import ADMIN_SCOPES
 from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
@@ -423,6 +423,14 @@ class Backend(Database):
 
     def get_history(self, query=None, page=None, page_size=None):
         query = query or Query()
+        if 'id' in query.vars:
+            select = """
+                SELECT a.id
+                  FROM alerts a, unnest(history[1:{limit}]) h
+                 WHERE h.id LIKE %(id)s
+            """.format(limit=current_app.config['HISTORY_LIMIT'])
+            query.vars['id'] = self._fetchone(select, query.vars)
+
         select = """
             SELECT resource, environment, service, "group", tags, attributes, origin, customer, history, h.*
               FROM alerts, unnest(history[1:{limit}]) h
@@ -768,10 +776,10 @@ class Backend(Database):
 
     def upsert_heartbeat(self, heartbeat):
         upsert = """
-            INSERT INTO heartbeats (id, origin, tags, type, create_time, timeout, receive_time, customer)
-            VALUES (%(id)s, %(origin)s, %(tags)s, %(event_type)s, %(create_time)s, %(timeout)s, %(receive_time)s, %(customer)s)
+            INSERT INTO heartbeats (id, origin, tags, attributes, type, create_time, timeout, receive_time, customer)
+            VALUES (%(id)s, %(origin)s, %(tags)s, %(attributes)s, %(event_type)s, %(create_time)s, %(timeout)s, %(receive_time)s, %(customer)s)
             ON CONFLICT (origin, COALESCE(customer, '')) DO UPDATE
-                SET tags=%(tags)s, create_time=%(create_time)s, timeout=%(timeout)s, receive_time=%(receive_time)s
+                SET tags=%(tags)s, attributes=%(attributes)s, create_time=%(create_time)s, timeout=%(timeout)s, receive_time=%(receive_time)s
             RETURNING *
         """
         return self._upsert(upsert, vars(heartbeat))
@@ -831,6 +839,8 @@ class Backend(Database):
             UPDATE keys
             SET
         """
+        if 'user' in kwargs:
+            update += '"user"=%(user)s, '
         if 'scopes' in kwargs:
             update += 'scopes=%(scopes)s, '
         if 'text' in kwargs:
@@ -1096,12 +1106,16 @@ class Backend(Database):
 
     def get_scopes_by_match(self, login, matches):
         if login in current_app.config['ADMIN_USERS']:
-            return [Scope.admin, Scope.read, Scope.write]
+            return ADMIN_SCOPES
 
         scopes = list()
         for match in matches:
+            if match in current_app.config['ADMIN_ROLES']:
+                return ADMIN_SCOPES
             if match == 'user':
                 scopes.extend(current_app.config['USER_DEFAULT_SCOPES'])
+            if match == 'guest':
+                scopes.extend(current_app.config['GUEST_DEFAULT_SCOPES'])
             select = """SELECT scopes FROM perms WHERE match=%s"""
             response = self._fetchone(select, (match,))
             if response:
@@ -1173,6 +1187,75 @@ class Backend(Database):
 
         raise NoCustomerMatch("No customer lookup configured for user '{}' or '{}'".format(login, ','.join(matches)))
 
+    # NOTES
+
+    def create_note(self, note):
+        insert = """
+            INSERT INTO notes (id, text, "user", attributes, type,
+                create_time, update_time, alert, customer)
+            VALUES (%(id)s, %(text)s, %(user)s, %(attributes)s, %(note_type)s,
+                %(create_time)s, %(update_time)s, %(alert)s, %(customer)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(note))
+
+    def get_note(self, id):
+        select = """
+            SELECT * FROM notes
+            WHERE id=%s
+        """
+        return self._fetchone(select, (id,))
+
+    def get_notes(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        select = """
+            SELECT * FROM notes
+             WHERE {where}
+          ORDER BY {order}
+        """.format(where=query.where, order=query.sort or 'create_time')
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_alert_notes(self, id, page=None, page_size=None):
+        select = """
+            SELECT * FROM notes
+             WHERE alert ~* (%s)
+        """
+        return self._fetchall(select, (id,), limit=page_size, offset=(page - 1) * page_size)
+
+    def get_customer_notes(self, customer, page=None, page_size=None):
+        select = """
+            SELECT * FROM notes
+             WHERE customer=%s
+        """
+        return self._fetchall(select, (customer,), limit=page_size, offset=(page - 1) * page_size)
+
+    def update_note(self, id, **kwargs):
+        update = """
+            UPDATE notes
+            SET
+        """
+        if kwargs.get('text', None) is not None:
+            update += 'text=%(text)s, '
+        if kwargs.get('attributes', None) is not None:
+            update += 'attributes=attributes || %(attributes)s, '
+        update += """
+            "user"=COALESCE(%(user)s, "user"),
+            update_time=NOW() at time zone 'utc'
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs['id'] = id
+        kwargs['user'] = kwargs.get('user')
+        return self._updateone(update, kwargs, returning=True)
+
+    def delete_note(self, id):
+        delete = """
+            DELETE FROM notes
+            WHERE id=%s
+            RETURNING id
+        """
+        return self._deleteone(delete, (id,), returning=True)
+
     # METRICS
 
     def get_metrics(self, type=None):
@@ -1236,10 +1319,10 @@ class Backend(Database):
         select = """
             SELECT id, event, last_receive_id
               FROM alerts
-             WHERE status NOT IN ('expired','shelved') AND COALESCE(timeout, {timeout})!=0
+             WHERE status NOT IN ('expired','ack','shelved') AND COALESCE(timeout, {timeout})!=0
                AND (last_receive_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """.format(timeout=current_app.config['ALERT_TIMEOUT'])
-        expired = self._fetchall(select, {})
+        has_expired = self._fetchall(select, {})
 
         # get list of alerts to be unshelved
         select = """
@@ -1255,9 +1338,25 @@ class Backend(Database):
           FROM shelved
          WHERE timeout!=0 AND (update_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """
-        unshelved = self._fetchall(select, {})
+        unshelve = self._fetchall(select, {})
 
-        return (expired, unshelved)
+        # get list of alerts to be unack'ed
+        select = """
+        WITH acked AS (
+            SELECT DISTINCT ON (a.id) a.id, a.event, a.last_receive_id, h.update_time, a.timeout
+              FROM alerts a, UNNEST(history) h
+             WHERE a.status='ack'
+               AND h.type='ack'
+               AND h.status='ack'
+          ORDER BY a.id, h.update_time DESC
+        )
+        SELECT id, event, last_receive_id
+          FROM acked
+         WHERE timeout!=0 AND (update_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
+        """
+        unack = self._fetchall(select, {})
+
+        return has_expired, unshelve + unack
 
     # SQL HELPERS
 

@@ -71,7 +71,7 @@ class QueryParserTestCase(unittest.TestCase):
                 'value': 'johno',
                 'text': 'panic: this is a foo alert',
                 'tags': ['aaa', 'bbb', 'ccc'],
-                'attributes': {'region': 'NORAM'},
+                'attributes': {'region': 'EMEA'},
                 'origin': 'alpha',
                 'timeout': 100,
                 'rawData': ''
@@ -178,6 +178,9 @@ class QueryParserTestCase(unittest.TestCase):
         self.assertEqual(self._search(q='_exists_:region'), 4)
         self.assertEqual(self._search(q='service:Shared'), 4)
         self.assertEqual(self._search(q='tags:aaa'), 3)
+        self.assertEqual(self._search(q='attributes.region:EMEA'), 2)
+        self.assertEqual(self._search(q='_.region:EMEA'), 2)
+        self.assertEqual(self._search(q='_.region:(EMEA LATAM)'), 3)
 
     def test_wildcards(self):
         self.assertEqual(self._search(q='f*'), 4)
@@ -201,6 +204,28 @@ class QueryParserTestCase(unittest.TestCase):
         self.assertEqual(self._search(q='timeout:>=500'), 1)
         self.assertEqual(self._search(q='timeout:<500'), 4)
         self.assertEqual(self._search(q='timeout:<=500'), 5)
+
+    def test_boolean_operators(self):
+        self.assertEqual(self._search(q='"foo bar" foo'), 3)
+        self.assertEqual(self._search(q='"foo bar" OR foo'), 3)
+        self.assertEqual(self._search(q='"foo bar" || foo'), 3)
+
+        self.assertEqual(self._search(q='"foo bar" AND "bar baz"'), 1)
+        self.assertEqual(self._search(q='"foo bar" %26%26 "bar baz"'), 1)  # URL encode ampersands i.e &=%26
+
+        self.assertEqual(self._search(q='"foo bar" NOT "bar baz"'), 1)
+        self.assertEqual(self._search(q='"foo bar" !"bar baz"'), 1)
+        self.assertEqual(self._search(q='"foo bar" AND NOT "bar baz"'), 1)
+        self.assertEqual(self._search(q='NOT "foo bar"'), 3)
+
+        self.assertEqual(self._search(q='foo resource:net01'), 3)
+        self.assertEqual(self._search(q='foo OR resource:net01'), 3)
+        self.assertEqual(self._search(q='foo AND resource:net01'), 1)
+
+        self.assertEqual(self._search(q='foo !resource:net01'), 2)
+        self.assertEqual(self._search(q='foo NOT resource:net01'), 2)
+        self.assertEqual(self._search(q='foo AND !resource:net01'), 2)
+        self.assertEqual(self._search(q='foo AND NOT resource:net01'), 2)
 
     def test_grouping(self):
         self.assertEqual(self._search(q='(foo OR bar) AND baz'), 2)

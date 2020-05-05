@@ -1,59 +1,123 @@
+#!make
 
-PYTHON=python
-VERSION=`cut -d "'" -f 2 alerta/version.py`
+VENV=venv
+PYTHON=$(VENV)/bin/python
+PIP=$(VENV)/bin/pip --disable-pip-version-check
+PYLINT=$(VENV)/bin/pylint
+MYPY=$(VENV)/bin/mypy
+BLACK=$(VENV)/bin/black
+TOX=$(VENV)/bin/tox
+PYTEST=$(VENV)/bin/pytest
+PRE_COMMIT=$(VENV)/bin/pre-commit
+WHEEL=$(VENV)/bin/wheel
+TWINE=$(VENV)/bin/twine
+GIT=git
+
+.DEFAULT_GOAL:=help
+
+-include .env .env.local .env.*.local
+
+ifndef PROJECT
+$(error PROJECT is not set)
+endif
+
+VERSION=$(shell cut -d "'" -f 2 $(PROJECT)/version.py)
+
+PKG_SDIST=dist/*-$(VERSION).tar.gz
+PKG_WHEEL=dist/*-$(VERSION)-*.whl
 
 all:	help
 
-help:
-	@echo ""
-	@echo "Usage: make <command>"
-	@echo ""
-	@echo "Commands:"
-	@echo "   init    Initialise environment"
-	@echo "   dev     Initialise dev environment"
-	@echo "   pylint  Lint source code"
-	@echo "   mypy    Type checking"
-	@echo "   clean   Clean source"
-	@echo "   test    Run tests"
-	@echo "   run     Run application"
-	@echo "   tag     Git tag with current version"
-	@echo "   upload  Upload package to PyPI"
-	@echo ""
+$(PIP):
+	python3 -m venv $(VENV)
 
-init:
-	pip install -r requirements.txt --upgrade
-	pip install -e .
+$(PYLINT): $(PIP)
+	$(PIP) install pylint
 
-dev:
-	pip install -r requirements-dev.txt --upgrade
-	pre-commit install
-	pre-commit autoupdate
+$(MYPY): $(PIP)
+	$(PIP) install mypy
 
-pylint:
-	@pip -q install pylint
-	pylint --rcfile pylintrc alerta
+$(BLACK): $(PIP)
+	$(PIP) install black
 
-mypy:
-	@pip -q install mypy==0.620
-	mypy alerta/
+$(TOX): $(PIP)
+	$(PIP) install tox
 
-hooks:
-	pre-commit run --all-files
+$(PYTEST): $(PIP)
+	$(PIP) install pytest
 
-clean:
-	find . -name "*.pyc" -exec rm {} \;
-	rm -Rf build dist *.egg-info
+$(PRE_COMMIT): $(PIP)
+	$(PIP) install pre-commit
 
-test:
-	ALERTA_SVR_CONF_FILE= pytest
+$(WHEEL): $(PIP)
+	$(PIP) install wheel
 
+$(TWINE): $(PIP)
+	$(PIP) install twine
+
+ifdef TOXENV
+toxparams?=-e $(TOXENV)
+endif
+
+## format			- Code formatter.
+format: $(BLACK)
+	$(BLACK) -l120 -S -v $(PROJECT)
+
+## lint			- Lint and type checking.
+lint: $(PYLINT) $(MYPY) $(BLACK)
+	$(PYLINT) --rcfile pylintrc $(PROJECT)
+	$(MYPY) $(PROJECT)/
+	$(BLACK) -l120 -S --check -v $(PROJECT) || true
+
+## hooks			- Run pre-commit hooks.
+hooks: $(PRE_COMMIT)
+	$(PRE_COMMIT) run -a
+
+## test			- Run unit tests.
+test: $(TOX) $(PYTEST)
+	$(TOX) $(toxparams)
+
+## run			- Run application.
 run:
-	alertad run --port 8080 --with-threads --reload
+	alertad
 
+## tag			- Git tag with current version.
 tag:
-	git tag -a v$(VERSION) -m "version $(VERSION)"
-	git push --tags
+	$(GIT) tag -a v$(VERSION) -m "version $(VERSION)"
+	$(GIT) push --tags
 
-upload:
-	$(PYTHON) setup.py sdist bdist_wheel
-	twine upload dist/*
+## build			- Build package.
+build: $(PIP) $(PKG_SDIST) $(PKG_WHEEL)
+
+$(PKG_SDIST):
+	$(PYTHON) setup.py sdist
+
+$(PKG_WHEEL): $(WHEEL)
+	$(PYTHON) setup.py bdist_wheel
+
+## upload			- Upload package to PyPI.
+upload: $(TWINE)
+	$(TWINE) upload dist/*
+
+## clean			- Clean source.
+clean:
+	rm -rf $(VENV)
+	rm -rf .tox
+	rm -rf dist
+	rm -rf build
+	find . -name "*.pyc" -exec rm {} \;
+
+## help			- Show this help.
+help: Makefile
+	@echo ''
+	@echo 'Usage:'
+	@echo '  make [TARGET]'
+	@echo ''
+	@echo 'Targets:'
+	@sed -n 's/^##//p' $<
+	@echo ''
+
+	@echo 'Add project-specific env variables to .env file:'
+	@echo 'PROJECT=$(PROJECT)'
+
+.PHONY: help lint test build sdist wheel clean all

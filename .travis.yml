@@ -7,21 +7,22 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
+  - "3.8"
 
 env:
-  - DB=mongodb DATABASE_URL=mongodb://localhost:27017/alerta5
-  - DB=postgres DATABASE_URL=postgres://localhost:5432/alerta5
+  - DB=mongodb DATABASE_URL=mongodb://localhost:27017/alerta
+  - DB=postgres DATABASE_URL=postgres://localhost:5432/alerta
 
 services:
   - mongodb
   - postgresql
 
 addons:
-  postgresql: "9.5"
+  postgresql: "9.6"
 
 before_script:
-  - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'DROP DATABASE IF EXISTS alerta5;' -U postgres; fi"
-  - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'CREATE DATABASE alerta5;' -U postgres; fi"
+  - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'DROP DATABASE IF EXISTS alerta;' -U postgres; fi"
+  - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'CREATE DATABASE alerta;' -U postgres; fi"
 
 install:
   - pip install -r requirements.txt
@@ -29,8 +30,23 @@ install:
   - pip install .
 
 script:
-  - pip install coveralls
-  - python -m mypy alerta/
-  - pre-commit run -a
   - pytest --cov=alerta
+
+stages:
+  - Hooks
+  - Checks
+  - Test
+
+jobs:
+  include:
+    - stage: Hooks
+      name: Pre-commit
+      script: pre-commit run -a
+    - stage: Checks
+      name: Lint
+      script: pylint --rcfile pylintrc alerta
+    - name: Type Check
+      script: python -m mypy alerta/
+
+after_success:
   - coveralls

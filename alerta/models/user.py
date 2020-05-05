@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
@@ -9,6 +8,7 @@ from alerta.app import db
 from alerta.auth import utils
 from alerta.database.base import Query
 from alerta.models.group import Group
+from alerta.settings import DEFAULT_ADMIN_ROLE
 from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
@@ -29,7 +29,7 @@ class User:
         self.password = password  # NB: hashed password
         self.email = email
         self.status = kwargs.get('status', None) or 'active'  # 'active', 'inactive', 'unknown'
-        self.roles = ['admin'] if self.email in current_app.config['ADMIN_USERS'] else (roles or ['user'])
+        self.roles = [DEFAULT_ADMIN_ROLE] if self.email and self.email in current_app.config['ADMIN_USERS'] else (roles or ['user'])
         self.attributes = kwargs.get('attributes', None) or dict()
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
         self.last_login = kwargs.get('last_login', None)

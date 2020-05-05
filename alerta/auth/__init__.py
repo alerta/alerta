@@ -9,6 +9,7 @@ class AuthBlueprint(Blueprint):
         if app.config['AUTH_PROVIDER'] in ['openid', 'azure', 'cognito', 'gitlab', 'keycloak']:
             oidc_config, _ = oidc.get_oidc_configuration(app)
             app.config['OIDC_AUTH_URL'] = oidc_config['authorization_endpoint']
+            app.config['OIDC_LOGOUT_URL'] = oidc_config.get('end_session_endpoint')
         super().register(app, options, first_registration)
 
 
@@ -33,7 +34,7 @@ def init_auth(app):
             raise RuntimeError('Must install pysaml2 to use SAML2 authentication module')
 
 
-from . import github, oidc, userinfo   # noqa isort:skip
+from . import github, logout, oidc, userinfo   # noqa isort:skip
 
 
 @auth.before_request
@@ -41,5 +42,9 @@ def only_json():
     # SAML2 Assertion Consumer Service expects POST request with 'Content-Type': 'application/x-www-form-urlencoded' from IdP
     if request.method == 'POST' and request.path == '/auth/saml' and request.headers['Content-Type'] == 'application/x-www-form-urlencoded':
         return
+
+    if request.path == '/auth/logout':
+        return
+
     if request.method in ['POST', 'PUT'] and not request.is_json:
         raise ApiError("POST and PUT requests must set 'Content-Type' to 'application/json'", 415)

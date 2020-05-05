@@ -1,4 +1,3 @@
-
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
@@ -92,8 +91,9 @@ def update_customer(customer_id):
     admin_audit_trail.send(current_app._get_current_object(), event='customer-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=customer.id, type='customer', request=request)
 
-    if customer.update(**request.json):
-        return jsonify(status='ok')
+    updated = customer.update(**request.json)
+    if updated:
+        return jsonify(status='ok', customer=updated.serialize)
     else:
         raise ApiError('failed to update customer', 500)
 

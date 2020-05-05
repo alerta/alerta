@@ -1,4 +1,3 @@
-
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
@@ -14,14 +13,21 @@ from alerta.utils.audit import write_audit_trail
 from . import webhooks
 
 
-@webhooks.route('/webhooks/<webhook>', methods=['OPTIONS', 'GET', 'POST'])
+@webhooks.route('/webhooks/<webhook>', defaults={'path': ''}, methods=['OPTIONS', 'GET', 'POST'])
+@webhooks.route('/webhooks/<webhook>/<path:path>', methods=['OPTIONS', 'GET', 'POST'])
 @cross_origin()
 @permission(Scope.write_webhooks)
-def custom(webhook):
+def custom(webhook, path):
     if webhook not in custom_webhooks.webhooks:
         raise ApiError("Custom webhook '%s' not found." % webhook, 404)
 
     try:
+        rv = custom_webhooks.webhooks[webhook].incoming(
+            path=path or request.path,
+            query_string=request.args,
+            payload=request.get_json() or request.form or request.get_data(as_text=True)
+        )
+    except TypeError:
         rv = custom_webhooks.webhooks[webhook].incoming(
             query_string=request.args,
             payload=request.get_json() or request.form or request.get_data(as_text=True)

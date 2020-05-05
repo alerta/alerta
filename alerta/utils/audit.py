@@ -82,9 +82,11 @@ class AuditTrail:
 
         def get_redacted_data(r):
             data = r.get_json()
-            if app.config['AUDIT_LOG_REDACT']:
+            if data and app.config['AUDIT_LOG_REDACT']:
                 if 'password' in data:
                     data['password'] = '[REDACTED]'
+            if app.config['AUDIT_LOG_JSON']:
+                return data
             return json.dumps(data)
 
         return json.dumps({

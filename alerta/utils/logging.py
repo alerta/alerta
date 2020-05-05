@@ -25,7 +25,7 @@ class Logger:
             return open(path, mode)
 
         log_config_file = os.path.expandvars(os.path.expanduser(app.config['LOG_CONFIG_FILE']))
-        log_level = 'DEBUG' if app.debug else 'INFO'
+        log_level = 'DEBUG' if app.debug else app.config['LOG_LEVEL']
 
         if os.path.exists(log_config_file):
             with open_file(log_config_file) as f:

@@ -1,7 +1,9 @@
-mypy==0.620
+mypy
 pre-commit
+pylint==2.4.4
 pytest
 pytest-cov
 python-dotenv
 requests_mock
 twine
+wheel

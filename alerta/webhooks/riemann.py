@@ -13,7 +13,7 @@ class RiemannWebhook(WebhookBase):
     http://riemann.io/clients.html
     """
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
 
         return Alert(
             resource='{}-{}'.format(payload['host'], payload['service']),

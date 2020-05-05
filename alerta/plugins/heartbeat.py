@@ -14,8 +14,9 @@ class HeartbeatReceiver(PluginBase):
     """
 
     def pre_receive(self, alert, **kwargs):
+        HEARTBEAT_EVENTS = self.get_config('HEARTBEAT_EVENTS', default=['Heartbeat'], type=list, **kwargs)
 
-        if alert.event == 'Heartbeat':
+        if alert.event in HEARTBEAT_EVENTS:
             hb = Heartbeat(
                 origin=alert.origin,
                 tags=alert.tags,
@@ -34,4 +35,7 @@ class HeartbeatReceiver(PluginBase):
         return
 
     def take_action(self, alert, action, text, **kwargs):
+        raise NotImplementedError
+
+    def delete(self, alert, **kwargs) -> bool:
         raise NotImplementedError
