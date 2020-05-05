@@ -101,6 +101,10 @@ LDAP_DOMAINS_GROUP = {}  # type: Dict[str, str]
 LDAP_DOMAINS_BASEDN = {}  # type: Dict[str, str]
 LDAP_ALLOW_SELF_SIGNED_CERT = False
 
+# LDAPS
+LDAPS = False #LDAPS True/False
+LDAPS_CERT = '' #Path to certificate
+
 # Microsoft Identity Platform (v2.0)
 AZURE_TENANT = 'common'  # "common", "organizations", "consumers" or tenant ID
 

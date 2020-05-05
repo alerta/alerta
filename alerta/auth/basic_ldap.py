@@ -20,6 +20,11 @@ def login():
     if current_app.config['LDAP_ALLOW_SELF_SIGNED_CERT']:
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
 
+    # LDAPS
+    if current_app.config['LDAPS']:
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_HARD)
+        ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, current_app.config['LDAPS_CERT'])
+
     # Retrieve required fields from client request
     try:
         login = request.json.get('username', None) or request.json['email']
