@@ -1,7 +1,7 @@
 import ast
 import logging
 import os
-from typing import List
+from typing import List, Tuple
 
 from flask import Flask
 from voluptuous import Email, MultipleInvalid, Schema, TypeInvalid, Url
@@ -29,7 +29,7 @@ class Validate:
 
         return variable_value
 
-    def validate_url(self, url_string: str) -> (str, List[str]):
+    def validate_url(self, url_string: str) -> Tuple[str, List[str]]:
         try:
             if isinstance(url_string, list):
                 variable_value = []
