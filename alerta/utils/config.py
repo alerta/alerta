@@ -1,9 +1,10 @@
-import os
-from flask import Flask
-from voluptuous import Schema, Url, Email, TypeInvalid, MultipleInvalid
-import logging
 import ast
+import logging
+import os
 from typing import List
+
+from flask import Flask
+from voluptuous import Email, MultipleInvalid, Schema, TypeInvalid, Url
 
 LOG = logging.getLogger('alerta.config')
 
