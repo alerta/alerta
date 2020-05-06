@@ -15,9 +15,9 @@ class Validate:
         self.integer_validator = Schema(int)
         self.list_string_validator = Schema([str])
         self.list_integer_validator = Schema([int])
-        self.list_url_validator = Schema([Url()])
-        self.url_validator = Schema(Url())
-        self.email_validator = Schema(Email())
+        self.list_url_validator = Schema([Url(str)])
+        self.url_validator = Schema(Url(str))
+        self.email_validator = Schema(Email(str))
 
     def validate_boolean(self, boolean_string: str) -> bool:
         if boolean_string.lower() in ['true', '1', 'yes', 'y', 'on']:
