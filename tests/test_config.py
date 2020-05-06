@@ -1,5 +1,6 @@
 import os
 import unittest
+
 from alerta.utils.config import Config, Validate
 
 
@@ -7,6 +8,7 @@ class TestValidator(unittest.TestCase):
     '''
     Test the environment variables
     '''
+
     def setUp(self):
         self.TestValidator = Validate()
 
