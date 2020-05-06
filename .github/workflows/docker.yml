@@ -34,7 +34,7 @@ jobs:
         run: docker push $REPOSITORY_URL/$IMAGE_NAME
 
       - name: Notify Slack
-        uses: alerta/actions/notify-slack@master
+        uses: alerta/actions/slacky@master
         with:
           status: ${{ job.status }}
           fields: repo,message,commit,diff,author,action,issue,eventName,ref,workflow
