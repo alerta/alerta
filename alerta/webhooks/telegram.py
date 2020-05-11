@@ -85,10 +85,27 @@ class TelegramWebhook(WebhookBase):
             elif action in ['watch', 'unwatch']:
                 alert.untag(tags=['{}:{}'.format(action, user)])
             elif action == 'blackout':
-                # new style paremeters: only alert_id
-                environment = alert.environment
-                resource = alert.resource
-                event = alert.event
+                if alert:
+                    # new style paremeters: only alert_id
+                    environment = alert.environment
+                    resource = alert.resource
+                    event = alert.event
+                else:
+                    try:
+                        # old (pre issue #309) parameters: env|resource|event
+                        # send_message_reply needs alert/alert.id so parse
+                        # alert_id from /ack command
+                        dummy, alert_id = payload['callback_query']['message']['reply_markup']['inline_keyboard'][0][0]['callback_data'].split(' ', 1)
+                        alert = Alert.find_by_id(alert_id, customers=customers)
+                        if alert:
+                            environment = alert.environment
+                            resource = alert.resource
+                            event = alert.event
+                        else:
+                            raise ValueError
+                    except (ValueError, KeyError):
+                        return jsonify(status='error', message='blackout parameters not found for Telegram message')
+
                 blackout = Blackout(environment, resource=resource, event=event)
                 blackout.create()
 
