@@ -9,7 +9,6 @@ class AuthBlueprint(Blueprint):
         if app.config['AUTH_PROVIDER'] == 'ldap':
             try:
                 import ldap  # noqa
-                from . import basic_ldap  # noqa
             except ImportError:
                 raise RuntimeError('Must install python-ldap to use LDAP authentication module')
         else:
@@ -36,7 +35,7 @@ class AuthBlueprint(Blueprint):
 auth = AuthBlueprint('auth', __name__)
 
 
-from . import github, logout, oidc, userinfo   # noqa isort:skip
+from . import github, login, logout, oidc, userinfo   # noqa isort:skip
 
 
 @auth.before_request

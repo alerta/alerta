@@ -257,6 +257,8 @@ def update_attributes(alert_id):
 
 
 # delete
+
+
 @api.route('/alert/<alert_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
 @permission(Scope.write_alerts)

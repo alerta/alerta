@@ -2,7 +2,6 @@ import sys
 
 import ldap  # pylint: disable=import-error
 from flask import current_app, jsonify, request
-from flask_cors import cross_origin
 
 from alerta.auth.utils import create_token, get_customers
 from alerta.exceptions import ApiError
@@ -10,12 +9,9 @@ from alerta.models.permission import Permission
 from alerta.models.user import User
 from alerta.utils.audit import auth_audit_trail
 
-from . import auth
 
-
-@auth.route('/auth/login', methods=['OPTIONS', 'POST'])
-@cross_origin(supports_credentials=True)
 def login():
+
     # Allow LDAP server to use a self signed certificate
     if current_app.config['LDAP_ALLOW_SELF_SIGNED_CERT']:
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
@@ -40,13 +36,13 @@ def login():
         raise ApiError('expected username with domain', 401)
 
     # Validate LDAP domain
-    if domain not in current_app.config['LDAP_DOMAINS']:
+    if domain not in current_app.config['LDAP_DOMAINS'] and \
+       domain not in current_app.config['LDAP_DOMAINS_SEARCH_QUERY']:
         raise ApiError('unauthorized domain', 403)
 
     # Initialise ldap connection
     try:
         trace_level = 2 if current_app.debug else 0
-        raise ApiError('Trace level: {}'.format(trace_level), 500)
         ldap_connection = ldap.initialize(current_app.config['LDAP_URL'], trace_level=trace_level)
     except Exception as e:
         raise ApiError(str(e), 500)
