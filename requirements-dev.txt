@@ -4,6 +4,7 @@ pylint==2.4.4
 pytest
 pytest-cov
 python-dotenv
+python-ldap
 requests_mock
 twine
 wheel
