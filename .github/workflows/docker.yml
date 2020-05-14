@@ -12,7 +12,7 @@ jobs:
       IMAGE_NAME: ${{ github.repository }}/alerta-api
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
-      - uses: alerta/actions/slacky@master
+      - uses: act10ns/slack@v1
         with:
           status: starting
           channel: '#workflows'
@@ -38,7 +38,7 @@ jobs:
         id: docker-push
         run: docker push $REPOSITORY_URL/$IMAGE_NAME
 
-      - uses: alerta/actions/slacky@master
+      - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
