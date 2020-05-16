@@ -4,9 +4,9 @@ from typing import Any, Dict
 
 import click
 from flask import Flask, current_app
-from flask.cli import FlaskGroup, with_appcontext, ScriptInfo
+from flask.cli import FlaskGroup, ScriptInfo, with_appcontext
 
-from alerta.app import config, db, key_helper, qb, create_app
+from alerta.app import config, create_app, db, key_helper, qb
 from alerta.auth.utils import generate_password_hash
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey

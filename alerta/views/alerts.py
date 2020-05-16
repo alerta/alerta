@@ -255,6 +255,7 @@ def update_attributes(alert_id):
     else:
         raise ApiError('failed to update attributes', 500)
 
+
 # delete
 @api.route('/alert/<alert_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
