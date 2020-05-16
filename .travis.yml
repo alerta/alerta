@@ -41,7 +41,7 @@ jobs:
   include:
     - stage: Hooks
       name: Pre-commit
-      script: pre-commit run -a
+      script: pre-commit run -a --show-diff-on-failure
     - stage: Checks
       name: Lint
       script: pylint --rcfile pylintrc alerta
