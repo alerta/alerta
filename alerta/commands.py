@@ -216,7 +216,3 @@ def users():
         else:
             if user:
                 click.echo('{} {}'.format(user.id, user.login))
-
-
-if __name__ == '__main__':
-    cli()
