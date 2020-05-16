@@ -87,7 +87,7 @@ tag:
 	$(GIT) push --tags
 
 ## build			- Build package.
-build: $(PIP) $(PKG_SDIST) $(PKG_WHEEL)
+build: $(PIP) $(WHEEL) $(PKG_SDIST) $(PKG_WHEEL)
 
 $(PKG_SDIST):
 	$(PYTHON) setup.py sdist
