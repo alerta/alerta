@@ -15,7 +15,7 @@ from . import auth
 
 @auth.route('/auth/login', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
-def login():
+def ldap_login():
     # Allow LDAP server to use a self signed certificate
     if current_app.config['LDAP_ALLOW_SELF_SIGNED_CERT']:
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
