@@ -18,7 +18,7 @@ services:
   - postgresql
 
 addons:
-  postgresql: "9.6"
+  postgresql: "11"
 
 before_script:
   - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'DROP DATABASE IF EXISTS alerta;' -U postgres; fi"
