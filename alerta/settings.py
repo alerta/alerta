@@ -158,6 +158,8 @@ DEFAULT_TIMEOUT = 86400  # seconds
 ALERT_TIMEOUT = DEFAULT_TIMEOUT
 HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
 HEARTBEAT_MAX_LATENCY = 2000  # ms
+ACK_TIMEOUT = 0  # auto-unack alerts after x seconds (0 seconds = do not auto-unack)
+SHELVE_TIMEOUT = 7200  # auto-unshelve alerts after x seconds (0 seconds = do not auto-unshelve)
 
 # Housekeeping settings
 DEFAULT_EXPIRED_DELETE_HRS = 2  # hours (0 hours = do not delete)
