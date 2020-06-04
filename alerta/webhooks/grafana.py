@@ -14,7 +14,10 @@ JSON = Dict[str, Any]
 
 
 def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) -> Alert:
-    alerting_severity = args.get('severity', 'major')
+    tags = match.get('tags', {}).copy()
+    tags.update(alert.get('tags', {}))
+
+    alerting_severity = tags.get('severity') or args.get('severity', 'major')
 
     if alert['state'] == 'alerting':
         severity = alerting_severity
@@ -23,21 +26,21 @@ def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) 
     else:
         severity = 'indeterminate'
 
-    environment = args.get('environment', 'Production')  # TODO: verify at create?
-    event_type = args.get('event_type', 'performanceAlert')
-    group = args.get('group', 'Performance')
-    origin = args.get('origin', 'Grafana')
-    service = args.get('service', 'Grafana')
-    timeout = args.get('timeout', type=int)
+    environment = tags.get('environment') or args.get('environment', 'Production')  # TODO: verify at create?
+    event_type = tags.get('event_type') or args.get('event_type', 'performanceAlert')
+    group = tags.get('group') or args.get('group', 'Performance')
+    origin = tags.get('origin') or args.get('origin', 'Grafana')
+    service = tags.get('service') or args.get('service', 'Grafana')
+    timeout = tags.get('timeout') or args.get('timeout', type=int)
 
-    attributes = match.get('tags', None) or dict()
+    attributes = match.get('tags', {})
     attributes = {k.replace('.', '_'): v for (k, v) in attributes.items()}
 
     attributes['ruleId'] = str(alert['ruleId'])
     if 'ruleUrl' in alert:
-        attributes['ruleUrl'] = '<a href="%s" target="_blank">Rule</a>' % alert['ruleUrl']
+        attributes['ruleUrl'] = '<a href="{}" target="_blank">Rule</a>'.format(alert['ruleUrl'])
     if 'imageUrl' in alert:
-        attributes['imageUrl'] = '<a href="%s" target="_blank">Image</a>' % alert['imageUrl']
+        attributes['imageUrl'] = '<a href="{}" target="_blank">Image</a>'.format(alert['imageUrl'])
 
     return Alert(
         resource=match['metric'],
@@ -46,9 +49,9 @@ def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) 
         severity=severity,
         service=[service],
         group=group,
-        value='%s' % match['value'],
+        value='{}'.format(match['value']),
         text=alert.get('message', None) or alert.get('title', alert['state']),
-        tags=list(),
+        tags=['{}={}'.format(k, v) for k, v in tags.items()],
         attributes=attributes,
         origin=origin,
         event_type=event_type,
