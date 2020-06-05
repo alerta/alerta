@@ -80,8 +80,7 @@ def create_app(config_override: Dict[str, Any] = None, environment: str = None) 
     from alerta.webhooks import webhooks
     app.register_blueprint(webhooks)
 
-    from alerta.auth import init_auth, auth as auth_blueprint
-    init_auth(app)
+    from alerta.auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint)
 
     from alerta.management import mgmt

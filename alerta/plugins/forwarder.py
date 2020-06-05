@@ -36,7 +36,7 @@ class Forwarder(PluginBase):
     def pre_receive(self, alert: 'Alert', **kwargs) -> 'Alert':
 
         if is_in_xloop(base_url()):
-            http_origin = request.origin or '(unknown)'
+            http_origin = request.origin or '(unknown)'  # type: ignore
             raise ForwardingLoop('Alert forwarded by {} already processed by {}'.format(http_origin, base_url()))
         return alert
 
@@ -69,7 +69,7 @@ class Forwarder(PluginBase):
     def take_action(self, alert: 'Alert', action: str, text: str, **kwargs) -> Any:
 
         if is_in_xloop(base_url()):
-            http_origin = request.origin or '(unknown)'
+            http_origin = request.origin or '(unknown)'  # type: ignore
             raise ForwardingLoop('Action {} forwarded by {} already processed by {}'.format(
                 action, http_origin, base_url())
             )
@@ -98,7 +98,7 @@ class Forwarder(PluginBase):
     def delete(self, alert: 'Alert', **kwargs) -> bool:
 
         if is_in_xloop(base_url()):
-            http_origin = request.origin or '(unknown)'
+            http_origin = request.origin or '(unknown)'  # type: ignore
             raise ForwardingLoop('Delete forwarded by {} already processed by {}'.format(http_origin, base_url()))
 
         for remote, auth, actions in self.get_config('FWD_DESTINATIONS', default=[], type=list, **kwargs):
