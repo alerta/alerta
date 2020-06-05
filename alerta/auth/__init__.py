@@ -6,32 +6,34 @@ from alerta.exceptions import ApiError
 class AuthBlueprint(Blueprint):
 
     def register(self, app, options, first_registration=False):
+        if app.config['AUTH_PROVIDER'] == 'ldap':
+            try:
+                import ldap  # noqa
+                from . import basic_ldap  # noqa
+            except ImportError:
+                raise RuntimeError('Must install python-ldap to use LDAP authentication module')
+        else:
+            from . import basic  # noqa
+
+        if app.config['AUTH_PROVIDER'] == 'saml2':
+            try:
+                import saml2  # noqa
+                from . import saml  # noqa
+            except ImportError:
+                raise RuntimeError('Must install pysaml2 to use SAML2 authentication module')
+
         if app.config['AUTH_PROVIDER'] in ['openid', 'azure', 'cognito', 'gitlab', 'keycloak']:
-            oidc_config, _ = oidc.get_oidc_configuration(app)
-            app.config['OIDC_AUTH_URL'] = oidc_config['authorization_endpoint']
-            app.config['OIDC_LOGOUT_URL'] = oidc_config.get('end_session_endpoint')
+            try:
+                oidc_config, _ = oidc.get_oidc_configuration(app)
+                app.config['OIDC_AUTH_URL'] = oidc_config['authorization_endpoint']
+                app.config['OIDC_LOGOUT_URL'] = oidc_config.get('end_session_endpoint')
+            except Exception as e:
+                raise RuntimeError(e)
+
         super().register(app, options, first_registration)
 
 
 auth = AuthBlueprint('auth', __name__)
-
-
-def init_auth(app):
-    if app.config['AUTH_PROVIDER'] == 'ldap':
-        try:
-            import ldap  # noqa
-            from . import basic_ldap  # noqa
-        except ImportError:
-            raise RuntimeError('Must install python-ldap to use LDAP authentication module')
-    else:
-        from . import basic  # noqa
-
-    if app.config['AUTH_PROVIDER'] == 'saml2':
-        try:
-            import saml2  # noqa
-            from . import saml  # noqa
-        except ImportError:
-            raise RuntimeError('Must install pysaml2 to use SAML2 authentication module')
 
 
 from . import github, logout, oidc, userinfo   # noqa isort:skip
