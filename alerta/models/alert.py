@@ -540,34 +540,11 @@ class Alert:
         return [Note.from_db(note) for note in notes]
 
     @staticmethod
-    def housekeeping(expired_threshold: int = 2, info_threshold: int = 12) -> None:
-        now = datetime.utcnow()
-        has_expired, has_timedout = db.housekeeping(expired_threshold, info_threshold)
-
-        for (id, event, last_receive_id) in has_expired:
-            history = History(
-                id=last_receive_id,
-                event=event,
-                status='expired',
-                text='',
-                change_type=ChangeType.expired,
-                update_time=now,
-                user=g.login
-            )
-            db.set_status(id, 'expired', timeout=current_app.config['ALERT_TIMEOUT'], update_time=now, history=history)
-
-        for (id, event, last_receive_id) in has_timedout:
-            # as per ISA 18.2 recommendation 11.7.3 auto-unshelved alarms transition to open, not previous status
-            history = History(
-                id=last_receive_id,
-                event=event,
-                status='open',
-                text='',
-                change_type=ChangeType.timeout,
-                update_time=now,
-                user=g.login
-            )
-            db.set_status(id, 'open', timeout=current_app.config['ALERT_TIMEOUT'], update_time=now, history=history)
+    def housekeeping(expired_threshold: int = 2, info_threshold: int = 12) -> Tuple[List['Alert'], List['Alert']]:
+        return (
+            [Alert.from_db(alert) for alert in db.get_expired(expired_threshold, info_threshold)],
+            [Alert.from_db(alert) for alert in db.get_timeout()]
+        )
 
     def from_status(self, status: str, text: str = '', timeout: int = None) -> 'Alert':
         now = datetime.utcnow()
@@ -641,3 +618,9 @@ class Alert:
             update_time=now,
             history=history)
         )
+
+    def from_expired(self, text: str = '', timeout: int = None):
+        return self.from_action(action='expired', text=text, timeout=timeout)
+
+    def from_timeout(self, text: str = '', timeout: int = None):
+        return self.from_action(action='timeout', text=text, timeout=timeout)

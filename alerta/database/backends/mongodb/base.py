@@ -1617,7 +1617,7 @@ class Backend(Database):
 
     # HOUSEKEEPING
 
-    def housekeeping(self, expired_threshold, info_threshold):
+    def get_expired(self, expired_threshold, info_threshold):
         # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
         # and 'informational' alerts older than "info_threshold" hours
 
@@ -1632,15 +1632,15 @@ class Backend(Database):
 
         # get list of alerts to be newly expired
         pipeline = [
-            {'$project': {
-                'event': 1, 'status': 1, 'lastReceiveId': 1, 'timeout': 1,
+            {'$addFields': {
                 'expireTime': {'$add': ['$lastReceiveTime', {'$multiply': ['$timeout', 1000]}]}}
              },
             {'$match': {'status': {'$nin': ['expired', 'ack', 'shelved']}, 'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {
                 '$ne': 0}}}
         ]
-        has_expired = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
+        return self.get_db().alerts.aggregate(pipeline)
 
+    def get_timeout(self):
         # get list of alerts to be unshelved
         pipeline = [
             {'$match': {'status': 'shelved'}},
@@ -1650,21 +1650,12 @@ class Backend(Database):
                 'history.status': 'shelved'
             }},
             {'$sort': {'history.updateTime': -1}},
-            {'$group': {
-                '_id': '$_id',
-                'event': {'$first': '$event'},
-                'lastReceiveId': {'$first': '$lastReceiveId'},
-                'updateTime': {'$first': '$history.updateTime'},
-                'timeout': {'$first': '$timeout'}
-            }},
-            {'$project': {
-                'event': 1,
-                'lastReceiveId': 1,
+            {'$addFields': {
                 'expireTime': {'$add': ['$updateTime', {'$multiply': ['$timeout', 1000]}]}
             }},
             {'$match': {'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {'$ne': 0}}}
         ]
-        unshelve = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
+        unshelve = self.get_db().alerts.aggregate(pipeline)
 
         # get list of alerts to be unack'ed
         pipeline = [
@@ -1675,20 +1666,11 @@ class Backend(Database):
                 'history.status': 'ack'
             }},
             {'$sort': {'history.updateTime': -1}},
-            {'$group': {
-                '_id': '$_id',
-                'event': {'$first': '$event'},
-                'lastReceiveId': {'$first': '$lastReceiveId'},
-                'updateTime': {'$first': '$history.updateTime'},
-                'timeout': {'$first': '$timeout'}
-            }},
-            {'$project': {
-                'event': 1,
-                'lastReceiveId': 1,
+            {'$addFields': {
                 'expireTime': {'$add': ['$updateTime', {'$multiply': ['$timeout', 1000]}]}
             }},
             {'$match': {'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {'$ne': 0}}}
         ]
-        unack = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
+        unack = self.get_db().alerts.aggregate(pipeline)
 
-        return has_expired, unshelve + unack
+        return list(unshelve) + list(unack)
