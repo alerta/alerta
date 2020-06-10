@@ -39,6 +39,12 @@ def config():
         'site_logo_url': current_app.config['SITE_LOGO_URL'],
         'severity': alarm_model.Severity,  # FIXME - moved to alarm model
         'colors': alarm_model.Colors,  # FIXME - moved to alarm model
+        'timeouts': {
+            'alert': current_app.config['ALERT_TIMEOUT'],
+            'heartbeat': current_app.config['HEARTBEAT_TIMEOUT'],
+            'ack': current_app.config['ACK_TIMEOUT'],
+            'shelve': current_app.config['SHELVE_TIMEOUT']
+        },
         'dates': {
             'shortTime': current_app.config['DATE_FORMAT_SHORT_TIME'],
             'mediumDate': current_app.config['DATE_FORMAT_MEDIUM_DATE'],
