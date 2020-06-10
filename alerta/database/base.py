@@ -403,7 +403,10 @@ class Database(Base):
 
     # HOUSEKEEPING
 
-    def housekeeping(self, expired_threshold, info_threshold):
+    def get_expired(self, expired_threshold, info_threshold):
+        raise NotImplementedError
+
+    def get_timeout(self):
         raise NotImplementedError
 
 
