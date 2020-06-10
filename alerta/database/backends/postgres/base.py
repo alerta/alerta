@@ -1296,7 +1296,7 @@ class Backend(Database):
 
     # HOUSEKEEPING
 
-    def housekeeping(self, expired_threshold, info_threshold):
+    def get_expired(self, expired_threshold, info_threshold):
         # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
         # and 'informational' alerts older than "info_threshold" hours
         if expired_threshold:
@@ -1317,24 +1317,26 @@ class Backend(Database):
 
         # get list of alerts to be newly expired
         select = """
-            SELECT id, event, last_receive_id
+            SELECT *
               FROM alerts
              WHERE status NOT IN ('expired','ack','shelved') AND COALESCE(timeout, {timeout})!=0
                AND (last_receive_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """.format(timeout=current_app.config['ALERT_TIMEOUT'])
-        has_expired = self._fetchall(select, {})
 
+        return self._fetchall(select, {})
+
+    def get_timeout(self):
         # get list of alerts to be unshelved
         select = """
         WITH shelved AS (
-            SELECT DISTINCT ON (a.id) a.id, a.event, a.last_receive_id, h.update_time, a.timeout
+            SELECT DISTINCT ON (a.id) a.*
               FROM alerts a, UNNEST(history) h
              WHERE a.status='shelved'
                AND h.type='shelve'
                AND h.status='shelved'
           ORDER BY a.id, h.update_time DESC
         )
-        SELECT id, event, last_receive_id
+        SELECT *
           FROM shelved
          WHERE timeout!=0 AND (update_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """
@@ -1343,20 +1345,20 @@ class Backend(Database):
         # get list of alerts to be unack'ed
         select = """
         WITH acked AS (
-            SELECT DISTINCT ON (a.id) a.id, a.event, a.last_receive_id, h.update_time, a.timeout
+            SELECT DISTINCT ON (a.id) a.*
               FROM alerts a, UNNEST(history) h
              WHERE a.status='ack'
                AND h.type='ack'
                AND h.status='ack'
           ORDER BY a.id, h.update_time DESC
         )
-        SELECT id, event, last_receive_id
+        SELECT *
           FROM acked
          WHERE timeout!=0 AND (update_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """
         unack = self._fetchall(select, {})
 
-        return has_expired, unshelve + unack
+        return unshelve + unack
 
     # SQL HELPERS
 

@@ -2,18 +2,20 @@ import datetime
 import os
 import time
 
-from flask import (Response, current_app, jsonify, render_template, request,
+from flask import (Response, current_app, g, jsonify, render_template, request,
                    url_for)
 from flask_cors import cross_origin
 
 from alerta.app import db
 from alerta.auth.decorators import permission
-from alerta.exceptions import ApiError
+from alerta.exceptions import ApiError, RejectException
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 from alerta.models.heartbeat import Heartbeat
 from alerta.models.metrics import Counter, Gauge, Timer
 from alerta.models.switch import Switch, SwitchState
+from alerta.utils.api import process_action
+from alerta.utils.audit import write_audit_trail
 from alerta.version import __version__
 
 from . import mgmt
@@ -143,20 +145,53 @@ def health_check():
 @cross_origin()
 @permission(Scope.admin_management)
 def housekeeping():
-    DEFAULT_EXPIRED_DELETE_HRS = current_app.config['DEFAULT_EXPIRED_DELETE_HRS']
-    DEFAULT_INFO_DELETE_HRS = current_app.config['DEFAULT_INFO_DELETE_HRS']
+    expired_threshold = request.args.get('expired', current_app.config['DEFAULT_EXPIRED_DELETE_HRS'], type='int')
+    info_threshold = request.args.get('info', current_app.config['DEFAULT_INFO_DELETE_HRS'], type='int')
 
-    try:
-        expired_threshold = int(request.args.get('expired', DEFAULT_EXPIRED_DELETE_HRS))
-        info_threshold = int(request.args.get('info', DEFAULT_INFO_DELETE_HRS))
-    except Exception as e:
-        raise ApiError(str(e), 400)
+    has_expired, has_timedout = Alert.housekeeping(expired_threshold, info_threshold)
 
-    try:
-        Alert.housekeeping(expired_threshold, info_threshold)
-        return jsonify(status='ok')
-    except Exception as e:
-        raise ApiError('HOUSEKEEPING FAILED: %s' % e, 503)
+    errors = []
+    for alert in has_expired:
+        try:
+            alert, _, text, timeout = process_action(alert, action='expired', text='', timeout=current_app.config['ALERT_TIMEOUT'])
+            alert = alert.from_expired(text, timeout)
+        except RejectException as e:
+            write_audit_trail.send(current_app._get_current_object(), event='alert-expire-rejected', message=alert.text,
+                                   user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                                   request=request)
+            errors.append(str(e))
+            continue
+        except Exception as e:
+            raise ApiError(str(e), 500)
+
+        write_audit_trail.send(current_app._get_current_object(), event='alert-expired', message=text, user=g.login,
+                               customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+
+    for alert in has_timedout:
+        try:
+            alert, _, text, timeout = process_action(alert, action='timeout', text='', timeout=current_app.config['ALERT_TIMEOUT'])
+            alert = alert.from_timeout(text, timeout)
+        except RejectException as e:
+            write_audit_trail.send(current_app._get_current_object(), event='alert-timeout-rejected', message=alert.text,
+                                   user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                                   request=request)
+            errors.append(str(e))
+            continue
+        except Exception as e:
+            raise ApiError(str(e), 500)
+
+        write_audit_trail.send(current_app._get_current_object(), event='alert-timeout', message=text, user=g.login,
+                               customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+
+    if errors:
+        raise ApiError('housekeeping failed', 500, errors=errors)
+    else:
+        return jsonify(
+            status='ok',
+            expired=[a.id for a in has_expired],
+            timedout=[a.id for a in has_timedout],
+            count=len(has_expired) + len(has_timedout)
+        )
 
 
 @mgmt.route('/management/status', methods=['OPTIONS', 'GET'])
