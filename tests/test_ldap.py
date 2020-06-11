@@ -5,14 +5,6 @@ import json
 from alerta import create_app
 
 
-def skip_ldap():
-    try:
-        import ldap  # noqa
-    except ImportError:
-        return True
-    return False
-
-
 class LdapAuthTestCase(unittest.TestCase):
 
     class LDAPObjectMock:
@@ -39,9 +31,6 @@ class LdapAuthTestCase(unittest.TestCase):
             return self.search_results
 
     def setUp(self):
-
-        if skip_ldap():
-            self.skipTest('python-ldap import failed')
 
         test_config = {
             'TESTING': True,
