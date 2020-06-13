@@ -143,6 +143,31 @@ class WebhooksTestCase(unittest.TestCase):
         }
         """
 
+        self.grafana_6 = """
+        {
+           "evalMatches":[
+              {
+                 "value":323.4,
+                 "metric":"samples",
+                 "tags":{
+                 }
+              }
+           ],
+           "message":"Here's my message",
+           "ruleId":12,
+           "ruleName":"Samples Appended alert",
+           "ruleUrl":"http://grafana.monitor.aort.<...>.com/d/itBdm3dZz/prometheus-health?fullscreen\\u0026edit\\u0026tab=alert\\u0026panelId=3\\u0026orgId=1",
+           "state":"alerting",
+           "tags":{
+              "arbitrary_key":"arbitrary_val",
+              "dashboard":"my dashboard",
+              "slack":"my_slack",
+              "tsg":"my tsg"
+           },
+           "title":"[Alerting] Samples Appended alert"
+        }
+        """
+
         self.graylog_notification = """
         {
             "check_result": {
@@ -689,6 +714,28 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['group'], 'Performance')
         self.assertEqual(data['alert']['text'],
                          'Load is peaking. Make sure the traffic is real and spin up more webfronts')
+
+        # example alert
+        response = self.client.post('/webhooks/grafana', data=self.grafana_6, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+        self.assertEqual(data['alert']['resource'], 'samples')
+        self.assertEqual(data['alert']['event'], 'Samples Appended alert')
+        self.assertEqual(data['alert']['environment'], 'Production')
+        self.assertEqual(data['alert']['severity'], 'major')
+        self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['service'], ['Grafana'])
+        self.assertEqual(data['alert']['group'], 'Performance')
+        self.assertEqual(data['alert']['value'], '323.4')
+        self.assertEqual(data['alert']['text'], 'Here\'s my message')
+        self.assertEqual(data['alert']['tags'], [])
+        self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+        self.assertEqual(data['alert']['attributes']['ruleId'], '12')
+        self.assertEqual(data['alert']['attributes']['ruleUrl'], '<a '
+                         'href="http://grafana.monitor.aort.<...>.com/d/itBdm3dZz/prometheus-health?fullscreen&edit&tab=alert&panelId=3&orgId=1" '
+                         'target="_blank">Rule</a>')
+        self.assertEqual(data['alert']['origin'], 'Grafana')
 
     def test_graylog_webhook(self):
         # graylog alert
