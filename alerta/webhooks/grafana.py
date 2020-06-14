@@ -13,9 +13,41 @@ from . import WebhookBase
 JSON = Dict[str, Any]
 
 
-def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) -> Alert:
-    alerting_severity = args.get('severity', 'major')
+def parse_grafana(args: ImmutableMultiDict, alert: JSON, match: Dict[str, Any]) -> Alert:
 
+    # get values from request params
+    environment = args.get('environment', 'Production')
+    alerting_severity = args.get('severity', 'major')
+    service = args.getlist('service') or ['Grafana']
+    group = args.get('group', 'Performance')
+    customer = args.get('customer', None)
+    origin = args.get('origin', 'Grafana')
+    timeout = args.get('timeout', type=int)
+
+    # get metric labels (evalMatches tags)
+    match_tags = match.get('tags') or {}
+    environment = match_tags.pop('environment', environment)
+    alerting_severity = match_tags.pop('severity', alerting_severity)
+    if 'service' in match_tags:
+        service.append(match_tags.pop('service'))
+    group = match_tags.pop('group', group)
+    customer = match_tags.pop('customer', customer)
+    origin = match_tags.pop('origin', origin)
+
+    # assign leftover match tags as attributes
+    attributes = {k.replace('.', '_'): v for (k, v) in match_tags.items()}
+
+    # get alert rule tags
+    rules_tags = alert.get('tags') or {}
+    environment = rules_tags.pop('environment', environment)
+    alerting_severity = rules_tags.pop('severity', alerting_severity)
+    if 'service' in rules_tags:
+        service.append(rules_tags.pop('service'))
+    group = rules_tags.pop('group', group)
+    customer = rules_tags.pop('customer', customer)
+    origin = rules_tags.pop('origin', origin)
+
+    # set severity
     if alert['state'] == 'alerting':
         severity = alerting_severity
     elif alert['state'] == 'ok':
@@ -23,15 +55,8 @@ def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) 
     else:
         severity = 'indeterminate'
 
-    environment = args.get('environment', 'Production')  # TODO: verify at create?
-    event_type = args.get('event_type', 'performanceAlert')
-    group = args.get('group', 'Performance')
-    origin = args.get('origin', 'Grafana')
-    service = args.get('service', 'Grafana')
-    timeout = args.get('timeout', type=int)
-
-    attributes = match.get('tags', None) or dict()
-    attributes = {k.replace('.', '_'): v for (k, v) in attributes.items()}
+    # assign leftover rule tags as attributes
+    attributes.update({k.replace('.', '_'): v for (k, v) in rules_tags.items()})
 
     attributes['ruleId'] = str(alert['ruleId'])
     if 'ruleUrl' in alert:
@@ -44,14 +69,15 @@ def parse_grafana(alert: JSON, match: Dict[str, Any], args: ImmutableMultiDict) 
         event=alert['ruleName'],
         environment=environment,
         severity=severity,
-        service=[service],
+        service=service,
         group=group,
         value='%s' % match['value'],
         text=alert.get('message', None) or alert.get('title', alert['state']),
         tags=list(),
         attributes=attributes,
+        customer=customer,
         origin=origin,
-        event_type=event_type,
+        event_type='grafanaAlert',
         timeout=timeout,
         raw_data=json.dumps(alert)
     )
@@ -66,7 +92,7 @@ class GrafanaWebhook(WebhookBase):
     def incoming(self, path, query_string, payload):
 
         if payload and payload['state'] == 'alerting':
-            return [parse_grafana(payload, match, query_string) for match in payload.get('evalMatches', [])]
+            return [parse_grafana(query_string, payload, match) for match in payload.get('evalMatches', [])]
 
         elif payload and payload['state'] == 'ok' and payload.get('ruleId'):
             try:
