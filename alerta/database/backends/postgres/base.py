@@ -7,6 +7,7 @@ from flask import current_app
 from psycopg2.extensions import AsIs, adapt, register_adapter
 from psycopg2.extras import Json, NamedTupleCursor, register_composite
 
+from alerta.app import alarm_model
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
 from alerta.models.enums import ADMIN_SCOPES
@@ -380,11 +381,21 @@ class Backend(Database):
 
     def get_alerts(self, query=None, page=None, page_size=None):
         query = query or Query()
+        join = ''
+        if 's.code' in query.sort:
+            join += 'JOIN (VALUES {}) AS s(sev, code) ON alerts.severity = s.sev '.format(
+                ', '.join(("('{}', {})".format(k, v) for k, v in alarm_model.Severity.items()))
+            )
+        if 'st.state' in query.sort:
+            join += 'JOIN (VALUES {}) AS st(sts, state) ON alerts.status = st.sts '.format(
+                ', '.join(("('{}', '{}')".format(k, v) for k, v in alarm_model.Status.items()))
+            )
         select = """
-            SELECT * FROM alerts
+            SELECT *
+              FROM alerts {join}
              WHERE {where}
           ORDER BY {order}
-        """.format(where=query.where, order=query.sort or 'last_receive_time')
+        """.format(join=join, where=query.where, order=query.sort or 'last_receive_time')
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_alert_history(self, alert, page=None, page_size=None):

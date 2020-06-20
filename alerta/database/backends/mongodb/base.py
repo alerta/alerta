@@ -5,6 +5,7 @@ from flask import current_app
 from pymongo import ASCENDING, TEXT, MongoClient, ReturnDocument
 from pymongo.errors import ConnectionFailure
 
+from alerta.app import alarm_model
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
 from alerta.models.enums import ADMIN_SCOPES
@@ -23,6 +24,7 @@ class Backend(Database):
 
         db = self.connect()
         self._create_indexes(db)
+        self._update_lookups(db)
 
     def connect(self):
         self.client = MongoClient(self.uri)
@@ -50,6 +52,21 @@ class Backend(Database):
                               partialFilterExpression={'email': {'$type': 'string'}})
         db.groups.create_index([('name', ASCENDING)], unique=True)
         db.metrics.create_index([('group', ASCENDING), ('name', ASCENDING)], unique=True)
+
+    @staticmethod
+    def _update_lookups(db):
+        for severity, code in alarm_model.Severity.items():
+            db.codes.update(
+                {'severity': severity},
+                {'$set': {'severity': severity, 'code': code}},
+                upsert=True
+            )
+        for status, state in alarm_model.Status.items():
+            db.states.update(
+                {'status': status},
+                {'$set': {'status': status, 'state': state}},
+                upsert=True
+            )
 
     @property
     def name(self):
@@ -467,7 +484,29 @@ class Backend(Database):
 
     def get_alerts(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return self.get_db().alerts.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+        pipeline = [
+            {'$lookup': {
+                'from': 'codes',
+                'localField': 'severity',
+                'foreignField': 'severity',
+                'as': 'fromCodes'
+            }},
+            {'$replaceRoot': {'newRoot': {'$mergeObjects': [{'$arrayElemAt': ['$fromCodes', 0]}, '$$ROOT']}}},
+            {'$project': {'fromCodes': 0}},
+            {'$lookup': {
+                'from': 'states',
+                'localField': 'status',
+                'foreignField': 'status',
+                'as': 'fromStates'
+            }},
+            {'$replaceRoot': {'newRoot': {'$mergeObjects': [{'$arrayElemAt': ['$fromStates', 0]}, '$$ROOT']}}},
+            {'$project': {'fromStates': 0}},
+            {'$match': query.where},
+            {'$sort': {k: v for k, v in query.sort}},
+            {'$skip': (page - 1) * page_size},
+            {'$limit': page_size}
+        ]
+        return self.get_db().alerts.aggregate(pipeline)
 
     def get_alert_history(self, alert, page=None, page_size=None):
         query = {

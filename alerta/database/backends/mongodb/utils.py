@@ -60,11 +60,19 @@ class QueryBuilderImpl(QueryBuilder):
         # sort-by
         sort = list()
         direction = 1
-        if params.get('reverse', None):
+        if params.get('reverse', None):  # deprecated. use '-' instead.
             direction = -1
         if params.get('sort-by', None):
             for sort_by in params.getlist('sort-by'):
-                if sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
+                direction = 1
+                if sort_by.startswith('-'):
+                    sort_by = sort_by[1:]
+                    direction = -1
+                if sort_by == 'severity':
+                    sort.append(('code', direction))
+                elif sort_by == 'status':
+                    sort.append(('state', direction))
+                elif sort_by in ['createTime', 'receiveTime', 'lastReceiveTime']:
                     sort.append((sort_by, -direction))  # reverse chronological
                 else:
                     sort.append((sort_by, direction))
