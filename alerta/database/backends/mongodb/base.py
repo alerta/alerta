@@ -754,13 +754,14 @@ class Backend(Database):
         for r in response_status:
             status_count[r['_id']['environment']].append((r['_id']['status'], r['count']))
 
+        environments = self.get_db().alerts.find().distinct('environment')
         return [
             {
                 'environment': env,
                 'severityCounts': dict(severity_count[env]),
                 'statusCounts': dict(status_count[env]),
                 'count': sum(t[1] for t in severity_count[env])
-            } for env in severity_count]
+            } for env in environments]
 
     # SERVICES
 
@@ -791,14 +792,20 @@ class Backend(Database):
         for r in response_status:
             status_count[(r['_id']['environment'], r['_id']['service'])].append((r['_id']['status'], r['count']))
 
+        pipeline = [
+            {'$unwind': '$service'},
+            {'$group': {'_id': {'environment': '$environment', 'service': '$service'}}},
+            {'$limit': topn}
+        ]
+        services = list(self.get_db().alerts.aggregate(pipeline))
         return [
             {
-                'environment': env,
-                'service': svc,
-                'severityCounts': dict(severity_count[(env, svc)]),
-                'statusCounts': dict(status_count[(env, svc)]),
-                'count': sum(t[1] for t in severity_count[(env, svc)])
-            } for env, svc in severity_count]
+                'environment': svc['_id']['environment'],
+                'service': svc['_id']['service'],
+                'severityCounts': dict(severity_count[(svc['_id']['environment'], svc['_id']['service'])]),
+                'statusCounts': dict(status_count[(svc['_id']['environment'], svc['_id']['service'])]),
+                'count': sum(t[1] for t in severity_count[(svc['_id']['environment'], svc['_id']['service'])])
+            } for svc in services]
 
     # ALERT GROUPS
 
