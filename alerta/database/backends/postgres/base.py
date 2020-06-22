@@ -7,6 +7,7 @@ from flask import current_app
 from psycopg2.extensions import AsIs, adapt, register_adapter
 from psycopg2.extras import Json, NamedTupleCursor, register_composite
 
+from alerta.app import alarm_model
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
 from alerta.models.enums import ADMIN_SCOPES
@@ -380,11 +381,21 @@ class Backend(Database):
 
     def get_alerts(self, query=None, page=None, page_size=None):
         query = query or Query()
+        join = ''
+        if 's.code' in query.sort:
+            join += 'JOIN (VALUES {}) AS s(sev, code) ON alerts.severity = s.sev '.format(
+                ', '.join(("('{}', {})".format(k, v) for k, v in alarm_model.Severity.items()))
+            )
+        if 'st.state' in query.sort:
+            join += 'JOIN (VALUES {}) AS st(sts, state) ON alerts.status = st.sts '.format(
+                ', '.join(("('{}', '{}')".format(k, v) for k, v in alarm_model.Status.items()))
+            )
         select = """
-            SELECT * FROM alerts
+            SELECT *
+              FROM alerts {join}
              WHERE {where}
           ORDER BY {order}
-        """.format(where=query.where, order=query.sort or 'last_receive_time')
+        """.format(join=join, where=query.where, order=query.sort or 'last_receive_time')
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_alert_history(self, alert, page=None, page_size=None):
@@ -591,13 +602,15 @@ class Backend(Database):
             if not row.severity and not row.status:
                 total_count[row.environment] = row.count
 
+        select = """SELECT DISTINCT environment FROM alerts"""
+        environments = self._fetchall(select, {})
         return [
             {
-                'environment': env,
-                'severityCounts': dict(severity_count[env]),
-                'statusCounts': dict(status_count[env]),
-                'count': total_count[env]
-            } for env in severity_count]
+                'environment': e.environment,
+                'severityCounts': dict(severity_count[e.environment]),
+                'statusCounts': dict(status_count[e.environment]),
+                'count': total_count[e.environment]
+            } for e in environments]
 
     # SERVICES
 
@@ -622,14 +635,16 @@ class Backend(Database):
             if not row.severity and not row.status:
                 total_count[(row.environment, row.svc)] = row.count
 
+        select = """SELECT DISTINCT environment, svc FROM alerts, UNNEST(service) svc"""
+        services = self._fetchall(select, {})
         return [
             {
-                'environment': env,
-                'service': svc,
-                'severityCounts': dict(severity_count[(env, svc)]),
-                'statusCounts': dict(status_count[(env, svc)]),
-                'count': total_count[(env, svc)]
-            } for env, svc in severity_count]
+                'environment': s.environment,
+                'service': s.svc,
+                'severityCounts': dict(severity_count[(s.environment, s.svc)]),
+                'statusCounts': dict(status_count[(s.environment, s.svc)]),
+                'count': total_count[(s.environment, s.svc)]
+            } for s in services]
 
     # ALERT GROUPS
 
@@ -640,7 +655,12 @@ class Backend(Database):
             WHERE {where}
             GROUP BY environment, "group"
         """.format(where=query.where)
-        return [{'environment': g.environment, 'group': g.group, 'count': g.count} for g in self._fetchall(select, query.vars, limit=topn)]
+        return [
+            {
+                'environment': g.environment,
+                'group': g.group,
+                'count': g.count
+            } for g in self._fetchall(select, query.vars, limit=topn)]
 
     # ALERT TAGS
 
