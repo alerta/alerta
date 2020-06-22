@@ -591,13 +591,15 @@ class Backend(Database):
             if not row.severity and not row.status:
                 total_count[row.environment] = row.count
 
+        select = """SELECT DISTINCT environment FROM alerts"""
+        environments = self._fetchall(select, {})
         return [
             {
-                'environment': env,
-                'severityCounts': dict(severity_count[env]),
-                'statusCounts': dict(status_count[env]),
-                'count': total_count[env]
-            } for env in severity_count]
+                'environment': e.environment,
+                'severityCounts': dict(severity_count[e.environment]),
+                'statusCounts': dict(status_count[e.environment]),
+                'count': total_count[e.environment]
+            } for e in environments]
 
     # SERVICES
 
@@ -622,14 +624,16 @@ class Backend(Database):
             if not row.severity and not row.status:
                 total_count[(row.environment, row.svc)] = row.count
 
+        select = """SELECT DISTINCT environment, svc FROM alerts, UNNEST(service) svc"""
+        services = self._fetchall(select, {})
         return [
             {
-                'environment': env,
-                'service': svc,
-                'severityCounts': dict(severity_count[(env, svc)]),
-                'statusCounts': dict(status_count[(env, svc)]),
-                'count': total_count[(env, svc)]
-            } for env, svc in severity_count]
+                'environment': s.environment,
+                'service': s.svc,
+                'severityCounts': dict(severity_count[(s.environment, s.svc)]),
+                'statusCounts': dict(status_count[(s.environment, s.svc)]),
+                'count': total_count[(s.environment, s.svc)]
+            } for s in services]
 
     # ALERT GROUPS
 
@@ -640,7 +644,12 @@ class Backend(Database):
             WHERE {where}
             GROUP BY environment, "group"
         """.format(where=query.where)
-        return [{'environment': g.environment, 'group': g.group, 'count': g.count} for g in self._fetchall(select, query.vars, limit=topn)]
+        return [
+            {
+                'environment': g.environment,
+                'group': g.group,
+                'count': g.count
+            } for g in self._fetchall(select, query.vars, limit=topn)]
 
     # ALERT TAGS
 
