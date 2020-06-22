@@ -26,7 +26,7 @@ LOG_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TR
 
 # API settings
 ALARM_MODEL = 'ALERTA'  # 'ALERTA' (default) or 'ISA_18_2'
-QUERY_LIMIT = 1000
+QUERY_LIMIT = 50
 DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single query
 HISTORY_LIMIT = 100  # cap the number of alert history entries
 HISTORY_ON_VALUE_CHANGE = True  # history entry for duplicate alerts if value changes
@@ -188,7 +188,7 @@ COLUMNS = [
     'severity', 'status', 'lastReceiveTime', 'timeoutLeft', 'duplicateCount',
     'customer', 'environment', 'service', 'resource', 'event', 'value', 'text'
 ]
-SORT_LIST_BY = 'lastReceiveTime'  # newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
+SORT_LIST_BY = ['severity', 'lastReceiveTime']  # eg. newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
 DEFAULT_FILTER = {'status': ['open', 'ack']}
 
 # Alert Status Indicators
