@@ -194,6 +194,21 @@ class AggregationsTestCase(unittest.TestCase):
             }
         ])
 
+        response = self.client.get('/environments?status=shelved')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('environments', data)
+        self.assertCountEqual(data['environments'], [
+            {
+                'count': 0,
+                'environment': 'Production',
+                'severityCounts': {
+                },
+                'statusCounts': {
+                }
+            }
+        ])
+
         # service
         response = self.client.get('/services')
         self.assertEqual(response.status_code, 200)
