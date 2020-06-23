@@ -592,7 +592,7 @@ class Backend(Database):
 
         severity_count = defaultdict(list)
         status_count = defaultdict(list)
-        total_count = dict()
+        total_count = defaultdict(int)
 
         for row in result:
             if row.severity and not row.status:
@@ -625,7 +625,7 @@ class Backend(Database):
 
         severity_count = defaultdict(list)
         status_count = defaultdict(list)
-        total_count = dict()
+        total_count = defaultdict(int)
 
         for row in result:
             if row.severity and not row.status:
