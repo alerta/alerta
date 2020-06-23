@@ -246,6 +246,31 @@ class AggregationsTestCase(unittest.TestCase):
             }
         ])
 
+        response = self.client.get('/services?status=ack')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('services', data)
+        self.assertCountEqual(data['services'], [
+            {
+                'count': 0,
+                'environment': 'Production',
+                'service': 'Network',
+                'severityCounts': {
+                },
+                'statusCounts': {
+                }
+            },
+            {
+                'count': 0,
+                'environment': 'Production',
+                'service': 'Shared',
+                'severityCounts': {
+                },
+                'statusCounts': {
+                }
+            }
+        ])
+
         # groups
         response = self.client.get('/alerts/groups')
         self.assertEqual(response.status_code, 200)
