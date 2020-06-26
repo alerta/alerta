@@ -21,10 +21,10 @@ def jsonp(func):
 
 def absolute_url(path: str = '') -> str:
     try:
-        base_url = current_app.config.get('BASE_URL', request.url_root)
+        base_url = current_app.config['BASE_URL'] or request.url_root
     except Exception:
         base_url = '/'
-    return urljoin(base_url, path) if path else base_url
+    return urljoin(base_url + '/', path.lstrip('/')) if path else base_url
 
 
 def base_url():
