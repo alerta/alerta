@@ -1,8 +1,10 @@
 import json
+import time
 import unittest
 from uuid import uuid4
 
 from alerta.app import create_app, db
+from alerta.models.heartbeat import Heartbeat
 
 
 class HeartbeatsTestCase(unittest.TestCase):
@@ -12,7 +14,8 @@ class HeartbeatsTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': False,
-            'HEARTBEAT_TIMEOUT': 240,
+            'ALERT_TIMEOUT': 2,
+            'HEARTBEAT_TIMEOUT': 6,
             'HEARTBEAT_EVENTS': ['Heartbeat', 'Watchdog'],
             'PLUGINS': ['heartbeat']
         }
@@ -55,6 +58,7 @@ class HeartbeatsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(heartbeat_id, data['heartbeat']['id'])
+        self.assertEqual(data['heartbeat']['status'], 'ok', data)
 
         # delete heartbeat
         response = self.client.delete('/heartbeat/' + heartbeat_id)
@@ -82,7 +86,7 @@ class HeartbeatsTestCase(unittest.TestCase):
         response = self.client.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['heartbeat']['timeout'], 240)
+        self.assertEqual(data['heartbeat']['timeout'], 6)
 
         # resend heartbeat with different timeout
         self.heartbeat['timeout'] = 20
@@ -104,6 +108,55 @@ class HeartbeatsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['heartbeat']['timeout'], 10)
+
+        # send heartbeat with very short timeout
+        self.heartbeat['timeout'] = 2
+        response = self.client.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['heartbeat']['timeout'], 2)
+
+        heartbeat_id = data['id']
+
+        time.sleep(4)
+
+        # get heartbeat
+        response = self.client.get('/heartbeat/' + heartbeat_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(heartbeat_id, data['heartbeat']['id'])
+        self.assertEqual(data['heartbeat']['timeout'], 2)
+        self.assertEqual(data['heartbeat']['status'], 'expired')
+
+        with self.app.app_context():
+            hb = Heartbeat.parse(data['heartbeat'])
+
+        payload = {
+            'resource': hb.origin,
+            'event': 'HeartbeatFail',
+            'environment': 'Production',
+            'severity': 'major',
+            'correlate': ['HeartbeatFail', 'HeartbeatSlow', 'HeartbeatOK'],
+            'service': ['Test'],
+            'group': 'Alerta',
+            'value': '{}'.format(hb.since),
+            'text': 'Heartbeat not received in {} seconds'.format(hb.timeout),
+            'tags': hb.tags,
+            'attributes': hb.attributes,
+            # 'timeout': None
+        }
+
+        # create heartbeat alert
+        response = self.client.post('/alert', json=payload)
+        self.assertEqual(response.status_code, 201, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], hb.origin)
+        self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['service'], ['Test'])
+        self.assertEqual(data['alert']['timeout'], 2)
+        self.assertEqual(data['alert']['duplicateCount'], 0)
+        self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
+        self.assertEqual(data['alert']['history'][0]['user'], None)
 
     def test_heartbeat_from_alert(self):
 
