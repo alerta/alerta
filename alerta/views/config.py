@@ -50,6 +50,7 @@ def config():
             'mediumDate': current_app.config['DATE_FORMAT_MEDIUM_DATE'],
             'longDate': current_app.config['DATE_FORMAT_LONG_DATE']
         },
+        'font': current_app.config['DEFAULT_FONT'],
         'audio': {
             'new': current_app.config['DEFAULT_AUDIO_FILE']
         },
