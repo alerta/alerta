@@ -202,6 +202,13 @@ ASI_QUERIES = [
     {'text': 'Misc.', 'query': 'group=Misc'},
 ]
 
+# Alarm list default font settings
+DEFAULT_FONT = {
+    'font-family': '"Sintony", Arial, sans-serif',
+    'font-size': '13px',
+    'font-weight': 500  # 400=normal, 700=bold
+}
+
 # List of custom actions
 ACTIONS = []  # type: List[str]
 GOOGLE_TRACKING_ID = None
