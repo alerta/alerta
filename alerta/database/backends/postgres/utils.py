@@ -78,6 +78,8 @@ class QueryBuilderImpl(QueryBuilder):
                     sort.append('s.code ' + direction)
                 elif sort_by == 'status':
                     sort.append('st.state ' + direction)
+                elif sort_by.startswith('attributes'):
+                    sort.append("attributes->'{}' {}".format(sort_by.replace('attributes.', ''), direction))
                 elif sort_by == 'createTime':
                     sort.append('create_time ' + reverse_sort(direction))
                 elif sort_by == 'receiveTime':
