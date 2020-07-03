@@ -86,7 +86,7 @@ def process_alert(alert: Alert) -> Alert:
     return alert
 
 
-def process_action(alert: Alert, action: str, text: str, timeout: int) -> Tuple[Alert, str, str, int]:
+def process_action(alert: Alert, action: str, text: str, timeout: int = None) -> Tuple[Alert, str, str, Optional[int]]:
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None

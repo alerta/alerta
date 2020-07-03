@@ -256,7 +256,7 @@ class Alert:
     def _get_hist_info(self, action=None):
         h_loop = self.get_alert_history(alert=self)
         if len(h_loop) == 1:
-            return h_loop[0].status, h_loop[0].value, None
+            return h_loop[0].status, h_loop[0].value, None, None
         if action == ChangeType.unack:
             find = ChangeType.ack
         elif action == ChangeType.unshelve:
@@ -265,14 +265,14 @@ class Alert:
             find = None
         for h, h_next in zip(h_loop, h_loop[1:]):
             if not find or h.change_type == find:
-                return h_loop[0].status, h_loop[0].value, h_next.status
-        return None, None, None
+                return h_loop[0].status, h_loop[0].value, h_next.status, h_next.timeout
+        return None, None, None, None
 
     # de-duplicate an alert
     def deduplicate(self, duplicate_of) -> 'Alert':
         now = datetime.utcnow()
 
-        status, previous_value, previous_status = self._get_hist_info()
+        status, previous_value, previous_status, _ = self._get_hist_info()
 
         _, new_status = alarm_model.transition(
             alert=self,
@@ -299,6 +299,7 @@ class Alert:
                 change_type=ChangeType.status,
                 update_time=self.create_time,
                 user=g.login,
+                timeout=self.timeout,
             )  # type: Optional[History]
 
         elif current_app.config['HISTORY_ON_VALUE_CHANGE'] and self.value != previous_value:
@@ -311,7 +312,8 @@ class Alert:
                 text=self.text,
                 change_type=ChangeType.value,
                 update_time=self.create_time,
-                user=g.login
+                user=g.login,
+                timeout=self.timeout,
             )
         else:
             history = None
@@ -326,7 +328,7 @@ class Alert:
         self.previous_severity = db.get_severity(self)
         self.trend_indication = alarm_model.trend(self.previous_severity, self.severity)
 
-        status, _, previous_status = self._get_hist_info()
+        status, _, previous_status, _ = self._get_hist_info()
 
         _, new_status = alarm_model.transition(
             alert=self,
@@ -356,7 +358,8 @@ class Alert:
             text=text,
             change_type=ChangeType.severity,
             update_time=self.create_time,
-            user=g.login
+            user=g.login,
+            timeout=self.timeout
         )]
 
         self.status = new_status
@@ -390,7 +393,8 @@ class Alert:
             text=self.text,
             change_type=ChangeType.new,
             update_time=self.create_time,
-            user=g.login
+            user=g.login,
+            timeout=self.timeout
         )]
 
         return Alert.from_db(db.create_alert(self))
@@ -426,7 +430,8 @@ class Alert:
             text=text,
             change_type=ChangeType.status,
             update_time=now,
-            user=g.login
+            user=g.login,
+            timeout=self.timeout
         )
         return db.set_status(self.id, status, timeout, update_time=now, history=history)
 
@@ -540,10 +545,11 @@ class Alert:
         return [Note.from_db(note) for note in notes]
 
     @staticmethod
-    def housekeeping(expired_threshold: int = 2, info_threshold: int = 12) -> Tuple[List['Alert'], List['Alert']]:
+    def housekeeping(expired_threshold: int = 2, info_threshold: int = 12) -> Tuple[List['Alert'], List['Alert'], List['Alert']]:
         return (
             [Alert.from_db(alert) for alert in db.get_expired(expired_threshold, info_threshold)],
-            [Alert.from_db(alert) for alert in db.get_timeout()]
+            [Alert.from_db(alert) for alert in db.get_unshelve()],
+            [Alert.from_db(alert) for alert in db.get_unack()]
         )
 
     def from_status(self, status: str, text: str = '', timeout: int = None) -> 'Alert':
@@ -559,7 +565,8 @@ class Alert:
             text=text,
             change_type=ChangeType.status,
             update_time=now,
-            user=g.login
+            user=g.login,
+            timeout=self.timeout
         )]
         return Alert.from_db(db.set_alert(
             id=self.id,
@@ -576,9 +583,17 @@ class Alert:
     def from_action(self, action: str, text: str = '', timeout: int = None) -> 'Alert':
         now = datetime.utcnow()
 
-        self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
+        status, _, previous_status, previous_timeout = self._get_hist_info(action)
 
-        status, _, previous_status = self._get_hist_info(action)
+        if action in ['unack', 'unshelve', 'timeout']:
+            timeout = timeout or previous_timeout
+
+        if action in ['ack', 'unack']:
+            timeout = timeout or current_app.config['ACK_TIMEOUT']
+        elif action in ['shelve', 'unshelve']:
+            timeout = timeout or current_app.config['SHELVE_TIMEOUT']
+        else:
+            timeout = timeout or self.timeout or current_app.config['ALERT_TIMEOUT']
 
         new_severity, new_status = alarm_model.transition(
             alert=self,
@@ -604,7 +619,8 @@ class Alert:
             text=text,
             change_type=change_type,
             update_time=now,
-            user=g.login
+            user=g.login,
+            timeout=timeout
         )]
 
         return Alert.from_db(db.set_alert(
@@ -613,7 +629,7 @@ class Alert:
             status=new_status,
             tags=self.tags,
             attributes=self.attributes,
-            timeout=timeout,
+            timeout=self.timeout,
             previous_severity=self.severity if new_severity != self.severity else self.previous_severity,
             update_time=now,
             history=history)
