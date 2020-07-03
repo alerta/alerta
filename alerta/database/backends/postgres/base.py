@@ -34,7 +34,7 @@ class HistoryAdapter:
                 a.prepare(self.conn)
             return a.getquoted().decode('utf-8')
 
-        return '({}, {}, {}, {}, {}, {}, {}, {}::timestamp, {})::history'.format(
+        return '({}, {}, {}, {}, {}, {}, {}, {}::timestamp, {}, {})::history'.format(
             quoted(self.history.id),
             quoted(self.history.event),
             quoted(self.history.severity),
@@ -43,7 +43,8 @@ class HistoryAdapter:
             quoted(self.history.text),
             quoted(self.history.change_type),
             quoted(self.history.update_time),
-            quoted(self.history.user)
+            quoted(self.history.user),
+            quoted(self.history.timeout)
         )
 
     def __str__(self):
@@ -51,8 +52,9 @@ class HistoryAdapter:
 
 
 Record = namedtuple('Record', [
-    'id', 'resource', 'event', 'environment', 'severity', 'status', 'service', 'group',
-    'value', 'text', 'tags', 'attributes', 'origin', 'update_time', 'user', 'type', 'customer'
+    'id', 'resource', 'event', 'environment', 'severity', 'status', 'service',
+    'group', 'value', 'text', 'tags', 'attributes', 'origin', 'update_time',
+    'user', 'timeout', 'type', 'customer'
 ])
 
 
@@ -427,6 +429,7 @@ class Backend(Database):
                 origin=h.origin,
                 update_time=h.update_time,
                 user=getattr(h, 'user', None),
+                timeout=getattr(h, 'timeout', None),
                 type=h.type,
                 customer=h.customer
             ) for h in self._fetchall(select, vars(alert), limit=page_size, offset=(page - 1) * page_size)
@@ -466,6 +469,7 @@ class Backend(Database):
                 origin=h.origin,
                 update_time=h.update_time,
                 user=getattr(h, 'user', None),
+                timeout=getattr(h, 'timeout', None),
                 type=h.type,
                 customer=h.customer
             ) for h in self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
@@ -1319,6 +1323,7 @@ class Backend(Database):
     def get_expired(self, expired_threshold, info_threshold):
         # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
         # and 'informational' alerts older than "info_threshold" hours
+
         if expired_threshold:
             delete = """
                 DELETE FROM alerts
@@ -1339,46 +1344,39 @@ class Backend(Database):
         select = """
             SELECT *
               FROM alerts
-             WHERE status NOT IN ('expired','ack','shelved') AND COALESCE(timeout, {timeout})!=0
+             WHERE status NOT IN ('expired') AND COALESCE(timeout, {timeout})!=0
                AND (last_receive_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
         """.format(timeout=current_app.config['ALERT_TIMEOUT'])
 
         return self._fetchall(select, {})
 
-    def get_timeout(self):
+    def get_unshelve(self):
         # get list of alerts to be unshelved
         select = """
-        WITH shelved AS (
             SELECT DISTINCT ON (a.id) a.*
               FROM alerts a, UNNEST(history) h
              WHERE a.status='shelved'
                AND h.type='shelve'
                AND h.status='shelved'
-          ORDER BY a.id, h.update_time DESC
-        )
-        SELECT *
-          FROM shelved
-         WHERE COALESCE(timeout, {timeout})!=0 AND (update_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
+               AND COALESCE(h.timeout, {timeout})!=0
+               AND (a.update_time + INTERVAL '1 second' * h.timeout) < NOW() at time zone 'utc'
+          ORDER BY a.id, a.update_time DESC
         """.format(timeout=current_app.config['SHELVE_TIMEOUT'])
-        unshelve = self._fetchall(select, {})
+        return self._fetchall(select, {})
 
+    def get_unack(self):
         # get list of alerts to be unack'ed
         select = """
-        WITH acked AS (
             SELECT DISTINCT ON (a.id) a.*
               FROM alerts a, UNNEST(history) h
              WHERE a.status='ack'
                AND h.type='ack'
                AND h.status='ack'
-          ORDER BY a.id, h.update_time DESC
-        )
-        SELECT *
-          FROM acked
-         WHERE COALESCE(timeout, {timeout})!=0 AND (update_time + INTERVAL '1 second' * timeout) < NOW() at time zone 'utc'
+               AND COALESCE(h.timeout, {timeout})!=0
+               AND (a.update_time + INTERVAL '1 second' * h.timeout) < NOW() at time zone 'utc'
+          ORDER BY a.id, a.update_time DESC
         """.format(timeout=current_app.config['ACK_TIMEOUT'])
-        unack = self._fetchall(select, {})
-
-        return unshelve + unack
+        return self._fetchall(select, {})
 
     # SQL HELPERS
 

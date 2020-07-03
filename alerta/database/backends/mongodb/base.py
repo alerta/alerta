@@ -566,6 +566,7 @@ class Backend(Database):
                     'origin': response['origin'],
                     'updateTime': response['history']['updateTime'],
                     'user': response['history'].get('user'),
+                    'timeout': response['history'].get('timeout'),
                     'type': response['history'].get('type', 'unknown'),
                     'customer': response.get('customer')
                 }
@@ -585,6 +586,7 @@ class Backend(Database):
             'attributes': 1,
             'origin': 1,
             'user': 1,
+            'timeout': 1,
             'type': 1,
             'history': 1
         }
@@ -619,6 +621,7 @@ class Backend(Database):
                     'origin': response['origin'],
                     'updateTime': response['history']['updateTime'],
                     'user': response.get('user'),
+                    'timeout': response.get('timeout'),
                     'type': response['history'].get('type', 'unknown'),
                     'customer': response.get('customer', None)
                 }
@@ -1678,15 +1681,18 @@ class Backend(Database):
 
         # get list of alerts to be newly expired
         pipeline = [
+            {'$match': {'status': {'$nin': ['expired']}}},
             {'$addFields': {
-                'expireTime': {'$add': ['$lastReceiveTime', {'$multiply': ['$timeout', 1000]}]}}
-             },
-            {'$match': {'status': {'$nin': ['expired', 'ack', 'shelved']}, 'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {
-                '$ne': 0}}}
+                'computedTimeout': {'$multiply': [{'$ifNull': ['$timeout', current_app.config['ALERT_TIMEOUT']]}, 1000]}
+            }},
+            {'$addFields': {
+                'isExpired': {'$lt': [{'$add': ['$lastReceiveTime', '$computedTimeout']}, datetime.utcnow()]}
+            }},
+            {'$match': {'isExpired': True, 'computedTimeout': {'$ne': 0}}}
         ]
         return self.get_db().alerts.aggregate(pipeline)
 
-    def get_timeout(self):
+    def get_unshelve(self):
         # get list of alerts to be unshelved
         pipeline = [
             {'$match': {'status': 'shelved'}},
@@ -1696,13 +1702,47 @@ class Backend(Database):
                 'history.status': 'shelved'
             }},
             {'$sort': {'history.updateTime': -1}},
-            {'$addFields': {
-                'expireTime': {'$add': ['$updateTime', {'$multiply': ['$timeout', 1000]}]}
+            {'$group': {
+                '_id': '$_id',
+                'resource': {'$first': '$resource'},
+                'event': {'$first': '$event'},
+                'environment': {'$first': '$environment'},
+                'severity': {'$first': '$severity'},
+                'correlate': {'$first': '$correlate'},
+                'status': {'$first': '$status'},
+                'service': {'$first': '$service'},
+                'group': {'$first': '$group'},
+                'value': {'$first': '$value'},
+                'text': {'$first': '$text'},
+                'tags': {'$first': '$tags'},
+                'attributes': {'$first': '$attributes'},
+                'origin': {'$first': '$origin'},
+                'type': {'$first': '$type'},
+                'createTime': {'$first': '$createTime'},
+                'timeout': {'$first': '$timeout'},
+                'rawData': {'$first': '$rawData'},
+                'customer': {'$first': '$customer'},
+                'duplicateCount': {'$first': '$duplicateCount'},
+                'repeat': {'$first': '$repeat'},
+                'previousSeverity': {'$first': '$previousSeverity'},
+                'trendIndication': {'$first': '$trendIndication'},
+                'receiveTime': {'$first': '$receiveTime'},
+                'lastReceiveId': {'$first': '$lastReceiveId'},
+                'lastReceiveTime': {'$first': '$lastReceiveTime'},
+                'updateTime': {'$first': '$updateTime'},
+                'history': {'$first': '$history'},
             }},
-            {'$match': {'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {'$ne': 0}}}
+            {'$addFields': {
+                'computedTimeout': {'$multiply': [{'$ifNull': ['$history.timeout', current_app.config['SHELVE_TIMEOUT']]}, 1000]}
+            }},
+            {'$addFields': {
+                'isExpired': {'$lt': [{'$add': ['$updateTime', '$computedTimeout']}, datetime.utcnow()]}
+            }},
+            {'$match': {'isExpired': True, 'computedTimeout': {'$ne': 0}}}
         ]
-        unshelve = self.get_db().alerts.aggregate(pipeline)
+        return self.get_db().alerts.aggregate(pipeline)
 
+    def get_unack(self):
         # get list of alerts to be unack'ed
         pipeline = [
             {'$match': {'status': 'ack'}},
@@ -1712,11 +1752,42 @@ class Backend(Database):
                 'history.status': 'ack'
             }},
             {'$sort': {'history.updateTime': -1}},
-            {'$addFields': {
-                'expireTime': {'$add': ['$updateTime', {'$multiply': ['$timeout', 1000]}]}
+            {'$group': {
+                '_id': '$_id',
+                'resource': {'$first': '$resource'},
+                'event': {'$first': '$event'},
+                'environment': {'$first': '$environment'},
+                'severity': {'$first': '$severity'},
+                'correlate': {'$first': '$correlate'},
+                'status': {'$first': '$status'},
+                'service': {'$first': '$service'},
+                'group': {'$first': '$group'},
+                'value': {'$first': '$value'},
+                'text': {'$first': '$text'},
+                'tags': {'$first': '$tags'},
+                'attributes': {'$first': '$attributes'},
+                'origin': {'$first': '$origin'},
+                'type': {'$first': '$type'},
+                'createTime': {'$first': '$createTime'},
+                'timeout': {'$first': '$timeout'},
+                'rawData': {'$first': '$rawData'},
+                'customer': {'$first': '$customer'},
+                'duplicateCount': {'$first': '$duplicateCount'},
+                'repeat': {'$first': '$repeat'},
+                'previousSeverity': {'$first': '$previousSeverity'},
+                'trendIndication': {'$first': '$trendIndication'},
+                'receiveTime': {'$first': '$receiveTime'},
+                'lastReceiveId': {'$first': '$lastReceiveId'},
+                'lastReceiveTime': {'$first': '$lastReceiveTime'},
+                'updateTime': {'$first': '$updateTime'},
+                'history': {'$first': '$history'},
             }},
-            {'$match': {'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {'$ne': 0}}}
+            {'$addFields': {
+                'computedTimeout': {'$multiply': [{'$ifNull': ['$history.timeout', current_app.config['ACK_TIMEOUT']]}, 1000]}
+            }},
+            {'$addFields': {
+                'isExpired': {'$lt': [{'$add': ['$updateTime', '$computedTimeout']}, datetime.utcnow()]}
+            }},
+            {'$match': {'isExpired': True, 'computedTimeout': {'$ne': 0}}}
         ]
-        unack = self.get_db().alerts.aggregate(pipeline)
-
-        return list(unshelve) + list(unack)
+        return self.get_db().alerts.aggregate(pipeline)

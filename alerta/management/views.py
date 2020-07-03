@@ -148,12 +148,12 @@ def housekeeping():
     expired_threshold = request.args.get('expired', default=current_app.config['DEFAULT_EXPIRED_DELETE_HRS'], type=int)
     info_threshold = request.args.get('info', default=current_app.config['DEFAULT_INFO_DELETE_HRS'], type=int)
 
-    has_expired, has_timedout = Alert.housekeeping(expired_threshold, info_threshold)
+    has_expired, shelve_timeout, ack_timeout = Alert.housekeeping(expired_threshold, info_threshold)
 
     errors = []
     for alert in has_expired:
         try:
-            alert, _, text, timeout = process_action(alert, action='expired', text='', timeout=current_app.config['ALERT_TIMEOUT'])
+            alert, _, text, timeout = process_action(alert, action='expired', text='', timeout=None)
             alert = alert.from_expired(text, timeout)
         except RejectException as e:
             write_audit_trail.send(current_app._get_current_object(), event='alert-expire-rejected', message=alert.text,
@@ -167,9 +167,10 @@ def housekeeping():
         write_audit_trail.send(current_app._get_current_object(), event='alert-expired', message=text, user=g.login,
                                customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
-    for alert in has_timedout:
+    for alert in shelve_timeout + ack_timeout:
+        print('>>>>>>>>> {}'.format(alert))
         try:
-            alert, _, text, timeout = process_action(alert, action='timeout', text='', timeout=current_app.config['ALERT_TIMEOUT'])
+            alert, _, text, timeout = process_action(alert, action='timeout', text='', timeout=None)
             alert = alert.from_timeout(text, timeout)
         except RejectException as e:
             write_audit_trail.send(current_app._get_current_object(), event='alert-timeout-rejected', message=alert.text,
@@ -189,8 +190,9 @@ def housekeeping():
         return jsonify(
             status='ok',
             expired=[a.id for a in has_expired],
-            timedout=[a.id for a in has_timedout],
-            count=len(has_expired) + len(has_timedout)
+            unshelve=[a.id for a in shelve_timeout],
+            unack=[a.id for a in ack_timeout],
+            count=len(has_expired) + len(shelve_timeout) + len(ack_timeout)
         )
 
 
