@@ -187,7 +187,10 @@ class StateMachine(AlarmModel):
             return next_state('EXP-0', current_severity, EXPIRED)
 
         if action == ACTION_TIMEOUT:
-            return next_state('OPEN-0', current_severity, OPEN)
+            if previous_status == ACK:
+                return next_state('ACK-0', current_severity, ACK)
+            else:
+                return next_state('OPEN-0', current_severity, OPEN)
 
         if state == OPEN:
             if action == ACTION_OPEN:
