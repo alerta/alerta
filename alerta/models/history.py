@@ -15,6 +15,7 @@ class History:
         self.change_type = kwargs.get('change_type', kwargs.get('type', None)) or ''
         self.update_time = kwargs.get('update_time', None) or datetime.utcnow()
         self.user = kwargs.get('user', None)
+        self.timeout = kwargs.get('timeout', None)
 
     @property
     def serialize(self):
@@ -28,7 +29,8 @@ class History:
             'text': self.text,
             'type': self.change_type,
             'updateTime': self.update_time,
-            'user': self.user
+            'user': self.user,
+            'timeout': self.timeout
         }
 
     def __repr__(self):
@@ -46,7 +48,8 @@ class History:
             text=doc.get('text', None),
             change_type=doc.get('type', None),
             update_time=doc.get('updateTime', None),
-            user=doc.get('user', None)
+            user=doc.get('user', None),
+            timeout=doc.get('timeout', None)
         )
 
     @classmethod
@@ -60,7 +63,8 @@ class History:
             text=rec.text,
             change_type=rec.type,
             update_time=rec.update_time,
-            user=getattr(rec, 'user', None)
+            user=getattr(rec, 'user', None),
+            timeout=getattr(rec, 'timeout', None)
         )
 
     @classmethod
@@ -90,6 +94,7 @@ class RichHistory:
         self.origin = kwargs.get('origin', None)
         self.update_time = kwargs.get('update_time', None)
         self.user = kwargs.get('user', None)
+        self.timeout = kwargs.get('timeout', None)
         self.change_type = kwargs.get('change_type', kwargs.get('type', None))
         self.customer = kwargs.get('customer', None)
 
@@ -109,6 +114,7 @@ class RichHistory:
             'origin': self.origin,
             'updateTime': self.update_time,
             'user': self.user,
+            'timeout': self.timeout,
             'type': self.change_type,
             'customer': self.customer
         }
@@ -125,8 +131,10 @@ class RichHistory:
         return data
 
     def __repr__(self):
-        return 'RichHistory(id={!r}, environment={!r}, resource={!r}, event={!r}, severity={!r}, status={!r}, type={!r}, customer={!r})'.format(
-            self.id, self.environment, self.resource, self.event, self.severity, self.status, self.change_type, self.customer)
+        return 'RichHistory(id={!r}, environment={!r}, resource={!r}, event={!r}, severity={!r},' \
+               ' status={!r}, timeout={!r}, type={!r}, customer={!r})'.format(
+                   self.id, self.environment, self.resource, self.event, self.severity,
+                   self.status, self.timeout, self.change_type, self.customer)
 
     @classmethod
     def from_document(cls, doc):
@@ -146,6 +154,7 @@ class RichHistory:
             origin=doc.get('origin', None),
             update_time=doc.get('updateTime', None),
             user=doc.get('user', None),
+            timeout=doc.get('timeout', None),
             change_type=doc.get('type', None),
             customer=doc.get('customer', None)
         )
@@ -168,6 +177,7 @@ class RichHistory:
             origin=rec.origin,
             update_time=rec.update_time,
             user=getattr(rec, 'user', None),
+            timeout=getattr(rec, 'timeout', None),
             change_type=rec.type,
             customer=rec.customer
         )
