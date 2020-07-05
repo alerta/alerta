@@ -26,7 +26,7 @@ class Blackout:
             duration = kwargs.get('duration', None) or current_app.config['BLACKOUT_DURATION']
             end_time = start_time + timedelta(seconds=duration)
 
-        self.id = kwargs.get('id', str(uuid4()))
+        self.id = kwargs.get('id') or str(uuid4())
         self.environment = environment
         self.service = kwargs.get('service', None) or list()
         self.resource = kwargs.get('resource', None)
@@ -76,6 +76,7 @@ class Blackout:
             raise ValueError('tags must be a list')
 
         return Blackout(
+            id=json.get('id', None),
             environment=json['environment'],
             service=json.get('service', list()),
             resource=json.get('resource', None),

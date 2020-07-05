@@ -18,7 +18,7 @@ class Note:
 
     def __init__(self, text: str, user: str, note_type: str, **kwargs) -> None:
 
-        self.id = kwargs.get('id', str(uuid4()))
+        self.id = kwargs.get('id') or str(uuid4())
         self.text = text
         self.user = user
         self.note_type = note_type
@@ -31,6 +31,7 @@ class Note:
     @classmethod
     def parse(cls, json: JSON) -> 'Note':
         return Note(
+            id=json.get('id', None),
             text=json.get('status', None),
             user=json.get('status', None),
             attributes=json.get('attributes', dict()),
@@ -52,11 +53,13 @@ class Note:
             'type': self.note_type,
             'createTime': self.create_time,
             'updateTime': self.update_time,
-            'related': dict(),
+            '_links': dict(),
             'customer': self.customer
         }
         if self.alert:
-            note['related']['alert'] = self.alert
+            note['_links'] = {
+                'alert': absolute_url('/alert/' + self.alert)
+            }
         return note
 
     def __repr__(self) -> str:

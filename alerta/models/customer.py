@@ -12,13 +12,14 @@ class Customer:
 
     def __init__(self, match: str, customer: str, **kwargs) -> None:
 
-        self.id = kwargs.get('id', str(uuid4()))
+        self.id = kwargs.get('id') or str(uuid4())
         self.match = match
         self.customer = customer
 
     @classmethod
     def parse(cls, json: JSON) -> 'Customer':
         return Customer(
+            id=json.get('id', None),
             match=json.get('match', None),
             customer=json.get('customer', None)
         )

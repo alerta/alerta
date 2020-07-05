@@ -136,7 +136,7 @@ class AlertNotesTestCase(unittest.TestCase):
         self.assertEqual(data['note']['type'], 'alert')
         self.assertIsNotNone(data['note']['createTime'])
         self.assertIsNone(data['note']['updateTime'])
-        self.assertEqual(data['note']['related']['alert'], alert_id)
+        self.assertIn(alert_id, data['note']['_links']['alert'])
         self.assertEqual(data['note']['customer'], None)
 
         # list notes for alert
@@ -167,7 +167,7 @@ class AlertNotesTestCase(unittest.TestCase):
         self.assertEqual(data['note']['type'], 'alert')
         self.assertIsNotNone(data['note']['createTime'])
         self.assertIsNotNone(data['note']['updateTime'])
-        self.assertEqual(data['note']['related']['alert'], alert_id)
+        self.assertIn(alert_id, data['note']['_links']['alert'])
         self.assertEqual(data['note']['customer'], None)
 
         # list notes for alert (again)

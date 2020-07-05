@@ -46,7 +46,7 @@ class Alert:
         if timeout < 0:
             raise ValueError("Invalid negative 'timeout' value ({})".format(timeout))
 
-        self.id = kwargs.get('id', None) or str(uuid4())
+        self.id = kwargs.get('id') or str(uuid4())
         self.resource = resource
         self.event = event
         self.environment = kwargs.get('environment', None) or ''
