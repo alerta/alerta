@@ -23,7 +23,7 @@ class User:
         if not login:
             raise ValueError('Missing mandatory value for "login"')
 
-        self.id = kwargs.get('id', None) or str(uuid4())
+        self.id = kwargs.get('id') or str(uuid4())
         self.name = name or ''
         self.login = login  # => g.login
         self.password = password  # NB: hashed password
@@ -54,6 +54,7 @@ class User:
     @classmethod
     def parse(cls, json: JSON) -> 'User':
         return User(
+            id=json.get('id', None),
             name=json['name'],
             login=json.get('login', None) or json.get('email', None),
             password=utils.generate_password_hash(json.get('password', '')),

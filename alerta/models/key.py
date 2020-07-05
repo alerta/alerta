@@ -15,7 +15,7 @@ class ApiKey:
 
     def __init__(self, user: str, scopes: List[Scope], text: str = '', expire_time: datetime = None, customer: str = None, **kwargs) -> None:
 
-        self.id = kwargs.get('id', None) or str(uuid4())
+        self.id = kwargs.get('id') or str(uuid4())
         self.key = kwargs.get('key', None) or key_helper.generate()
         self.user = user
         self.scopes = scopes or key_helper.user_default_scopes
@@ -35,6 +35,7 @@ class ApiKey:
             raise ValueError('scopes must be a list')
 
         api_key = ApiKey(
+            id=json.get('id', None),
             user=json.get('user', None),
             scopes=[Scope(s) for s in json.get('scopes', [])],
             text=json.get('text', None),
