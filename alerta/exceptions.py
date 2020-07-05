@@ -25,7 +25,7 @@ class HeartbeatReceived(AlertaException):
 
     def __init__(self, id):
         self.id = id
-        super().__init__('Alert converted to heartbeat')
+        super().__init__('Alert converted to Heartbeat')
 
 
 class BlackoutPeriod(AlertaException):
