@@ -219,7 +219,7 @@ class PluginsTestCase(unittest.TestCase):
         response = self.client.post('/alert', json=self.heartbeat_alert, headers=self.headers)
         self.assertEqual(response.status_code, 202)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['message'], 'Alert converted to heartbeat')
+        self.assertEqual(data['message'], 'Alert converted to Heartbeat')
 
     def test_add_and_remove_tags(self):
 

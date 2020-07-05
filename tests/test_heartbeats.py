@@ -15,7 +15,7 @@ class HeartbeatsTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': False,
             'ALERT_TIMEOUT': 2,
-            'HEARTBEAT_TIMEOUT': 6,
+            'HEARTBEAT_TIMEOUT': 4,
             'HEARTBEAT_EVENTS': ['Heartbeat', 'Watchdog'],
             'PLUGINS': ['heartbeat']
         }
@@ -86,7 +86,7 @@ class HeartbeatsTestCase(unittest.TestCase):
         response = self.client.post('/heartbeat', data=json.dumps(self.heartbeat), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['heartbeat']['timeout'], 6)
+        self.assertEqual(data['heartbeat']['timeout'], 4)
 
         # resend heartbeat with different timeout
         self.heartbeat['timeout'] = 20
@@ -172,7 +172,7 @@ class HeartbeatsTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(heartbeat_alert), headers=self.headers)
         self.assertEqual(response.status_code, 202, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['message'], 'Alert converted to heartbeat')
+        self.assertEqual(data['message'], 'Alert converted to Heartbeat')
 
         response = self.client.get('/heartbeats?origin=test/hb')
         self.assertEqual(response.status_code, 200)
@@ -190,16 +190,18 @@ class HeartbeatsTestCase(unittest.TestCase):
               "labels": {
                 "alertname": "Heartbeat",
                 "dc": "eu-west-1",
-                "environment": "Production",
+                "environment": "Development",
+                "group": "Healthchecks",
                 "monitor": "codelab",
                 "region": "EU",
-                "service": "Prometheus",
-                "severity": "informational"
+                "service": "Monitoring",
+                "severity": "warning"
               },
               "annotations": {},
-              "startsAt": "2019-04-15T14:14:22.012771244Z",
+              "startsAt": "2020-07-05T18:51:22.012771244Z",
               "endsAt": "0001-01-01T00:00:00Z",
-              "generatorURL": "http://96b678727a4b:9090/graph?g0.expr=vector%281%29\u0026g0.tab=1"
+              "generatorURL": "http://9b924908440c:9090/graph?g0.expr=vector%281%29\u0026g0.tab=1",
+              "fingerprint": "fc635810a7f52b9d"
             }
           ],
           "groupLabels": {
@@ -208,25 +210,37 @@ class HeartbeatsTestCase(unittest.TestCase):
           "commonLabels": {
             "alertname": "Heartbeat",
             "dc": "eu-west-1",
-            "environment": "Production",
+            "environment": "Development",
+            "group": "Healthchecks",
             "monitor": "codelab",
             "region": "EU",
-            "service": "Prometheus",
-            "severity": "informational"
+            "service": "Monitoring",
+            "severity": "warning"
           },
           "commonAnnotations": {},
-          "externalURL": "http://316cdde530cd:9093",
+          "externalURL": "http://ca39969851f4:9093",
           "version": "4",
-          "groupKey": "{}:{alertname=\"Heartbeat\"}"
+          "groupKey": "{}:{alertname=\"Heartbeat\"}",
+          "truncatedAlerts": 0
         }
         """
 
         response = self.client.post('/webhooks/prometheus', data=prometheus_alert, headers=self.headers)
         self.assertEqual(response.status_code, 202)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['message'], 'Alert converted to heartbeat')
+        self.assertEqual(data['message'], 'Alert converted to Heartbeat')
 
         response = self.client.get('/heartbeats?origin=prometheus/codelab')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(sorted(data['heartbeats'][0]['tags']), sorted(['dc=eu-west-1', 'region=EU']))
+        self.assertDictEqual(
+            data['heartbeats'][0]['attributes'],
+            dict(
+                environment='Development',
+                severity='warning',
+                service=['Monitoring'],
+                group='Healthchecks'
+            )
+        )
+        self.assertEqual(data['heartbeats'][0]['timeout'], 4)
