@@ -13,4 +13,4 @@ pytz==2020.1
 PyYAML==5.3.1
 requests==2.24.0
 requests_hawk==1.0.1
-sentry-sdk[flask]===0.15.1
+sentry-sdk[flask]===0.16.2
