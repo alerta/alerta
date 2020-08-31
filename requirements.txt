@@ -1,5 +1,5 @@
 bcrypt==3.1.7
-cryptography==2.9.2
+cryptography==3.1
 Flask==1.1.2
 Flask-Compress==1.5.0
 Flask-Cors==3.0.8
