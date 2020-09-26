@@ -1,13 +1,15 @@
 from typing import Any, Dict
 
 from alerta.models.alert import Alert
-
+from alerta.models.alarms.alerta import SEVERITY_MAP
 from . import WebhookBase
 
 JSON = Dict[str, Any]
+UNDETERMINED ="Untetermined"
 
 
 class NewRelicWebhook(WebhookBase):
+
     """
     New Relic webhook notification channel
     See https://docs.newrelic.com/docs/alerts/new-relic-alerts/managing-notification-channels/notification-channels-control-where-send-alerts
@@ -33,23 +35,32 @@ class NewRelicWebhook(WebhookBase):
             severity = payload['severity'].lower()
             status = 'open'
 
-        attributes = dict()
-        if 'incident_url' in payload:
-            attributes['moreInfo'] = '<a href="%s" target="_blank">Incident URL</a>' % payload['incident_url']
-        if 'runbook_url' in payload:
-            attributes['runBook'] = '<a href="%s" target="_blank">Runbook URL</a>' % payload['runbook_url']
+        if severity not in SEVERITY_MAP:
+            if severity.lower() == 'info':
+                severity = 'informational'
+            else:
+                severity = 'unknown'
 
+        attributes = dict()
+        if 'incident_url' in payload and payload['incident_url'] is not None:
+            attributes['incident_url'] = payload['incident_url']
+        if 'runbook_url' in payload and payload['runbook_url'] is not None:
+            attributes['runbook_url'] = payload['runbook_url']
+
+        event = payload['condition_name'] if payload['condition_name'] else UNDETERMINED
+        resource = payload['targets'][0]['name'] if payload['targets'][0]['name'] else UNDETERMINED
+ 
         return Alert(
-            resource=payload['targets'][0]['name'],
-            event=payload['condition_name'],
+            resource=resource,
+            event=event,
             environment='Production',
             severity=severity,
             status=status,
+            attributes=attributes,
             service=[payload['account_name']],
             group=payload['targets'][0]['type'],
             text=payload['details'],
             tags=['{}:{}'.format(key, value) for (key, value) in payload['targets'][0]['labels'].items()],
-            attributes=attributes,
             origin='New Relic/v%s' % payload['version'],
             event_type=payload['event_type'].lower(),
             raw_data=payload
