@@ -52,9 +52,13 @@ class CloudWatchWebhook(WebhookBase):
             if 'Trigger' not in alarm:
                 raise ValueError('SNS message is not a Cloudwatch notification')
 
+            resource = notification['TopicArn'].split(':')[-1]
+            if alarm['Trigger']['Dimensions']:
+              resource = '{}:{}'.format(alarm['Trigger']['Dimensions'][0]['name'],
+                                        alarm['Trigger']['Dimensions'][0]['value'])
+
             return Alert(
-                resource='{}:{}'.format(alarm['Trigger']['Dimensions'][0]['name'],
-                                        alarm['Trigger']['Dimensions'][0]['value']),
+                resource=resource,
                 event=alarm['AlarmName'],
                 environment='Production',
                 severity=self.cw_state_to_severity(alarm['NewStateValue']),
