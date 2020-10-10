@@ -54,8 +54,8 @@ class CloudWatchWebhook(WebhookBase):
 
             resource = notification['TopicArn'].split(':')[-1]
             if alarm['Trigger']['Dimensions']:
-              resource = '{}:{}'.format(alarm['Trigger']['Dimensions'][0]['name'],
-                                        alarm['Trigger']['Dimensions'][0]['value'])
+                resource = '{}:{}'.format(alarm['Trigger']['Dimensions'][0]['name'],
+                                          alarm['Trigger']['Dimensions'][0]['value'])
 
             return Alert(
                 resource=resource,
