@@ -29,7 +29,7 @@ class PingdomWebhook(WebhookBase):
             severity = alarm_model.DEFAULT_NORMAL_SEVERITY
 
         if len(payload['tags']) > 0:
-            tags_dict = { d[0].strip():d[1].strip() for d in [ t.split('_') for t in payload['tags'] if '_' in t ] }
+            tags_dict = { d[0].strip():d[1].strip() for d in [ t.split('_') for t in payload['tags'] if '_' in t ] if len(d[0]) > 0 and len(d[1]) > 0 }
 
             if 'environment' in tags_dict:
                 environment = tags_dict['environment']
