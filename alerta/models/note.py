@@ -55,7 +55,7 @@ class Note:
             'updateTime': self.update_time,
             '_links': dict(),
             'customer': self.customer
-        }
+        }  # type: Dict[str, Any]
         if self.alert:
             note['_links'] = {
                 'alert': absolute_url('/alert/' + self.alert)
