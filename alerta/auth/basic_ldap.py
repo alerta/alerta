@@ -27,6 +27,9 @@ def login():
     except KeyError:
         raise ApiError("must supply 'username' and 'password'", 401)
 
+    if not password:
+        raise ApiError('password not allowed to be empty', 401)
+
     try:
         if '\\' in login:
             domain, username = login.split('\\')
