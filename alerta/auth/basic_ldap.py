@@ -71,7 +71,7 @@ def login():
     user = User.find_by_username(username=login)
     if not user:
         user = User(name=username, login=login, password='', email=email,
-                    roles=[], text='LDAP user', email_verified=email_verified)
+                    roles=current_app.config['USER_ROLES'], text='LDAP user', email_verified=email_verified)
         try:
             user = user.create()
         except Exception as e:

@@ -16,7 +16,9 @@ class ScopesTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'ADMIN_USERS': ['admin@alerta.io', 'sys@alerta.io'],
             'DEFAULT_ADMIN_ROLE': 'ops',
-            'ADMIN_ROLES': ['ops', 'devops']
+            'ADMIN_ROLES': ['ops', 'devops'],
+            'DEFAULT_USER_ROLE': 'dev',
+            'USER_ROLES': ['dev']
         }
         self.app = create_app(test_config, environment='development')
         self.client = self.app.test_client()

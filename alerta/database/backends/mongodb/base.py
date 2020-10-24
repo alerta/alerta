@@ -1491,14 +1491,14 @@ class Backend(Database):
         for match in matches:
             if match in current_app.config['ADMIN_ROLES']:
                 return ADMIN_SCOPES
-            if match == 'user':
+            if match in current_app.config['USER_ROLES']:
                 scopes.extend(current_app.config['USER_DEFAULT_SCOPES'])
-            if match == 'guest':
+            if match in current_app.config['GUEST_ROLES']:
                 scopes.extend(current_app.config['GUEST_DEFAULT_SCOPES'])
             response = self.get_db().perms.find_one({'match': match}, projection={'scopes': 1, '_id': 0})
             if response:
                 scopes.extend(response['scopes'])
-        return sorted(set(scopes)) or current_app.config['USER_DEFAULT_SCOPES']
+        return sorted(set(scopes))
 
     # CUSTOMERS
 
