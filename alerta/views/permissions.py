@@ -4,9 +4,8 @@ from flask_cors import cross_origin
 from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
-from alerta.models.enums import Scope
+from alerta.models.enums import ADMIN_SCOPES, Scope
 from alerta.models.permission import Permission
-from alerta.settings import DEFAULT_ADMIN_ROLE
 from alerta.utils.audit import admin_audit_trail
 from alerta.utils.response import jsonp
 
@@ -23,7 +22,11 @@ def create_perm():
     except ValueError as e:
         raise ApiError(str(e), 400)
 
-    if perm.match in [DEFAULT_ADMIN_ROLE, 'user', 'guest']:
+    if perm.match in [
+        current_app.config['DEFAULT_ADMIN_ROLE'],
+        current_app.config['DEFAULT_USER_ROLE'],
+        current_app.config['DEFAULT_GUEST_ROLE']
+    ]:
         raise ApiError('{} role already exists'.format(perm.match), 409)
 
     for want_scope in perm.scopes:
@@ -67,15 +70,15 @@ def list_perms():
     perms = Permission.find_all(query)
 
     admin_perm = Permission(
-        match=DEFAULT_ADMIN_ROLE,
-        scopes=[Scope.admin]
+        match=current_app.config['DEFAULT_ADMIN_ROLE'],
+        scopes=ADMIN_SCOPES
     )
     user_perm = Permission(
-        match='user',
+        match=current_app.config['DEFAULT_USER_ROLE'],
         scopes=current_app.config['USER_DEFAULT_SCOPES']
     )
     guest_perm = Permission(
-        match='guest',
+        match=current_app.config['DEFAULT_GUEST_ROLE'],
         scopes=current_app.config['GUEST_DEFAULT_SCOPES']
     )
 

@@ -11,7 +11,6 @@ from alerta.auth.utils import generate_password_hash
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
 from alerta.models.user import User
-from alerta.settings import DEFAULT_ADMIN_ROLE
 from alerta.version import __version__
 
 
@@ -172,7 +171,7 @@ def user(name, email, password, text, all):
             name=name or login,
             login=login,
             password=generate_password_hash(password),
-            roles=[DEFAULT_ADMIN_ROLE],
+            roles=current_app.config['ADMIN_ROLES'],
             text=text,
             email=email,
             email_verified=bool(email)

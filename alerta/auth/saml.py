@@ -87,7 +87,7 @@ def saml_response_from_idp():
     user = User.find_by_username(username=email)
     if not user:
         user = User(name=name, login=login, password='', email=email,
-                    roles=[], text='SAML2 user', email_verified=True)
+                    roles=current_app.config['USER_ROLES'], text='SAML2 user', email_verified=True)
         try:
             user = user.create()
         except Exception as e:
