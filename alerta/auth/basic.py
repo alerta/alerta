@@ -23,7 +23,7 @@ def signup():
         raise ApiError(str(e), 400)
 
     # set sign-up defaults
-    user.roles = ['user']
+    user.roles = current_app.config['USER_ROLES']
     user.email_verified = False
 
     # check allowed domain

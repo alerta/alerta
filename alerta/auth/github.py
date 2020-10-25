@@ -58,7 +58,7 @@ def github():
     user = User.find_by_id(id=subject)
     if not user:
         user = User(id=subject, name=name, login=login, password='', email=email,
-                    roles=[], text='', email_verified=email_verified)
+                    roles=current_app.config['USER_ROLES'], text='', email_verified=email_verified)
         user.create()
     else:
         user.update(login=login, email=email)

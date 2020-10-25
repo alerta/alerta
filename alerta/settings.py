@@ -62,7 +62,11 @@ AUTH_PROVIDER = 'basic'  # basic (default), ldap, github, openid, saml2, azure, 
 ADMIN_USERS = []  # type: List[str]
 DEFAULT_ADMIN_ROLE = 'admin'
 ADMIN_ROLES = [DEFAULT_ADMIN_ROLE]
+DEFAULT_USER_ROLE = 'user'
+USER_ROLES = [DEFAULT_USER_ROLE]
 USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includes 'read'
+DEFAULT_GUEST_ROLE = 'guest'
+GUEST_ROLES = [DEFAULT_GUEST_ROLE]
 GUEST_DEFAULT_SCOPES = ['read:alerts']
 CUSTOMER_VIEWS = False
 
