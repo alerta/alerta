@@ -368,7 +368,7 @@ class WebhooksTestCase(unittest.TestCase):
                     "location": "Strasbourg 5, France",
                     "ipv6": ""
                 },
-                "tags": [],
+                "tags": ["environment_stage", "group_mainsite"],
                 "check_id": 803318,
                 "current_state": "DOWN",
                 "check_params": {
@@ -823,6 +823,9 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['severity'], 'critical')
         self.assertEqual(data['alert']['text'], 'HIGH: HTTP Server Error 503 Service Unavailable')
         self.assertEqual(data['alert']['value'], 'HTTP Error 503')
+        self.assertEqual(data['alert']['tags'], ['environment_stage', 'group_mainsite'])
+        self.assertEqual(data['alert']['environment'], 'stage')
+        self.assertEqual(data['alert']['group'], 'mainsite')
 
         # http up
         response = self.client.post('/webhooks/pingdom', data=self.pingdom_up, headers=self.headers)
