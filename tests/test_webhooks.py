@@ -368,7 +368,7 @@ class WebhooksTestCase(unittest.TestCase):
                     "location": "Strasbourg 5, France",
                     "ipv6": ""
                 },
-                "tags": ["environment_stage", "group_mainsite"],
+                "tags": ["environment_staging", "group_mainsite"],
                 "check_id": 803318,
                 "current_state": "DOWN",
                 "check_params": {
@@ -401,7 +401,7 @@ class WebhooksTestCase(unittest.TestCase):
                     "location": "Athens, Greece",
                     "ipv6": ""
                 },
-                "tags": [],
+                "tags": ["environment_staging", "group_mainsite"],
                 "check_id": 803318,
                 "current_state": "UP",
                 "check_params": {
@@ -823,8 +823,8 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['severity'], 'critical')
         self.assertEqual(data['alert']['text'], 'HIGH: HTTP Server Error 503 Service Unavailable')
         self.assertEqual(data['alert']['value'], 'HTTP Error 503')
-        self.assertEqual(data['alert']['tags'], ['environment_stage', 'group_mainsite'])
-        self.assertEqual(data['alert']['environment'], 'stage')
+        self.assertEqual(data['alert']['tags'], ['environment_staging', 'group_mainsite'])
+        self.assertEqual(data['alert']['environment'], 'staging')
         self.assertEqual(data['alert']['group'], 'mainsite')
 
         # http up
@@ -836,6 +836,9 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['severity'], 'normal')
         self.assertEqual(data['alert']['text'], 'HIGH: OK')
         self.assertEqual(data['alert']['value'], 'OK')
+        self.assertEqual(data['alert']['tags'], ['environment_staging', 'group_mainsite'])
+        self.assertEqual(data['alert']['environment'], 'staging')
+        self.assertEqual(data['alert']['group'], 'mainsite')
 
     def test_prometheus_webhook(self):
 
