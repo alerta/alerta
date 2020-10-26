@@ -1,7 +1,7 @@
 Alerta Release 8.0
 ==================
 
-[![Build Status](https://travis-ci.org/alerta/alerta.svg?branch=master)](https://travis-ci.org/alerta/alerta)
+[![Actions Status](https://github.com/alerta/alerta/workflows/CI%20Tests/badge.svg)](https://github.com/alerta/alerta/actions)
 [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
 [![Coverage Status](https://coveralls.io/repos/github/alerta/alerta/badge.svg?branch=master)](https://coveralls.io/github/alerta/alerta?branch=master)
 
