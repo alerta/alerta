@@ -68,7 +68,8 @@ class AlertsTestCase(unittest.TestCase):
             'service': ['Network'],
             'severity': 'warning',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
-            'timeout': 50
+            'timeout': 50,
+            'rawData': 'command output'
         }
         self.normal_alert = {
             'event': 'node_up',
@@ -710,6 +711,31 @@ class AlertsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['total'], 1)
         self.assertEqual(data['alerts'][0]['event'], 'node_up')
+
+    def test_alerts_show_fields(self):
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        response = self.client.get('/alerts?show-raw-data=no')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alerts'][0]['rawData'], None)
+        self.assertEqual(data['alerts'][0]['history'], [])
+
+        response = self.client.get('/alerts?show-raw-data=yes&show-history=0')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alerts'][0]['rawData'], 'command output')
+        self.assertEqual(data['alerts'][0]['history'], [])
+
+        response = self.client.get('/alerts?show-history=yes')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['total'], 1)
+        self.assertEqual(data['alerts'][0]['rawData'], None)
+        self.assertEqual(len(data['alerts'][0]['history']), 1)
 
     def test_get_body(self):
         from flask import g
