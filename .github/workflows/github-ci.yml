@@ -9,8 +9,6 @@ on:
 jobs:
   test-postgres:
     runs-on: ubuntu-latest
-    env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
     services:
       postgres:
@@ -32,11 +30,6 @@ jobs:
         python-version: [3.7, 3.8]
 
     steps:
-      - uses: act10ns/slack@v1
-        with:
-          status: starting
-          channel: '#github-ci'
-        if: always()
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -66,17 +59,8 @@ jobs:
         run: |
           pytest --cov=alerta
 
-      - uses: act10ns/slack@v1
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: '#github-ci'
-        if: always()
-
   test-mongodb:
     runs-on: ubuntu-latest
-    env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
     services:
       mongodb:
@@ -117,10 +101,3 @@ jobs:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
         run: |
           pytest --cov=alerta
-
-      - uses: act10ns/slack@v1
-        with:
-          status: ${{ job.status }}
-          steps: ${{ toJson(steps) }}
-          channel: '#github-ci'
-        if: always()
