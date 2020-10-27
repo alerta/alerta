@@ -44,7 +44,13 @@ def login():
             email = login
             email_verified = True
     except ValueError:
-        raise ApiError('expected username with domain', 401)
+        if current_app.config['LDAP_DEFAULT_DOMAIN']:
+            username = login
+            domain = current_app.config['LDAP_DEFAULT_DOMAIN']
+            email = username+'@'+domain
+            email_verified = True
+        else:
+            raise ApiError('expected username with domain', 401)
 
     # Validate LDAP domain
     if domain not in current_app.config['LDAP_DOMAINS']:
