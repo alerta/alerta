@@ -278,6 +278,55 @@ class WebhooksTestCase(unittest.TestCase):
 
         # new relic payload
 
+        self.new_relic_notification = """
+            {
+              "owner": "",
+              "severity": "INFO",
+              "policy_url": "https://alerts.newrelic.com/accounts/11111/policies/0",
+              "closed_violations_count": {
+                "critical": 0,
+                "warning": 0,
+                "ok": 0,
+                "info": 0
+              },
+              "current_state": "open",
+              "policy_name": "New Relic Alert - Test Policy",
+              "incident_url": "https://alerts.newrelic.com/accounts/11111/incidents/0",
+              "condition_family_id": 0,
+              "incident_acknowledge_url": "https://alerts.newrelic.com/accounts/11111/incidents/0/acknowledge",
+              "targets": [
+                {
+                  "id": "0",
+                  "name": "",
+                  "link": "http://localhost/sample/violation/charturl/12345",
+                  "labels": {},
+                  "product": "TESTING",
+                  "type": "Application"
+                }
+              ],
+              "version": "1.0",
+              "condition_id": 0,
+              "duration": 5,
+              "account_id": 11111,
+              "incident_id": 0,
+              "event_type": "INCIDENT",
+              "runbook_url": "http://localhost/runbook/url",
+              "account_name": "Myaccount (Staging)",
+              "open_violations_count": {
+                "critical": 0,
+                "warning": 0,
+                "ok": 0,
+                "info": 0
+              },
+              "details": "I am a test Violation",
+              "violation_callback_url": "http://localhost/sample/violation/charturl/12345",
+              "condition_name": "New Relic Alert - Test Condition",
+              "timestamp": 1601033007849
+            }
+        """
+
+        # pagerduty payload
+
         self.pagerduty_alert = """
             {
               "messages": [
@@ -779,6 +828,18 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['severity'], 'critical')
         self.assertEqual(
             data['alert']['text'], 'Stream had 2 messages in the last 1 minutes with trigger condition more than 1 messages. (Current grace time: 1 minutes)')
+
+    def test_new_relic_webhook(self):
+        # new relic notification
+        response = self.client.post('/webhooks/newrelic',
+                                    data=self.new_relic_notification, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['resource'], 'unknown')
+        self.assertEqual(data['alert']['event'], 'New Relic Alert - Test Condition')
+        self.assertEqual(data['alert']['service'], ['Myaccount (Staging)'])
+        self.assertEqual(data['alert']['severity'], 'informational')
+        self.assertEqual(data['alert']['text'], 'I am a test Violation')
 
     def test_pagerduty_webhook(self):
 
