@@ -90,9 +90,9 @@ class QueryBuilderImpl(QueryBuilder):
             query['$or'] = [{'_id': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}},
                             {'lastReceiveId': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}]
 
-        EXCLUDE_QUERY = ['_', 'callback', 'token', 'api-key', 'q', 'q.df', 'q.op', 'id',
-                         'from-date', 'to-date', 'duplicateCount', 'repeat', 'sort-by',
-                         'reverse', 'group-by', 'page', 'page-size', 'limit']
+        EXCLUDE_QUERY = ['_', 'callback', 'token', 'api-key', 'q', 'q.df', 'q.op', 'id', 'from-date', 'to-date',
+                         'duplicateCount', 'repeat', 'sort-by', 'reverse', 'group-by', 'page', 'page-size', 'limit',
+                         'show-raw-data', 'show-history']
         # fields
         for field in params:
             if field in EXCLUDE_QUERY:
