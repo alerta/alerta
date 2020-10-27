@@ -145,7 +145,7 @@ class PluginsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'assign')
         self.assertEqual(sorted(data['alert']['tags']), sorted(
-            ['Development', 'Production', 'more', 'other', 'that', 'the', 'this']))
+            ['Development', 'Production', 'more', 'other', 'that', 'the', 'this', 'aSingleTag', 'a:Triple:Tag']))
         self.assertEqual(data['alert']['history'][1]['text'],
                          'ticket created by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
 
@@ -219,7 +219,33 @@ class PluginsTestCase(unittest.TestCase):
         response = self.client.post('/alert', json=self.heartbeat_alert, headers=self.headers)
         self.assertEqual(response.status_code, 202)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['message'], 'Alert converted to heartbeat')
+        self.assertEqual(data['message'], 'Alert converted to Heartbeat')
+
+    def test_add_and_remove_tags(self):
+
+        plugins.plugins['action1'] = CustActionPlugin1()
+        plugins.plugins['action2'] = CustActionPlugin2()
+
+        # create alert
+        response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        alert_id = data['id']
+
+        payload = {
+            'action': 'ack',
+            'text': 'this is a test'
+        }
+        response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('aSingleTag', data['alert']['tags'])
+        self.assertIn('a:Triple:Tag', data['alert']['tags'])
+        self.assertNotIn('aDouble:Tag', data['alert']['tags'])
 
 
 class OldPlugin1(PluginBase):
@@ -323,6 +349,27 @@ class CustActionPlugin1(PluginBase):
             alert.status = 'closed'
             alert.tags.append('true')
             text = text + ' (ticket #12345)'
+
+        alert.tags.append('aSingleTag')  # one tag only
+        alert.tags.extend(['aDouble:Tag', 'a:Triple:Tag'])  # multiple tags as a list
+
+        return alert, action, text
+
+
+class CustActionPlugin2(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        return
+
+    def status_change(self, alert, status, text, **kwargs):
+        return alert, status, text
+
+    def take_action(self, alert, action, text, **kwargs):
+
+        alert.tags.remove('aDouble:Tag')
 
         return alert, action, text
 

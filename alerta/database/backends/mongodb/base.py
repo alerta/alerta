@@ -5,6 +5,7 @@ from flask import current_app
 from pymongo import ASCENDING, TEXT, MongoClient, ReturnDocument
 from pymongo.errors import ConnectionFailure
 
+from alerta.app import alarm_model
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
 from alerta.models.enums import ADMIN_SCOPES
@@ -23,6 +24,7 @@ class Backend(Database):
 
         db = self.connect()
         self._create_indexes(db)
+        self._update_lookups(db)
 
     def connect(self):
         self.client = MongoClient(self.uri)
@@ -50,6 +52,21 @@ class Backend(Database):
                               partialFilterExpression={'email': {'$type': 'string'}})
         db.groups.create_index([('name', ASCENDING)], unique=True)
         db.metrics.create_index([('group', ASCENDING), ('name', ASCENDING)], unique=True)
+
+    @staticmethod
+    def _update_lookups(db):
+        for severity, code in alarm_model.Severity.items():
+            db.codes.update(
+                {'severity': severity},
+                {'$set': {'severity': severity, 'code': code}},
+                upsert=True
+            )
+        for status, state in alarm_model.Status.items():
+            db.states.update(
+                {'status': status},
+                {'$set': {'status': status, 'state': state}},
+                upsert=True
+            )
 
     @property
     def name(self):
@@ -467,7 +484,29 @@ class Backend(Database):
 
     def get_alerts(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return self.get_db().alerts.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+        pipeline = [
+            {'$lookup': {
+                'from': 'codes',
+                'localField': 'severity',
+                'foreignField': 'severity',
+                'as': 'fromCodes'
+            }},
+            {'$replaceRoot': {'newRoot': {'$mergeObjects': [{'$arrayElemAt': ['$fromCodes', 0]}, '$$ROOT']}}},
+            {'$project': {'fromCodes': 0}},
+            {'$lookup': {
+                'from': 'states',
+                'localField': 'status',
+                'foreignField': 'status',
+                'as': 'fromStates'
+            }},
+            {'$replaceRoot': {'newRoot': {'$mergeObjects': [{'$arrayElemAt': ['$fromStates', 0]}, '$$ROOT']}}},
+            {'$project': {'fromStates': 0}},
+            {'$match': query.where},
+            {'$sort': {k: v for k, v in query.sort}},
+            {'$skip': (page - 1) * page_size},
+            {'$limit': page_size}
+        ]
+        return self.get_db().alerts.aggregate(pipeline)
 
     def get_alert_history(self, alert, page=None, page_size=None):
         query = {
@@ -527,6 +566,7 @@ class Backend(Database):
                     'origin': response['origin'],
                     'updateTime': response['history']['updateTime'],
                     'user': response['history'].get('user'),
+                    'timeout': response['history'].get('timeout'),
                     'type': response['history'].get('type', 'unknown'),
                     'customer': response.get('customer')
                 }
@@ -546,6 +586,7 @@ class Backend(Database):
             'attributes': 1,
             'origin': 1,
             'user': 1,
+            'timeout': 1,
             'type': 1,
             'history': 1
         }
@@ -580,6 +621,7 @@ class Backend(Database):
                     'origin': response['origin'],
                     'updateTime': response['history']['updateTime'],
                     'user': response.get('user'),
+                    'timeout': response.get('timeout'),
                     'type': response['history'].get('type', 'unknown'),
                     'customer': response.get('customer', None)
                 }
@@ -754,13 +796,14 @@ class Backend(Database):
         for r in response_status:
             status_count[r['_id']['environment']].append((r['_id']['status'], r['count']))
 
+        environments = self.get_db().alerts.find().distinct('environment')
         return [
             {
                 'environment': env,
                 'severityCounts': dict(severity_count[env]),
                 'statusCounts': dict(status_count[env]),
                 'count': sum(t[1] for t in severity_count[env])
-            } for env in severity_count]
+            } for env in environments]
 
     # SERVICES
 
@@ -791,14 +834,20 @@ class Backend(Database):
         for r in response_status:
             status_count[(r['_id']['environment'], r['_id']['service'])].append((r['_id']['status'], r['count']))
 
+        pipeline = [
+            {'$unwind': '$service'},
+            {'$group': {'_id': {'environment': '$environment', 'service': '$service'}}},
+            {'$limit': topn}
+        ]
+        services = list(self.get_db().alerts.aggregate(pipeline))
         return [
             {
-                'environment': env,
-                'service': svc,
-                'severityCounts': dict(severity_count[(env, svc)]),
-                'statusCounts': dict(status_count[(env, svc)]),
-                'count': sum(t[1] for t in severity_count[(env, svc)])
-            } for env, svc in severity_count]
+                'environment': svc['_id']['environment'],
+                'service': svc['_id']['service'],
+                'severityCounts': dict(severity_count[(svc['_id']['environment'], svc['_id']['service'])]),
+                'statusCounts': dict(status_count[(svc['_id']['environment'], svc['_id']['service'])]),
+                'count': sum(t[1] for t in severity_count[(svc['_id']['environment'], svc['_id']['service'])])
+            } for svc in services]
 
     # ALERT GROUPS
 
@@ -1442,14 +1491,14 @@ class Backend(Database):
         for match in matches:
             if match in current_app.config['ADMIN_ROLES']:
                 return ADMIN_SCOPES
-            if match == 'user':
+            if match in current_app.config['USER_ROLES']:
                 scopes.extend(current_app.config['USER_DEFAULT_SCOPES'])
-            if match == 'guest':
+            if match in current_app.config['GUEST_ROLES']:
                 scopes.extend(current_app.config['GUEST_DEFAULT_SCOPES'])
             response = self.get_db().perms.find_one({'match': match}, projection={'scopes': 1, '_id': 0})
             if response:
                 scopes.extend(response['scopes'])
-        return sorted(set(scopes)) or current_app.config['USER_DEFAULT_SCOPES']
+        return sorted(set(scopes))
 
     # CUSTOMERS
 
@@ -1617,7 +1666,7 @@ class Backend(Database):
 
     # HOUSEKEEPING
 
-    def housekeeping(self, expired_threshold, info_threshold):
+    def get_expired(self, expired_threshold, info_threshold):
         # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
         # and 'informational' alerts older than "info_threshold" hours
 
@@ -1632,15 +1681,18 @@ class Backend(Database):
 
         # get list of alerts to be newly expired
         pipeline = [
-            {'$project': {
-                'event': 1, 'status': 1, 'lastReceiveId': 1, 'timeout': 1,
-                'expireTime': {'$add': ['$lastReceiveTime', {'$multiply': ['$timeout', 1000]}]}}
-             },
-            {'$match': {'status': {'$nin': ['expired', 'ack', 'shelved']}, 'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {
-                '$ne': 0}}}
+            {'$match': {'status': {'$nin': ['expired']}}},
+            {'$addFields': {
+                'computedTimeout': {'$multiply': [{'$ifNull': ['$timeout', current_app.config['ALERT_TIMEOUT']]}, 1000]}
+            }},
+            {'$addFields': {
+                'isExpired': {'$lt': [{'$add': ['$lastReceiveTime', '$computedTimeout']}, datetime.utcnow()]}
+            }},
+            {'$match': {'isExpired': True, 'computedTimeout': {'$ne': 0}}}
         ]
-        has_expired = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
+        return self.get_db().alerts.aggregate(pipeline)
 
+    def get_unshelve(self):
         # get list of alerts to be unshelved
         pipeline = [
             {'$match': {'status': 'shelved'}},
@@ -1652,20 +1704,45 @@ class Backend(Database):
             {'$sort': {'history.updateTime': -1}},
             {'$group': {
                 '_id': '$_id',
+                'resource': {'$first': '$resource'},
                 'event': {'$first': '$event'},
+                'environment': {'$first': '$environment'},
+                'severity': {'$first': '$severity'},
+                'correlate': {'$first': '$correlate'},
+                'status': {'$first': '$status'},
+                'service': {'$first': '$service'},
+                'group': {'$first': '$group'},
+                'value': {'$first': '$value'},
+                'text': {'$first': '$text'},
+                'tags': {'$first': '$tags'},
+                'attributes': {'$first': '$attributes'},
+                'origin': {'$first': '$origin'},
+                'type': {'$first': '$type'},
+                'createTime': {'$first': '$createTime'},
+                'timeout': {'$first': '$timeout'},
+                'rawData': {'$first': '$rawData'},
+                'customer': {'$first': '$customer'},
+                'duplicateCount': {'$first': '$duplicateCount'},
+                'repeat': {'$first': '$repeat'},
+                'previousSeverity': {'$first': '$previousSeverity'},
+                'trendIndication': {'$first': '$trendIndication'},
+                'receiveTime': {'$first': '$receiveTime'},
                 'lastReceiveId': {'$first': '$lastReceiveId'},
-                'updateTime': {'$first': '$history.updateTime'},
-                'timeout': {'$first': '$timeout'}
+                'lastReceiveTime': {'$first': '$lastReceiveTime'},
+                'updateTime': {'$first': '$updateTime'},
+                'history': {'$first': '$history'},
             }},
-            {'$project': {
-                'event': 1,
-                'lastReceiveId': 1,
-                'expireTime': {'$add': ['$updateTime', {'$multiply': ['$timeout', 1000]}]}
+            {'$addFields': {
+                'computedTimeout': {'$multiply': [{'$ifNull': ['$history.timeout', current_app.config['SHELVE_TIMEOUT']]}, 1000]}
             }},
-            {'$match': {'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {'$ne': 0}}}
+            {'$addFields': {
+                'isExpired': {'$lt': [{'$add': ['$updateTime', '$computedTimeout']}, datetime.utcnow()]}
+            }},
+            {'$match': {'isExpired': True, 'computedTimeout': {'$ne': 0}}}
         ]
-        unshelve = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
+        return self.get_db().alerts.aggregate(pipeline)
 
+    def get_unack(self):
         # get list of alerts to be unack'ed
         pipeline = [
             {'$match': {'status': 'ack'}},
@@ -1677,18 +1754,40 @@ class Backend(Database):
             {'$sort': {'history.updateTime': -1}},
             {'$group': {
                 '_id': '$_id',
+                'resource': {'$first': '$resource'},
                 'event': {'$first': '$event'},
+                'environment': {'$first': '$environment'},
+                'severity': {'$first': '$severity'},
+                'correlate': {'$first': '$correlate'},
+                'status': {'$first': '$status'},
+                'service': {'$first': '$service'},
+                'group': {'$first': '$group'},
+                'value': {'$first': '$value'},
+                'text': {'$first': '$text'},
+                'tags': {'$first': '$tags'},
+                'attributes': {'$first': '$attributes'},
+                'origin': {'$first': '$origin'},
+                'type': {'$first': '$type'},
+                'createTime': {'$first': '$createTime'},
+                'timeout': {'$first': '$timeout'},
+                'rawData': {'$first': '$rawData'},
+                'customer': {'$first': '$customer'},
+                'duplicateCount': {'$first': '$duplicateCount'},
+                'repeat': {'$first': '$repeat'},
+                'previousSeverity': {'$first': '$previousSeverity'},
+                'trendIndication': {'$first': '$trendIndication'},
+                'receiveTime': {'$first': '$receiveTime'},
                 'lastReceiveId': {'$first': '$lastReceiveId'},
-                'updateTime': {'$first': '$history.updateTime'},
-                'timeout': {'$first': '$timeout'}
+                'lastReceiveTime': {'$first': '$lastReceiveTime'},
+                'updateTime': {'$first': '$updateTime'},
+                'history': {'$first': '$history'},
             }},
-            {'$project': {
-                'event': 1,
-                'lastReceiveId': 1,
-                'expireTime': {'$add': ['$updateTime', {'$multiply': ['$timeout', 1000]}]}
+            {'$addFields': {
+                'computedTimeout': {'$multiply': [{'$ifNull': ['$history.timeout', current_app.config['ACK_TIMEOUT']]}, 1000]}
             }},
-            {'$match': {'expireTime': {'$lt': datetime.utcnow()}, 'timeout': {'$ne': 0}}}
+            {'$addFields': {
+                'isExpired': {'$lt': [{'$add': ['$updateTime', '$computedTimeout']}, datetime.utcnow()]}
+            }},
+            {'$match': {'isExpired': True, 'computedTimeout': {'$ne': 0}}}
         ]
-        unack = [(r['_id'], r['event'], r['lastReceiveId']) for r in self.get_db().alerts.aggregate(pipeline)]
-
-        return has_expired, unshelve + unack
+        return self.get_db().alerts.aggregate(pipeline)

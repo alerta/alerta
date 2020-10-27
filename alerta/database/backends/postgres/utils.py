@@ -66,11 +66,21 @@ class QueryBuilderImpl(QueryBuilder):
         # sort-by
         sort = list()
         direction = 'ASC'
-        if params.get('reverse', None):
+        if params.get('reverse', None):  # deprecated. use '-' instead.
             direction = 'DESC'
         if params.get('sort-by', None):
             for sort_by in params.getlist('sort-by'):
-                if sort_by == 'createTime':
+                direction = 'ASC'
+                if sort_by.startswith('-'):
+                    sort_by = sort_by[1:]
+                    direction = 'DESC'
+                if sort_by == 'severity':
+                    sort.append('s.code ' + direction)
+                elif sort_by == 'status':
+                    sort.append('st.state ' + direction)
+                elif sort_by.startswith('attributes'):
+                    sort.append("attributes->'{}' {}".format(sort_by.replace('attributes.', ''), direction))
+                elif sort_by == 'createTime':
                     sort.append('create_time ' + reverse_sort(direction))
                 elif sort_by == 'receiveTime':
                     sort.append('receive_time ' + reverse_sort(direction))
@@ -95,9 +105,9 @@ class QueryBuilderImpl(QueryBuilder):
             query.append('AND (id ~* (%(regex_id)s) OR last_receive_id ~* (%(regex_id)s))')
             qvars['regex_id'] = '|'.join(['^' + i for i in ids])
 
-        EXCLUDE_QUERY = ['_', 'callback', 'token', 'api-key', 'q', 'q.df', 'id',
-                         'from-date', 'to-date', 'duplicateCount', 'repeat', 'sort-by',
-                         'reverse', 'group-by', 'page', 'page-size', 'limit']
+        EXCLUDE_QUERY = ['_', 'callback', 'token', 'api-key', 'q', 'q.df', 'id', 'from-date', 'to-date',
+                         'duplicateCount', 'repeat', 'sort-by', 'reverse', 'group-by', 'page', 'page-size', 'limit',
+                         'show-raw-data', 'show-history']
 
         # fields
         for field in params:

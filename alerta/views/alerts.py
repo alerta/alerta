@@ -255,6 +255,7 @@ def update_attributes(alert_id):
     else:
         raise ApiError('failed to update attributes', 500)
 
+
 # delete
 @api.route('/alert/<alert_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
@@ -295,6 +296,8 @@ def delete_alert(alert_id):
 def search_alerts():
     query_time = datetime.utcnow()
     query = qb.from_params(request.args, customers=g.customers, query_time=query_time)
+    show_raw_data = request.args.get('show-raw-data', default=False, type=lambda x: x.lower() in ['true', 't', '1', 'yes', 'y', 'on'])
+    show_history = request.args.get('show-history', default=False, type=lambda x: x.lower() in ['true', 't', '1', 'yes', 'y', 'on'])
     severity_count = Alert.get_counts_by_severity(query)
     status_count = Alert.get_counts_by_status(query)
 
@@ -302,6 +305,12 @@ def search_alerts():
     paging = Page.from_params(request.args, total)
 
     alerts = Alert.find_all(query, paging.page, paging.page_size)
+
+    for alert in alerts:
+        if not show_raw_data:
+            alert.raw_data = None
+        if not show_history:
+            alert.history = []
 
     if alerts:
         return jsonify(

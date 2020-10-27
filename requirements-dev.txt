@@ -1,8 +1,8 @@
-mypy
-pre-commit
-pylint==2.4.4
-pytest
+mypy==0.790
+pre-commit==2.7.1
+pylint==2.6.0
 pytest-cov
+pytest>=5.4.3
 python-dotenv
 requests_mock
 twine

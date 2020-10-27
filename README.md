@@ -1,7 +1,7 @@
-Alerta Release 7.0
+Alerta Release 8.0
 ==================
 
-[![Build Status](https://travis-ci.org/alerta/alerta.png)](https://travis-ci.org/alerta/alerta)
+[![Actions Status](https://github.com/alerta/alerta/workflows/CI%20Tests/badge.svg)](https://github.com/alerta/alerta/actions)
 [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
 [![Coverage Status](https://coveralls.io/repos/github/alerta/alerta/badge.svg?branch=master)](https://coveralls.io/github/alerta/alerta?branch=master)
 
@@ -15,15 +15,10 @@ The Alerta monitoring tool was developed with the following aims in mind:
 
 ----
 
-Python 2.7 support is EOL
--------------------------
-
-Starting with Release 6.0 only Python 3.5+ is supported. Release 5.2 was the
-last to support Python 2.7 and feature enhancements for this release ended on
-August 31, 2018. Only critical bug fixes will be backported to Release 5.2.
-
 Requirements
 ------------
+
+Release 8 only supports Python 3.6 or higher.
 
 The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 

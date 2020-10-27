@@ -72,7 +72,7 @@ class Group:
         if not name:
             raise ValueError('Missing mandatory value for name')
 
-        self.id = kwargs.get('id', str(uuid4()))
+        self.id = kwargs.get('id') or str(uuid4())
         self.name = name
         self.text = text or ''
         self.count = kwargs.get('count')
@@ -80,6 +80,7 @@ class Group:
     @classmethod
     def parse(cls, json: JSON) -> 'Group':
         return Group(
+            id=json.get('id', None),
             name=json.get('name', None),
             text=json.get('text', None)
         )

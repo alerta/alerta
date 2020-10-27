@@ -11,13 +11,19 @@ BEGIN
             text text,
             type text,
             update_time timestamp without time zone,
-            "user" text
+            "user" text,
+            timeout integer
         );
     ELSE
         BEGIN
             ALTER TYPE history ADD ATTRIBUTE "user" text CASCADE;
         EXCEPTION
             WHEN duplicate_column THEN RAISE NOTICE 'column "user" already exists in history type.';
+        END;
+        BEGIN
+            ALTER TYPE history ADD ATTRIBUTE timeout integer CASCADE;
+        EXCEPTION
+            WHEN duplicate_column THEN RAISE NOTICE 'column "timeout" already exists in history type.';
         END;
     END IF;
 END$$;

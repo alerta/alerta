@@ -26,7 +26,7 @@ LOG_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TR
 
 # API settings
 ALARM_MODEL = 'ALERTA'  # 'ALERTA' (default) or 'ISA_18_2'
-QUERY_LIMIT = 1000
+QUERY_LIMIT = 50
 DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single query
 HISTORY_LIMIT = 100  # cap the number of alert history entries
 HISTORY_ON_VALUE_CHANGE = True  # history entry for duplicate alerts if value changes
@@ -62,7 +62,11 @@ AUTH_PROVIDER = 'basic'  # basic (default), ldap, github, openid, saml2, azure, 
 ADMIN_USERS = []  # type: List[str]
 DEFAULT_ADMIN_ROLE = 'admin'
 ADMIN_ROLES = [DEFAULT_ADMIN_ROLE]
+DEFAULT_USER_ROLE = 'user'
+USER_ROLES = [DEFAULT_USER_ROLE]
 USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includes 'read'
+DEFAULT_GUEST_ROLE = 'guest'
+GUEST_ROLES = [DEFAULT_GUEST_ROLE]
 GUEST_DEFAULT_SCOPES = ['read:alerts']
 CUSTOMER_VIEWS = False
 
@@ -101,6 +105,7 @@ LDAP_DOMAINS_GROUP = {}  # type: Dict[str, str]
 LDAP_DOMAINS_BASEDN = {}  # type: Dict[str, str]
 LDAP_ALLOW_SELF_SIGNED_CERT = False
 LDAP_DEFAULT_DOMAIN = ''
+LDAP_CACERT = '' #Path to CA certificate to verify LDAPS connection against
 
 # Microsoft Identity Platform (v2.0)
 AZURE_TENANT = 'common'  # "common", "organizations", "consumers" or tenant ID
@@ -159,6 +164,8 @@ DEFAULT_TIMEOUT = 86400  # seconds
 ALERT_TIMEOUT = DEFAULT_TIMEOUT
 HEARTBEAT_TIMEOUT = DEFAULT_TIMEOUT
 HEARTBEAT_MAX_LATENCY = 2000  # ms
+ACK_TIMEOUT = 0  # auto-unack alerts after x seconds (0 seconds = do not auto-unack)
+SHELVE_TIMEOUT = 7200  # auto-unshelve alerts after x seconds (0 seconds = do not auto-unshelve)
 
 # Housekeeping settings
 DEFAULT_EXPIRED_DELETE_HRS = 2  # hours (0 hours = do not delete)
@@ -187,7 +194,7 @@ COLUMNS = [
     'severity', 'status', 'lastReceiveTime', 'timeoutLeft', 'duplicateCount',
     'customer', 'environment', 'service', 'resource', 'event', 'value', 'text'
 ]
-SORT_LIST_BY = 'lastReceiveTime'  # newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
+SORT_LIST_BY = ['severity', 'lastReceiveTime']  # eg. newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
 DEFAULT_FILTER = {'status': ['open', 'ack']}
 
 # Alert Status Indicators
@@ -200,6 +207,13 @@ ASI_QUERIES = [
     {'text': 'Heartbeats', 'query': {'q': 'event:Heartbeat'}},
     {'text': 'Misc.', 'query': 'group=Misc'},
 ]
+
+# Alarm list default font settings
+DEFAULT_FONT = {
+    'font-family': '"Sintony", Arial, sans-serif',
+    'font-size': '13px',
+    'font-weight': 500  # 400=normal, 700=bold
+}
 
 # List of custom actions
 ACTIONS = []  # type: List[str]

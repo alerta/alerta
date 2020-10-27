@@ -20,12 +20,19 @@ def login():
     if current_app.config['LDAP_ALLOW_SELF_SIGNED_CERT']:
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
 
+    if current_app.config['LDAP_CACERT']:
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_HARD)
+        ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, current_app.config['LDAP_CACERT'])
+
     # Retrieve required fields from client request
     try:
         login = request.json.get('username', None) or request.json['email']
         password = request.json['password']
     except KeyError:
         raise ApiError("must supply 'username' and 'password'", 401)
+
+    if not password:
+        raise ApiError('password not allowed to be empty', 401)
 
     try:
         if '\\' in login:
@@ -74,7 +81,7 @@ def login():
     user = User.find_by_username(username=login)
     if not user:
         user = User(name=username, login=login, password='', email=email,
-                    roles=[], text='LDAP user', email_verified=email_verified)
+                    roles=current_app.config['USER_ROLES'], text='LDAP user', email_verified=email_verified)
         try:
             user = user.create()
         except Exception as e:
