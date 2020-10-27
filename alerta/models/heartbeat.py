@@ -40,7 +40,7 @@ class Heartbeat:
         if timeout < 0:
             raise ValueError("Invalid negative 'max_latency' value ({})".format(timeout))
 
-        self.id = kwargs.get('id', str(uuid4()))
+        self.id = kwargs.get('id') or str(uuid4())
         self.origin = origin or '{}/{}'.format(os.path.basename(sys.argv[0]), platform.uname()[1])
         self.tags = tags or list()
         self.attributes = kwargs.get('attributes', None) or dict()
@@ -81,6 +81,7 @@ class Heartbeat:
             raise ValueError('customer must not be an empty string')
 
         return Heartbeat(
+            id=json.get('id', None),
             origin=json.get('origin', None),
             tags=json.get('tags', list()),
             attributes=json.get('attributes', dict()),

@@ -403,7 +403,13 @@ class Database(Base):
 
     # HOUSEKEEPING
 
-    def housekeeping(self, expired_threshold, info_threshold):
+    def get_expired(self, expired_threshold, info_threshold):
+        raise NotImplementedError
+
+    def get_unshelve(self):
+        raise NotImplementedError
+
+    def get_unack(self):
         raise NotImplementedError
 
 

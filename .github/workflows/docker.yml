@@ -4,22 +4,26 @@ on:
   push:
     branches: [ master, release/* ]
 
-env:
-  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
       REPOSITORY_URL: docker.pkg.github.com
       IMAGE_NAME: ${{ github.repository }}/alerta-api
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
+      - uses: act10ns/slack@v1
+        with:
+          status: starting
+          channel: '#workflows'
+        if: always()
       - name: Checkout
         uses: actions/checkout@v2
       - name: Variables
         id: vars
         run: echo "::set-output name=SHORT_COMMIT_ID::$(git rev-parse --short HEAD)"
       - name: Build image
+        id: docker-build
         run: >-
           docker build
           -t $IMAGE_NAME
@@ -31,11 +35,12 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: docker login $REPOSITORY_URL --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD"
       - name: Publish Image
+        id: docker-push
         run: docker push $REPOSITORY_URL/$IMAGE_NAME
 
-      - name: Notify Slack
-        uses: alerta/actions/notify-slack@master
+      - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
-          fields: repo,message,commit,diff,author,action,issue,eventName,ref,workflow
+          steps: ${{ toJson(steps) }}
+          channel: '#workflows'
         if: always()

@@ -63,15 +63,15 @@ endif
 format: $(BLACK)
 	$(BLACK) -l120 -S -v $(PROJECT)
 
-## lint			- Lint and type checking.
-lint: $(PYLINT) $(MYPY) $(BLACK)
-	$(PYLINT) --rcfile pylintrc $(PROJECT)
-	$(MYPY) $(PROJECT)/
-	$(BLACK) -l120 -S --check -v $(PROJECT) || true
-
 ## hooks			- Run pre-commit hooks.
 hooks: $(PRE_COMMIT)
-	$(PRE_COMMIT) run -a
+	$(PRE_COMMIT) run --all-files --show-diff-on-failure
+
+## lint			- Lint and type checking.
+lint: $(PYLINT) $(BLACK) $(MYPY)
+	$(PYLINT) --rcfile pylintrc $(PROJECT)
+	$(BLACK) -l120 -S --check -v $(PROJECT) || true
+	$(MYPY) $(PROJECT)/
 
 ## test			- Run unit tests.
 test: $(TOX) $(PYTEST)
@@ -87,7 +87,7 @@ tag:
 	$(GIT) push --tags
 
 ## build			- Build package.
-build: $(PIP) $(PKG_SDIST) $(PKG_WHEEL)
+build: $(PIP) $(WHEEL) $(PKG_SDIST) $(PKG_WHEEL)
 
 $(PKG_SDIST):
 	$(PYTHON) setup.py sdist

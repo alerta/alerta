@@ -7,6 +7,8 @@ from flask import jsonify
 
 from alerta.app import create_app, custom_webhooks, db
 from alerta.models.alert import Alert
+from alerta.models.enums import Scope
+from alerta.models.key import ApiKey
 from alerta.webhooks import WebhookBase
 
 
@@ -16,7 +18,9 @@ class WebhooksTestCase(unittest.TestCase):
 
         test_config = {
             'TESTING': True,
-            'AUTH_REQUIRED': False
+            'AUTH_REQUIRED': True,
+            'ALLOWED_ENVIRONMENTS': ['Production', 'Development', 'Staging'],
+            'CUSTOMER_VIEWS': True
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -140,6 +144,38 @@ class WebhooksTestCase(unittest.TestCase):
               "value": 122
             }
           ]
+        }
+        """
+
+        self.grafana_6 = """
+        {
+          "evalMatches": [
+            {
+              "value": 23644.5,
+              "metric": "Battery Voltage (millivolts)",
+              "tags": {
+                "environment": "Network",
+                "service": "Core",
+                "group": "Power"
+              }
+            }
+          ],
+          "message": "Battery Voltage dropped below 23.7 Volts, please investigate",
+          "ruleId": 58,
+          "ruleName": "Testing -> Battery Voltage alert",
+          "ruleUrl": "https://grafana.logreposit.com/d/Rs6E_oHWk/playground?fullscreen&edit&tab=alert&panelId=2&orgId=1",
+          "state": "alerting",
+          "tags": {
+            "enabled": "true",
+            "relay": "7",
+            "on-alerting": "relay-on",
+            "on-ok": "ignore",
+            "environment": "Staging",
+            "severity": "warning",
+            "service": "Physical",
+            "group": "BatteryPower"
+          },
+          "title": "[Alerting] TEST -> Battery Voltage alert"
         }
         """
 
@@ -607,9 +643,19 @@ class WebhooksTestCase(unittest.TestCase):
         }
         """
 
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='admin-key'
+            )
+            self.api_key.create()
+
         self.headers = {
             'Content-type': 'application/json',
             'X-Forwarded-For': ['10.1.1.1', '172.16.1.1', '192.168.1.1'],
+            'X-API-Key': self.api_key.key
         }
 
     def tearDown(self):
@@ -618,15 +664,15 @@ class WebhooksTestCase(unittest.TestCase):
     def test_cloudwatch_webhook(self):
 
         # subscription confirmation
-        response = self.client.post('/webhooks/cloudwatch',
+        response = self.client.post('/webhooks/cloudwatch?api-key={}'.format(self.api_key.key),
                                     data=self.cloudwatch_subscription_confirmation, content_type='text/plain; charset=UTF-8')
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 201, response.json)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'arn:aws:sns:eu-west-1:1234567890:alerta-test')
         self.assertEqual(data['alert']['event'], 'SubscriptionConfirmation')
 
         # notification
-        response = self.client.post('/webhooks/cloudwatch',
+        response = self.client.post('/webhooks/cloudwatch?api-key={}'.format(self.api_key.key),
                                     data=self.cloudwatch_notification, content_type='text/plain; charset=UTF-8')
         self.assertEqual(response.status_code, 201, response.data)
         data = json.loads(response.data.decode('utf-8'))
@@ -640,7 +686,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['origin'], 'arn:aws:sns:eu-west-1:1234567890:alerta-test')
 
         # notification
-        response = self.client.post('/webhooks/cloudwatch',
+        response = self.client.post('/webhooks/cloudwatch?api-key={}'.format(self.api_key.key),
                                     data=self.cloudwatch_insufficient_data, content_type='text/plain; charset=UTF-8')
         self.assertEqual(response.status_code, 201, response.data)
         data = json.loads(response.data.decode('utf-8'))
@@ -673,22 +719,53 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['status'], 'ok')
 
         # get alert
-        response = self.client.get('/alert/' + alert_id)
+        response = self.client.get('/alert/' + alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['status'], 'closed')
 
         # example alert
-        response = self.client.post('/webhooks/grafana', data=self.grafana_example, headers=self.headers)
+        response = self.client.post('/webhooks/grafana?service=SvcA&service=SvcB&timeout=7200', data=self.grafana_example, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
         self.assertEqual(data['alert']['resource'], 'requests')
         self.assertEqual(data['alert']['event'], 'Load peaking!')
+        self.assertEqual(data['alert']['service'], ['SvcA', 'SvcB'])
         self.assertEqual(data['alert']['group'], 'Performance')
         self.assertEqual(data['alert']['text'],
                          'Load is peaking. Make sure the traffic is real and spin up more webfronts')
+        self.assertEqual(data['alert']['timeout'], 7200)
+
+        # example alert
+        response = self.client.post('/webhooks/grafana?customer=Foo%20Corp.', data=self.grafana_6, headers=self.headers)
+        self.assertEqual(response.status_code, 201, response.json)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+        self.assertEqual(data['alert']['resource'], 'Battery Voltage (millivolts)')
+        self.assertEqual(data['alert']['event'], 'Testing -> Battery Voltage alert')
+        self.assertEqual(data['alert']['environment'], 'Staging')
+        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['service'], ['Grafana', 'Core', 'Physical'])
+        self.assertEqual(data['alert']['group'], 'BatteryPower')
+        self.assertEqual(data['alert']['value'], '23644.5')
+        self.assertEqual(data['alert']['text'], 'Battery Voltage dropped below 23.7 Volts, please investigate')
+        self.assertEqual(data['alert']['tags'], [])
+        self.assertEqual(data['alert']['attributes']['enabled'], 'true')
+        self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+        self.assertEqual(data['alert']['attributes']['on-alerting'], 'relay-on')
+        self.assertEqual(data['alert']['attributes']['on-ok'], 'ignore')
+        self.assertEqual(data['alert']['attributes']['relay'], '7')
+        self.assertEqual(data['alert']['attributes']['ruleId'], '58')
+        self.assertEqual(data['alert']['attributes']['ruleUrl'], '<a '
+                         'href="https://grafana.logreposit.com/d/Rs6E_oHWk/playground?fullscreen&edit&tab=alert&panelId=2&orgId=1" '
+                         'target="_blank">Rule</a>')
+        self.assertNotIn('service', data['alert']['attributes'])
+        self.assertEqual(data['alert']['origin'], 'Grafana')
+        self.assertEqual(data['alert']['timeout'], 86400)
+        self.assertEqual(data['alert']['customer'], 'Foo Corp.')
 
     def test_graylog_webhook(self):
         # graylog alert
@@ -722,14 +799,14 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         # get alert
-        response = self.client.get('/alert/' + trigger_alert_id)
+        response = self.client.get('/alert/' + trigger_alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(trigger_alert_id, data['alert']['id'])
         self.assertEqual(data['alert']['status'], 'ack')
 
         # get alert
-        response = self.client.get('/alert/' + resolve_alert_id)
+        response = self.client.get('/alert/' + resolve_alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(resolve_alert_id, data['alert']['id'])
@@ -874,24 +951,25 @@ class WebhooksTestCase(unittest.TestCase):
         custom_webhooks.webhooks['userdefined'] = DummyUserDefinedWebhook()
 
         # test json payload
-        response = self.client.post('/webhooks/json/bar/baz?foo=bar', json={'baz': 'quux'}, content_type='application/json')
+        response = self.client.post('/webhooks/json/bar/baz?foo=bar&api-key={}'.format(self.api_key.key), json={'baz': 'quux'}, content_type='application/json')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'bar')
         self.assertEqual(data['alert']['event'], 'quux')
         self.assertEqual(data['alert']['attributes']['path'], 'bar/baz')
-        self.assertEqual(data['alert']['attributes']['qs'], {'foo': 'bar'})
+        qs = {k: v for k, v in data['alert']['attributes']['qs'].items() if k == 'foo'}
+        self.assertEqual(qs, {'foo': 'bar'})
         self.assertEqual(data['alert']['attributes']['data'], {'baz': 'quux'})
 
         # test text data
-        response = self.client.post('/webhooks/text?foo', data='this is raw data', content_type='text/plain')
+        response = self.client.post('/webhooks/text?foo&api-key={}'.format(self.api_key.key), data='this is raw data', content_type='text/plain')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'nofoo')
         self.assertEqual(data['alert']['event'], 'this is raw data')
 
         # test form data
-        response = self.client.post('/webhooks/form?foo=1', data='say=Hi&to=Mom',
+        response = self.client.post('/webhooks/form?foo=1&api-key={}'.format(self.api_key.key), data='say=Hi&to=Mom',
                                     content_type='application/x-www-form-urlencoded')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
@@ -903,7 +981,7 @@ class WebhooksTestCase(unittest.TestCase):
             field1='value1',
             file1=(BytesIO(b'my file contents'), 'file1.txt'),
         )
-        response = self.client.post('/webhooks/multipart?foo=1', data=form_data1,
+        response = self.client.post('/webhooks/multipart?foo=1&api-key={}'.format(self.api_key.key), data=form_data1,
                                     content_type='multipart/form-data;boundary="boundary"')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
@@ -911,7 +989,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['event'], 'value1')
 
         # test user-defined response
-        response = self.client.post('/webhooks/userdefined?foo=bar',
+        response = self.client.post('/webhooks/userdefined?foo=bar&api-key={}'.format(self.api_key.key),
                                     json={'baz': 'quux'}, content_type='application/json')
         self.assertEqual(response.status_code, 418)
         data = json.loads(response.data.decode('utf-8'))

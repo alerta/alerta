@@ -72,6 +72,8 @@ ACTION_UNACK = 'unack'
 ACTION_SHELVE = 'shelve'
 ACTION_UNSHELVE = 'unshelve'
 ACTION_CLOSE = 'close'
+ACTION_EXPIRED = 'expired'
+ACTION_TIMEOUT = 'timeout'
 
 ACTION_ALL = [
     ACTION_OPEN,
@@ -80,7 +82,9 @@ ACTION_ALL = [
     ACTION_UNACK,
     ACTION_SHELVE,
     ACTION_UNSHELVE,
-    ACTION_CLOSE
+    ACTION_CLOSE,
+    ACTION_EXPIRED,
+    ACTION_TIMEOUT
 ]
 
 
@@ -178,6 +182,15 @@ class StateMachine(AlarmModel):
                 return next_state('UNSHL-1', current_severity, previous_status)
             else:
                 raise InvalidAction('invalid action for current {} status'.format(state))
+
+        if action == ACTION_EXPIRED:
+            return next_state('EXP-0', current_severity, EXPIRED)
+
+        if action == ACTION_TIMEOUT:
+            if previous_status == ACK:
+                return next_state('ACK-0', current_severity, ACK)
+            else:
+                return next_state('OPEN-0', current_severity, OPEN)
 
         if state == OPEN:
             if action == ACTION_OPEN:

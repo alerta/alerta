@@ -4,18 +4,17 @@ from typing import Any, Dict
 
 import click
 from flask import Flask, current_app
-from flask.cli import FlaskGroup, with_appcontext
+from flask.cli import FlaskGroup, ScriptInfo, with_appcontext
 
-from alerta.app import config, db, key_helper, qb
+from alerta.app import config, create_app, db, key_helper, qb
 from alerta.auth.utils import generate_password_hash
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
 from alerta.models.user import User
-from alerta.settings import DEFAULT_ADMIN_ROLE
 from alerta.version import __version__
 
 
-def create_app(config_override: Dict[str, Any] = None, environment: str = None) -> Flask:
+def _create_app(config_override: Dict[str, Any] = None, environment: str = None) -> Flask:
     app = Flask(__name__)
     app.config['ENVIRONMENT'] = environment
     config.init_app(app)
@@ -28,13 +27,19 @@ def create_app(config_override: Dict[str, Any] = None, environment: str = None) 
     return app
 
 
-@click.group(cls=FlaskGroup, create_app=create_app, add_version_option=False)
+@click.group(cls=FlaskGroup, add_version_option=False)
 @click.version_option(version=__version__)
-def cli():
+@click.pass_context
+def cli(ctx):
     """
     Management command-line tool for Alerta server.
     """
-    pass
+    if ctx.invoked_subcommand in ['routes', 'run', 'shell']:
+        # Load HTTP endpoints for standard Flask commands
+        ctx.obj = ScriptInfo(create_app=create_app)
+    else:
+        # Do not load HTTP endpoints for management commands
+        ctx.obj = ScriptInfo(create_app=_create_app)
 
 
 @cli.command('key', short_help='Create an admin API key')
@@ -166,7 +171,7 @@ def user(name, email, password, text, all):
             name=name or login,
             login=login,
             password=generate_password_hash(password),
-            roles=[DEFAULT_ADMIN_ROLE],
+            roles=current_app.config['ADMIN_ROLES'],
             text=text,
             email=email,
             email_verified=bool(email)
@@ -210,7 +215,3 @@ def users():
         else:
             if user:
                 click.echo('{} {}'.format(user.id, user.login))
-
-
-if __name__ == '__main__':
-    cli()

@@ -8,7 +8,6 @@ from alerta.app import db
 from alerta.auth import utils
 from alerta.database.base import Query
 from alerta.models.group import Group
-from alerta.settings import DEFAULT_ADMIN_ROLE
 from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
@@ -23,13 +22,13 @@ class User:
         if not login:
             raise ValueError('Missing mandatory value for "login"')
 
-        self.id = kwargs.get('id', None) or str(uuid4())
+        self.id = kwargs.get('id') or str(uuid4())
         self.name = name or ''
         self.login = login  # => g.login
         self.password = password  # NB: hashed password
         self.email = email
         self.status = kwargs.get('status', None) or 'active'  # 'active', 'inactive', 'unknown'
-        self.roles = [DEFAULT_ADMIN_ROLE] if self.email and self.email in current_app.config['ADMIN_USERS'] else (roles or ['user'])
+        self.roles = current_app.config['ADMIN_ROLES'] if self.email and self.email in current_app.config['ADMIN_USERS'] else roles
         self.attributes = kwargs.get('attributes', None) or dict()
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
         self.last_login = kwargs.get('last_login', None)
@@ -54,6 +53,7 @@ class User:
     @classmethod
     def parse(cls, json: JSON) -> 'User':
         return User(
+            id=json.get('id', None),
             name=json['name'],
             login=json.get('login', None) or json.get('email', None),
             password=utils.generate_password_hash(json.get('password', '')),
