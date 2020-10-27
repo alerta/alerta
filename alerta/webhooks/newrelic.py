@@ -1,11 +1,12 @@
 from typing import Any, Dict
 
-from alerta.models.alert import Alert
 from alerta.models.alarms.alerta import SEVERITY_MAP
+from alerta.models.alert import Alert
+
 from . import WebhookBase
 
 JSON = Dict[str, Any]
-UNDETERMINED ="Untetermined"
+UNKNOWN = 'unknown'
 
 
 class NewRelicWebhook(WebhookBase):
@@ -47,20 +48,20 @@ class NewRelicWebhook(WebhookBase):
         if 'runbook_url' in payload and payload['runbook_url'] is not None:
             attributes['runbook_url'] = payload['runbook_url']
 
-        event = payload['condition_name'] if payload['condition_name'] else UNDETERMINED
-        resource = payload['targets'][0]['name'] if payload['targets'][0]['name'] else UNDETERMINED
- 
+        resource = payload['targets'][0]['name'] or UNKNOWN
+        event = payload['condition_name'] or UNKNOWN
+
         return Alert(
             resource=resource,
             event=event,
             environment='Production',
             severity=severity,
             status=status,
-            attributes=attributes,
             service=[payload['account_name']],
             group=payload['targets'][0]['type'],
             text=payload['details'],
             tags=['{}:{}'.format(key, value) for (key, value) in payload['targets'][0]['labels'].items()],
+            attributes=attributes,
             origin='New Relic/v%s' % payload['version'],
             event_type=payload['event_type'].lower(),
             raw_data=payload
