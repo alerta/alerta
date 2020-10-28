@@ -100,9 +100,14 @@ ALLOWED_GITLAB_GROUPS = None
 
 # BasicAuth using LDAP
 LDAP_URL = ''  # eg. ldap://localhost:389
+LDAP_BIND_USERNAME = ''  # Optional: Only needed if defined domain in LDAP_DOMAINS_SEARCH_QUERY. eg. uid=admin,ou=users,dc=domain,dc=com
+LDAP_BIND_PASSWORD = ''  # Optional: Only needed if defined domain in LDAP_DOMAINS_SEARCH_QUERY.
 LDAP_DOMAINS = {}  # type: Dict[str, str]
 LDAP_DOMAINS_GROUP = {}  # type: Dict[str, str]
 LDAP_DOMAINS_BASEDN = {}  # type: Dict[str, str]
+LDAP_DOMAINS_USER_BASEDN = {}  # type: Dict[str, str] # If not defined, it will take BASEDN
+LDAP_DOMAINS_GROUP_BASEDN = {}  # type: Dict[str, str] # If not defined, it will take BASEDN
+LDAP_DOMAINS_SEARCH_QUERY = {}  # type: Dict[str, str]
 LDAP_ALLOW_SELF_SIGNED_CERT = False
 LDAP_DEFAULT_DOMAIN = ''
 LDAP_CACERT = ''  # Path to CA certificate to verify LDAPS connection against

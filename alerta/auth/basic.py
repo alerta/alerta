@@ -63,8 +63,6 @@ def signup():
     return jsonify(token=token.tokenize)
 
 
-@auth.route('/auth/login', methods=['OPTIONS', 'POST'])
-@cross_origin(supports_credentials=True)
 def login():
     # lookup user from username/email
     try:
