@@ -100,17 +100,22 @@ ALLOWED_GITLAB_GROUPS = None
 
 # BasicAuth using LDAP
 LDAP_URL = ''  # eg. ldap://localhost:389
-LDAP_BIND_USERNAME = ''  # Optional: Only needed if defined domain in LDAP_DOMAINS_SEARCH_QUERY. eg. uid=admin,ou=users,dc=domain,dc=com
-LDAP_BIND_PASSWORD = ''  # Optional: Only needed if defined domain in LDAP_DOMAINS_SEARCH_QUERY.
-LDAP_DOMAINS = {}  # type: Dict[str, str]
-LDAP_DOMAINS_GROUP = {}  # type: Dict[str, str]
-LDAP_DOMAINS_BASEDN = {}  # type: Dict[str, str]
-LDAP_DOMAINS_USER_BASEDN = {}  # type: Dict[str, str] # If not defined, it will take BASEDN
-LDAP_DOMAINS_GROUP_BASEDN = {}  # type: Dict[str, str] # If not defined, it will take BASEDN
-LDAP_DOMAINS_SEARCH_QUERY = {}  # type: Dict[str, str]
-LDAP_ALLOW_SELF_SIGNED_CERT = False
-LDAP_DEFAULT_DOMAIN = ''
+LDAP_BASEDN = ''
 LDAP_CACERT = ''  # Path to CA certificate to verify LDAPS connection against
+LDAP_ALLOW_SELF_SIGNED_CERT = False
+LDAP_DOMAINS = {
+    # 'planetexpress.com': 'cn=%s,ou=people,dc=planetexpress,dc=com'
+}
+LDAP_BIND_USERNAME = ''  # required if using LDAP_SEARCH_QUERY eg. uid=admin,ou=users,dc=domain,dc=com
+LDAP_BIND_PASSWORD = ''  # required if using LDAP_BIND_USERNAME
+LDAP_USER_BASEDN = ''  # BASEDN for user search (default: LDAP_BASEDN)
+LDAP_USER_FILTER = ''  # eg. (cn={username})
+LDAP_USER_NAME_ATTR = 'cn'  # eg. cn or displayName
+LDAP_USER_EMAIL_ATTR = 'mail'  # eg. mail or email
+LDAP_GROUP_BASEDN = ''  # BASEDN for group search (default: LDAP_BASEDN)
+LDAP_GROUP_FILTER = ''  # eg. (&(member={userdn})(objectClass=group))
+LDAP_GROUP_NAME_ATTR = 'memberOf'  # eg. memberOf or cn
+LDAP_DEFAULT_DOMAIN = ''  # if set allows users to login with bare username
 
 # Microsoft Identity Platform (v2.0)
 AZURE_TENANT = 'common'  # "common", "organizations", "consumers" or tenant ID

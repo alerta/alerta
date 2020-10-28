@@ -48,7 +48,7 @@ def github():
     name = profile['name']
     username = '@' + profile['login']
     email = profile['email']
-    email_verified = True if email else False
+    email_verified = bool(email)
     picture = profile['avatar_url']
 
     login = username or email
