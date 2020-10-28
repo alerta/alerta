@@ -36,7 +36,7 @@ class AuthBlueprint(Blueprint):
 auth = AuthBlueprint('auth', __name__)
 
 
-from . import github, logout, oidc, userinfo   # noqa isort:skip
+from . import github, login, logout, oidc, userinfo   # noqa isort:skip
 
 
 @auth.before_request

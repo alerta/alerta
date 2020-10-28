@@ -2,7 +2,6 @@ import sys
 
 import ldap  # pylint: disable=import-error
 from flask import current_app, jsonify, request
-from flask_cors import cross_origin
 
 from alerta.auth.utils import create_token, get_customers
 from alerta.exceptions import ApiError
@@ -10,11 +9,7 @@ from alerta.models.permission import Permission
 from alerta.models.user import User
 from alerta.utils.audit import auth_audit_trail
 
-from . import auth
 
-
-@auth.route('/auth/login', methods=['OPTIONS', 'POST'])
-@cross_origin(supports_credentials=True)
 def login():
     # Allow LDAP server to use a self signed certificate
     if current_app.config['LDAP_ALLOW_SELF_SIGNED_CERT']:
@@ -53,15 +48,61 @@ def login():
             raise ApiError('expected username with domain', 401)
 
     # Validate LDAP domain
-    if domain not in current_app.config['LDAP_DOMAINS']:
+    if domain not in current_app.config['LDAP_DOMAINS'] and \
+       domain not in current_app.config['LDAP_DOMAINS_SEARCH_QUERY']:
         raise ApiError('unauthorized domain', 403)
 
-    userdn = current_app.config['LDAP_DOMAINS'][domain] % username
-
-    # Attempt LDAP AUTH
+    # Initialise ldap connection
     try:
         trace_level = 2 if current_app.debug else 0
         ldap_connection = ldap.initialize(current_app.config['LDAP_URL'], trace_level=trace_level)
+    except Exception as e:
+        raise ApiError(str(e), 500)
+
+    # If user search filter exist
+    #   Search the user using the provided User Search filter for the current domain
+    #   If one user is found
+    #       Set the DN as the one found
+    #       Set email retreived from AD
+    #   If more than one user is found
+    #       Except: Search query is bad defined
+    # Else
+    #   Set the DN as the one found in LDAP_DOMAINS variable
+    domain_search_query = current_app.config.get('LDAP_DOMAINS_SEARCH_QUERY', {})
+    base_dns = current_app.config.get('LDAP_DOMAINS_BASEDN', {})
+    user_base_dn = current_app.config.get('LDAP_DOMAINS_USER_BASEDN', {})
+    if domain in domain_search_query:
+        ldap_bind_username = current_app.config.get('LDAP_BIND_USERNAME', '')
+        ldap_bind_password = current_app.config.get('LDAP_BIND_PASSWORD', '')
+
+        try:
+            ldap_connection.simple_bind_s(ldap_bind_username, ldap_bind_password)
+        except ldap.INVALID_CREDENTIALS:
+            raise ApiError('invalid ldap bind username or password', 401)
+
+        ldap_users = [(_dn, user) for _dn, user in ldap_connection.search_s(
+            base_dns[domain] if user_base_dn.get(domain) is None else user_base_dn[domain],
+            ldap.SCOPE_SUBTREE,
+            domain_search_query[domain].format(username=username, email=email),
+            ['mail']
+        ) if _dn is not None]
+
+        if len(ldap_users) > 1:
+            raise ApiError('invalid search query for domain "{}"'.format(domain), 500)
+        elif len(ldap_users) == 0:
+            raise ApiError('invalid username or password', 401)
+
+        for _dn, _email in ldap_users:
+            userdn = _dn
+            email_attr = _email.get('mail')
+            if email_attr is not None:
+                email = email_attr[0].decode(sys.stdout.encoding)
+                email_verified = True
+    else:
+        userdn = current_app.config['LDAP_DOMAINS'][domain] % username
+
+    # Attempt LDAP AUTH
+    try:
         ldap_connection.simple_bind_s(userdn, password)
     except ldap.INVALID_CREDENTIALS:
         raise ApiError('invalid username or password', 401)
@@ -91,17 +132,18 @@ def login():
     groups = list()
     try:
         groups_filters = current_app.config.get('LDAP_DOMAINS_GROUP', {})
-        base_dns = current_app.config.get('LDAP_DOMAINS_BASEDN', {})
-        if domain in groups_filters and domain in base_dns:
+        groups_base_dn = current_app.config.get('LDAP_DOMAINS_GROUP_BASEDN', {})
+        if domain in groups_filters and (domain in base_dns or domain in groups_base_dn):
             resultID = ldap_connection.search(
-                base_dns[domain],
+                base_dns[domain] if groups_base_dn.get(domain) is None else groups_base_dn[domain],
                 ldap.SCOPE_SUBTREE,
                 groups_filters[domain].format(username=username, email=email, userdn=userdn),
                 ['cn']
             )
             resultTypes, results = ldap_connection.result(resultID)
             for _dn, attributes in results:
-                groups.append(attributes['cn'][0].decode('utf-8'))
+                if _dn is not None:
+                    groups.append(attributes['cn'][0].decode('utf-8'))
     except ldap.LDAPError as e:
         raise ApiError(str(e), 500)
 
