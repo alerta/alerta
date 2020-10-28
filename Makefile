@@ -8,6 +8,7 @@ MYPY=$(VENV)/bin/mypy
 BLACK=$(VENV)/bin/black
 TOX=$(VENV)/bin/tox
 PYTEST=$(VENV)/bin/pytest
+DOCKER_COMPOSE=docker-compose
 PRE_COMMIT=$(VENV)/bin/pre-commit
 WHEEL=$(VENV)/bin/wheel
 TWINE=$(VENV)/bin/twine
@@ -73,9 +74,15 @@ lint: $(PYLINT) $(BLACK) $(MYPY)
 	$(BLACK) -l120 -S --check -v $(PROJECT) || true
 	$(MYPY) $(PROJECT)/
 
-## test			- Run unit tests.
-test: $(TOX) $(PYTEST)
+## test.unit		- Run unit tests.
+test: test.unit
+test.unit: $(TOX) $(PYTEST)
 	$(TOX) $(toxparams)
+
+## test.integration	- Run integration tests.
+test.integration: $(PYTEST)
+	$(DOCKER_COMPOSE) -f docker-compose.ci.yml up -d
+	$(PYTEST) tests/integration
 
 ## run			- Run application.
 run:

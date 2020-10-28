@@ -57,7 +57,7 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/alerta
         run: |
-          pytest --cov=alerta
+          pytest --cov=alerta tests/*.py
 
   test-mongodb:
     runs-on: ubuntu-latest
@@ -100,4 +100,47 @@ jobs:
         env:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
         run: |
-          pytest --cov=alerta
+          pytest --cov=alerta tests/*.py
+
+  test-integration:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo
+        ports:
+          - 27017:27017
+      ldap:
+        image: rroemhild/test-openldap
+        ports:
+          - 389:389
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install packages
+        run: |
+          sudo apt-get install -y \
+            build-essential \
+            python3-dev \
+            libldap2-dev \
+            libsasl2-dev
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+      - name: Install dependencies
+        id: install-deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install python-ldap
+          pip install .
+      - name: Integration Test with pytest
+        id: integration-test
+        env:
+          DATABASE_URL: mongodb://127.0.0.1:27017/alerta
+        run: |
+          pytest tests/integration
