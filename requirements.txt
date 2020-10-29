@@ -1,10 +1,10 @@
 bcrypt==3.2.0
-cryptography==3.1.1
+cryptography==3.2.1
 Flask==1.1.2
-Flask-Compress==1.5.0
-Flask-Cors==3.0.8
+Flask-Compress==1.7.0
+Flask-Cors==3.0.9
 mohawk==1.1.0
-psycopg2==2.8.5
+psycopg2==2.8.6
 PyJWT==1.7.1
 pymongo==3.11.0
 pyparsing==2.4.7
@@ -13,4 +13,4 @@ pytz==2020.1
 PyYAML==5.3.1
 requests==2.24.0
 requests_hawk==1.0.1
-sentry-sdk[flask]===0.18.0
+sentry-sdk[flask]===0.19.1
