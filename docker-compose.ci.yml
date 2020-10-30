@@ -1,0 +1,7 @@
+version: '3'
+
+services:
+  openldap:
+    image: rroemhild/test-openldap
+    ports:
+      - 389:389
