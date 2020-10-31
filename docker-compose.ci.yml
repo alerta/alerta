@@ -5,3 +5,12 @@ services:
     image: rroemhild/test-openldap
     ports:
       - 389:389
+
+  saml-idp:
+    image: jamedjo/test-saml-idp
+    ports:
+      - 9443:8443
+      - 9080:8080
+    environment:
+      SIMPLESAMLPHP_SP_ENTITY_ID: http://localhost:8080
+      SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE: http://localhost:8080/auth/saml
