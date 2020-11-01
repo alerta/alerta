@@ -10,15 +10,6 @@ from alerta.utils.audit import auth_audit_trail
 
 def login():
 
-    # LDAP certificate settings
-    if current_app.config['LDAP_CACERT']:
-        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_HARD)
-        ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, current_app.config['LDAP_CACERT'])
-
-    # Allow LDAP server to use a self-signed certificate
-    if current_app.config['LDAP_ALLOW_SELF_SIGNED_CERT']:
-        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
-
     try:
         login = request.json.get('username') or request.json['email']
         password = request.json['password']
@@ -45,12 +36,30 @@ def login():
             and domain not in current_app.config['LDAP_DOMAINS']):
         raise ApiError('unauthorized domain', 403)
 
+    # LDAP certificate settings
+    if current_app.config['LDAP_CACERT']:
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_HARD)
+        ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, current_app.config['LDAP_CACERT'])
+
+    # Allow LDAP server to use a self-signed certificate
+    if current_app.config['LDAP_ALLOW_SELF_SIGNED_CERT']:
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
+
     # Initialise ldap connection
     try:
         trace_level = 2 if current_app.debug else 0  # XXX - do not set in production environments
         ldap_connection = ldap.initialize(current_app.config['LDAP_URL'], trace_level=trace_level)
     except Exception as e:
         raise ApiError(str(e), 500)
+
+    # bind user credentials
+    ldap_bind_username = current_app.config['LDAP_BIND_USERNAME']
+    ldap_bind_password = current_app.config['LDAP_BIND_PASSWORD']
+    if ldap_bind_username:
+        try:
+            ldap_connection.simple_bind_s(ldap_bind_username, ldap_bind_password)
+        except ldap.INVALID_CREDENTIALS:
+            raise ApiError('invalid ldap bind credentials', 500)
 
     # Set default base DN for user and group search
     base_dn = current_app.config['LDAP_BASEDN']
@@ -66,19 +75,16 @@ def login():
     #   Set the DN as the one found in LDAP_DOMAINS variable
     user_filter = current_app.config['LDAP_USER_FILTER']
     user_base_dn = current_app.config['LDAP_USER_BASEDN']
+    user_attrs = [
+        current_app.config['LDAP_USER_NAME_ATTR'],
+        current_app.config['LDAP_USER_EMAIL_ATTR']
+    ]
     if user_filter:
-        ldap_bind_username = current_app.config['LDAP_BIND_USERNAME']
-        ldap_bind_password = current_app.config['LDAP_BIND_PASSWORD']
-
-        try:
-            ldap_connection.simple_bind_s(ldap_bind_username, ldap_bind_password)
-        except ldap.INVALID_CREDENTIALS:
-            raise ApiError('invalid ldap bind credentials', 500)
-
         result = ldap_connection.search_s(
             user_base_dn or base_dn,
             ldap.SCOPE_SUBTREE,
-            user_filter.format(username=username)
+            user_filter.format(username=username),
+            user_attrs
         )
 
         if len(result) > 1:
@@ -87,39 +93,25 @@ def login():
             raise ApiError('invalid username or password', 401)
 
         userdn = result[0][0]
+        name = result[0][1][current_app.config['LDAP_USER_NAME_ATTR']][0].decode('utf-8', 'ignore')
+        email = result[0][1][current_app.config['LDAP_USER_EMAIL_ATTR']][0].decode('utf-8', 'ignore')
+        email_verified = bool(email)
     else:
         if '%' in current_app.config['LDAP_DOMAINS'][domain]:
             userdn = current_app.config['LDAP_DOMAINS'][domain] % username
         else:
             userdn = current_app.config['LDAP_DOMAINS'][domain].format(username)
+        name = username
+        email = '{}@{}'.format(username, domain)
+        email_verified = False
 
+    # Authenticate user logging in
     try:
         ldap_connection.simple_bind_s(userdn, password)
     except ldap.INVALID_CREDENTIALS:
         raise ApiError('invalid username or password', 401)
-    except Exception as e:
-        raise ApiError(str(e), 500)
 
-    # Get user attributes
-    try:
-        user_attrs = [
-            current_app.config['LDAP_USER_NAME_ATTR'],
-            current_app.config['LDAP_USER_EMAIL_ATTR']
-        ]
-        result = ldap_connection.search_s(userdn, ldap.SCOPE_SUBTREE, '(objectClass=*)', user_attrs)
-        name = result[0][1][current_app.config['LDAP_USER_NAME_ATTR']][0].decode('utf-8', 'ignore')
-        email = result[0][1][current_app.config['LDAP_USER_EMAIL_ATTR']][0].decode('utf-8', 'ignore')
-        email_verified = bool(email)
-    except Exception as e:
-        raise ApiError(str(e), 500)
-
-    if not name:
-        name = username
-    if not email:
-        email = '{}@{}'.format(username, domain)
-        email_verified = False
-    login = email
-
+    login = email or username
     user = User.find_by_username(username=login)
     if not user:
         user = User(name=name, login=login, password='', email=email,
@@ -128,11 +120,17 @@ def login():
     else:
         user.update(login=login, email=email, email_verified=email_verified)
 
+    if ldap_bind_username:
+        try:
+            ldap_connection.simple_bind_s(ldap_bind_username, ldap_bind_password)
+        except ldap.INVALID_CREDENTIALS:
+            raise ApiError('invalid ldap bind credentials', 500)
+
     # Assign customers & update last login time
+    group_filter = current_app.config['LDAP_GROUP_FILTER']
+    group_base_dn = current_app.config['LDAP_GROUP_BASEDN']
     groups = list()
-    try:
-        group_filter = current_app.config['LDAP_GROUP_FILTER']
-        group_base_dn = current_app.config['LDAP_GROUP_BASEDN']
+    if group_filter:
         result = ldap_connection.search_s(
             group_base_dn or base_dn,
             ldap.SCOPE_SUBTREE,
@@ -141,8 +139,6 @@ def login():
         )
         for cn, group_attrs in result:
             groups.append(group_attrs[current_app.config['LDAP_GROUP_NAME_ATTR']][0].decode('utf-8', 'ignore'))
-    except ldap.LDAPError as e:
-        raise ApiError(str(e), 500)
 
     # Check user is active
     if user.status != 'active':
