@@ -4,14 +4,17 @@ RUN apk add --no-cache \
     bash \
     build-base \
     libffi-dev \
+    openldap-dev \
     openssl-dev \
     postgresql-dev \
-    python3-dev
+    python3-dev \
+    xmlsec-dev
 
 COPY . /app
 WORKDIR /app
 
 RUN pip install -r requirements.txt
+RUN pip install python-ldap pysaml2
 RUN pip install .
 
 ENV ALERTA_SVR_CONF_FILE /app/alertad.conf
@@ -22,7 +25,5 @@ COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 EXPOSE 8080
-
 ENV FLASK_SKIP_DOTENV=1
-
 CMD ["alertad", "run", "--host", "0.0.0.0", "--port", "8080"]
