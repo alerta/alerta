@@ -1,7 +1,7 @@
 import ldap  # pylint: disable=import-error
 from flask import current_app, jsonify, request
 
-from alerta.auth.utils import create_token, get_customers
+from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
 from alerta.models.permission import Permission
 from alerta.models.user import User
@@ -143,6 +143,8 @@ def login():
     # Check user is active
     if user.status != 'active':
         raise ApiError('User {} not active'.format(login), 403)
+    if not_authorized('ALLOWED_LDAP_GROUPS', groups):
+        raise ApiError('User {} is not authorized'.format(login), 403)
     user.update_last_login()
 
     scopes = Permission.lookup(login=login, roles=user.roles + groups)
