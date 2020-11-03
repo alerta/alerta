@@ -12,7 +12,7 @@ class LDAPIntegrationTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'DEBUG': True,
-            'AUTH_REQUIRED': False,
+            'AUTH_REQUIRED': True,
             'ADMIN_USERS': ['professor@planetexpress.com'],
 
             'AUTH_PROVIDER': 'ldap',
@@ -36,7 +36,8 @@ class LDAPIntegrationTestCase(unittest.TestCase):
             'LDAP_GROUP_FILTER': '(&(member={userdn})(objectClass=group))',
             'LDAP_GROUP_NAME_ATTR': 'cn',  # memberOf or cn
 
-            'LDAP_DEFAULT_DOMAIN': 'planetexpress.com'
+            'LDAP_DEFAULT_DOMAIN': 'planetexpress.com',
+            'ALLOWED_LDAP_GROUPS': ['admin_staff', 'ship_crew']
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -121,3 +122,12 @@ class LDAPIntegrationTestCase(unittest.TestCase):
         self.assertEqual(jwt.email_verified, True)
         self.assertEqual(jwt.picture, None)
         self.assertEqual(jwt.customers, [])
+
+    def test_login_invalid_group(self):
+
+        payload = {
+            'username': 'zoidberg',
+            'password': 'zoidberg'
+        }
+        response = self.client.post('/auth/login', data=json.dumps(payload), content_type='application/json')
+        self.assertEqual(response.status_code, 403)
