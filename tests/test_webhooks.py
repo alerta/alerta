@@ -563,6 +563,82 @@ class WebhooksTestCase(unittest.TestCase):
             }
         """
 
+        self.prometheus_multi_alert = """
+            {
+              "receiver": "alerta",
+              "status": "firing",
+              "alerts": [
+                {
+                  "status": "firing",
+                  "labels": {
+                    "alertname": "node-disk-pressure",
+                    "condition": "DiskPressure",
+                    "endpoint": "http",
+                    "instance": "********:8080",
+                    "job": "kube-state-metrics",
+                    "namespace": "monitor",
+                    "node": "node1",
+                    "pod": "po-kube-state-metrics-*****",
+                    "prometheus": "monitor/po-prometheus-operator-prometheus",
+                    "service": "po-kube-state-metrics",
+                    "severity": "warning",
+                    "status": "true"
+                  },
+                  "annotations": {
+                    "message": "node:\\"node1\\" has disk pressure"
+                  },
+                  "startsAt": "2020-07-06T01:03:34.06Z",
+                  "endsAt": "0001-01-01T00:00:00Z",
+                  "generatorURL": "http://po-prometheus-operator-prometheus.monitor:9090/******",
+                  "fingerprint": "*******"
+                },
+                {
+                  "status": "firing",
+                  "labels": {
+                    "alertname": "node-disk-pressure",
+                    "condition": "DiskPressure",
+                    "endpoint": "http",
+                    "instance": "****:8080",
+                    "job": "kube-state-metrics",
+                    "namespace": "monitor",
+                    "node": "node2",
+                    "pod": "po-kube-state-metrics-*****",
+                    "prometheus": "monitor/po-prometheus-operator-prometheus",
+                    "service": "po-kube-state-metrics",
+                    "severity": "warning",
+                    "status": "true"
+                  },
+                  "annotations": {
+                    "message": "node:\\"node2\\" has disk pressure"
+                  },
+                  "startsAt": "2020-07-06T01:03:34.06Z",
+                  "endsAt": "0001-01-01T00:00:00Z",
+                  "generatorURL": "http://po-prometheus-operator-prometheus.monitor:9090/****"
+                }
+              ],
+              "groupLabels": {
+                "alertname": "node-disk-pressure"
+              },
+              "commonLabels": {
+                "alertname": "node-disk-pressure",
+                "condition": "DiskPressure",
+                "endpoint": "http",
+                "instance": "*****:8080",
+                "job": "kube-state-metrics",
+                "namespace": "monitor",
+                "pod": "po-kube-state-metrics-*****",
+                "prometheus": "monitor/po-prometheus-operator-prometheus",
+                "service": "po-kube-state-metrics",
+                "severity": "warning",
+                "status": "true"
+              },
+              "commonAnnotations": {},
+              "externalURL": "http://po-prometheus-operator-alertmanager.monitor:9093",
+              "version": "4",
+              "groupKey": "{}:{alertname=\\"node-disk-pressure\\"}"
+            }
+        """
+
         self.riemann_alert = """
           {
             "host": "hostbob",
@@ -927,6 +1003,63 @@ class WebhooksTestCase(unittest.TestCase):
                          'https://internal.myorg.net/wiki/alerts/{app}/{alertname}')
         self.assertEqual(data['alert']['attributes']['runbookGood'],
                          'https://internal.myorg.net/wiki/alerts/thing_dead')
+
+        # create mulit alert
+        response = self.client.post('/webhooks/prometheus', data=self.prometheus_multi_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(len(data['ids']), 2)
+        self.assertEqual(data['status'], 'ok')
+
+        alert_ids = data['ids']
+
+        # get alert #1
+        response = self.client.get('/alert/' + alert_ids[0], headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['id'], alert_ids[0])
+        self.assertEqual(data['alert']['resource'], '********:8080')
+        self.assertEqual(data['alert']['event'], 'node-disk-pressure')
+        self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['timeout'], 86400)
+        self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+        self.assertEqual(
+            sorted(data['alert']['tags']),
+            sorted([
+                'condition=DiskPressure',
+                'endpoint=http',
+                'namespace=monitor',
+                'node=node1',
+                'pod=po-kube-state-metrics-*****',
+                'prometheus=monitor/po-prometheus-operator-prometheus',
+                'status=true'
+            ])
+        )
+
+        # get alert #2
+        response = self.client.get('/alert/' + alert_ids[1], headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['id'], alert_ids[1])
+        self.assertEqual(data['alert']['resource'], '****:8080')
+        self.assertEqual(data['alert']['event'], 'node-disk-pressure')
+        self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['severity'], 'warning')
+        self.assertEqual(data['alert']['timeout'], 86400)
+        self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+        self.assertEqual(
+            sorted(data['alert']['tags']),
+            sorted([
+                'condition=DiskPressure',
+                'endpoint=http',
+                'namespace=monitor',
+                'node=node2',
+                'pod=po-kube-state-metrics-*****',
+                'prometheus=monitor/po-prometheus-operator-prometheus',
+                'status=true'
+            ])
+        )
 
     def test_riemann_webhook(self):
 
