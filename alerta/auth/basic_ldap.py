@@ -81,10 +81,10 @@ def login():
     ]
     if user_filter:
         result = ldap_connection.search_s(
-            user_base_dn or base_dn,
-            ldap.SCOPE_SUBTREE,
-            user_filter.format(username=username),
-            user_attrs
+            base=user_base_dn or base_dn,
+            scope=ldap.SCOPE_SUBTREE,
+            filterstr=user_filter.format(username=username),
+            attrlist=user_attrs
         )
 
         if len(result) > 1:
@@ -92,22 +92,22 @@ def login():
         elif len(result) == 0:
             raise ApiError('invalid username or password', 401)
 
-        userdn = result[0][0]
+        user_dn = result[0][0]
         name = result[0][1][current_app.config['LDAP_USER_NAME_ATTR']][0].decode('utf-8', 'ignore')
         email = result[0][1][current_app.config['LDAP_USER_EMAIL_ATTR']][0].decode('utf-8', 'ignore')
         email_verified = bool(email)
     else:
         if '%' in current_app.config['LDAP_DOMAINS'][domain]:
-            userdn = current_app.config['LDAP_DOMAINS'][domain] % username
+            user_dn = current_app.config['LDAP_DOMAINS'][domain] % username
         else:
-            userdn = current_app.config['LDAP_DOMAINS'][domain].format(username)
+            user_dn = current_app.config['LDAP_DOMAINS'][domain].format(username)
         name = username
         email = '{}@{}'.format(username, domain)
         email_verified = False
 
     # Authenticate user logging in
     try:
-        ldap_connection.simple_bind_s(userdn, password)
+        ldap_connection.simple_bind_s(user_dn, password)
     except ldap.INVALID_CREDENTIALS:
         raise ApiError('invalid username or password', 401)
 
@@ -132,13 +132,16 @@ def login():
     groups = list()
     if group_filter:
         result = ldap_connection.search_s(
-            group_base_dn or base_dn,
-            ldap.SCOPE_SUBTREE,
-            group_filter.format(username=username, email=email, userdn=userdn),
-            [current_app.config['LDAP_GROUP_NAME_ATTR']]
+            base=group_base_dn or base_dn,
+            scope=ldap.SCOPE_SUBTREE,
+            filterstr=group_filter.format(username=username, email=email, userdn=user_dn),
+            attrlist=[current_app.config['LDAP_GROUP_NAME_ATTR']]
         )
-        for cn, group_attrs in result:
-            groups.append(group_attrs[current_app.config['LDAP_GROUP_NAME_ATTR']][0].decode('utf-8', 'ignore'))
+        for group_dn, group_attrs in result:
+            if current_app.config['LDAP_GROUP_NAME_ATTR'] in group_attrs.keys():
+                groups.extend([g.decode('utf-8', 'ignore') for g in group_attrs[current_app.config['LDAP_GROUP_NAME_ATTR']]])
+            else:
+                groups.append(group_dn)
 
     # Check user is active
     if user.status != 'active':

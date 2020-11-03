@@ -114,7 +114,7 @@ LDAP_USER_NAME_ATTR = 'cn'  # eg. cn or displayName
 LDAP_USER_EMAIL_ATTR = 'mail'  # eg. mail or email
 LDAP_GROUP_BASEDN = ''  # BASEDN for group search (default: LDAP_BASEDN)
 LDAP_GROUP_FILTER = ''  # eg. (&(member={userdn})(objectClass=group))
-LDAP_GROUP_NAME_ATTR = 'memberOf'  # eg. memberOf or cn
+LDAP_GROUP_NAME_ATTR = 'dn'  # eg. dn, memberOf, or cn
 LDAP_DEFAULT_DOMAIN = ''  # if set allows users to login with bare username
 ALLOWED_LDAP_GROUPS = ['*']
 
