@@ -145,7 +145,7 @@ jobs:
           pip install flake8 pytest
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          pip install python-ldap pysaml2 lxml
+          pip install -r requirements-ci.txt
           pip install .
       - name: Integration Test with pytest
         id: integration-test

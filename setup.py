@@ -39,6 +39,7 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=['tests']),
     install_requires=[
         'bcrypt',
+        'blinker',
         'cryptography',
         'Flask>=0.10.1',
         'Flask-Compress>=1.4.0',
@@ -49,7 +50,7 @@ setuptools.setup(
         'pyparsing',
         'python-dateutil',
         'pytz',
-        'pyyaml',
+        'PyYAML',
         'requests',
         'requests-hawk',
         'sentry-sdk[flask]>=0.10.2',
