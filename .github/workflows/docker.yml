@@ -3,13 +3,14 @@ name: Docker Build and Push
 on:
   push:
     branches: [ master, release/* ]
+    tags: [ '**' ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      REPOSITORY_URL: docker.pkg.github.com
-      IMAGE_NAME: ${{ github.repository }}/alerta-api
+      REPOSITORY_URL: ghcr.io
+      IMAGE_NAME: ${{ github.repository_owner }}/alerta-api
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - uses: act10ns/slack@v1
@@ -31,9 +32,9 @@ jobs:
           -t $REPOSITORY_URL/$IMAGE_NAME:latest .
       - name: Docker Login
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-        run: docker login $REPOSITORY_URL --username "$DOCKER_USERNAME" --password "$DOCKER_PASSWORD"
+          DOCKER_USERNAME: ${{ github.actor }}
+          DOCKER_PASSWORD: ${{ secrets.ghcr_token }}
+        run: echo $DOCKER_PASSWORD | docker login $REPOSITORY_URL --username "$DOCKER_USERNAME" --password-stdin
       - name: Publish Image
         id: docker-push
         run: docker push $REPOSITORY_URL/$IMAGE_NAME
