@@ -1,3 +1,4 @@
+import threading
 import time
 from collections import defaultdict, namedtuple
 from datetime import datetime
@@ -64,10 +65,12 @@ class Backend(Database):
         self.uri = uri
         self.dbname = dbname
 
-        conn = self.connect()
-        with app.open_resource('sql/schema.sql') as f:
-            conn.cursor().execute(f.read())
-            conn.commit()
+        lock = threading.Lock()
+        with lock:
+            conn = self.connect()
+            with app.open_resource('sql/schema.sql') as f:
+                conn.cursor().execute(f.read())
+                conn.commit()
 
         register_adapter(dict, Json)
         register_adapter(datetime, self._adapt_datetime)
