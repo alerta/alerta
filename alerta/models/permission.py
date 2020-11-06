@@ -1,6 +1,8 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
+from flask import current_app
+
 from alerta.app import db
 from alerta.database.base import Query
 from alerta.models.enums import Scope
@@ -96,6 +98,11 @@ class Permission:
             return cls.is_in_scope(want_scope.replace('read', 'write'), have_scopes)
         elif want_scope.startswith('write'):
             return cls.is_in_scope(want_scope.replace('write', 'admin'), have_scopes)
+        elif want_scope.startswith('delete'):
+            if want_scope in current_app.config['DELETE_SCOPES']:
+                return cls.is_in_scope(want_scope.replace('delete', 'admin'), have_scopes)
+            else:
+                return cls.is_in_scope(want_scope.replace('delete', 'write'), have_scopes)
         else:
             return False
 

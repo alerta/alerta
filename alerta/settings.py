@@ -68,6 +68,7 @@ USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includ
 DEFAULT_GUEST_ROLE = 'guest'
 GUEST_ROLES = [DEFAULT_GUEST_ROLE]
 GUEST_DEFAULT_SCOPES = ['read:alerts']
+DELETE_SCOPES = []  # Set to "delete:alerts" to prevent users with "write:alerts" scope being able to delete alerts
 CUSTOMER_VIEWS = False
 
 BASIC_AUTH_REALM = 'Alerta'
