@@ -8,6 +8,7 @@ class Scope(str, Enum):
     admin = 'admin'
     read_alerts = 'read:alerts'
     write_alerts = 'write:alerts'
+    delete_alerts = 'delete:alerts'
     admin_alerts = 'admin:alerts'
     read_blackouts = 'read:blackouts'
     write_blackouts = 'write:blackouts'
@@ -47,7 +48,7 @@ class Scope(str, Enum):
     def from_str(action: str, resource: str = None):
         """Return a scope based on the supplied action and resource.
 
-        :param action: the scope action eg. read, write or admin
+        :param action: the scope action eg. read, write, delete or admin
         :param resource: the specific resource of the scope, if any eg. alerts,
             blackouts, heartbeats, users, perms, customers, keys, webhooks,
             oembed, management or userinfo or None

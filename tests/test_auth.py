@@ -17,6 +17,7 @@ class AuthTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
             'ADMIN_USERS': ['admin@alerta.io'],
+            'DELETE_SCOPES': ['delete:alerts'],
             'ALLOWED_EMAIL_DOMAINS': ['bonaparte.fr', 'debeauharnais.fr', 'manorfarm.ru']
         }
         self.app = create_app(test_config)
@@ -51,6 +52,46 @@ class AuthTestCase(unittest.TestCase):
         response = self.client.get('/alerts')
         self.assertEqual(response.status_code, 401)
 
+    def test_admin_key(self):
+
+        payload = {
+            'user': 'rw-demo-key-user',
+            'scopes': ['admin']
+        }
+
+        response = self.client.post('/key', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIsNotNone(data['key'], 'Failed to create read-write key')
+
+        admin_api_key = data['key']
+
+        response = self.client.post('/alert', data=json.dumps(self.alert),
+                                    content_type='application/json', headers={'Authorization': 'Key ' + admin_api_key})
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['history'][0]['user'], 'rw-demo-key-user')
+
+        alert_id = data['id']
+
+        response = self.client.get('/alerts', headers={'Authorization': 'Key ' + admin_api_key})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('total', data)
+
+        response = self.client.get('/key/' + admin_api_key, headers={'Authorization': 'Key ' + admin_api_key})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['key']['scopes'], ['admin'])
+
+        # delete alert
+        response = self.client.delete('/alert/' + alert_id, headers={'Authorization': 'Key ' + admin_api_key})
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.delete('/key/' + admin_api_key, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
     def test_readwrite_key(self):
 
         payload = {
@@ -72,6 +113,8 @@ class AuthTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['history'][0]['user'], 'rw-demo-key-user')
 
+        alert_id = data['id']
+
         response = self.client.get('/alerts', headers={'Authorization': 'Key ' + rw_api_key})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
@@ -82,7 +125,54 @@ class AuthTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['key']['scopes'], ['read', 'write'])
 
+        # delete alert
+        response = self.client.delete('/alert/' + alert_id, headers={'Authorization': 'Key ' + rw_api_key})
+        self.assertEqual(response.status_code, 403)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], 'Missing required scope: delete:alerts')
+
         response = self.client.delete('/key/' + rw_api_key, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+    def test_rw_delete_key(self):
+
+        payload = {
+            'user': 'rw-delete-demo-key-user',
+            'scopes': ['read', 'write', 'delete:alerts']
+        }
+
+        response = self.client.post('/key', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIsNotNone(data['key'], 'Failed to create read-write-delete key')
+        self.assertEqual(data['data']['scopes'], ['read', 'write', 'delete:alerts'])
+
+        rwd_api_key = data['key']
+
+        response = self.client.post('/alert', data=json.dumps(self.alert),
+                                    content_type='application/json', headers={'Authorization': 'Key ' + rwd_api_key})
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['history'][0]['user'], 'rw-delete-demo-key-user')
+
+        alert_id = data['id']
+
+        response = self.client.get('/alerts', headers={'Authorization': 'Key ' + rwd_api_key})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('total', data)
+
+        response = self.client.get('/key/' + rwd_api_key, headers={'Authorization': 'Key ' + rwd_api_key})
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['key']['scopes'], ['read', 'write', 'delete:alerts'])
+
+        # delete alert
+        response = self.client.delete('/alert/' + alert_id, headers={'Authorization': 'Key ' + rwd_api_key})
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.delete('/key/' + rwd_api_key, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
     def test_readonly_key(self):
