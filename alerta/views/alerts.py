@@ -259,7 +259,7 @@ def update_attributes(alert_id):
 # delete
 @api.route('/alert/<alert_id>', methods=['OPTIONS', 'DELETE'])
 @cross_origin()
-@permission(Scope.write_alerts)
+@permission(Scope.delete_alerts)
 @timer(delete_timer)
 @jsonp
 def delete_alert(alert_id):
