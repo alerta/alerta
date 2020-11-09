@@ -78,7 +78,7 @@ def permission(scope=None):
                     raise ApiError('Token has expired', 401)
                 except InvalidAudience:
                     raise ApiError('Invalid audience', 401)
-                g.user_id = jwt.subject
+                g.user_id = jwt.oid or jwt.subject
                 g.login = jwt.preferred_username
                 g.customers = jwt.customers
                 g.scopes = jwt.scopes  # type: List[Scope]
