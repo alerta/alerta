@@ -1477,6 +1477,214 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims['customers'], ['Foo Corp'], claims)
 
     @requests_mock.mock()
+    def test_openid_idp(self, m):
+
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': True,
+            'AUTH_PROVIDER': 'openid',
+            'OIDC_ISSUER_URL': 'https://dev-66191jdr.eu.auth0.com/',
+        }
+
+        authorization_grant = """
+        {
+          "code": "q79ntL3d9mzPFAU-",
+          "clientId": "LMMEZSlPYKvM14cFxnWNWkC4DgvRk0dZ",
+          "redirectUri": "http://local.alerta.io:8000",
+          "state": "051pvr3x5e4y"
+        }
+        """
+
+        discovery_doc = """
+        {
+          "issuer": "https://dev-66191jdr.eu.auth0.com/",
+          "authorization_endpoint": "https://dev-66191jdr.eu.auth0.com/authorize",
+          "token_endpoint": "https://dev-66191jdr.eu.auth0.com/oauth/token",
+          "userinfo_endpoint": "https://dev-66191jdr.eu.auth0.com/userinfo",
+          "mfa_challenge_endpoint": "https://dev-66191jdr.eu.auth0.com/mfa/challenge",
+          "jwks_uri": "https://dev-66191jdr.eu.auth0.com/.well-known/jwks.json",
+          "registration_endpoint": "https://dev-66191jdr.eu.auth0.com/oidc/register",
+          "revocation_endpoint": "https://dev-66191jdr.eu.auth0.com/oauth/revoke",
+          "scopes_supported": [
+            "openid",
+            "profile",
+            "offline_access",
+            "name",
+            "given_name",
+            "family_name",
+            "nickname",
+            "email",
+            "email_verified",
+            "picture",
+            "created_at",
+            "identities",
+            "phone",
+            "address"
+          ],
+          "response_types_supported": [
+            "code",
+            "token",
+            "id_token",
+            "code token",
+            "code id_token",
+            "token id_token",
+            "code token id_token"
+          ],
+          "response_modes_supported": [
+            "query",
+            "fragment",
+            "form_post"
+          ],
+          "subject_types_supported": [
+            "public"
+          ],
+          "id_token_signing_alg_values_supported": [
+            "HS256",
+            "RS256"
+          ],
+          "token_endpoint_auth_methods_supported": [
+            "client_secret_basic",
+            "client_secret_post"
+          ],
+          "claims_supported": [
+            "aud",
+            "auth_time",
+            "created_at",
+            "email",
+            "email_verified",
+            "exp",
+            "family_name",
+            "given_name",
+            "iat",
+            "identities",
+            "iss",
+            "name",
+            "nickname",
+            "phone_number",
+            "picture",
+            "sub"
+          ],
+          "request_uri_parameter_supported": false
+        }
+        """
+
+        jwks_uri = """
+        {
+          "keys": [
+            {
+              "alg": "RS256",
+              "kty": "RSA",
+              "use": "sig",
+              "x5c": [
+                "MIIDDTCCAfWgAwIBAgIJQGmNBJxybcLTMA0GCSqGSIb3DQEBCwUAMCQxIjAgBgNVBAMTGWRldi02NjE5MWpkci5ldS5hdXRoMC5jb20wHhcNMTkwMzMwMDYzODM1WhcNMzIxMjA2MDYzODM1WjAkMSIwIAYDVQQDExlkZXYtNjYxOTFqZHIuZXUuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp2ZcAYOMRWIVqO8Ih3qiLXoL0antgVSsyJvlHmvWJN0Oyn9xkmXX3qbJRIYN13Dj2EW0A1mGZYZBHVPDCoAe7dWLFA8UyU8ofQofQ76AXn4zEhI5ETnj5ZkqSMTfZuA8sbKtLtO7alVTPok24a4sfm4ECG8k5Rx59UOX1JIVOsvQLnWhnxYmoe+fB52XqnhY6tXF3Y+v+QC2jCWo1yZpG/ZpegMu4WcmT3zqxWqT4pbamCUH49IfJbVhRISF9JQdytz/ylfzaow4+QTgpMQHx27L99AFhgL9moxglyMmI8OO8yyoabWdkE9GPtKYiaNwxlfagze6sA0XMuWAMAH3NwIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQ4VB9WhbNhas/0DpOGSvQqui8j6zAOBgNVHQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBACix5lFpyx46oTNwwsJKVo3+gZAlLY6/sHldbUpV8MQIC2HXwCjNQAldUWQkMVWSieU3eE4fEUrfRxIwKOXZ/hV5oA9PSnnVAJyRzXuzYijtKPV15D3InnAr3TsgLGw3kWjPUDgXecqxsIo8hnuYaVIcNPJT12mBlZYtBckf4DAMl76/xwy0Y5vdLZX8/MICl8MoXn4a4DXfhyD/SG0mLYUOepdxAKjZNV5EfTQgUVkiZlYRkiKEU0jRy1moRbXDwJ4r7t1sVASO14D8r8JfkPUhqFovijVmk5+dLbLEQlr6mbEe6221riOD2a/Eq8CTukkYzzXxSDfohVniqHO3mLA="
+              ],
+              "n": "p2ZcAYOMRWIVqO8Ih3qiLXoL0antgVSsyJvlHmvWJN0Oyn9xkmXX3qbJRIYN13Dj2EW0A1mGZYZBHVPDCoAe7dWLFA8UyU8ofQofQ76AXn4zEhI5ETnj5ZkqSMTfZuA8sbKtLtO7alVTPok24a4sfm4ECG8k5Rx59UOX1JIVOsvQLnWhnxYmoe-fB52XqnhY6tXF3Y-v-QC2jCWo1yZpG_ZpegMu4WcmT3zqxWqT4pbamCUH49IfJbVhRISF9JQdytz_ylfzaow4-QTgpMQHx27L99AFhgL9moxglyMmI8OO8yyoabWdkE9GPtKYiaNwxlfagze6sA0XMuWAMAH3Nw",
+              "e": "AQAB",
+              "kid": "MjdFNjIxNjhFN0Y4N0E4RkFCODUyQzAyMUNBQzkxQjNFMDI2MkUyMA",
+              "x5t": "MjdFNjIxNjhFN0Y4N0E4RkFCODUyQzAyMUNBQzkxQjNFMDI2MkUyMA"
+            }
+          ]
+        }
+        """
+
+        # using GitHub credentials
+        access_token = """
+        {
+          "access_token": "2WkWGsYR6dOdFLFAME3LI-21l15BRFiL",
+          "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1qZEZOakl4TmpoRk4wWTROMEU0UmtGQ09EVXlRekF5TVVOQlF6a3hRak5GTURJMk1rVXlNQSJ9.eyJuaWNrbmFtZSI6InNhdHRlcmx5IiwibmFtZSI6Ik5pY2sgU2F0dGVybHkiLCJwaWN0dXJlIjoiaHR0cHM6Ly9hdmF0YXJzMC5naXRodWJ1c2VyY29udGVudC5jb20vdS82MTUwNTc_dj00IiwidXBkYXRlZF9hdCI6IjIwMjAtMTEtMDlUMDA6MDY6MjAuMDgxWiIsImVtYWlsIjoibmZzYXR0ZXJseUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6Ly9kZXYtNjYxOTFqZHIuZXUuYXV0aDAuY29tLyIsInN1YiI6ImdpdGh1Ynw2MTUwNTciLCJhdWQiOiJMTU1FWlNsUFlLdk0xNGNGeG5XTldrQzREZ3ZSazBkWiIsImlhdCI6MTYwNDg4MDM4MSwiZXhwIjoxNjA0OTE2MzgxfQ.DslYi1zR2w9PYKX25jh9RMQQXVtoOS21opgl0RA0DZG98WjRztzufeSMjDydyYFrQevB739jItWxXfZU_R1uXwvMghsLOdOqT95roWoFWKQW7Z3o35KI3-9XdkLTQ9E5_IGl8U8J666alsF4kns2qUUeV57xoN3BVPFjVr1mM65tO5xWlGD3Mq3sqEVC0OwxtDelG0C4WgGnSmJQryRbaXKo0kl8ixuEDET2aBqBjXjIZ-Av73IkBBpicAsigGlxjDHxl9y6lmkhuH2ft1f1CZO0XBwFFB7VeX2mozRk9lEMudQVUXaAWZQGZPjKt-M9HbH0SwMv4vm6mchG9jkNUA",
+         "scope": "openid profile email",
+         "expires_in": 86400,
+          "token_type": "Bearer"
+        }
+        """
+
+        userinfo = """
+        {
+          "sub": "github|615057",
+          "nickname": "satterly",
+          "name": "Nick Satterly",
+          "picture": "https://avatars0.githubusercontent.com/u/615057?v=4",
+          "updated_at": "2020-11-09T00:06:20.081Z",
+          "email": "nfsatterly@gmail.com",
+          "email_verified": true
+        }
+        """
+
+        m.get('https://dev-66191jdr.eu.auth0.com/.well-known/openid-configuration', text=discovery_doc)
+        m.get('https://dev-66191jdr.eu.auth0.com/.well-known/jwks.json', text=jwks_uri)
+
+        m.post('https://dev-66191jdr.eu.auth0.com/oauth/token', text=access_token)
+        m.get('https://dev-66191jdr.eu.auth0.com/userinfo', text=userinfo)
+
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
+        self.assertEqual(response.status_code, 200, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        claims = jwt.decode(data['token'], verify=False)
+
+        self.assertEqual(claims['sub'], 'github|615057', claims)
+        self.assertNotIn('oid', claims)
+        self.assertEqual(claims['preferred_username'], 'satterly', claims)
+        self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
+        self.assertEqual(claims.get('email_verified'), True, claims)
+
+        # using Google credentials
+        access_token = """
+        {
+          "access_token": "Ua37VMJg6W-DuQuO14GyDQlidhUXCNzT",
+          "id_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1qZEZOakl4TmpoRk4wWTROMEU0UmtGQ09EVXlRekF5TVVOQlF6a3hRak5GTURJMk1rVXlNQSJ9.eyJnaXZlbl9uYW1lIjoiTmljayIsImZhbWlseV9uYW1lIjoiU2F0dGVybHkiLCJuaWNrbmFtZSI6Im5mc2F0dGVybHkiLCJuYW1lIjoiTmljayBTYXR0ZXJseSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS0vQU9oMTRHaFZrS3pQbXI0RnE4cjRIN3R0eTdCc2g5VWY2WlFXZnFVeFJTOVluUT1zOTYtYyIsImxvY2FsZSI6ImVuLUdCIiwidXBkYXRlZF9hdCI6IjIwMjAtMTEtMDlUMDA6MTI6MjYuODQ4WiIsImVtYWlsIjoibmZzYXR0ZXJseUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6Ly9kZXYtNjYxOTFqZHIuZXUuYXV0aDAuY29tLyIsInN1YiI6Imdvb2dsZS1vYXV0aDJ8MTA0MDA0NzY0ODI0MDY2MzU5MzkwIiwiYXVkIjoiTE1NRVpTbFBZS3ZNMTRjRnhuV05Xa0M0RGd2UmswZFoiLCJpYXQiOjE2MDQ4ODA3NDcsImV4cCI6MTYwNDkxNjc0N30.IV_SplyKCwhGHis3gt-tCP1wZ9Enqq5o7IzF6HvP345G2SLVZE8Ue2sOZCqLoVAcWF7nMPPCyjujXXETXCMYoWjcgH67TmlPubG4JZtUkuAoTnyytSVPsm6JQpbeqoFo9urCANuAFuDfuQPUNNupX78EzNOgYmQKY66jZl86Gy28c1FRLOFNzowpGyheBm_tABu4wJTToaVoJhmWGGMsW4oHBoRZ3K2S6UEkkszAp-CtZmTNCKYh-vV9GmW5TXgysAGo0sc0TwyqPzJxLvikDhOYeC8f8uCibNnJ4cmaM1igk1YKAZ97Amom5-AmaE10oHTXP2d-_KRaEsdj5weY1g",
+          "scope": "openid profile email",
+          "expires_in": 86400,
+          "token_type": "Bearer"
+        }
+        """
+
+        userinfo = """
+        {
+          "sub": "google-oauth2|104004764824066359390",
+          "given_name": "Nick",
+          "family_name": "Satterly",
+          "nickname": "nfsatterly",
+          "name": "Nick Satterly",
+          "picture": "https://lh3.googleusercontent.com/a-/AOh14GhVkKzPmr4Fq8r4H7tty7Bsh9Uf6ZQWfqUxRS9YnQ=s96-c",
+          "locale": "en-GB",
+          "updated_at": "2020-11-09T00:12:26.848Z",
+          "email": "nfsatterly@gmail.com",
+          "email_verified": true
+        }
+        """
+
+        m.post('https://dev-66191jdr.eu.auth0.com/oauth/token', text=access_token)
+        m.get('https://dev-66191jdr.eu.auth0.com/userinfo', text=userinfo)
+
+        response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
+        self.assertEqual(response.status_code, 200, response.data)
+        data = json.loads(response.data.decode('utf-8'))
+        claims = jwt.decode(data['token'], verify=False)
+
+        self.assertEqual(claims['sub'], 'google-oauth2|104004764824066359390', claims)
+        self.assertEqual(claims['oid'], 'github|615057', claims)
+        self.assertEqual(claims['preferred_username'], 'nfsatterly', claims)
+        self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
+        self.assertEqual(claims.get('email_verified'), True, claims)
+
+    @requests_mock.mock()
     def test_openid_okta(self, m):
 
         test_config = {

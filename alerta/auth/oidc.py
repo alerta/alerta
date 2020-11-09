@@ -128,16 +128,23 @@ def openid():
     if not login:
         raise ApiError("Must support one of the following OpenID claims: 'preferred_username', 'nickname' or 'email'", 400)
 
-    user = User.find_by_id(id=subject)
+    if current_app.config['OIDC_LINK_USER_EMAIL'] and email and email_verified:
+        user = User.find_by_email(email=email)
+    else:
+        user = User.find_by_id(id=subject)
+
     if not user:
         user = User(id=subject, name=name, login=login, password='', email=email,
                     roles=current_app.config['USER_ROLES'], text='', email_verified=email_verified)
         user.create()
     else:
-        user.update(login=login, email=email)
+        user.update(login=login, email=email, email_verified=email_verified)
 
     roles = custom_claims[role_claim] + user.roles
     groups = custom_claims[group_claim]
+
+    if user.id != subject:
+        custom_claims['oid'] = user.id  # if subject differs store the original subject as "oid" claim
 
     if user.status != 'active':
         raise ApiError('User {} is not active'.format(login), 403)

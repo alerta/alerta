@@ -135,6 +135,7 @@ OIDC_VERIFY_TOKEN = False
 OIDC_ROLE_CLAIM = OIDC_CUSTOM_CLAIM = 'roles'  # JWT claim name whose value is used in role mapping
 OIDC_GROUP_CLAIM = 'groups'  # JWT claim name whose value is used in customer mapping
 ALLOWED_OIDC_ROLES = ALLOWED_GITLAB_GROUPS or ALLOWED_KEYCLOAK_ROLES or ['*']
+OIDC_LINK_USER_EMAIL = True  # if using federated IdP link user accounts by verified email addresses
 
 # SAML 2.0
 SAML2_ENTITY_ID = None
