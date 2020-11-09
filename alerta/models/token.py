@@ -37,6 +37,7 @@ class Jwt:
         self.email_verified = kwargs.get('email_verified')
         self.picture = kwargs.get('picture')
         self.customers = kwargs.get('customers')
+        self.oid = kwargs.get('oid')
 
     @classmethod
     def parse(cls, token: str, key: str = None, verify: bool = True, algorithm: str = 'HS256') -> 'Jwt':
@@ -70,7 +71,8 @@ class Jwt:
             scopes=json.get('scope', '').split(' '),  # eg. scope='read write' => scopes=['read', 'write']
             email_verified=json.get('email_verified', None),
             picture=json.get('picture', None),
-            customers=[json['customer']] if 'customer' in json else json.get('customers', list())
+            customers=[json['customer']] if 'customer' in json else json.get('customers', list()),
+            oid=json.get('oid')
         )
 
     @property
@@ -108,6 +110,8 @@ class Jwt:
             data['picture'] = self.picture
         if current_app.config['CUSTOMER_VIEWS']:
             data['customers'] = self.customers
+        if self.oid:
+            data['oid'] = self.oid
         return data
 
     @property
