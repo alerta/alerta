@@ -16,7 +16,6 @@ jobs:
       - uses: act10ns/slack@v1
         with:
           status: starting
-          channel: '#workflows'
         if: always()
       - name: Checkout
         uses: actions/checkout@v2
@@ -43,5 +42,4 @@ jobs:
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
-          channel: '#workflows'
         if: always()
