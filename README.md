@@ -2,7 +2,7 @@ Alerta Release 8.0
 ==================
 
 [![Actions Status](https://github.com/alerta/alerta/workflows/CI%20Tests/badge.svg)](https://github.com/alerta/alerta/actions)
-[![Slack chat](https://img.shields.io/badge/chat-on%20slack-blue?logo=slack)](https://slack.com/app_redirect?channel=C01FJRJR2F2)
+[![Slack chat](https://img.shields.io/badge/chat-on%20slack-blue?logo=slack)](https://slack.alerta.dev)
 [![Coverage Status](https://coveralls.io/repos/github/alerta/alerta/badge.svg?branch=master)](https://coveralls.io/github/alerta/alerta?branch=master)
 [![Docker Pulls](https://img.shields.io/docker/pulls/alerta/alerta-web.svg)](https://hub.docker.com/r/alerta/alerta-web)
 
