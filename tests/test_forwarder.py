@@ -13,7 +13,7 @@ class ForwarderTestCase(unittest.TestCase):
     def setUp(self):
 
         test_config = {
-            'DEBUG': True,
+            'DEBUG': False,
             'TESTING': True,
             'AUTH_REQUIRED': False,
             'BASE_URL': 'http://localhost:8080',

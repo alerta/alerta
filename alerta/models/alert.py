@@ -443,6 +443,10 @@ class Alert:
     def untag(self, tags: List[str]) -> bool:
         return db.untag_alert(self.id, tags)
 
+    # update alert tags
+    def update_tags(self, tags: List[str]) -> bool:
+        return db.update_tags(self.id, tags)
+
     # update alert attributes
     def update_attributes(self, attributes: Dict[str, Any]) -> bool:
         return db.update_attributes(self.id, self.attributes, attributes)
