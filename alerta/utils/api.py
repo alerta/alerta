@@ -80,13 +80,14 @@ def process_alert(alert: Alert) -> Alert:
             alert = updated
 
     if updated:
-        alert.tag(alert.tags)
+        alert.update_tags(alert.tags)
         alert.update_attributes(alert.attributes)
 
     return alert
 
 
 def process_action(alert: Alert, action: str, text: str, timeout: int = None) -> Tuple[Alert, str, str, Optional[int]]:
+
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None
@@ -113,9 +114,9 @@ def process_action(alert: Alert, action: str, text: str, timeout: int = None) ->
             elif len(updated) == 3:
                 alert, action, text = updated
 
-    # remove keys from attributes with None values
-    new_attrs = {k: v for k, v in alert.attributes.items() if v is not None}
-    alert.attributes = new_attrs
+    if updated:
+        alert.update_tags(alert.tags)
+        alert.update_attributes(alert.attributes)
 
     return alert, action, text, timeout
 

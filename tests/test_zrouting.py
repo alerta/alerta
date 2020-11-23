@@ -16,7 +16,7 @@ class RoutingTestCase(unittest.TestCase):
 
         # create dummy routing rules
         self.dist = pkg_resources.Distribution(__file__, project_name='alerta-routing', version='0.1')
-        s = 'rules = tests.test_routing:rules'
+        s = 'rules = tests.test_zrouting:rules'
         self.entry_point = pkg_resources.EntryPoint.parse(s, dist=self.dist)
         self.dist._ep_map = {'alerta.routing': {'rules': self.entry_point}}
         pkg_resources.working_set.add(self.dist)
@@ -112,6 +112,7 @@ class RoutingTestCase(unittest.TestCase):
         plugins.plugins['config'] = DummyConfigPlugin()
 
     def tearDown(self):
+        plugins.plugins.clear()
         self.dist._ep_map.clear()
 
     def test_config(self):

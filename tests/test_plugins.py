@@ -14,7 +14,7 @@ class PluginsTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': False,
-            'PLUGINS': ['reject']
+            'PLUGINS': ['reject', 'remote_ip', 'heartbeat']
         }
         os.environ['ALLOWED_ENVIRONMENTS'] = 'Production,Staging,Development'
 
@@ -57,20 +57,16 @@ class PluginsTestCase(unittest.TestCase):
             'Content-type': 'application/json'
         }
 
+    def tearDown(self):
+        plugins.plugins.clear()
+        db.destroy()
+
+    def test_reject_alert(self):
+
         plugins.plugins['old1'] = OldPlugin1()
         plugins.plugins['test1'] = CustPlugin1()
         plugins.plugins['test2'] = CustPlugin2()
         plugins.plugins['test3'] = CustPlugin3()
-
-    def tearDown(self):
-
-        del plugins.plugins['test1']
-        del plugins.plugins['test2']
-        del plugins.plugins['test3']
-
-        db.destroy()
-
-    def test_reject_alert(self):
 
         # create alert that will be rejected
         response = self.client.post('/alert', data=json.dumps(self.reject_alert), headers=self.headers)
@@ -86,7 +82,17 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['status'], 'ok')
         self.assertRegex(data['id'], '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 
+        del plugins.plugins['old1']
+        del plugins.plugins['test1']
+        del plugins.plugins['test2']
+        del plugins.plugins['test3']
+
     def test_status_update(self):
+
+        plugins.plugins['old1'] = OldPlugin1()
+        plugins.plugins['test1'] = CustPlugin1()
+        plugins.plugins['test2'] = CustPlugin2()
+        plugins.plugins['test3'] = CustPlugin3()
 
         # create alert that will be accepted
         response = self.client.post('/alert', data=json.dumps(self.accept_alert), headers=self.headers)
@@ -118,7 +124,17 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['attributes']['xyz'], 'down')
         self.assertEqual(data['alert']['history'][-1]['text'], 'input-plugin1-plugin3')
 
+        del plugins.plugins['old1']
+        del plugins.plugins['test1']
+        del plugins.plugins['test2']
+        del plugins.plugins['test3']
+
     def test_take_action(self):
+
+        plugins.plugins['old1'] = OldPlugin1()
+        plugins.plugins['test1'] = CustPlugin1()
+        plugins.plugins['test2'] = CustPlugin2()
+        plugins.plugins['test3'] = CustPlugin3()
 
         plugins.plugins['action1'] = CustActionPlugin1()
 
@@ -145,7 +161,7 @@ class PluginsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'assign')
         self.assertEqual(sorted(data['alert']['tags']), sorted(
-            ['Development', 'Production', 'more', 'other', 'that', 'the', 'this', 'aSingleTag', 'a:Triple:Tag']))
+            ['Development', 'Production', 'more', 'other', 'that', 'the', 'this', 'aSingleTag', 'aDouble:Tag', 'a:Triple:Tag']))
         self.assertEqual(data['alert']['history'][1]['text'],
                          'ticket created by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
 
@@ -184,7 +200,17 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['history'][3]['text'],
                          'ticket resolved by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
 
+        del plugins.plugins['old1']
+        del plugins.plugins['test1']
+        del plugins.plugins['test2']
+        del plugins.plugins['test3']
+
     def test_delete(self):
+
+        plugins.plugins['old1'] = OldPlugin1()
+        plugins.plugins['test1'] = CustPlugin1()
+        plugins.plugins['test2'] = CustPlugin2()
+        plugins.plugins['test3'] = CustPlugin3()
 
         plugins.plugins['delete1'] = CustDeletePlugin1()
         plugins.plugins['delete2'] = CustDeletePlugin2()
@@ -205,7 +231,20 @@ class PluginsTestCase(unittest.TestCase):
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 404)
 
+        del plugins.plugins['old1']
+        del plugins.plugins['test1']
+        del plugins.plugins['test2']
+        del plugins.plugins['test3']
+
+        del plugins.plugins['delete1']
+        del plugins.plugins['delete2']
+
     def test_heartbeat_alert(self):
+
+        plugins.plugins['old1'] = OldPlugin1()
+        plugins.plugins['test1'] = CustPlugin1()
+        plugins.plugins['test2'] = CustPlugin2()
+        plugins.plugins['test3'] = CustPlugin3()
 
         self.heartbeat_alert = {
             'event': 'Heartbeat',
@@ -221,7 +260,17 @@ class PluginsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['message'], 'Alert converted to Heartbeat')
 
+        del plugins.plugins['old1']
+        del plugins.plugins['test1']
+        del plugins.plugins['test2']
+        del plugins.plugins['test3']
+
     def test_add_and_remove_tags(self):
+
+        plugins.plugins['old1'] = OldPlugin1()
+        plugins.plugins['test1'] = CustPlugin1()
+        plugins.plugins['test2'] = CustPlugin2()
+        plugins.plugins['test3'] = CustPlugin3()
 
         plugins.plugins['action1'] = CustActionPlugin1()
         plugins.plugins['action2'] = CustActionPlugin2()
@@ -246,6 +295,14 @@ class PluginsTestCase(unittest.TestCase):
         self.assertIn('aSingleTag', data['alert']['tags'])
         self.assertIn('a:Triple:Tag', data['alert']['tags'])
         self.assertNotIn('aDouble:Tag', data['alert']['tags'])
+
+        del plugins.plugins['old1']
+        del plugins.plugins['test1']
+        del plugins.plugins['test2']
+        del plugins.plugins['test3']
+
+        del plugins.plugins['action1']
+        del plugins.plugins['action2']
 
 
 class OldPlugin1(PluginBase):
