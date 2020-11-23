@@ -56,13 +56,13 @@ class Backend(Database):
     @staticmethod
     def _update_lookups(db):
         for severity, code in alarm_model.Severity.items():
-            db.codes.update(
+            db.codes.update_one(
                 {'severity': severity},
                 {'$set': {'severity': severity, 'code': code}},
                 upsert=True
             )
         for status, state in alarm_model.Status.items():
-            db.states.update(
+            db.states.update_one(
                 {'status': status},
                 {'$set': {'status': status, 'state': state}},
                 upsert=True
