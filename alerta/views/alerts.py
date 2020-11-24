@@ -13,7 +13,7 @@ from alerta.models.enums import Scope
 from alerta.models.metrics import Timer, timer
 from alerta.models.switch import Switch
 from alerta.utils.api import (assign_customer, process_action, process_alert,
-                              process_delete, process_status)
+                              process_delete, process_note, process_status)
 from alerta.utils.audit import write_audit_trail
 from alerta.utils.paging import Page
 from alerta.utils.response import absolute_url, jsonp
@@ -587,6 +587,7 @@ def add_note(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
+    alert, note_text = process_note(alert, note_text)
     note = alert.add_note(note_text)
 
     write_audit_trail.send(current_app._get_current_object(), event='alert-note-added', message='', user=g.login,
@@ -649,6 +650,9 @@ def update_note(alert_id, note_id):
 
     update = request.json
     update['user'] = g.login
+    if update.get('text', ''):
+        alert, note_text = process_note(alert, update['text'])
+        update['text'] = note_text
 
     write_audit_trail.send(current_app._get_current_object(), event='alert-note-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note',
