@@ -203,6 +203,59 @@ class PluginsTestCase(unittest.TestCase):
 
         del plugins.plugins['action3']
 
+    def test_take_note(self):
+
+        plugins.plugins['old1'] = OldPlugin1()
+        plugins.plugins['test1'] = CustPlugin1()
+        plugins.plugins['test2'] = CustPlugin2()
+        plugins.plugins['test3'] = CustPlugin3()
+
+        plugins.plugins['note1'] = CustNotePlugin1()
+
+        # create alert
+        response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        alert_id = data['id']
+
+        # check plugin is triggered on create
+        payload = {
+            'text': 'caused by: power outage'
+        }
+        response = self.client.put('/alert/' + alert_id + '/note', json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['note']['text'], 'caused by: power outage (ticket #12345)')
+        note_id = data['note']['id']
+
+        # check if attribute got properly edited by plugin
+        response = self.client.get('/alert/' + alert_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['attributes']['cause'], 'power outage')
+
+        # check plugin is triggered on update
+        payload = {
+            'text': 'caused by: zombie invasion'
+        }
+        response = self.client.put('/alert/' + alert_id + '/note/' + note_id, json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['note']['text'], 'caused by: zombie invasion (ticket #23456)')
+
+        # check if attribute got properly edited by plugin
+        response = self.client.get('/alert/' + alert_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['attributes']['cause'], 'zombie invasion')
+
+        del plugins.plugins['old1']
+        del plugins.plugins['test1']
+        del plugins.plugins['test2']
+        del plugins.plugins['test3']
+        del plugins.plugins['note1']
+
     def test_delete(self):
 
         plugins.plugins['old1'] = OldPlugin1()
@@ -423,6 +476,30 @@ class CustActionPlugin3(PluginBase):
             raise InvalidAction('{} is not a valid action for this status'.format(action))
 
         return alert, action, text
+
+
+class CustNotePlugin1(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        return
+
+    def status_change(self, alert, status, text, **kwargs):
+        return alert, status, text
+
+    def take_note(self, alert, text, **kwargs):
+
+        if text == 'caused by: power outage':
+            alert.attributes['cause'] = 'power outage'
+            text = text + ' (ticket #12345)'
+
+        if text == 'caused by: zombie invasion':
+            alert.attributes['cause'] = 'zombie invasion'
+            text = text + ' (ticket #23456)'
+
+        return alert, text
 
 
 class CustDeletePlugin1(PluginBase):
