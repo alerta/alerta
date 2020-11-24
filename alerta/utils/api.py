@@ -81,7 +81,7 @@ def process_alert(alert: Alert) -> Alert:
 
     if updated:
         alert.update_tags(alert.tags)
-        alert.update_attributes(alert.attributes)
+        alert.attributes = alert.update_attributes(alert.attributes)
 
     return alert
 
@@ -116,7 +116,7 @@ def process_action(alert: Alert, action: str, text: str, timeout: int = None) ->
 
     if updated:
         alert.update_tags(alert.tags)
-        alert.update_attributes(alert.attributes)
+        alert.attributes = alert.update_attributes(alert.attributes)
 
     return alert, action, text, timeout
 
@@ -146,9 +146,9 @@ def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, st
             except Exception:
                 alert = updated
 
-    # remove keys from attributes with None values
-    new_attrs = {k: v for k, v in alert.attributes.items() if v is not None}
-    alert.attributes = new_attrs
+    if updated:
+        alert.update_tags(alert.tags)
+        alert.attributes = alert.update_attributes(alert.attributes)
 
     return alert, status, text
 

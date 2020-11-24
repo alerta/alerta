@@ -168,7 +168,6 @@ def housekeeping():
                                customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     for alert in shelve_timeout + ack_timeout:
-        print('>>>>>>>>> {}'.format(alert))
         try:
             alert, _, text, timeout = process_action(alert, action='timeout', text='', timeout=None)
             alert = alert.from_timeout(text, timeout)
