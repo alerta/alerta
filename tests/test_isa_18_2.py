@@ -13,7 +13,7 @@ class Isa182TestCase(unittest.TestCase):
             'TESTING': True,
             'ALARM_MODEL': 'ISA_18_2',
             'AUTH_REQUIRED': False,
-            'PLUGINS': [],
+            'PLUGINS': ['remote_ip'],
             'ALERT_TIMEOUT': 120,
             'HISTORY_LIMIT': 5
         }
@@ -119,6 +119,7 @@ class Isa182TestCase(unittest.TestCase):
         }
 
     def tearDown(self):
+        plugins.plugins.clear()
         db.destroy()
 
     def test_ack_active_alarm(self):

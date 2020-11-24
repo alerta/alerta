@@ -11,7 +11,7 @@ class ManagementTestCase(unittest.TestCase):
     def setUp(self):
 
         test_config = {
-            'DEBUG': True,
+            'DEBUG': False,
             'TESTING': True,
             'AUTH_REQUIRED': False,
             # 'ACK_TIMEOUT': 2,

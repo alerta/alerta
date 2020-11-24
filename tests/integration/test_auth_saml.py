@@ -22,7 +22,7 @@ class SAMLIntegrationTestCase(unittest.TestCase):
 
         test_config = {
             'TESTING': True,
-            'DEBUG': True,
+            'DEBUG': False,
             'AUTH_PROVIDER': 'saml2',
             'BASE_URL': 'http://localhost:8080',
             # 'SAML2_METADATA_URL': 'https://dev-490527.okta.com/app/exk65v4trcrBK3iH6357/sso/saml/metadata'

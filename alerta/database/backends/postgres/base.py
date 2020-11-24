@@ -314,6 +314,15 @@ class Backend(Database):
         """
         return self._updateone(update, {'id': id, 'like_id': id + '%', 'tags': tags}, returning=True)
 
+    def update_tags(self, id, tags):
+        update = """
+            UPDATE alerts
+            SET tags=%(tags)s
+            WHERE id=%(id)s OR id LIKE %(like_id)s
+            RETURNING *
+        """
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'tags': tags}, returning=True)
+
     def update_attributes(self, id, old_attrs, new_attrs):
         old_attrs.update(new_attrs)
         attrs = {k: v for k, v in old_attrs.items() if v is not None}
