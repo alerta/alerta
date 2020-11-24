@@ -4,6 +4,7 @@ import unittest
 from uuid import uuid4
 
 from alerta.app import create_app, db, plugins
+from alerta.exceptions import InvalidAction
 from alerta.plugins import PluginBase, app
 
 
@@ -180,6 +181,27 @@ class PluginsTestCase(unittest.TestCase):
         del plugins.plugins['test1']
         del plugins.plugins['test2']
         del plugins.plugins['test3']
+
+    def test_invalid_action(self):
+
+        plugins.plugins['action3'] = CustActionPlugin3()
+
+        # create alert
+        response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        alert_id = data['id']
+
+        # create ticket for alert
+        payload = {
+            'action': 'invalid',
+            'text': ''
+        }
+        response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 409)
+
+        del plugins.plugins['action3']
 
     def test_delete(self):
 
@@ -377,6 +399,28 @@ class CustActionPlugin2(PluginBase):
     def take_action(self, alert, action, text, **kwargs):
 
         alert.tags.remove('aDouble:Tag')
+
+        if action == 'invalid':
+            raise InvalidAction('{} is not a valid action for this status'.format(action))
+
+        return alert, action, text
+
+
+class CustActionPlugin3(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        return
+
+    def status_change(self, alert, status, text, **kwargs):
+        return alert, status, text
+
+    def take_action(self, alert, action, text, **kwargs):
+
+        if action == 'invalid':
+            raise InvalidAction('{} is not a valid action for this status'.format(action))
 
         return alert, action, text
 
