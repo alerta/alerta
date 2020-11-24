@@ -114,6 +114,7 @@ class AlertsTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
+        plugins.plugins.clear()
         db.destroy()
 
     def test_alert(self):

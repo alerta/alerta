@@ -11,7 +11,7 @@ class LDAPIntegrationTestCase(unittest.TestCase):
 
         test_config = {
             'TESTING': True,
-            'DEBUG': True,
+            'DEBUG': False,
             'AUTH_REQUIRED': True,
             'ADMIN_USERS': ['professor@planetexpress.com'],
 

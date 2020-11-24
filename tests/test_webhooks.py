@@ -708,6 +708,7 @@ class WebhooksTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
+        custom_webhooks.webhooks.clear()
         db.destroy()
 
     def test_cloudwatch_webhook(self):

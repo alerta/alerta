@@ -2,7 +2,8 @@ import json
 import unittest
 from uuid import uuid4
 
-from alerta.app import create_app, db
+from alerta.app import create_app, db, plugins
+from alerta.plugins import PluginBase
 
 
 class TagsTestCase(unittest.TestCase):
@@ -11,7 +12,8 @@ class TagsTestCase(unittest.TestCase):
 
         test_config = {
             'TESTING': True,
-            'AUTH_REQUIRED': False
+            'AUTH_REQUIRED': False,
+            'PLUGINS': ['reject']
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -45,9 +47,12 @@ class TagsTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
+        plugins.plugins.clear()
         db.destroy()
 
     def test_tag_alert(self):
+
+        plugins.plugins['tag'] = TagPlugin()
 
         # create alert
         response = self.client.post('/alert', data=json.dumps(self.node_down_alert), headers=self.headers)
@@ -75,6 +80,28 @@ class TagsTestCase(unittest.TestCase):
                                    alert_id, data=json.dumps({'tags': ['quux']}), headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
+        # tag using operator action
+        payload = {
+            'action': 'toggle',
+            'text': ''
+        }
+        response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('tagged', sorted(data['alert']['tags']))
+
+        # untag user operator action
+        response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertNotIn('tagged', sorted(data['alert']['tags']))
+
         # correlate alert
         response = self.client.post('/alert', data=json.dumps(self.node_up_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
@@ -93,3 +120,29 @@ class TagsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn(alert_id, data['alert']['id'])
         self.assertEqual(sorted(data['alert']['tags']), sorted(['foo', 'bar', 'baz']))
+
+        del plugins.plugins['tag']
+
+
+class TagPlugin(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        return alert
+
+    def status_change(self, alert, status, text, **kwargs):
+        return alert
+
+    def take_action(self, alert, action, text, **kwargs):
+
+        if action == 'toggle':
+            if 'tagged' in alert.tags:
+                alert.tags.remove('tagged')
+                text = 'remove'
+            else:
+                alert.tags.append('tagged')
+                text = 'add'
+
+        return alert, action, text
