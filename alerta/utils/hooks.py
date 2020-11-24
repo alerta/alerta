@@ -42,7 +42,7 @@ class HookTrigger:
             raise ApiError(str(e), 500)
 
         alert.tag(alert.tags)
-        alert.update_attributes(alert.attributes)
+        alert.attributes = alert.update_attributes(alert.attributes)
 
         return alert, status, text
 

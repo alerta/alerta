@@ -445,10 +445,10 @@ class Alert:
 
     # update alert tags
     def update_tags(self, tags: List[str]) -> bool:
-        return db.update_tags(self.id, tags)
+        return db.update_tags(self.id, list(set(tags)))
 
     # update alert attributes
-    def update_attributes(self, attributes: Dict[str, Any]) -> bool:
+    def update_attributes(self, attributes: Dict[str, Any]) -> Dict[str, Any]:
         return db.update_attributes(self.id, self.attributes, attributes)
 
     # delete an alert

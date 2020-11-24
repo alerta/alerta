@@ -326,13 +326,14 @@ class Backend(Database):
     def update_attributes(self, id, old_attrs, new_attrs):
         old_attrs.update(new_attrs)
         attrs = {k: v for k, v in old_attrs.items() if v is not None}
+
         update = """
             UPDATE alerts
             SET attributes=%(attrs)s
             WHERE id=%(id)s OR id LIKE %(like_id)s
-            RETURNING *
+            RETURNING attributes
         """
-        return self._updateone(update, {'id': id, 'like_id': id + '%', 'attrs': attrs}, returning=True)
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'attrs': attrs}, returning=True).attributes
 
     def delete_alert(self, id):
         delete = """

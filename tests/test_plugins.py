@@ -61,32 +61,6 @@ class PluginsTestCase(unittest.TestCase):
         plugins.plugins.clear()
         db.destroy()
 
-    def test_reject_alert(self):
-
-        plugins.plugins['old1'] = OldPlugin1()
-        plugins.plugins['test1'] = CustPlugin1()
-        plugins.plugins['test2'] = CustPlugin2()
-        plugins.plugins['test3'] = CustPlugin3()
-
-        # create alert that will be rejected
-        response = self.client.post('/alert', data=json.dumps(self.reject_alert), headers=self.headers)
-        self.assertEqual(response.status_code, 403)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['status'], 'error')
-        self.assertEqual(data['message'], '[POLICY] Alert must define a service')
-
-        # create alert that will be accepted
-        response = self.client.post('/alert', data=json.dumps(self.accept_alert), headers=self.headers)
-        self.assertEqual(response.status_code, 201)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['status'], 'ok')
-        self.assertRegex(data['id'], '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
-
-        del plugins.plugins['old1']
-        del plugins.plugins['test1']
-        del plugins.plugins['test2']
-        del plugins.plugins['test3']
-
     def test_status_update(self):
 
         plugins.plugins['old1'] = OldPlugin1()
@@ -100,6 +74,7 @@ class PluginsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
         self.assertRegex(data['id'], '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
+        self.assertEqual(data['alert']['attributes']['old'], 'post1')
         self.assertEqual(data['alert']['attributes']['aaa'], 'post1')
 
         alert_id = data['id']
@@ -111,6 +86,7 @@ class PluginsTestCase(unittest.TestCase):
         response = self.client.get('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
+
         self.assertEqual(data['alert']['attributes']['old'], 'post1')
         self.assertEqual(data['alert']['attributes']['aaa'], 'post1')
 
@@ -238,32 +214,6 @@ class PluginsTestCase(unittest.TestCase):
 
         del plugins.plugins['delete1']
         del plugins.plugins['delete2']
-
-    def test_heartbeat_alert(self):
-
-        plugins.plugins['old1'] = OldPlugin1()
-        plugins.plugins['test1'] = CustPlugin1()
-        plugins.plugins['test2'] = CustPlugin2()
-        plugins.plugins['test3'] = CustPlugin3()
-
-        self.heartbeat_alert = {
-            'event': 'Heartbeat',
-            'resource': 'hb01',
-            'environment': 'Production',
-            'service': ['Svc1'],
-            'severity': 'informational',
-        }
-
-        # create alert
-        response = self.client.post('/alert', json=self.heartbeat_alert, headers=self.headers)
-        self.assertEqual(response.status_code, 202)
-        data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['message'], 'Alert converted to Heartbeat')
-
-        del plugins.plugins['old1']
-        del plugins.plugins['test1']
-        del plugins.plugins['test2']
-        del plugins.plugins['test3']
 
     def test_add_and_remove_tags(self):
 

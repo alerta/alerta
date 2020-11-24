@@ -413,9 +413,6 @@ class Backend(Database):
         return response.matched_count > 0
 
     def update_attributes(self, id, old_attrs, new_attrs):
-        """
-        Set all attributes and unset attributes by using a value of 'null'.
-        """
         update = dict()
         set_value = {'attributes.' + k: v for k, v in new_attrs.items() if v is not None}
         if set_value:
@@ -425,8 +422,12 @@ class Backend(Database):
             update['$unset'] = unset_value
 
         if update:
-            response = self.get_db().alerts.update_one({'_id': {'$regex': '^' + id}}, update=update)
-            return response.matched_count > 0
+            return self.get_db().alerts.find_one_and_update(
+                {'_id': {'$regex': '^' + id}},
+                update=update,
+                return_document=ReturnDocument.AFTER
+            )['attributes']
+        return {}
 
     def delete_alert(self, id):
         response = self.get_db().alerts.delete_one({'_id': {'$regex': '^' + id}})

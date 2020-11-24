@@ -24,7 +24,10 @@ class AckedBy(PluginBase):
         return
 
     def status_change(self, alert, status, text, **kwargs):
-        return
+
+        if status == 'open':
+            alert.attributes['acked-by'] = None
+        return alert
 
     def take_action(self, alert, action, text, **kwargs):
 
