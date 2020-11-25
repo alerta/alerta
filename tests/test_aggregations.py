@@ -2,7 +2,7 @@ import json
 import unittest
 from uuid import uuid4
 
-from alerta.app import create_app, db
+from alerta.app import create_app, db, plugins
 
 
 class AggregationsTestCase(unittest.TestCase):
@@ -116,6 +116,7 @@ class AggregationsTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
+        plugins.plugins.clear()
         db.destroy()
 
     def test_aggregations(self):

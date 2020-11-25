@@ -15,7 +15,7 @@ class PluginsTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': False,
-            'PLUGINS': ['reject', 'remote_ip', 'heartbeat']
+            'PLUGINS': ['remote_ip']
         }
         os.environ['ALLOWED_ENVIRONMENTS'] = 'Production,Staging,Development'
 

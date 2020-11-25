@@ -226,7 +226,8 @@ class Backend(Database):
             update['$push'] = {
                 'history': {
                     '$each': [history.serialize],
-                    '$slice': -abs(current_app.config['HISTORY_LIMIT'])
+                    '$slice': current_app.config['HISTORY_LIMIT'],
+                    '$position': 0
                 }
             }
 
@@ -279,7 +280,8 @@ class Backend(Database):
             '$push': {
                 'history': {
                     '$each': [h.serialize for h in history],
-                    '$slice': -abs(current_app.config['HISTORY_LIMIT'])
+                    '$slice': current_app.config['HISTORY_LIMIT'],
+                    '$position': 0
                 }
             }
         }
@@ -347,7 +349,8 @@ class Backend(Database):
             '$push': {
                 'history': {
                     '$each': [h.serialize for h in history],
-                    '$slice': -abs(current_app.config['HISTORY_LIMIT'])
+                    '$slice': current_app.config['HISTORY_LIMIT'],
+                    '$position': 0
                 }
             }
         }
@@ -382,14 +385,14 @@ class Backend(Database):
             '$push': {
                 'history': {
                     '$each': [history.serialize],
-                    '$slice': -abs(current_app.config['HISTORY_LIMIT'])
+                    '$slice': current_app.config['HISTORY_LIMIT'],
+                    '$position': 0
                 }
             }
         }
         return self.get_db().alerts.find_one_and_update(
             query,
             update=update,
-            projection={'history': 0},
             return_document=ReturnDocument.AFTER
         )
 
@@ -476,14 +479,14 @@ class Backend(Database):
             '$push': {
                 'history': {
                     '$each': [history.serialize],
-                    '$slice': -abs(current_app.config['HISTORY_LIMIT'])
+                    '$slice': current_app.config['HISTORY_LIMIT'],
+                    '$position': 0
                 }
             }
         }
         return self.get_db().alerts.find_one_and_update(
             query,
             update=update,
-            projection={'history': 0},
             return_document=ReturnDocument.AFTER
         )
 
