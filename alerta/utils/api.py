@@ -122,6 +122,36 @@ def process_action(alert: Alert, action: str, text: str, timeout: int = None) ->
     return alert, action, text, timeout
 
 
+def process_note(alert: Alert, text: str) -> Tuple[Alert, str]:
+
+    wanted_plugins, wanted_config = plugins.routing(alert)
+
+    updated = None
+    for plugin in wanted_plugins:
+        try:
+            updated = plugin.take_note(alert, text, config=wanted_config)
+        except NotImplementedError:
+            pass  # plugin does not support take_note() method
+        except (RejectException, ForwardingLoop):
+            raise
+        except Exception as e:
+            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                raise ApiError("Error while running note plugin '{}': {}".format(plugin.name, str(e)))
+            else:
+                logging.error("Error while running note plugin '{}': {}".format(plugin.name, str(e)))
+
+        if isinstance(updated, Alert):
+            updated = updated, text
+        if isinstance(updated, tuple) and len(updated) == 2:
+            alert, text = updated
+
+    if updated:
+        alert.update_tags(alert.tags)
+        alert.update_attributes(alert.attributes)
+
+    return alert, text
+
+
 def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, str]:
 
     wanted_plugins, wanted_config = plugins.routing(alert)
