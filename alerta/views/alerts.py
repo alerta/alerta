@@ -650,14 +650,12 @@ def update_note(alert_id, note_id):
 
     update = request.json
     update['user'] = g.login
-    if update.get('text', ''):
-        alert, note_text = process_note(alert, update['text'])
-        update['text'] = note_text
 
     write_audit_trail.send(current_app._get_current_object(), event='alert-note-updated', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note',
                            request=request)
 
+    _, update['text'] = process_note(alert, update.get('text'))
     updated = note.update(**update)
     if updated:
         return jsonify(status='ok', note=updated.serialize)

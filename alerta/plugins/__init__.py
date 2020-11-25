@@ -38,7 +38,7 @@ class PluginBase(metaclass=abc.ABCMeta):
         """Trigger integrations based on external actions. (optional)"""
         raise NotImplementedError
 
-    def take_note(self, alert: 'Alert', text: str, **kwargs) -> Any:
+    def take_note(self, alert: 'Alert', text: Optional[str], **kwargs) -> Any:
         """Trigger integrations based on notes. (optional)"""
         raise NotImplementedError
 
