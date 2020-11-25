@@ -2,7 +2,7 @@ import base64
 import json
 import unittest
 
-from alerta.app import create_app, db
+from alerta.app import create_app, db, plugins
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
 from alerta.models.token import Jwt
@@ -45,6 +45,7 @@ class AuthTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
+        plugins.plugins.clear()
         db.destroy()
 
     def test_401_error(self):
