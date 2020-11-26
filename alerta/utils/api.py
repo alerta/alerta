@@ -64,6 +64,8 @@ def process_alert(alert: Alert) -> Alert:
     except Exception as e:
         raise ApiError(str(e))
 
+    wanted_plugins, wanted_config = plugins.routing(alert)
+
     updated = None
     for plugin in wanted_plugins:
         if skip_plugins:

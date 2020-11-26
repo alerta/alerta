@@ -36,9 +36,10 @@ class RoutingTestCase(unittest.TestCase):
             'SLACK_API_KEYS': {
                 'Soylent Corporation': 'sc-key',
                 'Omni Consumer Products': 'ocp-key',
-                # 'Dolmansaxlil Shoe Corporation': 'dsc-key'  # use default key
+                'Dolmansaxlil Shoe Corporation': 'dsc-key'
             },
-            'API_KEY': 'default-key'
+            'API_KEY': 'default-key',
+            'HOOK': 'not-set'
         }
 
         self.app = create_app(test_config)
@@ -211,7 +212,7 @@ class RoutingTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['attributes']['NOTIFY'], 'slack')
-        self.assertEqual(data['alert']['attributes']['API_KEY'], 'default-key')
+        self.assertEqual(data['alert']['attributes']['API_KEY'], 'dsc-key')
 
         # create alert (no key)
         response = self.client.post('/alert', data=json.dumps(self.tier3_it_alert), headers=self.headers)
@@ -221,7 +222,7 @@ class RoutingTestCase(unittest.TestCase):
         self.assertNotIn('API_KEY', data['alert']['attributes'])
 
 
-class DummyConfigPlugin(PluginBase):
+class DummyConfigPlugin(unittest.TestCase, PluginBase):
 
     def pre_receive(self, alert, **kwargs):
 
@@ -254,9 +255,11 @@ class DummyConfigPlugin(PluginBase):
             'var2': self.get_config('var2', default='default2', **kwargs),
             'var3': self.get_config('var3', default='default3', **kwargs),
         }
+        self.assertEqual(self.get_config('HOOK', default='', type=str, **kwargs), 'pre-receive')
         return alert
 
     def post_receive(self, alert, **kwargs):
+        self.assertEqual(self.get_config('HOOK', default='', type=str, **kwargs), 'post-receive')
         return alert
 
     def status_change(self, alert, status, text, **kwargs):
@@ -293,6 +296,11 @@ class DummySlackPlugin(PluginBase):
 
 def rules(alert, plugins, **kwargs):
 
+    if alert.repeat is None:
+        hook = 'pre-receive'
+    else:
+        hook = 'post-receive'
+
     TIER_ONE_CUSTOMERS = [
         'Tyrell Corporation',
         'Cyberdyne Systems',
@@ -315,7 +323,10 @@ def rules(alert, plugins, **kwargs):
             plugins['blackout'],
             plugins['pagerduty'],
             plugins['config']
-        ], dict(API_KEY=config['PD_API_KEYS'][alert.customer])
+        ], dict(
+            HOOK=hook,
+            API_KEY=config['PD_API_KEYS'][alert.customer]
+        )
 
     elif alert.customer in TIER_TWO_CUSTOMERS:
         # Tier 2 customers handled via Slack
@@ -325,7 +336,10 @@ def rules(alert, plugins, **kwargs):
             plugins['blackout'],
             plugins['slack'],
             plugins['config']
-        ], dict(API_KEY=config['SLACK_API_KEYS'][alert.customer])
+        ], dict(
+            HOOK=hook,
+            API_KEY=config['SLACK_API_KEYS'][alert.customer]
+        )
 
     else:
         # Tier 3 customers get "best effort"
@@ -334,4 +348,4 @@ def rules(alert, plugins, **kwargs):
             plugins['reject'],
             plugins['blackout'],
             plugins['config']
-        ]
+        ], dict(HOOK=hook)
