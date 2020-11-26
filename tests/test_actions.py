@@ -2,7 +2,7 @@ import json
 import unittest
 from uuid import uuid4
 
-from alerta.app import alarm_model, create_app, db
+from alerta.app import alarm_model, create_app, db, plugins
 
 
 class ActionsTestCase(unittest.TestCase):
@@ -91,6 +91,7 @@ class ActionsTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
+        plugins.plugins.clear()
         db.destroy()
 
     def test_alert(self):

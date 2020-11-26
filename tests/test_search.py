@@ -53,7 +53,6 @@ class QueryParserTestCase(unittest.TestCase):
             'ALERT_TIMEOUT': 120,
             'HISTORY_LIMIT': 5,
             'DEBUG': False,
-            # 'PLUGINS': ['logstash']
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
