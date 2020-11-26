@@ -1,4 +1,5 @@
 import ldap  # pylint: disable=import-error
+import logging
 from flask import current_app, jsonify, request
 
 from alerta.auth.utils import create_token, get_customers, not_authorized
@@ -45,6 +46,10 @@ def login():
     if current_app.config['LDAP_ALLOW_SELF_SIGNED_CERT']:
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
 
+    # Set LDAP Timeout:
+    if current_app.config['LDAP_QUERY_TIMEOUT_SECONDS']:
+        ldap.set_option(ldap.OPT_NETWORK_TIMEOUT, current_app.config['LDAP_QUERY_TIMEOUT_SECONDS'])
+
     # Initialise ldap connection
     try:
         trace_level = 2 if current_app.debug else 0  # XXX - do not set in production environments
@@ -88,10 +93,21 @@ def login():
         )
 
         if len(result) > 1:
-            raise ApiError('invalid search query for domain "{}"'.format(domain), 500)
+            # ADDS responds with filter matches on each directory  partitions
+            logging.debug('ADDS - More than one result on LDAP')
+            tmp_result = []
+            for result_tupple in result:
+                if None not in result_tupple:
+                    tmp_result.append(result_tupple)
+            logging.debug('ADDS - Filtered LDAP response has {} entries'.format(len(tmp_result)))
+            if len(tmp_result) > 1:
+                raise ApiError('invalid search query for domain "{}"'.format(domain), 500)
+            elif len(tmp_result) == 0:
+                raise ApiError('invalid username or password', 401)
+            else:
+                result = tmp_result
         elif len(result) == 0:
             raise ApiError('invalid username or password', 401)
-
         user_dn = result[0][0]
         name = result[0][1][current_app.config['LDAP_USER_NAME_ATTR']][0].decode('utf-8', 'ignore')
         email = result[0][1][current_app.config['LDAP_USER_EMAIL_ATTR']][0].decode('utf-8', 'ignore')
