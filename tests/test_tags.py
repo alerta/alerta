@@ -13,7 +13,7 @@ class TagsTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': False,
-            'PLUGINS': ['reject']
+            'PLUGINS': []
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()

@@ -3,7 +3,7 @@ import unittest
 from flask_cors import CORS
 from flask_cors.extension import ACL_ALLOW_HEADERS, ACL_ORIGIN
 
-from alerta.app import create_app, db
+from alerta.app import create_app, db, plugins
 
 
 class HTTPCorsTestCase(unittest.TestCase):
@@ -22,7 +22,7 @@ class HTTPCorsTestCase(unittest.TestCase):
         CORS(self.client.application, origins=self.app.config['CORS_ORIGINS'])
 
     def tearDown(self):
-
+        plugins.plugins.clear()
         db.destroy()
 
     def test_cors_headers(self):

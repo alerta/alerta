@@ -3,7 +3,7 @@ import unittest
 
 from flask import g
 
-from alerta.app import create_app, db
+from alerta.app import create_app, db, plugins
 from alerta.exceptions import ApiError
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
@@ -53,6 +53,7 @@ class CustomersTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
+        plugins.plugins.clear()
         db.destroy()
 
     def test_customers(self):

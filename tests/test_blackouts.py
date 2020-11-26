@@ -17,7 +17,7 @@ class BlackoutsTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
-            'PLUGINS': ['reject']
+            'PLUGINS': []
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -126,6 +126,7 @@ class BlackoutsTestCase(unittest.TestCase):
             self.customer_api_key.create()
 
     def tearDown(self):
+        plugins.plugins.clear()
         db.destroy()
 
     def test_suppress_blackout(self):

@@ -3,7 +3,7 @@ import time
 import unittest
 from uuid import uuid4
 
-from alerta.app import create_app, db
+from alerta.app import create_app, db, plugins
 from alerta.models.heartbeat import Heartbeat
 
 
@@ -34,6 +34,7 @@ class HeartbeatsTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
+        plugins.plugins.clear()
         db.destroy()
 
     def test_heartbeat(self):

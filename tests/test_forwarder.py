@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import requests_mock
 
-from alerta.app import create_app, db
+from alerta.app import create_app, db, plugins
 from alerta.utils.response import base_url
 
 
@@ -67,6 +67,7 @@ class ForwarderTestCase(unittest.TestCase):
         }
 
     def tearDown(self):
+        plugins.plugins.clear()
         db.destroy()
 
     @requests_mock.mock()
