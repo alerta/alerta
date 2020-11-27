@@ -34,6 +34,7 @@ class LDAPIntegrationTestCase(unittest.TestCase):
 
             'LDAP_GROUP_BASEDN': 'ou=people,dc=planetexpress,dc=com',
 
+            'LDAP_QUERY_TIMEOUT_SECONDS': 3,
             # Scenario 1. default usage using group DN
             # 'LDAP_GROUP_FILTER': '(&(member={userdn})(objectClass=group))',
             # 'ALLOWED_LDAP_GROUPS': [
