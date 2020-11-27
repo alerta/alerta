@@ -1,5 +1,4 @@
 import ldap  # pylint: disable=import-error
-import logging
 from flask import current_app, jsonify, request
 
 from alerta.auth.utils import create_token, get_customers, not_authorized
