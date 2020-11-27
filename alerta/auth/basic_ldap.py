@@ -45,6 +45,10 @@ def login():
     if current_app.config['LDAP_ALLOW_SELF_SIGNED_CERT']:
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
 
+    # Set LDAP Timeout:
+    if current_app.config['LDAP_QUERY_TIMEOUT_SECONDS']:
+        ldap.set_option(ldap.OPT_NETWORK_TIMEOUT, current_app.config['LDAP_QUERY_TIMEOUT_SECONDS'])
+
     # Initialise ldap connection
     try:
         trace_level = 2 if current_app.debug else 0  # XXX - do not set in production environments
@@ -80,18 +84,17 @@ def login():
         current_app.config['LDAP_USER_EMAIL_ATTR']
     ]
     if user_filter:
-        result = ldap_connection.search_s(
+        result = [r for r in ldap_connection.search_s(
             base=user_base_dn or base_dn,
             scope=ldap.SCOPE_SUBTREE,
             filterstr=user_filter.format(username=username),
             attrlist=user_attrs
-        )
+        ) if None not in r]
 
         if len(result) > 1:
             raise ApiError('invalid search query for domain "{}"'.format(domain), 500)
         elif len(result) == 0:
             raise ApiError('invalid username or password', 401)
-
         user_dn = result[0][0]
         name = result[0][1][current_app.config['LDAP_USER_NAME_ATTR']][0].decode('utf-8', 'ignore')
         email = result[0][1][current_app.config['LDAP_USER_EMAIL_ATTR']][0].decode('utf-8', 'ignore')
