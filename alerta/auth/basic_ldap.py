@@ -85,27 +85,15 @@ def login():
         current_app.config['LDAP_USER_EMAIL_ATTR']
     ]
     if user_filter:
-        result = ldap_connection.search_s(
+        result = [r for r in ldap_connection.search_s(
             base=user_base_dn or base_dn,
             scope=ldap.SCOPE_SUBTREE,
             filterstr=user_filter.format(username=username),
             attrlist=user_attrs
-        )
+        ) if None not in r]
 
         if len(result) > 1:
-            # ADDS responds with filter matches on each directory  partitions
-            logging.debug('ADDS - More than one result on LDAP')
-            tmp_result = []
-            for result_tupple in result:
-                if None not in result_tupple:
-                    tmp_result.append(result_tupple)
-            logging.debug('ADDS - Filtered LDAP response has {} entries'.format(len(tmp_result)))
-            if len(tmp_result) > 1:
-                raise ApiError('invalid search query for domain "{}"'.format(domain), 500)
-            elif len(tmp_result) == 0:
-                raise ApiError('invalid username or password', 401)
-            else:
-                result = tmp_result
+            raise ApiError('invalid search query for domain "{}"'.format(domain), 500)
         elif len(result) == 0:
             raise ApiError('invalid username or password', 401)
         user_dn = result[0][0]
