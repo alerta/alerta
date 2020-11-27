@@ -18,6 +18,7 @@ class LDAPIntegrationTestCase(unittest.TestCase):
             'AUTH_PROVIDER': 'ldap',
             'ALLOWED_EMAIL_DOMAINS': ['planetexpress.com'],
             'LDAP_URL': 'ldap://localhost:389',
+            'LDAP_TIMEOUT': 10,
             'LDAP_BASEDN': 'dc=planetexpress,dc=com',
 
             'LDAP_DOMAINS': {
@@ -34,7 +35,11 @@ class LDAPIntegrationTestCase(unittest.TestCase):
 
             'LDAP_GROUP_BASEDN': 'ou=people,dc=planetexpress,dc=com',
 
-            'LDAP_QUERY_TIMEOUT_SECONDS': 3,
+            'LDAP_CONFIG': {
+                'OPT_REFERRALS': 0,
+                'OPT_PROTOCOL_VERSION': 3,
+                'OPT_DEBUG_LEVEL': -1
+            },
             # Scenario 1. default usage using group DN
             # 'LDAP_GROUP_FILTER': '(&(member={userdn})(objectClass=group))',
             # 'ALLOWED_LDAP_GROUPS': [
