@@ -45,9 +45,13 @@ def login():
     if current_app.config['LDAP_ALLOW_SELF_SIGNED_CERT']:
         ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
 
-    # Set LDAP Timeout:
-    if current_app.config['LDAP_QUERY_TIMEOUT_SECONDS']:
-        ldap.set_option(ldap.OPT_NETWORK_TIMEOUT, current_app.config['LDAP_QUERY_TIMEOUT_SECONDS'])
+    # Set LDAP Timeout
+    if current_app.config['LDAP_TIMEOUT']:
+        ldap.set_option(ldap.OPT_NETWORK_TIMEOUT, current_app.config['LDAP_TIMEOUT'])
+
+    # Set custom config options
+    for k, v in current_app.config['LDAP_CONFIG'].items():
+        ldap.set_option(getattr(ldap, k), v)
 
     # Initialise ldap connection
     try:
