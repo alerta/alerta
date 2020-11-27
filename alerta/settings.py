@@ -101,6 +101,7 @@ ALLOWED_GITLAB_GROUPS = ['*']
 
 # BasicAuth using LDAP
 LDAP_URL = ''  # eg. ldap://localhost:389
+LDAP_TIMEOUT = -1  # seconds (-1=infinity)
 LDAP_BASEDN = ''
 LDAP_CACERT = ''  # Path to CA certificate to verify LDAPS connection against
 LDAP_ALLOW_SELF_SIGNED_CERT = False
@@ -117,6 +118,7 @@ LDAP_GROUP_BASEDN = ''  # BASEDN for group search (default: LDAP_BASEDN)
 LDAP_GROUP_FILTER = ''  # eg. (&(member={userdn})(objectClass=group))
 LDAP_GROUP_NAME_ATTR = 'dn'  # eg. dn, memberOf, or cn
 LDAP_DEFAULT_DOMAIN = ''  # if set allows users to login with bare username
+LDAP_CONFIG = {}  # type: Dict[str, Any]
 ALLOWED_LDAP_GROUPS = ['*']
 
 # Microsoft Identity Platform (v2.0)
