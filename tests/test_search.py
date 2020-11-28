@@ -3,7 +3,7 @@ import unittest
 
 from werkzeug.datastructures import MultiDict
 
-from alerta.app import create_app, qb
+from alerta.app import create_app, db, qb
 
 # service, tags (=, !=, =~, !=~)
 # attributes (=, !=, =~, !=~)
@@ -70,7 +70,7 @@ class QueryParserTestCase(unittest.TestCase):
                 'value': 'johno',
                 'text': 'panic: this is a foo alert',
                 'tags': ['aaa', 'bbb', 'ccc'],
-                'attributes': {'region': 'EMEA'},
+                'attributes': {'region': 'EMEA', 'partition': '7.0'},
                 'origin': 'alpha',
                 'timeout': 100,
                 'rawData': ''
@@ -87,7 +87,7 @@ class QueryParserTestCase(unittest.TestCase):
                 'value': 'jonathon',
                 'text': 'Kernel Panic: this is a bar test alert',
                 'tags': ['bbb', 'ccc', 'ddd'],
-                'attributes': {'region': 'LATAM'},
+                'attributes': {'region': 'LATAM', 'partition': '72'},
                 'origin': 'bravo',
                 'timeout': 200,
                 'rawData': ''
@@ -104,7 +104,7 @@ class QueryParserTestCase(unittest.TestCase):
                 'value': 'jonathan',
                 'text': 'kernel panic: this is a foo bar text alert',
                 'tags': ['ccc', 'ddd', 'eee'],
-                'attributes': {'region': 'APAC'},
+                'attributes': {'region': 'APAC', 'partition': '727'},
                 'origin': 'charlie',
                 'timeout': 300,
                 'rawData': ''
@@ -121,7 +121,7 @@ class QueryParserTestCase(unittest.TestCase):
                 'value': 'john',
                 'text': 'kernel panick: this is a fu bar baz quux tests alert (i have a boat)',
                 'tags': ['ddd', 'eee', 'aaa'],
-                'attributes': {'region': 'EMEA'},
+                'attributes': {'region': 'EMEA', 'partition': '27'},
                 'origin': 'delta',
                 'timeout': 400,
                 'rawData': ''
@@ -148,6 +148,9 @@ class QueryParserTestCase(unittest.TestCase):
         for alert in alerts:
             response = self.client.post('/alert', json=alert, content_type='application/json')
             self.assertEqual(response.status_code, 201)
+
+    def tearDown(self):
+        db.destroy()
 
     def _search(self, q):
         response = self.client.get('/alerts?q={}'.format(q))
@@ -180,6 +183,11 @@ class QueryParserTestCase(unittest.TestCase):
         self.assertEqual(self._search(q='attributes.region:EMEA'), 2)
         self.assertEqual(self._search(q='_.region:EMEA'), 2)
         self.assertEqual(self._search(q='_.region:(EMEA LATAM)'), 3)
+        self.assertEqual(self._search(q='_.region:(EMEA OR LATAM)'), 3)
+        self.assertEqual(self._search(q='attributes.partition:7'), 4)
+        self.assertEqual(self._search(q='_.partition:7'), 4)
+        self.assertEqual(self._search(q='attributes.partition:"7"'), 1)
+        self.assertEqual(self._search(q='_.partition:"7"'), 1)
 
     def test_wildcards(self):
         self.assertEqual(self._search(q='f*'), 4)

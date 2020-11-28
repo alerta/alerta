@@ -69,6 +69,9 @@ class SearchTerm:
                 return '"{}" ~* \'\\y{}\\y\''.format('__default_field__', self.tokens.phrase)
             elif self.tokens.field[0] in ['correlate', 'service', 'tags']:
                 return '\'{}\'=ANY("{}")'.format(self.tokens.term, self.tokens.field[0])
+            elif self.tokens.attr:
+                tokens_attr = self.tokens.attr.replace('_', 'attributes')
+                return '"{}"::jsonb ->>\'{}\' ~* \'\\y{}\\y\''.format(tokens_attr, self.tokens.fieldname, self.tokens.phrase)
             else:
                 return '"{}" ~* \'\\y{}\\y\''.format(self.tokens.field[0], self.tokens.phrase)
         if 'wildcard' in self.tokens:

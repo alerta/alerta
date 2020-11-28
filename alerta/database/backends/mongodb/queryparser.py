@@ -66,18 +66,19 @@ class SearchTerm:
                 return '{{"attributes.{}": {{"$exists": true}}}}'.format(self.tokens.singleterm)
             else:
                 if self.tokens.field[0] == '__default_field__':
-                    return '{{"{}": {{"{}": "{}"}}}}'.format('__default_field__', '__default_operator__', self.tokens.singleterm)
+                    return '{{"{}": {{"{}": "{}", "$options": "i"}}}}'.format('__default_field__', '__default_operator__', self.tokens.singleterm)
                 else:
-                    return '{{"{}": {{"$regex": "{}"}}}}'.format(tokens_fieldname, self.tokens.singleterm)
+                    return '{{"{}": {{"$regex": "{}", "$options": "i"}}}}'.format(tokens_fieldname, self.tokens.singleterm)
         if 'phrase' in self.tokens:
-            if self.tokens.field[0] == '__default_field__':
-                return '{{"{}": {{"{}": "{}"}}}}'.format('__default_field__', '__default_operator__', self.tokens.phrase)
+            tokens_field0 = self.tokens.field[0].replace('_.', 'attributes.')
+            if tokens_field0 == '__default_field__':
+                return '{{"{}": {{"{}": "{}", "$options": "i"}}}}'.format('__default_field__', '__default_operator__', self.tokens.phrase)
             else:
-                return '{{"{}": {{"$regex": "{}"}}}}'.format(self.tokens.field[0], self.tokens.phrase)
+                return '{{"{}": {{"$regex": "\\\\b{}\\\\b", "$options": "i"}}}}'.format(tokens_field0, self.tokens.phrase)
         if 'wildcard' in self.tokens:
-            return '{{"{}": {{"$regex": "\\\\b{}\\\\b"}}}}'.format(self.tokens.field[0], self.tokens.wildcard)
+            return '{{"{}": {{"$regex": "\\\\b{}\\\\b", "$options": "i"}}}}'.format(self.tokens.field[0], self.tokens.wildcard)
         if 'regex' in self.tokens:
-            return '{{"{}": {{"$regex": "{}"}}}}'.format(self.tokens.field[0], self.tokens.regex)
+            return '{{"{}": {{"$regex": "{}", "$options": "i"}}}}'.format(self.tokens.field[0], self.tokens.regex)
 
         def range_term(field, operator, range):
             if field in ['duplicateCount', 'timeout']:
