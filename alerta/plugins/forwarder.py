@@ -55,7 +55,10 @@ class Forwarder(PluginBase):
 
             LOG.info('Forward [action=alerts]: {} ; {} -> {}'.format(alert.id, base_url(), remote))
             try:
-                r = client.send_alert(**alert.get_body())
+                body = alert.get_body(history=False)
+                body['id'] = alert.last_receive_id
+                # FIXME - createTime is being overwritten by send_alert()
+                r = client.send_alert(**body)
             except Exception as e:
                 LOG.warning('Forward [action=alerts]: {} ; Failed to forward alert to {} - {}'.format(alert.id, remote, str(e)))
                 continue
