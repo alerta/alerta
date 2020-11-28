@@ -39,6 +39,17 @@ class ForwarderTestCase(unittest.TestCase):
         self.resource = str(uuid4()).upper()[:8]
 
         self.major_alert = {
+            'id': 'b528c6f7-0925-4f6d-b930-fa6c0bba51dc',
+            'event': 'node_marginal',
+            'resource': self.resource,
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'major',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 40
+        }
+        self.repeated_major_alert = {
+            'id': '4ba2b0d6-ff4a-4fc0-8d93-45939c819465',
             'event': 'node_marginal',
             'resource': self.resource,
             'environment': 'Production',
@@ -48,6 +59,7 @@ class ForwarderTestCase(unittest.TestCase):
             'timeout': 40
         }
         self.warn_alert = {
+            'id': '67344228-bd03-4660-9c45-ff9c8f1d53d0',
             'event': 'node_marginal',
             'resource': self.resource,
             'environment': 'Production',
@@ -57,6 +69,7 @@ class ForwarderTestCase(unittest.TestCase):
             'timeout': 50
         }
         self.normal_alert = {
+            'id': 'cb12250d-42ed-42cc-97ef-592f3a49618c',
             'event': 'node_up',
             'resource': self.resource,
             'environment': 'Production',

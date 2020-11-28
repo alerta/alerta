@@ -84,6 +84,9 @@ test.integration: $(PYTEST)
 	$(DOCKER_COMPOSE) -f docker-compose.ci.yml up -d
 	$(PYTEST) tests/integration $(toxparams)
 
+test.forwarder:
+	$(DOCKER_COMPOSE) -f tests/integration/fixtures/docker-compose.yml up
+
 ## run			- Run application.
 run:
 	alertad
