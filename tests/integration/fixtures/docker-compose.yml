@@ -1,0 +1,82 @@
+version: '3.1'
+
+services:
+  alerta-web-mom1:
+    image: alerta/alerta-beta
+    ports:
+      - 9000:80
+    volumes:
+      - ./config-mom1.json:/usr/share/nginx/html/config.json
+    networks:
+      dev:
+
+  api-mom1:
+    image: ghcr.io/alerta/alerta-api:latest
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@mom1-db/mom1
+    depends_on:
+      - mom1-db
+    ports:
+      - 9001:8080
+    volumes:
+      - ./mom-1.conf:/app/alertad.conf
+    networks:
+      dev:
+        aliases:
+          - mom1.local.alerta.io
+
+  mom1-db:
+    image: postgres
+    volumes:
+      - ./pg-data/mom1:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: mom1
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: always
+    networks:
+      dev:
+        aliases:
+          - mom1-db
+
+  alerta-web-mlm1:
+    image: alerta/alerta-beta
+    ports:
+      - 10000:80
+    volumes:
+      - ./config-mlm1.json:/usr/share/nginx/html/config.json
+    networks:
+      dev:
+
+  api-mlm1:
+    image: ghcr.io/alerta/alerta-api:latest
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@mlm1-db/mlm1
+    depends_on:
+      - mlm1-db
+    ports:
+      - 10001:8080
+    volumes:
+      - ./mlm-1.conf:/app/alertad.conf
+    networks:
+      dev:
+        aliases:
+          - mlm1.local.alerta.io
+
+  mlm1-db:
+    image: postgres
+    volumes:
+      - ./pg-data/mlm1:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: mlm1
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: always
+    networks:
+      dev:
+        aliases:
+          - mlm1-db
+
+networks:
+  dev:
+    driver: bridge
