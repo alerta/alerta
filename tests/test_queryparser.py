@@ -26,7 +26,17 @@ class PostgresQueryTestCase(unittest.TestCase):
         r = self.parser.parse(string)
         self.assertEqual(r, '"text" ILIKE \'%%quick%%\'')
 
-        # default field (ie. "text") contains phrase
+        # default field (ie. "text") contains either words
+        string = r'''quick OR brown'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '("text" ILIKE \'%%quick%%\' OR "text" ILIKE \'%%brown%%\')')
+
+        # default field (ie. "text") contains either words (default operator)
+        string = r'''quick brown'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '("text" ILIKE \'%%quick%%\' OR "text" ILIKE \'%%brown%%\')')
+
+        # default field (ie. "text") contains exact phrase
         string = r'''"quick brown"'''
         r = self.parser.parse(string)
         self.assertEqual(r, '"text" ~* \'\\yquick brown\\y\'')
@@ -48,7 +58,7 @@ class PostgresQueryTestCase(unittest.TestCase):
         r = self.parser.parse(string)
         self.assertEqual(r, '("title" ILIKE \'%%quick%%\' OR "title" ILIKE \'%%brown%%\')')
 
-        # field exact match
+        # field contains exact phrase
         string = r'''author:"John Smith"'''
         r = self.parser.parse(string)
         self.assertEqual(r, '"author" ~* \'\\yJohn Smith\\y\'')
@@ -73,6 +83,11 @@ class PostgresQueryTestCase(unittest.TestCase):
         r = self.parser.parse(string)
         self.assertEqual(r, '"attributes"::jsonb ->>\'vendor\' ILIKE \'%%cisco%%\'')
 
+        # attribute contains either words
+        string = r'''attributes.vendor:(cisco OR juniper)'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '("attributes"::jsonb ->>\'vendor\' ILIKE \'%%cisco%%\' OR "attributes"::jsonb ->>\'vendor\' ILIKE \'%%juniper%%\')')
+
         # attribute contains either words (default operator)
         string = r'''attributes.vendor:(cisco juniper)'''
         r = self.parser.parse(string)
@@ -82,6 +97,16 @@ class PostgresQueryTestCase(unittest.TestCase):
         string = r'''_.vendor:(cisco juniper)'''
         r = self.parser.parse(string)
         self.assertEqual(r, '("attributes"::jsonb ->>\'vendor\' ILIKE \'%%cisco%%\' OR "attributes"::jsonb ->>\'vendor\' ILIKE \'%%juniper%%\')')
+
+        # attribute contains exact phrase
+        string = r'''foo.vendor:"quick brown"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '"foo"::jsonb ->>\'vendor\' ~* \'\\yquick brown\\y\'')
+
+        # attribute contains exact phrase ("_" shortcut)
+        string = r'''_.vendor:"quick brown"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '"attributes"::jsonb ->>\'vendor\' ~* \'\\yquick brown\\y\'')
 
     def test_wildcards(self):
 
@@ -233,39 +258,49 @@ class MongoQueryTestCase(unittest.TestCase):
         # default field (ie. "text") contains word
         string = r'''quick'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"text": {"$regex": "quick"}}')
+        self.assertEqual(r, '{"text": {"$regex": "quick", "$options": "i"}}')
 
-        # default field (ie. "text") contains phrase
+        # default field (ie. "text") contains either words
+        string = r'''quick OR brown'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '{"$or": [{"text": {"$regex": "quick", "$options": "i"}}, {"text": {"$regex": "brown", "$options": "i"}}]}')
+
+        # default field (ie. "text") contains either words (default operator)
+        string = r'''quick brown'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '{"$or": [{"text": {"$regex": "quick", "$options": "i"}}, {"text": {"$regex": "brown", "$options": "i"}}]}')
+
+        # default field (ie. "text") contains exact phrase
         string = r'''"quick brown"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"text": {"$regex": "quick brown"}}')
+        self.assertEqual(r, '{"text": {"$regex": "quick brown", "$options": "i"}}')
 
     def test_field_names(self):
 
         # field contains word
         string = r'''status:active'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"status": {"$regex": "active"}}')
+        self.assertEqual(r, '{"status": {"$regex": "active", "$options": "i"}}')
 
         # field contains either words
         string = r'''title:(quick OR brown)'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$or": [{"title": {"$regex": "quick"}}, {"title": {"$regex": "brown"}}]}')
+        self.assertEqual(r, '{"$or": [{"title": {"$regex": "quick", "$options": "i"}}, {"title": {"$regex": "brown", "$options": "i"}}]}')
 
         # field contains either words (default operator)
         string = r'''title:(quick brown)'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$or": [{"title": {"$regex": "quick"}}, {"title": {"$regex": "brown"}}]}')
+        self.assertEqual(r, '{"$or": [{"title": {"$regex": "quick", "$options": "i"}}, {"title": {"$regex": "brown", "$options": "i"}}]}')
 
-        # field exact match
+        # field contains exact phrase
         string = r'''author:"John Smith"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"author": {"$regex": "John Smith"}}')
+        self.assertEqual(r, r'{"author": {"$regex": "\\bJohn Smith\\b", "$options": "i"}}')
 
-        # # # any attribute contains word or phrase
-        # # string = r'''attributes.\*:(quick brown)'''
-        # # r = self.parser.parse(string)
-        # # self.assertEqual(r, '??')
+        # # any attribute contains word or phrase
+        # string = r'''attributes.\*:(quick brown)'''
+        # r = self.parser.parse(string)
+        # self.assertEqual(r, '??')
 
         # attribute field has non-null value
         string = r'''_exists_:title'''
@@ -275,22 +310,37 @@ class MongoQueryTestCase(unittest.TestCase):
         # attribute contains word
         string = r'''foo.vendor:cisco'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"foo.vendor": {"$regex": "cisco"}}')
+        self.assertEqual(r, '{"foo.vendor": {"$regex": "cisco", "$options": "i"}}')
 
         # attribute contains word ("_" shortcut)
         string = r'''_.vendor:cisco'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"attributes.vendor": {"$regex": "cisco"}}')
+        self.assertEqual(r, '{"attributes.vendor": {"$regex": "cisco", "$options": "i"}}')
+
+        # attribute contains either words
+        string = r'''attributes.vendor:(cisco OR juniper)'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '{"$or": [{"attributes.vendor": {"$regex": "cisco", "$options": "i"}}, {"attributes.vendor": {"$regex": "juniper", "$options": "i"}}]}')
 
         # attribute contains either words (default operator)
         string = r'''attributes.vendor:(cisco juniper)'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$or": [{"attributes.vendor": {"$regex": "cisco"}}, {"attributes.vendor": {"$regex": "juniper"}}]}')
+        self.assertEqual(r, '{"$or": [{"attributes.vendor": {"$regex": "cisco", "$options": "i"}}, {"attributes.vendor": {"$regex": "juniper", "$options": "i"}}]}')
 
         # attribute contains either words ("_" shortcut, default operator)
         string = r'''_.vendor:(cisco juniper)'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$or": [{"attributes.vendor": {"$regex": "cisco"}}, {"attributes.vendor": {"$regex": "juniper"}}]}')
+        self.assertEqual(r, '{"$or": [{"attributes.vendor": {"$regex": "cisco", "$options": "i"}}, {"attributes.vendor": {"$regex": "juniper", "$options": "i"}}]}')
+
+        # attribute contains exact phrase
+        string = r'''foo.vendor:"quick brown"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, r'{"foo.vendor": {"$regex": "\\bquick brown\\b", "$options": "i"}}')
+
+        # attribute contains exact phrase ("_" shortcut)
+        string = r'''_.vendor:"quick brown"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, r'{"attributes.vendor": {"$regex": "\\bquick brown\\b", "$options": "i"}}')
 
     def test_wildcards(self):
 
@@ -298,13 +348,13 @@ class MongoQueryTestCase(unittest.TestCase):
         string = r'''text:qu?ck bro*'''
         r = self.parser.parse(string)
         self.assertEqual(
-            r, '{"$or": [{"text": {"$regex": "\\\\bqu.?ck\\\\b"}}, {"text": {"$regex": "\\\\bbro.*\\\\b"}}]}')
+            r, '{"$or": [{"text": {"$regex": "\\\\bqu.?ck\\\\b", "$options": "i"}}, {"text": {"$regex": "\\\\bbro.*\\\\b", "$options": "i"}}]}')
 
     def test_regular_expressions(self):
 
         string = r'''name:/joh?n(ath[oa]n)/'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"name": {"$regex": "joh?n(ath[oa]n)"}}')
+        self.assertEqual(r, '{"name": {"$regex": "joh?n(ath[oa]n)", "$options": "i"}}')
 
     def test_fuzziness(self):
         pass
@@ -365,24 +415,24 @@ class MongoQueryTestCase(unittest.TestCase):
         # OR (||)
         string = r'''"jakarta apache" jakarta'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$or": [{"text": {"$regex": "jakarta apache"}}, {"text": {"$regex": "jakarta"}}]}')
+        self.assertEqual(r, '{"$or": [{"text": {"$regex": "jakarta apache", "$options": "i"}}, {"text": {"$regex": "jakarta", "$options": "i"}}]}')
 
         string = r'''"jakarta apache" OR jakarta'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$or": [{"text": {"$regex": "jakarta apache"}}, {"text": {"$regex": "jakarta"}}]}')
+        self.assertEqual(r, '{"$or": [{"text": {"$regex": "jakarta apache", "$options": "i"}}, {"text": {"$regex": "jakarta", "$options": "i"}}]}')
 
         string = r'''"jakarta apache" || jakarta'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$or": [{"text": {"$regex": "jakarta apache"}}, {"text": {"$regex": "jakarta"}}]}')
+        self.assertEqual(r, '{"$or": [{"text": {"$regex": "jakarta apache", "$options": "i"}}, {"text": {"$regex": "jakarta", "$options": "i"}}]}')
 
         # AND (&&)
         string = r'''"jakarta apache" AND "Apache Lucene"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$and": [{"text": {"$regex": "jakarta apache"}}, {"text": {"$regex": "Apache Lucene"}}]}')
+        self.assertEqual(r, '{"$and": [{"text": {"$regex": "jakarta apache", "$options": "i"}}, {"text": {"$regex": "Apache Lucene", "$options": "i"}}]}')
 
         string = r'''"jakarta apache" && "Apache Lucene"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$and": [{"text": {"$regex": "jakarta apache"}}, {"text": {"$regex": "Apache Lucene"}}]}')
+        self.assertEqual(r, '{"$and": [{"text": {"$regex": "jakarta apache", "$options": "i"}}, {"text": {"$regex": "Apache Lucene", "$options": "i"}}]}')
 
         # + (required)
         pass
@@ -390,19 +440,19 @@ class MongoQueryTestCase(unittest.TestCase):
         # NOT (!)
         string = r'''"jakarta apache" NOT "Apache Lucene"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$and": [{"text": {"$regex": "jakarta apache"}}, {"text": {"$not": {"$regex": "Apache Lucene"}}}]}')
+        self.assertEqual(r, '{"$and": [{"text": {"$regex": "jakarta apache", "$options": "i"}}, {"text": {"$not": {"$regex": "Apache Lucene", "$options": "i"}}}]}')
 
         string = r'''"jakarta apache" !"Apache Lucene"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$and": [{"text": {"$regex": "jakarta apache"}}, {"text": {"$not": {"$regex": "Apache Lucene"}}}]}')
+        self.assertEqual(r, '{"$and": [{"text": {"$regex": "jakarta apache", "$options": "i"}}, {"text": {"$not": {"$regex": "Apache Lucene", "$options": "i"}}}]}')
 
         string = r'''NOT "jakarta apache"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"text": {"$not": {"$regex": "jakarta apache"}}}')
+        self.assertEqual(r, '{"text": {"$not": {"$regex": "jakarta apache", "$options": "i"}}}')
 
         string = r'''group:"jakarta apache" NOT group:"Apache Lucene"'''
         r = self.parser.parse(string)
-        self.assertEqual(r, '{"$and": [{"group": {"$regex": "jakarta apache"}}, {"group": {"$not": {"$regex": "Apache Lucene"}}}]}')
+        self.assertEqual(r, r'{"$and": [{"group": {"$regex": "\\bjakarta apache\\b", "$options": "i"}}, {"group": {"$not": {"$regex": "\\bApache Lucene\\b", "$options": "i"}}}]}')
 
         # - (prohibit)
         pass
@@ -413,10 +463,10 @@ class MongoQueryTestCase(unittest.TestCase):
         string = r'''(quick OR brown) AND fox'''
         r = self.parser.parse(string)
         self.assertEqual(
-            r, '{"$and": [{"$or": [{"text": {"$regex": "quick"}}, {"text": {"$regex": "brown"}}]}, {"text": {"$regex": "fox"}}]}')
+            r, '{"$and": [{"$or": [{"text": {"$regex": "quick", "$options": "i"}}, {"text": {"$regex": "brown", "$options": "i"}}]}, {"text": {"$regex": "fox", "$options": "i"}}]}')
 
         # field exact match
         string = r'''status:(active OR pending) title:(full text search)'''
         r = self.parser.parse(string)
         self.assertEqual(
-            r, '{"$or": [{"$or": [{"status": {"$regex": "active"}}, {"status": {"$regex": "pending"}}]}, {"$or": [{"title": {"$regex": "full"}}, {"title": {"$regex": "text"}}]}]}')
+            r, '{"$or": [{"$or": [{"status": {"$regex": "active", "$options": "i"}}, {"status": {"$regex": "pending", "$options": "i"}}]}, {"$or": [{"title": {"$regex": "full", "$options": "i"}}, {"title": {"$regex": "text", "$options": "i"}}]}]}')
