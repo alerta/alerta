@@ -81,6 +81,7 @@ test.unit: $(TOX) $(PYTEST)
 
 ## test.integration	- Run integration tests.
 test.integration: $(PYTEST)
+	$(PIP) install -r requirements-ci.txt
 	$(DOCKER_COMPOSE) -f docker-compose.ci.yml up -d
 	$(PYTEST) tests/integration $(toxparams)
 
