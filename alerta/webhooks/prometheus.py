@@ -49,12 +49,13 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
     service = labels.pop('service', '').split(',')
     group = labels.pop('group', None) or labels.pop('job', 'Prometheus')
     origin = 'prometheus/' + labels.pop('monitor', '-')
-    tags = ['{}={}'.format(k, v) for k, v in labels.items()]  # any labels left over are used for tags
 
     try:
         timeout = int(labels.pop('timeout', 0)) or None
     except ValueError:
         timeout = None
+
+    tags = ['{}={}'.format(k, v) for k, v in labels.items()]  # any labels left over are used for tags
 
     # annotations
     value = annotations.pop('value', None)
