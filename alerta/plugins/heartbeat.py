@@ -19,11 +19,6 @@ class HeartbeatReceiver(PluginBase):
         HEARTBEAT_EVENTS = self.get_config('HEARTBEAT_EVENTS', default=['Heartbeat'], type=list, **kwargs)
 
         if alert.event in HEARTBEAT_EVENTS:
-            if 'timeout' in request.json:
-                timeout = alert.timeout
-            else:
-                timeout = current_app.config['HEARTBEAT_TIMEOUT']
-
             hb = Heartbeat(
                 origin=alert.origin,
                 tags=alert.tags,
@@ -33,7 +28,7 @@ class HeartbeatReceiver(PluginBase):
                     'service': alert.service,
                     'group': alert.group
                 },
-                timeout=timeout,
+                timeout=alert.timeout,
                 customer=alert.customer
             )
             r = hb.create()
