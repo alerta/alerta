@@ -196,7 +196,8 @@ class HeartbeatsTestCase(unittest.TestCase):
                 "monitor": "codelab",
                 "region": "EU",
                 "service": "Monitoring",
-                "severity": "warning"
+                "severity": "warning",
+                "timeout": "8"
               },
               "annotations": {},
               "startsAt": "2020-07-05T18:51:22.012771244Z",
@@ -244,4 +245,4 @@ class HeartbeatsTestCase(unittest.TestCase):
                 group='Healthchecks'
             )
         )
-        self.assertEqual(data['heartbeats'][0]['timeout'], 4)
+        self.assertEqual(data['heartbeats'][0]['timeout'], 8)
