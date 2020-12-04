@@ -492,36 +492,11 @@ class Backend(Database):
 
     def get_alerts(self, query=None, raw_data=False, history=False, page=None, page_size=None):
         query = query or Query()
-        fields = {
-            'resource': 1,
-            'event': 1,
-            'environment': 1,
-            'severity': 1,
-            'correlate': 1,
-            'status': 1,
-            'service': 1,
-            'group': 1,
-            'value': 1,
-            'text': 1,
-            'tags': 1,
-            'attributes': 1,
-            'origin': 1,
-            'type': 1,
-            'createTime': 1,
-            'timeout': 1,
-            'customer': 1,
-            'duplicateCount': 1,
-            'repeat': 1,
-            'previousSeverity': 1,
-            'trendIndication': 1,
-            'receiveTime': 1,
-            'lastReceiveId': 1,
-            'lastReceiveTime': 1,
-        }
-        if raw_data:
-            fields['rawData'] = 1
-        if history:
-            fields['history'] = 1
+        fields = dict()
+        if not raw_data:
+            fields['rawData'] = 0
+        if not history:
+            fields['history'] = 0
         pipeline = [
             {'$lookup': {
                 'from': 'codes',
