@@ -1,7 +1,5 @@
 import logging
 
-from flask import current_app, request
-
 from alerta.exceptions import HeartbeatReceived
 from alerta.models.heartbeat import Heartbeat
 from alerta.plugins import PluginBase
