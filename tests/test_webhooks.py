@@ -674,6 +674,47 @@ class WebhooksTestCase(unittest.TestCase):
         }
         """
 
+        self.telegram_close = """
+        {
+            "update_id": 913527394,
+            "callback_query": {
+                "id": "688111769854308995",
+                "from": {
+                    "id": 160213506,
+                    "first_name": "Nick",
+                    "last_name": "Satterly",
+                    "username": "satterly"
+                },
+                "message": {
+                    "message_id": 37,
+                    "from": {
+                        "id": 264434259,
+                        "first_name": "alerta-bot",
+                        "username": "alertaio_bot"
+                    },
+                    "chat": {
+                        "id": -163056465,
+                        "title": "Alerta Telegram",
+                        "type": "group",
+                        "all_members_are_administrators": true
+                    },
+                    "date": 1481841548,
+                    "text": "",
+                    "entities": [
+                        {
+                            "type": "text_link",
+                            "offset": 0,
+                            "length": 8,
+                            "url": "https://try.alerta.io/#/alert/a2b47856-1779-49a9-a2aa-5cbd2e539b56"
+                        }
+                    ]
+                },
+                "chat_instance": "-428019502972440238",
+                "data": "/close %s"
+            }
+        }
+        """
+
         self.vmware_vrealize = """
         {
            "startDate":1369757346267,
@@ -970,14 +1011,36 @@ class WebhooksTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(self.telegram_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        telegram_alert_id = data['id']
+
+        alert_id = data['id']
 
         # command=/ack
         response = self.client.post('/webhooks/telegram', data=self.telegram_ack %
-                                    telegram_alert_id, headers=self.headers)
+                                    alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
+
+        # get alert
+        response = self.client.get('/alert/' + alert_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn(alert_id, data['alert']['id'])
+        self.assertEqual(data['alert']['status'], 'ack')
+
+        # command=/close
+        response = self.client.post('/webhooks/telegram', data=self.telegram_close %
+                                    alert_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok')
+
+        # get alert
+        response = self.client.get('/alert/' + alert_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn(alert_id, data['alert']['id'])
+        self.assertEqual(data['alert']['status'], 'closed')
 
         # command=/ack with bogus telegram_alert_id
         response = self.client.post('/webhooks/telegram', data=self.telegram_ack %

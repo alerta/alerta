@@ -85,7 +85,7 @@ class SlackWebhook(WebhookBase):
             jsonify(status='error', message='alert not found for #slack message')
 
         if action in ['open', 'ack', 'close']:
-            alert.set_status(status=action, text='status change via #slack by {}'.format(user))
+            alert.from_action(action, text='status change via #slack by {}'.format(user))
         elif action in ['watch', 'unwatch']:
             alert.untag(tags=['{}:{}'.format(action, user)])
         else:
