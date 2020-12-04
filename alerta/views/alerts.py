@@ -304,13 +304,7 @@ def search_alerts():
     total = sum(severity_count.values())
     paging = Page.from_params(request.args, total)
 
-    alerts = Alert.find_all(query, paging.page, paging.page_size)
-
-    for alert in alerts:
-        if not show_raw_data:
-            alert.raw_data = None
-        if not show_history:
-            alert.history = []
+    alerts = Alert.find_all(query, raw_data=show_raw_data, history=show_history, page=paging.page, page_size=paging.page_size)
 
     if alerts:
         return jsonify(
