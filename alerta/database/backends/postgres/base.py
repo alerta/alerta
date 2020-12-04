@@ -401,11 +401,12 @@ class Backend(Database):
         else:
             select = (
                 'id, resource, event, environment, severity, correlate, status, service, "group", value, "text",'
-                + 'tags, attributes, origin, type, create_time, timeout {raw_data}, customer, duplicate_count, repeat,'
-                + 'previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time {history}'
+                + 'tags, attributes, origin, type, create_time, timeout, {raw_data}, customer, duplicate_count, repeat,'
+                + 'previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time, update_time,'
+                + '{history}'
             ).format(
-                raw_data=', raw_data' if raw_data else '',
-                history=', history' if history else ''
+                raw_data='raw_data' if raw_data else 'NULL as raw_data',
+                history='history' if history else 'array[]::history[] as history'
             )
 
         join = ''
