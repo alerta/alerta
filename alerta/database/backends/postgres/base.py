@@ -400,9 +400,9 @@ class Backend(Database):
             select = '*'
         else:
             select = (
-                'id, resource, event, environment, severity, correlate, status, service, "group", value, "text",' +
-                'tags, attributes, origin, type, create_time, timeout {raw_data}, customer, duplicate_count, repeat,' +
-                'previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time {history}'
+                'id, resource, event, environment, severity, correlate, status, service, "group", value, "text",'
+                + 'tags, attributes, origin, type, create_time, timeout {raw_data}, customer, duplicate_count, repeat,'
+                + 'previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time {history}'
             ).format(
                 raw_data=', raw_data' if raw_data else '',
                 history=', history' if history else ''
