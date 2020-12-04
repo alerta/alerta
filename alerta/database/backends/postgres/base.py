@@ -394,8 +394,20 @@ class Backend(Database):
         """.format(limit=current_app.config['HISTORY_LIMIT'])
         return self._updateone(update, {'id': id, 'like_id': id + '%', 'history': history}, returning=True)
 
-    def get_alerts(self, query=None, page=None, page_size=None):
+    def get_alerts(self, query=None, raw_data=False, history=False, page=None, page_size=None):
         query = query or Query()
+        if raw_data and history:
+            select = '*'
+        else:
+            select = (
+                'id, resource, event, environment, severity, correlate, status, service, "group", value, "text",' +
+                'tags, attributes, origin, type, create_time, timeout {raw_data}, customer, duplicate_count, repeat,' +
+                'previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time {history}'
+            ).format(
+                raw_data=', raw_data' if raw_data else '',
+                history=', history' if history else ''
+            )
+
         join = ''
         if 's.code' in query.sort:
             join += 'JOIN (VALUES {}) AS s(sev, code) ON alerts.severity = s.sev '.format(
@@ -406,11 +418,11 @@ class Backend(Database):
                 ', '.join(("('{}', '{}')".format(k, v) for k, v in alarm_model.Status.items()))
             )
         select = """
-            SELECT *
+            SELECT {select}
               FROM alerts {join}
              WHERE {where}
           ORDER BY {order}
-        """.format(join=join, where=query.where, order=query.sort or 'last_receive_time')
+        """.format(select=select, join=join, where=query.where, order=query.sort or 'last_receive_time')
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_alert_history(self, alert, page=None, page_size=None):
