@@ -81,7 +81,7 @@ class TelegramWebhook(WebhookBase):
                 return jsonify(status='error', message='alert not found for Telegram message')
 
             if action in ['open', 'ack', 'close']:
-                alert.set_status(status=action, text='status change via Telegram')
+                alert.from_action(action, text='status change via Telegram')
             elif action in ['watch', 'unwatch']:
                 alert.untag(tags=['{}:{}'.format(action, user)])
             elif action == 'blackout':

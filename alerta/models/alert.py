@@ -589,12 +589,12 @@ class Alert:
 
         status, _, previous_status, previous_timeout = self._get_hist_info(action)
 
-        if action in ['unack', 'unshelve', 'timeout']:
+        if action in [ChangeType.unack, ChangeType.unshelve, ChangeType.timeout]:
             timeout = timeout or previous_timeout
 
-        if action in ['ack', 'unack']:
+        if action in [ChangeType.ack, ChangeType.unack]:
             timeout = timeout or current_app.config['ACK_TIMEOUT']
-        elif action in ['shelve', 'unshelve']:
+        elif action in [ChangeType.shelve, ChangeType.unshelve]:
             timeout = timeout or current_app.config['SHELVE_TIMEOUT']
         else:
             timeout = timeout or self.timeout or current_app.config['ALERT_TIMEOUT']
