@@ -157,7 +157,7 @@ class Database(Base):
 
     # SEARCH & HISTORY
 
-    def get_alerts(self, query=None, page=None, page_size=None):
+    def get_alerts(self, query=None, raw_data=False, history=False, page=None, page_size=None):
         raise NotImplementedError
 
     def get_alert_history(self, alert, page=None, page_size=None):

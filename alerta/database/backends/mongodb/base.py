@@ -490,8 +490,38 @@ class Backend(Database):
             return_document=ReturnDocument.AFTER
         )
 
-    def get_alerts(self, query=None, page=None, page_size=None):
+    def get_alerts(self, query=None, raw_data=False, history=False, page=None, page_size=None):
         query = query or Query()
+        fields = {
+            'resource': 1,
+            'event': 1,
+            'environment': 1,
+            'severity': 1,
+            'correlate': 1,
+            'status': 1,
+            'service': 1,
+            'group': 1,
+            'value': 1,
+            'text': 1,
+            'tags': 1,
+            'attributes': 1,
+            'origin': 1,
+            'type': 1,
+            'createTime': 1,
+            'timeout': 1,
+            'customer': 1,
+            'duplicateCount': 1,
+            'repeat': 1,
+            'previousSeverity': 1,
+            'trendIndication': 1,
+            'receiveTime': 1,
+            'lastReceiveId': 1,
+            'lastReceiveTime': 1,
+        }
+        if raw_data:
+            fields['rawData'] = 1
+        if history:
+            fields['history'] = 1
         pipeline = [
             {'$lookup': {
                 'from': 'codes',
@@ -510,6 +540,7 @@ class Backend(Database):
             {'$replaceRoot': {'newRoot': {'$mergeObjects': [{'$arrayElemAt': ['$fromStates', 0]}, '$$ROOT']}}},
             {'$project': {'fromStates': 0}},
             {'$match': query.where},
+            {'$project': fields},
             {'$sort': {k: v for k, v in query.sort}},
             {'$skip': (page - 1) * page_size},
             {'$limit': page_size}
