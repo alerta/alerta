@@ -71,7 +71,8 @@ setuptools.setup(
             'heartbeat = alerta.plugins.heartbeat:HeartbeatReceiver',
             'blackout = alerta.plugins.blackout:BlackoutHandler',
             'acked_by = alerta.plugins.acked_by:AckedBy',
-            'forwarder = alerta.plugins.forwarder:Forwarder'
+            'forwarder = alerta.plugins.forwarder:Forwarder',
+            'timeout = alerta.plugins.timeout:TimeoutPolicy'
         ],
         'alerta.webhooks': [
             'cloudwatch = alerta.webhooks.cloudwatch:CloudWatchWebhook',
