@@ -90,7 +90,8 @@ def handle_http_error(error: HTTPException) -> Tuple[Response, int]:
         'code': error.code,
         'errors': [
             error.description
-        ]
+        ],
+        'requestId': g.request_id
     }), error.code
 
 
@@ -102,7 +103,7 @@ def handle_api_error(error: ApiError) -> Tuple[Response, int]:
         'message': error.message,
         'code': error.code,
         'errors': error.errors,
-        'requestId': error.request_id
+        'requestId': g.request_id
     }), error.code
 
 
@@ -112,7 +113,7 @@ def handle_basic_auth_error(error: BasicAuthError) -> Tuple[Response, int, Dict[
         'message': error.message,
         'code': error.code,
         'errors': error.errors,
-        'requestId': error.request_id
+        'requestId': g.request_id
     }), error.code, {'WWW-Authenticate': 'Basic realm=%s' % current_app.config['BASIC_AUTH_REALM']}
 
 
