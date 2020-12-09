@@ -159,7 +159,7 @@ AUDIT_LOG_JSON = False  # log alert data as JSON object
 AUDIT_URL = None  # send audit log events via webhook URL
 
 # CORS settings
-CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin']
+CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin', 'X-Request-ID']
 CORS_ORIGINS = [
     # 'http://try.alerta.io',
     # 'http://explorer.alerta.io',
