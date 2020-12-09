@@ -21,7 +21,8 @@ LOG_FILE = 'alertad.log'  # NOTE: 'file' must be added to LOG_HANDLERS for loggi
 LOG_LEVEL = 'WARNING'  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 LOG_BACKUP_COUNT = 2
-LOG_FORMAT = 'default'  # 'default', 'simple', 'verbose', 'json' or any valid logging format
+LOG_FORMAT = 'default'  # 'default', 'simple', 'verbose', 'json', 'syslog' or any valid logging format
+LOG_FACILITY = 'local7'  # syslog logging facility (local0 .. local7)
 LOG_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH']
 
 # API settings
