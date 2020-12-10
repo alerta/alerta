@@ -39,6 +39,10 @@ COLOR_MAP = {
         Severity.Trace: '#7554BF',  # violet
         Severity.Unknown: 'silver'
     },
+    'status': {
+        Status.Ack: 'skyblue',
+        Status.Shelved: 'skyblue'
+    },
     'text': 'black'
 }
 
