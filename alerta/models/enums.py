@@ -1,6 +1,56 @@
 from enum import Enum
 
 
+class Severity(str, Enum):
+
+    Security = 'security'
+    Critical = 'critical'
+    Major = 'major'
+    Minor = 'minor'
+    Warning = 'warning'
+    Indeterminate = 'indeterminate'
+    Informational = 'informational'
+    Normal = 'normal'
+    Ok = 'ok'
+    Cleared = 'cleared'
+    Debug = 'debug'
+    Trace = 'trace'
+    Unknown = 'unknown'
+
+
+class Status(str, Enum):
+
+    Open = 'open'
+    Assign = 'assign'
+    Ack = 'ack'
+    Shelved = 'shelved'
+    Blackout = 'blackout'
+    Closed = 'closed'
+    Expired = 'expired'
+    Unknown = 'unknown'
+    Not_Valid = 'notValid'
+
+
+class Action(str, Enum):
+
+    OPEN = 'open'
+    ASSIGN = 'assign'
+    ACK = 'ack'
+    UNACK = 'unack'
+    SHELVE = 'shelve'
+    UNSHELVE = 'unshelve'
+    CLOSE = 'close'
+    EXPIRED = 'expired'
+    TIMEOUT = 'timeout'
+
+
+class TrendIndication(str, Enum):
+
+    More_Severe = 'moreSevere'
+    No_Change = 'noChange'
+    Less_Severe = 'lessSevere'
+
+
 class Scope(str, Enum):
 
     read = 'read'
