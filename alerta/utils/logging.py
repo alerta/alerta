@@ -3,7 +3,6 @@ import logging
 import os
 from logging.config import dictConfig
 
-import click
 import flask
 import yaml
 from flask import Flask, current_app, g, request
@@ -35,11 +34,9 @@ class Logger:
             else:
                 log_format = 'custom'
                 custom_format = app.config['LOG_FORMAT']
-            click.echo(f' * Set format to: {log_format}')
 
             if 'file' in app.config['LOG_HANDLERS']:
                 log_file = os.path.expandvars(os.path.expanduser(app.config['LOG_FILE']))
-                click.echo(f' * Logging to: {log_file}')
             else:
                 log_file = '/dev/null'
 
