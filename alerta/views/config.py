@@ -63,5 +63,6 @@ def config():
         },
         'actions': current_app.config['ACTIONS'],
         'tracking_id': current_app.config['GOOGLE_TRACKING_ID'],
-        'refresh_interval': current_app.config['AUTO_REFRESH_INTERVAL']
+        'refresh_interval': current_app.config['AUTO_REFRESH_INTERVAL'],
+        'environments': current_app.config['ALLOWED_ENVIRONMENTS']
     })
