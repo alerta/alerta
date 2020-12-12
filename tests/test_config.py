@@ -1,4 +1,5 @@
 import json
+import os
 import unittest
 
 from alerta.app import create_app, db
@@ -8,15 +9,15 @@ class ConfigTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        self.allowed_environments = ['Foo', 'Bar', 'Baz', 'QUUX']
-
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
-            'ALLOWED_ENVIRONMENTS': self.allowed_environments,
             'PLUGINS': []
         }
+        self.allowed_environments = ['Foo', 'Bar', 'Baz', 'QUUX']
+        os.environ['ALLOWED_ENVIRONMENTS'] = ','.join(self.allowed_environments)
+
         self.app = create_app(test_config)
         self.client = self.app.test_client()
 
