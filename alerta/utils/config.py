@@ -23,117 +23,64 @@ class Config:
         config.from_pyfile('/etc/alertad.conf', silent=True)
         config.from_envvar('ALERTA_SVR_CONF_FILE', silent=True)
 
-        if 'DEBUG' in os.environ:
-            config['DEBUG'] = True
-
-        if 'BASE_URL' in os.environ:
-            config['BASE_URL'] = os.environ['BASE_URL']
-
-        if 'USE_PROXYFIX' in os.environ:
-            config['USE_PROXYFIX'] = True if os.environ['USE_PROXYFIX'] == 'True' else False
-
-        if 'SECRET_KEY' in os.environ:
-            config['SECRET_KEY'] = os.environ['SECRET_KEY']
+        config['DEBUG'] = get_config('DEBUG', default=True, type=bool, config=config)
+        config['BASE_URL'] = get_config('BASE_URL', default='', type=str, config=config)
+        config['USE_PROXYFIX'] = get_config('USE_PROXYFIX', default=False, type=bool, config=config)
+        config['SECRET_KEY'] = get_config('SECRET_KEY', default='', type=str, config=config)
 
         database_url = (
-            os.environ.get('DATABASE_URL', None)
             # The following database settings are deprecated.
-            or os.environ.get('MONGO_URI', None)
+            os.environ.get('MONGO_URI', None)
             or os.environ.get('MONGODB_URI', None)
             or os.environ.get('MONGOHQ_URL', None)
             or os.environ.get('MONGOLAB_URI', None)
         )
         # Use app config for DATABASE_URL if no env var from above override it
-        config['DATABASE_URL'] = database_url or config['DATABASE_URL']
+        config['DATABASE_URL'] = get_config('DATABASE_URL', default=database_url, type=str, config=config)
+        config['DATABASE_NAME'] = get_config('DATABASE_NAME', default=None, type=str, config=config)
 
-        if 'DATABASE_NAME' in os.environ:
-            config['DATABASE_NAME'] = os.environ['DATABASE_NAME']
+        config['AUTH_REQUIRED'] = get_config('AUTH_REQUIRED', default=None, type=bool, config=config)
+        config['AUTH_PROVIDER'] = get_config('AUTH_PROVIDER', default=None, type=str, config=config)
+        config['ADMIN_USERS'] = get_config('ADMIN_USERS', default=[], type=list, config=config)
+        config['SIGNUP_ENABLED'] = get_config('SIGNUP_ENABLED', default=True, type=bool, config=config)
+        config['CUSTOMER_VIEWS'] = get_config('CUSTOMER_VIEWS', default=False, type=bool, config=config)
 
-        if 'AUTH_REQUIRED' in os.environ:
-            config['AUTH_REQUIRED'] = True if os.environ['AUTH_REQUIRED'] == 'True' else False
+        config['OAUTH2_CLIENT_ID'] = get_config('OAUTH2_CLIENT_ID', default=None, type=str, config=config)
+        config['OAUTH2_CLIENT_SECRET'] = get_config('OAUTH2_CLIENT_SECRET', default=None, type=str, config=config)
+        config['ALLOWED_EMAIL_DOMAINS'] = get_config('ALLOWED_EMAIL_DOMAINS', default=[], type=list, config=config)
 
-        if 'AUTH_PROVIDER' in os.environ:
-            config['AUTH_PROVIDER'] = os.environ['AUTH_PROVIDER']
+        config['AZURE_TENANT'] = get_config('AZURE_TENANT', default=None, type=str, config=config)
 
-        if 'ADMIN_USERS' in os.environ:
-            config['ADMIN_USERS'] = os.environ['ADMIN_USERS'].split(',')
+        config['GITHUB_URL'] = get_config('GITHUB_URL', default=None, type=str, config=config)
+        config['ALLOWED_GITHUB_ORGS'] = get_config('ALLOWED_GITHUB_ORGS', default=[], type=list, config=config)
 
-        if 'SIGNUP_ENABLED' in os.environ:
-            config['SIGNUP_ENABLED'] = True if os.environ['SIGNUP_ENABLED'] == 'True' else False
+        config['GITLAB_URL'] = get_config('GITLAB_URL', default=None, type=str, config=config)
+        config['ALLOWED_OIDC_ROLES'] = get_config('ALLOWED_GITLAB_GROUPS', default=[], type=list, config=config)
 
-        if 'CUSTOMER_VIEWS' in os.environ:
-            config['CUSTOMER_VIEWS'] = True if os.environ['CUSTOMER_VIEWS'] == 'True' else False
+        config['KEYCLOAK_URL'] = get_config('KEYCLOAK_URL', default=None, type=str, config=config)
+        config['KEYCLOAK_REALM'] = get_config('KEYCLOAK_REALM', default=None, type=str, config=config)
+        config['ALLOWED_OIDC_ROLES'] = get_config('ALLOWED_KEYCLOAK_ROLES', default=[], type=list, config=config)
 
-        if 'OAUTH2_CLIENT_ID' in os.environ:
-            config['OAUTH2_CLIENT_ID'] = os.environ['OAUTH2_CLIENT_ID']
+        config['OIDC_ISSUER_URL'] = get_config('OIDC_ISSUER_URL', default=None, type=str, config=config)
+        config['ALLOWED_OIDC_ROLES'] = get_config('ALLOWED_OIDC_ROLES', default=[], type=list, config=config)
 
-        if 'OAUTH2_CLIENT_SECRET' in os.environ:
-            config['OAUTH2_CLIENT_SECRET'] = os.environ['OAUTH2_CLIENT_SECRET']
+        config['CORS_ORIGINS'] = get_config('CORS_ORIGINS', default=[], type=list, config=config)
 
-        if 'ALLOWED_EMAIL_DOMAINS' in os.environ:
-            config['ALLOWED_EMAIL_DOMAINS'] = os.environ['ALLOWED_EMAIL_DOMAINS'].split(',')
+        config['MAIL_FROM'] = get_config('MAIL_FROM', default=None, type=str, config=config)
+        config['SMTP_PASSWORD'] = get_config('SMTP_PASSWORD', default=None, type=str, config=config)
 
-        if 'AZURE_TENANT' in os.environ:
-            config['AZURE_TENANT'] = os.environ['AZURE_TENANT']
+        config['GOOGLE_TRACKING_ID'] = get_config('GOOGLE_TRACKING_ID', default=None, type=str, config=config)
 
-        if 'GITHUB_URL' in os.environ:
-            config['GITHUB_URL'] = os.environ['GITHUB_URL']
-
-        if 'ALLOWED_GITHUB_ORGS' in os.environ:
-            config['ALLOWED_GITHUB_ORGS'] = os.environ['ALLOWED_GITHUB_ORGS'].split(',')
-
-        if 'GITLAB_URL' in os.environ:
-            config['GITLAB_URL'] = os.environ['GITLAB_URL']
-
-        if 'ALLOWED_GITLAB_GROUPS' in os.environ:
-            config['ALLOWED_OIDC_ROLES'] = os.environ['ALLOWED_GITLAB_GROUPS'].split(',')
-
-        if 'KEYCLOAK_URL' in os.environ:
-            config['KEYCLOAK_URL'] = os.environ['KEYCLOAK_URL']
-
-        if 'KEYCLOAK_REALM' in os.environ:
-            config['KEYCLOAK_REALM'] = os.environ['KEYCLOAK_REALM']
-
-        if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
-            config['ALLOWED_OIDC_ROLES'] = os.environ['ALLOWED_KEYCLOAK_ROLES'].split(',')
-
-        if 'OIDC_ISSUER_URL' in os.environ:
-            config['OIDC_ISSUER_URL'] = os.environ['OIDC_ISSUER_URL']
-
-        if 'ALLOWED_OIDC_ROLES' in os.environ:
-            config['ALLOWED_OIDC_ROLES'] = os.environ['ALLOWED_OIDC_ROLES'].split(',')
-
-        if 'CORS_ORIGINS' in os.environ:
-            config['CORS_ORIGINS'] = os.environ['CORS_ORIGINS'].split(',')
-
-        if 'MAIL_FROM' in os.environ:
-            config['MAIL_FROM'] = os.environ['MAIL_FROM']
-
-        if 'SMTP_PASSWORD' in os.environ:
-            config['SMTP_PASSWORD'] = os.environ['SMTP_PASSWORD']
-
-        if 'GOOGLE_TRACKING_ID' in os.environ:
-            config['GOOGLE_TRACKING_ID'] = os.environ['GOOGLE_TRACKING_ID']
-
-        if 'PLUGINS' in os.environ:
-            config['PLUGINS'] = os.environ['PLUGINS'].split(',')
+        config['PLUGINS'] = get_config('PLUGINS', default=[], type=list, config=config)
 
         # blackout plugin
-        if 'BLACKOUT_DURATION' in os.environ:
-            config['BLACKOUT_DURATION'] = int(os.environ['BLACKOUT_DURATION'])
-
-        if 'NOTIFICATION_BLACKOUT' in os.environ:
-            config['NOTIFICATION_BLACKOUT'] = True if os.environ['NOTIFICATION_BLACKOUT'] == 'True' else False
-
-        if 'BLACKOUT_ACCEPT' in os.environ:
-            config['BLACKOUT_ACCEPT'] = os.environ['BLACKOUT_ACCEPT'].split(',')
+        config['BLACKOUT_DURATION'] = get_config('BLACKOUT_DURATION', default=None, type=int, config=config)
+        config['NOTIFICATION_BLACKOUT'] = get_config('NOTIFICATION_BLACKOUT', default=None, type=bool, config=config)
+        config['BLACKOUT_ACCEPT'] = get_config('BLACKOUT_ACCEPT', default=[], type=list, config=config)
 
         # reject plugin
-        if 'ORIGIN_BLACKLIST' in os.environ:
-            config['ORIGIN_BLACKLIST'] = os.environ['ORIGIN_BLACKLIST'].split(',')
-
-        if 'ALLOWED_ENVIRONMENTS' in os.environ:
-            config['ALLOWED_ENVIRONMENTS'] = os.environ['ALLOWED_ENVIRONMENTS'].split(',')
+        config['ORIGIN_BLACKLIST'] = get_config('ORIGIN_BLACKLIST', default=[], type=list, config=config)
+        config['ALLOWED_ENVIRONMENTS'] = get_config('ALLOWED_ENVIRONMENTS', default=[], type=list, config=config)
 
         # Runtime config check
         if config['CUSTOMER_VIEWS'] and not config['AUTH_REQUIRED']:
@@ -143,3 +90,25 @@ class Config:
             raise RuntimeError('Customer views is enabled but there are no admin users')
 
         return config
+
+
+def get_config(key, default=None, type=None, **kwargs):
+
+    if key in os.environ:
+        rv = os.environ[key]
+        if type == bool:
+            return rv.lower() in ['yes', 'on', 'true', 't', '1']
+        elif type == list:
+            return rv.split(',')
+        elif type is not None:
+            try:
+                rv = type(rv)
+            except ValueError:
+                rv = default
+        return rv
+
+    try:
+        rv = kwargs['config'].get(key, default)
+    except KeyError:
+        rv = default
+    return rv
