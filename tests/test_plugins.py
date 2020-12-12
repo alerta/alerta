@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from alerta.app import create_app, db, plugins
 from alerta.exceptions import InvalidAction
-from alerta.plugins import PluginBase, app
+from alerta.plugins import PluginBase
 
 
 class PluginsTestCase(unittest.TestCase):
@@ -27,7 +27,7 @@ class PluginsTestCase(unittest.TestCase):
         self.reject_alert = {
             'event': 'node_marginal',
             'resource': self.resource,
-            'environment': 'Production',
+            'environment': 'Staging',
             'service': [],  # alert will be rejected because service not defined
             'severity': 'warning',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
@@ -37,7 +37,7 @@ class PluginsTestCase(unittest.TestCase):
         self.accept_alert = {
             'event': 'node_marginal',
             'resource': self.resource,
-            'environment': 'Production',
+            'environment': 'Staging',
             'service': ['Network'],  # alert will be accepted because service defined
             'severity': 'warning',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
@@ -47,7 +47,7 @@ class PluginsTestCase(unittest.TestCase):
         self.critical_alert = {
             'event': 'node_down',
             'resource': self.resource,
-            'environment': 'Production',
+            'environment': 'Staging',
             'service': ['Network'],
             'severity': 'critical',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
@@ -94,7 +94,7 @@ class PluginsTestCase(unittest.TestCase):
         # alert status, tags, attributes and history text modified by plugin1 & plugin2
         self.assertEqual(data['alert']['status'], 'assign')
         self.assertEqual(sorted(data['alert']['tags']), sorted(
-            ['Development', 'Production', 'more', 'other', 'that', 'the', 'this']))
+            ['Development', 'Production', 'Staging', 'more', 'other', 'that', 'the', 'this']))
         self.assertEqual(data['alert']['attributes']['foo'], 'bar')
         self.assertEqual(data['alert']['attributes']['baz'], 'quux')
         self.assertNotIn('abc', data['alert']['attributes'])
@@ -119,7 +119,7 @@ class PluginsTestCase(unittest.TestCase):
         response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['alert']['tags'], ['Production', 'Development'])
+        self.assertEqual(data['alert']['tags'], ['Production', 'Staging', 'Development'])
         self.assertEqual(data['alert']['attributes'], {'aaa': 'post1', 'ip': '127.0.0.1', 'old': 'post1'})
 
         alert_id = data['id']
@@ -138,7 +138,7 @@ class PluginsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'assign')
         self.assertEqual(sorted(data['alert']['tags']), sorted(
-            ['Development', 'Production', 'more', 'other', 'that', 'the', 'this', 'aSingleTag', 'aDouble:Tag', 'a:Triple:Tag']))
+            ['Development', 'Production', 'Staging', 'more', 'other', 'that', 'the', 'this', 'aSingleTag', 'aDouble:Tag', 'a:Triple:Tag']))
         self.assertEqual(data['alert']['history'][1]['text'],
                          'ticket created by bob (ticket #12345)-plugin1-plugin3', data['alert']['history'])
 
@@ -332,8 +332,8 @@ class PluginsTestCase(unittest.TestCase):
 
 class OldPlugin1(PluginBase):
 
-    def pre_receive(self, alert):
-        ALLOWED_ENVIRONMENTS = app.config['ALLOWED_ENVIRONMENTS']
+    def pre_receive(self, alert, **kwargs):
+        ALLOWED_ENVIRONMENTS = self.get_config('ALLOWED_ENVIRONMENTS', default=[], type=list, **kwargs)
         alert.attributes['old'] = 'pre1'
         alert.tags = ALLOWED_ENVIRONMENTS
         return alert

@@ -118,6 +118,23 @@ class Config:
         if 'PLUGINS' in os.environ:
             config['PLUGINS'] = os.environ['PLUGINS'].split(',')
 
+        # blackout plugin
+        if 'BLACKOUT_DURATION' in os.environ:
+            config['BLACKOUT_DURATION'] = int(os.environ['BLACKOUT_DURATION'])
+
+        if 'NOTIFICATION_BLACKOUT' in os.environ:
+            config['NOTIFICATION_BLACKOUT'] = True if os.environ['NOTIFICATION_BLACKOUT'] == 'True' else False
+
+        if 'BLACKOUT_ACCEPT' in os.environ:
+            config['BLACKOUT_ACCEPT'] = os.environ['BLACKOUT_ACCEPT'].split(',')
+
+        # reject plugin
+        if 'ORIGIN_BLACKLIST' in os.environ:
+            config['ORIGIN_BLACKLIST'] = os.environ['ORIGIN_BLACKLIST'].split(',')
+
+        if 'ALLOWED_ENVIRONMENTS' in os.environ:
+            config['ALLOWED_ENVIRONMENTS'] = os.environ['ALLOWED_ENVIRONMENTS'].split(',')
+
         # Runtime config check
         if config['CUSTOMER_VIEWS'] and not config['AUTH_REQUIRED']:
             raise RuntimeError('Must enable authentication to use customer views')
