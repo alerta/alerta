@@ -46,7 +46,8 @@ class PluginBase(metaclass=abc.ABCMeta):
         """Trigger integrations when an alert is deleted. (optional)"""
         raise NotImplementedError
 
-    def get_config(self, key, default=None, type=None, **kwargs):
+    @staticmethod
+    def get_config(key, default=None, type=None, **kwargs):
 
         if key in os.environ:
             rv = os.environ[key]
