@@ -68,7 +68,7 @@ class SearchTerm:
             if self.tokens.field[0] == '__default_field__':
                 return '"{}" ~* \'\\y{}\\y\''.format('__default_field__', self.tokens.phrase)
             elif self.tokens.field[0] in ['correlate', 'service', 'tags']:
-                return '\'{}\'=ANY("{}")'.format(self.tokens.term, self.tokens.field[0])
+                return '\'{}\'=ANY("{}")'.format(self.tokens.phrase, self.tokens.field[0])
             elif self.tokens.attr:
                 tokens_attr = self.tokens.attr.replace('_', 'attributes')
                 return '"{}"::jsonb ->>\'{}\' ~* \'\\y{}\\y\''.format(tokens_attr, self.tokens.fieldname, self.tokens.phrase)
