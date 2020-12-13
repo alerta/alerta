@@ -1,3 +1,16 @@
+## v8.3.1 (2020-12-13)
+
+### Fix
+
+- **search**: use phrase token when searching arrays (#1426)
+- **tests**: only temporarily modify the os.environ (#1423)
+- **build**: run tests against correct branch
+- read built-in plugin config from env vars (#1422)
+
+### Refactor
+
+- **config**: simplify config settings from env vars (#1424)
+
 ## v8.3.0 (2020-12-12)
 
 ### Feat
