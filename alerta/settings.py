@@ -60,6 +60,7 @@ CELERY_RESULT_SERIALIZER = 'customjson'
 # Authentication settings
 AUTH_REQUIRED = False
 AUTH_PROVIDER = 'basic'  # basic (default), ldap, github, openid, saml2, azure, cognito, gitlab, google, keycloak
+
 ADMIN_USERS = []  # type: List[str]
 DEFAULT_ADMIN_ROLE = 'admin'
 ADMIN_ROLES = [DEFAULT_ADMIN_ROLE]
@@ -72,33 +73,9 @@ GUEST_DEFAULT_SCOPES = ['read:alerts']
 DELETE_SCOPES = []  # Set to "delete:alerts" to prevent users with "write:alerts" scope being able to delete alerts
 CUSTOMER_VIEWS = False
 
+# BasicAuth
 BASIC_AUTH_REALM = 'Alerta'
 SIGNUP_ENABLED = True
-
-HMAC_AUTH_CREDENTIALS = [
-    # {
-    #     'id': '',  # access key id  => $ uuidgen | tr '[:upper:]' '[:lower:]'
-    #     'key': '',  # secret key => $ date | md5 | base64
-    #     'algorithm': 'sha256'  # valid hmac algorithm eg. sha256, sha384, sha512
-    # }
-]  # type: List[Dict[str, Any]]
-
-OAUTH2_CLIENT_ID = None  # OAuth2 client ID and secret
-OAUTH2_CLIENT_SECRET = None
-ALLOWED_EMAIL_DOMAINS = ['*']
-
-# Amazon Cognito
-AWS_REGION = 'us-east-1'  # US East - N. Virginia (default)
-COGNITO_USER_POOL_ID = None
-COGNITO_DOMAIN = None
-
-# GitHub OAuth2
-GITHUB_URL = 'https://github.com'
-ALLOWED_GITHUB_ORGS = ['*']
-
-# GitLab OAuth2
-GITLAB_URL = 'https://gitlab.com'
-ALLOWED_GITLAB_GROUPS = ['*']
 
 # BasicAuth using LDAP
 LDAP_URL = ''  # eg. ldap://localhost:389
@@ -124,21 +101,49 @@ ALLOWED_LDAP_GROUPS = ['*']
 
 # Microsoft Identity Platform (v2.0)
 AZURE_TENANT = 'common'  # "common", "organizations", "consumers" or tenant ID
+AZURE_CLIENT_ID = None
+AZURE_CLIENT_SECRET = None
+
+# Amazon Cognito
+AWS_REGION = 'us-east-1'  # US East - N. Virginia (default)
+COGNITO_USER_POOL_ID = None
+COGNITO_DOMAIN = None
+COGNITO_CLIENT_ID = None
+COGNITO_CLIENT_SECRET = None
+
+# GitHub OAuth2
+GITHUB_URL = 'https://github.com'
+GITHUB_CLIENT_ID = None
+GITHUB_CLIENT_SECRET = None
+ALLOWED_GITHUB_ORGS = ['*']
+
+# GitLab OAuth2
+GITLAB_URL = 'https://gitlab.com'
+GITLAB_CLIENT_ID = None
+GITLAB_CLIENT_SECRET = None
+ALLOWED_GITLAB_GROUPS = ['*']
 
 # Keycloak
 KEYCLOAK_URL = None
 KEYCLOAK_REALM = None
+KEYCLOAK_CLIENT_ID = None
+KEYCLOAK_CLIENT_SECRET = None
 ALLOWED_KEYCLOAK_ROLES = ['*']
 
 # OpenID Connect
 OIDC_ISSUER_URL = None
 OIDC_AUTH_URL = None
-OIDC_LOGOUT_URL = None
+OIDC_LOGOUT_URL = None  # do not set
 OIDC_VERIFY_TOKEN = False
 OIDC_ROLE_CLAIM = OIDC_CUSTOM_CLAIM = 'roles'  # JWT claim name whose value is used in role mapping
 OIDC_GROUP_CLAIM = 'groups'  # JWT claim name whose value is used in customer mapping
 ALLOWED_OIDC_ROLES = ALLOWED_GITLAB_GROUPS or ALLOWED_KEYCLOAK_ROLES or ['*']
 OIDC_LINK_USER_EMAIL = True  # if using federated IdP link user accounts by verified email addresses
+
+# OAuth2 client ID and secret
+OAUTH2_CLIENT_ID = None
+OAUTH2_CLIENT_SECRET = None
+ALLOWED_EMAIL_DOMAINS = ['*']
 
 # SAML 2.0
 SAML2_ENTITY_ID = None
@@ -251,7 +256,16 @@ NOTIFICATION_BLACKOUT = False  # True - set alert status=blackout, False - do no
 BLACKOUT_ACCEPT = []  # type: List[str]
 # BLACKOUT_ACCEPT = ['normal', 'ok', 'cleared']  # list of severities accepted during blackout period
 
-# northbound interface
+# forwarder auth settings
+HMAC_AUTH_CREDENTIALS = [
+    # {
+    #     'id': '',  # access key id  => $ uuidgen | tr '[:upper:]' '[:lower:]'
+    #     'key': '',  # secret key => $ date | md5 | base64
+    #     'algorithm': 'sha256'  # valid hmac algorithm eg. sha256, sha384, sha512
+    # }
+]  # type: List[Dict[str, Any]]
+
+# forwarder destinations
 FWD_DESTINATIONS = [
     # ('http://localhost:9000', {'username': 'user', 'password': 'pa55w0rd', 'timeout': 10}, ['alerts', 'actions']),  # BasicAuth
     # ('https://httpbin.org/anything', dict(username='foo', password='bar', ssl_verify=False), ['alerts', 'actions']),
@@ -260,4 +274,4 @@ FWD_DESTINATIONS = [
     # ('http://localhost:9000', {'token': 'bearer-token'}, ['alerts', 'actions']),  # Bearer token
 ]  # type: List[Tuple]
 
-# valid actions=['*', 'alerts', 'actions', 'open', 'assign', 'ack', 'unack', 'shelve', 'unshelve', 'close', 'delete']
+# forwarder valid actions=['*', 'alerts', 'actions', 'open', 'assign', 'ack', 'unack', 'shelve', 'unshelve', 'close', 'delete']
