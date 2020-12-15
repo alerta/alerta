@@ -55,11 +55,13 @@ class Config:
         config['ALLOWED_GITHUB_ORGS'] = get_config('ALLOWED_GITHUB_ORGS', default=[], type=list, config=config)
 
         config['GITLAB_URL'] = get_config('GITLAB_URL', default=None, type=str, config=config)
-        config['ALLOWED_OIDC_ROLES'] = get_config('ALLOWED_GITLAB_GROUPS', default=[], type=list, config=config)
+        if 'ALLOWED_GITLAB_GROUPS' in os.environ:
+            config['ALLOWED_OIDC_ROLES'] = get_config('ALLOWED_GITLAB_GROUPS', default=[], type=list, config=config)
 
         config['KEYCLOAK_URL'] = get_config('KEYCLOAK_URL', default=None, type=str, config=config)
         config['KEYCLOAK_REALM'] = get_config('KEYCLOAK_REALM', default=None, type=str, config=config)
-        config['ALLOWED_OIDC_ROLES'] = get_config('ALLOWED_KEYCLOAK_ROLES', default=[], type=list, config=config)
+        if 'ALLOWED_KEYCLOAK_ROLES' in os.environ:
+            config['ALLOWED_OIDC_ROLES'] = get_config('ALLOWED_KEYCLOAK_ROLES', default=[], type=list, config=config)
 
         config['OIDC_ISSUER_URL'] = get_config('OIDC_ISSUER_URL', default=None, type=str, config=config)
         config['ALLOWED_OIDC_ROLES'] = get_config('ALLOWED_OIDC_ROLES', default=[], type=list, config=config)
