@@ -1,3 +1,10 @@
+## v8.3.2 (2021-01-02)
+
+### Fix
+
+- log level not set correctly if DEBUG enabled (#1437)
+- do not override envvar config for GitLab and Keycloak (#1431)
+
 ## v8.3.1 (2020-12-13)
 
 ### Fix
