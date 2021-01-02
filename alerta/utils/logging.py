@@ -99,23 +99,23 @@ class Logger:
                 },
                 'loggers': {
                     'root': {
-                        'level': app.config['LOG_LEVEL'],
+                        'level': log_level,
                         'handlers': app.config['LOG_HANDLERS'],
                     },
                     'alerta': {
-                        'level': app.config['LOG_LEVEL'],
+                        'level': log_level,
                     },
                     'flask_cors.core': {
                         'level': 'WARNING',
                     },
                     'mohawk': {
-                        'level': app.config['LOG_LEVEL'],
+                        'level': log_level,
                     },
                     'requests': {
-                        'level': app.config['LOG_LEVEL'],
+                        'level': log_level,
                     },
                     'urllib3': {
-                        'level': app.config['LOG_LEVEL'],
+                        'level': log_level,
                     },
                     'werkzeug': {
                         'level': 'WARNING',
