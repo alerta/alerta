@@ -1,3 +1,9 @@
+## v8.3.3 (2021-01-06)
+
+### Fix
+
+- move root logger config key back to top level (#1438)
+
 ## v8.3.2 (2021-01-02)
 
 ### Fix
