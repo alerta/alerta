@@ -126,7 +126,7 @@ jobs:
       ldap:
         image: rroemhild/test-openldap
         ports:
-          - 389:389
+          - 389:10389
       saml-idp:
         image: jamedjo/test-saml-idp
         ports:
