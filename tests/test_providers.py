@@ -1,12 +1,12 @@
 import json
 import unittest
 
-import jwt
 import requests_mock
 
 from alerta.app import create_app, db
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
+from alerta.models.token import Jwt
 
 
 class AuthProvidersTestCase(unittest.TestCase):
@@ -127,16 +127,18 @@ class AuthProvidersTestCase(unittest.TestCase):
         response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
 
-        self.assertEqual(claims['name'], 'Nick Satterly', claims)
-        self.assertEqual(claims['preferred_username'], 'satterly', claims)
-        self.assertEqual(claims['provider'], 'cognito', claims)
-        # self.assertEqual(claims['roles'], ['user'], claims)
-        self.assertEqual(claims['scope'], 'read write', claims)
-        self.assertEqual(claims['email'], 'nfsatterly+2@gmail.com', claims)
-        self.assertEqual(claims.get('email_verified'), True, claims)
-        self.assertEqual(claims['customers'], ['Alphabet'], claims)
+        with self.app.test_request_context('/'):
+            claims = Jwt.parse(data['token'], verify=False)
+
+        self.assertEqual(claims.name, 'Nick Satterly', claims)
+        self.assertEqual(claims.preferred_username, 'satterly', claims)
+        self.assertEqual(claims.provider, 'cognito', claims)
+        # self.assertEqual(claims.roles, ['user'], claims)
+        self.assertEqual(claims.scopes, ['read', 'write'], claims)
+        self.assertEqual(claims.email, 'nfsatterly+2@gmail.com', claims)
+        self.assertEqual(claims.email_verified, True, claims)
+        self.assertEqual(claims.customers, ['Alphabet'], claims)
 
     @requests_mock.mock()
     def test_azure_v1(self, m):
@@ -330,16 +332,18 @@ class AuthProvidersTestCase(unittest.TestCase):
         response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
 
-        self.assertEqual(claims['name'], 'Nick Satterly', claims)
-        self.assertEqual(claims['preferred_username'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims['provider'], 'openid', claims)
-        # self.assertEqual(claims['roles'], ['user'], claims)
-        self.assertEqual(claims['scope'], 'read write', claims)
-        self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims.get('email_verified'), True, claims)
-        self.assertEqual(claims['customers'], ['Alerta IO'], claims)
+        with self.app.test_request_context('/'):
+            claims = Jwt.parse(data['token'], verify=False)
+
+        self.assertEqual(claims.name, 'Nick Satterly', claims)
+        self.assertEqual(claims.preferred_username, 'nfsatterly@gmail.com', claims)
+        self.assertEqual(claims.email, 'nfsatterly@gmail.com', claims)
+        self.assertEqual(claims.provider, 'openid', claims)
+        # self.assertEqual(claims.roles, ['user'], claims)
+        self.assertEqual(claims.scopes, ['read', 'write'], claims)
+        self.assertEqual(claims.email_verified, True, claims)
+        self.assertEqual(claims.customers, ['Alerta IO'], claims)
 
     @requests_mock.mock()
     def test_azure_v2(self, m):
@@ -559,16 +563,18 @@ class AuthProvidersTestCase(unittest.TestCase):
         response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
 
-        self.assertEqual(claims['name'], 'Nick Satterly', claims)
-        self.assertEqual(claims['preferred_username'], 'nick.satterly@hotmail.com', claims)
-        self.assertEqual(claims['provider'], 'azure', claims)
-        # self.assertEqual(claims['roles'], ['user'], claims)
-        self.assertEqual(claims['scope'], 'read write', claims)
-        self.assertEqual(claims['email'], 'nick.satterly@hotmail.com', claims)
-        self.assertEqual(claims.get('email_verified'), True, claims)
-        self.assertEqual(claims['customers'], ['Hotmail'], claims)
+        with self.app.test_request_context('/'):
+            claims = Jwt.parse(data['token'], verify=False)
+
+        self.assertEqual(claims.name, 'Nick Satterly', claims)
+        self.assertEqual(claims.preferred_username, 'nick.satterly@hotmail.com', claims)
+        self.assertEqual(claims.email, 'nick.satterly@hotmail.com', claims)
+        self.assertEqual(claims.provider, 'azure', claims)
+        # self.assertEqual(claims.roles, ['user'], claims)
+        self.assertEqual(claims.scopes, ['read', 'write'], claims)
+        self.assertEqual(claims.email_verified, True, claims)
+        self.assertEqual(claims.customers, ['Hotmail'], claims)
 
     @requests_mock.mock()
     def test_github(self, m):
@@ -702,15 +708,17 @@ class AuthProvidersTestCase(unittest.TestCase):
         response = self.client.post('/auth/github', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
 
-        self.assertEqual(claims['name'], 'Nick Satterly', claims)
-        self.assertEqual(claims['preferred_username'], '@satterly', claims)
-        self.assertEqual(claims['provider'], 'github', claims)
-        self.assertEqual(claims['orgs'], ['ganglia', 'alerta'], claims)
-        self.assertEqual(claims['scope'], 'read write', claims)
-        self.assertEqual(claims.get('email_verified'), False, claims)
-        self.assertEqual(claims['customers'], ['Alerta IO'], claims)
+        with self.app.test_request_context('/'):
+            claims = Jwt.parse(data['token'], verify=False)
+
+        self.assertEqual(claims.name, 'Nick Satterly', claims)
+        self.assertEqual(claims.preferred_username, '@satterly', claims)
+        self.assertEqual(claims.provider, 'github', claims)
+        self.assertEqual(claims.orgs, ['ganglia', 'alerta'], claims)
+        self.assertEqual(claims.scopes, ['read', 'write'], claims)
+        self.assertEqual(claims.email_verified, False, claims)
+        self.assertEqual(claims.customers, ['Alerta IO'], claims)
 
     @requests_mock.mock()
     def test_gitlab(self, m):
@@ -889,19 +897,21 @@ class AuthProvidersTestCase(unittest.TestCase):
         response = self.client.post('/auth/gitlab', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
 
-        self.assertEqual(claims['name'], 'Nick Satterly', claims)
-        self.assertEqual(claims['preferred_username'], 'satterly', claims)
-        self.assertEqual(claims['provider'], 'gitlab', claims)
-        self.assertEqual(claims['groups'],
+        with self.app.test_request_context('/'):
+            claims = Jwt.parse(data['token'], verify=False)
+
+        self.assertEqual(claims.name, 'Nick Satterly', claims)
+        self.assertEqual(claims.preferred_username, 'satterly', claims)
+        self.assertEqual(claims.email, 'nfsatterly@gmail.com', claims)
+        self.assertEqual(claims.provider, 'gitlab', claims)
+        self.assertEqual(claims.groups,
                          ['team-alerta', 'alertaio', 'alerta-project',
                              'team-alerta/core', 'team-alerta/cli', 'team-alerta/sdk'],
                          claims)
-        self.assertEqual(claims['scope'], 'read write', claims)
-        self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims.get('email_verified'), True, claims)
-        self.assertEqual(claims['customers'], ['Alerta IO'], claims)
+        self.assertEqual(claims.scopes, ['read', 'write'], claims)
+        self.assertEqual(claims.email_verified, True, claims)
+        self.assertEqual(claims.customers, ['Alerta IO'], claims)
 
     @requests_mock.mock()
     def test_google(self, m):
@@ -1056,16 +1066,18 @@ class AuthProvidersTestCase(unittest.TestCase):
         response = self.client.post('/auth/google', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
 
-        self.assertEqual(claims['name'], 'Nick Satterly', claims)
-        self.assertEqual(claims['preferred_username'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims['provider'], 'google', claims)
-        # self.assertEqual(claims['roles'], ['user'], claims)
-        self.assertEqual(claims['scope'], 'read write', claims)
-        self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims.get('email_verified'), True, claims)
-        self.assertEqual(claims['customers'], ['Google Inc.'], claims)
+        with self.app.test_request_context('/'):
+            claims = Jwt.parse(data['token'], verify=False)
+
+        self.assertEqual(claims.name, 'Nick Satterly', claims)
+        self.assertEqual(claims.preferred_username, 'nfsatterly@gmail.com', claims)
+        self.assertEqual(claims.email, 'nfsatterly@gmail.com', claims)
+        self.assertEqual(claims.provider, 'google', claims)
+        # self.assertEqual(claims.roles, ['user'], claims)
+        self.assertEqual(claims.scopes, ['read', 'write'], claims)
+        self.assertEqual(claims.email_verified, True, claims)
+        self.assertEqual(claims.customers, ['Google Inc.'], claims)
 
     @requests_mock.mock()
     def test_keycloak(self, m):
@@ -1286,16 +1298,18 @@ class AuthProvidersTestCase(unittest.TestCase):
         response = self.client.post('/auth/keycloak', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
 
-        self.assertEqual(claims['name'], 'Nicholas Satterly', claims)
-        self.assertEqual(claims['preferred_username'], 'nsatterl', claims)
-        self.assertEqual(claims['provider'], 'keycloak', claims)
-        self.assertEqual(claims['roles'], ['create-realm', 'devops', 'alerta-project', 'admin'], claims)
-        self.assertEqual(claims['scope'], 'admin read write', claims)
-        self.assertEqual(claims['email'], 'nick@alerta.dev', claims)
-        self.assertEqual(claims.get('email_verified'), True, claims)
-        self.assertEqual(claims['customers'], ['Domain Customer'], claims)
+        with self.app.test_request_context('/'):
+            claims = Jwt.parse(data['token'], verify=False)
+
+        self.assertEqual(claims.name, 'Nicholas Satterly', claims)
+        self.assertEqual(claims.preferred_username, 'nsatterl', claims)
+        self.assertEqual(claims.email, 'nick@alerta.dev', claims)
+        self.assertEqual(claims.provider, 'keycloak', claims)
+        self.assertEqual(claims.roles, ['create-realm', 'devops', 'alerta-project', 'admin'], claims)
+        self.assertEqual(claims.scopes, ['admin', 'read', 'write'], claims)
+        self.assertEqual(claims.email_verified, True, claims)
+        self.assertEqual(claims.customers, ['Domain Customer'], claims)
 
     @requests_mock.mock()
     def test_openid_auth0(self, m):
@@ -1465,16 +1479,18 @@ class AuthProvidersTestCase(unittest.TestCase):
         response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
 
-        self.assertEqual(claims['name'], 'admin@alerta.dev', claims)
-        self.assertEqual(claims['preferred_username'], 'admin', claims)
-        self.assertEqual(claims['provider'], 'openid', claims)
-        # self.assertEqual(claims['roles'], ['user'], claims)
-        self.assertEqual(claims['scope'], 'read write', claims)
-        self.assertEqual(claims['email'], 'admin@alerta.dev', claims)
-        self.assertEqual(claims.get('email_verified'), False, claims)
-        self.assertEqual(claims['customers'], ['Foo Corp'], claims)
+        with self.app.test_request_context('/'):
+            claims = Jwt.parse(data['token'], verify=False)
+
+        self.assertEqual(claims.name, 'admin@alerta.dev', claims)
+        self.assertEqual(claims.preferred_username, 'admin', claims)
+        self.assertEqual(claims.email, 'admin@alerta.dev', claims)
+        self.assertEqual(claims.provider, 'openid', claims)
+        # self.assertEqual(claims.roles, ['user'], claims)
+        self.assertEqual(claims.scopes, ['read', 'write'], claims)
+        self.assertEqual(claims.email_verified, False, claims)
+        self.assertEqual(claims.customers, ['Foo Corp'], claims)
 
     @requests_mock.mock()
     def test_openid_idp(self, m):
@@ -1636,13 +1652,15 @@ class AuthProvidersTestCase(unittest.TestCase):
         response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
 
-        self.assertEqual(claims['sub'], 'github|615057', claims)
-        self.assertNotIn('oid', claims)
-        self.assertEqual(claims['preferred_username'], 'satterly', claims)
-        self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims.get('email_verified'), True, claims)
+        with self.app.test_request_context('/'):
+            claims = Jwt.parse(data['token'], verify=False)
+
+        self.assertEqual(claims.subject, 'github|615057', claims)
+        self.assertEqual(claims.oid, None, claims)
+        self.assertEqual(claims.preferred_username, 'satterly', claims)
+        self.assertEqual(claims.email, 'nfsatterly@gmail.com', claims)
+        self.assertEqual(claims.email_verified, True, claims)
 
         # using Google credentials
         access_token = """
@@ -1676,13 +1694,15 @@ class AuthProvidersTestCase(unittest.TestCase):
         response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
 
-        self.assertEqual(claims['sub'], 'google-oauth2|104004764824066359390', claims)
-        self.assertEqual(claims['oid'], 'github|615057', claims)
-        self.assertEqual(claims['preferred_username'], 'nfsatterly', claims)
-        self.assertEqual(claims['email'], 'nfsatterly@gmail.com', claims)
-        self.assertEqual(claims.get('email_verified'), True, claims)
+        with self.app.test_request_context('/'):
+            claims = Jwt.parse(data['token'], verify=False)
+
+        self.assertEqual(claims.subject, 'google-oauth2|104004764824066359390', claims)
+        self.assertEqual(claims.oid, 'github|615057', claims)
+        self.assertEqual(claims.preferred_username, 'nfsatterly', claims)
+        self.assertEqual(claims.email, 'nfsatterly@gmail.com', claims)
+        self.assertEqual(claims.email_verified, True, claims)
 
     @requests_mock.mock()
     def test_openid_okta(self, m):
@@ -1900,14 +1920,16 @@ class AuthProvidersTestCase(unittest.TestCase):
         response = self.client.post('/auth/openid', data=authorization_grant, content_type='application/json')
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        claims = jwt.decode(data['token'], verify=False)
 
-        self.assertEqual(claims['scope'], 'read write', claims)
-        self.assertEqual(claims['name'], 'Nick Satterly', claims)
-        self.assertEqual(claims['preferred_username'], 'nfs@alerta.dev', claims)
-        self.assertEqual(claims['provider'], 'openid', claims)
-        self.assertEqual(claims['groups'], ['Everyone'], claims)
-        self.assertEqual(claims['scope'], 'read write', claims)
-        self.assertEqual(claims['email'], 'nfs@alerta.dev', claims)
-        self.assertEqual(claims.get('email_verified'), True, claims)
-        self.assertEqual(claims['customers'], ['Alerta Dev'], claims)
+        from alerta.models.token import Jwt
+        with self.app.test_request_context('/'):
+            claims = Jwt.parse(data['token'], verify=False)
+
+        self.assertEqual(claims.name, 'Nick Satterly', claims)
+        self.assertEqual(claims.preferred_username, 'nfs@alerta.dev', claims)
+        self.assertEqual(claims.email, 'nfs@alerta.dev', claims)
+        self.assertEqual(claims.provider, 'openid', claims)
+        self.assertEqual(claims.groups, ['Everyone'], claims)
+        self.assertEqual(claims.scopes, ['read', 'write'], claims)
+        self.assertEqual(claims.email_verified, True, claims)
+        self.assertEqual(claims.customers, ['Alerta Dev'], claims)

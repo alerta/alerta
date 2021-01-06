@@ -30,7 +30,7 @@ class CustomWebhooks:
                     self.webhooks[ep.name] = webhook()
                     app.logger.info("Server webhook '{}' loaded.".format(ep.name))
             except Exception as e:
-                app.logger.warn("Failed to load webhook '{}': {}".format(ep.name, e))
+                app.logger.warning("Failed to load webhook '{}': {}".format(ep.name, e))
 
     def iter_rules(self) -> Iterator[WebhookRule]:
         return iter([

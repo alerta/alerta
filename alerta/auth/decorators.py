@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import mohawk
 from flask import current_app, g, request
-from jwt import DecodeError, ExpiredSignature, InvalidAudience
+from jwt import DecodeError, ExpiredSignatureError, InvalidAudienceError
 
 from alerta.auth.hmac import HmacAuth
 from alerta.auth.utils import get_customers, not_authorized
@@ -74,9 +74,9 @@ def permission(scope=None):
                     jwt = Jwt.parse(token)
                 except DecodeError:
                     raise ApiError('Token is invalid', 401)
-                except ExpiredSignature:
+                except ExpiredSignatureError:
                     raise ApiError('Token has expired', 401)
-                except InvalidAudience:
+                except InvalidAudienceError:
                     raise ApiError('Invalid audience', 401)
                 g.user_id = jwt.oid or jwt.subject
                 g.login = jwt.preferred_username
