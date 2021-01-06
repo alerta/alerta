@@ -98,10 +98,6 @@ class Logger:
                     }
                 },
                 'loggers': {
-                    'root': {
-                        'level': log_level,
-                        'handlers': app.config['LOG_HANDLERS'],
-                    },
                     'alerta': {
                         'level': log_level,
                     },
@@ -120,7 +116,11 @@ class Logger:
                     'werkzeug': {
                         'level': 'WARNING',
                     },
-                }
+                },
+                'root': {
+                    'level': log_level,
+                    'handlers': app.config['LOG_HANDLERS'],
+                },
             })
 
             # from logging_tree import printout
