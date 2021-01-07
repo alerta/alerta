@@ -78,14 +78,14 @@ class Logger:
                         'class': 'logging.StreamHandler',
                         'formatter': log_format,
                         'level': log_level,
-                        'filters': ['requests', 'context'],
+                        'filters': ['context', 'requests'],
                         'stream': 'ext://sys.stdout'
                     },
                     'file': {
                         'class': 'logging.handlers.RotatingFileHandler',
                         'formatter': log_format,
                         'level': log_level,
-                        'filters': ['requests', 'context'],
+                        'filters': ['context', 'requests'],
                         'filename': log_file,
                         'maxBytes': app.config['LOG_MAX_BYTES'],
                         'backupCount': app.config['LOG_BACKUP_COUNT']
@@ -93,7 +93,7 @@ class Logger:
                     'wsgi': {
                         'class': 'logging.StreamHandler',
                         'formatter': log_format,
-                        'filters': ['requests', 'context'],
+                        'filters': ['context', 'requests'],
                         'stream': 'ext://flask.logging.wsgi_errors_stream'
                     }
                 },
@@ -144,7 +144,7 @@ class RequestFilter(logging.Filter):
     def filter(self, record):
 
         if hasattr(record, 'method'):
-            if record.method in self.methods:
+            if record.method == '-' or record.method in self.methods:
                 return True
         else:
             return True
