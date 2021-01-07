@@ -45,7 +45,7 @@ setuptools.setup(
         'Flask-Compress>=1.4.0',
         'Flask-Cors>=3.0.2',
         'mohawk',
-        'PyJWT',
+        'PyJWT>=2.0.0',
         'pymongo>=3.6',
         'pyparsing',
         'python-dateutil',

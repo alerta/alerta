@@ -83,8 +83,8 @@ def openid():
         raise ApiError(error_text)
 
     try:
+        jwt_header = jwt.get_unverified_header(token['id_token'])
         if current_app.config['OIDC_VERIFY_TOKEN']:
-            jwt_header = jwt.get_unverified_header(token['id_token'])
             public_key = jwt_key_set[jwt_header['kid']]
 
             id_token = jwt.decode(
@@ -95,7 +95,8 @@ def openid():
         else:
             id_token = jwt.decode(
                 token['id_token'],
-                verify=False
+                algorithms=jwt_header['alg'],
+                options={'verify_signature': False}
             )
     except Exception:
         current_app.logger.warning('No ID token in OpenID Connect token response.')

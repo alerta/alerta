@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 import jwt
 from flask import current_app
-from jwt import DecodeError, ExpiredSignature, InvalidAudience
+from jwt import DecodeError, ExpiredSignatureError, InvalidAudienceError
 
 from alerta.utils.response import absolute_url
 
@@ -49,7 +49,7 @@ class Jwt:
                 algorithms=algorithm,
                 audience=current_app.config['OAUTH2_CLIENT_ID'] or current_app.config['SAML2_ENTITY_ID'] or absolute_url()
             )
-        except (DecodeError, ExpiredSignature, InvalidAudience):
+        except (DecodeError, ExpiredSignatureError, InvalidAudienceError):
             raise
 
         return Jwt(
@@ -115,9 +115,8 @@ class Jwt:
         return data
 
     @property
-    def tokenize(self) -> str:
-        token = jwt.encode(self.serialize, key=current_app.config['SECRET_KEY'])
-        return token.decode('unicode_escape')
+    def tokenize(self, algorithm: str = 'HS256') -> str:
+        return jwt.encode(self.serialize, key=current_app.config['SECRET_KEY'], algorithm=algorithm)
 
     def __repr__(self) -> str:
         return 'Jwt(iss={!r}, sub={!r}, aud={!r}, exp={!r}, name={!r}, preferred_username={!r}, customers={!r})'.format(
