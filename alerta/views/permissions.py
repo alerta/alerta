@@ -7,6 +7,7 @@ from alerta.exceptions import ApiError
 from alerta.models.enums import ADMIN_SCOPES, Scope
 from alerta.models.permission import Permission
 from alerta.utils.audit import admin_audit_trail
+from alerta.utils.paging import Page
 from alerta.utils.response import jsonp
 
 from . import api
@@ -66,8 +67,10 @@ def get_perm(perm_id):
 @permission(Scope.read_perms)
 @jsonp
 def list_perms():
+
     query = qb.from_params(request.args)
-    perms = Permission.find_all(query)
+    total = Permission.count(query)
+    perms: list[Permission] = []
 
     admin_perm = Permission(
         match=current_app.config['DEFAULT_ADMIN_ROLE'],
@@ -87,24 +90,39 @@ def list_perms():
         want_scopes = request.args.getlist('scopes')
         if set(admin_perm.scopes) & set(want_scopes):
             perms.append(admin_perm)
+            total += 1
         if set(user_perm.scopes) & set(want_scopes):
             perms.append(user_perm)
+            total += 1
         if set(guest_perm.scopes) & set(want_scopes):
             perms.append(guest_perm)
+            total += 1
     else:
         perms.append(admin_perm)
         perms.append(user_perm)
         perms.append(guest_perm)
+        total += 3
+
+    paging = Page.from_params(request.args, total)
+    perms.extend(Permission.find_all(query, page=paging.page, page_size=paging.page_size))
 
     if perms:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             permissions=[perm.serialize for perm in perms],
-            total=len(perms)
+            total=total
         )
     else:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             message='not found',
             permissions=[],
             total=0

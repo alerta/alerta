@@ -9,6 +9,7 @@ from alerta.models.key import ApiKey
 from alerta.models.permission import Permission
 from alerta.utils.api import assign_customer
 from alerta.utils.audit import admin_audit_trail, write_audit_trail
+from alerta.utils.paging import Page
 from alerta.utils.response import jsonp
 
 from . import api
@@ -78,10 +79,12 @@ def get_key(key):
 @jsonp
 def list_keys():
     query = qb.from_params(request.args, customers=g.customers)
+    total = ApiKey.count(query)
+    paging = Page.from_params(request.args, total)
     if not current_app.config['AUTH_REQUIRED']:
-        keys = ApiKey.find_all(query)
+        keys = ApiKey.find_all(query, page=paging.page, page_size=paging.page_size)
     elif Scope.admin in g.scopes or Scope.admin_keys in g.scopes:
-        keys = ApiKey.find_all(query)
+        keys = ApiKey.find_all(query, page=paging.page, page_size=paging.page_size)
     elif not g.get('login', None):
         raise ApiError("Must define 'user' to list user keys", 400)
     else:
@@ -90,12 +93,20 @@ def list_keys():
     if keys:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             keys=[key.serialize for key in keys],
-            total=len(keys)
+            total=total
         )
     else:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             message='not found',
             keys=[],
             total=0

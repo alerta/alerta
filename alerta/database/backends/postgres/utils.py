@@ -74,6 +74,7 @@ class QueryBuilderImpl(QueryBuilder):
                 if sort_by.startswith('-'):
                     sort_by = sort_by[1:]
                     direction = 'DESC'
+
                 if sort_by == 'severity':
                     sort.append('s.code ' + direction)
                 elif sort_by == 'status':
@@ -88,10 +89,30 @@ class QueryBuilderImpl(QueryBuilder):
                     sort.append('last_receive_time ' + reverse_sort(direction))
                 elif sort_by == 'duplicateCount':
                     sort.append('duplicate_count ' + direction)
+
+                elif sort_by == 'group':
+                    sort.append('"group" ' + reverse_sort(direction))
+
+                elif sort_by == 'startTime':
+                    sort.append('start_time ' + reverse_sort(direction))
+                elif sort_by == 'endTime':
+                    sort.append('end_time ' + reverse_sort(direction))
+                elif sort_by == 'expireTime':
+                    sort.append('expire_time ' + reverse_sort(direction))
+                elif sort_by == 'lastUsedTime':
+                    sort.append('last_used_time ' + reverse_sort(direction))
+                elif sort_by == 'lastLogin':
+                    sort.append('last_login ' + reverse_sort(direction))
+                elif sort_by == 'updateTime':
+                    sort.append('update_time ' + reverse_sort(direction))
+                elif sort_by == 'emailVerified':
+                    sort.append('email_verified ' + reverse_sort(direction))
+
+                # default
                 else:
                     sort.append(sort_by + ' ' + direction)
         else:
-            sort.append('last_receive_time ' + reverse_sort(direction))
+            sort.append('id')
 
         # group-by
         group = params.getlist('group-by')

@@ -217,7 +217,10 @@ class Database(Base):
     def get_blackout(self, id, customers=None):
         raise NotImplementedError
 
-    def get_blackouts(self, query=None):
+    def get_blackouts(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_blackouts_count(self, query=None):
         raise NotImplementedError
 
     def is_blackout_period(self, alert):
@@ -237,7 +240,10 @@ class Database(Base):
     def get_heartbeat(self, id, customers=None):
         raise NotImplementedError
 
-    def get_heartbeats(self, query=None):
+    def get_heartbeats(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_heartbeats_count(self, query=None):
         raise NotImplementedError
 
     def delete_heartbeat(self, id):
@@ -251,7 +257,13 @@ class Database(Base):
     def get_key(self, key, user=None):
         raise NotImplementedError
 
-    def get_keys(self, query=None):
+    def get_keys(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_keys_by_user(self, user):
+        raise NotImplementedError
+
+    def get_keys_count(self, query=None):
         raise NotImplementedError
 
     def update_key(self, key, **kwargs):
@@ -271,7 +283,10 @@ class Database(Base):
     def get_user(self, id):
         raise NotImplementedError
 
-    def get_users(self, query=None):
+    def get_users(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_users_count(self, query=None):
         raise NotImplementedError
 
     def get_user_by_username(self, username):
@@ -309,7 +324,10 @@ class Database(Base):
     def get_group_users(self, id):
         raise NotImplementedError
 
-    def get_groups(self, query=None):
+    def get_groups(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_groups_count(self, query=None):
         raise NotImplementedError
 
     def update_group(self, id, **kwargs):
@@ -335,7 +353,10 @@ class Database(Base):
     def get_perm(self, id):
         raise NotImplementedError
 
-    def get_perms(self, query=None):
+    def get_perms(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_perms_count(self, query=None):
         raise NotImplementedError
 
     def update_perm(self, id, **kwargs):
@@ -355,7 +376,10 @@ class Database(Base):
     def get_customer(self, id):
         raise NotImplementedError
 
-    def get_customers(self, query=None):
+    def get_customers(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_customers_count(self, query=None):
         raise NotImplementedError
 
     def update_customer(self, id, **kwargs):

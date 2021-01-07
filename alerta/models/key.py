@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
-from alerta.app import db, key_helper, qb
+from alerta.app import db, key_helper
 from alerta.database.base import Query
 from alerta.models.enums import Scope
 from alerta.utils.format import DateTime
@@ -117,18 +117,22 @@ class ApiKey:
         return ApiKey.from_db(db.get_key(key, user))
 
     @staticmethod
-    def find_all(query: Query = None) -> List['ApiKey']:
+    def find_all(query: Query = None, page: int = 1, page_size: int = 1000) -> List['ApiKey']:
         """
         List all API keys.
         """
-        return [ApiKey.from_db(key) for key in db.get_keys(query)]
+        return [ApiKey.from_db(key) for key in db.get_keys(query, page, page_size)]
+
+    @staticmethod
+    def count(query: Query = None) -> int:
+        return db.get_keys_count(query)
 
     @staticmethod
     def find_by_user(user: str) -> List['ApiKey']:
         """
         List API keys for a user.
         """
-        return [ApiKey.from_db(key) for key in db.get_keys(qb.from_dict({'user': user}))]
+        return [ApiKey.from_db(key) for key in db.get_keys_by_user(user)]
 
     def update(self, **kwargs) -> 'ApiKey':
         kwargs['expireTime'] = DateTime.parse(kwargs['expireTime']) if 'expireTime' in kwargs else None

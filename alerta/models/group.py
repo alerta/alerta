@@ -132,8 +132,12 @@ class Group:
         return Group.from_db(db.get_group(id))
 
     @staticmethod
-    def find_all(query: Query = None) -> List['Group']:
-        return [Group.from_db(group) for group in db.get_groups(query)]
+    def find_all(query: Query = None, page: int = 1, page_size: int = 1000) -> List['Group']:
+        return [Group.from_db(group) for group in db.get_groups(query, page, page_size)]
+
+    @staticmethod
+    def count(query: Query = None) -> int:
+        return db.get_groups_count(query)
 
     def update(self, **kwargs) -> 'Group':
         return Group.from_db(db.update_group(self.id, **kwargs))
