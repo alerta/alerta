@@ -105,7 +105,7 @@ class GroupsTestCase(unittest.TestCase):
         response = self.client.get('/groups', headers=self.headers)
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertListEqual([g['name'] for g in data['groups']], ['Group 1 changed', 'Group 2'])
+        self.assertCountEqual([g['name'] for g in data['groups']], ['Group 1 changed', 'Group 2'])
 
         # create a user
         payload = {
@@ -132,7 +132,7 @@ class GroupsTestCase(unittest.TestCase):
         response = self.client.get('/group/' + group_id + '/users', headers=self.headers)
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertListEqual([u['name'] for u in data['users']], ['John Doe'])
+        self.assertCountEqual([u['name'] for u in data['users']], ['John Doe'])
 
         # create another user
         payload = {
@@ -159,7 +159,7 @@ class GroupsTestCase(unittest.TestCase):
         response = self.client.get('/group/' + group_id + '/users', headers=self.headers)
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertListEqual([u['name'] for u in data['users']], ['John Doe', 'Jane Doe'])
+        self.assertCountEqual([u['name'] for u in data['users']], ['John Doe', 'Jane Doe'])
 
         # add second user to second group
         response = self.client.put('/group/' + group2_id + '/user/' + user2_id, headers=self.headers)
@@ -170,19 +170,19 @@ class GroupsTestCase(unittest.TestCase):
         response = self.client.get('/group/' + group2_id + '/users', headers=self.headers)
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertListEqual([u['name'] for u in data['users']], ['Jane Doe'])
+        self.assertCountEqual([u['name'] for u in data['users']], ['Jane Doe'])
 
         # get groups for first user
         response = self.client.get('/user/' + user_id + '/groups', headers=self.headers)
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertListEqual([g['name'] for g in data['groups']], ['Group 1 changed'])
+        self.assertCountEqual([g['name'] for g in data['groups']], ['Group 1 changed'])
 
         # get groups for second user
         response = self.client.get('/user/' + user2_id + '/groups', headers=self.headers)
         self.assertEqual(response.status_code, 200, response.data)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertListEqual([g['name'] for g in data['groups']], ['Group 1 changed', 'Group 2'])
+        self.assertCountEqual([g['name'] for g in data['groups']], ['Group 1 changed', 'Group 2'])
 
         # delete groups
         response = self.client.delete('/group/' + group_id, headers=self.headers)

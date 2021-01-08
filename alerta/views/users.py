@@ -9,6 +9,7 @@ from alerta.models.enums import Scope
 from alerta.models.permission import Permission
 from alerta.models.user import User
 from alerta.utils.audit import admin_audit_trail, write_audit_trail
+from alerta.utils.paging import Page
 from alerta.utils.response import jsonp
 
 from . import api
@@ -130,18 +131,28 @@ def get_me_attributes():
 @jsonp
 def list_users():
     query = qb.from_params(request.args)
-    users = User.find_all(query)
+    total = User.count(query)
+    paging = Page.from_params(request.args, total)
+    users = User.find_all(query, page=paging.page, page_size=paging.page_size)
 
     if users:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             users=[user.serialize for user in users],
             domains=current_app.config['ALLOWED_EMAIL_DOMAINS'],
-            total=len(users)
+            total=total
         )
     else:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             message='not found',
             users=[],
             domains=current_app.config['ALLOWED_EMAIL_DOMAINS'],

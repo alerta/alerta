@@ -159,8 +159,12 @@ class Heartbeat:
 
     # search heartbeats
     @staticmethod
-    def find_all(query: Query = None) -> List['Heartbeat']:
-        return [Heartbeat.from_db(heartbeat) for heartbeat in db.get_heartbeats(query)]
+    def find_all(query: Query = None, page: int = 1, page_size: int = 1000) -> List['Heartbeat']:
+        return [Heartbeat.from_db(heartbeat) for heartbeat in db.get_heartbeats(query, page, page_size)]
+
+    @staticmethod
+    def count(query: Query = None) -> int:
+        return db.get_heartbeats_count(query)
 
     # delete a heartbeat
     def delete(self) -> bool:

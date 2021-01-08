@@ -723,13 +723,22 @@ class Backend(Database):
         """.format(customer='customer=ANY(%(customers)s)' if customers else '1=1')
         return self._fetchone(select, {'id': id, 'customers': customers})
 
-    def get_blackouts(self, query=None):
+    def get_blackouts(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """
             SELECT * FROM blackouts
-            WHERE {where}
+             WHERE {where}
+          ORDER BY {order}
+        """.format(where=query.where, order=query.sort)
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_blackouts_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM blackouts
+             WHERE {where}
         """.format(where=query.where)
-        return self._fetchall(select, query.vars)
+        return self._fetchone(select, query.vars).count
 
     def is_blackout_period(self, alert):
         select = """
@@ -842,13 +851,22 @@ class Backend(Database):
         """.format(customer='customer=%(customers)s' if customers else '1=1')
         return self._fetchone(select, {'id': id, 'like_id': id + '%', 'customers': customers})
 
-    def get_heartbeats(self, query=None):
+    def get_heartbeats(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """
             SELECT * FROM heartbeats
-            WHERE {where}
+             WHERE {where}
+          ORDER BY {order}
+        """.format(where=query.where, order=query.sort)
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_heartbeats_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM heartbeats
+             WHERE {where}
         """.format(where=query.where)
-        return self._fetchall(select, query.vars)
+        return self._fetchone(select, query.vars).count
 
     def delete_heartbeat(self, id):
         delete = """
@@ -876,13 +894,29 @@ class Backend(Database):
         """.format(user='"user"=%(user)s' if user else '1=1')
         return self._fetchone(select, {'key': key, 'user': user})
 
-    def get_keys(self, query=None):
+    def get_keys(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """
             SELECT * FROM keys
-            WHERE {where}
+             WHERE {where}
+          ORDER BY {order}
+        """.format(where=query.where, order=query.sort)
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_keys_by_user(self, user):
+        select = """
+            SELECT * FROM keys
+             WHERE "user"=%s
+        """
+        return self._fetchall(select, (user,))
+
+    def get_keys_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM keys
+             WHERE {where}
         """.format(where=query.where)
-        return self._fetchall(select, query.vars)
+        return self._fetchone(select, query.vars).count
 
     def update_key(self, key, **kwargs):
         update = """
@@ -939,13 +973,22 @@ class Backend(Database):
         select = """SELECT * FROM users WHERE id=%s"""
         return self._fetchone(select, (id,))
 
-    def get_users(self, query=None):
+    def get_users(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """
             SELECT * FROM users
-            WHERE {where}
+             WHERE {where}
+          ORDER BY {order}
+        """.format(where=query.where, order=query.sort)
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_users_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM users
+             WHERE {where}
         """.format(where=query.where)
-        return self._fetchall(select, query.vars)
+        return self._fetchone(select, query.vars).count
 
     def get_user_by_username(self, username):
         select = """SELECT * FROM users WHERE login=%s OR email=%s"""
@@ -1040,13 +1083,22 @@ class Backend(Database):
         select = """SELECT * FROM groups WHERE id=%s"""
         return self._fetchone(select, (id,))
 
-    def get_groups(self, query=None):
+    def get_groups(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """
             SELECT * FROM groups
-            WHERE {where}
+             WHERE {where}
+          ORDER BY {order}
+        """.format(where=query.where, order=query.sort)
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_groups_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM groups
+             WHERE {where}
         """.format(where=query.where)
-        return self._fetchall(select, query.vars)
+        return self._fetchone(select, query.vars).count
 
     def get_group_users(self, id):
         select = """
@@ -1121,13 +1173,22 @@ class Backend(Database):
         select = """SELECT * FROM perms WHERE id=%s"""
         return self._fetchone(select, (id,))
 
-    def get_perms(self, query=None):
+    def get_perms(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """
             SELECT * FROM perms
-            WHERE {where}
+             WHERE {where}
+          ORDER BY {order}
+        """.format(where=query.where, order=query.sort)
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_perms_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM perms
+             WHERE {where}
         """.format(where=query.where)
-        return self._fetchall(select, query.vars)
+        return self._fetchone(select, query.vars).count
 
     def update_perm(self, id, **kwargs):
         update = """
@@ -1186,13 +1247,22 @@ class Backend(Database):
         select = """SELECT * FROM customers WHERE id=%s"""
         return self._fetchone(select, (id,))
 
-    def get_customers(self, query=None):
+    def get_customers(self, query=None, page=None, page_size=None):
         query = query or Query()
         select = """
             SELECT * FROM customers
-            WHERE {where}
+             WHERE {where}
+          ORDER BY {order}
+        """.format(where=query.where, order=query.sort)
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_customers_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM customers
+             WHERE {where}
         """.format(where=query.where)
-        return self._fetchall(select, query.vars)
+        return self._fetchone(select, query.vars).count
 
     def update_customer(self, id, **kwargs):
         update = """

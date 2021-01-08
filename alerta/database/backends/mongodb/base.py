@@ -948,9 +948,13 @@ class Backend(Database):
 
         return self.get_db().blackouts.find_one(query)
 
-    def get_blackouts(self, query=None):
+    def get_blackouts(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return self.get_db().blackouts.find(query.where)
+        return self.get_db().blackouts.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+
+    def get_blackouts_count(self, query=None):
+        query = query or Query()
+        return self.get_db().blackouts.count_documents(query.where)
 
     def is_blackout_period(self, alert):
         query = dict()
@@ -1240,9 +1244,13 @@ class Backend(Database):
 
         return self.get_db().heartbeats.find_one(query)
 
-    def get_heartbeats(self, query=None):
+    def get_heartbeats(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return self.get_db().heartbeats.find(query.where)
+        return self.get_db().heartbeats.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+
+    def get_heartbeats_count(self, query=None):
+        query = query or Query()
+        return self.get_db().heartbeats.count_documents(query.where)
 
     def delete_heartbeat(self, id):
         response = self.get_db().heartbeats.delete_one({'_id': {'$regex': '^' + id}})
@@ -1276,9 +1284,16 @@ class Backend(Database):
         return self.get_db().keys.find_one(query)
 
     # list
-    def get_keys(self, query=None):
+    def get_keys(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return self.get_db().keys.find(query.where)
+        return self.get_db().keys.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+
+    def get_keys_by_user(self, user):
+        return self.get_db().keys.find({'user': user})
+
+    def get_keys_count(self, query=None):
+        query = query or Query()
+        return self.get_db().keys.count_documents(query.where)
 
     def update_key(self, key, **kwargs):
         return self.get_db().keys.find_one_and_update(
@@ -1330,9 +1345,13 @@ class Backend(Database):
         return self.get_db().users.find_one(query)
 
     # list
-    def get_users(self, query=None):
+    def get_users(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return self.get_db().users.find(query.where)
+        return self.get_db().users.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+
+    def get_users_count(self, query=None):
+        query = query or Query()
+        return self.get_db().users.count_documents(query.where)
 
     def get_user_by_username(self, username):
         if not username:
@@ -1413,9 +1432,13 @@ class Backend(Database):
         query = {'_id': id}
         return self.get_db().groups.find_one(query)
 
-    def get_groups(self, query=None):
+    def get_groups(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return self.get_db().groups.find(query.where)
+        return self.get_db().groups.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+
+    def get_groups_count(self, query=None):
+        query = query or Query()
+        return self.get_db().groups.count_documents(query.where)
 
     def get_group_users(self, id):
         pipeline = [
@@ -1482,9 +1505,13 @@ class Backend(Database):
         query = {'_id': id}
         return self.get_db().perms.find_one(query)
 
-    def get_perms(self, query=None):
+    def get_perms(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return self.get_db().perms.find(query.where)
+        return self.get_db().perms.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+
+    def get_perms_count(self, query=None):
+        query = query or Query()
+        return self.get_db().perms.count_documents(query.where)
 
     def update_perm(self, id, **kwargs):
         return self.get_db().perms.find_one_and_update(
@@ -1529,9 +1556,13 @@ class Backend(Database):
         query = {'_id': id}
         return self.get_db().customers.find_one(query)
 
-    def get_customers(self, query=None):
+    def get_customers(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return self.get_db().customers.find(query.where)
+        return self.get_db().customers.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+
+    def get_customers_count(self, query=None):
+        query = query or Query()
+        return self.get_db().customers.count_documents(query.where)
 
     def update_customer(self, id, **kwargs):
         return self.get_db().customers.find_one_and_update(
