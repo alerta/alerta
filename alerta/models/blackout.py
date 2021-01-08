@@ -197,8 +197,12 @@ class Blackout:
         return Blackout.from_db(db.get_blackout(id, customers))
 
     @staticmethod
-    def find_all(query: Query = None) -> List['Blackout']:
-        return [Blackout.from_db(blackout) for blackout in db.get_blackouts(query)]
+    def find_all(query: Query = None, page: int = 1, page_size: int = 1000) -> List['Blackout']:
+        return [Blackout.from_db(blackout) for blackout in db.get_blackouts(query, page, page_size)]
+
+    @staticmethod
+    def count(query: Query = None) -> int:
+        return db.get_blackouts_count(query)
 
     def update(self, **kwargs) -> 'Blackout':
         if kwargs.get('startTime'):

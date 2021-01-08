@@ -152,8 +152,12 @@ class User:
         return User.from_db(db.get_user_by_email(email))
 
     @staticmethod
-    def find_all(query: Query = None) -> List['User']:
-        return [User.from_db(user) for user in db.get_users(query)]
+    def find_all(query: Query = None, page: int = 1, page_size: int = 1000) -> List['User']:
+        return [User.from_db(user) for user in db.get_users(query, page, page_size)]
+
+    @staticmethod
+    def count(query: Query = None) -> int:
+        return db.get_users_count(query)
 
     def update_last_login(self) -> bool:
         return db.update_last_login(self.id)

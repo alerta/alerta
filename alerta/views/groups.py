@@ -8,6 +8,7 @@ from alerta.models.enums import Scope
 from alerta.models.group import Group, GroupUsers
 from alerta.models.user import User
 from alerta.utils.audit import admin_audit_trail
+from alerta.utils.paging import Page
 from alerta.utils.response import jsonp
 
 from . import api
@@ -80,17 +81,27 @@ def get_group_users(group_id):
 @jsonp
 def list_groups():
     query = qb.from_params(request.args)
-    groups = Group.find_all(query)
+    total = Group.count(query)
+    paging = Page.from_params(request.args, total)
+    groups = Group.find_all(query, page=paging.page, page_size=paging.page_size)
 
     if groups:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             groups=[group.serialize for group in groups],
-            total=len(groups)
+            total=total
         )
     else:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             message='not found',
             groups=[],
             total=0

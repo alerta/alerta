@@ -8,6 +8,7 @@ from alerta.models.blackout import Blackout
 from alerta.models.enums import Scope
 from alerta.utils.api import assign_customer
 from alerta.utils.audit import write_audit_trail
+from alerta.utils.paging import Page
 from alerta.utils.response import absolute_url, jsonp
 
 from . import api
@@ -63,17 +64,27 @@ def get_blackout(blackout_id):
 @jsonp
 def list_blackouts():
     query = qb.from_params(request.args, customers=g.customers)
-    blackouts = Blackout.find_all(query)
+    total = Blackout.count(query)
+    paging = Page.from_params(request.args, total)
+    blackouts = Blackout.find_all(query, page=paging.page, page_size=paging.page_size)
 
     if blackouts:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             blackouts=[blackout.serialize for blackout in blackouts],
-            total=len(blackouts)
+            total=total
         )
     else:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             message='not found',
             blackouts=[],
             total=0

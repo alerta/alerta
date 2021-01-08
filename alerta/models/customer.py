@@ -68,8 +68,12 @@ class Customer:
         return Customer.from_db(db.get_customer(id))
 
     @staticmethod
-    def find_all(query: Query = None) -> List['Customer']:
-        return [Customer.from_db(customer) for customer in db.get_customers(query)]
+    def find_all(query: Query = None, page: int = 1, page_size: int = 1000) -> List['Customer']:
+        return [Customer.from_db(customer) for customer in db.get_customers(query, page, page_size)]
+
+    @staticmethod
+    def count(query: Query = None) -> int:
+        return db.get_customers_count(query)
 
     def update(self, **kwargs) -> 'Customer':
         return Customer.from_db(db.update_customer(self.id, **kwargs))

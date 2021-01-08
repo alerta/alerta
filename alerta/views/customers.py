@@ -7,6 +7,7 @@ from alerta.exceptions import ApiError
 from alerta.models.customer import Customer
 from alerta.models.enums import Scope
 from alerta.utils.audit import admin_audit_trail
+from alerta.utils.paging import Page
 from alerta.utils.response import jsonp
 
 from . import api
@@ -55,20 +56,30 @@ def get_customer(customer_id):
 @jsonp
 def list_customers():
     query = qb.from_params(request.args, customers=g.customers)
+    total = Customer.count(query)
+    paging = Page.from_params(request.args, total)
     customers = [
-        c for c in Customer.find_all(query)
+        c for c in Customer.find_all(query, page=paging.page, page_size=paging.page_size)
         if Scope.admin in g.scopes or Scope.admin_customers in g.scopes or c.customer in g.customers
     ]
 
     if customers:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             customers=[customer.serialize for customer in customers],
-            total=len(customers)
+            total=total
         )
     else:
         return jsonify(
             status='ok',
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             message='not found',
             customers=[],
             total=0
