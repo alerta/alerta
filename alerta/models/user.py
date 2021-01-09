@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
@@ -11,6 +12,13 @@ from alerta.models.group import Group
 from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
+
+
+class UserStatus(str, Enum):
+
+    Active = 'active'
+    Inactive = 'inactive'
+    Unknown = 'unknown'  # aka 'stale'
 
 
 class User:
@@ -27,7 +35,7 @@ class User:
         self.login = login  # => g.login
         self.password = password  # NB: hashed password
         self.email = email
-        self.status = kwargs.get('status', None) or 'active'  # 'active', 'inactive', 'unknown'
+        self.status = kwargs.get('status', None) or UserStatus.Active
         self.roles = current_app.config['ADMIN_ROLES'] if self.email and self.email in current_app.config['ADMIN_USERS'] else roles
         self.attributes = kwargs.get('attributes', None) or dict()
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
@@ -48,7 +56,7 @@ class User:
 
     @property
     def is_active(self) -> bool:
-        return self.status == 'active'
+        return self.status == UserStatus.Active
 
     @classmethod
     def parse(cls, json: JSON) -> 'User':

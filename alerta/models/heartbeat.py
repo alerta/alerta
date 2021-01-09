@@ -2,6 +2,7 @@ import os
 import platform
 import sys
 from datetime import datetime, timedelta
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
@@ -13,6 +14,13 @@ from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
+
+
+class HeartbeatStatus(str, Enum):
+
+    OK = 'ok'
+    Slow = 'slow'
+    Expired = 'expired'  # aka 'stale'
 
 
 class Heartbeat:
@@ -63,11 +71,10 @@ class Heartbeat:
     @property
     def status(self) -> str:
         if self.since.total_seconds() > self.timeout:
-            return 'expired'  # aka 'stale'
+            return HeartbeatStatus.Expired
         elif self.latency > self.max_latency:
-            return 'slow'
-        else:
-            return 'ok'
+            return HeartbeatStatus.Slow
+        return HeartbeatStatus.OK
 
     @classmethod
     def parse(cls, json: JSON) -> 'Heartbeat':
