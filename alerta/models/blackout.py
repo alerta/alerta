@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
@@ -10,6 +11,13 @@ from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
+
+
+class BlackoutStatus(str, Enum):
+
+    Pending = 'pending'
+    Active = 'active'
+    Expired = 'expired'
 
 
 class Blackout:
@@ -57,16 +65,25 @@ class Blackout:
         elif self.tags:
             self.priority = 7
 
+    @property
+    def status(self):
         now = datetime.utcnow()
-        if self.start_time <= now and self.end_time > now:
-            self.status = 'active'
-            self.remaining = int((self.end_time - now).total_seconds())
-        elif self.start_time > now:
-            self.status = 'pending'
-            self.remaining = self.duration
-        elif self.end_time <= now:
-            self.status = 'expired'
-            self.remaining = 0
+        if self.start_time <= now < self.end_time:
+            return BlackoutStatus.Active
+        if self.start_time > now:
+            return BlackoutStatus.Pending
+        if self.end_time <= now:
+            return BlackoutStatus.Expired
+
+    @property
+    def remaining(self):
+        now = datetime.utcnow()
+        if self.start_time <= now < self.end_time:
+            return int((self.end_time - now).total_seconds())
+        if self.start_time > now:
+            return self.duration
+        if self.end_time <= now:
+            return 0
 
     @classmethod
     def parse(cls, json: JSON) -> 'Blackout':

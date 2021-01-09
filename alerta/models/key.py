@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
@@ -9,6 +10,12 @@ from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
+
+
+class ApiKeyStatus(str, Enum):
+
+    Active = 'active'
+    Expired = 'expired'
 
 
 class ApiKey:
@@ -28,6 +35,10 @@ class ApiKey:
     @property
     def type(self) -> str:
         return key_helper.scopes_to_type(self.scopes)
+
+    @property
+    def status(self) -> ApiKeyStatus:
+        return ApiKeyStatus.Expired if datetime.utcnow() > self.expire_time else ApiKeyStatus.Active
 
     @classmethod
     def parse(cls, json: JSON) -> 'ApiKey':
@@ -52,6 +63,7 @@ class ApiKey:
         return {
             'id': self.id,
             'key': self.key,
+            'status': self.status,
             'href': absolute_url('/key/' + self.key),
             'user': self.user,
             'scopes': self.scopes,
@@ -64,8 +76,8 @@ class ApiKey:
         }
 
     def __repr__(self) -> str:
-        return 'ApiKey(key={!r}, user={!r}, scopes={!r}, expireTime={!r}, customer={!r})'.format(
-            self.key, self.user, self.scopes, self.expire_time, self.customer)
+        return 'ApiKey(key={!r}, status={!r}, user={!r}, scopes={!r}, expireTime={!r}, customer={!r})'.format(
+            self.key, self.status, self.user, self.scopes, self.expire_time, self.customer)
 
     @classmethod
     def from_document(cls, doc: Dict[str, Any]) -> 'ApiKey':
