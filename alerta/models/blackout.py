@@ -45,6 +45,7 @@ class Blackout:
         self.start_time = start_time
         self.end_time = end_time
         self.duration = duration
+        self.remaining = kwargs.get('remaining', duration)
 
         self.user = kwargs.get('user', None)
         self.create_time = kwargs['create_time'] if 'create_time' in kwargs else datetime.utcnow()
@@ -74,16 +75,6 @@ class Blackout:
             return BlackoutStatus.Pending
         if self.end_time <= now:
             return BlackoutStatus.Expired
-
-    @property
-    def remaining(self):
-        now = datetime.utcnow()
-        if self.start_time <= now < self.end_time:
-            return int((self.end_time - now).total_seconds())
-        if self.start_time > now:
-            return self.duration
-        if self.end_time <= now:
-            return 0
 
     @classmethod
     def parse(cls, json: JSON) -> 'Blackout':
@@ -172,6 +163,7 @@ class Blackout:
             start_time=doc.get('startTime', None),
             end_time=doc.get('endTime', None),
             duration=doc.get('duration', None),
+            remaining=doc.get('remaining', None),
             user=doc.get('user', None),
             create_time=doc.get('createTime', None),
             text=doc.get('text', None)
@@ -192,6 +184,7 @@ class Blackout:
             start_time=rec.start_time,
             end_time=rec.end_time,
             duration=rec.duration,
+            remaining=rec.remaining,
             user=rec.user,
             create_time=rec.create_time,
             text=rec.text

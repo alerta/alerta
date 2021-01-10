@@ -68,7 +68,7 @@ def get_perm(perm_id):
 @jsonp
 def list_perms():
 
-    query = qb.from_params(request.args)
+    query = qb.perms.from_params(request.args)
     total = Permission.count(query)
     perms: list[Permission] = []
 

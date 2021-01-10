@@ -78,7 +78,7 @@ def get_key(key):
 @permission(Scope.read_keys)
 @jsonp
 def list_keys():
-    query = qb.from_params(request.args, customers=g.customers)
+    query = qb.keys.from_params(request.args, customers=g.customers)
     total = ApiKey.count(query)
     paging = Page.from_params(request.args, total)
     if not current_app.config['AUTH_REQUIRED']:

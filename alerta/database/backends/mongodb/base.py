@@ -9,6 +9,7 @@ from alerta.app import alarm_model
 from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
 from alerta.models.enums import ADMIN_SCOPES
+from alerta.models.heartbeat import HeartbeatStatus
 
 from .utils import Query
 
@@ -1247,6 +1248,35 @@ class Backend(Database):
     def get_heartbeats(self, query=None, page=None, page_size=None):
         query = query or Query()
         return self.get_db().heartbeats.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+
+    def get_heartbeats_by_status(self, status=None, query=None, page=None, page_size=None):
+        status = status or list()
+        query = query or Query()
+
+        max_latency = current_app.config['HEARTBEAT_MAX_LATENCY']
+
+        pipeline = [{'$match': query.where}]
+        if status:
+            pipeline.extend([
+                {'$addFields': {'timeoutInMs': {'$multiply': ['$timeout', 1000]}}},
+                {'$addFields': {'isExpired': {'$gt': [{'$subtract': [datetime.utcnow(), '$receiveTime']}, '$timeoutInMs']}}},
+                {'$addFields': {'isSlow': {'$gt': [{'$subtract': ['$receiveTime', '$createTime']}, max_latency]}}}
+            ])
+            match_or = list()
+            if HeartbeatStatus.OK in status:
+                match_or.append({'isExpired': False, 'isSlow': False})
+            if HeartbeatStatus.Expired in status:
+                match_or.append({'isExpired': True})
+            if HeartbeatStatus.Slow in status:
+                match_or.append({'isExpired': False, 'isSlow': True})
+            pipeline.append({'$match': {'$or': match_or}})
+
+        pipeline.extend([
+            {'$sort': {k: v for k, v in query.sort}},
+            {'$skip': (page - 1) * page_size},
+            {'$limit': page_size}
+        ])
+        return self.get_db().heartbeats.aggregate(pipeline)
 
     def get_heartbeats_count(self, query=None):
         query = query or Query()
