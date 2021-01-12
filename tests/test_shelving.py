@@ -12,7 +12,10 @@ class ShelvingTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
-            'PLUGINS': []
+            'PLUGINS': ['timeout'],
+            'ALERT_TIMEOUT': 24680,
+            'ACK_TIMEOUT': 98765,
+            'SHELVE_TIMEOUT': 12345
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -45,7 +48,7 @@ class ShelvingTestCase(unittest.TestCase):
     def tearDown(self):
         db.destroy()
 
-    def test_alarm_shelving(self):
+    def test_shelved_status(self):
 
         self.headers = {
             'Authorization': 'Key %s' % self.admin_api_key.key,
@@ -168,3 +171,29 @@ class ShelvingTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'open')
+
+    def test_shelve_action(self):
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # new alert should be status=open
+        response = self.client.post('/alert', data=json.dumps(self.alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'open')
+
+        alert_id = data['id']
+
+        # shelve alert
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps({'action': 'shelve', 'timeout': 2222}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'shelved')
+        self.assertEqual(data['alert']['history'][-1]['timeout'], 12345)
+        self.assertEqual(data['alert']['history'][-1]['text'], 'shelve operator action (using server timeout value)')
