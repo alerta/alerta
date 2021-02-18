@@ -33,6 +33,11 @@ class BlackoutPeriod(AlertaException):
     pass
 
 
+class TwilioAuth(AlertaException):
+    """Twilio is missing credentials. SID or AuthToken missing from setup"""
+    pass
+
+
 class ForwardingLoop(AlertaException):
     """Forwarding loop detected."""
     pass

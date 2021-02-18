@@ -237,7 +237,7 @@ GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
 
 # Plugins
-PLUGINS = ['remote_ip', 'reject', 'heartbeat', 'blackout', 'forwarder']
+PLUGINS = ['remote_ip', 'reject', 'heartbeat', 'blackout', 'forwarder', 'twilio_rule']
 PLUGINS_RAISE_ON_ERROR = True  # raise RuntimeError exception on first failure
 
 # reject plugin settings
