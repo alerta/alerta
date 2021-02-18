@@ -46,6 +46,11 @@ class BlackoutPeriod(BaseError):
     pass
 
 
+class TwilioAuth(BaseError):
+    """Twilio is missing credentials. SID or AuthToken missing from setup"""
+    pass
+
+
 class ForwardingLoop(BaseError):
     """Forwarding loop detected."""
     pass

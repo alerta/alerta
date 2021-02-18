@@ -69,6 +69,7 @@ setuptools.setup(
             'reject = alerta.plugins.reject:RejectPolicy',
             'heartbeat = alerta.plugins.heartbeat:HeartbeatReceiver',
             'blackout = alerta.plugins.blackout:BlackoutHandler',
+            'twilio_rule = alerta.plugins.twilio_rule:TwilioRulesHandler',
             'acked_by = alerta.plugins.acked_by:AckedBy',
             'escalate = alerta.plugins.escalate:EscalateSeverity',
             'forwarder = alerta.plugins.forwarder:Forwarder',

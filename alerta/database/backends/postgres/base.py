@@ -143,7 +143,7 @@ class Backend(Database):
     def destroy(self):
         conn = self.connect()
         cursor = conn.cursor()
-        for table in ['alerts', 'blackouts', 'customers', 'groups', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
+        for table in ['alerts', 'blackouts', 'twilio_rules', 'customers', 'groups', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
             cursor.execute(f'DROP TABLE IF EXISTS {table}')
         conn.commit()
         conn.close()
@@ -880,6 +880,113 @@ class Backend(Database):
     def delete_blackout(self, id):
         delete = """
             DELETE FROM blackouts
+            WHERE id=%s
+            RETURNING id
+        """
+        return self._deleteone(delete, (id,), returning=True)
+
+    # TWILIO_RULES
+
+    def create_twilio_rule(self, twilio_rule):
+        insert = """
+            INSERT INTO twilio_rules (id, priority, environment, type, service, resource, event, "group", tags,
+                customer, start_time, end_time, "user", create_time, text, from_number, to_numbers, days, severity)
+            VALUES (%(id)s, %(priority)s, %(environment)s, %(type)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s,
+                %(customer)s, %(start_time)s, %(end_time)s, %(user)s, %(create_time)s, %(text)s, %(from_number)s, %(to_numbers)s, %(days)s, %(severity)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(twilio_rule))
+
+    def get_twilio_rule(self, id, customers=None):
+        select = """
+            SELECT * FROM twilio_rules
+            WHERE id=%(id)s
+              AND {customer}
+        """.format(customer='customer=ANY(%(customers)s)' if customers else '1=1')
+        return self._fetchone(select, {'id': id, 'customers': customers})
+
+    def get_twilio_rules(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        select = """
+            SELECT * FROM twilio_rules
+             WHERE {where}
+          ORDER BY {order}
+        """.format(where=query.where, order=query.sort)
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_twilio_rules_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM twilio_rules
+             WHERE {where}
+        """.format(where=query.where)
+        return self._fetchone(select, query.vars).count
+
+    def get_twilio_rules_active(self, alert):
+        select = """
+            SELECT *
+            FROM twilio_rules
+            WHERE (start_time IS NULL OR start_time <= %(time)s) AND (end_time IS NULL OR end_time > %(time)s)
+              AND (days='{}' OR ARRAY[%(day)s] <@ days)
+              AND environment=%(environment)s
+              AND (severity='{}' OR ARRAY[%(severity)s] <@ severity)
+              AND (resource IS NULL OR resource=%(resource)s)
+              AND (service='{}' OR service <@ %(service)s)
+              AND (event IS NULL OR event=%(event)s)
+              AND ("group" IS NULL OR "group"=%(group)s)
+              AND (tags='{}' OR tags <@ %(tags)s)
+        """
+        if current_app.config['CUSTOMER_VIEWS']:
+            select += ' AND (customer IS NULL OR customer=%(customer)s)'
+        return self._fetchall(select, vars(alert))
+
+    def update_twilio_rule(self, id, **kwargs):
+        update = """
+            UPDATE twilio_rules
+            SET
+        """
+        if kwargs.get('environment') is not None:
+            update += 'environment=%(environment)s, '
+        if kwargs.get('severity') is not None:
+            update += 'severity=%(severity)s, '
+        if kwargs.get('type') is not None:
+            update += 'type=%(type)s, '
+        if 'fromNumber' in kwargs:
+            update += 'from_number=%(fromNumber)s, '
+        if 'toNumbers' in kwargs:
+            update += 'to_numbers=%(toNumbers)s, '
+        if 'startTime' in kwargs:
+            update += 'start_time=%(startTime)s, '
+        if 'endTime' in kwargs:
+            update += 'end_time=%(endTime)s, '
+        if 'days' in kwargs:
+            update += 'days=%(days)s, '
+        if 'service' in kwargs:
+            update += 'service=%(service)s, '
+        if 'resource' in kwargs:
+            update += 'resource=%(resource)s, '
+        if 'event' in kwargs:
+            update += 'event=%(event)s, '
+        if 'group' in kwargs:
+            update += '"group"=%(group)s, '
+        if 'tags' in kwargs:
+            update += 'tags=%(tags)s, '
+        if 'customer' in kwargs:
+            update += 'customer=%(customer)s, '
+        if 'text' in kwargs:
+            update += 'text=%(text)s, '
+        update += """
+            "user"=COALESCE(%(user)s, "user")
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs['id'] = id
+        kwargs['user'] = kwargs.get('user')
+        return self._updateone(update, kwargs, returning=True)
+
+    def delete_twilio_rule(self, id):
+        delete = """
+            DELETE FROM twilio_rules
             WHERE id=%s
             RETURNING id
         """

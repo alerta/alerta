@@ -1061,6 +1061,106 @@ class Backend(Database):
         response = self.get_db().blackouts.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
 
+    # TWILIO_RULES
+
+    def create_twilio_rule(self, twilio_rule):
+        data = {
+            '_id': twilio_rule.id,
+            'priority': twilio_rule.priority,
+            'environment': twilio_rule.environment,
+            'type': twilio_rule.type,
+            'user': twilio_rule.user,
+            'createTime': twilio_rule.create_time,
+            'text': twilio_rule.text,
+            'from_number': twilio_rule.from_number,
+            'to_numbers': twilio_rule.to_numbers
+        }
+        if twilio_rule.start_time:
+            data['startTime'] = twilio_rule.start_time.hour + twilio_rule.start_time.minute / 100
+            data['endTime'] = twilio_rule.end_time.hour + twilio_rule.end_time.minute / 100
+        if twilio_rule.days:
+            data['days'] = twilio_rule.days
+        if twilio_rule.severity:
+            data['severity'] = twilio_rule.severity
+        if twilio_rule.service:
+            data['service'] = twilio_rule.service
+        if twilio_rule.resource:
+            data['resource'] = twilio_rule.resource
+        if twilio_rule.event:
+            data['event'] = twilio_rule.event
+        if twilio_rule.group:
+            data['group'] = twilio_rule.group
+        if twilio_rule.tags:
+            data['tags'] = twilio_rule.tags
+        if twilio_rule.customer:
+            data['customer'] = twilio_rule.customer
+
+        if self.get_db().twilio_rules.insert_one(data).inserted_id == twilio_rule.id:
+            return data
+
+    def get_twilio_rule(self, id: str, customers: list = None):
+        query = {'_id': id}
+
+        if customers:
+            query['customer'] = {'$in': customers}
+
+        return self.get_db().twilio_rules.find_one(query)
+
+    def get_twilio_rules(self, query: Query = None, page: int = None, page_size: int = None):
+        query = query or Query()
+        return self.get_db().twilio_rules.find(query.where, sort=query.sort)\
+            .skip((page - 1) * page_size).limit(page_size)
+
+    def get_twilio_rules_count(self, query: Query = None):
+        query = query or Query()
+        return self.get_db().twilio_rules.count_documents(query.where)
+
+    def get_twilio_rules_active(self, alert):
+        query = dict()
+        query['environment'] = alert.environment
+        query['$and'] = [
+            {'$or': [
+                {'startTime': None},
+                {'startTime': {'$lte': alert.time.hour + alert.time.minute / 100}}
+            ]},
+            {'$or': [{'endTime': None}, {'endTime': {'$gt': alert.time.hour + alert.time.minute / 100}}]},
+            {'$or': [{'days': None}, {'days': {'$in': [alert.day]}}]},
+            {'$or': [
+                {'severity': None},
+                {'severity': {'$in': [alert.severity]}}
+            ]},
+            {'$or': [{'resource': None}, {'resource': alert.resource}]},
+            {'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}},
+            {'$or': [{'event': None}, {'event': alert.event}]},
+            {'$or': [{'group': None}, {'group': alert.group}]},
+            {'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}},
+        ]
+
+        if current_app.config['CUSTOMER_VIEWS']:
+            query['$and'].append({'$or': [
+                {'customer': None},
+                {'customer': alert.customer}
+            ]})
+        return self.get_db().twilio_rules.find(query)
+
+    def update_twilio_rule(self, id, **kwargs):
+        if 'startTime' in kwargs:
+            start_split = kwargs['startTime'].split(':')
+            kwargs['startTime'] = float(start_split[0]) + float(start_split[1]) / 100
+        if 'endTime' in kwargs:
+            end_split = kwargs['endTime'].split(':')
+            kwargs['endTime'] = float(end_split[0]) + float(end_split[1]) / 100
+
+        return self.get_db().twilio_rules.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
+    def delete_twilio_rule(self, id):
+        response = self.get_db().twilio_rules.delete_one({'_id': id})
+        return True if response.deleted_count == 1 else False
+
     # HEARTBEATS
 
     def upsert_heartbeat(self, heartbeat):

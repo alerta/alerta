@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional  # noqa
 from typing import Any, Dict, List, Tuple, Union
 from uuid import uuid4
+from alerta.models.twilio_rule import TwilioRule
 
 from flask import current_app, g
 
@@ -64,6 +65,8 @@ class Alert:
         self.origin = kwargs.get('origin', None) or f'{os.path.basename(sys.argv[0])}/{platform.uname()[1]}'
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'exceptionAlert'
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
+        self.day = self.create_time.strftime("%a")
+        self.time = self.create_time.time()
         self.timeout = timeout
         self.raw_data = kwargs.get('raw_data', None)
         self.customer = kwargs.get('customer', None)
@@ -146,7 +149,8 @@ class Alert:
             'lastReceiveId': self.last_receive_id,
             'lastReceiveTime': self.last_receive_time,
             'updateTime': self.update_time,
-            'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)]
+            'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)],
+            'twilioRules': [twilio_rule.serialize for twilio_rule in self.get_twilio_rules()]
         }
 
     def get_id(self, short: bool = False) -> str:
@@ -424,6 +428,12 @@ class Alert:
     def is_suppressed(self) -> bool:
         """Is the alert status 'blackout'?"""
         return alarm_model.is_suppressed(self)
+
+    def get_twilio_rules(self) -> 'list[TwilioRule]':
+        if not self.duplicate_count or self.duplicate_count == 0:
+            return [TwilioRule.from_db(twilio_rule) for twilio_rule in db.get_twilio_rules_active(self)]
+        else:
+            return []
 
     # set alert status
     def set_status(self, status: str, text: str = '', timeout: int = None) -> 'Alert':

@@ -245,6 +245,29 @@ class Database(Base):
     def delete_blackout(self, id):
         raise NotImplementedError
 
+    # TWILIO RULE
+
+    def create_twilio_rule(self, twilio_rule):
+        raise NotImplementedError
+
+    def get_twilio_rule(self, id, customers=None):
+        raise NotImplementedError
+
+    def get_twilio_rules(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_twilio_rules_count(self, query=None):
+        raise NotImplementedError
+
+    def get_twilio_rules_active(self, alert):
+        raise NotImplementedError
+
+    def update_twilio_rule(self, id, **kwargs):
+        raise NotImplementedError
+
+    def delete_twilio_rule(self, id):
+        raise NotImplementedError
+
     # HEARTBEATS
 
     def upsert_heartbeat(self, heartbeat):
