@@ -3,8 +3,9 @@ from flask_cors import cross_origin
 
 from alerta.app import custom_webhooks
 from alerta.auth.decorators import permission
-from alerta.exceptions import (ApiError, BlackoutPeriod, HeartbeatReceived,
-                               RateLimit, RejectException)
+from alerta.exceptions import (AlertaException, ApiError, BlackoutPeriod,
+                               ForwardingLoop, HeartbeatReceived, RateLimit,
+                               RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 from alerta.utils.api import assign_customer, process_alert
@@ -32,6 +33,8 @@ def custom(webhook, path):
             query_string=request.args,
             payload=request.get_json() or request.form or request.get_data(as_text=True)
         )
+    except AlertaException as e:
+        raise ApiError(e.message, code=e.code, errors=e.errors)
     except Exception as e:
         raise ApiError(str(e), 400)
 
@@ -56,12 +59,16 @@ def custom(webhook, path):
             except RateLimit as e:
                 audit_trail_alert(event='alert-rate-limited')
                 return jsonify(status='error', message=str(e), id=alert.id), 429
-            except HeartbeatReceived as e:
+            except HeartbeatReceived as heartbeat:
                 audit_trail_alert(event='alert-heartbeat')
-                return jsonify(status='ok', message=str(e), id=alert.id), 202
+                return jsonify(status='ok', message=str(heartbeat), id=heartbeat.id), 202
             except BlackoutPeriod as e:
                 audit_trail_alert(event='alert-blackout')
                 return jsonify(status='ok', message=str(e), id=alert.id), 202
+            except ForwardingLoop as e:
+                return jsonify(status='ok', message=str(e)), 202
+            except AlertaException as e:
+                raise ApiError(e.message, code=e.code, errors=e.errors)
             except Exception as e:
                 raise ApiError(str(e), 500)
 
