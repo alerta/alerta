@@ -6,6 +6,7 @@ from uuid import uuid4
 from flask import jsonify
 
 from alerta.app import create_app, custom_webhooks, db
+from alerta.exceptions import AlertaException
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
@@ -1074,6 +1075,7 @@ class WebhooksTestCase(unittest.TestCase):
         custom_webhooks.webhooks['form'] = DummyFormWebhook()
         custom_webhooks.webhooks['multipart'] = DummyMultiPartFormWebhook()
         custom_webhooks.webhooks['userdefined'] = DummyUserDefinedWebhook()
+        custom_webhooks.webhooks['teapot'] = TeapotWebhook()
 
         # test json payload
         response = self.client.post('/webhooks/json/bar/baz?foo=bar&api-key={}'.format(self.api_key.key), json={'baz': 'quux'}, content_type='application/json')
@@ -1121,6 +1123,18 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['status'], 'ok')
         self.assertEqual(data['message'], 'This is a test user-defined response')
         self.assertEqual(data['teapot'], True)
+
+        # test exception response
+        response = self.client.post('/webhooks/teapot?coffee=1&api-key={}'.format(self.api_key.key),
+                                    json={'baz': 'quux'}, content_type='application/json')
+        self.assertEqual(response.status_code, 418)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'error')
+        self.assertEqual(data['message'], "I'm a teapot")
+        self.assertCountEqual(data['errors'], [
+            'server refuses to brew coffee because it is, permanently, a teapot',
+            'See https://tools.ietf.org/html/rfc2324'
+        ])
 
 
 class VmwareWebhook(WebhookBase):
@@ -1172,7 +1186,7 @@ class DummyTextWebhook(WebhookBase):
 
 class DummyFormWebhook(WebhookBase):
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
         return Alert(
             resource=query_string['foo'],
             event='Say {} to {}'.format(payload['say'], payload['to']),
@@ -1183,7 +1197,7 @@ class DummyFormWebhook(WebhookBase):
 
 class DummyMultiPartFormWebhook(WebhookBase):
 
-    def incoming(self, query_string, payload):
+    def incoming(self, path, query_string, payload):
         return Alert(
             resource=query_string['foo'],
             event=payload['field1'],
@@ -1200,3 +1214,13 @@ class DummyUserDefinedWebhook(WebhookBase):
             message='This is a test user-defined response',
             teapot=True
         ), 418
+
+
+class TeapotWebhook(WebhookBase):
+
+    def incoming(self, path, query_string, payload):
+        raise AlertaException("I'm a teapot", code=418,
+                              errors=[
+                                  'server refuses to brew coffee because it is, permanently, a teapot',
+                                  'See https://tools.ietf.org/html/rfc2324'
+                              ])

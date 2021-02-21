@@ -5,12 +5,13 @@ from flask_cors import cross_origin
 
 from alerta.app import qb
 from alerta.auth.decorators import permission
-from alerta.exceptions import (ApiError, BlackoutPeriod, ForwardingLoop,
-                               HeartbeatReceived, InvalidAction, RateLimit,
-                               RejectException)
+from alerta.exceptions import (AlertaException, ApiError, BlackoutPeriod,
+                               ForwardingLoop, HeartbeatReceived,
+                               InvalidAction, RateLimit, RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 from alerta.models.metrics import Timer, timer
+from alerta.models.note import Note
 from alerta.models.switch import Switch
 from alerta.utils.api import (assign_customer, process_action, process_alert,
                               process_delete, process_note, process_status)
@@ -18,7 +19,6 @@ from alerta.utils.audit import write_audit_trail
 from alerta.utils.paging import Page
 from alerta.utils.response import absolute_url, jsonp
 
-from ..models.note import Note
 from . import api
 
 receive_timer = Timer('alerts', 'received', 'Received alerts', 'Total time and number of received alerts')
@@ -65,6 +65,8 @@ def receive():
         return jsonify(status='ok', message=str(e), id=alert.id), 202
     except ForwardingLoop as e:
         return jsonify(status='ok', message=str(e)), 202
+    except AlertaException as e:
+        raise ApiError(e.message, code=e.code, errors=e.errors)
     except Exception as e:
         raise ApiError(str(e), 500)
 
@@ -120,6 +122,8 @@ def set_status(alert_id):
                                user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
                                request=request)
         raise ApiError(str(e), 400)
+    except AlertaException as e:
+        raise ApiError(e.message, code=e.code, errors=e.errors)
     except Exception as e:
         raise ApiError(str(e), 500)
 
@@ -163,6 +167,8 @@ def action_alert(alert_id):
         raise ApiError(str(e), 409)
     except ForwardingLoop as e:
         return jsonify(status='ok', message=str(e)), 202
+    except AlertaException as e:
+        raise ApiError(e.message, code=e.code, errors=e.errors)
     except Exception as e:
         raise ApiError(str(e), 500)
 
@@ -276,6 +282,8 @@ def delete_alert(alert_id):
                                user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
                                request=request)
         raise ApiError(str(e), 400)
+    except AlertaException as e:
+        raise ApiError(e.message, code=e.code, errors=e.errors)
     except Exception as e:
         raise ApiError(str(e), 500)
 
@@ -573,7 +581,7 @@ def add_note(alert_id):
     note_text = request.json.get('text') or request.json.get('note')
 
     if not note_text:
-        raise ApiError("must supply 'note' text")
+        raise ApiError("must supply 'note' text", 400)
 
     customers = g.get('customers', None)
     alert = Alert.find_by_id(alert_id, customers)
@@ -581,8 +589,20 @@ def add_note(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    alert, note_text = process_note(alert, note_text)
-    note = alert.add_note(note_text)
+    try:
+        alert, note_text = process_note(alert, note_text)
+        note = alert.add_note(note_text)
+    except RejectException as e:
+        write_audit_trail.send(current_app._get_current_object(), event='alert-note-rejected', message='',
+                               user=g.login, customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note',
+                               request=request)
+        raise ApiError(str(e), 400)
+    except ForwardingLoop as e:
+        return jsonify(status='ok', message=str(e)), 202
+    except AlertaException as e:
+        raise ApiError(e.message, code=e.code, errors=e.errors)
+    except Exception as e:
+        raise ApiError(str(e), 500)
 
     write_audit_trail.send(current_app._get_current_object(), event='alert-note-added', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note', request=request)

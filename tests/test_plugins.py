@@ -4,7 +4,7 @@ import unittest
 from uuid import uuid4
 
 from alerta.app import create_app, db, plugins
-from alerta.exceptions import InvalidAction
+from alerta.exceptions import AlertaException, InvalidAction
 from alerta.plugins import PluginBase
 
 
@@ -51,6 +51,16 @@ class PluginsTestCase(unittest.TestCase):
             'service': ['Network'],
             'severity': 'critical',
             'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'tags': []
+        }
+
+        self.coffee_alert = {
+            'event': 'coffee_pot',
+            'resource': self.resource,
+            'environment': 'Staging',
+            'service': ['Network'],
+            'severity': 'critical',
+            'text': 'coffee alert',
             'tags': []
         }
 
@@ -202,6 +212,80 @@ class PluginsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 409)
 
         del plugins.plugins['action3']
+
+    def test_im_a_teapot(self):
+
+        plugins.plugins['teapot'] = Teapot()
+
+        # send coffee alert
+        response = self.client.post('/alert', json=self.coffee_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 418)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], "I'm a teapot")
+        self.assertCountEqual(data['errors'], [
+            'server refuses to brew coffee because it is, permanently, a teapot',
+            'See https://tools.ietf.org/html/rfc2324'
+        ])
+
+        # send non-coffee alert
+        response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        alert_id = data['id']
+
+        # set status to coffee
+        payload = {
+            'status': 'coffee',
+            'text': ''
+        }
+        response = self.client.put('/alert/' + alert_id + '/status', json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 418)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], "I'm a teapot")
+        self.assertCountEqual(data['errors'], [
+            'server refuses to brew coffee because it is, permanently, a teapot',
+            'See https://tools.ietf.org/html/rfc2324'
+        ])
+
+        # coffee action
+        payload = {
+            'action': 'coffee',
+            'text': ''
+        }
+        response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 418)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], "I'm a teapot")
+        self.assertCountEqual(data['errors'], [
+            'server refuses to brew coffee because it is, permanently, a teapot',
+            'See https://tools.ietf.org/html/rfc2324'
+        ])
+
+        # coffee note
+        payload = {
+            'text': 'coffee'
+        }
+        response = self.client.put('/alert/' + alert_id + '/note', json=payload, headers=self.headers)
+        self.assertEqual(response.status_code, 418)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], "I'm a teapot")
+        self.assertCountEqual(data['errors'], [
+            'server refuses to brew coffee because it is, permanently, a teapot',
+            'See https://tools.ietf.org/html/rfc2324'
+        ])
+
+        # delete non-coffee alert
+        response = self.client.delete('/alert/' + alert_id, headers=self.headers)
+        self.assertEqual(response.status_code, 418)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], "I'm a teapot")
+        self.assertCountEqual(data['errors'], [
+            'server refuses to brew coffee because it is, permanently, a teapot',
+            'See https://tools.ietf.org/html/rfc2324'
+        ])
+
+        del plugins.plugins['teapot']
 
     def test_take_note(self):
 
@@ -536,3 +620,55 @@ class CustDeletePlugin2(PluginBase):
 
     def delete(self, alert, **kwargs):
         return True
+
+
+class Teapot(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        if 'coffee' in alert.text:
+            raise AlertaException("I'm a teapot", code=418,
+                                  errors=[
+                                      'server refuses to brew coffee because it is, permanently, a teapot',
+                                      'See https://tools.ietf.org/html/rfc2324'
+                                  ])
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        if 'coffee' in alert.text:
+            raise AlertaException("I'm a teapot", code=418,
+                                  errors=[
+                                      'server refuses to brew coffee because it is, permanently, a teapot',
+                                      'See https://tools.ietf.org/html/rfc2324'
+                                  ])
+
+    def status_change(self, alert, status, text, **kwargs):
+        if status != 'tea':
+            raise AlertaException("I'm a teapot", code=418,
+                                  errors=[
+                                      'server refuses to brew coffee because it is, permanently, a teapot',
+                                      'See https://tools.ietf.org/html/rfc2324'
+                                  ])
+
+    def take_action(self, alert, action, text, **kwargs):
+        if action != 'tea':
+            raise AlertaException("I'm a teapot", code=418,
+                                  errors=[
+                                      'server refuses to brew coffee because it is, permanently, a teapot',
+                                      'See https://tools.ietf.org/html/rfc2324'
+                                  ])
+        return alert, action, text
+
+    def take_note(self, alert, text, **kwargs):
+        if 'coffee' in text:
+            raise AlertaException("I'm a teapot", code=418,
+                                  errors=[
+                                      'server refuses to brew coffee because it is, permanently, a teapot',
+                                      'See https://tools.ietf.org/html/rfc2324'
+                                  ])
+
+    def delete(self, alert, **kwargs):
+        raise AlertaException("I'm a teapot", code=418,
+                              errors=[
+                                  'server refuses to brew coffee because it is, permanently, a teapot',
+                                  'See https://tools.ietf.org/html/rfc2324'
+                              ])
