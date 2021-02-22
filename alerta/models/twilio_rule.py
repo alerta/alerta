@@ -158,8 +158,8 @@ class TwilioRule:
             priority=doc.get('priority', None),
             environment=doc['environment'],
             type=doc['type'],
-            from_number=doc['from_number'],
-            to_numbers=doc['to_numbers'],
+            from_number=doc['fromNumber'],
+            to_numbers=doc['toNumbers'],
             service=doc.get('service', list()),
             severity=doc.get('severity', list()),
             resource=doc.get('resource', None),
@@ -170,8 +170,14 @@ class TwilioRule:
             user=doc.get('user', None),
             create_time=doc.get('createTime', None),
             text=doc.get('text', None),
-            start_time=datetime.strptime(f'{doc["startTime"] :.2f}'.replace('.', ':'), '%H:%M').time() if 'startTime' in doc else None,
-            end_time=datetime.strptime(f'{doc["endTime"] :.2f}'.replace('.', ':'), '%H:%M').time() if 'endTime' in doc else None,
+            start_time=(
+                datetime.strptime(f'{doc["startTime"] :.2f}'.replace('.', ':'), '%H:%M').time() if doc['startTime'] is not None else None
+            )
+            if 'startTime' in doc
+            else None,
+            end_time=(datetime.strptime(f'{doc["endTime"] :.2f}'.replace('.', ':'), '%H:%M').time() if doc['endTime'] is not None else None)
+            if 'endTime' in doc
+            else None,
             days=doc.get('days', None),
         )
 
