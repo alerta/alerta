@@ -1072,16 +1072,18 @@ class Backend(Database):
             'user': twilio_rule.user,
             'createTime': twilio_rule.create_time,
             'text': twilio_rule.text,
-            'from_number': twilio_rule.from_number,
-            'to_numbers': twilio_rule.to_numbers
+            'fromNumber': twilio_rule.from_number,
+            'toNumbers': twilio_rule.to_numbers,
+            'days': twilio_rule.days,
+            'severity': twilio_rule.severity,
         }
         if twilio_rule.start_time:
             data['startTime'] = twilio_rule.start_time.hour + twilio_rule.start_time.minute / 100
             data['endTime'] = twilio_rule.end_time.hour + twilio_rule.end_time.minute / 100
-        if twilio_rule.days:
-            data['days'] = twilio_rule.days
-        if twilio_rule.severity:
-            data['severity'] = twilio_rule.severity
+        # if twilio_rule.days:
+        #     data['days'] = twilio_rule.days
+        # if twilio_rule.severity:
+        #     data['severity'] = twilio_rule.severity
         if twilio_rule.service:
             data['service'] = twilio_rule.service
         if twilio_rule.resource:
@@ -1124,9 +1126,9 @@ class Backend(Database):
                 {'startTime': {'$lte': alert.time.hour + alert.time.minute / 100}}
             ]},
             {'$or': [{'endTime': None}, {'endTime': {'$gt': alert.time.hour + alert.time.minute / 100}}]},
-            {'$or': [{'days': None}, {'days': {'$in': [alert.day]}}]},
+            {'$or': [{'days': []}, {'days': {'$in': [alert.day]}}]},
             {'$or': [
-                {'severity': None},
+                {'severity': []},
                 {'severity': {'$in': [alert.severity]}}
             ]},
             {'$or': [{'resource': None}, {'resource': alert.resource}]},
@@ -1144,10 +1146,10 @@ class Backend(Database):
         return self.get_db().twilio_rules.find(query)
 
     def update_twilio_rule(self, id, **kwargs):
-        if 'startTime' in kwargs:
+        if kwargs.get('startTime', None) is not None:
             start_split = kwargs['startTime'].split(':')
             kwargs['startTime'] = float(start_split[0]) + float(start_split[1]) / 100
-        if 'endTime' in kwargs:
+        if kwargs.get('endTime', None) is not None:
             end_split = kwargs['endTime'].split(':')
             kwargs['endTime'] = float(end_split[0]) + float(end_split[1]) / 100
 
