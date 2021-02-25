@@ -6,6 +6,7 @@ from twilio.base.exceptions import TwilioRestException
 from alerta.models.twilio_rule import TwilioRule
 from alerta.plugins import PluginBase
 
+
 LOG = logging.getLogger('alerta.plugins.twilio_rule')
 
 
@@ -44,16 +45,19 @@ class TwilioRulesHandler(PluginBase):
         if alert.repeat or twilio_auth_token == '' or twilio_auth_token == '':
             return
 
-        message = '%s: %s alert for %s - %s is %s' % (
-            alert.environment,
-            alert.severity.capitalize(),
-            ','.join(alert.service),
-            alert.resource,
-            alert.event,
-        )
+        standard_message = '%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s'
 
         client = Client(twilio_account_sid, twilio_auth_token)
+        message_objs = alert.serialize.copy()
+        for key, val in message_objs.items():
+            value_type = type(val)
+            if key != 'history' and key != 'twilioRules' and value_type == list:
+                message_objs[key] = ', '.join(val)
+            if value_type == str and key == 'severity':
+                message_objs[key] = val.capitalize()
+
         for twilio_rule in alert.get_twilio_rules():
+            message = (twilio_rule.text if twilio_rule.text != '' else standard_message) % message_objs
             for number in twilio_rule.to_numbers:
                 try:
                     if twilio_rule.type == 'call':
@@ -63,8 +67,7 @@ class TwilioRulesHandler(PluginBase):
                             to=number,
                             from_=twilio_rule.from_number,
                         )
-                    else:
-                        twilio_response = client.messages.create(body=message, to=number, from_=twilio_rule.from_number)
+                    twilio_response = client.messages.create(body=message, to=number, from_=twilio_rule.from_number)
                 except TwilioRestException as err:
                     LOG.error('TwilioRule: ERROR - %s', str(err))
                 else:
