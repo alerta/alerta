@@ -1080,10 +1080,6 @@ class Backend(Database):
         if twilio_rule.start_time:
             data['startTime'] = twilio_rule.start_time.hour + twilio_rule.start_time.minute / 100
             data['endTime'] = twilio_rule.end_time.hour + twilio_rule.end_time.minute / 100
-        # if twilio_rule.days:
-        #     data['days'] = twilio_rule.days
-        # if twilio_rule.severity:
-        #     data['severity'] = twilio_rule.severity
         if twilio_rule.service:
             data['service'] = twilio_rule.service
         if twilio_rule.resource:
