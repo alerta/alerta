@@ -4,9 +4,9 @@ from typing import Optional, Tuple
 from flask import current_app, g
 
 from alerta.app import plugins
-from alerta.exceptions import (ApiError, BlackoutPeriod, ForwardingLoop,
-                               HeartbeatReceived, InvalidAction, RateLimit,
-                               RejectException)
+from alerta.exceptions import (AlertaException, ApiError, BlackoutPeriod,
+                               ForwardingLoop, HeartbeatReceived,
+                               InvalidAction, RateLimit, RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 
@@ -41,7 +41,7 @@ def process_alert(alert: Alert) -> Alert:
             alert = plugin.pre_receive(alert, config=wanted_config)
         except TypeError:
             alert = plugin.pre_receive(alert)  # for backward compatibility
-        except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit, ForwardingLoop):
+        except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit, ForwardingLoop, AlertaException):
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
@@ -74,6 +74,8 @@ def process_alert(alert: Alert) -> Alert:
             updated = plugin.post_receive(alert, config=wanted_config)
         except TypeError:
             updated = plugin.post_receive(alert)  # for backward compatibility
+        except AlertaException:
+            raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
                 raise ApiError("Error while running post-receive plugin '{}': {}".format(plugin.name, str(e)))
@@ -101,7 +103,7 @@ def process_action(alert: Alert, action: str, text: str, timeout: int = None) ->
             updated = plugin.take_action(alert, action, text, timeout=timeout, config=wanted_config)
         except NotImplementedError:
             pass  # plugin does not support action() method
-        except (RejectException, ForwardingLoop, InvalidAction):
+        except (RejectException, ForwardingLoop, InvalidAction, AlertaException):
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
@@ -134,7 +136,7 @@ def process_note(alert: Alert, text: str) -> Tuple[Alert, str]:
             updated = plugin.take_note(alert, text, config=wanted_config)
         except NotImplementedError:
             pass  # plugin does not support take_note() method
-        except (RejectException, ForwardingLoop):
+        except (RejectException, ForwardingLoop, AlertaException):
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
@@ -166,7 +168,7 @@ def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, st
             updated = plugin.status_change(alert, status, text, config=wanted_config)
         except TypeError:
             updated = plugin.status_change(alert, status, text)  # for backward compatibility
-        except RejectException:
+        except (RejectException, AlertaException):
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
@@ -196,7 +198,7 @@ def process_delete(alert: Alert) -> bool:
             delete = delete and plugin.delete(alert, config=wanted_config)
         except NotImplementedError:
             pass  # plugin does not support delete() method
-        except RejectException:
+        except (RejectException, AlertaException):
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:

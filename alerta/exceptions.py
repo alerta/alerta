@@ -6,53 +6,6 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.routing import RoutingException
 
 
-class AlertaException(IOError):
-    pass
-
-
-class RejectException(AlertaException):
-    """The alert was rejected because the format did not meet the required policy."""
-    pass
-
-
-class RateLimit(AlertaException):
-    """Too many alerts have been received for a resource or from an origin."""
-    pass
-
-
-class HeartbeatReceived(AlertaException):
-    """Alert was not processed because it was converted into a heartbeat."""
-
-    def __init__(self, id):
-        self.id = id
-        super().__init__('Alert converted to Heartbeat')
-
-
-class BlackoutPeriod(AlertaException):
-    """Alert was not processed because it was sent during a blackout period."""
-    pass
-
-
-class TwilioAuth(AlertaException):
-    """Twilio is missing credentials. SID or AuthToken missing from setup"""
-    pass
-
-
-class ForwardingLoop(AlertaException):
-    """Forwarding loop detected."""
-    pass
-
-
-class InvalidAction(AlertaException):
-    """Invalid or redundant action for the current alert status."""
-    pass
-
-
-class NoCustomerMatch(AlertaException):
-    """There was no customer lookup found for the user or group."""
-    pass
-
-
 class BaseError(Exception):
     code = 500
     description = 'Unhandled exception'
@@ -64,6 +17,53 @@ class BaseError(Exception):
             self.code = code
         self.errors = errors
         self.request_id = None
+
+
+class AlertaException(BaseError):
+    pass
+
+
+class RejectException(BaseError):
+    """The alert was rejected because the format did not meet the required policy."""
+    pass
+
+
+class RateLimit(BaseError):
+    """Too many alerts have been received for a resource or from an origin."""
+    pass
+
+
+class HeartbeatReceived(BaseError):
+    """Alert was not processed because it was converted into a heartbeat."""
+
+    def __init__(self, id):
+        self.id = id
+        super().__init__('Alert converted to Heartbeat')
+
+
+class BlackoutPeriod(BaseError):
+    """Alert was not processed because it was sent during a blackout period."""
+    pass
+
+
+class TwilioAuth(BaseError):
+    """Twilio is missing credentials. SID or AuthToken missing from setup"""
+    pass
+
+
+class ForwardingLoop(BaseError):
+    """Forwarding loop detected."""
+    pass
+
+
+class InvalidAction(BaseError):
+    """Invalid or redundant action for the current alert status."""
+    pass
+
+
+class NoCustomerMatch(BaseError):
+    """There was no customer lookup found for the user or group."""
+    pass
 
 
 class ApiError(BaseError):
