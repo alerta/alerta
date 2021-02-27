@@ -77,8 +77,8 @@ SIGNUP_ENABLED = True
 
 HMAC_AUTH_CREDENTIALS = [
     # {
-    #     'id': '',  # access key id  => $ uuidgen | tr '[:upper:]' '[:lower:]'
-    #     'key': '',  # secret key => $ date | md5 | base64
+    #     'key': '',  # access key id  => $ uuidgen | tr '[:upper:]' '[:lower:]'
+    #     'secret': '',  # secret key => $ date | md5 | base64
     #     'algorithm': 'sha256'  # valid hmac algorithm eg. sha256, sha384, sha512
     # }
 ]  # type: List[Dict[str, Any]]

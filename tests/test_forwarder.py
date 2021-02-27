@@ -5,6 +5,8 @@ from uuid import uuid4
 import requests_mock
 
 from alerta.app import create_app, db, plugins
+from alerta.models.enums import Scope
+from alerta.models.key import ApiKey
 from alerta.utils.response import base_url
 
 
@@ -20,6 +22,14 @@ class ForwarderTestCase(unittest.TestCase):
             'PLUGINS': ['forwarder']
         }
 
+        HMAC_AUTH_CREDENTIALS = [
+            {  # http://localhost:9001
+                'key': 'e3b8afc0-db18-4c51-865d-b95322742c5e',
+                'secret': 'MDhjZGMyYTRkY2YyNjk1MTEyMWFlNmM3Y2UxZDU1ZjIK',
+                'algorithm': 'sha256'
+            },
+        ]
+
         FWD_DESTINATIONS = [
             ('http://localhost:9000', {'username': 'user', 'password': 'pa55w0rd', 'timeout': 10}, ['alerts', 'actions']),  # BasicAuth
             # ('https://httpbin.org/anything', dict(username='foo', password='bar', ssl_verify=False), ['*']),
@@ -31,6 +41,7 @@ class ForwarderTestCase(unittest.TestCase):
             ('http://localhost:9003', {'token': 'bearer-token'}, ['*']),  # Bearer token
         ]
 
+        test_config['HMAC_AUTH_CREDENTIALS'] = HMAC_AUTH_CREDENTIALS
         test_config['FWD_DESTINATIONS'] = FWD_DESTINATIONS
 
         self.app = create_app(test_config)
@@ -79,6 +90,15 @@ class ForwarderTestCase(unittest.TestCase):
             'timeout': 100
         }
 
+        with self.app.test_request_context('/'):
+            self.app.preprocess_request()
+            self.api_key = ApiKey(
+                user='admin@alerta.io',
+                scopes=[Scope.admin, Scope.read, Scope.write],
+                text='demo-key'
+            )
+            self.api_key.create()
+
     def tearDown(self):
         plugins.plugins.clear()
         db.destroy()
@@ -95,6 +115,7 @@ class ForwarderTestCase(unittest.TestCase):
         m.post('http://localhost:9003/alert', text=ok_response)
 
         headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
             'Content-type': 'application/json',
             'Origin': 'http://localhost:5000',
             'X-Alerta-Loop': 'http://localhost:5000',
@@ -119,6 +140,7 @@ class ForwarderTestCase(unittest.TestCase):
 
         # create alert
         headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
             'Content-type': 'application/json'
         }
         response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=headers)
@@ -134,6 +156,7 @@ class ForwarderTestCase(unittest.TestCase):
         m.put('http://localhost:9003/alert/{}/action'.format(alert_id), text=ok_response)
 
         headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
             'Content-type': 'application/json',
             'Origin': 'http://localhost:8000'
         }
@@ -160,6 +183,7 @@ class ForwarderTestCase(unittest.TestCase):
 
         # create alert
         headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
             'Content-type': 'application/json'
         }
         response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=headers)
@@ -173,6 +197,7 @@ class ForwarderTestCase(unittest.TestCase):
         m.delete('http://localhost:9003/alert/{}'.format(alert_id), text=ok_response)
 
         headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
             'Content-type': 'application/json',
             'Origin': 'http://localhost:8000'
         }
@@ -209,6 +234,7 @@ class ForwarderTestCase(unittest.TestCase):
         m.post('http://localhost:9003/alert', text=ok_response)
 
         headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
             'Content-type': 'application/json',
             'Origin': 'http://localhost:5000',
             'X-Alerta-Loop': 'http://localhost:8080,http://localhost:5000',
@@ -236,6 +262,7 @@ class ForwarderTestCase(unittest.TestCase):
         m.post('http://localhost:9003/alert', text=ok_response)
 
         headers = {
+            'Authorization': 'Key %s' % self.api_key.key,
             'Content-type': 'application/json',
             'X-Alerta-Loop': 'http://localhost:9000,http://localhost:9001,http://localhost:9002,http://localhost:9003',
         }
