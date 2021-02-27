@@ -15,7 +15,7 @@ class ForwarderTestCase(unittest.TestCase):
         test_config = {
             'DEBUG': False,
             'TESTING': True,
-            'AUTH_REQUIRED': False,
+            'AUTH_REQUIRED': True,
             'BASE_URL': 'http://localhost:8080',
             'PLUGINS': ['forwarder']
         }
