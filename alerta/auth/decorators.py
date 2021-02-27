@@ -63,6 +63,7 @@ def permission(scope=None):
                 g.login = receiver.parsed_header.get('id')
                 g.customers = []
                 g.scopes = ADMIN_SCOPES
+                return f(*args, **kwargs)
 
             # Bearer Token
             auth_header = request.headers.get('Authorization', '')
