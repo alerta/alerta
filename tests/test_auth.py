@@ -2,6 +2,8 @@ import base64
 import json
 import unittest
 
+from mohawk import Sender
+
 from alerta.app import create_app, db, plugins
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
@@ -12,13 +14,24 @@ class AuthTestCase(unittest.TestCase):
 
     def setUp(self):
 
+        self.access_key = 'cc3b7f30-360e-47bc-8abb-c0a27625e134'
+        self.secret_key = 'MjM0ODU4NGI1YWQxZWMyYzcxNjAxZDA4MzczNGQ1M2IK'
+
         test_config = {
+            'DEBUG': True,
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
             'ADMIN_USERS': ['admin@alerta.io'],
             'DELETE_SCOPES': ['delete:alerts'],
-            'ALLOWED_EMAIL_DOMAINS': ['bonaparte.fr', 'debeauharnais.fr', 'manorfarm.ru']
+            'ALLOWED_EMAIL_DOMAINS': ['bonaparte.fr', 'debeauharnais.fr', 'manorfarm.ru'],
+            'HMAC_AUTH_CREDENTIALS': [
+                {
+                    'key': self.access_key,
+                    'secret': self.secret_key,
+                    'algorithm': 'sha256'
+                }
+            ]
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -530,3 +543,43 @@ class AuthTestCase(unittest.TestCase):
             'two-legs': 'bad',
             'isEvil': False
         })
+
+    def test_hmac_auth(self):
+
+        credentials = {
+            'id': self.access_key,
+            'key': self.secret_key,
+            'algorithm': 'sha256'
+        }
+
+        sender = Sender(
+            url='http://localhost/alerts',
+            method='GET',
+            content='',
+            content_type='application/json',
+            credentials=credentials
+        )
+        headers = {
+            'Authorization': sender.request_header,
+            'Content-Type': 'application/json'
+        }
+        response = self.client.get('/alerts', headers=headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+
+        sender = Sender(
+            url='http://localhost/alert',
+            method='POST',
+            content=json.dumps(self.alert),
+            content_type='application/json',
+            credentials=credentials
+        )
+        headers = {
+            'Authorization': sender.request_header,
+            'Content-Type': 'application/json'
+        }
+        response = self.client.post('/alert', data=json.dumps(self.alert),
+                                    content_type='application/json', headers=headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['event'], 'Foo')
