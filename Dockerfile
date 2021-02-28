@@ -13,9 +13,11 @@ RUN apk add --no-cache \
 COPY . /app
 WORKDIR /app
 
-RUN pip install -r requirements.txt
-RUN pip install python-ldap pysaml2
-RUN pip install .
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST 1
+RUN python -m pip install --upgrade pip && \
+    pip install -r requirements.txt && \
+    pip install -r requirements-ci.txt && \
+    pip install .
 
 ENV ALERTA_SVR_CONF_FILE /app/alertad.conf
 ENV ALERTA_CONF_FILE /app/alerta.conf
