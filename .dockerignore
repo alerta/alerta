@@ -1,0 +1,10 @@
+.mypy_cache
+.pytest_cache
+.tox
+*.egg-info
+build
+dist
+venv
+.coverage
+*.swp
+*.log
