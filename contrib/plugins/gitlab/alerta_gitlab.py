@@ -8,7 +8,7 @@ from alerta.plugins import PluginBase, app
 
 LOG = logging.getLogger('alerta.plugins.gitlab')
 
-GITLAB_URL = 'https://gitlab.com/api/v4'
+GITLAB_URL = os.environ.get('GITLAB_URL', None) or app.config['GITLAB_URL']
 GITLAB_PROJECT_ID = os.environ.get('GITLAB_PROJECT_ID', None) or app.config['GITLAB_PROJECT_ID']
 GITLAB_ACCESS_TOKEN = os.environ.get('GITLAB_PERSONAL_ACCESS_TOKEN') or app.config['GITLAB_PERSONAL_ACCESS_TOKEN']
 
@@ -17,10 +17,18 @@ class GitlabIssue(PluginBase):
 
     def __init__(self, name=None):
 
+        self.base_url = None
         self.headers = {'Private-Token': GITLAB_ACCESS_TOKEN}
         super().__init__()
 
     def pre_receive(self, alert, **kwargs):
+        for tag in alert.tags:
+            try:
+                k, v = tag.split('=', 1)
+                if k == "project_id":
+                    self.base_url = '{}/projects/{}'.format(GITLAB_URL, quote(v, safe=''))
+            except ValueError:
+                pass
         return alert
 
     def post_receive(self, alert, **kwargs):
@@ -31,14 +39,14 @@ class GitlabIssue(PluginBase):
 
     def take_action(self, alert, action, text, **kwargs):
         """should return internal id of external system"""
-
         BASE_URL = '{}/projects/{}'.format(GITLAB_URL, quote(GITLAB_PROJECT_ID, safe=''))
 
         if action == 'createIssue':
             if 'issue_iid' not in alert.attributes:
-                url = BASE_URL + '/issues?title=' + alert.text
-                r = requests.post(url, headers=self.headers)
 
+                if self.base_url:
+                    url = self.base_url + '/issues?title=' + alert.text
+                r = requests.post(url, headers=self.headers)
                 alert.attributes['issue_iid'] = r.json().get('iid', None)
                 alert.attributes['gitlabUrl'] = '<a href="{}" target="_blank">Issue #{}</a>'.format(
                     r.json().get('web_url', None),
