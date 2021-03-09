@@ -10,6 +10,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from alerta.database.base import Database, QueryBuilder
 from alerta.exceptions import ExceptionHandlers
 from alerta.models.alarms import AlarmModel
+from alerta.models.enums import Scope
 from alerta.utils.audit import AuditTrail
 from alerta.utils.config import Config
 from alerta.utils.hooks import HookTrigger
@@ -58,6 +59,7 @@ def create_app(config_override: Dict[str, Any] = None, environment: str = None) 
     hooks.init_app(app)
     audit.init_app(app)
     alarm_model.init_app(app)
+    Scope.init_app(app)
 
     cors.init_app(app)
     compress.init_app(app)
