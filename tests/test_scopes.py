@@ -18,7 +18,8 @@ class ScopesTestCase(unittest.TestCase):
             'DEFAULT_ADMIN_ROLE': 'ops',
             'ADMIN_ROLES': ['ops', 'devops'],
             'DEFAULT_USER_ROLE': 'dev',
-            'USER_ROLES': ['dev']
+            'USER_ROLES': ['dev'],
+            'CUSTOM_SCOPES': ['admin:foo', 'write:foo.bar', 'read:foo.baz', 'delete:foo.quux']
         }
         self.app = create_app(test_config, environment='development')
         self.client = self.app.test_client()
@@ -151,6 +152,28 @@ class ScopesTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['permission']['scopes'], [Scope.write, Scope.read])
         self.assertEqual(data['permission']['match'], 'read-write')
+
+    def test_custom_scopes(self):
+
+        headers = {
+            'Authorization': 'Key %s' % self.api_keys_scopes['admin'],
+            'Content-type': 'application/json'
+        }
+
+        # list scopes
+        response = self.client.get('/scopes', content_type='application/json', headers=headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+
+        self.assertIn('admin:foo', data['scopes'])
+        self.assertIn('write:foo.bar', data['scopes'])
+        self.assertIn('read:foo.baz', data['scopes'])
+        self.assertIn('delete:foo.quux', data['scopes'])
+
+        scope = Scope.from_str(action='write', resource='resource', type='type')
+        self.assertEqual(scope.action, 'write')
+        self.assertEqual(scope.resource, 'resource')
+        self.assertEqual(scope.type, 'type')
 
     def test_system_roles(self):
 
