@@ -48,7 +48,7 @@ def permission(scope=None):
                 g.scopes = key_info.scopes  # type: List[Scope]
 
                 if not Permission.is_in_scope(scope, have_scopes=g.scopes):
-                    raise ApiError('Missing required scope: %s' % scope.value, 403)
+                    raise ApiError('Missing required scope: %s' % scope, 403)
                 else:
                     return f(*args, **kwargs)
 
@@ -85,7 +85,7 @@ def permission(scope=None):
                 g.scopes = jwt.scopes  # type: List[Scope]
 
                 if not Permission.is_in_scope(scope, have_scopes=g.scopes):
-                    raise ApiError('Missing required scope: %s' % scope.value, 403)
+                    raise ApiError('Missing required scope: %s' % scope, 403)
                 else:
                     return f(*args, **kwargs)
 
@@ -116,7 +116,7 @@ def permission(scope=None):
                 g.scopes = Permission.lookup(user.email, roles=user.roles)  # type: List[Scope]
 
                 if not Permission.is_in_scope(scope, have_scopes=g.scopes):
-                    raise BasicAuthError('Missing required scope: %s' % scope.value, 403)
+                    raise BasicAuthError('Missing required scope: %s' % scope, 403)
                 else:
                     return f(*args, **kwargs)
 

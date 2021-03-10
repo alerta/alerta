@@ -138,7 +138,7 @@ def update_perm(perm_id):
         raise ApiError('nothing to change', 400)
 
     for s in request.json.get('scopes', []):
-        if s not in list(Scope):
+        if s not in Scope.find_all():
             raise ApiError("'{}' is not a valid Scope".format(s), 400)
 
     perm = Permission.find_by_id(perm_id)
@@ -180,7 +180,7 @@ def delete_perm(perm_id):
 @permission(Scope.read_perms)
 @jsonp
 def list_scopes():
-    scopes = list(Scope)
+    scopes = Scope.find_all()
 
     return jsonify(
         status='ok',
