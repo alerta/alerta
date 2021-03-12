@@ -59,7 +59,7 @@ CELERY_RESULT_SERIALIZER = 'customjson'
 
 # Authentication settings
 AUTH_REQUIRED = False
-AUTH_PROVIDER = 'basic'  # basic (default), ldap, github, openid, saml2, azure, cognito, gitlab, google, keycloak
+AUTH_PROVIDER = ['basic']  # basic (default), ldap, github, openid, saml2, azure, cognito, gitlab, google, keycloak
 ADMIN_USERS = []  # type: List[str]
 DEFAULT_ADMIN_ROLE = 'admin'
 ADMIN_ROLES = [DEFAULT_ADMIN_ROLE]

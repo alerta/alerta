@@ -1,7 +1,7 @@
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
-from alerta.app import qb
+from alerta.app import providers, qb
 from alerta.auth.decorators import permission
 from alerta.auth.utils import not_authorized
 from alerta.exceptions import ApiError
@@ -20,9 +20,8 @@ from . import api
 @permission(Scope.admin_users)
 @jsonp
 def create_user():
-    if current_app.config['AUTH_PROVIDER'] != 'basic':
-        raise ApiError(
-            'must use {} login flow to create new user'.format(current_app.config['AUTH_PROVIDER']), 400)
+    if not providers.has_provider('basic'):
+        raise ApiError('must use basic auth to create new user', 400)
 
     try:
         user = User.parse(request.json)

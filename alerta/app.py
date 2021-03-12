@@ -18,6 +18,7 @@ from alerta.utils.key import ApiKeyHelper
 from alerta.utils.logging import Logger
 from alerta.utils.mailer import Mailer
 from alerta.utils.plugin import Plugins
+from alerta.utils.providers import AuthProviders
 from alerta.utils.tracing import Tracing
 from alerta.utils.webhook import CustomWebhooks
 
@@ -41,6 +42,7 @@ sentry_sdk.init(integrations=[FlaskIntegration()])
 mailer = Mailer()
 plugins = Plugins()
 custom_webhooks = CustomWebhooks()
+providers = AuthProviders()
 
 
 def create_app(config_override: Dict[str, Any] = None, environment: str = None) -> Flask:
@@ -65,6 +67,7 @@ def create_app(config_override: Dict[str, Any] = None, environment: str = None) 
     compress.init_app(app)
     handlers.register(app)
     key_helper.init_app(app)
+    providers.init_app(app)
 
     db.init_db(app)
     qb.init_app(app)

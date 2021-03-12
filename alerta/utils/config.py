@@ -40,7 +40,7 @@ class Config:
         config['DATABASE_NAME'] = get_config('DATABASE_NAME', default=None, type=str, config=config)
 
         config['AUTH_REQUIRED'] = get_config('AUTH_REQUIRED', default=None, type=bool, config=config)
-        config['AUTH_PROVIDER'] = get_config('AUTH_PROVIDER', default=None, type=str, config=config)
+        config['AUTH_PROVIDER'] = get_config('AUTH_PROVIDER', default=[], type=list, config=config)
         config['ADMIN_USERS'] = get_config('ADMIN_USERS', default=[], type=list, config=config)
         config['SIGNUP_ENABLED'] = get_config('SIGNUP_ENABLED', default=True, type=bool, config=config)
         config['CUSTOMER_VIEWS'] = get_config('CUSTOMER_VIEWS', default=False, type=bool, config=config)

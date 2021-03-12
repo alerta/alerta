@@ -1,12 +1,13 @@
 from flask import Blueprint, request
 
+from alerta.app import providers
 from alerta.exceptions import ApiError
 
 
 class AuthBlueprint(Blueprint):
 
     def register(self, app, options, first_registration=False):
-        if app.config['AUTH_PROVIDER'] == 'ldap':
+        if providers.has_provider('ldap'):
             try:
                 import ldap  # noqa
                 from . import basic_ldap  # noqa
@@ -15,14 +16,14 @@ class AuthBlueprint(Blueprint):
         else:
             from . import basic  # noqa
 
-        if app.config['AUTH_PROVIDER'] == 'saml2':
+        if providers.has_provider('saml2'):
             try:
                 import saml2  # noqa
                 from . import saml  # noqa
             except ImportError:
                 raise RuntimeError('Must install pysaml2 to use SAML2 authentication module')
 
-        if app.config['AUTH_PROVIDER'] in ['openid', 'azure', 'cognito', 'gitlab', 'keycloak']:
+        if providers.get_oidc_provider():
             try:
                 oidc_config, _ = oidc.get_oidc_configuration(app)
                 app.config['OIDC_AUTH_URL'] = oidc_config['authorization_endpoint']

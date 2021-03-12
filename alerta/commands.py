@@ -6,7 +6,7 @@ import click
 from flask import Flask, current_app
 from flask.cli import FlaskGroup, ScriptInfo, with_appcontext
 
-from alerta.app import config, create_app, db, key_helper, qb
+from alerta.app import config, create_app, db, key_helper, providers, qb
 from alerta.auth.utils import generate_password_hash
 from alerta.models.enums import Scope
 from alerta.models.key import ApiKey
@@ -23,6 +23,7 @@ def _create_app(config_override: Dict[str, Any] = None, environment: str = None)
     db.init_db(app)
     qb.init_app(app)
     key_helper.init_app(app)
+    providers.init_app(app)
 
     return app
 
@@ -155,8 +156,8 @@ def user(name, email, password, text, all):
     """
     Create admin users (BasicAuth only).
     """
-    if current_app.config['AUTH_PROVIDER'] != 'basic':
-        raise click.UsageError('Not required for {} admin users'.format(current_app.config['AUTH_PROVIDER']))
+    if not providers.has_provider('basic'):
+        raise click.UsageError('Not required for {} admin users'.format(providers.get_oidc_provider()))
 
     if email and email not in current_app.config['ADMIN_USERS']:
         raise click.UsageError('User {} not an admin'.format(email))

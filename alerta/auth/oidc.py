@@ -6,6 +6,7 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from jwt.algorithms import RSAAlgorithm  # type: ignore
 
+from alerta.app import providers
 from alerta.auth.utils import create_token, get_customers, not_authorized
 from alerta.exceptions import ApiError
 from alerta.models.permission import Permission
@@ -25,7 +26,7 @@ def get_oidc_configuration(app):
         'keycloak': '{}/auth/realms/{}'.format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM'])
     }
 
-    issuer_url = OIDC_ISSUER_URL_BY_PROVIDER.get(app.config['AUTH_PROVIDER']) or app.config['OIDC_ISSUER_URL']
+    issuer_url = OIDC_ISSUER_URL_BY_PROVIDER.get(providers.get_oidc_provider()) or app.config['OIDC_ISSUER_URL']
     if not issuer_url:
         raise ApiError('Must define Issuer URL (OIDC_ISSUER_URL) in server configuration to use OpenID Connect.', 503)
     discovery_doc_url = issuer_url.strip('/') + '/.well-known/openid-configuration'
@@ -161,7 +162,7 @@ def openid():
                           user=login, customers=customers, scopes=scopes, **custom_claims,
                           resource_id=subject, type='user', request=request)
 
-    token = create_token(user_id=subject, name=name, login=login, provider=current_app.config['AUTH_PROVIDER'],
+    token = create_token(user_id=subject, name=name, login=login, provider=providers.get_oidc_provider(),
                          customers=customers, scopes=scopes, **custom_claims,
                          email=email, email_verified=email_verified, picture=picture)
     return jsonify(token=token.tokenize)
