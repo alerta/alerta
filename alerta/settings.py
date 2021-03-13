@@ -59,7 +59,94 @@ CELERY_RESULT_SERIALIZER = 'customjson'
 
 # Authentication settings
 AUTH_REQUIRED = False
-AUTH_PROVIDER = ['basic']  # basic (default), ldap, github, openid, saml2, azure, cognito, gitlab, google, keycloak
+AUTH_PROVIDER = 'basic'  # default
+
+AUTH_PROVIDERS = [
+    # {
+    #     # BasicAuth
+    #     'provider': 'basic',
+    #     'realm': 'Alerta',  # BASIC_AUTH_REALM
+    # },
+    # {
+    #     # LDAP
+    #     'provider': 'ldap',
+    #     # TBC
+    # },
+    # {
+    #     # Microsoft Identity Platform (v2.0)
+    #     'provider': 'azure',
+    #     'azure_tenant': 'common',  # "common", "organizations", "consumers" or tenant ID
+    #     'client_id': None,  # OAuth2 client ID and secret
+    #     'client_secret': None,
+    #     'allowed_email_domains': ['*']
+    # },
+    # {
+    #     # Amazon Cognito
+    #     'provider': 'cognito',
+    #     'cognito_user_pool_id': None,
+    #     'cognito_domain': None,
+    #     'client_id': None,  # OAuth2 client ID and secret
+    #     'client_secret': None,
+    #     'aws_region': 'us-east-1',  # US East - N. Virginia (default)
+    # },
+    # {
+    #     # GitHub OAuth2
+    #     'provider': 'github',
+    #     'base_url': 'https://github.com',  # GITHUB_URL
+    #     'client_id': None,  # OAuth2 client ID and secret
+    #     'client_secret': None,
+    #     'allowed_github_orgs': ['*']
+    # },
+    # {
+    #     # GitLab OAuth2
+    #     'provider': 'gitlab',
+    #     'base_url': 'https://gitlab.com',  # GITLAB_URL
+    #     'client_id': None,  # OAuth2 client ID and secret
+    #     'client_secret': None,
+    #     'allowed_gitlab_groups': ['*']
+    # },
+    # {
+    #     # Google
+    #     'provider': 'google',
+    #     'client_id': None,  # OAuth2 client ID and secret
+    #     'client_secret': None,
+    # },
+    # {
+    #     # Keycloak
+    #     'provider': 'keycloak',
+    #     'base_url': None,  # KEYCLOAK_URL
+    #     'realm': None,  # KEYCLOAK_REALM
+    #     'client_id': '',  # OAuth2 client ID and secret
+    #     'client_secret': '',
+    #     'allowed_keycloak_roles': ['*']
+    # },
+    # {
+    #     # OpenID Connect
+    #     'provider': 'openid',
+    #     'oidc_issuer_url': None,
+    #     'oidc_auth_url': None,
+    #     'oidc_logout_url': None,  # do not set
+    #     'oidc_verify_token': False,
+    #     'oidc_role_claim': 'roles',  # JWT claim name whose value is used in role mapping
+    #     'oidc_group_claim': 'groups',  # JWT claim name whose value is used in customer mapping
+    #     'client_id': '',  # OAuth2 client ID and secret
+    #     'client_secret': '',
+    #     'allowed_oidc_roles': ['*'],
+    #     'oidc_link_user_email': True,
+    #     'allowed_email_domains': ['*']
+    # },
+    # {
+    #     # SAML 2.0
+    #     'provider': 'saml2',
+    #     'entity_id': None,
+    #     'metadata_url': None,
+    #     'user_name_format': '{givenName} {surname}',
+    #     'email_attribute': 'emailAddress',
+    #     'saml2_config': {},  # type: Dict[str, Any]
+    #     'allowed_saml2_groups': ['*']
+    # }
+]  # type: List[Dict[str, Any]]
+
 ADMIN_USERS = []  # type: List[str]
 DEFAULT_ADMIN_ROLE = 'admin'
 ADMIN_ROLES = [DEFAULT_ADMIN_ROLE]
@@ -72,8 +159,6 @@ GUEST_DEFAULT_SCOPES = ['read:alerts']
 CUSTOM_SCOPES = []
 DELETE_SCOPES = []  # Set to "delete:alerts" to prevent users with "write:alerts" scope being able to delete alerts
 CUSTOMER_VIEWS = False
-
-BASIC_AUTH_REALM = 'Alerta'
 SIGNUP_ENABLED = True
 
 HMAC_AUTH_CREDENTIALS = [
@@ -84,22 +169,16 @@ HMAC_AUTH_CREDENTIALS = [
     # }
 ]  # type: List[Dict[str, Any]]
 
-OAUTH2_CLIENT_ID = None  # OAuth2 client ID and secret
-OAUTH2_CLIENT_SECRET = None
-ALLOWED_EMAIL_DOMAINS = ['*']
+# 'forwarder' plugin settings for Federated Alerta
+FWD_DESTINATIONS = [
+    # ('http://localhost:9000', {'username': 'user', 'password': 'pa55w0rd', 'timeout': 10}, ['alerts', 'actions']),  # BasicAuth
+    # ('https://httpbin.org/anything', dict(username='foo', password='bar', ssl_verify=False), ['alerts', 'actions']),
+    # ('http://localhost:9000', {'key': 'access-key', 'secret': 'secret-key'}, ['alerts', 'actions']),  # Hawk HMAC
+    # ('http://localhost:9000', {'key': 'my-api-key'}, ['alerts', 'actions']),  # API key
+    # ('http://localhost:9000', {'token': 'bearer-token'}, ['alerts', 'actions']),  # Bearer token
+]  # type: List[Tuple]
 
-# Amazon Cognito
-AWS_REGION = 'us-east-1'  # US East - N. Virginia (default)
-COGNITO_USER_POOL_ID = None
-COGNITO_DOMAIN = None
-
-# GitHub OAuth2
-GITHUB_URL = 'https://github.com'
-ALLOWED_GITHUB_ORGS = ['*']
-
-# GitLab OAuth2
-GITLAB_URL = 'https://gitlab.com'
-ALLOWED_GITLAB_GROUPS = ['*']
+# actions=['*', 'alerts', 'actions', 'open', 'assign', 'ack', 'unack', 'shelve', 'unshelve', 'close', 'delete']
 
 # BasicAuth using LDAP
 LDAP_URL = ''  # eg. ldap://localhost:389
@@ -123,32 +202,6 @@ LDAP_DEFAULT_DOMAIN = ''  # if set allows users to login with bare username
 LDAP_CONFIG = {}  # type: Dict[str, Any]
 ALLOWED_LDAP_GROUPS = ['*']
 
-# Microsoft Identity Platform (v2.0)
-AZURE_TENANT = 'common'  # "common", "organizations", "consumers" or tenant ID
-
-# Keycloak
-KEYCLOAK_URL = None
-KEYCLOAK_REALM = None
-ALLOWED_KEYCLOAK_ROLES = ['*']
-
-# OpenID Connect
-OIDC_ISSUER_URL = None
-OIDC_AUTH_URL = None
-OIDC_LOGOUT_URL = None
-OIDC_VERIFY_TOKEN = False
-OIDC_ROLE_CLAIM = OIDC_CUSTOM_CLAIM = 'roles'  # JWT claim name whose value is used in role mapping
-OIDC_GROUP_CLAIM = 'groups'  # JWT claim name whose value is used in customer mapping
-ALLOWED_OIDC_ROLES = ALLOWED_GITLAB_GROUPS or ALLOWED_KEYCLOAK_ROLES or ['*']
-OIDC_LINK_USER_EMAIL = True  # if using federated IdP link user accounts by verified email addresses
-
-# SAML 2.0
-SAML2_ENTITY_ID = None
-SAML2_METADATA_URL = None
-SAML2_USER_NAME_FORMAT = '{givenName} {surname}'
-SAML2_EMAIL_ATTRIBUTE = 'emailAddress'
-SAML2_CONFIG = {}  # type: Dict[str, Any]
-ALLOWED_SAML2_GROUPS = ['*']
-
 TOKEN_EXPIRE_DAYS = 14
 API_KEY_EXPIRE_DAYS = 365  # 1 year
 
@@ -171,10 +224,16 @@ CORS_ORIGINS = [
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 
 # Serverity settings
-SEVERITY_MAP = {}  # type: Dict[str, Any]
+SEVERITY_MAP = {
+
+
+}  # type: Dict[str, Any]
 DEFAULT_NORMAL_SEVERITY = None
 DEFAULT_PREVIOUS_SEVERITY = None
-COLOR_MAP = {}  # type: Dict[str, Any]
+COLOR_MAP = {
+
+
+}  # type: Dict[str, Any]
 
 # Timeout settings
 DEFAULT_TIMEOUT = 86400  # seconds
@@ -251,14 +310,3 @@ BLACKOUT_DURATION = 3600  # default period = 1 hour
 NOTIFICATION_BLACKOUT = False  # True - set alert status=blackout, False - do not process alert (default)
 BLACKOUT_ACCEPT = []  # type: List[str]
 # BLACKOUT_ACCEPT = ['normal', 'ok', 'cleared']  # list of severities accepted during blackout period
-
-# northbound interface
-FWD_DESTINATIONS = [
-    # ('http://localhost:9000', {'username': 'user', 'password': 'pa55w0rd', 'timeout': 10}, ['alerts', 'actions']),  # BasicAuth
-    # ('https://httpbin.org/anything', dict(username='foo', password='bar', ssl_verify=False), ['alerts', 'actions']),
-    # ('http://localhost:9000', {'key': 'access-key', 'secret': 'secret-key'}, ['alerts', 'actions']),  # Hawk HMAC
-    # ('http://localhost:9000', {'key': 'my-api-key'}, ['alerts', 'actions']),  # API key
-    # ('http://localhost:9000', {'token': 'bearer-token'}, ['alerts', 'actions']),  # Bearer token
-]  # type: List[Tuple]
-
-# valid actions=['*', 'alerts', 'actions', 'open', 'assign', 'ack', 'unack', 'shelve', 'unshelve', 'close', 'delete']

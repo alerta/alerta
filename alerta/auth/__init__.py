@@ -26,6 +26,7 @@ class AuthBlueprint(Blueprint):
         if providers.get_oidc_provider():
             try:
                 oidc_config, _ = oidc.get_oidc_configuration(app)
+                app.config['AUTH_PROVIDERS']['openid']['oidc_auth_url'] = oidc_config['authorization_endpoint']
                 app.config['OIDC_AUTH_URL'] = oidc_config['authorization_endpoint']
                 app.config['OIDC_LOGOUT_URL'] = oidc_config.get('end_session_endpoint')
             except Exception as e:
