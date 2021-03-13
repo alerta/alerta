@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict
 
-from werkzeug.datastructures import ImmutableMultiDict
+from werkzeug.datastructures import ImmutableMultiDict, MultiDict
 
 from alerta.app import alarm_model, qb
 from alerta.exceptions import ApiError, RejectException
@@ -96,7 +96,7 @@ class GrafanaWebhook(WebhookBase):
 
         elif payload and payload['state'] == 'ok' and payload.get('ruleId'):
             try:
-                query = qb.from_dict({'attributes.ruleId': str(payload['ruleId'])})
+                query = qb.alerts.from_params(MultiDict([('attributes.ruleId', str(payload['ruleId']))]))
                 existingAlerts = Alert.find_all(query)
             except Exception as e:
                 raise ApiError(str(e), 500)

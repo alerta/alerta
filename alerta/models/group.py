@@ -114,7 +114,7 @@ class Group:
             id=rec.id,
             name=rec.name,
             text=rec.text,
-            count=len(rec.users or [])
+            count=rec.count
         )
 
     @classmethod

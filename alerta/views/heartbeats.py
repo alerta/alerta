@@ -59,10 +59,11 @@ def get_heartbeat(heartbeat_id):
 @permission(Scope.read_heartbeats)
 @jsonp
 def list_heartbeats():
-    query = qb.from_params(request.args, customers=g.customers)
+    query = qb.heartbeats.from_params(request.args, customers=g.customers)
     total = Heartbeat.count(query)
     paging = Page.from_params(request.args, total)
-    heartbeats = Heartbeat.find_all(query, page=paging.page, page_size=paging.page_size)
+    status = request.args.getlist('status')
+    heartbeats = Heartbeat.find_all_by_status(status, query, page=paging.page, page_size=paging.page_size)
 
     if heartbeats:
         return jsonify(

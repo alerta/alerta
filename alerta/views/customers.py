@@ -55,7 +55,7 @@ def get_customer(customer_id):
 @permission(Scope.read_customers)
 @jsonp
 def list_customers():
-    query = qb.from_params(request.args, customers=g.customers)
+    query = qb.customers.from_params(request.args, customers=g.customers)
     total = Customer.count(query)
     paging = Page.from_params(request.args, total)
     customers = [
