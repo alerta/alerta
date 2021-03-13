@@ -30,7 +30,7 @@ def oembed(format):
 
     if o.path.endswith('/alerts/count'):
         try:
-            query = qb.from_dict(parse_qs(o.query))
+            query = qb.alerts.from_params(parse_qs(o.query))
             severity_count = db.get_counts_by_severity(query)
         except Exception as e:
             return jsonify(status='error', message=str(e)), 500

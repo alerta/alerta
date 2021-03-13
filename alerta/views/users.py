@@ -130,7 +130,7 @@ def get_me_attributes():
 @permission(Scope.admin_users)
 @jsonp
 def list_users():
-    query = qb.from_params(request.args)
+    query = qb.users.from_params(request.args)
     total = User.count(query)
     paging = Page.from_params(request.args, total)
     users = User.find_all(query, page=paging.page, page_size=paging.page_size)

@@ -80,7 +80,7 @@ def get_group_users(group_id):
 @permission(Scope.read_groups)
 @jsonp
 def list_groups():
-    query = qb.from_params(request.args)
+    query = qb.groups.from_params(request.args)
     total = Group.count(query)
     paging = Page.from_params(request.args, total)
     groups = Group.find_all(query, page=paging.page, page_size=paging.page_size)
