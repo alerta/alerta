@@ -159,6 +159,15 @@ class WebhooksTestCase(unittest.TestCase):
                 "service": "Core",
                 "group": "Power"
               }
+            },
+            {
+              "value": 23644.5,
+              "metric": "Battery Voltage (millivolts)",
+              "tags": {
+                "environment": "Network",
+                "service": "Core",
+                "group": "Power"
+              }
             }
           ],
           "message": "Battery Voltage dropped below 23.7 Volts, please investigate",
@@ -830,34 +839,44 @@ class WebhooksTestCase(unittest.TestCase):
                          'Load is peaking. Make sure the traffic is real and spin up more webfronts')
         self.assertEqual(data['alert']['timeout'], 7200)
 
-        # example alert
+        # test tags
+        # - ensure tags filled in the grafana's alert panel are overriding
+        #   tags from timeseries
+        # - ensure these tags are given to all timeseries in the grafana's alert
         response = self.client.post('/webhooks/grafana?customer=Foo%20Corp.', data=self.grafana_6, headers=self.headers)
         self.assertEqual(response.status_code, 201, response.json)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['status'], 'ok')
-        self.assertEqual(data['alert']['resource'], 'Battery Voltage (millivolts)')
-        self.assertEqual(data['alert']['event'], 'Testing -> Battery Voltage alert')
-        self.assertEqual(data['alert']['environment'], 'Staging')
-        self.assertEqual(data['alert']['severity'], 'warning')
-        self.assertEqual(data['alert']['status'], 'open')
-        self.assertEqual(data['alert']['service'], ['Grafana', 'Core', 'Physical'])
-        self.assertEqual(data['alert']['group'], 'BatteryPower')
-        self.assertEqual(data['alert']['value'], '23644.5')
-        self.assertEqual(data['alert']['text'], 'Battery Voltage dropped below 23.7 Volts, please investigate')
-        self.assertEqual(data['alert']['tags'], [])
-        self.assertEqual(data['alert']['attributes']['enabled'], 'true')
-        self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
-        self.assertEqual(data['alert']['attributes']['on-alerting'], 'relay-on')
-        self.assertEqual(data['alert']['attributes']['on-ok'], 'ignore')
-        self.assertEqual(data['alert']['attributes']['relay'], '7')
-        self.assertEqual(data['alert']['attributes']['ruleId'], '58')
-        self.assertEqual(data['alert']['attributes']['ruleUrl'], '<a '
-                         'href="https://grafana.logreposit.com/d/Rs6E_oHWk/playground?fullscreen&edit&tab=alert&panelId=2&orgId=1" '
-                         'target="_blank">Rule</a>')
-        self.assertNotIn('service', data['alert']['attributes'])
-        self.assertEqual(data['alert']['origin'], 'Grafana')
-        self.assertEqual(data['alert']['timeout'], 86400)
-        self.assertEqual(data['alert']['customer'], 'Foo Corp.')
+        with self.app.app_context():
+            # get alerts manually as API returns ids for multiple alerts
+            a = Alert.find_by_id(data['ids'][0])
+            b = Alert.find_by_id(data['ids'][1])
+
+        for alert in [a, b]:
+            data['alert'] = alert.serialize
+            self.assertEqual(data['status'], 'ok')
+            self.assertEqual(data['alert']['resource'], 'Battery Voltage (millivolts)')
+            self.assertEqual(data['alert']['event'], 'Testing -> Battery Voltage alert')
+            self.assertEqual(data['alert']['environment'], 'Staging')
+            self.assertEqual(data['alert']['severity'], 'warning')
+            self.assertEqual(data['alert']['status'], 'open')
+            self.assertEqual(data['alert']['service'], ['Grafana', 'Core', 'Physical'])
+            self.assertEqual(data['alert']['group'], 'BatteryPower')
+            self.assertEqual(data['alert']['value'], '23644.5')
+            self.assertEqual(data['alert']['text'], 'Battery Voltage dropped below 23.7 Volts, please investigate')
+            self.assertEqual(data['alert']['tags'], [])
+            self.assertEqual(data['alert']['attributes']['enabled'], 'true')
+            self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+            self.assertEqual(data['alert']['attributes']['on-alerting'], 'relay-on')
+            self.assertEqual(data['alert']['attributes']['on-ok'], 'ignore')
+            self.assertEqual(data['alert']['attributes']['relay'], '7')
+            self.assertEqual(data['alert']['attributes']['ruleId'], '58')
+            self.assertEqual(data['alert']['attributes']['ruleUrl'], '<a '
+                             'href="https://grafana.logreposit.com/d/Rs6E_oHWk/playground?fullscreen&edit&tab=alert&panelId=2&orgId=1" '
+                             'target="_blank">Rule</a>')
+            self.assertNotIn('service', data['alert']['attributes'])
+            self.assertEqual(data['alert']['origin'], 'Grafana')
+            self.assertEqual(data['alert']['timeout'], 86400)
+            self.assertEqual(data['alert']['customer'], 'Foo Corp.')
 
     def test_graylog_webhook(self):
         # graylog alert
