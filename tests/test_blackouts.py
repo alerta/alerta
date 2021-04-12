@@ -109,6 +109,14 @@ class BlackoutsTestCase(unittest.TestCase):
             'timeout': 50
         }
 
+        self.zabbix_alert = {
+            'event': 'vfs.file.contents[/var/lib/redacted/stats/redacted.services.health.admin.green]',
+            'resource': 'zbx01',
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'warning'
+        }
+
         with self.app.test_request_context('/'):
             self.app.preprocess_request()
             self.admin_api_key = ApiKey(
@@ -637,6 +645,52 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(data['blackout']['user'], 'admin@alerta.io')
         self.assertIsInstance(DateTime.parse(data['blackout']['createTime']), datetime)
         self.assertEqual(data['blackout']['text'], 'administratively down')
+
+    def test_zabbix_event_blackout(self):
+
+        os.environ['NOTIFICATION_BLACKOUT'] = 'False'
+        plugins.plugins['blackout'] = Blackout()
+
+        self.headers = {
+            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Content-type': 'application/json'
+        }
+
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.zabbix_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        # create blackout (for whole development environment)
+        blackout = {
+            'environment': 'Production',
+            'event': 'vfs.file.contents[/var/lib/redacted/stats/redacted.services.health.admin.green]'
+        }
+        response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        print(data)
+
+        blackout_id = data['id']
+
+        # do not suppress production alert
+        response = self.client.post('/alert', data=json.dumps(self.prod_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        # suppress development alert
+        response = self.client.post('/alert', data=json.dumps(self.zabbix_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 202)
+
+        # remove blackout
+        response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # do not suppress any alerts
+        response = self.client.post('/alert', data=json.dumps(self.prod_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.post('/alert', data=json.dumps(self.zabbix_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
 
 
 class Blackout(PluginBase):
