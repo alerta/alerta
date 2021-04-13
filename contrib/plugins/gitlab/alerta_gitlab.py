@@ -24,7 +24,7 @@ class GitlabIssue(PluginBase):
         for tag in alert.tags:
             try:
                 k, v = tag.split('=', 1)
-                if k == "project_id":
+                if k == 'project_id':
                     alert.attributes['base_url'] = '{}/projects/{}'.format(GITLAB_URL, quote(v, safe=''))
             except ValueError:
                 pass
