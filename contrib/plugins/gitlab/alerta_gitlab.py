@@ -49,7 +49,7 @@ class GitlabIssue(PluginBase):
                 due = '/due in 1 days \n'
                 assign = '/assign @all'
                 issue_iid = alert.attributes['issue_iid']
-                issue_body due + assign
+                issue_body = due + assign
                 dueurl = alert.attributes['base_url'] + '/issues/{}/discussions?body={}'.format(issue_iid, issue_body)
                 r1 = requests.post(dueurl, headers=self.headers)
         return alert
@@ -75,7 +75,7 @@ class GitlabIssue(PluginBase):
                 due = '/due in 1 days \n'
                 assign = '/assign @all'
                 issue_iid = alert.attributes['issue_iid']
-                issue_body due + assign
+                issue_body = due + assign
                 dueurl = alert.attributes['base_url'] + '/issues/{}/discussions?body={}'.format(issue_iid, issue_body)
                 r1 = requests.post(dueurl, headers=self.headers)
 
