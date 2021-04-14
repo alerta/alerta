@@ -935,6 +935,8 @@ class Backend(Database):
             data['group'] = blackout.group
         if blackout.tags:
             data['tags'] = blackout.tags
+        if blackout.origin:
+            data['origin'] = blackout.origin
         if blackout.customer:
             data['customer'] = blackout.customer
 
@@ -964,230 +966,70 @@ class Backend(Database):
 
         query['environment'] = alert.environment
         query['$and'] = [{'$or': [
-            {
-                'resource': None,
-                'service': None,
-                'event': None,
-                'group': None,
-                'tags': None
-            },
-            {
-                'resource': None,
-                'service': None,
-                'event': None,
-                'group': None,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': None,
-                'service': None,
-                'event': None,
-                'group': alert.group,
-                'tags': None
-            },
-            {
-                'resource': None,
-                'service': None,
-                'event': None,
-                'group': alert.group,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': None,
-                'service': None,
-                'event': alert.event,
-                'group': None,
-                'tags': None
-            },
-            {
-                'resource': None,
-                'service': None,
-                'event': alert.event,
-                'group': None,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': None,
-                'service': None,
-                'event': alert.event,
-                'group': alert.group,
-                'tags': None
-            },
-            {
-                'resource': None,
-                'service': None,
-                'event': alert.event,
-                'group': alert.group,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': None,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': None,
-                'group': None,
-                'tags': None
-            },
-            {
-                'resource': None,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': None,
-                'group': None,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': None,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': None,
-                'group': alert.group,
-                'tags': None
-            },
-            {
-                'resource': None,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': None,
-                'group': alert.group,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': None,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': alert.event,
-                'group': None,
-                'tags': None
-            },
-            {
-                'resource': None,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': alert.event,
-                'group': None,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': None,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': alert.event,
-                'group': alert.group,
-                'tags': None
-            },
-            {
-                'resource': None,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': alert.event,
-                'group': alert.group,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': alert.resource,
-                'service': None,
-                'event': None,
-                'group': None,
-                'tags': None
-            },
-            {
-                'resource': alert.resource,
-                'service': None,
-                'event': None,
-                'group': None,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': alert.resource,
-                'service': None,
-                'event': None,
-                'group': alert.group,
-                'tags': None
-            },
-            {
-                'resource': alert.resource,
-                'service': None,
-                'event': None,
-                'group': alert.group,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': alert.resource,
-                'service': None,
-                'event': alert.event,
-                'group': None,
-                'tags': None
-            },
-            {
-                'resource': alert.resource,
-                'service': None,
-                'event': alert.event,
-                'group': None,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': alert.resource,
-                'service': None,
-                'event': alert.event,
-                'group': alert.group,
-                'tags': None
-            },
-            {
-                'resource': alert.resource,
-                'service': None,
-                'event': alert.event,
-                'group': alert.group,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': alert.resource,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': None,
-                'group': None,
-                'tags': None
-            },
-            {
-                'resource': alert.resource,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': None,
-                'group': None,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': alert.resource,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': None,
-                'group': alert.group,
-                'tags': None
-            },
-            {
-                'resource': alert.resource,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': None,
-                'group': alert.group,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': alert.resource,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': alert.event,
-                'group': None,
-                'tags': None
-            },
-            {
-                'resource': alert.resource,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': alert.event,
-                'group': None,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            },
-            {
-                'resource': alert.resource,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': alert.event,
-                'group': alert.group,
-                'tags': None
-            },
-            {
-                'resource': alert.resource,
-                'service': {'$not': {'$elemMatch': {'$nin': alert.service}}},
-                'event': alert.event,
-                'group': alert.group,
-                'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}
-            }
+            {'resource': None, 'service': None, 'event': None, 'group': None, 'tags': None, 'origin': None},
+            {'resource': None, 'service': None, 'event': None, 'group': None, 'tags': None, 'origin': alert.origin},
+            {'resource': None, 'service': None, 'event': None, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': None, 'service': None, 'event': None, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': None, 'service': None, 'event': None, 'group': alert.group, 'tags': None, 'origin': None},
+            {'resource': None, 'service': None, 'event': None, 'group': alert.group, 'tags': None, 'origin': alert.origin},
+            {'resource': None, 'service': None, 'event': None, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': None, 'service': None, 'event': None, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': None, 'service': None, 'event': alert.event, 'group': None, 'tags': None, 'origin': None},
+            {'resource': None, 'service': None, 'event': alert.event, 'group': None, 'tags': None, 'origin': alert.origin},
+            {'resource': None, 'service': None, 'event': alert.event, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': None, 'service': None, 'event': alert.event, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': None, 'service': None, 'event': alert.event, 'group': alert.group, 'tags': None, 'origin': None},
+            {'resource': None, 'service': None, 'event': alert.event, 'group': alert.group, 'tags': None, 'origin': alert.origin},
+            {'resource': None, 'service': None, 'event': alert.event, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': None, 'service': None, 'event': alert.event, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': None, 'tags': None, 'origin': None},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': None, 'tags': None, 'origin': alert.origin},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': alert.group, 'tags': None, 'origin': None},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': alert.group, 'tags': None, 'origin': alert.origin},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': None, 'tags': None, 'origin': None},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': None, 'tags': None, 'origin': alert.origin},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': alert.group, 'tags': None, 'origin': None},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': alert.group, 'tags': None, 'origin': alert.origin},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': None, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': None, 'event': None, 'group': None, 'tags': None, 'origin': None},
+            {'resource': alert.resource, 'service': None, 'event': None, 'group': None, 'tags': None, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': None, 'event': None, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': alert.resource, 'service': None, 'event': None, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': None, 'event': None, 'group': alert.group, 'tags': None, 'origin': None},
+            {'resource': alert.resource, 'service': None, 'event': None, 'group': alert.group, 'tags': None, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': None, 'event': None, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': alert.resource, 'service': None, 'event': None, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': None, 'event': alert.event, 'group': None, 'tags': None, 'origin': None},
+            {'resource': alert.resource, 'service': None, 'event': alert.event, 'group': None, 'tags': None, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': None, 'event': alert.event, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': alert.resource, 'service': None, 'event': alert.event, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': None, 'event': alert.event, 'group': alert.group, 'tags': None, 'origin': None},
+            {'resource': alert.resource, 'service': None, 'event': alert.event, 'group': alert.group, 'tags': None, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': None, 'event': alert.event, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': alert.resource, 'service': None, 'event': alert.event, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': None, 'tags': None, 'origin': None},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': None, 'tags': None, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': alert.group, 'tags': None, 'origin': None},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': alert.group, 'tags': None, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': None, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': None, 'tags': None, 'origin': None},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': None, 'tags': None, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': None, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': alert.group, 'tags': None, 'origin': None},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': alert.group, 'tags': None, 'origin': alert.origin},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': None},
+            {'resource': alert.resource, 'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}, 'event': alert.event, 'group': alert.group, 'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}, 'origin': alert.origin},
         ]}]
 
         if current_app.config['CUSTOMER_VIEWS']:

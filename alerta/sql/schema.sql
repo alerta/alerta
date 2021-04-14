@@ -121,6 +121,12 @@ EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column "text" already exists in blackouts.';
 END$$;
 
+DO $$
+BEGIN
+    ALTER TABLE blackouts ADD COLUMN origin text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "origin" already exists in blackouts.';
+END$$;
 
 CREATE TABLE IF NOT EXISTS customers (
     id text PRIMARY KEY,
