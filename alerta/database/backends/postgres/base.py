@@ -708,10 +708,12 @@ class Backend(Database):
 
     def create_blackout(self, blackout):
         insert = """
-            INSERT INTO blackouts (id, priority, environment, service, resource, event, "group", tags,
-                customer, start_time, end_time, duration, "user", create_time, text)
-            VALUES (%(id)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s,
-                %(customer)s, %(start_time)s, %(end_time)s, %(duration)s, %(user)s, %(create_time)s, %(text)s)
+            INSERT INTO blackouts (id, priority, environment, service, resource, event,
+                "group", tags, origin, customer, start_time, end_time,
+                duration, "user", create_time, text)
+            VALUES (%(id)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s,
+                %(group)s, %(tags)s, %(origin)s, %(customer)s, %(start_time)s, %(end_time)s,
+                %(duration)s, %(user)s, %(create_time)s, %(text)s)
             RETURNING *, duration AS remaining
         """
         return self._insert(insert, vars(blackout))

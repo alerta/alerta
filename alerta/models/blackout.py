@@ -41,7 +41,7 @@ class Blackout:
         self.event = kwargs.get('event', None)
         self.group = kwargs.get('group', None)
         self.tags = kwargs.get('tags', None) or list()
-        self.origin = kwargs.get('origin')
+        self.origin = kwargs.get('origin', None)
         self.customer = kwargs.get('customer', None)
         self.start_time = start_time
         self.end_time = end_time
@@ -66,7 +66,7 @@ class Blackout:
             self.priority = 6
         elif self.tags:
             self.priority = 7
-        elif self.origin:
+        if self.origin:
             self.priority = 8
 
     @property
