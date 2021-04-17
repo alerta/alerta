@@ -507,17 +507,29 @@ class Alert:
     # top 10 alerts
     @staticmethod
     def get_top10_count(query: Query = None) -> List[Dict[str, Any]]:
-        return db.get_topn_count(query, topn=10)
+        return Alert.get_topn_count(query, topn=10)
+
+    @staticmethod
+    def get_topn_count(query: Query = None, topn: int = 10) -> List[Dict[str, Any]]:
+        return db.get_topn_count(query, topn=topn)
 
     # top 10 flapping
     @staticmethod
     def get_top10_flapping(query: Query = None) -> List[Dict[str, Any]]:
-        return db.get_topn_flapping(query, topn=10)
+        return Alert.get_topn_flapping(topn=10)
+
+    @staticmethod
+    def get_topn_flapping(query: Query = None, topn: int = 10) -> List[Dict[str, Any]]:
+        return db.get_topn_flapping(query, topn=topn)
 
     # top 10 standing
     @staticmethod
     def get_top10_standing(query: Query = None) -> List[Dict[str, Any]]:
-        return db.get_topn_standing(query, topn=10)
+        return Alert.get_topn_standing(topn=10)
+
+    @staticmethod
+    def get_topn_standing(query: Query = None, topn: int = 10) -> List[Dict[str, Any]]:
+        return db.get_topn_standing(query, topn=topn)
 
     # get environments
     @staticmethod

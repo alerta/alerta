@@ -393,82 +393,82 @@ def get_counts():
 
 # top 10 counts
 @api.route('/alerts/top10/count', methods=['OPTIONS', 'GET'])
+@api.route('/alerts/topn/count', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.read_alerts)
 @timer(count_timer)
 @jsonp
-def get_top10_count():
+def get_topn_count():
     query = qb.alerts.from_params(request.args, customers=g.customers)
-    top10 = Alert.get_top10_count(query)
+    paging = Page.from_params(request.args, 1)
+    topn = Alert.get_topn_count(query, topn=paging.page_size)
 
-    if top10:
+    if topn:
         return jsonify(
             status='ok',
-            top10=top10,
-            total=len(top10),
-            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
+            top10=topn,
+            total=len(topn)
         )
     else:
         return jsonify(
             status='ok',
             message='not found',
             top10=[],
-            total=0,
-            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
+            total=0
         )
 
 
 # top 10 flapping
 @api.route('/alerts/top10/flapping', methods=['OPTIONS', 'GET'])
+@api.route('/alerts/topn/flapping', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.read_alerts)
 @timer(count_timer)
 @jsonp
-def get_top10_flapping():
+def get_topn_flapping():
     query = qb.alerts.from_params(request.args, customers=g.customers)
-    top10 = Alert.get_top10_flapping(query)
+    paging = Page.from_params(request.args, 1)
+    topn = Alert.get_topn_flapping(query, topn=paging.page_size)
 
-    if top10:
+    if topn:
         return jsonify(
             status='ok',
-            top10=top10,
-            total=len(top10),
-            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
+            top10=topn,
+            total=len(topn)
         )
     else:
         return jsonify(
             status='ok',
             message='not found',
             top10=[],
-            total=0,
-            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
+            total=0
         )
 
 
 # top 10 standing
 @api.route('/alerts/top10/standing', methods=['OPTIONS', 'GET'])
+@api.route('/alerts/topn/standing', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.read_alerts)
 @timer(count_timer)
 @jsonp
-def get_top10_standing():
+def get_topn_standing():
     query = qb.alerts.from_params(request.args, customers=g.customers)
-    top10 = Alert.get_top10_standing(query)
+    paging = Page.from_params(request.args, 1)
+    topn = Alert.get_topn_standing(query, topn=paging.page_size)
 
-    if top10:
+    if topn:
         return jsonify(
             status='ok',
-            top10=top10,
-            total=len(top10),
-            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
+            top10=topn,
+            total=len(topn)
         )
     else:
         return jsonify(
             status='ok',
             message='not found',
             top10=[],
-            total=0,
-            autoRefresh=Switch.find_by_name('auto-refresh-allow').is_on
+            total=0
         )
 
 
