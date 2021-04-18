@@ -57,6 +57,9 @@ class Note:
             'customer': self.customer
         }  # type: Dict[str, Any]
         if self.alert:
+            note['related'] = {
+                'alert': self.alert
+            }
             note['_links'] = {
                 'alert': absolute_url('/alert/' + self.alert)
             }
