@@ -1,3 +1,4 @@
+import copy
 import json
 from typing import Any, Dict
 
@@ -38,7 +39,7 @@ def parse_grafana(args: ImmutableMultiDict, alert: JSON, match: Dict[str, Any]) 
     attributes = {k.replace('.', '_'): v for (k, v) in match_tags.items()}
 
     # get alert rule tags
-    rules_tags = alert.get('tags') or {}
+    rules_tags = copy.copy(alert.get('tags') or {})
     environment = rules_tags.pop('environment', environment)
     alerting_severity = rules_tags.pop('severity', alerting_severity)
     if 'service' in rules_tags:
