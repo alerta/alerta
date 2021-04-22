@@ -73,6 +73,9 @@ CUSTOM_SCOPES = []
 DELETE_SCOPES = []  # Set to "delete:alerts" to prevent users with "write:alerts" scope being able to delete alerts
 CUSTOMER_VIEWS = False
 
+ALLOW_READONLY = False
+READONLY_SCOPES = ['read']
+
 BASIC_AUTH_REALM = 'Alerta'
 SIGNUP_ENABLED = True
 
