@@ -120,11 +120,20 @@ def permission(scope=None):
                 else:
                     return f(*args, **kwargs)
 
+            # auth not required
             if not current_app.config['AUTH_REQUIRED']:
                 g.user_id = None
                 g.login = None
                 g.customers = []
                 g.scopes = []  # type: List[Scope]
+                return f(*args, **kwargs)
+
+            # auth required for admin/write, but readonly is allowed
+            if current_app.config['AUTH_REQUIRED'] and current_app.config['ALLOW_READONLY']:
+                g.user_id = None
+                g.login = None
+                g.customers = []
+                g.scopes = current_app.config['READONLY_SCOPES']
                 return f(*args, **kwargs)
 
             # Google App Engine Cron Service
