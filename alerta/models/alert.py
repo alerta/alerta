@@ -553,12 +553,40 @@ class Alert:
 
     # add note
     def add_note(self, text: str) -> Note:
-        return Note.from_alert(self, text)
+        note = Note.from_alert(self, text)
+        history = History(
+            id=note.id,
+            event=self.event,
+            severity=self.severity,
+            status=self.status,
+            value=self.value,
+            text=text,
+            change_type=ChangeType.note,
+            update_time=datetime.utcnow(),
+            user=g.login
+        )
+        db.add_history(self.id, history)
+        return note
 
     # get notes for alert
     def get_alert_notes(self, page: int = 1, page_size: int = 100) -> List['Note']:
         notes = db.get_alert_notes(self.id, page, page_size)
         return [Note.from_db(note) for note in notes]
+
+    def delete_note(self, note_id):
+        history = History(
+            id=note_id,
+            event=self.event,
+            severity=self.severity,
+            status=self.status,
+            value=self.value,
+            text='note dismissed',
+            change_type=ChangeType.dismiss,
+            update_time=datetime.utcnow(),
+            user=g.login
+        )
+        db.add_history(self.id, history)
+        return Note.delete_by_id(note_id)
 
     @staticmethod
     def housekeeping(expired_threshold: int = 2, info_threshold: int = 12) -> Tuple[List['Alert'], List['Alert'], List['Alert']]:
