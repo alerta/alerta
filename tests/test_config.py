@@ -63,6 +63,7 @@ class ConfigTestCase(unittest.TestCase):
 
         with mod_env(
                 ALLOWED_ENVIRONMENTS=','.join(self.allowed_environments),
+                DEFAULT_ENVIRONMENT='Baz',
                 ALLOWED_GITHUB_ORGS=','.join(self.allowed_github_orgs),
                 # ALLOWED_GITLAB_GROUPS=','.join(self.allowed_gitlab_groups),
                 ALLOWED_KEYCLOAK_ROLES=','.join(self.allowed_keycloak_roles),

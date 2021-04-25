@@ -86,12 +86,18 @@ class Config:
         config['ORIGIN_BLACKLIST'] = get_config('ORIGIN_BLACKLIST', default=[], type=list, config=config)
         config['ALLOWED_ENVIRONMENTS'] = get_config('ALLOWED_ENVIRONMENTS', default=[], type=list, config=config)
 
+        # webhooks
+        config['DEFAULT_ENVIRONMENT'] = get_config('DEFAULT_ENVIRONMENT', default=None, type=str, config=config)
+
         # Runtime config check
         if config['CUSTOMER_VIEWS'] and not config['AUTH_REQUIRED']:
             raise RuntimeError('Must enable authentication to use customer views')
 
         if config['CUSTOMER_VIEWS'] and not config['ADMIN_USERS']:
             raise RuntimeError('Customer views is enabled but there are no admin users')
+
+        if config['DEFAULT_ENVIRONMENT'] not in config['ALLOWED_ENVIRONMENTS']:
+            raise RuntimeError('Default environment "{}" not in list of allowed environments'.format(config['DEFAULT_ENVIRONMENT']))
 
         return config
 

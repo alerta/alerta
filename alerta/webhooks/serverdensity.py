@@ -1,5 +1,7 @@
 from typing import Any, Dict
 
+from flask import current_app
+
 from alerta.models.alert import Alert
 
 from . import WebhookBase
@@ -23,7 +25,7 @@ class ServerDensityWebhook(WebhookBase):
         return Alert(
             resource=payload['item_name'],
             event=payload['alert_type'],
-            environment='Production',
+            environment=current_app.config['DEFAULT_ENVIRONMENT'],
             severity=severity,
             service=[payload['item_type']],
             group=payload['alert_section'],

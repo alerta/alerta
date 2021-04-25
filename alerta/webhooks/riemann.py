@@ -1,5 +1,7 @@
 from typing import Any, Dict
 
+from flask import current_app
+
 from alerta.models.alert import Alert
 
 from . import WebhookBase
@@ -18,7 +20,7 @@ class RiemannWebhook(WebhookBase):
         return Alert(
             resource='{}-{}'.format(payload['host'], payload['service']),
             event=payload.get('event', payload['service']),
-            environment=payload.get('environment', 'Production'),
+            environment=payload.get('environment', current_app.config['DEFAULT_ENVIRONMENT']),
             severity=payload.get('state', 'unknown'),
             service=[payload['service']],
             group=payload.get('group', 'Performance'),

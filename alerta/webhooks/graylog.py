@@ -1,5 +1,7 @@
 from typing import Any, Dict
 
+from flask import current_app
+
 from alerta.models.alert import Alert
 
 from . import WebhookBase
@@ -18,7 +20,7 @@ class GraylogWebhook(WebhookBase):
         return Alert(
             resource=payload['stream']['title'],
             event=query_string.get('event', 'Alert'),
-            environment=query_string.get('environment', 'Development'),
+            environment=query_string.get('environment', current_app.config['DEFAULT_ENVIRONMENT']),
             service=query_string.get('service', 'test').split(','),
             severity=query_string.get('severity', 'critical'),
             value='n/a',
