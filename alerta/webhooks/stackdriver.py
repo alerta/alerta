@@ -49,7 +49,7 @@ class StackDriverWebhook(WebhookBase):
         return Alert(
             resource=incident['resource_name'],
             event=incident['condition_name'],
-            environment=incident.get('environment', 'Production'),
+            environment=incident.get('environment', current_app.config['DEFAULT_ENVIRONMENT']),
             severity=severity,
             status=status,
             service=service,
