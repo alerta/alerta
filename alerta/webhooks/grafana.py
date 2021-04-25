@@ -2,6 +2,7 @@ import copy
 import json
 from typing import Any, Dict
 
+from flask import current_app
 from werkzeug.datastructures import ImmutableMultiDict, MultiDict
 
 from alerta.app import alarm_model, qb
@@ -17,7 +18,7 @@ JSON = Dict[str, Any]
 def parse_grafana(args: ImmutableMultiDict, alert: JSON, match: Dict[str, Any]) -> Alert:
 
     # get values from request params
-    environment = args.get('environment', 'Production')
+    environment = args.get('environment', current_app.config['DEFAULT_ENVIRONMENT'])
     alerting_severity = args.get('severity', 'major')
     service = args.getlist('service') or ['Grafana']
     group = args.get('group', 'Performance')

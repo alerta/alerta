@@ -1,5 +1,7 @@
 from typing import Any, Dict
 
+from flask import current_app
+
 from alerta.app import alarm_model
 from alerta.models.alert import Alert
 
@@ -28,7 +30,7 @@ class PingdomWebhook(WebhookBase):
             resource=payload['check_name'],
             event=payload['current_state'],
             correlate=['UP', 'DOWN'],
-            environment='Production',
+            environment=current_app.config['DEFAULT_ENVIRONMENT'],
             severity=severity,
             service=[payload['check_type']],
             group='Network',

@@ -265,3 +265,6 @@ FWD_DESTINATIONS = [
 ]  # type: List[Tuple]
 
 # valid actions=['*', 'alerts', 'actions', 'open', 'assign', 'ack', 'unack', 'shelve', 'unshelve', 'close', 'delete']
+
+# Webhooks
+DEFAULT_ENVIRONMENT = 'Production'  # default environment used by webhooks, value must be in ALLOWED_ENVIRONMENTS
