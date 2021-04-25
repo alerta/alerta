@@ -159,6 +159,7 @@ class ChangeType(str, Enum):
     value = 'value'
     severity = 'severity'
     note = 'note'
+    dismiss = 'dismiss'  # note dismissed
     timeout = 'timeout'
     expired = 'expired'
 

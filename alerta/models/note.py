@@ -6,8 +6,7 @@ from flask import g
 
 from alerta.app import db
 from alerta.database.base import Query
-from alerta.models.enums import ChangeType, NoteType
-from alerta.models.history import History
+from alerta.models.enums import NoteType
 from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
@@ -124,19 +123,6 @@ class Note:
             alert=alert.id,
             customer=alert.customer
         )
-
-        history = History(
-            id=note.id,
-            event=alert.event,
-            severity=alert.severity,
-            status=alert.status,
-            value=alert.value,
-            text=text,
-            change_type=ChangeType.note,
-            update_time=datetime.utcnow(),
-            user=g.login
-        )
-        db.add_history(alert.id, history)
         return note.create()
 
     @staticmethod
@@ -152,3 +138,7 @@ class Note:
 
     def delete(self) -> bool:
         return db.delete_note(self.id)
+
+    @staticmethod
+    def delete_by_id(id: str) -> bool:
+        return db.delete_note(id)

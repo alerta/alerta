@@ -697,7 +697,7 @@ def delete_note(alert_id, note_id):
     write_audit_trail.send(current_app._get_current_object(), event='alert-note-deleted', message='', user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note', request=request)
 
-    if note.delete():
+    if alert.delete_note(note_id):
         return jsonify(status='ok')
     else:
         raise ApiError('failed to delete note', 500)
