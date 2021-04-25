@@ -188,8 +188,8 @@ ACK_TIMEOUT = 0  # auto-unack alerts after x seconds (0 seconds = do not auto-un
 SHELVE_TIMEOUT = 7200  # auto-unshelve alerts after x seconds (0 seconds = do not auto-unshelve)
 
 # Housekeeping settings
-DEFAULT_EXPIRED_DELETE_HRS = 2  # hours (0 hours = do not delete)
-DEFAULT_INFO_DELETE_HRS = 12  # hours (0 hours = do not delete)
+DELETE_EXPIRED_AFTER = 2 * 60 * 60  # seconds (0 = do not delete)
+DELETE_INFO_AFTER = 12 * 60 * 60  # seconds (0 = do not delete)
 
 # Send verification emails to new BasicAuth users
 EMAIL_VERIFICATION = False

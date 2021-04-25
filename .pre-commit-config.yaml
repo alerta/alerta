@@ -23,6 +23,7 @@ repos:
         args: ['--autofix']
     -   id: name-tests-test
         args: ['--django']
+        exclude: ^tests/helpers/
     -   id: requirements-txt-fixer
     -   id: trailing-whitespace
 -   repo: https://gitlab.com/pycqa/flake8

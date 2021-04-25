@@ -1500,14 +1500,14 @@ class Backend(Database):
     # HOUSEKEEPING
 
     def get_expired(self, expired_threshold, info_threshold):
-        # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
-        # and 'informational' alerts older than "info_threshold" hours
+        # delete 'closed' or 'expired' alerts older than "expired_threshold" seconds
+        # and 'informational' alerts older than "info_threshold" seconds
 
         if expired_threshold:
             delete = """
                 DELETE FROM alerts
                  WHERE (status IN ('closed', 'expired')
-                        AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(expired_threshold)s hours'))
+                        AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(expired_threshold)s seconds'))
             """
             self._deleteall(delete, {'expired_threshold': expired_threshold})
 
@@ -1515,7 +1515,7 @@ class Backend(Database):
             delete = """
                 DELETE FROM alerts
                  WHERE (severity='informational'
-                        AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(info_threshold)s hours'))
+                        AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(info_threshold)s seconds'))
             """
             self._deleteall(delete, {'info_threshold': info_threshold})
 

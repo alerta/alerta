@@ -75,6 +75,22 @@ class Config:
 
         config['GOOGLE_TRACKING_ID'] = get_config('GOOGLE_TRACKING_ID', default=None, type=str, config=config)
 
+        # housekeeping
+        delete_expired_hrs = (
+            os.environ.get('DEFAULT_EXPIRED_DELETE_HRS', None)
+            or os.environ.get('HK_EXPIRED_DELETE_HRS', None)
+        )
+        delete_expired = delete_expired_hrs * 60 * 60 if delete_expired_hrs else None
+        config['DELETE_EXPIRED_AFTER'] = get_config('DELETE_EXPIRED_AFTER', default=delete_expired, type=int, config=config)
+
+        delete_info_hrs = (
+            os.environ.get('DEFAULT_INFO_DELETE_HRS', None)
+            or os.environ.get('HK_INFO_DELETE_HRS', None)
+        )
+        delete_info = delete_info_hrs * 60 * 60 if delete_info_hrs else None
+        config['DELETE_INFO_AFTER'] = get_config('DELETE_INFO_AFTER', default=delete_info, type=int, config=config)
+
+        # plugins
         config['PLUGINS'] = get_config('PLUGINS', default=[], type=list, config=config)
 
         # blackout plugin
