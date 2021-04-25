@@ -47,6 +47,9 @@ def config():
             'ack': current_app.config['ACK_TIMEOUT'],
             'shelve': current_app.config['SHELVE_TIMEOUT']
         },
+        'blackouts': {
+            'duration': current_app.config['BLACKOUT_DURATION']
+        },
         'dates': {
             'shortTime': current_app.config['DATE_FORMAT_SHORT_TIME'],
             'mediumDate': current_app.config['DATE_FORMAT_MEDIUM_DATE'],
