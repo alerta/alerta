@@ -4,11 +4,14 @@ import unittest
 from uuid import uuid4
 
 from alerta.app import create_app, db
+from tests.helpers.utils import mod_env
 
 
 class ManagementTestCase(unittest.TestCase):
 
     def setUp(self):
+
+        self.maxDiff = None
 
         test_config = {
             'DEBUG': False,
@@ -17,8 +20,13 @@ class ManagementTestCase(unittest.TestCase):
             # 'ACK_TIMEOUT': 2,
             # 'SHELVE_TIMEOUT': 3
         }
-        self.app = create_app(test_config)
-        self.client = self.app.test_client()
+
+        with mod_env(
+            DELETE_EXPIRED_AFTER='2',
+            DELETE_INFO_AFTER='3'
+        ):
+            self.app = create_app(test_config)
+            self.client = self.app.test_client()
 
         self.headers = {
             'Content-type': 'application/json'
@@ -77,6 +85,16 @@ class ManagementTestCase(unittest.TestCase):
             'service': ['Network'],
             'severity': 'ok',
             'correlate': ['node_down', 'node_marginal', 'node_up']
+        }
+
+        self.info_alert = {
+            'event': 'node_init',
+            'resource': random_resource(),
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'informational',
+            'correlate': ['node_down', 'node_marginal', 'node_up'],
+            'timeout': 3
         }
 
     def tearDown(self):
@@ -153,7 +171,13 @@ class ManagementTestCase(unittest.TestCase):
         # create an alert that should be unaffected
         response = self.client.post('/alert', data=json.dumps(self.ok_alert), headers=self.headers)
         self.assertEqual(response.status_code, 201)
+
+        # create an info alert that should be deleted
+        response = self.client.post('/alert', data=json.dumps(self.info_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
+
+        info_id = data['id']
 
         # create an alert and ack it then shelve it
         response = self.client.post('/alert', data=json.dumps(self.acked_and_shelved_alert), headers=self.headers)
@@ -184,6 +208,7 @@ class ManagementTestCase(unittest.TestCase):
 
         time.sleep(5)
 
+        # run housekeeping (1st time)
         response = self.client.get('/management/housekeeping', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
@@ -232,3 +257,29 @@ class ManagementTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['history'][2]['timeout'], 3)
         self.assertEqual(data['alert']['history'][3]['status'], 'ack')
         self.assertEqual(data['alert']['history'][3]['timeout'], 4)
+
+        response = self.client.get('/alert/' + info_id)
+        self.assertEqual(response.status_code, 404)
+
+        time.sleep(5)
+
+        # run housekeeping (2nd time)
+        response = self.client.get('/management/housekeeping', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['count'], 1)
+        self.assertListEqual(data['expired'], [])
+        self.assertListEqual(data['unshelve'], [])
+        self.assertListEqual(data['unack'], [acked_and_shelved_id])
+
+        response = self.client.get('/alert/' + expired_id)
+        self.assertEqual(response.status_code, 404)
+
+        # run housekeeping (3rd time)
+        response = self.client.get('/management/housekeeping', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['count'], 0)
+        self.assertListEqual(data['expired'], [])
+        self.assertListEqual(data['unshelve'], [])
+        self.assertListEqual(data['unack'], [])

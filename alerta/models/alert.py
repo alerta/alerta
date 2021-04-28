@@ -589,7 +589,7 @@ class Alert:
         return Note.delete_by_id(note_id)
 
     @staticmethod
-    def housekeeping(expired_threshold: int = 2, info_threshold: int = 12) -> Tuple[List['Alert'], List['Alert'], List['Alert']]:
+    def housekeeping(expired_threshold: int, info_threshold: int) -> Tuple[List['Alert'], List['Alert'], List['Alert']]:
         return (
             [Alert.from_db(alert) for alert in db.get_expired(expired_threshold, info_threshold)],
             [Alert.from_db(alert) for alert in db.get_unshelve()],
