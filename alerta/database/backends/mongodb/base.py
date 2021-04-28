@@ -1584,17 +1584,17 @@ class Backend(Database):
     # HOUSEKEEPING
 
     def get_expired(self, expired_threshold, info_threshold):
-        # delete 'closed' or 'expired' alerts older than "expired_threshold" hours
-        # and 'informational' alerts older than "info_threshold" hours
+        # delete 'closed' or 'expired' alerts older than "expired_threshold" seconds
+        # and 'informational' alerts older than "info_threshold" seconds
 
         if expired_threshold:
-            expired_hours_ago = datetime.utcnow() - timedelta(hours=expired_threshold)
+            expired_seconds_ago = datetime.utcnow() - timedelta(seconds=expired_threshold)
             self.get_db().alerts.delete_many(
-                {'status': {'$in': ['closed', 'expired']}, 'lastReceiveTime': {'$lt': expired_hours_ago}})
+                {'status': {'$in': ['closed', 'expired']}, 'lastReceiveTime': {'$lt': expired_seconds_ago}})
 
         if info_threshold:
-            info_hours_ago = datetime.utcnow() - timedelta(hours=info_threshold)
-            self.get_db().alerts.delete_many({'severity': 'informational', 'lastReceiveTime': {'$lt': info_hours_ago}})
+            info_seconds_ago = datetime.utcnow() - timedelta(seconds=info_threshold)
+            self.get_db().alerts.delete_many({'severity': 'informational', 'lastReceiveTime': {'$lt': info_seconds_ago}})
 
         # get list of alerts to be newly expired
         pipeline = [
