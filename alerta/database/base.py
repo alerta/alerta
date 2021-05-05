@@ -44,7 +44,6 @@ def load_backend(backend):
 
 
 class Database(Base):
-
     def __init__(self, app=None):
         self.app = None
         if app is not None:
@@ -268,6 +267,52 @@ class Database(Base):
     def delete_twilio_rule(self, id):
         raise NotImplementedError
 
+    # NOTIFICATION CHANNELS
+
+    def create_notification_channel(self, notification_channel):
+        raise NotImplementedError
+
+    def get_notification_channel(self, id, customers=None):
+        raise NotImplementedError
+
+    def get_notification_channels(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_notification_channels_count(self, query=None):
+        raise NotImplementedError
+
+    def get_notification_channels_active(self, alert):
+        raise NotImplementedError
+
+    def update_notification_channel(self, id, **kwargs):
+        raise NotImplementedError
+
+    def delete_notification_channel(self, id):
+        raise NotImplementedError
+
+    # NOTIFICATION RULES
+
+    def create_notification_rule(self, notification_rule):
+        raise NotImplementedError
+
+    def get_notification_rule(self, id, customers=None):
+        raise NotImplementedError
+
+    def get_notification_rules(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_notification_rules_count(self, query=None):
+        raise NotImplementedError
+
+    def get_notification_rules_active(self, alert):
+        raise NotImplementedError
+
+    def update_notification_rule(self, id, **kwargs):
+        raise NotImplementedError
+
+    def delete_notification_rule(self, id):
+        raise NotImplementedError
+
     # HEARTBEATS
 
     def upsert_heartbeat(self, heartbeat):
@@ -480,7 +525,6 @@ class Database(Base):
 
 
 class QueryBuilder(Base):
-
     def __init__(self, app=None):
         self.app = None
         if app is not None:

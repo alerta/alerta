@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional  # noqa
 from typing import Any, Dict, List, Tuple, Union
 from uuid import uuid4
+from alerta.models.notification_rule import NotificationRule
 from alerta.models.twilio_rule import TwilioRule
 
 from flask import current_app, g
@@ -23,15 +24,15 @@ NoneType = type(None)
 
 
 class Alert:
-
     def __init__(self, resource: str, event: str, **kwargs) -> None:
 
         if not resource:
             raise ValueError('Missing mandatory value for "resource"')
         if not event:
             raise ValueError('Missing mandatory value for "event"')
-        if any(['.' in key for key in kwargs.get('attributes', dict()).keys()]) \
-                or any(['$' in key for key in kwargs.get('attributes', dict()).keys()]):
+        if any(['.' in key for key in kwargs.get('attributes', dict()).keys()]) or any(
+            ['$' in key for key in kwargs.get('attributes', dict()).keys()]
+        ):
             raise ValueError('Attribute keys must not contain "." or "$"')
         if isinstance(kwargs.get('value', None), int):
             kwargs['value'] = str(kwargs['value'])
@@ -115,7 +116,7 @@ class Alert:
             create_time=DateTime.parse(json['createTime']) if 'createTime' in json else None,
             timeout=json.get('timeout', None),
             raw_data=json.get('rawData', None),
-            customer=json.get('customer', None)
+            customer=json.get('customer', None),
         )
 
     @property
@@ -150,7 +151,8 @@ class Alert:
             'lastReceiveTime': self.last_receive_time,
             'updateTime': self.update_time,
             'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)],
-            'twilioRules': [twilio_rule.serialize for twilio_rule in self.get_twilio_rules()]
+            'twilioRules': [twilio_rule.serialize for twilio_rule in self.get_twilio_rules()],
+            'notificationRules': [notification_rule.serialize for notification_rule in self.get_notification_rules()],
         }
 
     def get_id(self, short: bool = False) -> str:
@@ -158,9 +160,9 @@ class Alert:
 
     def get_body(self, history: bool = True) -> Dict[str, Any]:
         body = self.serialize
-        body.update({
-            key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime', 'updateTime'] if body[key]
-        })
+        body.update(
+            {key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime', 'updateTime'] if body[key]}
+        )
         if not history:
             body['history'] = []
         return body
@@ -200,7 +202,7 @@ class Alert:
             last_receive_id=doc.get('lastReceiveId', None),
             last_receive_time=doc.get('lastReceiveTime', None),
             update_time=doc.get('updateTime', None),
-            history=[History.from_db(h) for h in doc.get('history', list())]
+            history=[History.from_db(h) for h in doc.get('history', list())],
         )
 
     @classmethod
@@ -233,7 +235,7 @@ class Alert:
             last_receive_id=rec.last_receive_id,
             last_receive_time=rec.last_receive_time,
             update_time=getattr(rec, 'update_time'),
-            history=[History.from_db(h) for h in rec.history]
+            history=[History.from_db(h) for h in rec.history],
         )
 
     @classmethod
@@ -287,11 +289,7 @@ class Alert:
 
         status, previous_value, previous_status, _ = self._get_hist_info()
 
-        _, new_status = alarm_model.transition(
-            alert=self,
-            current_status=status,
-            previous_status=previous_status
-        )
+        _, new_status = alarm_model.transition(alert=self, current_status=status, previous_status=previous_status)
 
         self.repeat = True
         self.last_receive_id = self.id
@@ -343,11 +341,7 @@ class Alert:
 
         status, _, previous_status, _ = self._get_hist_info()
 
-        _, new_status = alarm_model.transition(
-            alert=self,
-            current_status=status,
-            previous_status=previous_status
-        )
+        _, new_status = alarm_model.transition(alert=self, current_status=status, previous_status=previous_status)
 
         self.duplicate_count = 0
         self.repeat = False
@@ -362,18 +356,20 @@ class Alert:
         else:
             text = self.text
 
-        history = [History(
-            id=self.id,
-            event=self.event,
-            severity=self.severity,
-            status=new_status,
-            value=self.value,
-            text=text,
-            change_type=ChangeType.severity,
-            update_time=self.create_time,
-            user=g.login,
-            timeout=self.timeout
-        )]
+        history = [
+            History(
+                id=self.id,
+                event=self.event,
+                severity=self.severity,
+                status=new_status,
+                value=self.value,
+                text=text,
+                change_type=ChangeType.severity,
+                update_time=self.create_time,
+                user=g.login,
+                timeout=self.timeout,
+            )
+        ]
 
         self.status = new_status
         return Alert.from_db(db.correlate_alert(self, history))
@@ -384,9 +380,7 @@ class Alert:
 
         trend_indication = alarm_model.trend(alarm_model.DEFAULT_PREVIOUS_SEVERITY, self.severity)
 
-        _, self.status = alarm_model.transition(
-            alert=self
-        )
+        _, self.status = alarm_model.transition(alert=self)
 
         self.duplicate_count = 0
         self.repeat = False
@@ -397,18 +391,20 @@ class Alert:
         self.last_receive_time = now
         self.update_time = now
 
-        self.history = [History(
-            id=self.id,
-            event=self.event,
-            severity=self.severity,
-            status=self.status,
-            value=self.value,
-            text=self.text,
-            change_type=ChangeType.new,
-            update_time=self.create_time,
-            user=g.login,
-            timeout=self.timeout
-        )]
+        self.history = [
+            History(
+                id=self.id,
+                event=self.event,
+                severity=self.severity,
+                status=self.status,
+                value=self.value,
+                text=self.text,
+                change_type=ChangeType.new,
+                update_time=self.create_time,
+                user=g.login,
+                timeout=self.timeout,
+            )
+        ]
 
         return Alert.from_db(db.create_alert(self))
 
@@ -435,6 +431,12 @@ class Alert:
         else:
             return []
 
+    def get_notification_rules(self) -> 'list[NotificationRule]':
+        if not self.duplicate_count or self.duplicate_count == 0:
+            return [NotificationRule.from_db(notification_rule) for notification_rule in db.get_notification_rules_active(self)]
+        else:
+            return []
+
     # set alert status
     def set_status(self, status: str, text: str = '', timeout: int = None) -> 'Alert':
         now = datetime.utcnow()
@@ -450,7 +452,7 @@ class Alert:
             change_type=ChangeType.status,
             update_time=now,
             user=g.login,
-            timeout=self.timeout
+            timeout=self.timeout,
         )
         return db.set_status(self.id, status, timeout, update_time=now, history=history)
 
@@ -612,35 +614,39 @@ class Alert:
         return (
             [Alert.from_db(alert) for alert in db.get_expired(expired_threshold, info_threshold)],
             [Alert.from_db(alert) for alert in db.get_unshelve()],
-            [Alert.from_db(alert) for alert in db.get_unack()]
+            [Alert.from_db(alert) for alert in db.get_unack()],
         )
 
     def from_status(self, status: str, text: str = '', timeout: int = None) -> 'Alert':
         now = datetime.utcnow()
 
         self.timeout = timeout or current_app.config['ALERT_TIMEOUT']
-        history = [History(
-            id=self.id,
-            event=self.event,
-            severity=self.severity,
-            status=status,
-            value=self.value,
-            text=text,
-            change_type=ChangeType.status,
-            update_time=now,
-            user=g.login,
-            timeout=self.timeout
-        )]
-        return Alert.from_db(db.set_alert(
-            id=self.id,
-            severity=self.severity,
-            status=status,
-            tags=self.tags,
-            attributes=self.attributes,
-            timeout=timeout,
-            previous_severity=self.previous_severity,
-            update_time=now,
-            history=history)
+        history = [
+            History(
+                id=self.id,
+                event=self.event,
+                severity=self.severity,
+                status=status,
+                value=self.value,
+                text=text,
+                change_type=ChangeType.status,
+                update_time=now,
+                user=g.login,
+                timeout=self.timeout,
+            )
+        ]
+        return Alert.from_db(
+            db.set_alert(
+                id=self.id,
+                severity=self.severity,
+                status=status,
+                tags=self.tags,
+                attributes=self.attributes,
+                timeout=timeout,
+                previous_severity=self.previous_severity,
+                update_time=now,
+                history=history,
+            )
         )
 
     def from_action(self, action: str, text: str = '', timeout: int = None) -> 'Alert':
@@ -658,12 +664,7 @@ class Alert:
         else:
             timeout = timeout or self.timeout or current_app.config['ALERT_TIMEOUT']
 
-        new_severity, new_status = alarm_model.transition(
-            alert=self,
-            current_status=status,
-            previous_status=previous_status,
-            action=action
-        )
+        new_severity, new_status = alarm_model.transition(alert=self, current_status=status, previous_status=previous_status, action=action)
 
         r = status_change_hook.send(self, status=new_status, text=text)
         _, (_, new_status, text) = r[0]
@@ -673,29 +674,33 @@ class Alert:
         except ValueError:
             change_type = ChangeType.action
 
-        history = [History(
-            id=self.id,
-            event=self.event,
-            severity=new_severity,
-            status=new_status,
-            value=self.value,
-            text=text,
-            change_type=change_type,
-            update_time=now,
-            user=g.login,
-            timeout=timeout
-        )]
+        history = [
+            History(
+                id=self.id,
+                event=self.event,
+                severity=new_severity,
+                status=new_status,
+                value=self.value,
+                text=text,
+                change_type=change_type,
+                update_time=now,
+                user=g.login,
+                timeout=timeout,
+            )
+        ]
 
-        return Alert.from_db(db.set_alert(
-            id=self.id,
-            severity=new_severity,
-            status=new_status,
-            tags=self.tags,
-            attributes=self.attributes,
-            timeout=self.timeout,
-            previous_severity=self.severity if new_severity != self.severity else self.previous_severity,
-            update_time=now,
-            history=history)
+        return Alert.from_db(
+            db.set_alert(
+                id=self.id,
+                severity=new_severity,
+                status=new_status,
+                tags=self.tags,
+                attributes=self.attributes,
+                timeout=self.timeout,
+                previous_severity=self.severity if new_severity != self.severity else self.previous_severity,
+                update_time=now,
+                history=history,
+            )
         )
 
     def from_expired(self, text: str = '', timeout: int = None):

@@ -121,6 +121,41 @@ CREATE TABLE IF NOT EXISTS twilio_rules (
 );
 
 
+-- DROP TABLE IF EXISTS notification_rules;
+-- DROP TABLE IF EXISTS notification_channels;
+CREATE TABLE IF NOT EXISTS notification_channels (
+    id text PRIMARY KEY,
+    type text NOT NULL,
+    api_token text not null,
+    api_sid text,
+    sender text not null,
+    customer text
+);
+
+
+CREATE TABLE IF NOT EXISTS notification_rules (
+    id text PRIMARY KEY,
+    priority integer NOT NULL,
+    environment text NOT NULL,
+    service text[],
+    resource text,
+    event text,
+    "group" text,
+    tags text[],
+    customer text,
+    "user" text,
+    create_time timestamp without time zone,
+    start_time time without time zone,
+    end_time time without time zone,
+    days text[],
+    receivers text[],
+    severity text[],
+    text text,
+    channel_id text not null,
+    FOREIGN key (channel_id) references notification_channels(id)
+);
+
+
 
 CREATE TABLE IF NOT EXISTS customers (
     id text PRIMARY KEY,
