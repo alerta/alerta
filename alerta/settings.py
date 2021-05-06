@@ -32,6 +32,12 @@ DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single
 HISTORY_LIMIT = 100  # cap the number of alert history entries
 HISTORY_ON_VALUE_CHANGE = True  # history entry for duplicate alerts if value changes
 
+# Correlation and duplicate settings
+CORRELATE_APPEND_TAGS = True  # append existing tags to incoming alert tags
+DUPLICATE_APPEND_TAGS = True
+CORRELATE_UPDATE_ATTRIBUTES = True  # update existing attributes with incoming alert attributes
+DUPLICATE_UPDATE_ATTRIBUTES = True
+
 # MongoDB (deprecated, use DATABASE_URL setting)
 MONGO_URI = 'mongodb://localhost:27017/monitoring'
 MONGO_DATABASE = None  # can be used to override default database, above

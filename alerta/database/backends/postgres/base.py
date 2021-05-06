@@ -201,19 +201,29 @@ class Backend(Database):
         """.format(window=window, customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         return self._fetchone(select, vars(alert)).count > count
 
-    def dedup_alert(self, alert, history):
+    def dedup_alert(self, alert, history, append_tags=True, update_attributes=True):
         """
         Update alert status, service, value, text, timeout and rawData, increment duplicate count and set
         repeat=True, and keep track of last receive id and time but don't append to history unless status changes.
         """
+        if append_tags:
+            tags = 'ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s))'
+        else:
+            tags = '%(tags)s'
+
+        if update_attributes:
+            attributes = 'attributes || %(attributes)s'
+        else:
+            attributes = '%(attributes)s'
+
         alert.history = history
         update = """
             UPDATE alerts
                SET status=%(status)s, service=%(service)s, value=%(value)s, text=%(text)s,
                    timeout=%(timeout)s, raw_data=%(raw_data)s, repeat=%(repeat)s,
-                   last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
-                   tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)), attributes=attributes || %(attributes)s,
-                   duplicate_count=duplicate_count + 1, {update_time}, history=(%(history)s || history)[1:{limit}]
+                   last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s, tags={tags},
+                   attributes={attributes}, duplicate_count=duplicate_count + 1, {update_time},
+                   history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND event=%(event)s
@@ -221,13 +231,25 @@ class Backend(Database):
                AND {customer}
          RETURNING *
         """.format(
+            tags=tags,
+            attributes=attributes,
             limit=current_app.config['HISTORY_LIMIT'],
             update_time='update_time=%(update_time)s' if alert.update_time else 'update_time=update_time',
             customer='customer=%(customer)s' if alert.customer else 'customer IS NULL'
         )
         return self._updateone(update, vars(alert), returning=True)
 
-    def correlate_alert(self, alert, history):
+    def correlate_alert(self, alert, history, append_tags=True, update_attributes=True):
+        if append_tags:
+            tags = 'ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s))'
+        else:
+            tags = '%(tags)s'
+
+        if update_attributes:
+            attributes = 'attributes || %(attributes)s'
+        else:
+            attributes = '%(attributes)s'
+
         alert.history = history
         update = """
             UPDATE alerts
@@ -235,14 +257,16 @@ class Backend(Database):
                    text=%(text)s, create_time=%(create_time)s, timeout=%(timeout)s, raw_data=%(raw_data)s,
                    duplicate_count=%(duplicate_count)s, repeat=%(repeat)s, previous_severity=%(previous_severity)s,
                    trend_indication=%(trend_indication)s, receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
-                   last_receive_time=%(last_receive_time)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
-                   attributes=attributes || %(attributes)s, {update_time}, history=(%(history)s || history)[1:{limit}]
+                   last_receive_time=%(last_receive_time)s, tags={tags}, attributes={attributes}, {update_time},
+                   history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
          RETURNING *
         """.format(
+            tags=tags,
+            attributes=attributes,
             limit=current_app.config['HISTORY_LIMIT'],
             update_time='update_time=%(update_time)s' if alert.update_time else 'update_time=update_time',
             customer='customer=%(customer)s' if alert.customer else 'customer IS NULL'

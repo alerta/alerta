@@ -106,7 +106,7 @@ class Database(Base):
     def dedup_alert(self, alert, history):
         raise NotImplementedError
 
-    def correlate_alert(self, alert, history):
+    def correlate_alert(self, alert, history, append_tags=True, update_attributes=True):
         raise NotImplementedError
 
     def create_alert(self, alert):

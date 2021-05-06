@@ -186,7 +186,7 @@ class Backend(Database):
                 return True
         return False
 
-    def dedup_alert(self, alert, history):
+    def dedup_alert(self, alert, history, append_tags=True, update_attributes=True):
         """
         Update alert status, service, value, text, timeout and rawData, increment duplicate count and set
         repeat=True, and keep track of last receive id and time but don't append to history unless status changes.
@@ -212,13 +212,21 @@ class Backend(Database):
                 'lastReceiveId': alert.id,
                 'lastReceiveTime': now
             },
-            '$addToSet': {'tags': {'$each': alert.tags}},
             '$inc': {'duplicateCount': 1}
         }
 
+        # by default, add new tags to existing tags
+        if append_tags:
+            update['$addToSet'] = {'tags': {'$each': alert.tags}}
+        else:
+            update['$set']['tags'] = alert.tags
+
         # only update those attributes that are specifically defined
-        attributes = {'attributes.' + k: v for k, v in alert.attributes.items()}
-        update['$set'].update(attributes)
+        if update_attributes:
+            attributes = {'attributes.' + k: v for k, v in alert.attributes.items()}
+            update['$set'].update(attributes)
+        else:
+            update['$set']['attributes'] = alert.attributes
 
         if alert.update_time:
             update['$set']['updateTime'] = alert.update_time
@@ -238,7 +246,7 @@ class Backend(Database):
             return_document=ReturnDocument.AFTER
         )
 
-    def correlate_alert(self, alert, history):
+    def correlate_alert(self, alert, history, append_tags=True, update_attributes=True):
         """
         Update alert key attributes, reset duplicate count and set repeat=False, keep track of last
         receive id and time, appending all to history. Append to history again if status changes.
@@ -277,7 +285,6 @@ class Backend(Database):
                 'lastReceiveId': alert.last_receive_id,
                 'lastReceiveTime': alert.last_receive_time
             },
-            '$addToSet': {'tags': {'$each': alert.tags}},
             '$push': {
                 'history': {
                     '$each': [h.serialize for h in history],
@@ -287,9 +294,18 @@ class Backend(Database):
             }
         }
 
+        # by default, add new tags to existing tags
+        if append_tags:
+            update['$addToSet'] = {'tags': {'$each': alert.tags}}
+        else:
+            update['$set']['tags'] = alert.tags
+
         # only update those attributes that are specifically defined
-        attributes = {'attributes.' + k: v for k, v in alert.attributes.items()}
-        update['$set'].update(attributes)
+        if update_attributes:
+            attributes = {'attributes.' + k: v for k, v in alert.attributes.items()}
+            update['$set'].update(attributes)
+        else:
+            update['$set']['attributes'] = alert.attributes
 
         if alert.update_time:
             update['$set']['updateTime'] = alert.update_time

@@ -319,7 +319,8 @@ class Alert:
             history = None
 
         self.status = new_status
-        return Alert.from_db(db.dedup_alert(self, history))
+        return Alert.from_db(db.dedup_alert(self, history, append_tags=current_app.config['DUPLICATE_APPEND_TAGS'],
+                                            update_attributes=current_app.config['DUPLICATE_UPDATE_ATTRIBUTES']))
 
     # correlate an alert
     def update(self, correlate_with) -> 'Alert':
@@ -363,7 +364,8 @@ class Alert:
         )]
 
         self.status = new_status
-        return Alert.from_db(db.correlate_alert(self, history))
+        return Alert.from_db(db.correlate_alert(self, history, append_tags=current_app.config['CORRELATE_APPEND_TAGS'],
+                                                update_attributes=current_app.config['CORRELATE_UPDATE_ATTRIBUTES']))
 
     # create an alert
     def create(self) -> 'Alert':
