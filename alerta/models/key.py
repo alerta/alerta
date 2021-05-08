@@ -51,7 +51,8 @@ class ApiKey:
             scopes=[Scope(s) for s in json.get('scopes', [])],
             text=json.get('text', None),
             expire_time=DateTime.parse(json['expireTime']) if 'expireTime' in json else None,
-            customer=json.get('customer', None)
+            customer=json.get('customer', None),
+            key=json.get('key')
         )
         if 'type' in json:
             api_key.scopes = key_helper.type_to_scopes(api_key.user, json['type'])
