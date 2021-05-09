@@ -35,7 +35,7 @@ class PingdomWebhook(WebhookBase):
             service=[payload['check_type']],
             group='Network',
             value=payload['description'],
-            text='{}: {}'.format(payload['importance_level'], payload['long_description']),
+            text=f"{payload['importance_level']}: {payload['long_description']}",
             tags=payload['tags'],
             attributes={'checkId': payload['check_id']},
             origin='Pingdom',

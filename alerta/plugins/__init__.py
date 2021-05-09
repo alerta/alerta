@@ -14,7 +14,7 @@ class PluginBase(metaclass=abc.ABCMeta):
     def __init__(self, name=None):
         self.name = name or self.__module__
         if self.__doc__:
-            LOG.info('\n{}\n'.format(self.__doc__))
+            LOG.info(f'\n{self.__doc__}\n')
 
     @abc.abstractmethod
     def pre_receive(self, alert: 'Alert', **kwargs) -> 'Alert':

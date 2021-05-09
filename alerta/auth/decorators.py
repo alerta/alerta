@@ -41,14 +41,14 @@ def permission(scope=None):
             if key:
                 key_info = ApiKey.verify_key(key)
                 if not key_info:
-                    raise ApiError("API key parameter '%s' is invalid" % key, 401)
+                    raise ApiError(f"API key parameter '{key}' is invalid", 401)
                 g.user_id = None
                 g.login = key_info.user
                 g.customers = [key_info.customer] if key_info.customer else []
                 g.scopes = key_info.scopes  # type: List[Scope]
 
                 if not Permission.is_in_scope(scope, have_scopes=g.scopes):
-                    raise ApiError('Missing required scope: %s' % scope, 403)
+                    raise ApiError(f'Missing required scope: {scope}', 403)
                 else:
                     return f(*args, **kwargs)
 
@@ -85,7 +85,7 @@ def permission(scope=None):
                 g.scopes = jwt.scopes  # type: List[Scope]
 
                 if not Permission.is_in_scope(scope, have_scopes=g.scopes):
-                    raise ApiError('Missing required scope: %s' % scope, 403)
+                    raise ApiError(f'Missing required scope: {scope}', 403)
                 else:
                     return f(*args, **kwargs)
 
@@ -116,7 +116,7 @@ def permission(scope=None):
                 g.scopes = Permission.lookup(user.email, roles=user.roles)  # type: List[Scope]
 
                 if not Permission.is_in_scope(scope, have_scopes=g.scopes):
-                    raise BasicAuthError('Missing required scope: %s' % scope, 403)
+                    raise BasicAuthError(f'Missing required scope: {scope}', 403)
                 else:
                     return f(*args, **kwargs)
 

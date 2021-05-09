@@ -143,7 +143,7 @@ def set_status(alert_id):
 @jsonp
 def action_alert(alert_id):
     action = request.json.get('action', None)
-    text = request.json.get('text', '%s operator action' % action)
+    text = request.json.get('text', f'{action} operator action')
     timeout = request.json.get('timeout', None)
 
     if not action:
@@ -608,7 +608,7 @@ def add_note(alert_id):
                            customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note', request=request)
 
     if note:
-        return jsonify(status='ok', id=note.id, note=note.serialize), 201, {'Location': absolute_url('/alert/{}/note/{}'.format(alert.id, note.id))}
+        return jsonify(status='ok', id=note.id, note=note.serialize), 201, {'Location': absolute_url(f'/alert/{alert.id}/note/{note.id}')}
     else:
         raise ApiError('failed to add note for alert', 500)
 

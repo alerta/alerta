@@ -13,7 +13,7 @@ class Page:
         self.items = items
 
         if items and self.page > self.pages or self.page < 1:
-            raise ApiError('page out of range: 1-%s' % self.pages, 416)
+            raise ApiError(f'page out of range: 1-{self.pages}', 416)
 
     @staticmethod
     def from_params(params: MultiDict, items: int) -> 'Page':

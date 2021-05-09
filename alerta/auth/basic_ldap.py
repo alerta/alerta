@@ -96,7 +96,7 @@ def login():
         ) if None not in r]
 
         if len(result) > 1:
-            raise ApiError('invalid search query for domain "{}"'.format(domain), 500)
+            raise ApiError(f'invalid search query for domain "{domain}"', 500)
         elif len(result) == 0:
             raise ApiError('invalid username or password', 401)
         user_dn = result[0][0]
@@ -109,7 +109,7 @@ def login():
         else:
             user_dn = current_app.config['LDAP_DOMAINS'][domain].format(username)
         name = username
-        email = '{}@{}'.format(username, domain)
+        email = f'{username}@{domain}'
         email_verified = False
 
     # Authenticate user logging in
@@ -152,9 +152,9 @@ def login():
 
     # Check user is active
     if user.status != 'active':
-        raise ApiError('User {} not active'.format(login), 403)
+        raise ApiError(f'User {login} not active', 403)
     if not_authorized('ALLOWED_LDAP_GROUPS', groups):
-        raise ApiError('User {} is not authorized'.format(login), 403)
+        raise ApiError(f'User {login} is not authorized', 403)
     user.update_last_login()
 
     scopes = Permission.lookup(login=login, roles=user.roles + groups)

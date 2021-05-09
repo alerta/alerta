@@ -32,7 +32,7 @@ class WebhookBase(metaclass=abc.ABCMeta):
     def __init__(self, name: str = None) -> None:
         self.name = name or self.__module__
         if self.__doc__:
-            LOG.info('\n{}\n'.format(self.__doc__))
+            LOG.info(f'\n{self.__doc__}\n')
 
     @abc.abstractmethod
     def incoming(self, path: str, query_string: ImmutableMultiDict, payload: Any) -> Union[Alert, JSON]:

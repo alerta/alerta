@@ -133,9 +133,9 @@ class Scope(str):
         :return: Scope
         """
         if resource and type:
-            return Scope('{}:{}.{}'.format(action, resource, type))
+            return Scope(f'{action}:{resource}.{type}')
         if resource:
-            return Scope('{}:{}'.format(action, resource))
+            return Scope(f'{action}:{resource}')
         else:
             return Scope(action)
 

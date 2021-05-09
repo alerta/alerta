@@ -22,7 +22,7 @@ from . import api
 def create_user():
     if current_app.config['AUTH_PROVIDER'] != 'basic':
         raise ApiError(
-            'must use {} login flow to create new user'.format(current_app.config['AUTH_PROVIDER']), 400)
+            f"must use {current_app.config['AUTH_PROVIDER']} login flow to create new user", 400)
 
     try:
         user = User.parse(request.json)

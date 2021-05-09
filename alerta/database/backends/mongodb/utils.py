@@ -39,7 +39,7 @@ class QueryBuilder:
                     sort_by = sort_by[1:]
                 valid_sort_params = [k for k, v in valid_params.items() if v[1]]
                 if sort_by not in valid_sort_params:
-                    raise ApiError("Sorting by '{}' field not supported.".format(sort_by), 400)
+                    raise ApiError(f"Sorting by '{sort_by}' field not supported.", 400)
                 _, column, direction = valid_params[sort_by]
                 sort.append((column, direction * reverse))
         else:
@@ -53,7 +53,7 @@ class QueryBuilder:
             if field.replace('!', '').split('.')[0] in EXCLUDE_FROM_QUERY:
                 continue
             if field.replace('!', '').split('.')[0] not in valid_params:
-                raise ApiError('Invalid filter parameter: {}'.format(field), 400)
+                raise ApiError(f'Invalid filter parameter: {field}', 400)
             if field.startswith('attributes.'):
                 column = field
             else:

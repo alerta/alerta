@@ -45,7 +45,7 @@ def signup():
 
     # check user is active & update last login
     if user.status != 'active':
-        raise ApiError('User {} not active'.format(user.login), 403)
+        raise ApiError(f'User {user.login} not active', 403)
     user.update_last_login()
 
     groups = [g.name for g in user.get_groups()]
@@ -86,7 +86,7 @@ def login():
 
     # check user is active & update last login
     if user.status != 'active':
-        raise ApiError('User {} not active'.format(user.login), 403)
+        raise ApiError(f'User {user.login} not active', 403)
     user.update_last_login()
 
     groups = [g.name for g in user.get_groups()]
@@ -118,7 +118,7 @@ def verify_email(hash):
                               message='user confirm email address', user=user.email, customers=[], scopes=[],
                               resource_id=user.id, type='user', request=request)
 
-        return jsonify(status='ok', message='email address {} confirmed'.format(user.email))
+        return jsonify(status='ok', message=f'email address {user.email} confirmed')
     else:
         raise ApiError('invalid confirmation hash', 400)
 

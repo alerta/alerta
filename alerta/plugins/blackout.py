@@ -26,10 +26,10 @@ class BlackoutHandler(PluginBase):
 
         if alert.is_blackout():
             if NOTIFICATION_BLACKOUT:
-                LOG.debug('Set status to "{}" during blackout period (id={})'.format(status, alert.id))
+                LOG.debug(f'Set status to "{status}" during blackout period (id={alert.id})')
                 alert.status = status
             else:
-                LOG.debug('Suppressed alert during blackout period (id={})'.format(alert.id))
+                LOG.debug(f'Suppressed alert during blackout period (id={alert.id})')
                 raise BlackoutPeriod('Suppressed alert during blackout period')
         return alert
 

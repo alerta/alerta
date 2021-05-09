@@ -16,38 +16,38 @@ def parse_pagerduty(message: JSON) -> Tuple[str, str, str]:
         incident_key = message['data']['incident']['incident_key']
         incident_number = message['data']['incident']['incident_number']
         html_url = message['data']['incident']['html_url']
-        incident_url = '<a href="{}">#{}</a>'.format(html_url, incident_number)
+        incident_url = f'<a href="{html_url}">#{incident_number}</a>'
 
         if message['type'] == 'incident.trigger':
             status = 'open'
             user = message['data']['incident']['assigned_to_user']['name']
-            text = 'Incident {} assigned to {}'.format(incident_url, user)
+            text = f'Incident {incident_url} assigned to {user}'
         elif message['type'] == 'incident.acknowledge':
             status = 'ack'
             user = message['data']['incident']['assigned_to_user']['name']
-            text = 'Incident {} acknowledged by {}'.format(incident_url, user)
+            text = f'Incident {incident_url} acknowledged by {user}'
         elif message['type'] == 'incident.unacknowledge':
             status = 'open'
-            text = 'Incident %s unacknowledged due to timeout' % incident_url
+            text = f'Incident {incident_url} unacknowledged due to timeout'
         elif message['type'] == 'incident.resolve':
             status = 'closed'
             if message['data']['incident']['resolved_by_user']:
                 user = message['data']['incident']['resolved_by_user']['name']
             else:
                 user = 'n/a'
-            text = 'Incident {} resolved by {}'.format(incident_url, user)
+            text = f'Incident {incident_url} resolved by {user}'
         elif message['type'] == 'incident.assign':
             status = 'assign'
             user = message['data']['incident']['assigned_to_user']['name']
-            text = 'Incident {} manually assigned to {}'.format(incident_url, user)
+            text = f'Incident {incident_url} manually assigned to {user}'
         elif message['type'] == 'incident.escalate':
             status = 'open'
             user = message['data']['incident']['assigned_to_user']['name']
-            text = 'Incident {} escalated to {}'.format(incident_url, user)
+            text = f'Incident {incident_url} escalated to {user}'
         elif message['type'] == 'incident.delegate':
             status = 'open'
             user = message['data']['incident']['assigned_to_user']['name']
-            text = 'Incident {} reassigned due to escalation to {}'.format(incident_url, user)
+            text = f'Incident {incident_url} reassigned due to escalation to {user}'
         else:
             status = 'unknown'
             text = message['type']

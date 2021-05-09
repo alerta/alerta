@@ -36,10 +36,10 @@ class QueryBuilder:
                     sort_by = sort_by[1:]
                 valid_sort_params = [k for k, v in valid_params.items() if v[1]]
                 if sort_by not in valid_sort_params:
-                    raise ApiError("Sorting by '{}' field not supported.".format(sort_by), 400)
+                    raise ApiError(f"Sorting by '{sort_by}' field not supported.", 400)
                 _, column, direction = valid_params[sort_by]
                 direction = 'ASC' if direction * reverse == 1 else 'DESC'
-                sort.append('{} {}'.format(column, direction))
+                sort.append(f'{column} {direction}')
         else:
             sort.append('(false)')
         return sort
@@ -52,7 +52,7 @@ class QueryBuilder:
                 continue
             valid_filter_params = [k for k, v in valid_params.items() if v[0]]
             if field.replace('!', '').split('.')[0] not in valid_filter_params:
-                raise ApiError('Invalid filter parameter: {}'.format(field), 400)
+                raise ApiError(f'Invalid filter parameter: {field}', 400)
             column, _, _ = valid_params[field.replace('!', '').split('.')[0]]
             value = params.getlist(field)
 
@@ -61,7 +61,7 @@ class QueryBuilder:
                 qvars[column] = value
             elif field.startswith('attributes.'):
                 column = field.replace('attributes.', '')
-                query.append('AND attributes @> %(attr_{})s'.format(column))
+                query.append(f'AND attributes @> %(attr_{column})s')
                 qvars['attr_' + column] = {column: value[0]}
             elif len(value) == 1:
                 value = value[0]

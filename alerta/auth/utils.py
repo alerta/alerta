@@ -78,7 +78,7 @@ def link(base_url, *parts):
 
 
 def send_confirmation(user: 'User', token: str) -> None:
-    subject = "[Alerta] Please verify your email '%s'" % user.email
+    subject = f"[Alerta] Please verify your email '{user.email}'"
     text = 'Hello {name}!\n\n' \
            'Please verify your email address is {email} by clicking on the link below:\n\n' \
            '{url}\n\n' \

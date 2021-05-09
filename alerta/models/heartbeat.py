@@ -37,19 +37,19 @@ class Heartbeat:
         try:
             timeout = int(timeout)
         except ValueError:
-            raise ValueError("Could not convert 'timeout' value of '{}' to an integer".format(timeout))
+            raise ValueError(f"Could not convert 'timeout' value of '{timeout}' to an integer")
         if timeout < 0:
-            raise ValueError("Invalid negative 'timeout' value ({})".format(timeout))
+            raise ValueError(f"Invalid negative 'timeout' value ({timeout})")
 
         try:
             max_latency = int(max_latency)
         except ValueError:
-            raise ValueError("Could not convert 'max_latency' value of '{}' to an integer".format(timeout))
+            raise ValueError(f"Could not convert 'max_latency' value of '{timeout}' to an integer")
         if timeout < 0:
-            raise ValueError("Invalid negative 'max_latency' value ({})".format(timeout))
+            raise ValueError(f"Invalid negative 'max_latency' value ({timeout})")
 
         self.id = kwargs.get('id') or str(uuid4())
-        self.origin = origin or '{}/{}'.format(os.path.basename(sys.argv[0]), platform.uname()[1])
+        self.origin = origin or f'{os.path.basename(sys.argv[0])}/{platform.uname()[1]}'
         self.tags = tags or list()
         self.attributes = kwargs.get('attributes', None) or dict()
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'Heartbeat'
