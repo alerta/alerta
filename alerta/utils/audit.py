@@ -56,7 +56,7 @@ class AuditTrail:
         try:
             requests.post(self.audit_url, data=payload, timeout=2)
         except Exception as e:
-            app.logger.warning('Failed to send audit log entry to "{}" - {}'.format(self.audit_url, str(e)))
+            app.logger.warning(f'Failed to send audit log entry to "{self.audit_url}" - {str(e)}')
 
     def admin_log_response(self, app: Flask, **kwargs):
         self._log_response(app, 'admin', **kwargs)

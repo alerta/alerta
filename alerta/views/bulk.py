@@ -90,7 +90,7 @@ def bulk_action_alert():
 
     task = action_alerts.delay(alerts, action, text, timeout)
 
-    return jsonify(status='ok', message='{} alerts queued for action'.format(len(alerts))), 202, {'Location': absolute_url('/_bulk/task/' + task.id)}
+    return jsonify(status='ok', message=f'{len(alerts)} alerts queued for action'), 202, {'Location': absolute_url('/_bulk/task/' + task.id)}
 
 
 @api.route('/_bulk/alerts/tag', methods=['OPTIONS', 'PUT'])

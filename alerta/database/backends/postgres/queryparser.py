@@ -56,28 +56,28 @@ class SearchTerm:
         # print([t for t in self.tokens.items()])
         if 'singleterm' in self.tokens:
             if self.tokens.fieldname == '_exists_':
-                return '"attributes"::jsonb ? \'{}\''.format(self.tokens.singleterm)
+                return f'"attributes"::jsonb ? \'{self.tokens.singleterm}\''
             elif self.tokens.fieldname in ['correlate', 'service', 'tags']:
-                return '\'{}\'=ANY("{}")'.format(self.tokens.singleterm, self.tokens.field[0])
+                return f'\'{self.tokens.singleterm}\'=ANY("{self.tokens.field[0]}")'
             elif self.tokens.attr:
                 tokens_attr = self.tokens.attr.replace('_', 'attributes')
-                return '"{}"::jsonb ->>\'{}\' ILIKE \'%%{}%%\''.format(tokens_attr, self.tokens.fieldname, self.tokens.singleterm)
+                return f'"{tokens_attr}"::jsonb ->>\'{self.tokens.fieldname}\' ILIKE \'%%{self.tokens.singleterm}%%\''
             else:
-                return '"{}" ILIKE \'%%{}%%\''.format(self.tokens.field[0], self.tokens.singleterm)
+                return f'"{self.tokens.field[0]}" ILIKE \'%%{self.tokens.singleterm}%%\''
         if 'phrase' in self.tokens:
             if self.tokens.field[0] == '__default_field__':
                 return f"\"__default_field__\" ~* '\\y{self.tokens.phrase}\\y'"
             elif self.tokens.field[0] in ['correlate', 'service', 'tags']:
-                return '\'{}\'=ANY("{}")'.format(self.tokens.phrase, self.tokens.field[0])
+                return f'\'{self.tokens.phrase}\'=ANY("{self.tokens.field[0]}")'
             elif self.tokens.attr:
                 tokens_attr = self.tokens.attr.replace('_', 'attributes')
-                return '"{}"::jsonb ->>\'{}\' ~* \'\\y{}\\y\''.format(tokens_attr, self.tokens.fieldname, self.tokens.phrase)
+                return f'"{tokens_attr}"::jsonb ->>\'{self.tokens.fieldname}\' ~* \'\\y{self.tokens.phrase}\\y\''
             else:
-                return '"{}" ~* \'\\y{}\\y\''.format(self.tokens.field[0], self.tokens.phrase)
+                return f'"{self.tokens.field[0]}" ~* \'\\y{self.tokens.phrase}\\y\''
         if 'wildcard' in self.tokens:
-            return '"{}" ~* \'\\y{}\\y\''.format(self.tokens.field[0], self.tokens.wildcard)
+            return f'"{self.tokens.field[0]}" ~* \'\\y{self.tokens.wildcard}\\y\''
         if 'regex' in self.tokens:
-            return '"{}" ~* \'{}\''.format(self.tokens.field[0], self.tokens.regex)
+            return f'"{self.tokens.field[0]}" ~* \'{self.tokens.regex}\''
         if 'range' in self.tokens:
             if self.tokens.range[0].lowerbound == '*':
                 lower_term = '1=1'
@@ -106,7 +106,7 @@ class SearchTerm:
         if 'subquery' in self.tokens:
             if self.tokens.attr:
                 tokens_attr = 'attributes' if self.tokens.attr == '_' else self.tokens.attr
-                tokens_fieldname = '"{}"::jsonb ->>\'{}\''.format(tokens_attr, self.tokens.fieldname)
+                tokens_fieldname = f'"{tokens_attr}"::jsonb ->>\'{self.tokens.fieldname}\''
             else:
                 tokens_fieldname = f'"{self.tokens.fieldname or self.tokens.field[0]}"'
             return f'{self.tokens.subquery[0]}'.replace('"__default_field__"', tokens_fieldname)
