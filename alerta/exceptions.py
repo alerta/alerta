@@ -52,7 +52,7 @@ class ForwardingLoop(BaseError):
 
 
 class InvalidAction(BaseError):
-    """Invalid or redundant action for the current alert status."""
+    """Invalid or redundant action for the current alert status or severity."""
     pass
 
 
