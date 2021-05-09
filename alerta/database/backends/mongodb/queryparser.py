@@ -26,21 +26,21 @@ class BinaryOperation:
 class SearchModifier(UnaryOperation):
 
     def __repr__(self):
-        return '{} {}'.format(self.op, self.operands)
+        return f'{self.op} {self.operands}'
 
 
 class SearchAnd(BinaryOperation):
 
     def __repr__(self):
-        return '{{"$and": [{}, {}]}}'.format(self.lhs, self.rhs)
+        return f'{{"$and": [{self.lhs}, {self.rhs}]}}'
 
 
 class SearchOr(BinaryOperation):
 
     def __repr__(self):
         if getattr(self.rhs, 'op', None) == 'NOT':
-            return '{{"$and": [{}, {}]}}'.format(self.lhs, self.rhs)
-        return '{{"$or": [{}, {}]}}'.format(self.lhs, self.rhs)
+            return f'{{"$and": [{self.lhs}, {self.rhs}]}}'
+        return f'{{"$or": [{self.lhs}, {self.rhs}]}}'
 
 
 class SearchNot(UnaryOperation):
@@ -50,7 +50,7 @@ class SearchNot(UnaryOperation):
         tokens = list(json.loads(str(self.operands)).items())
         field_name = tokens[0][0]
         self.operands = {'$not': tokens[0][1]}
-        return '{{"{}": {}}}'.format(field_name, json.dumps(self.operands))
+        return f'{{"{field_name}": {json.dumps(self.operands)}}}'
 
 
 class SearchTerm:
@@ -63,29 +63,29 @@ class SearchTerm:
         if 'singleterm' in self.tokens:
             tokens_fieldname = self.tokens.fieldname.replace('_.', 'attributes.')
             if self.tokens.fieldname == '_exists_':
-                return '{{"attributes.{}": {{"$exists": true}}}}'.format(self.tokens.singleterm)
+                return f'{{"attributes.{self.tokens.singleterm}": {{"$exists": true}}}}'
             else:
                 if self.tokens.field[0] == '__default_field__':
-                    return '{{"{}": {{"{}": "{}", "$options": "i"}}}}'.format('__default_field__', '__default_operator__', self.tokens.singleterm)
+                    return f"{{\"__default_field__\": {{\"__default_operator__\": \"{self.tokens.singleterm}\", \"$options\": \"i\"}}}}"
                 else:
-                    return '{{"{}": {{"$regex": "{}", "$options": "i"}}}}'.format(tokens_fieldname, self.tokens.singleterm)
+                    return f'{{"{tokens_fieldname}": {{"$regex": "{self.tokens.singleterm}", "$options": "i"}}}}'
         if 'phrase' in self.tokens:
             tokens_field0 = self.tokens.field[0].replace('_.', 'attributes.')
             if tokens_field0 == '__default_field__':
-                return '{{"{}": {{"{}": "{}", "$options": "i"}}}}'.format('__default_field__', '__default_operator__', self.tokens.phrase)
+                return f"{{\"__default_field__\": {{\"__default_operator__\": \"{self.tokens.phrase}\", \"$options\": \"i\"}}}}"
             else:
-                return '{{"{}": {{"$regex": "\\\\b{}\\\\b", "$options": "i"}}}}'.format(tokens_field0, self.tokens.phrase)
+                return f'{{"{tokens_field0}": {{"$regex": "\\\\b{self.tokens.phrase}\\\\b", "$options": "i"}}}}'
         if 'wildcard' in self.tokens:
-            return '{{"{}": {{"$regex": "\\\\b{}\\\\b", "$options": "i"}}}}'.format(self.tokens.field[0], self.tokens.wildcard)
+            return f'{{"{self.tokens.field[0]}": {{"$regex": "\\\\b{self.tokens.wildcard}\\\\b", "$options": "i"}}}}'
         if 'regex' in self.tokens:
-            return '{{"{}": {{"$regex": "{}", "$options": "i"}}}}'.format(self.tokens.field[0], self.tokens.regex)
+            return f'{{"{self.tokens.field[0]}": {{"$regex": "{self.tokens.regex}", "$options": "i"}}}}'
 
         def range_term(field, operator, range):
             if field in ['duplicateCount', 'timeout']:
                 range = int(range)
             else:
-                range = '"{}"'.format(range)
-            return '{{"{}": {{"{}": {}}}}}'.format(field, operator, range)
+                range = f'"{range}"'
+            return f'{{"{field}": {{"{operator}": {range}}}}}'
 
         if 'range' in self.tokens:
             if self.tokens.range[0].lowerbound == '*':
@@ -104,7 +104,7 @@ class SearchTerm:
                     '$lte' if 'inclusive' in self.tokens.range[2] else '$lt',
                     self.tokens.range[2].upperbound
                 )
-            return '{{"$and": [{}, {}]}}'.format(lower_term, upper_term)
+            return f'{{"$and": [{lower_term}, {upper_term}]}}'
         if 'onesidedrange' in self.tokens:
             return range_term(
                 self.tokens.field[0],
@@ -114,13 +114,13 @@ class SearchTerm:
         if 'subquery' in self.tokens:
             tokens_field0 = self.tokens.field[0].replace('_.', 'attributes.')
             if tokens_field0 != '__default_field__':
-                return '{}'.format(self.tokens.subquery[0])\
+                return f'{self.tokens.subquery[0]}'\
                     .replace('__default_field__', tokens_field0)\
                     .replace('__default_operator__', '$regex')
             else:
-                return '{}'.format(self.tokens.subquery[0])
+                return f'{self.tokens.subquery[0]}'
 
-        raise ParseException('Search term did not match query syntax: %s' % self.tokens)
+        raise ParseException(f'Search term did not match query syntax: {self.tokens}')
 
 
 # BNF for Lucene query syntax

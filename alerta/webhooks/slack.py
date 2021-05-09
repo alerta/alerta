@@ -22,11 +22,11 @@ def parse_slack(data: ImmutableMultiDict) -> Tuple[str, str, str]:
     action = payload.get('actions', [{}])[0].get('value')
 
     if not alert_id:
-        raise ValueError('Alert {} not match'.format(alert_id))
+        raise ValueError(f'Alert {alert_id} not match')
     elif not user:
-        raise ValueError('User {} not exist'.format(user))
+        raise ValueError(f'User {user} not exist')
     elif not action:
-        raise ValueError('Non existent action {}'.format(action))
+        raise ValueError(f'Non existent action {action}')
 
     return alert_id, user, action
 
@@ -85,9 +85,9 @@ class SlackWebhook(WebhookBase):
             jsonify(status='error', message='alert not found for #slack message')
 
         if action in ['open', 'ack', 'close']:
-            alert.from_action(action, text='status change via #slack by {}'.format(user))
+            alert.from_action(action, text=f'status change via #slack by {user}')
         elif action in ['watch', 'unwatch']:
-            alert.untag(tags=['{}:{}'.format(action, user)])
+            alert.untag(tags=[f'{action}:{user}'])
         else:
             raise ApiError('Unsupported #slack action', 400)
 

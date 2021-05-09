@@ -85,8 +85,8 @@ class StateMachine(AlarmModel):
 
     def trend(self, previous, current):
         valid_severities = sorted(StateMachine.Severity, key=StateMachine.Severity.get)
-        assert previous in StateMachine.Severity, 'Severity is not one of %s' % ', '.join(valid_severities)
-        assert current in StateMachine.Severity, 'Severity is not one of %s' % ', '.join(valid_severities)
+        assert previous in StateMachine.Severity, f"Severity is not one of {', '.join(valid_severities)}"
+        assert current in StateMachine.Severity, f"Severity is not one of {', '.join(valid_severities)}"
 
         if StateMachine.Severity[previous] < StateMachine.Severity[current]:
             return MORE_SEVERE

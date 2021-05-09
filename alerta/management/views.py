@@ -76,16 +76,16 @@ def properties():
     properties = ''
 
     for k, v in request.environ.items():
-        properties += '{}: {}\n'.format(k, v)
+        properties += f'{k}: {v}\n'
 
     for k, v in os.environ.items():
-        properties += '{}: {}\n'.format(k, v)
+        properties += f'{k}: {v}\n'
 
     for k, v in current_app.__dict__.items():
-        properties += '{}: {}\n'.format(k, v)
+        properties += f'{k}: {v}\n'
 
     for k, v in current_app.config.items():
-        properties += '{}: {}\n'.format(k, v)
+        properties += f'{k}: {v}\n'
 
     return Response(properties, content_type='text/plain')
 
@@ -133,10 +133,10 @@ def health_check():
             delta = datetime.datetime.utcnow() - heartbeat.receive_time
             threshold = int(heartbeat.timeout) * 4
             if delta.seconds > threshold:
-                return 'HEARTBEAT_STALE: %s' % heartbeat.origin, 503
+                return f'HEARTBEAT_STALE: {heartbeat.origin}', 503
 
     except Exception as e:
-        return 'HEALTH_CHECK_FAILED: %s' % e, 503
+        return f'HEALTH_CHECK_FAILED: {e}', 503
 
     return 'OK'
 

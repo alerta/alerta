@@ -38,15 +38,15 @@ def send_message_reply(alert: Alert, action: str, user: str, data: JSON) -> None
             next_action = actions[(actions.index(action) + 1) % len(actions)]
             inline_keyboard = [
                 [
-                    {'text': next_action.capitalize(), 'callback_data': '/{} {}'.format(next_action, alert.id)},
-                    {'text': 'Ack', 'callback_data': '{} {}'.format('/ack', alert.id)},
-                    {'text': 'Close', 'callback_data': '{} {}'.format('/close', alert.id)}
+                    {'text': next_action.capitalize(), 'callback_data': f'/{next_action} {alert.id}'},
+                    {'text': 'Ack', 'callback_data': f'/ack {alert.id}'},
+                    {'text': 'Close', 'callback_data': f'/close {alert.id}'}
                 ]
             ]
 
         # format message response
         alert_short_id = alert.get_id(short=True)
-        alert_url = '{}/#/alert/{}'.format(dashboard_url, alert.id)
+        alert_url = f'{dashboard_url}/#/alert/{alert.id}'
         reply = reply.format(alert=alert_short_id, status=action, user=user)
         message = '{alert} *{level} - {event} on {resouce}*\n{log}\n{reply}'.format(
             alert='[{}]({})'.format(alert_short_id, alert_url), level=alert.severity.capitalize(),
@@ -71,7 +71,7 @@ class TelegramWebhook(WebhookBase):
 
         if 'callback_query' in payload:
             author = payload['callback_query']['from']
-            user = '{} {}'.format(author.get('first_name'), author.get('last_name'))
+            user = f"{author.get('first_name')} {author.get('last_name')}"
             command, alert_id = payload['callback_query']['data'].split(' ', 1)
 
             customers = g.get('customers', None)
@@ -83,7 +83,7 @@ class TelegramWebhook(WebhookBase):
             if action in ['open', 'ack', 'close']:
                 alert.from_action(action, text='status change via Telegram')
             elif action in ['watch', 'unwatch']:
-                alert.untag(tags=['{}:{}'.format(action, user)])
+                alert.untag(tags=[f'{action}:{user}'])
             elif action == 'blackout':
                 if alert:
                     # new style paremeters: only alert_id

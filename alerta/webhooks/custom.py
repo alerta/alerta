@@ -20,7 +20,7 @@ from . import webhooks
 @permission(Scope.write_webhooks)
 def custom(webhook, path):
     if webhook not in custom_webhooks.webhooks:
-        raise ApiError("Custom webhook '%s' not found." % webhook, 404)
+        raise ApiError(f"Custom webhook '{webhook}' not found.", 404)
 
     try:
         rv = custom_webhooks.webhooks[webhook].incoming(
@@ -72,7 +72,7 @@ def custom(webhook, path):
             except Exception as e:
                 raise ApiError(str(e), 500)
 
-            text = 'alert received via {} webhook'.format(webhook)
+            text = f'alert received via {webhook} webhook'
             write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text,
                                    user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id,
                                    type='alert', request=request)
@@ -84,7 +84,7 @@ def custom(webhook, path):
             return jsonify(status='ok', ids=[alert.id for alert in alerts]), 201
 
     else:
-        text = 'request received via {} webhook'.format(webhook)
+        text = f'request received via {webhook} webhook'
         write_audit_trail.send(current_app._get_current_object(), event='webhook-received', message=text,
                                user=g.login, customers=g.customers, scopes=g.scopes, resource_id=None,
                                type='user-defined', request=request)

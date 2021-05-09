@@ -683,7 +683,7 @@ class Backend(Database):
             {'$unwind': '$service'},
             {
                 '$group': {
-                    '_id': '$%s' % group,
+                    '_id': f'${group}',
                     'count': {'$sum': 1},
                     'duplicateCount': {'$sum': '$duplicateCount'},
                     'environments': {'$addToSet': '$environment'},
@@ -701,7 +701,7 @@ class Backend(Database):
         for response in responses:
             top.append(
                 {
-                    '%s' % group: response['_id'],
+                    f'{group}': response['_id'],
                     'environments': response['environments'],
                     'services': response['services'],
                     'resources': response['resources'],
@@ -720,7 +720,7 @@ class Backend(Database):
             {'$match': {'history.type': 'severity'}},
             {
                 '$group': {
-                    '_id': '$%s' % group,
+                    '_id': f'${group}',
                     'count': {'$sum': 1},
                     'duplicateCount': {'$max': '$duplicateCount'},
                     'environments': {'$addToSet': '$environment'},
@@ -738,7 +738,7 @@ class Backend(Database):
         for response in responses:
             top.append(
                 {
-                    '%s' % group: response['_id'],
+                    f'{group}': response['_id'],
                     'environments': response['environments'],
                     'services': response['services'],
                     'resources': response['resources'],
@@ -755,7 +755,7 @@ class Backend(Database):
             {'$unwind': '$service'},
             {
                 '$group': {
-                    '_id': '$%s' % group,
+                    '_id': f'${group}',
                     'count': {'$sum': 1},
                     'duplicateCount': {'$sum': '$duplicateCount'},
                     'lifeTime': {'$sum': {'$subtract': ['$lastReceiveTime', '$createTime']}},
@@ -773,7 +773,7 @@ class Backend(Database):
         for response in responses:
             top.append(
                 {
-                    '%s' % group: response['_id'],
+                    f'{group}': response['_id'],
                     'environments': response['environments'],
                     'services': response['services'],
                     'resources': response['resources'],
@@ -1462,7 +1462,7 @@ class Backend(Database):
 
             return customers
 
-        raise NoCustomerMatch("No customer lookup configured for user '{}' or '{}'".format(login, ','.join(matches)))
+        raise NoCustomerMatch(f"No customer lookup configured for user '{login}' or '{','.join(matches)}'")
 
     # NOTES
 

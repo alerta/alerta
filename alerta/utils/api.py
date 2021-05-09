@@ -17,7 +17,7 @@ def assign_customer(wanted: str = None, permission: Scope = Scope.admin_alerts) 
         if Scope.admin in g.scopes or permission in g.scopes:
             return wanted
         if wanted not in customers:
-            raise ApiError("not allowed to set customer to '%s'" % wanted, 400)
+            raise ApiError(f"not allowed to set customer to '{wanted}'", 400)
         else:
             return wanted
     if customers:
@@ -49,7 +49,7 @@ def process_alert(alert: Alert) -> Alert:
             else:
                 logging.error("Error while running pre-receive plugin '{}': {}".format(plugin.name, str(e)))
         if not alert:
-            raise SyntaxError("Plugin '%s' pre-receive hook did not return modified alert" % plugin.name)
+            raise SyntaxError(f"Plugin '{plugin.name}' pre-receive hook did not return modified alert")
 
     try:
         is_duplicate = alert.is_duplicate()

@@ -31,7 +31,7 @@ class Plugins:
 
         entry_points = {}
         for ep in iter_entry_points('alerta.plugins'):
-            LOG.debug("Server plugin '{}' found.".format(ep.name))
+            LOG.debug(f"Server plugin '{ep.name}' found.")
             entry_points[ep.name] = ep
 
         for name in self.config['PLUGINS']:
@@ -39,10 +39,10 @@ class Plugins:
                 plugin = entry_points[name].load()
                 if plugin:
                     self.plugins[name] = plugin()
-                    LOG.info("Server plugin '{}' loaded.".format(name))
+                    LOG.info(f"Server plugin '{name}' loaded.")
             except Exception as e:
                 LOG.error("Failed to load plugin '{}': {}".format(name, str(e)))
-        LOG.info('All server plugins enabled: {}'.format(', '.join(self.plugins.keys())))
+        LOG.info(f"All server plugins enabled: {', '.join(self.plugins.keys())}")
         try:
             self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')  # type: ignore
         except (DistributionNotFound, ImportError):
@@ -63,7 +63,7 @@ class Plugins:
                     return plugins, Config('/', {**self.config, **config})
 
         except Exception as e:
-            LOG.warning('Plugin routing rules failed: {}'.format(e))
+            LOG.warning(f'Plugin routing rules failed: {e}')
 
         # default when no routing rules defined
         return self.plugins.values(), self.config

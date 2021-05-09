@@ -62,9 +62,9 @@ class NewRelicWebhook(WebhookBase):
             service=[payload['account_name']],
             group=payload['targets'][0]['type'],
             text=payload['details'],
-            tags=['{}:{}'.format(key, value) for (key, value) in payload['targets'][0]['labels'].items()],
+            tags=[f'{key}:{value}' for (key, value) in payload['targets'][0]['labels'].items()],
             attributes=attributes,
-            origin='New Relic/v%s' % payload['version'],
+            origin=f"New Relic/v{payload['version']}",
             event_type=payload['event_type'].lower(),
             raw_data=payload
         )

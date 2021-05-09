@@ -79,7 +79,7 @@ class StateMachine(AlarmModel):
 
     def register(self, app):
         from alerta.management.views import __version__
-        self.name = 'Alerta %s' % __version__
+        self.name = f'Alerta {__version__}'
 
         StateMachine.Severity = app.config['SEVERITY_MAP'] or SEVERITY_MAP
         StateMachine.Colors = app.config['COLOR_MAP'] or COLOR_MAP
@@ -118,7 +118,7 @@ class StateMachine(AlarmModel):
 
         valid_severities = sorted(StateMachine.Severity, key=StateMachine.Severity.get)
         if current_severity not in StateMachine.Severity:
-            raise ApiError('Severity ({}) is not one of {}'.format(current_severity, ', '.join(valid_severities)), 400)
+            raise ApiError(f"Severity ({current_severity}) is not one of {', '.join(valid_severities)}", 400)
 
         def next_state(rule, severity, status):
             current_app.logger.info(
@@ -157,14 +157,14 @@ class StateMachine(AlarmModel):
             if state == Status.Ack:
                 return next_state('UNACK-1', current_severity, previous_status)
             else:
-                raise InvalidAction('invalid action for current {} status'.format(state))
+                raise InvalidAction(f'invalid action for current {state} status')
 
         if action == Action.UNSHELVE:
             if state == Status.Shelved:
                 # as per ISA 18.2 recommendation 11.7.3 manually unshelved alarms transition to previous status
                 return next_state('UNSHL-1', current_severity, previous_status)
             else:
-                raise InvalidAction('invalid action for current {} status'.format(state))
+                raise InvalidAction(f'invalid action for current {state} status')
 
         if action == Action.EXPIRED:
             return next_state('EXP-0', current_severity, Status.Expired)
@@ -177,7 +177,7 @@ class StateMachine(AlarmModel):
 
         if state == Status.Open:
             if action == Action.OPEN:
-                raise InvalidAction('alert is already in {} status'.format(state))
+                raise InvalidAction(f'alert is already in {state} status')
             if action == Action.ACK:
                 return next_state('OPEN-1', current_severity, Status.Ack)
             if action == Action.SHELVE:
@@ -192,7 +192,7 @@ class StateMachine(AlarmModel):
             if action == Action.OPEN:
                 return next_state('ACK-1', current_severity, Status.Open)
             if action == Action.ACK:
-                raise InvalidAction('alert is already in {} status'.format(state))
+                raise InvalidAction(f'alert is already in {state} status')
             if action == Action.SHELVE:
                 return next_state('ACK-2', current_severity, Status.Shelved)
             if action == Action.CLOSE:
@@ -208,9 +208,9 @@ class StateMachine(AlarmModel):
             if action == Action.OPEN:
                 return next_state('SHL-1', current_severity, Status.Open)
             if action == Action.ACK:
-                raise InvalidAction('invalid action for current {} status'.format(state))
+                raise InvalidAction(f'invalid action for current {state} status')
             if action == Action.SHELVE:
-                raise InvalidAction('alert is already in {} status'.format(state))
+                raise InvalidAction(f'alert is already in {state} status')
             if action == Action.CLOSE:
                 return next_state('SHL-2', StateMachine.DEFAULT_NORMAL_SEVERITY, Status.Closed)
 
@@ -227,11 +227,11 @@ class StateMachine(AlarmModel):
             if action == Action.OPEN:
                 return next_state('CLS-1', previous_severity, Status.Open)
             if action == Action.ACK:
-                raise InvalidAction('invalid action for current {} status'.format(state))
+                raise InvalidAction(f'invalid action for current {state} status')
             if action == Action.SHELVE:
-                raise InvalidAction('invalid action for current {} status'.format(state))
+                raise InvalidAction(f'invalid action for current {state} status')
             if action == Action.CLOSE:
-                raise InvalidAction('alert is already in {} status'.format(state))
+                raise InvalidAction(f'alert is already in {state} status')
 
             if StateMachine.Severity[current_severity] != StateMachine.NORMAL_SEVERITY_LEVEL:
                 if previous_status == Status.Shelved:
@@ -245,7 +245,7 @@ class StateMachine(AlarmModel):
 
         if state == Status.Expired:
             if action and action != Action.OPEN:
-                raise InvalidAction('invalid action for current {} status'.format(state))
+                raise InvalidAction(f'invalid action for current {state} status')
             if StateMachine.Severity[current_severity] != StateMachine.NORMAL_SEVERITY_LEVEL:
                 return next_state('EXP-1', current_severity, Status.Open)
 

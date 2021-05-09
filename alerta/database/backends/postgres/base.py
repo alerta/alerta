@@ -102,17 +102,17 @@ class Backend(Database):
                     break
                 else:
                     backoff = 2 ** retry
-                    print('Retry attempt {}/{} (wait={}s)...'.format(retry, MAX_RETRIES, backoff))
+                    print(f'Retry attempt {retry}/{MAX_RETRIES} (wait={backoff}s)...')
                     time.sleep(backoff)
 
         if conn:
             return conn
         else:
-            raise RuntimeError('Database connect error. Failed to connect after {} retries.'.format(MAX_RETRIES))
+            raise RuntimeError(f'Database connect error. Failed to connect after {MAX_RETRIES} retries.')
 
     @staticmethod
     def _adapt_datetime(dt):
-        return AsIs('%s' % adapt(DateTime.iso8601(dt)))
+        return AsIs(f'{adapt(DateTime.iso8601(dt))}')
 
     @property
     def name(self):
@@ -139,7 +139,7 @@ class Backend(Database):
         conn = self.connect()
         cursor = conn.cursor()
         for table in ['alerts', 'blackouts', 'customers', 'groups', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
-            cursor.execute('DROP TABLE IF EXISTS %s' % table)
+            cursor.execute(f'DROP TABLE IF EXISTS {table}')
         conn.commit()
         conn.close()
 
@@ -348,12 +348,12 @@ class Backend(Database):
 
     def tag_alerts(self, query=None, tags=None):
         query = query or Query()
-        update = """
+        update = f"""
             UPDATE alerts
             SET tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(_tags)s))
-            WHERE {where}
+            WHERE {query.where}
             RETURNING id
-        """.format(where=query.where)
+        """
         return [row[0] for row in self._updateall(update, {**query.vars, **{'_tags': tags}}, returning=True)]
 
     def untag_alerts(self, query=None, tags=None):
@@ -367,21 +367,21 @@ class Backend(Database):
         return [row[0] for row in self._updateall(update, {**query.vars, **{'_tags': tags}}, returning=True)]
 
     def update_attributes_by_query(self, query=None, attributes=None):
-        update = """
+        update = f"""
             UPDATE alerts
             SET attributes=attributes || %(_attributes)s
-            WHERE {where}
+            WHERE {query.where}
             RETURNING id
-        """.format(where=query.where)
+        """
         return [row[0] for row in self._updateall(update, {**query.vars, **{'_attributes': attributes}}, returning=True)]
 
     def delete_alerts(self, query=None):
         query = query or Query()
-        delete = """
+        delete = f"""
             DELETE FROM alerts
-            WHERE {where}
+            WHERE {query.where}
             RETURNING id
-        """.format(where=query.where)
+        """
         return [row[0] for row in self._deleteall(delete, query.vars, returning=True)]
 
     # SEARCH & HISTORY
@@ -419,12 +419,12 @@ class Backend(Database):
             join += 'JOIN (VALUES {}) AS st(sts, state) ON alerts.status = st.sts '.format(
                 ', '.join(("('{}', '{}')".format(k, v) for k, v in alarm_model.Status.items()))
             )
-        select = """
+        select = f"""
             SELECT {select}
               FROM alerts {join}
-             WHERE {where}
-          ORDER BY {order}
-        """.format(select=select, join=join, where=query.where, order=query.sort or 'last_receive_time')
+             WHERE {query.where}
+          ORDER BY {query.sort or 'last_receive_time'}
+        """
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_alert_history(self, alert, page=None, page_size=None):
@@ -506,10 +506,10 @@ class Backend(Database):
 
     def get_count(self, query=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT COUNT(1) FROM alerts
-             WHERE {where}
-        """.format(where=query.where)
+             WHERE {query.where}
+        """
         return self._fetchone(select, query.vars).count
 
     def get_counts(self, query=None, group=None):
@@ -525,20 +525,20 @@ class Backend(Database):
 
     def get_counts_by_severity(self, query=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT severity, COUNT(*) FROM alerts
-             WHERE {where}
+             WHERE {query.where}
             GROUP BY severity
-        """.format(where=query.where)
+        """
         return {s.severity: s.count for s in self._fetchall(select, query.vars)}
 
     def get_counts_by_status(self, query=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT status, COUNT(*) FROM alerts
-            WHERE {where}
+            WHERE {query.where}
             GROUP BY status
-        """.format(where=query.where)
+        """
         return {s.status: s.count for s in self._fetchall(select, query.vars)}
 
     def get_topn_count(self, query=None, group='event', topn=100):
@@ -558,8 +558,8 @@ class Backend(Database):
                 'duplicateCount': t.duplicate_count,
                 'environments': t.environments,
                 'services': t.services,
-                '%s' % group: t.event,
-                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url('/alert/%s' % r[0])} for r in t.resources]
+                f'{group}': t.event,
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
@@ -582,7 +582,7 @@ class Backend(Database):
                 'environments': t.environments,
                 'services': t.services,
                 'event': t.event,
-                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url('/alert/%s' % r[0])} for r in t.resources]
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
@@ -606,7 +606,7 @@ class Backend(Database):
                 'environments': t.environments,
                 'services': t.services,
                 'event': t.event,
-                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url('/alert/%s' % r[0])} for r in t.resources]
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
@@ -614,11 +614,11 @@ class Backend(Database):
 
     def get_environments(self, query=None, topn=1000):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT environment, severity, status, count(1) FROM alerts
-            WHERE {where}
+            WHERE {query.where}
             GROUP BY environment, CUBE(severity, status)
-        """.format(where=query.where)
+        """
         result = self._fetchall(select, query.vars, limit=topn)
 
         severity_count = defaultdict(list)
@@ -681,11 +681,11 @@ class Backend(Database):
 
     def get_alert_groups(self, query=None, topn=1000):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT environment, "group", count(1) FROM alerts
-            WHERE {where}
+            WHERE {query.where}
             GROUP BY environment, "group"
-        """.format(where=query.where)
+        """
         return [
             {
                 'environment': g.environment,
@@ -739,10 +739,10 @@ class Backend(Database):
 
     def get_blackouts_count(self, query=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT COUNT(1) FROM blackouts
-             WHERE {where}
-        """.format(where=query.where)
+             WHERE {query.where}
+        """
         return self._fetchone(select, query.vars).count
 
     def is_blackout_period(self, alert):
@@ -944,10 +944,10 @@ class Backend(Database):
 
     def get_heartbeats_count(self, query=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT COUNT(1) FROM heartbeats
-             WHERE {where}
-        """.format(where=query.where)
+             WHERE {query.where}
+        """
         return self._fetchone(select, query.vars).count
 
     def delete_heartbeat(self, id):
@@ -969,20 +969,20 @@ class Backend(Database):
         return self._insert(insert, vars(key))
 
     def get_key(self, key, user=None):
-        select = """
+        select = f"""
             SELECT * FROM keys
              WHERE (id=%(key)s OR key=%(key)s)
-               AND {user}
-        """.format(user='"user"=%(user)s' if user else '1=1')
+               AND {'"user"=%(user)s' if user else '1=1'}
+        """
         return self._fetchone(select, {'key': key, 'user': user})
 
     def get_keys(self, query=None, page=None, page_size=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT * FROM keys
-             WHERE {where}
-          ORDER BY {order}
-        """.format(where=query.where, order=query.sort)
+             WHERE {query.where}
+          ORDER BY {query.sort}
+        """
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_keys_by_user(self, user):
@@ -994,10 +994,10 @@ class Backend(Database):
 
     def get_keys_count(self, query=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT COUNT(1) FROM keys
-             WHERE {where}
-        """.format(where=query.where)
+             WHERE {query.where}
+        """
         return self._fetchone(select, query.vars).count
 
     def update_key(self, key, **kwargs):
@@ -1057,19 +1057,19 @@ class Backend(Database):
 
     def get_users(self, query=None, page=None, page_size=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT * FROM users
-             WHERE {where}
-          ORDER BY {order}
-        """.format(where=query.where, order=query.sort)
+             WHERE {query.where}
+          ORDER BY {query.sort}
+        """
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_users_count(self, query=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT COUNT(1) FROM users
-             WHERE {where}
-        """.format(where=query.where)
+             WHERE {query.where}
+        """
         return self._fetchone(select, query.vars).count
 
     def get_user_by_username(self, username):
@@ -1176,10 +1176,10 @@ class Backend(Database):
 
     def get_groups_count(self, query=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT COUNT(1) FROM groups
-             WHERE {where}
-        """.format(where=query.where)
+             WHERE {query.where}
+        """
         return self._fetchone(select, query.vars).count
 
     def get_group_users(self, id):
@@ -1258,19 +1258,19 @@ class Backend(Database):
 
     def get_perms(self, query=None, page=None, page_size=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT * FROM perms
-             WHERE {where}
-          ORDER BY {order}
-        """.format(where=query.where, order=query.sort)
+             WHERE {query.where}
+          ORDER BY {query.sort}
+        """
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_perms_count(self, query=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT COUNT(1) FROM perms
-             WHERE {where}
-        """.format(where=query.where)
+             WHERE {query.where}
+        """
         return self._fetchone(select, query.vars).count
 
     def update_perm(self, id, **kwargs):
@@ -1332,19 +1332,19 @@ class Backend(Database):
 
     def get_customers(self, query=None, page=None, page_size=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT * FROM customers
-             WHERE {where}
-          ORDER BY {order}
-        """.format(where=query.where, order=query.sort)
+             WHERE {query.where}
+          ORDER BY {query.sort}
+        """
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_customers_count(self, query=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT COUNT(1) FROM customers
-             WHERE {where}
-        """.format(where=query.where)
+             WHERE {query.where}
+        """
         return self._fetchone(select, query.vars).count
 
     def update_customer(self, id, **kwargs):
@@ -1388,7 +1388,7 @@ class Backend(Database):
                 return '*'  # all customers
             return customers
 
-        raise NoCustomerMatch("No customer lookup configured for user '{}' or '{}'".format(login, ','.join(matches)))
+        raise NoCustomerMatch(f"No customer lookup configured for user '{login}' or '{','.join(matches)}'")
 
     # NOTES
 
@@ -1411,11 +1411,11 @@ class Backend(Database):
 
     def get_notes(self, query=None, page=None, page_size=None):
         query = query or Query()
-        select = """
+        select = f"""
             SELECT * FROM notes
-             WHERE {where}
-          ORDER BY {order}
-        """.format(where=query.where, order=query.sort or 'create_time')
+             WHERE {query.where}
+          ORDER BY {query.sort or 'create_time'}
+        """
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_alert_notes(self, id, page=None, page_size=None):
@@ -1584,7 +1584,7 @@ class Backend(Database):
         """
         if limit is None:
             limit = current_app.config['DEFAULT_PAGE_SIZE']
-        query += ' LIMIT %s OFFSET %s''' % (limit, offset)
+        query += f' LIMIT {limit} OFFSET {offset}'
         cursor = self.get_db().cursor()
         self._log(cursor, query, vars)
         cursor.execute(query, vars)

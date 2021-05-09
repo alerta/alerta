@@ -28,7 +28,7 @@ def create_perm():
         current_app.config['DEFAULT_USER_ROLE'],
         current_app.config['DEFAULT_GUEST_ROLE']
     ]:
-        raise ApiError('{} role already exists'.format(perm.match), 409)
+        raise ApiError(f'{perm.match} role already exists', 409)
 
     for want_scope in perm.scopes:
         if not Permission.is_in_scope(want_scope, have_scopes=g.scopes):
@@ -139,7 +139,7 @@ def update_perm(perm_id):
 
     for s in request.json.get('scopes', []):
         if s not in Scope.find_all():
-            raise ApiError("'{}' is not a valid Scope".format(s), 400)
+            raise ApiError(f"'{s}' is not a valid Scope", 400)
 
     perm = Permission.find_by_id(perm_id)
 

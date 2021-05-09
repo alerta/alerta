@@ -57,18 +57,18 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
     except ValueError:
         timeout = None
 
-    tags = ['{}={}'.format(k, v) for k, v in labels.items()]  # any labels left over are used for tags
+    tags = [f'{k}={v}' for k, v in labels.items()]  # any labels left over are used for tags
 
     # annotations
     value = annotations.pop('value', None)
     summary = annotations.pop('summary', None)
     description = annotations.pop('description', None)
-    text = description or summary or '{}: {} is {}'.format(severity.upper(), resource, event)
+    text = description or summary or f'{severity.upper()}: {resource} is {event}'
 
     if external_url:
         annotations['externalUrl'] = external_url  # needed as raw URL for bi-directional integration
     if 'generatorURL' in alert:
-        annotations['moreInfo'] = '<a href="{}" target="_blank">Prometheus Graph</a>'.format(alert['generatorURL'])
+        annotations['moreInfo'] = f"<a href=\"{alert['generatorURL']}\" target=\"_blank\">Prometheus Graph</a>"
 
     # attributes
     attributes = {

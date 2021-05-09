@@ -173,7 +173,7 @@ class User:
     def update(self, **kwargs) -> 'User':
         if kwargs.get('email', None) is not None:
             if '@' not in kwargs['email']:
-                raise ValueError('Value for "email" not valid: %s' % kwargs['email'])
+                raise ValueError(f"Value for \"email\" not valid: {kwargs['email']}")
             kwargs['email_verified'] = kwargs.get('email_verified', False)
         if kwargs.get('password') is not None:
             kwargs['password'] = utils.generate_password_hash(kwargs['password'])

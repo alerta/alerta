@@ -54,10 +54,10 @@ class Client:
             'text': text,
             'timeout': timeout
         }
-        return self.http.put('/alert/%s/action' % id, data)
+        return self.http.put(f'/alert/{id}/action', data)
 
     def delete_alert(self, id):
-        return self.http.delete('/alert/%s' % id)
+        return self.http.delete(f'/alert/{id}')
 
 
 class ApiKeyAuth(AuthBase):
@@ -67,7 +67,7 @@ class ApiKeyAuth(AuthBase):
         self.auth_token = auth_token
 
     def __call__(self, r):
-        r.headers['Authorization'] = 'Key {}'.format(self.api_key)
+        r.headers['Authorization'] = f'Key {self.api_key}'
         return r
 
 
@@ -77,7 +77,7 @@ class TokenAuth(AuthBase):
         self.auth_token = auth_token
 
     def __call__(self, r):
-        r.headers['Authorization'] = 'Bearer {}'.format(self.auth_token)
+        r.headers['Authorization'] = f'Bearer {self.auth_token}'
         return r
 
 

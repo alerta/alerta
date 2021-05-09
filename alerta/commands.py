@@ -57,7 +57,7 @@ def key(username, want_key, scopes, duration, text, customer, all, force):
     Create an admin API key.
     """
     if username and username not in current_app.config['ADMIN_USERS']:
-        raise click.UsageError('User {} not an admin'.format(username))
+        raise click.UsageError(f'User {username} not an admin')
 
     if all and want_key:
         raise click.UsageError('Can only set API key with "--username".')
@@ -78,7 +78,7 @@ def key(username, want_key, scopes, duration, text, customer, all, force):
         try:
             key = key.create()
         except Exception as e:
-            click.echo('ERROR: {}'.format(e))
+            click.echo(f'ERROR: {e}')
         else:
             return key
 
@@ -89,7 +89,7 @@ def key(username, want_key, scopes, duration, text, customer, all, force):
                 key = keys[0]
             else:
                 key = create_key(admin)
-            click.echo('{:40} {}'.format(key.key, key.user))
+            click.echo(f'{key.key:40} {key.user}')
 
     elif username:
         keys = [k for k in ApiKey.find_by_user(username) if k.scopes == scopes]
@@ -123,10 +123,10 @@ def keys():
         try:
             keys = [k for k in ApiKey.find_by_user(admin) if Scope.admin in k.scopes]
         except Exception as e:
-            click.echo('ERROR: {}'.format(e))
+            click.echo(f'ERROR: {e}')
         else:
             for key in keys:
-                click.echo('{:40} {}'.format(key.key, key.user))
+                click.echo(f'{key.key:40} {key.user}')
 
 
 class CommandWithOptionalPassword(click.Command):
@@ -156,10 +156,10 @@ def user(name, email, password, text, all):
     Create admin users (BasicAuth only).
     """
     if current_app.config['AUTH_PROVIDER'] != 'basic':
-        raise click.UsageError('Not required for {} admin users'.format(current_app.config['AUTH_PROVIDER']))
+        raise click.UsageError(f"Not required for {current_app.config['AUTH_PROVIDER']} admin users")
 
     if email and email not in current_app.config['ADMIN_USERS']:
-        raise click.UsageError('User {} not an admin'.format(email))
+        raise click.UsageError(f'User {email} not an admin')
     if (email or all) and not password:
         password = click.prompt('Password', hide_input=True)
 
@@ -179,7 +179,7 @@ def user(name, email, password, text, all):
         try:
             user = user.create()
         except Exception as e:
-            click.echo('ERROR: {}'.format(e))
+            click.echo(f'ERROR: {e}')
         else:
             return user
 
@@ -188,7 +188,7 @@ def user(name, email, password, text, all):
             user = User.find_by_username(admin)
             if not user:
                 user = create_user(name=admin, login=admin)
-            click.echo('{} {}'.format(user.id, user.login))
+            click.echo(f'{user.id} {user.login}')
 
     elif email:
         user = create_user(name, login=email)
@@ -211,7 +211,7 @@ def users():
         try:
             user = User.find_by_username(admin)
         except Exception as e:
-            click.echo('ERROR: {}'.format(e))
+            click.echo(f'ERROR: {e}')
         else:
             if user:
-                click.echo('{} {}'.format(user.id, user.login))
+                click.echo(f'{user.id} {user.login}')

@@ -18,11 +18,11 @@ from . import auth
 def get_oidc_configuration(app):
 
     OIDC_ISSUER_URL_BY_PROVIDER = {
-        'azure': 'https://login.microsoftonline.com/{}/v2.0'.format(app.config['AZURE_TENANT']),
-        'cognito': 'https://cognito-idp.{}.amazonaws.com/{}'.format(app.config['AWS_REGION'], app.config['COGNITO_USER_POOL_ID']),
+        'azure': f"https://login.microsoftonline.com/{app.config['AZURE_TENANT']}/v2.0",
+        'cognito': f"https://cognito-idp.{app.config['AWS_REGION']}.amazonaws.com/{app.config['COGNITO_USER_POOL_ID']}",
         'gitlab': app.config['GITLAB_URL'],
         'google': 'https://accounts.google.com',
-        'keycloak': '{}/auth/realms/{}'.format(app.config['KEYCLOAK_URL'], app.config['KEYCLOAK_REALM'])
+        'keycloak': f"{app.config['KEYCLOAK_URL']}/auth/realms/{app.config['KEYCLOAK_REALM']}"
     }
 
     issuer_url = OIDC_ISSUER_URL_BY_PROVIDER.get(app.config['AUTH_PROVIDER']) or app.config['OIDC_ISSUER_URL']
@@ -38,7 +38,7 @@ def get_oidc_configuration(app):
 
     if 'issuer' not in config:
         error = config.get('error') or config.get('message') or config
-        raise ApiError('OpenID Connect issuer response invalid: {}'.format(error))
+        raise ApiError(f'OpenID Connect issuer response invalid: {error}')
 
     if config['issuer'].format(tenantid=app.config['AZURE_TENANT']) != issuer_url:
         raise ApiError('Issuer Claim does not match Issuer URL used to retrieve OpenID configuration', 503)
@@ -103,7 +103,7 @@ def openid():
         id_token = {}
 
     try:
-        headers = {'Authorization': '{} {}'.format(token.get('token_type', 'Bearer'), token['access_token'])}
+        headers = {'Authorization': f"{token.get('token_type', 'Bearer')} {token['access_token']}"}
         r = requests.get(userinfo_endpoint, headers=headers)
         userinfo = r.json()
     except Exception:
@@ -148,10 +148,10 @@ def openid():
         custom_claims['oid'] = user.id  # if subject differs store the original subject as "oid" claim
 
     if user.status != 'active':
-        raise ApiError('User {} is not active'.format(login), 403)
+        raise ApiError(f'User {login} is not active', 403)
 
     if not_authorized('ALLOWED_OIDC_ROLES', roles) or not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
-        raise ApiError('User {} is not authorized'.format(login), 403)
+        raise ApiError(f'User {login} is not authorized', 403)
     user.update_last_login()
 
     scopes = Permission.lookup(login, roles=roles)
