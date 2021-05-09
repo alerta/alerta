@@ -34,7 +34,7 @@ def get_oidc_configuration(app):
         r = requests.get(discovery_doc_url, timeout=2)
         config = r.json()
     except Exception as e:
-        raise ApiError('Could not get OpenID configuration from well known URL: {}'.format(str(e)), 503)
+        raise ApiError(f'Could not get OpenID configuration from well known URL: {str(e)}', 503)
 
     if 'issuer' not in config:
         error = config.get('error') or config.get('message') or config
@@ -49,7 +49,7 @@ def get_oidc_configuration(app):
             r = requests.get(jwks_uri, timeout=2)
             keys = {k['kid']: RSAAlgorithm.from_jwk(json.dumps(k)) for k in r.json()['keys']}
         except Exception as e:
-            raise ApiError('Could not get OpenID JWT Key Set from JWKS URL: {}'.format(str(e)), 503)
+            raise ApiError(f'Could not get OpenID JWT Key Set from JWKS URL: {str(e)}', 503)
     else:
         keys = {}
 

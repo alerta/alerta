@@ -49,7 +49,7 @@ def send_message_reply(alert: Alert, action: str, user: str, data: JSON) -> None
         alert_url = f'{dashboard_url}/#/alert/{alert.id}'
         reply = reply.format(alert=alert_short_id, status=action, user=user)
         message = '{alert} *{level} - {event} on {resouce}*\n{log}\n{reply}'.format(
-            alert='[{}]({})'.format(alert_short_id, alert_url), level=alert.severity.capitalize(),
+            alert=f'[{alert_short_id}]({alert_url})', level=alert.severity.capitalize(),
             event=alert.event, resouce=alert.resource, log=message_log, reply=reply)
 
         # send message

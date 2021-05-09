@@ -45,9 +45,9 @@ def process_alert(alert: Alert) -> Alert:
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise RuntimeError("Error while running pre-receive plugin '{}': {}".format(plugin.name, str(e)))
+                raise RuntimeError(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
             else:
-                logging.error("Error while running pre-receive plugin '{}': {}".format(plugin.name, str(e)))
+                logging.error(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
         if not alert:
             raise SyntaxError(f"Plugin '{plugin.name}' pre-receive hook did not return modified alert")
 
@@ -78,9 +78,9 @@ def process_alert(alert: Alert) -> Alert:
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError("Error while running post-receive plugin '{}': {}".format(plugin.name, str(e)))
+                raise ApiError(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
             else:
-                logging.error("Error while running post-receive plugin '{}': {}".format(plugin.name, str(e)))
+                logging.error(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
         if updated:
             alert = updated
 
@@ -107,9 +107,9 @@ def process_action(alert: Alert, action: str, text: str, timeout: int = None) ->
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
+                raise ApiError(f"Error while running action plugin '{plugin.name}': {str(e)}")
             else:
-                logging.error("Error while running action plugin '{}': {}".format(plugin.name, str(e)))
+                logging.error(f"Error while running action plugin '{plugin.name}': {str(e)}")
 
         if isinstance(updated, Alert):
             updated = updated, action, text, timeout
@@ -140,9 +140,9 @@ def process_note(alert: Alert, text: str) -> Tuple[Alert, str]:
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError("Error while running note plugin '{}': {}".format(plugin.name, str(e)))
+                raise ApiError(f"Error while running note plugin '{plugin.name}': {str(e)}")
             else:
-                logging.error("Error while running note plugin '{}': {}".format(plugin.name, str(e)))
+                logging.error(f"Error while running note plugin '{plugin.name}': {str(e)}")
 
         if isinstance(updated, Alert):
             updated = updated, text
@@ -172,9 +172,9 @@ def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, st
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError("Error while running status plugin '{}': {}".format(plugin.name, str(e)))
+                raise ApiError(f"Error while running status plugin '{plugin.name}': {str(e)}")
             else:
-                logging.error("Error while running status plugin '{}': {}".format(plugin.name, str(e)))
+                logging.error(f"Error while running status plugin '{plugin.name}': {str(e)}")
         if updated:
             try:
                 alert, status, text = updated
@@ -202,8 +202,8 @@ def process_delete(alert: Alert) -> bool:
             raise
         except Exception as e:
             if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError("Error while running delete plugin '{}': {}".format(plugin.name, str(e)))
+                raise ApiError(f"Error while running delete plugin '{plugin.name}': {str(e)}")
             else:
-                logging.error("Error while running delete plugin '{}': {}".format(plugin.name, str(e)))
+                logging.error(f"Error while running delete plugin '{plugin.name}': {str(e)}")
 
     return delete and alert.delete()

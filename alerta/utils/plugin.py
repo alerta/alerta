@@ -41,7 +41,7 @@ class Plugins:
                     self.plugins[name] = plugin()
                     LOG.info(f"Server plugin '{name}' loaded.")
             except Exception as e:
-                LOG.error("Failed to load plugin '{}': {}".format(name, str(e)))
+                LOG.error(f"Failed to load plugin '{name}': {str(e)}")
         LOG.info(f"All server plugins enabled: {', '.join(self.plugins.keys())}")
         try:
             self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')  # type: ignore
