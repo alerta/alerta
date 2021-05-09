@@ -24,27 +24,27 @@ class BinaryOperation:
 class SearchModifier(UnaryOperation):
 
     def __repr__(self):
-        return '{} {}'.format(self.op, self.operands)
+        return f'{self.op} {self.operands}'
 
 
 class SearchAnd(BinaryOperation):
 
     def __repr__(self):
-        return '({} AND {})'.format(self.lhs, self.rhs)
+        return f'({self.lhs} AND {self.rhs})'
 
 
 class SearchOr(BinaryOperation):
 
     def __repr__(self):
         if getattr(self.rhs, 'op', None) == 'NOT':
-            return '({} AND {})'.format(self.lhs, self.rhs)
-        return '({} OR {})'.format(self.lhs, self.rhs)
+            return f'({self.lhs} AND {self.rhs})'
+        return f'({self.lhs} OR {self.rhs})'
 
 
 class SearchNot(UnaryOperation):
 
     def __repr__(self):
-        return 'NOT ({})'.format(self.operands)
+        return f'NOT ({self.operands})'
 
 
 class SearchTerm:
@@ -66,7 +66,7 @@ class SearchTerm:
                 return '"{}" ILIKE \'%%{}%%\''.format(self.tokens.field[0], self.tokens.singleterm)
         if 'phrase' in self.tokens:
             if self.tokens.field[0] == '__default_field__':
-                return '"{}" ~* \'\\y{}\\y\''.format('__default_field__', self.tokens.phrase)
+                return f"\"__default_field__\" ~* '\\y{self.tokens.phrase}\\y'"
             elif self.tokens.field[0] in ['correlate', 'service', 'tags']:
                 return '\'{}\'=ANY("{}")'.format(self.tokens.phrase, self.tokens.field[0])
             elif self.tokens.attr:
@@ -96,7 +96,7 @@ class SearchTerm:
                     '<=' if 'inclusive' in self.tokens.range[2] else '<',
                     self.tokens.range[2].upperbound
                 )
-            return '({} AND {})'.format(lower_term, upper_term)
+            return f'({lower_term} AND {upper_term})'
         if 'onesidedrange' in self.tokens:
             return '("{}" {} \'{}\')'.format(
                 self.tokens.field[0],
@@ -108,10 +108,10 @@ class SearchTerm:
                 tokens_attr = 'attributes' if self.tokens.attr == '_' else self.tokens.attr
                 tokens_fieldname = '"{}"::jsonb ->>\'{}\''.format(tokens_attr, self.tokens.fieldname)
             else:
-                tokens_fieldname = '"{}"'.format(self.tokens.fieldname or self.tokens.field[0])
-            return '{}'.format(self.tokens.subquery[0]).replace('"__default_field__"', tokens_fieldname)
+                tokens_fieldname = f'"{self.tokens.fieldname or self.tokens.field[0]}"'
+            return f'{self.tokens.subquery[0]}'.replace('"__default_field__"', tokens_fieldname)
 
-        raise ParseException('Search term did not match query syntax: %s' % self.tokens)
+        raise ParseException(f'Search term did not match query syntax: {self.tokens}')
 
 
 # BNF for Lucene query syntax

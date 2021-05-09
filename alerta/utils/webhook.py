@@ -23,19 +23,19 @@ class CustomWebhooks:
 
     def register(self, app: Flask) -> None:
         for ep in iter_entry_points('alerta.webhooks'):
-            app.logger.debug("Server webhook '{}' found.".format(ep.name))
+            app.logger.debug(f"Server webhook '{ep.name}' found.")
             try:
                 webhook = ep.load()
                 if webhook:
                     self.webhooks[ep.name] = webhook()
-                    app.logger.info("Server webhook '{}' loaded.".format(ep.name))
+                    app.logger.info(f"Server webhook '{ep.name}' loaded.")
             except Exception as e:
-                app.logger.warning("Failed to load webhook '{}': {}".format(ep.name, e))
+                app.logger.warning(f"Failed to load webhook '{ep.name}': {e}")
 
     def iter_rules(self) -> Iterator[WebhookRule]:
         return iter([
             WebhookRule(
-                rule='/webhooks/{}'.format(name),
-                endpoint='webhooks.{}'.format(name),
+                rule=f'/webhooks/{name}',
+                endpoint=f'webhooks.{name}',
                 methods=['POST', 'GET']
             ) for name, ep in self.webhooks.items()])

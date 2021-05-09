@@ -40,8 +40,7 @@ class Permission:
         }
 
     def __repr__(self) -> str:
-        return 'Perm(id={!r}, match={!r}, scopes={!r})'.format(
-            self.id, self.match, self.scopes)
+        return f'Perm(id={self.id!r}, match={self.match!r}, scopes={self.scopes!r})'
 
     @classmethod
     def from_document(cls, doc: Dict[str, Any]) -> 'Permission':

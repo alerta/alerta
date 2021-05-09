@@ -113,7 +113,7 @@ class Config:
             raise RuntimeError('Customer views is enabled but there are no admin users')
 
         if config['DEFAULT_ENVIRONMENT'] not in config['ALLOWED_ENVIRONMENTS']:
-            raise RuntimeError('Default environment "{}" not in list of allowed environments'.format(config['DEFAULT_ENVIRONMENT']))
+            raise RuntimeError(f"Default environment \"{config['DEFAULT_ENVIRONMENT']}\" not in list of allowed environments")
 
         return config
 

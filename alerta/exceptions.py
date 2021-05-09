@@ -114,7 +114,7 @@ def handle_basic_auth_error(error: BasicAuthError) -> Tuple[Response, int, Dict[
         'code': error.code,
         'errors': error.errors,
         'requestId': g.request_id
-    }), error.code, {'WWW-Authenticate': 'Basic realm=%s' % current_app.config['BASIC_AUTH_REALM']}
+    }), error.code, {'WWW-Authenticate': f"Basic realm={current_app.config['BASIC_AUTH_REALM']}"}
 
 
 def handle_exception(error: Exception) -> Union[Tuple[Response, int], Exception]:

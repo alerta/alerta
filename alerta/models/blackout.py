@@ -130,19 +130,19 @@ class Blackout:
     def __repr__(self) -> str:
         more = ''
         if self.service:
-            more += 'service=%r, ' % self.service
+            more += f'service={self.service!r}, '
         if self.resource:
-            more += 'resource=%r, ' % self.resource
+            more += f'resource={self.resource!r}, '
         if self.event:
-            more += 'event=%r, ' % self.event
+            more += f'event={self.event!r}, '
         if self.group:
-            more += 'group=%r, ' % self.group
+            more += f'group={self.group!r}, '
         if self.tags:
-            more += 'tags=%r, ' % self.tags
+            more += f'tags={self.tags!r}, '
         if self.origin:
-            more += 'origin=%r, ' % self.origin
+            more += f'origin={self.origin!r}, '
         if self.customer:
-            more += 'customer=%r, ' % self.customer
+            more += f'customer={self.customer!r}, '
 
         return 'Blackout(id={!r}, priority={!r}, status={!r}, environment={!r}, {}start_time={!r}, end_time={!r}, remaining={!r})'.format(
             self.id,

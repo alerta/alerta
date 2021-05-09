@@ -37,7 +37,7 @@ def github():
     r = requests.post(access_token_url, data, headers={'Accept': 'application/json'})
     token = r.json()
 
-    headers = {'Authorization': 'token {}'.format(token['access_token'])}
+    headers = {'Authorization': f"token {token['access_token']}"}
     r = requests.get(github_api_url + '/user', headers=headers)
     profile = r.json()
 
@@ -64,10 +64,10 @@ def github():
         user.update(login=login, email=email)
 
     if user.status != 'active':
-        raise ApiError('User {} is not active'.format(login), 403)
+        raise ApiError(f'User {login} is not active', 403)
 
     if not_authorized('ALLOWED_GITHUB_ORGS', organizations):
-        raise ApiError('User {} is not authorized'.format(login), 403)
+        raise ApiError(f'User {login} is not authorized', 403)
     user.update_last_login()
 
     scopes = Permission.lookup(login, roles=user.roles + organizations)

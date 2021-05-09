@@ -62,9 +62,9 @@ def parse_grafana(args: ImmutableMultiDict, alert: JSON, match: Dict[str, Any]) 
 
     attributes['ruleId'] = str(alert['ruleId'])
     if 'ruleUrl' in alert:
-        attributes['ruleUrl'] = '<a href="%s" target="_blank">Rule</a>' % alert['ruleUrl']
+        attributes['ruleUrl'] = f"<a href=\"{alert['ruleUrl']}\" target=\"_blank\">Rule</a>"
     if 'imageUrl' in alert:
-        attributes['imageUrl'] = '<a href="%s" target="_blank">Image</a>' % alert['imageUrl']
+        attributes['imageUrl'] = f"<a href=\"{alert['imageUrl']}\" target=\"_blank\">Image</a>"
 
     return Alert(
         resource=match['metric'],
@@ -73,7 +73,7 @@ def parse_grafana(args: ImmutableMultiDict, alert: JSON, match: Dict[str, Any]) 
         severity=severity,
         service=service,
         group=group,
-        value='%s' % match['value'],
+        value=f"{match['value']}",
         text=alert.get('message', None) or alert.get('title', alert['state']),
         tags=list(),
         attributes=attributes,

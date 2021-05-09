@@ -47,7 +47,7 @@ class EscalateSeverity(PluginBase):
                 alert.severity = escalate_map.get(severity_level)[0]
                 text = 'alert severity escalated'
             except TypeError:
-                raise InvalidAction('Can not escalate alert severity beyond "{}".'.format(alert.severity))
+                raise InvalidAction(f'Can not escalate alert severity beyond "{alert.severity}".')
 
         return alert, action, text
 

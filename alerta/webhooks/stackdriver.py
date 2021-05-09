@@ -28,7 +28,7 @@ class StackDriverWebhook(WebhookBase):
                 content = json.loads(incident['documentation']['content'])
                 incident.update(content)
             except Exception:
-                current_app.logger.warning("Invalid documentation content: '{}'".format(incident['documentation']))
+                current_app.logger.warning(f"Invalid documentation content: '{incident['documentation']}'")
 
         status = None
         severity = incident.get('severity', 'critical')
@@ -58,7 +58,7 @@ class StackDriverWebhook(WebhookBase):
             attributes={
                 'incidentId': incident['incident_id'],
                 'resourceId': incident['resource_id'],
-                'moreInfo': '<a href="%s" target="_blank">Stackdriver Console</a>' % incident['url'],
+                'moreInfo': f"<a href=\"{incident['url']}\" target=\"_blank\">Stackdriver Console</a>",
                 'startedAt': incident['started_at'],
                 'endedAt': incident['ended_at']
 
