@@ -538,7 +538,7 @@ class CustActionPlugin2(PluginBase):
         alert.tags.remove('aDouble:Tag')
 
         if action == 'invalid':
-            raise InvalidAction('{} is not a valid action for this status'.format(action))
+            raise InvalidAction(f'{action} is not a valid action for this status')
 
         return alert, action, text
 
@@ -557,7 +557,7 @@ class CustActionPlugin3(PluginBase):
     def take_action(self, alert, action, text, **kwargs):
 
         if action == 'invalid':
-            raise InvalidAction('{} is not a valid action for this status'.format(action))
+            raise InvalidAction(f'{action} is not a valid action for this status')
 
         return alert, action, text
 

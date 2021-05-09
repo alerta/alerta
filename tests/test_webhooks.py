@@ -765,7 +765,7 @@ class WebhooksTestCase(unittest.TestCase):
     def test_cloudwatch_webhook(self):
 
         # subscription confirmation
-        response = self.client.post('/webhooks/cloudwatch?api-key={}'.format(self.api_key.key),
+        response = self.client.post(f'/webhooks/cloudwatch?api-key={self.api_key.key}',
                                     data=self.cloudwatch_subscription_confirmation, content_type='text/plain; charset=UTF-8')
         self.assertEqual(response.status_code, 201, response.json)
         data = json.loads(response.data.decode('utf-8'))
@@ -773,7 +773,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['event'], 'SubscriptionConfirmation')
 
         # notification
-        response = self.client.post('/webhooks/cloudwatch?api-key={}'.format(self.api_key.key),
+        response = self.client.post(f'/webhooks/cloudwatch?api-key={self.api_key.key}',
                                     data=self.cloudwatch_notification, content_type='text/plain; charset=UTF-8')
         self.assertEqual(response.status_code, 201, response.data)
         data = json.loads(response.data.decode('utf-8'))
@@ -787,7 +787,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['origin'], 'arn:aws:sns:eu-west-1:1234567890:alerta-test')
 
         # notification
-        response = self.client.post('/webhooks/cloudwatch?api-key={}'.format(self.api_key.key),
+        response = self.client.post(f'/webhooks/cloudwatch?api-key={self.api_key.key}',
                                     data=self.cloudwatch_insufficient_data, content_type='text/plain; charset=UTF-8')
         self.assertEqual(response.status_code, 201, response.data)
         data = json.loads(response.data.decode('utf-8'))
@@ -1097,7 +1097,7 @@ class WebhooksTestCase(unittest.TestCase):
         custom_webhooks.webhooks['teapot'] = TeapotWebhook()
 
         # test json payload
-        response = self.client.post('/webhooks/json/bar/baz?foo=bar&api-key={}'.format(self.api_key.key), json={'baz': 'quux'}, content_type='application/json')
+        response = self.client.post(f'/webhooks/json/bar/baz?foo=bar&api-key={self.api_key.key}', json={'baz': 'quux'}, content_type='application/json')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'bar')
@@ -1108,14 +1108,14 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['attributes']['data'], {'baz': 'quux'})
 
         # test text data
-        response = self.client.post('/webhooks/text?foo&api-key={}'.format(self.api_key.key), data='this is raw data', content_type='text/plain')
+        response = self.client.post(f'/webhooks/text?foo&api-key={self.api_key.key}', data='this is raw data', content_type='text/plain')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['resource'], 'nofoo')
         self.assertEqual(data['alert']['event'], 'this is raw data')
 
         # test form data
-        response = self.client.post('/webhooks/form?foo=1&api-key={}'.format(self.api_key.key), data='say=Hi&to=Mom',
+        response = self.client.post(f'/webhooks/form?foo=1&api-key={self.api_key.key}', data='say=Hi&to=Mom',
                                     content_type='application/x-www-form-urlencoded')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
@@ -1127,7 +1127,7 @@ class WebhooksTestCase(unittest.TestCase):
             field1='value1',
             file1=(BytesIO(b'my file contents'), 'file1.txt'),
         )
-        response = self.client.post('/webhooks/multipart?foo=1&api-key={}'.format(self.api_key.key), data=form_data1,
+        response = self.client.post(f'/webhooks/multipart?foo=1&api-key={self.api_key.key}', data=form_data1,
                                     content_type='multipart/form-data;boundary="boundary"')
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
@@ -1135,7 +1135,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['event'], 'value1')
 
         # test user-defined response
-        response = self.client.post('/webhooks/userdefined?foo=bar&api-key={}'.format(self.api_key.key),
+        response = self.client.post(f'/webhooks/userdefined?foo=bar&api-key={self.api_key.key}',
                                     json={'baz': 'quux'}, content_type='application/json')
         self.assertEqual(response.status_code, 418)
         data = json.loads(response.data.decode('utf-8'))
@@ -1144,7 +1144,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['teapot'], True)
 
         # test exception response
-        response = self.client.post('/webhooks/teapot?coffee=1&api-key={}'.format(self.api_key.key),
+        response = self.client.post(f'/webhooks/teapot?coffee=1&api-key={self.api_key.key}',
                                     json={'baz': 'quux'}, content_type='application/json')
         self.assertEqual(response.status_code, 418)
         data = json.loads(response.data.decode('utf-8'))
@@ -1208,7 +1208,7 @@ class DummyFormWebhook(WebhookBase):
     def incoming(self, path, query_string, payload):
         return Alert(
             resource=query_string['foo'],
-            event='Say {} to {}'.format(payload['say'], payload['to']),
+            event=f"Say {payload['say']} to {payload['to']}",
             environment='Production',
             service=['Foo']
         )

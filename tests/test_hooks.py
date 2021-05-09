@@ -95,7 +95,7 @@ class PluginsTestCase(unittest.TestCase):
         note = {
             'text': 'this is a note'
         }
-        response = self.client.put('/alert/{}/note'.format(alert_id), data=json.dumps(note), headers=self.headers)
+        response = self.client.put(f'/alert/{alert_id}/note', data=json.dumps(note), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         response = self.client.get('/alert/' + alert_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)

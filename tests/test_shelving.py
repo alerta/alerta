@@ -51,7 +51,7 @@ class ShelvingTestCase(unittest.TestCase):
     def test_shelved_status(self):
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -175,7 +175,7 @@ class ShelvingTestCase(unittest.TestCase):
     def test_shelve_action(self):
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 

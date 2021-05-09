@@ -48,7 +48,7 @@ class CustomersTestCase(unittest.TestCase):
             self.api_key.create()
 
         self.admin_headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
+            'Authorization': f'Key {self.api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -93,7 +93,7 @@ class CustomersTestCase(unittest.TestCase):
         self.assertIsNotNone(data, 'Failed to create user')
 
         self.bar_bearer_headers = {
-            'Authorization': 'Bearer %s' % data['token'],
+            'Authorization': f"Bearer {data['token']}",
             'Content-type': 'application/json'
         }
 
@@ -111,7 +111,7 @@ class CustomersTestCase(unittest.TestCase):
         self.assertIsNotNone(data, 'Failed to create user')
 
         self.foobar_bearer_headers = {
-            'Authorization': 'Bearer %s' % data['token'],
+            'Authorization': f"Bearer {data['token']}",
             'Content-type': 'application/json'
         }
 
@@ -129,7 +129,7 @@ class CustomersTestCase(unittest.TestCase):
         self.assertIsNotNone(data['key'], 'Failed to create read-write key')
 
         self.bar_api_key_headers = {
-            'Authorization': 'Key %s' % data['key'],
+            'Authorization': f"Key {data['key']}",
             'Content-type': 'application/json'
         }
 
@@ -148,7 +148,7 @@ class CustomersTestCase(unittest.TestCase):
         self.assertIsNotNone(data['key'], 'Failed to create read-write key')
 
         self.foobar_api_key_headers = {
-            'Authorization': 'Key %s' % data['key'],
+            'Authorization': f"Key {data['key']}",
             'Content-type': 'application/json'
         }
 
@@ -166,7 +166,7 @@ class CustomersTestCase(unittest.TestCase):
         self.assertIsNotNone(data['key'], 'Failed to create read-write key')
 
         self.foobar_bar_only_api_key_headers = {
-            'Authorization': 'Key %s' % data['key'],
+            'Authorization': f"Key {data['key']}",
             'Content-type': 'application/json'
         }
 
@@ -250,7 +250,7 @@ class CustomersTestCase(unittest.TestCase):
         self.assertIsNotNone(data, 'Failed to create user')
 
         foo_user_headers = {
-            'Authorization': 'Bearer %s' % data['token'],
+            'Authorization': f"Bearer {data['token']}",
             'Content-type': 'application/json'
         }
 
@@ -268,7 +268,7 @@ class CustomersTestCase(unittest.TestCase):
         self.assertIsNotNone(data, 'Failed to create user')
 
         bar_user_headers = {
-            'Authorization': 'Bearer %s' % data['token'],
+            'Authorization': f"Bearer {data['token']}",
             'Content-type': 'application/json'
         }
 
