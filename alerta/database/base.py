@@ -6,7 +6,11 @@ from flask import g
 
 # http://stackoverflow.com/questions/8544983/dynamically-mixin-a-base-class-to-an-instance-in-python
 
-Query = NamedTuple('Query', [('where', str), ('sort', str), ('group', str)])
+
+class Query(NamedTuple):
+    where: str
+    sort: str
+    group: str
 
 
 class Base:
