@@ -52,7 +52,7 @@ class ScopesTestCase(unittest.TestCase):
 
     def test_scopes(self):
 
-        response = self.client.get('/keys', headers={'Authorization': 'Key %s' % self.api_keys_scopes['read-only']})
+        response = self.client.get('/keys', headers={'Authorization': f"Key {self.api_keys_scopes['read-only']}"})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         for key in data['keys']:
@@ -103,7 +103,7 @@ class ScopesTestCase(unittest.TestCase):
     def test_edit_perms(self):
 
         headers = {
-            'Authorization': 'Key %s' % self.api_keys_scopes['admin'],
+            'Authorization': f"Key {self.api_keys_scopes['admin']}",
             'Content-type': 'application/json'
         }
 
@@ -156,7 +156,7 @@ class ScopesTestCase(unittest.TestCase):
     def test_custom_scopes(self):
 
         headers = {
-            'Authorization': 'Key %s' % self.api_keys_scopes['admin'],
+            'Authorization': f"Key {self.api_keys_scopes['admin']}",
             'Content-type': 'application/json'
         }
 
