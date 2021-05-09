@@ -36,7 +36,7 @@ class UsersTestCase(unittest.TestCase):
             self.api_key.create()
 
         self.headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
+            'Authorization': f'Key {self.api_key.key}',
             'Content-type': 'application/json'
         }
 

@@ -157,7 +157,7 @@ class HTTPClient:
 class CustomJsonEncoder(json.JSONEncoder):
     def default(self, o):  # pylint: disable=method-hidden
         if isinstance(o, (datetime.date, datetime.datetime)):
-            return o.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + '.%03dZ' % (o.microsecond // 1000)
+            return o.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + f'.{int(o.microsecond // 1000):03}Z'
         elif isinstance(o, datetime.timedelta):
             return int(o.total_seconds())
         else:

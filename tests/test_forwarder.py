@@ -115,7 +115,7 @@ class ForwarderTestCase(unittest.TestCase):
         m.post('http://localhost:9003/alert', text=ok_response)
 
         headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
+            'Authorization': f'Key {self.api_key.key}',
             'Content-type': 'application/json',
             'Origin': 'http://localhost:5000',
             'X-Alerta-Loop': 'http://localhost:5000',
@@ -140,7 +140,7 @@ class ForwarderTestCase(unittest.TestCase):
 
         # create alert
         headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
+            'Authorization': f'Key {self.api_key.key}',
             'Content-type': 'application/json'
         }
         response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=headers)
@@ -150,17 +150,17 @@ class ForwarderTestCase(unittest.TestCase):
 
         alert_id = data['id']
 
-        m.put('http://localhost:9000/alert/{}/action'.format(alert_id), text=ok_response)
-        m.put('http://localhost:9001/alert/{}/action'.format(alert_id), text=ok_response)
-        m.put('http://localhost:9002/alert/{}/action'.format(alert_id), text=ok_response)
-        m.put('http://localhost:9003/alert/{}/action'.format(alert_id), text=ok_response)
+        m.put(f'http://localhost:9000/alert/{alert_id}/action', text=ok_response)
+        m.put(f'http://localhost:9001/alert/{alert_id}/action', text=ok_response)
+        m.put(f'http://localhost:9002/alert/{alert_id}/action', text=ok_response)
+        m.put(f'http://localhost:9003/alert/{alert_id}/action', text=ok_response)
 
         headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
+            'Authorization': f'Key {self.api_key.key}',
             'Content-type': 'application/json',
             'Origin': 'http://localhost:8000'
         }
-        response = self.client.put('/alert/{}/action'.format(alert_id), data=json.dumps({'action': 'ack'}), headers=headers)
+        response = self.client.put(f'/alert/{alert_id}/action', data=json.dumps({'action': 'ack'}), headers=headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
@@ -183,7 +183,7 @@ class ForwarderTestCase(unittest.TestCase):
 
         # create alert
         headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
+            'Authorization': f'Key {self.api_key.key}',
             'Content-type': 'application/json'
         }
         response = self.client.post('/alert', data=json.dumps(self.warn_alert), headers=headers)
@@ -193,15 +193,15 @@ class ForwarderTestCase(unittest.TestCase):
 
         alert_id = data['id']
 
-        m.delete('http://localhost:9002/alert/{}'.format(alert_id), text=ok_response)
-        m.delete('http://localhost:9003/alert/{}'.format(alert_id), text=ok_response)
+        m.delete(f'http://localhost:9002/alert/{alert_id}', text=ok_response)
+        m.delete(f'http://localhost:9003/alert/{alert_id}', text=ok_response)
 
         headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
+            'Authorization': f'Key {self.api_key.key}',
             'Content-type': 'application/json',
             'Origin': 'http://localhost:8000'
         }
-        response = self.client.delete('/alert/{}'.format(alert_id), headers=headers)
+        response = self.client.delete(f'/alert/{alert_id}', headers=headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['status'], 'ok')
@@ -234,7 +234,7 @@ class ForwarderTestCase(unittest.TestCase):
         m.post('http://localhost:9003/alert', text=ok_response)
 
         headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
+            'Authorization': f'Key {self.api_key.key}',
             'Content-type': 'application/json',
             'Origin': 'http://localhost:5000',
             'X-Alerta-Loop': 'http://localhost:8080,http://localhost:5000',
@@ -262,7 +262,7 @@ class ForwarderTestCase(unittest.TestCase):
         m.post('http://localhost:9003/alert', text=ok_response)
 
         headers = {
-            'Authorization': 'Key %s' % self.api_key.key,
+            'Authorization': f'Key {self.api_key.key}',
             'Content-type': 'application/json',
             'X-Alerta-Loop': 'http://localhost:9000,http://localhost:9001,http://localhost:9002,http://localhost:9003',
         }

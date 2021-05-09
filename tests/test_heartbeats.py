@@ -140,8 +140,8 @@ class HeartbeatsTestCase(unittest.TestCase):
             'correlate': ['HeartbeatFail', 'HeartbeatSlow', 'HeartbeatOK'],
             'service': ['Test'],
             'group': 'Alerta',
-            'value': '{}'.format(hb.since),
-            'text': 'Heartbeat not received in {} seconds'.format(hb.timeout),
+            'value': f'{hb.since}',
+            'text': f'Heartbeat not received in {hb.timeout} seconds',
             'tags': hb.tags,
             'attributes': hb.attributes,
             # 'timeout': None

@@ -100,7 +100,7 @@ class AlertNotesTestCase(unittest.TestCase):
     def test_alert_notes(self):
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -112,7 +112,7 @@ class AlertNotesTestCase(unittest.TestCase):
         alert_id = data['id']
 
         # get alert
-        response = self.client.get('/alert/{}'.format(alert_id), headers=self.headers)
+        response = self.client.get(f'/alert/{alert_id}', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['status'], 'open')
@@ -121,7 +121,7 @@ class AlertNotesTestCase(unittest.TestCase):
         note = {
             'text': 'this is a note'
         }
-        response = self.client.put('/alert/{}/note'.format(alert_id), data=json.dumps(note), headers=self.headers)
+        response = self.client.put(f'/alert/{alert_id}/note', data=json.dumps(note), headers=self.headers)
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
 
@@ -140,7 +140,7 @@ class AlertNotesTestCase(unittest.TestCase):
         self.assertEqual(data['note']['customer'], None)
 
         # list notes for alert
-        response = self.client.get('/alert/{}/notes'.format(alert_id), headers=self.headers)
+        response = self.client.get(f'/alert/{alert_id}/notes', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
 
@@ -152,7 +152,7 @@ class AlertNotesTestCase(unittest.TestCase):
         note = {
             'text': 'this note has changed'
         }
-        response = self.client.put('/alert/{}/note/{}'.format(alert_id, note_id), data=json.dumps(note), headers=self.headers)
+        response = self.client.put(f'/alert/{alert_id}/note/{note_id}', data=json.dumps(note), headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
 
@@ -171,7 +171,7 @@ class AlertNotesTestCase(unittest.TestCase):
         self.assertEqual(data['note']['customer'], None)
 
         # list notes for alert (again)
-        response = self.client.get('/alert/{}/notes'.format(alert_id), headers=self.headers)
+        response = self.client.get(f'/alert/{alert_id}/notes', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
 
@@ -180,7 +180,7 @@ class AlertNotesTestCase(unittest.TestCase):
         self.assertEqual(data['notes'][0]['text'], 'this note has changed')
 
         # delete note
-        response = self.client.delete('/alert/{}/note/{}'.format(alert_id, note_id), headers=self.headers)
+        response = self.client.delete(f'/alert/{alert_id}/note/{note_id}', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
 

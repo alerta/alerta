@@ -82,7 +82,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.blackouts.from_params(search_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in blackout filter query: {}'.format(e))
+            self.fail(f'Unexpected exception in blackout filter query: {e}')
 
     def test_blackouts_sort_by(self):
 
@@ -109,7 +109,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.blackouts.from_params(sort_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in blackouts sort-by query: {}'.format(e))
+            self.fail(f'Unexpected exception in blackouts sort-by query: {e}')
 
     @patch('alerta.database.backends.mongodb.utils.datetime')
     def test_blackouts_query(self, mock_datetime):
@@ -164,7 +164,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.heartbeats.from_params(search_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in heartbeats filter query: {}'.format(e))
+            self.fail(f'Unexpected exception in heartbeats filter query: {e}')
 
     def test_heartbeats_sort_by(self):
 
@@ -185,7 +185,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.heartbeats.from_params(sort_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in heartbeats sort-by query: {}'.format(e))
+            self.fail(f'Unexpected exception in heartbeats sort-by query: {e}')
 
     def test_heartbeats_query(self):
 
@@ -232,7 +232,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.keys.from_params(search_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in API keys filter query: {}'.format(e))
+            self.fail(f'Unexpected exception in API keys filter query: {e}')
 
     def test_keys_sort_by(self):
 
@@ -253,7 +253,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.keys.from_params(sort_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in API keys sort-by query: {}'.format(e))
+            self.fail(f'Unexpected exception in API keys sort-by query: {e}')
 
     @patch('alerta.database.backends.mongodb.utils.datetime')
     def test_keys_query(self, mock_datetime):
@@ -308,7 +308,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.users.from_params(search_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in users filter query: {}'.format(e))
+            self.fail(f'Unexpected exception in users filter query: {e}')
 
     def test_users_sort_by(self):
 
@@ -331,7 +331,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.users.from_params(sort_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in users sort-by query: {}'.format(e))
+            self.fail(f'Unexpected exception in users sort-by query: {e}')
 
     def test_users_query(self):
 
@@ -371,7 +371,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.groups.from_params(search_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in groups filter query: {}'.format(e))
+            self.fail(f'Unexpected exception in groups filter query: {e}')
 
     def test_groups_sort_by(self):
 
@@ -385,7 +385,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.groups.from_params(sort_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in groups sort-by query: {}'.format(e))
+            self.fail(f'Unexpected exception in groups sort-by query: {e}')
 
     def test_groups_query(self):
 
@@ -424,7 +424,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.perms.from_params(search_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in perms filter query: {}'.format(e))
+            self.fail(f'Unexpected exception in perms filter query: {e}')
 
     def test_perms_sort_by(self):
 
@@ -437,7 +437,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.perms.from_params(sort_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in perms sort-by query: {}'.format(e))
+            self.fail(f'Unexpected exception in perms sort-by query: {e}')
 
     def test_perms_query(self):
 
@@ -477,7 +477,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.customers.from_params(search_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in customers filter query: {}'.format(e))
+            self.fail(f'Unexpected exception in customers filter query: {e}')
 
     def test_customers_sort_by(self):
 
@@ -490,7 +490,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.customers.from_params(sort_params)  # noqa
         except Exception as e:
-            self.fail('Unexpected exception in customers sort-by query: {}'.format(e))
+            self.fail(f'Unexpected exception in customers sort-by query: {e}')
 
     def test_customers_query(self):
 
@@ -627,7 +627,7 @@ class QueryParserTestCase(unittest.TestCase):
         db.destroy()
 
     def _search(self, q):
-        response = self.client.get('/alerts?q={}'.format(q))
+        response = self.client.get(f'/alerts?q={q}')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         return data['total']

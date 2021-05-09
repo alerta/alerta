@@ -37,7 +37,7 @@ class DateTime:
 
     @staticmethod
     def iso8601(dt: dt) -> str:
-        return dt.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + '.%03dZ' % (dt.microsecond // 1000)
+        return dt.replace(microsecond=0).strftime('%Y-%m-%dT%H:%M:%S') + f'.{int(dt.microsecond // 1000):03}Z'
 
 
 def custom_json_dumps(obj: object) -> str:

@@ -144,7 +144,7 @@ class BlackoutsTestCase(unittest.TestCase):
         plugins.plugins['blackout'] = Blackout()
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -164,7 +164,7 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 202)
 
         self.headers = {
-            'Authorization': 'Key %s' % self.customer_api_key.key,
+            'Authorization': f'Key {self.customer_api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -173,7 +173,7 @@ class BlackoutsTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 202)
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -186,7 +186,7 @@ class BlackoutsTestCase(unittest.TestCase):
         plugins.plugins['blackout'] = Blackout()
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -295,7 +295,7 @@ class BlackoutsTestCase(unittest.TestCase):
     def test_previous_status(self):
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -440,7 +440,7 @@ class BlackoutsTestCase(unittest.TestCase):
         plugins.plugins['blackout'] = Blackout()
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -483,7 +483,7 @@ class BlackoutsTestCase(unittest.TestCase):
         plugins.plugins['blackout'] = Blackout()
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -577,7 +577,7 @@ class BlackoutsTestCase(unittest.TestCase):
         plugins.plugins['blackout'] = Blackout()
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -679,7 +679,7 @@ class BlackoutsTestCase(unittest.TestCase):
         plugins.plugins['blackout'] = Blackout()
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 
@@ -735,7 +735,7 @@ class BlackoutsTestCase(unittest.TestCase):
     def test_user_info(self):
 
         self.headers = {
-            'Authorization': 'Key %s' % self.admin_api_key.key,
+            'Authorization': f'Key {self.admin_api_key.key}',
             'Content-type': 'application/json'
         }
 
