@@ -536,6 +536,8 @@ class QueryBuilder(Base):
 
         self.__class__.alerts = type('AlertsQueryBuilder', (cls.Alerts, self.Alerts, QueryBuilder), {})
         self.__class__.blackouts = type('BlackoutsQueryBuilder', (cls.Blackouts, self.Blackouts, QueryBuilder), {})
+        self.__class__.notification_channels = type('NotificationChannelsQueryBuilder', (cls.NotificationChannels, self.NotificationChannels, QueryBuilder), {})
+        self.__class__.notification_rules = type('NotificationRulesQueryBuilder', (cls.NotificationRules, self.NotificationRules, QueryBuilder), {})
         self.__class__.heartbeats = type('HeartbeatsQueryBuilder', (cls.Heartbeats, self.Heartbeats, QueryBuilder), {})
         self.__class__.keys = type('ApiKeysQueryBuilder', (cls.ApiKeys, self.ApiKeys, QueryBuilder), {})
         self.__class__.users = type('UsersQueryBuilder', (cls.Users, self.Users, QueryBuilder), {})
@@ -554,6 +556,18 @@ class QueryBuilder(Base):
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('BlackoutsQueryBuilder has no from_params() method')
+
+    class NotificationChannels:
+
+        @staticmethod
+        def from_params(params, customers=None, query_time=None):
+            raise NotImplementedError('NotificationChannelsQueryBuilder has no from_params() method')
+
+    class NotificationRules:
+
+        @staticmethod
+        def from_params(params, customers=None, query_time=None):
+            raise NotImplementedError('NotificationRulesQueryBuilder has no from_params() method')
 
     class Heartbeats:
 

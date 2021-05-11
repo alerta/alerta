@@ -75,7 +75,7 @@ def notification_channel(notification_channel_id):
 @permission(Scope.read_notification_channels)
 @jsonp
 def list_notification_channels():
-    query = qb.from_params(request.args, customers=g.customers)
+    query = qb.notification_channels.from_params(request.args, customers=g.customers)
     total = NotificationChannel.count(query)
     paging = Page.from_params(request.args, total)
     notification_channels = NotificationChannel.find_all(query, page=paging.page, page_size=paging.page_size)

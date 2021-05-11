@@ -2,7 +2,6 @@ import json
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 from alerta.exceptions import ApiError
-from python_http_client.client import Client
 from sendgrid import SendGridAPIClient, SendGridException
 from python_http_client.exceptions import ForbiddenError, UnauthorizedError
 from twilio.rest import Client as TwilioClient

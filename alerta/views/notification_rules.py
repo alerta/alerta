@@ -76,7 +76,7 @@ def get_notification_rule(notification_rule_id):
 @permission(Scope.read_notification_rules)
 @jsonp
 def list_notification_rules():
-    query = qb.from_params(request.args, customers=g.customers)
+    query = qb.notification_rules.from_params(request.args, customers=g.customers)
     total = NotificationRule.count(query)
     paging = Page.from_params(request.args, total)
     notification_rules = NotificationRule.find_all(query, page=paging.page, page_size=paging.page_size)
