@@ -327,6 +327,7 @@ class NotificationRules(QueryBuilder):
 
         return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
 
+
 class OnCalls(QueryBuilder):
 
     VALID_PARAMS = {
