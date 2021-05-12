@@ -96,29 +96,7 @@ ADD COLUMN IF NOT EXISTS create_time timestamp without time zone,
 ADD COLUMN IF NOT EXISTS text text,
 ADD COLUMN IF NOT EXISTS origin text;
 
--- DROP TABLE IF EXISTS twilio_rules;
-
-CREATE TABLE IF NOT EXISTS twilio_rules (
-    id text PRIMARY KEY,
-    type text,
-    priority integer NOT NULL,
-    environment text NOT NULL,
-    service text[],
-    resource text,
-    event text,
-    "group" text,
-    tags text[],
-    customer text,
-    to_numbers text[],
-    from_number text NOT NULL,
-    start_time time without time zone,
-    end_time time without time zone,
-    days text[],
-    "user" text,
-    severity text[],
-    create_time timestamp without time zone,
-    text text
-);
+DROP TABLE IF EXISTS twilio_rules;
 
 
 -- DROP TABLE IF EXISTS notification_rules;

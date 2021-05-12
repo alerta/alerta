@@ -6,7 +6,6 @@ from typing import Optional  # noqa
 from typing import Any, Dict, List, Tuple, Union
 from uuid import uuid4
 from alerta.models.notification_rule import NotificationRule
-from alerta.models.twilio_rule import TwilioRule
 
 from flask import current_app, g
 
@@ -151,7 +150,6 @@ class Alert:
             'lastReceiveTime': self.last_receive_time,
             'updateTime': self.update_time,
             'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)],
-            'twilioRules': [twilio_rule.serialize for twilio_rule in self.get_twilio_rules()],
             'notificationRules': [notification_rule.serialize for notification_rule in self.get_notification_rules()],
         }
 
@@ -424,12 +422,6 @@ class Alert:
     def is_suppressed(self) -> bool:
         """Is the alert status 'blackout'?"""
         return alarm_model.is_suppressed(self)
-
-    def get_twilio_rules(self) -> 'list[TwilioRule]':
-        if not self.duplicate_count or self.duplicate_count == 0:
-            return [TwilioRule.from_db(twilio_rule) for twilio_rule in db.get_twilio_rules_active(self)]
-        else:
-            return []
 
     def get_notification_rules(self) -> 'list[NotificationRule]':
         if not self.duplicate_count or self.duplicate_count == 0:

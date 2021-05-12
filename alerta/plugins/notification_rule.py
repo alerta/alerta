@@ -15,7 +15,7 @@ LOG = logging.getLogger('alerta.plugins.notification_rule')
 
 def get_notification_id(notification_rule: NotificationRule) -> 'str':
     """
-    Returns id field of a twilio rule
+    Returns id field of a notification rule
     """
     return notification_rule['id']
 
@@ -35,8 +35,8 @@ def remove_unspeakable_chr(message: str, unspeakables: 'dict[str,str]' = None):
 
 class NotificationRulesHandler(PluginBase):
     """
-    Default twilio rules handler for sending messages and making calls
-    when a twilio rule is active during new alert status
+    Default notification rules handler for sending messages and making calls
+    when a notification rule is active during new alert status
     """
 
     def get_twilio_client(self, channel: NotificationChannel, **kwargs):
@@ -101,7 +101,7 @@ class NotificationRulesHandler(PluginBase):
                 try:
                     self.send_email(message, channel, notification_rule.receivers)
                 except Exception as err:
-                    LOG.error('TwilioRule: ERROR - %s', str(err))
+                    LOG.error('NotificationRule: ERROR - %s', str(err))
             elif 'twilio' in notification_type:
                 for receiver in notification_rule.receivers:
                     try:
