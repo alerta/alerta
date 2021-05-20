@@ -1,3 +1,25 @@
+## v8.6.0 (2021-05-20)
+
+### Refactor
+
+- convert formatted strings to f-strings (more) (#1522)
+- convert tests to use f-strings (#1521)
+- convert formatted strings to f-strings (#1520)
+
+### Feat
+
+- add escalate severity custom action plugin (#1519)
+- Add support for user-defined API key (#1518)
+- log dismissing notes to alert history (#1507)
+- add default blackout duration to config endpoint (#1506)
+- support readonly users (#1505)
+
+### Fix
+
+- change housekeeping delete threshold to seconds (#1508)
+- config setting default environment for webhooks (#1510)
+- read LDAP_BIND_PASSWORD from environment variable (#1509)
+
 ## v8.5.0 (2021-04-18)
 
 ### Fix
