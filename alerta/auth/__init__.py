@@ -5,7 +5,7 @@ from alerta.exceptions import ApiError
 
 class AuthBlueprint(Blueprint):
 
-    def register(self, app, options, first_registration=False):
+    def register(self, app, options):
         if app.config['AUTH_PROVIDER'] == 'ldap':
             try:
                 import ldap  # noqa
@@ -30,7 +30,7 @@ class AuthBlueprint(Blueprint):
             except Exception as e:
                 raise RuntimeError(e)
 
-        super().register(app, options, first_registration)
+        super().register(app, options)
 
 
 auth = AuthBlueprint('auth', __name__)
