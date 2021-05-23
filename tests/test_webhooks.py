@@ -754,7 +754,7 @@ class WebhooksTestCase(unittest.TestCase):
 
         self.headers = {
             'Content-type': 'application/json',
-            'X-Forwarded-For': ['10.1.1.1', '172.16.1.1', '192.168.1.1'],
+            'X-Forwarded-For': '10.1.1.1, 172.16.1.1, 192.168.1.1',
             'X-API-Key': self.api_key.key
         }
 
@@ -865,7 +865,7 @@ class WebhooksTestCase(unittest.TestCase):
             self.assertEqual(data['alert']['text'], 'Battery Voltage dropped below 23.7 Volts, please investigate')
             self.assertEqual(data['alert']['tags'], [])
             self.assertEqual(data['alert']['attributes']['enabled'], 'true')
-            self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+            self.assertEqual(data['alert']['attributes']['ip'], '10.1.1.1')
             self.assertEqual(data['alert']['attributes']['on-alerting'], 'relay-on')
             self.assertEqual(data['alert']['attributes']['on-ok'], 'ignore')
             self.assertEqual(data['alert']['attributes']['relay'], '7')
@@ -968,7 +968,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['severity'], 'critical')
         self.assertEqual(data['alert']['timeout'], 600)
-        self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+        self.assertEqual(data['alert']['attributes']['ip'], '10.1.1.1')
         self.assertEqual(data['alert']['attributes']['moreInfo'],
                          '<a href="http://prometheus.host:9090/..." target="_blank">Prometheus Graph</a>')
         self.assertEqual(sorted(data['alert']['tags']), sorted(['__name__=ping_success']))
@@ -982,7 +982,7 @@ class WebhooksTestCase(unittest.TestCase):
         self.assertEqual(data['alert']['status'], 'open')
         self.assertEqual(data['alert']['severity'], 'critical')
         self.assertEqual(data['alert']['timeout'], 86400)
-        self.assertEqual(data['alert']['attributes']['ip'], '192.168.1.1')
+        self.assertEqual(data['alert']['attributes']['ip'], '10.1.1.1')
         self.assertEqual(data['alert']['attributes']['moreInfo'],
                          '<a href="http://somehost:9090/graph?g0.expr=sum%28irate%28messages_received_total%5B5m%5D%29%29+%3D%3D+0&g0.tab=0" target="_blank">Prometheus Graph</a>')
         self.assertEqual(data['alert']['attributes']['runbookBad'],

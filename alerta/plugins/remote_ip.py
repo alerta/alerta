@@ -14,10 +14,8 @@ class RemoteIpAddr(PluginBase):
     """
 
     def pre_receive(self, alert, **kwargs):
-        if request.headers.getlist('X-Forwarded-For'):
-            alert.attributes.update(ip=request.headers.getlist('X-Forwarded-For')[0])
-        else:
-            alert.attributes.update(ip=request.remote_addr)
+        remote_addr = next(iter(request.access_route), request.remote_addr)
+        alert.attributes.update(ip=remote_addr)
         return alert
 
     def post_receive(self, alert, **kwargs):
