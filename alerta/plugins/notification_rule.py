@@ -70,6 +70,27 @@ class NotificationRulesHandler(PluginBase):
         email_client = SendGridAPIClient(channel.api_token)
         return email_client.send(newMail)
 
+    def get_message_obj(self, alertobj: 'dict[str,any]') -> 'dict[str,any]':
+        alertobjcopy = alertobj.copy()
+        for objname, objval in alertobj.items():
+            try:
+                value_type = type(objval)
+                if objname != 'history' and objname != 'twilioRules' and objname != 'notificationRules' and value_type == list:
+                    alertobjcopy[objname] = ', '.join(objval)
+                if value_type == str and objname == 'severity':
+                    alertobjcopy[objname] = objval.capitalize()
+                if value_type == dict:
+                    for cmpxobjname, cmpxobjval in objval.items():
+                        alertobjcopy[f'{objname}.{cmpxobjname}'] = cmpxobjval
+                if value_type == list:
+                    for index, value in enumerate(objval):
+                        alertobjcopy[f'{objname}[{index}]'] = value
+            except Exception as err:
+                LOG.error(f'Error while handling message objs: {str(err)}')
+                continue
+
+        return alertobjcopy
+
     def pre_receive(self, alert, **kwargs):
         return alert
 
@@ -79,22 +100,10 @@ class NotificationRulesHandler(PluginBase):
             return
 
         standard_message = '%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s'
-
-        message_objs = alert.serialize.copy()
-        for key, val in message_objs.items():
-            try:
-                value_type = type(val)
-                if key != 'history' and key != 'twilioRules' and key != 'notificationRules' and value_type == list:
-                    message_objs[key] = ', '.join(val)
-                if value_type == str and key == 'severity':
-                    message_objs[key] = val.capitalize()
-            except Exception as err:
-                LOG.error(f'Error while handling message objs: {str(err)}')
-                continue
         for notification_rule in alert.get_notification_rules():
             message = (
                 notification_rule.text if notification_rule.text != '' and notification_rule.text is not None else standard_message
-            ) % message_objs
+            ) % self.get_message_obj(alert.serialize)
             channel = notification_rule.channel
             notification_type = channel.type
             if notification_type == 'sendgrid':
