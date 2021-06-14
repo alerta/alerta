@@ -227,13 +227,21 @@ def status():
 @permission(Scope.read_management)
 def prometheus_metrics():
 
+    now = int(time.time() * 1000)
     total_alert_gauge.set(Alert.get_count())
 
     output = Gauge.find_all()
     output += Counter.find_all()
     output += Timer.find_all()
+    outputs = [o.serialize(format='prometheus') for o in output]
+    outputs += (
+            '# HELP alerta_uptime_msecs milliseconds since app has started\n'
+            '# TYPE alerta_uptime counter\n'
+            'alerta_uptime_msecs {timestamp}\n'.format(
+                timestamp=int(now - started)
+            )
+        )
 
-    return Response(
-        [o.serialize(format='prometheus') for o in output],
+    return Response(outputs,
         content_type='text/plain; version=0.0.4; charset=utf-8'
     )
