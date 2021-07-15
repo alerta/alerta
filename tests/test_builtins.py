@@ -15,7 +15,7 @@ class BuiltinsTestCase(unittest.TestCase):
         test_config = {
             'TESTING': True,
             'AUTH_REQUIRED': True,
-            'PLUGINS': ['remote_ip', 'reject', 'heartbeat', 'blackout', 'acked_by', 'forwarder']
+            'PLUGINS': ['remote_ip', 'reject', 'heartbeat', 'blackout', 'notification_rule', 'acked_by', 'forwarder']
         }
         os.environ['ALLOWED_ENVIRONMENTS'] = 'Production,Staging,Development'
 
