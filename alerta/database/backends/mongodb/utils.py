@@ -250,6 +250,90 @@ class Blackouts(QueryBuilder):
         return Query(where=query, sort=sort, group=None)
 
 
+class NotificationChannels(QueryBuilder):
+
+    VALID_PARAMS = {
+        # field (column, sort-by, direction)
+        'id': ('id', 'id', 1),
+        'type': ('type', 'type', 1),
+        'api_token': ('api_token', 'api_token', 1),
+        'api_sid': ('api_sid', 'api_sid', 1),
+        'sender': ('sender', 'sender', 1),
+        'customer': ('customer', 'customer', 1),
+    }
+
+    @staticmethod
+    def from_params(params: ImmutableMultiDict, customers=None, query_time=None):
+
+        query = dict()
+        params = MultiDict(params)
+
+        # customer
+        if customers:
+           customer_query = {'customer': {'$in': customers}}
+        else:
+            customer_query = None
+
+        # filter, sort-by
+        query = QueryBuilder.filter_query(params, NotificationChannels.VALID_PARAMS, query)
+        sort = QueryBuilder.sort_by_columns(params, NotificationChannels.VALID_PARAMS)
+
+        if customer_query:
+            query = {'$and': [customer_query, query]}
+
+
+        return Query(where=query, sort=sort, group=None)
+
+
+class NotificationRules(QueryBuilder):
+
+    VALID_PARAMS = {
+        # field (column, sort-by, direction)
+        'id': ('id', None, 0),
+        'priority': ('priority', 'priority', 1),
+        'environment': ('environment', 'environment', 1),
+        'service': ('service', 'service', 1),
+        'resource': ('resource', 'resource', 1),
+        'event': ('event', 'event', 1),
+        'group': ('group', '"group"', 1),
+        'tag': ('tags', None, 0),  # filter
+        'tags': (None, 'tags', 1),  # sort-by
+        'customer': ('customer', 'customer', 1),
+        'user': ('user', 'user', 1),
+        'createTime': ('create_time', 'create_time', -1),
+        'startTime': ('start_time', 'start_time', -1),
+        'endTime': ('end_time', 'end_time', -1),
+        'days': ('days', 'days', -1),
+        'receivers': ('receivers', 'receivers', -1),
+        'severity': ('severity', 'severity', -1),
+        'channel_id': ('channel_id', 'channel_id', 1),
+        'text': ('text', 'text', 1),
+    }
+
+    @staticmethod
+    def from_params(params: ImmutableMultiDict, customers=None, query_time=None):
+
+        query = dict()
+        params = MultiDict(params)
+
+        # customer
+        if customers:
+           customer_query = {'customer': {'$in': customers}}
+        else:
+            customer_query = None
+
+
+        # filter, sort-by
+        query = QueryBuilder.filter_query(params, NotificationRules.VALID_PARAMS, query)
+        sort = QueryBuilder.sort_by_columns(params, NotificationRules.VALID_PARAMS)
+
+        if customer_query:
+            query = {'$and': [customer_query, query]}
+
+        return Query(where=query, sort=sort, group=None)
+
+
+
 class Heartbeats(QueryBuilder):
 
     VALID_PARAMS = {

@@ -1061,87 +1061,136 @@ class Backend(Database):
         response = self.get_db().blackouts.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
 
-    # TWILIO_RULES
+    # NOTIFICATION_CHANNELS
 
-    def create_twilio_rule(self, twilio_rule):
+    def create_notification_channel(self, notification_channel):
         data = {
-            '_id': twilio_rule.id,
-            'priority': twilio_rule.priority,
-            'environment': twilio_rule.environment,
-            'type': twilio_rule.type,
-            'user': twilio_rule.user,
-            'createTime': twilio_rule.create_time,
-            'text': twilio_rule.text,
-            'fromNumber': twilio_rule.from_number,
-            'toNumbers': twilio_rule.to_numbers,
-            'days': twilio_rule.days,
-            'severity': twilio_rule.severity,
+            '_id': notification_channel.id,
+            'type': notification_channel.type,
+            'apiToken': notification_channel.api_token,
+            'sender': notification_channel.sender,
         }
-        if twilio_rule.start_time:
-            data['startTime'] = twilio_rule.start_time.hour + twilio_rule.start_time.minute / 100
-            data['endTime'] = twilio_rule.end_time.hour + twilio_rule.end_time.minute / 100
-        if twilio_rule.service:
-            data['service'] = twilio_rule.service
-        if twilio_rule.resource:
-            data['resource'] = twilio_rule.resource
-        if twilio_rule.event:
-            data['event'] = twilio_rule.event
-        if twilio_rule.group:
-            data['group'] = twilio_rule.group
-        if twilio_rule.tags:
-            data['tags'] = twilio_rule.tags
-        if twilio_rule.customer:
-            data['customer'] = twilio_rule.customer
+        if notification_channel.api_sid:
+            data['apiSid'] = notification_channel.api_sid
+        if notification_channel.customer:
+            data['customer'] = notification_channel.customer
 
-        if self.get_db().twilio_rules.insert_one(data).inserted_id == twilio_rule.id:
+        if self.get_db().notification_channels.insert_one(data).inserted_id == notification_channel.id:
             return data
 
-    def get_twilio_rule(self, id: str, customers: list = None):
+    def get_notification_channel(self, id: str, customers: list = None):
         query = {'_id': id}
 
         if customers:
             query['customer'] = {'$in': customers}
 
-        return self.get_db().twilio_rules.find_one(query)
+        return self.get_db().notification_channels.find_one(query)
 
-    def get_twilio_rules(self, query: Query = None, page: int = None, page_size: int = None):
+    def get_notification_channels(self, query: Query = None, page: int = None, page_size: int = None):
         query = query or Query()
-        return self.get_db().twilio_rules.find(query.where, sort=query.sort)\
+        return self.get_db().notification_channels.find(query.where, sort=query.sort)\
             .skip((page - 1) * page_size).limit(page_size)
 
-    def get_twilio_rules_count(self, query: Query = None):
+    def get_notification_channels_count(self, query: Query = None):
         query = query or Query()
-        return self.get_db().twilio_rules.count_documents(query.where)
+        return self.get_db().notification_channels.count_documents(query.where)
 
-    def get_twilio_rules_active(self, alert):
+    def update_notification_channel(self, id, **kwargs):
+        return self.get_db().notification_channels.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
+    def delete_notification_channel(self, id):
+        response = self.get_db().notification_channels.delete_one({'_id': id})
+        return True if response.deleted_count == 1 else False
+
+    # NOTIFICATION_RULES
+
+    def create_notification_rule(self, notification_rule) -> 'dict | None':
+        if self.get_notification_channel(notification_rule.channel_id, [notification_rule.customer] if notification_rule.customer else None) == None:
+            return None
+
+        data = {
+            '_id': notification_rule.id,
+            'priority': notification_rule.priority,
+            'environment': notification_rule.environment,
+            'createTime': notification_rule.create_time,
+            'text': notification_rule.text,
+            'receivers': notification_rule.receivers,
+            'channelId': notification_rule.channel_id,
+        }
+        if notification_rule.severity:
+            data['severity'] = notification_rule.severity
+        if notification_rule.days:
+            data['days'] = notification_rule.days
+        if notification_rule.user:
+            data['user'] = notification_rule.user
+        if notification_rule.start_time and notification_rule.end_time:
+            data['startTime'] = notification_rule.start_time.hour + notification_rule.start_time.minute / 100
+            data['endTime'] = notification_rule.end_time.hour + notification_rule.end_time.minute / 100
+        if notification_rule.service:
+            data['service'] = notification_rule.service
+        if notification_rule.resource:
+            data['resource'] = notification_rule.resource
+        if notification_rule.event:
+            data['event'] = notification_rule.event
+        if notification_rule.group:
+            data['group'] = notification_rule.group
+        if notification_rule.tags:
+            data['tags'] = notification_rule.tags
+        if notification_rule.customer:
+            data['customer'] = notification_rule.customer
+
+        if self.get_db().notification_rules.insert_one(data).inserted_id == notification_rule.id:
+            return data
+
+    def get_notification_rule(self, id: str, customers: 'list | None' = None):
+        query = {'_id': id}
+
+        if customers:
+            query['customer'] = {'$in': customers}
+
+        return self.get_db().notification_rules.find_one(query)
+
+    def get_notification_rules(self, query: Query = None, page: int = None, page_size: int = None):
+        query = query or Query()
+        return self.get_db().notification_rules.find(query.where, sort=query.sort)\
+            .skip((page - 1) * page_size).limit(page_size)
+
+    def get_notification_rules_count(self, query: Query = None):
+        query = query or Query()
+        return self.get_db().notification_rules.count_documents(query.where)
+
+    def get_notification_rules_active(self, alert):
         query = dict()
         query['environment'] = alert.environment
         query['$and'] = [
-            {'$or': [
-                {'startTime': None},
-                {'startTime': {'$lte': alert.time.hour + alert.time.minute / 100}}
-            ]},
+            # {'environment': alert.environment},
+            {'$or': [{'startTime': None},{'startTime': {'$lte': alert.time.hour + alert.time.minute / 100}}]},
             {'$or': [{'endTime': None}, {'endTime': {'$gt': alert.time.hour + alert.time.minute / 100}}]},
-            {'$or': [{'days': []}, {'days': {'$in': [alert.day]}}]},
-            {'$or': [
-                {'severity': []},
-                {'severity': {'$in': [alert.severity]}}
-            ]},
+            {'$or': [{'days': None}, {"days": {'$in': [alert.day]}}]},
+            {'$or': [{'severity': None},{'severity': {'$in': [alert.severity]}}]},
             {'$or': [{'resource': None}, {'resource': alert.resource}]},
-            {'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}},
+            {"$or": [{"service": None},{'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}}]},
             {'$or': [{'event': None}, {'event': alert.event}]},
             {'$or': [{'group': None}, {'group': alert.group}]},
-            {'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}},
+            {"$or": [{"tags": None},{'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}}]},
         ]
 
-        if current_app.config['CUSTOMER_VIEWS']:
-            query['$and'].append({'$or': [
-                {'customer': None},
-                {'customer': alert.customer}
-            ]})
-        return self.get_db().twilio_rules.find(query)
+        # if current_app.config['CUSTOMER_VIEWS']:
+        #     query['$and'] = {'$or': [
+        #         {'customer': None},
+        #         {'customer': alert.customer}
+        #     ]}
+            # query['$and'].append({'$or': [
+            #     {'customer': None},
+            #     {'customer': alert.customer}
+            # ]})
+        return self.get_db().notification_rules.find(query)
 
-    def update_twilio_rule(self, id, **kwargs):
+    def update_notification_rule(self, id, **kwargs):
         if kwargs.get('startTime', None) is not None:
             start_split = kwargs['startTime'].split(':')
             kwargs['startTime'] = float(start_split[0]) + float(start_split[1]) / 100
@@ -1149,14 +1198,14 @@ class Backend(Database):
             end_split = kwargs['endTime'].split(':')
             kwargs['endTime'] = float(end_split[0]) + float(end_split[1]) / 100
 
-        return self.get_db().twilio_rules.find_one_and_update(
+        return self.get_db().notification_rules.find_one_and_update(
             {'_id': id},
             update={'$set': kwargs},
             return_document=ReturnDocument.AFTER
         )
 
-    def delete_twilio_rule(self, id):
-        response = self.get_db().twilio_rules.delete_one({'_id': id})
+    def delete_notification_rule(self, id):
+        response = self.get_db().notification_rules.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
 
     # HEARTBEATS
