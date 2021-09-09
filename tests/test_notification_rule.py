@@ -3,21 +3,17 @@ import json
 import unittest
 import logging
 
-from twilio.rest import Client
-from twilio.base.exceptions import TwilioRestException
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
-from alerta.plugins import notification_rule
 
-from alerta.plugins.notification_rule import get_notification_id
 from alerta.utils.format import DateTime
 from alerta.app import create_app, db, plugins
 from alerta.models.key import ApiKey
-from alerta.plugins import PluginBase
-from alerta.models.alert import Alert
 
 
 LOG = logging.getLogger("test.test_notification_rule")
+
+
+def get_id(object: dict):
+    return object["id"]
 
 
 class NotificationRuleTestCase(unittest.TestCase):
@@ -34,7 +30,7 @@ class NotificationRuleTestCase(unittest.TestCase):
         self.sms_channel = {
             "id": "SMS_Channel",
             "sender": "sender",
-            "type": "twiliosms",
+            "type": "twilio_sms",
             "apiToken": "api_token",
             "apiSid": "api_sid",
         }
@@ -42,7 +38,7 @@ class NotificationRuleTestCase(unittest.TestCase):
         self.call_channel = {
             "id": "CALL_Channel",
             "sender": "sender",
-            "type": "twiliocall",
+            "type": "twilio_call",
             "apiToken": "api_token",
             "apiSid": "api_sid",
         }
@@ -190,7 +186,6 @@ class NotificationRuleTestCase(unittest.TestCase):
         return notification_rule["id"]
 
     def test_notification_sms(self):
-        plugins.plugins["notificationrule"] = NotificationRule()
 
         notification_rule = {
             "environment": "Production",
@@ -205,61 +200,67 @@ class NotificationRuleTestCase(unittest.TestCase):
 
         # new alert should activate notification_rule
         data = self.create_api_obj("/alert", self.prod_alert, self.headers)
+        active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
         self.assertIn(
             notification_rule_id,
-            map(get_notification_id, data["alert"]["notificationRules"]),
+            map(get_id, active_notification_rules),
         )
 
         # duplicate alert should not activate notification_rule
         data = self.create_api_obj("/alert", self.prod_alert, self.headers)
+        active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
         self.assertNotIn(
             notification_rule_id,
-            map(get_notification_id, data["alert"]["notificationRules"]),
+            map(get_id, active_notification_rules),
         )
 
         # duplicate alert should not activate notification_rule (again)
         data = self.create_api_obj("/alert", self.prod_alert, self.headers)
+        active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
         self.assertNotIn(
             notification_rule_id,
-            map(get_notification_id, data["alert"]["notificationRules"]),
+            map(get_id, active_notification_rules),
         )
 
         # increase severity alert should activate notification_rule
         self.prod_alert["severity"] = "major"
         data = self.create_api_obj("/alert", self.prod_alert, self.headers)
+        active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
         self.assertIn(
             notification_rule_id,
-            map(get_notification_id, data["alert"]["notificationRules"]),
+            map(get_id, active_notification_rules),
         )
 
         # increase severity alert should activate notification_rule (again)
         self.prod_alert["severity"] = "critical"
         data = self.create_api_obj("/alert", self.prod_alert, self.headers)
+        active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
         self.assertIn(
             notification_rule_id,
-            map(get_notification_id, data["alert"]["notificationRules"]),
+            map(get_id, active_notification_rules),
         )
 
         # decrease severity alert should activate notification_rule
         self.prod_alert["severity"] = "minor"
         data = self.create_api_obj("/alert", self.prod_alert, self.headers)
+        active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
         self.assertIn(
             notification_rule_id,
-            map(get_notification_id, data["alert"]["notificationRules"]),
+            map(get_id, active_notification_rules),
         )
 
         # decrease severity alert should activate notification_rule (again)
         self.prod_alert["severity"] = "warning"
         data = self.create_api_obj("/alert", self.prod_alert, self.headers)
+        active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
         self.assertIn(
             notification_rule_id,
-            map(get_notification_id, data["alert"]["notificationRules"]),
+            map(get_id, active_notification_rules),
         )
 
         self.delete_api_obj("/notificationrules/" + notification_rule_id, self.headers)
 
     def test_edit_notification_rule(self):
-        plugins.plugins["notificationrule"] = NotificationRule()
 
         self.create_api_obj("/alert", self.prod_alert, self.headers)
 
@@ -280,9 +281,10 @@ class NotificationRuleTestCase(unittest.TestCase):
         self.prod_alert["severity"] = "minor" if self.prod_alert["severity"] != "minor" else "major"
         data = self.get_api_obj("/notificationrules", self.headers)
         data = self.create_api_obj("/alert", self.prod_alert, self.headers)
+        active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
         self.assertIn(
             notification_rule_id,
-            map(get_notification_id, data["alert"]["notificationRules"]),
+            map(get_id, active_notification_rules),
         )
 
         update = {
@@ -303,15 +305,15 @@ class NotificationRuleTestCase(unittest.TestCase):
         self.assertEqual(data["notificationRule"]["endTime"], "22:00")
 
         data = self.create_api_obj("/alert", self.dev_alert, self.headers)
+        active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
         self.assertIn(
             notification_rule_id,
-            map(get_notification_id, data["alert"]["notificationRules"]),
+            map(get_id, active_notification_rules),
         )
 
         self.delete_api_obj("/notificationrules/" + notification_rule_id, self.headers)
 
     def test_full_notification_rule(self):
-        plugins.plugins["notificationrule"] = NotificationRule()
         base_alert = {
             "environment": "Production",
             "resource": "notification_net",
@@ -380,67 +382,87 @@ class NotificationRuleTestCase(unittest.TestCase):
         notification_rule_data = self.create_api_obj("/notificationrules", notification_rule, self.headers)
 
         data = self.create_api_obj("/alert", base_alert, self.headers)
+        active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
         self.assertIn(
             notification_rule_data["notificationRule"],
-            data["alert"]["notificationRules"],
+            active_notification_rules,
         )
 
         more_data = self.create_api_obj("/alert", more_service_alert, self.headers)
         less_data = self.create_api_obj("/alert", less_service_alert, self.headers)
         none_data = self.create_api_obj("/alert", none_service_alert, self.headers)
         pop_data = self.create_api_obj("/alert", pop_service_alert, self.headers)
+        more_active_notification_rules = self.create_api_obj("/notificationrules/active", more_data["alert"], self.headers, 200)["notificationRules"]
+        less_active_notification_rules = self.create_api_obj("/notificationrules/active", less_data["alert"], self.headers, 200)["notificationRules"]
+        none_active_notification_rules = self.create_api_obj("/notificationrules/active", none_data["alert"], self.headers, 200)["notificationRules"]
+        pop_active_notification_rules = self.create_api_obj("/notificationrules/active", pop_data["alert"], self.headers, 200)["notificationRules"]
 
-        self.assertNotIn(notification_rule_data["notificationRule"], more_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], less_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], none_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], pop_data["alert"]["notificationRules"])
+        self.assertNotIn(notification_rule_data["notificationRule"], more_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], less_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], none_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], pop_active_notification_rules)
 
         more_data = self.create_api_obj("/alert", more_tags_alert, self.headers)
         less_data = self.create_api_obj("/alert", less_tags_alert, self.headers)
         none_data = self.create_api_obj("/alert", none_tags_alert, self.headers)
         pop_data = self.create_api_obj("/alert", pop_tags_alert, self.headers)
+        more_active_notification_rules = self.create_api_obj("/notificationrules/active", more_data["alert"], self.headers, 200)["notificationRules"]
+        less_active_notification_rules = self.create_api_obj("/notificationrules/active", less_data["alert"], self.headers, 200)["notificationRules"]
+        none_active_notification_rules = self.create_api_obj("/notificationrules/active", none_data["alert"], self.headers, 200)["notificationRules"]
+        pop_active_notification_rules = self.create_api_obj("/notificationrules/active", pop_data["alert"], self.headers, 200)["notificationRules"]
 
-        self.assertNotIn(notification_rule_data["notificationRule"], more_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], less_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], none_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], pop_data["alert"]["notificationRules"])
+        self.assertNotIn(notification_rule_data["notificationRule"], more_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], less_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], none_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], pop_active_notification_rules)
 
         wrong_data = self.create_api_obj("/alert", wrong_resource_alert, self.headers)
         none_data = self.create_api_obj("/alert", none_resource_alert, self.headers, 400)
         pop_data = self.create_api_obj("/alert", pop_resource_alert, self.headers, 400)
+        wrong_active_notification_rules = self.create_api_obj("/notificationrules/active", wrong_data["alert"], self.headers, 200)["notificationRules"]
 
-        self.assertNotIn(notification_rule_data["notificationRule"], wrong_data["alert"]["notificationRules"])
+        self.assertNotIn(notification_rule_data["notificationRule"], wrong_active_notification_rules)
 
         wrong_data = self.create_api_obj("/alert", wrong_event_alert, self.headers)
         none_data = self.create_api_obj("/alert", none_event_alert, self.headers, 400)
         pop_data = self.create_api_obj("/alert", pop_event_alert, self.headers, 400)
+        wrong_active_notification_rules = self.create_api_obj("/notificationrules/active", wrong_data["alert"], self.headers, 200)["notificationRules"]
 
-        self.assertNotIn(notification_rule_data["notificationRule"], wrong_data["alert"]["notificationRules"])
+        self.assertNotIn(notification_rule_data["notificationRule"], wrong_active_notification_rules)
 
         wrong_data = self.create_api_obj("/alert", wrong_environment_alert, self.headers)
         none_data = self.create_api_obj("/alert", none_environment_alert, self.headers)
         pop_data = self.create_api_obj("/alert", pop_environment_alert, self.headers)
+        wrong_active_notification_rules = self.create_api_obj("/notificationrules/active", wrong_data["alert"], self.headers, 200)["notificationRules"]
+        none_active_notification_rules = self.create_api_obj("/notificationrules/active", none_data["alert"], self.headers, 200)["notificationRules"]
+        pop_active_notification_rules = self.create_api_obj("/notificationrules/active", pop_data["alert"], self.headers, 200)["notificationRules"]
 
-        self.assertNotIn(notification_rule_data["notificationRule"], wrong_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], none_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], pop_data["alert"]["notificationRules"])
+        self.assertNotIn(notification_rule_data["notificationRule"], wrong_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], none_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], pop_active_notification_rules)
 
         wrong_data = self.create_api_obj("/alert", wrong_severity_alert, self.headers)
         none_data = self.create_api_obj("/alert", none_severity_alert, self.headers)
         pop_data = self.create_api_obj("/alert", pop_severity_alert, self.headers)
+        wrong_active_notification_rules = self.create_api_obj("/notificationrules/active", wrong_data["alert"], self.headers, 200)["notificationRules"]
+        none_active_notification_rules = self.create_api_obj("/notificationrules/active", none_data["alert"], self.headers, 200)["notificationRules"]
+        pop_active_notification_rules = self.create_api_obj("/notificationrules/active", pop_data["alert"], self.headers, 200)["notificationRules"]
 
-        self.assertNotIn(notification_rule_data["notificationRule"], wrong_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], none_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], pop_data["alert"]["notificationRules"])
+        self.assertNotIn(notification_rule_data["notificationRule"], wrong_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], none_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], pop_active_notification_rules)
 
         data = self.delete_api_obj(f"/alert/{data['id']}", self.headers)
         wrong_data = self.create_api_obj("/alert", wrong_group_alert, self.headers)
         none_data = self.create_api_obj("/alert", none_group_alert, self.headers)
         pop_data = self.create_api_obj("/alert", pop_group_alert, self.headers)
+        wrong_active_notification_rules = self.create_api_obj("/notificationrules/active", wrong_data["alert"], self.headers, 200)["notificationRules"]
+        none_active_notification_rules = self.create_api_obj("/notificationrules/active", none_data["alert"], self.headers, 200)["notificationRules"]
+        pop_active_notification_rules = self.create_api_obj("/notificationrules/active", pop_data["alert"], self.headers, 200)["notificationRules"]
 
-        self.assertNotIn(notification_rule_data["notificationRule"], wrong_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], none_data["alert"]["notificationRules"])
-        self.assertNotIn(notification_rule_data["notificationRule"], pop_data["alert"]["notificationRules"])
+        self.assertNotIn(notification_rule_data["notificationRule"], wrong_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], none_active_notification_rules)
+        self.assertNotIn(notification_rule_data["notificationRule"], pop_active_notification_rules)
 
     def test_full_alert(self):
         now_time = datetime.now()
@@ -634,7 +656,8 @@ class NotificationRuleTestCase(unittest.TestCase):
         ]
 
         data = self.create_api_obj("/alert", alert, self.headers)
-        notification_rules = data["alert"]["notificationRules"]
+        active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
+        notification_rules = active_notification_rules
 
         self.assertNotIn(wrong_environment_rule_data, notification_rules)
         self.assertNotIn(none_environment_rule_data, notification_rules)
@@ -678,7 +701,6 @@ class NotificationRuleTestCase(unittest.TestCase):
         self.assertIn(pop_endTime_rule_data, notification_rules)
 
     def test_delete_notification_rule(self):
-        plugins.plugins["notificationrule"] = NotificationRule()
 
         notification_rule = {
             "environment": "Production",
@@ -770,107 +792,3 @@ class NotificationRuleTestCase(unittest.TestCase):
         self.assertEqual(data["message"], "not found")
 
         self.delete_api_obj("/notificationrules/" + notification_rule_id, self.headers)
-
-
-class NotificationRule(PluginBase):
-    """
-    Default twilio rules handler for sending messages and making calls
-    when a twilio rule is active during new alert status
-    """
-
-    def remove_unspeakable_chr(self, message: str, unspeakables: "dict[str,str]" = None):
-        """
-        Removes unspeakable characters from string like _,-,:.
-        unspeakables: dictionary with keys as unspeakable charecters and value as replace string
-        """
-        unspeakable_chrs = {"_": " ", " - ": ". ", " -": ".", "-": " ", ":": "."}
-        unspeakable_chrs.update(unspeakables or {})
-        speakable_message = message
-        for unspeakable_chr, replacement_str in unspeakable_chrs.items():
-            speakable_message = speakable_message.replace(unspeakable_chr, replacement_str)
-        return speakable_message
-
-    def get_twilio_client(self, channel, **kwargs):
-        return Client(channel.api_sid, channel.api_token)
-
-    def make_call(self, message: str, channel, receiver: str, **kwargs):
-        twiml_message = f"<Response><Pause/><Say>{self.remove_unspeakable_chr(message)}</Say></Response>"
-        call_client = self.get_twilio_client(channel, **kwargs)
-        if not call_client:
-            return
-        self.send_sms(message, channel, receiver, client=call_client)
-        return call_client.calls.create(
-            twiml=twiml_message,
-            to=receiver,
-            from_=channel.sender,
-        )
-
-    def send_sms(self, message: str, channel, receiver: str, client: Client = None, **kwargs):
-        sms_client = client or self.get_twilio_client(channel, **kwargs)
-        if not sms_client:
-            return
-        return sms_client.messages.create(body=message, to=receiver, from_=channel.sender)
-
-    def send_email(self, message: str, channel, receivers: list, **kwargs):
-        newMail = Mail(
-            from_email=channel.sender,
-            to_emails=receivers,
-            subject="Alerta",
-            html_content=message,
-        )
-        email_client = SendGridAPIClient(channel.api_token)
-        return email_client.send(newMail)
-
-    def pre_receive(self, alert, **kwargs):
-        return alert
-
-    def post_receive(self, alert: "Alert", **kwargs):
-
-        if alert.repeat:
-            return
-
-        standard_message = "%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s"
-
-        message_objs = alert.serialize.copy()
-        for key, val in message_objs.items():
-            try:
-                value_type = type(val)
-                if key != "history" and key != "twilioRules" and key != "notificationRules" and value_type == list:
-                    message_objs[key] = ", ".join(val)
-                if value_type == str and key == "severity":
-                    message_objs[key] = val.capitalize()
-            except Exception as err:
-                LOG.error(f"Error while handling message objs: {str(err)}")
-                continue
-        for notification_rule in alert.get_notification_rules():
-            message = (
-                notification_rule.text
-                if notification_rule.text != "" and notification_rule.text is not None
-                else standard_message
-            ) % message_objs
-            channel = notification_rule.channel
-            notification_type = channel.type
-            if notification_type == "sendgrid":
-                try:
-                    self.send_email(message, channel, notification_rule.receivers)
-                except Exception as err:
-                    LOG.error("TwilioRule: ERROR - %s", str(err))
-            elif "twilio" in notification_type:
-                for receiver in notification_rule.receivers:
-                    try:
-                        if "call" in notification_type:
-                            self.make_call(message, channel, receiver)
-                        elif "sms" in notification_type:
-                            self.send_sms(message, channel, receiver)
-
-                    except TwilioRestException as err:
-                        LOG.error("TwilioRule: ERROR - %s", str(err))
-
-    def status_change(self, alert, status, text, **kwargs):
-        return
-
-    def take_action(self, alert, action, text, **kwargs):
-        raise NotImplementedError
-
-    def delete(self, alert, **kwargs) -> bool:
-        raise NotImplementedError
