@@ -327,6 +327,44 @@ class NotificationRules(QueryBuilder):
 
         return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
 
+class OnCalls(QueryBuilder):
+
+    VALID_PARAMS = {
+        # field (column, sort-by, direction)
+        'id': ('id', None, 0),
+        'customer': ('customer', 'customer', 1),
+        'user': ('user', 'user', 1),
+        'users': ('users', 'users', 1),
+        'groups': ('groups', 'groups', 1),
+        'startDate': ('start_date', 'start_date', 1),
+        'endDate': ('end_date', '"end_date"', 1),
+        'startTime': ('start_time', 'start_time', -1),
+        'endTime': ('end_time', 'end_time', -1),
+        'fullDay': ('full_day', 'full_day', 1),
+        'repeatType': ('repeat_type', 'repeat_type', 1),
+        'repeatDays': ('repeat_days', 'repeat_days', -1),
+        'repeatWeeks': ('repeat_weeks', 'repeat_weeks', -1),
+        'repeatMonths': ('repeat_months', 'repeat_months', -1),
+    }
+
+    @staticmethod
+    def from_params(params: MultiDict, customers=None, query_time=None):
+
+        query = ['1=1']
+        qvars = dict()
+        params = MultiDict(params)
+
+        # customer
+        if customers:
+            query.append('AND customer=ANY(%(customers)s)')
+            qvars['customers'] = customers
+
+        # filter, sort-by
+        query, qvars = QueryBuilder.filter_query(params, OnCalls.VALID_PARAMS, query, qvars)
+        sort = QueryBuilder.sort_by_columns(params, OnCalls.VALID_PARAMS)
+
+        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
+
 
 class Heartbeats(QueryBuilder):
 

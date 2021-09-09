@@ -5,6 +5,7 @@ from alerta.app import qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.notification_rule import NotificationRule
+from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 from alerta.utils.api import assign_customer
 from alerta.utils.audit import write_audit_trail
@@ -69,6 +70,24 @@ def get_notification_rule(notification_rule_id):
         return jsonify(status='ok', total=1, notificationRule=notification_rule.serialize)
     else:
         raise ApiError('not found', 404)
+
+
+@api.route("/notificationrules/active", methods=["OPTIONS", "POST"])
+@cross_origin()
+@permission(Scope.read_on_calls)
+@jsonp
+def get_notification_rules_active():
+    alert_json = request.json
+    if alert_json == None or alert_json.get("duplicateCount"):
+        return jsonify(status="ok", total=0, notificationRules=[])
+    try:
+        alert = Alert.parse(alert_json)
+    except Exception as e:
+        raise ApiError(str(e), 400)
+
+    notification_rules = [notification_rule.serialize for notification_rule in NotificationRule.find_all_active(alert)]
+    total = len(notification_rules)
+    return jsonify(status="ok", total=total, notificationRules=notification_rules)
 
 
 @api.route('/notificationrules', methods=['OPTIONS', 'GET'])

@@ -99,8 +99,6 @@ ADD COLUMN IF NOT EXISTS origin text;
 DROP TABLE IF EXISTS twilio_rules;
 
 
--- DROP TABLE IF EXISTS notification_rules;
--- DROP TABLE IF EXISTS notification_channels;
 CREATE TABLE IF NOT EXISTS notification_channels (
     id text PRIMARY KEY,
     type text NOT NULL,
@@ -109,7 +107,12 @@ CREATE TABLE IF NOT EXISTS notification_channels (
     sender text not null,
     customer text
 );
-
+DO $$
+BEGIN
+    ALTER TABLE notification_channels ADD CONSTRAINT check_available_type CHECK (type = 'twilio_sms' OR type = 'twilio_call' OR type = 'sendgrid' OR type = 'smtp');
+EXCEPTION
+    WHEN duplicate_object THEN RAISE NOTICE 'constraint "check_available_type" already exists in notification_rules.';
+END$$;
 
 CREATE TABLE IF NOT EXISTS notification_rules (
     id text PRIMARY KEY,
@@ -132,7 +135,29 @@ CREATE TABLE IF NOT EXISTS notification_rules (
     channel_id text not null,
     FOREIGN key (channel_id) references notification_channels(id)
 );
+DO $$
+BEGIN
+    ALTER TABLE notification_rules ADD COLUMN use_oncall boolean;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "use_on_call" already exists in notification_rules.';
+END$$;
 
+CREATE TABLE IF NOT EXISTS on_calls(
+    id text PRIMARY KEY,
+    customer text,
+    "user" text,
+    user_ids text[] NOT NULL,
+    group_ids text[] NOT NULL,
+    "start_date" date,
+    end_date date,
+    start_time time without time zone,
+    end_time time without time zone,
+	repeat_type text,
+	repeat_days text[] CONSTRAINT repeat_days_check CHECK (repeat_days IS NULL or repeat_type = 'list' ),
+	repeat_weeks integer[] CONSTRAINT repeat_weeks_check CHECK (repeat_weeks IS NULL or repeat_type = 'list' ),
+	repeat_months text[] CONSTRAINT repeat_months_check CHECK (repeat_months IS NULL or repeat_type = 'list' ),
+    CONSTRAINT check_user_length CHECK (cardinality(user_ids) > 0 OR cardinality(group_ids) > 0)
+);
 
 
 CREATE TABLE IF NOT EXISTS customers (
@@ -217,6 +242,14 @@ BEGIN
     ALTER TABLE users ALTER COLUMN login SET NOT NULL;
 EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column "login" already exists in users.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE users ADD COLUMN phone_number text;
+    ALTER TABLE users ADD COLUMN country text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "phone_number" already exists in users.';
 END$$;
 
 CREATE TABLE IF NOT EXISTS groups (

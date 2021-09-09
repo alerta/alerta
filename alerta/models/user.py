@@ -35,6 +35,8 @@ class User:
         self.login = login  # => g.login
         self.password = password  # NB: hashed password
         self.email = email
+        self.phone_number = kwargs.get('phone_number', None)
+        self.country = kwargs.get('country', None)
         self.status = kwargs.get('status', None) or UserStatus.Active
         self.roles = current_app.config['ADMIN_ROLES'] if self.email and self.email in current_app.config['ADMIN_USERS'] else roles
         self.attributes = kwargs.get('attributes', None) or dict()
@@ -58,6 +60,13 @@ class User:
     def is_active(self) -> bool:
         return self.status == UserStatus.Active
 
+    @property
+    def country_code(self) -> 'str':
+        if self.country == '' or self.country == None:
+            return ''
+        cc_start, cc_stop = [self.country.find('(') + 1, self.country.find(')')]
+        return self.country[cc_start:cc_stop]
+
     @classmethod
     def parse(cls, json: JSON) -> 'User':
         return User(
@@ -66,6 +75,8 @@ class User:
             login=json.get('login', None) or json.get('email', None),
             password=utils.generate_password_hash(json.get('password', '')),
             email=json.get('email', None),
+            phone_number=json.get('phoneNumber', None),
+            country=json.get('country', None),
             status=json.get('status', None),
             roles=json.get('roles', list()),
             attributes=json.get('attributes', dict()),
@@ -84,6 +95,8 @@ class User:
             'name': self.name,
             'login': self.login,
             'email': self.email,
+            'phoneNumber': self.phone_number,
+            'country': self.country,
             'domain': self.domain,
             'status': self.status,
             'roles': self.roles,
@@ -108,6 +121,8 @@ class User:
             login=doc.get('login', None) or doc.get('email', None) or 'n/a',
             password=doc.get('password', None),
             email=doc.get('email', None),
+            phone_number=doc.get('phoneNumber', None),
+            country=doc.get('country', None),
             status=doc.get('status', None),
             roles=doc.get('roles', list()),
             attributes=doc.get('attributes', dict()),
@@ -126,6 +141,8 @@ class User:
             login=rec.login or rec.email or 'n/a',
             password=rec.password,
             email=rec.email,
+            phone_number=rec.phone_number,
+            country=rec.country,
             status=rec.status,
             roles=rec.roles,
             attributes=dict(rec.attributes),

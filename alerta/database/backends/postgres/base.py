@@ -154,7 +154,7 @@ class Backend(Database):
     def destroy(self):
         conn = self.connect()
         cursor = conn.cursor()
-        for table in ['alerts', 'blackouts', 'notification_rules', 'notification_channels', 'customers', 'groups', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
+        for table in ['alerts', 'blackouts', 'notification_rules', 'notification_channels', 'on_calls', 'customers', 'groups', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
             cursor.execute(f'DROP TABLE IF EXISTS {table}')
         conn.commit()
         conn.close()
@@ -1032,9 +1032,9 @@ class Backend(Database):
     def create_notification_rule(self, notification_rule):
         insert = """
             INSERT INTO notification_rules (id, priority, environment, service, resource, event, "group", tags,
-                customer, "user", create_time, start_time, end_time, days, receivers, severity, text, channel_id)
+                customer, "user", create_time, start_time, end_time, days, receivers, use_oncall, severity, text, channel_id)
             VALUES (%(id)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s,
-                %(customer)s, %(user)s, %(create_time)s, %(start_time)s, %(end_time)s, %(days)s, %(receivers)s, %(severity)s, %(text)s, %(channel_id)s)
+                %(customer)s, %(user)s, %(create_time)s, %(start_time)s, %(end_time)s, %(days)s, %(receivers)s, %(use_oncall)s, %(severity)s, %(text)s, %(channel_id)s)
             RETURNING *
         """
         return self._insert(insert, vars(notification_rule))
@@ -1115,6 +1115,8 @@ class Backend(Database):
             update += 'days=%(days)s, '
         if 'receivers' in kwargs:
             update += 'receivers=%(receivers)s, '
+        if 'useOnCall' in kwargs:
+            update += "use_oncall=%(useOnCall)s, "
         if kwargs.get('severity') is not None:
             update += 'severity=%(severity)s, '
         if 'text' in kwargs:
@@ -1133,6 +1135,120 @@ class Backend(Database):
     def delete_notification_rule(self, id):
         delete = """
             DELETE FROM notification_rules
+            WHERE id=%s
+            RETURNING id
+        """
+        return self._deleteone(delete, (id,), returning=True)
+
+    # ON CALLS
+
+    def create_on_call(self, on_call):
+        insert = """
+            INSERT INTO on_calls (id, user_ids, group_ids, "start_date", end_date, start_time, end_time, "user", customer,
+                repeat_type, repeat_days, repeat_weeks, repeat_months)
+            VALUES (%(id)s, %(user_ids)s, %(group_ids)s, %(start_date)s, %(end_date)s, %(start_time)s, %(end_time)s, %(user)s, %(customer)s,
+                %(repeat_type)s, %(repeat_days)s, %(repeat_weeks)s, %(repeat_months)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(on_call))
+
+    def get_on_call(self, id, customers=None):
+        select = """
+            SELECT * FROM on_calls
+            WHERE id=%(id)s
+              AND {customer}
+        """.format(
+            customer="customer=ANY(%(customers)s)" if customers else "1=1"
+        )
+        return self._fetchone(select, {"id": id, "customers": customers})
+
+    def get_on_calls(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        select = """
+            SELECT * FROM on_calls
+             WHERE {where}
+          ORDER BY {order}
+        """.format(
+            where=query.where, order=query.sort
+        )
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size if page else None)
+
+    def get_on_calls_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM on_calls
+             WHERE {where}
+        """.format(
+            where=query.where
+        )
+        return self._fetchone(select, query.vars).count
+
+    def get_on_calls_active(self, alert):
+        date_data = {}
+        date_data["date"] = alert.create_time.date()
+        date_data["time"] = alert.create_time.time()
+        date_data["day"] = alert.create_time.strftime("%a")
+        _year, date_data["week"], _day_number = alert.create_time.isocalendar()
+        date_data["month"] = alert.create_time.strftime("%b")
+        select = """
+            SELECT *
+            FROM on_calls
+            WHERE ((start_time IS NULL OR start_time <= %(time)s) AND (end_time IS NULL OR end_time > %(time)s))
+            AND (
+              (start_date = %(date)s) OR (start_date < %(date)s AND end_date >= %(date)s)
+              OR (
+                repeat_type = 'list'
+                AND (repeat_days IS NULL OR repeat_days='{}' OR ARRAY[%(day)s] <@ repeat_days)
+                AND (repeat_weeks IS NULL OR repeat_weeks='{}' OR ARRAY[%(week)s] <@ repeat_weeks)
+                AND (repeat_months IS NULL OR repeat_months='{}' OR ARRAY[%(month)s] <@ repeat_months)
+              )
+            )
+
+        """
+        if current_app.config["CUSTOMER_VIEWS"]:
+            select += " AND (customer IS NULL OR customer=%(customer)s)"
+        return self._fetchall(select, {**vars(alert), **date_data})
+
+    def update_on_call(self, id, **kwargs):
+        update = """
+            UPDATE on_calls
+            SET
+        """
+        if "userIds" in kwargs:
+            update += "user_ids=%(userIds)s, "
+        if "groupIds" in kwargs:
+            update += "group_ids=%(groupIds)s, "
+        if "startDate" in kwargs:
+            update += "start_date=%(startDate)s, "
+        if "endDate" in kwargs:
+            update += '"end_date"=%(endDate)s, '
+        if "startTime" in kwargs:
+            update += "start_time=%(startTime)s, "
+        if "endTime" in kwargs:
+            update += "end_time=%(endTime)s, "
+        if "fullDay" in kwargs:
+            update += "full_day=%(fullDay)s, "
+        if "repeatType" in kwargs:
+            update += "repeat_type=%(repeatType)s, "
+        if "repeatDays" in kwargs:
+            update += "repeat_days=%(repeatDays)s, "
+        if "repeatWeeks" in kwargs:
+            update += "repeat_weeks=%(repeatWeeks)s, "
+        if "repeatMonths" in kwargs:
+            update += "repeat_months=%(repeatMonths)s,"
+
+        update += """
+            "user"=COALESCE(%(user)s, "user")
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs["id"] = id
+        kwargs["user"] = kwargs.get("user")
+        return self._updateone(update, kwargs, returning=True)
+
+    def delete_on_call(self, id):
+        delete = """
+            DELETE FROM on_calls
             WHERE id=%s
             RETURNING id
         """
@@ -1315,10 +1431,10 @@ class Backend(Database):
 
     def create_user(self, user):
         insert = """
-            INSERT INTO users (id, name, login, password, email, status, roles, attributes,
-                create_time, last_login, text, update_time, email_verified)
-            VALUES (%(id)s, %(name)s, %(login)s, %(password)s, %(email)s, %(status)s, %(roles)s, %(attributes)s, %(create_time)s,
-                %(last_login)s, %(text)s, %(update_time)s, %(email_verified)s)
+            INSERT INTO users (id, name, login, password, email, phone_number, country, status,
+                roles, attributes, create_time, last_login, text, update_time, email_verified)
+            VALUES (%(id)s, %(name)s, %(login)s, %(password)s, %(email)s, %(phone_number)s, %(country)s, %(status)s,
+                %(roles)s, %(attributes)s, %(create_time)s, %(last_login)s, %(text)s, %(update_time)s, %(email_verified)s)
             RETURNING *
         """
         return self._insert(insert, vars(user))
@@ -1377,6 +1493,10 @@ class Backend(Database):
             update += 'password=%(password)s, '
         if kwargs.get('email', None) is not None:
             update += 'email=%(email)s, '
+        if kwargs.get('phoneNumber', None) is not None:
+            update += 'phone_number=%(phoneNumber)s, '
+        if kwargs.get('country', None) is not None:
+            update += 'country=%(country)s, '
         if kwargs.get('status', None) is not None:
             update += 'status=%(status)s, '
         if kwargs.get('roles', None) is not None:

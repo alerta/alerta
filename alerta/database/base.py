@@ -290,6 +290,29 @@ class Database(Base):
     def delete_notification_rule(self, id):
         raise NotImplementedError
 
+    # ON CALLS
+
+    def create_on_call(self, on_call):
+        raise NotImplementedError
+
+    def get_on_call(self, id, customers=None):
+        raise NotImplementedError
+
+    def get_on_calls(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_on_calls_count(self, query=None):
+        raise NotImplementedError
+
+    def get_on_calls_active(self, alert):
+        raise NotImplementedError
+
+    def update_on_call(self, id, **kwargs):
+        raise NotImplementedError
+
+    def delete_on_call(self, id):
+        raise NotImplementedError
+
     # HEARTBEATS
 
     def upsert_heartbeat(self, heartbeat):
@@ -515,6 +538,7 @@ class QueryBuilder(Base):
         self.__class__.blackouts = type('BlackoutsQueryBuilder', (cls.Blackouts, self.Blackouts, QueryBuilder), {})
         self.__class__.notification_channels = type('NotificationChannelsQueryBuilder', (cls.NotificationChannels, self.NotificationChannels, QueryBuilder), {})
         self.__class__.notification_rules = type('NotificationRulesQueryBuilder', (cls.NotificationRules, self.NotificationRules, QueryBuilder), {})
+        self.__class__.on_calls = type("OnCallQueryBuilder", (cls.OnCalls, self.OnCalls, QueryBuilder), {})
         self.__class__.heartbeats = type('HeartbeatsQueryBuilder', (cls.Heartbeats, self.Heartbeats, QueryBuilder), {})
         self.__class__.keys = type('ApiKeysQueryBuilder', (cls.ApiKeys, self.ApiKeys, QueryBuilder), {})
         self.__class__.users = type('UsersQueryBuilder', (cls.Users, self.Users, QueryBuilder), {})
@@ -523,61 +547,56 @@ class QueryBuilder(Base):
         self.__class__.customers = type('CustomersQueryBuilder', (cls.Customers, self.Customers, QueryBuilder), {})
 
     class Alerts:
-
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('AlertsQueryBuilder has no from_params() method for alerts')
 
     class Blackouts:
-
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('BlackoutsQueryBuilder has no from_params() method')
 
     class NotificationChannels:
-
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('NotificationChannelsQueryBuilder has no from_params() method')
 
     class NotificationRules:
-
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('NotificationRulesQueryBuilder has no from_params() method')
 
-    class Heartbeats:
+    class OnCalls:
+        @staticmethod
+        def from_params(params, customers=None, query_time=None):
+            raise NotImplementedError('OnCallsQueryBuilder has no from_params() method')
 
+    class Heartbeats:
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('HeartbeatsQueryBuilder has no from_params() method')
 
     class ApiKeys:
-
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('ApiKeysQueryBuilder has no from_params() method')
 
     class Users:
-
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('UsersQueryBuilder has no from_params() method')
 
     class Groups:
-
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('GroupsQueryBuilder has no from_params() method')
 
     class Permissions:
-
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('PermissionsQueryBuilder has no from_params() method')
 
     class Customers:
-
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('CustomersQueryBuilder has no from_params() method')

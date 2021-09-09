@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Optional  # noqa
 from typing import Any, Dict, List, Tuple, Union
 from uuid import uuid4
-from alerta.models.notification_rule import NotificationRule
 
 from flask import current_app, g
 
@@ -150,7 +149,6 @@ class Alert:
             'lastReceiveTime': self.last_receive_time,
             'updateTime': self.update_time,
             'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)],
-            'notificationRules': [notification_rule.serialize for notification_rule in self.get_notification_rules()],
         }
 
     def get_id(self, short: bool = False) -> str:
@@ -423,13 +421,8 @@ class Alert:
         """Is the alert status 'blackout'?"""
         return alarm_model.is_suppressed(self)
 
-    def get_notification_rules(self) -> 'list[NotificationRule]':
-        if not self.duplicate_count or self.duplicate_count == 0:
-            return [NotificationRule.from_db(notification_rule) for notification_rule in db.get_notification_rules_active(self)]
-        else:
-            return []
-
     # set alert status
+
     def set_status(self, status: str, text: str = '', timeout: int = None) -> 'Alert':
         now = datetime.utcnow()
 

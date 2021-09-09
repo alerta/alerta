@@ -1,5 +1,5 @@
 from datetime import datetime, time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 from uuid import uuid4
 
 from alerta.app import db
@@ -7,12 +7,15 @@ from alerta.database.base import Query
 from alerta.utils.response import absolute_url
 from alerta.models.notification_channel import NotificationChannel
 
+if TYPE_CHECKING:
+    from alerta.models.alert import Alert
+
 JSON = Dict[str, Any]
 
 
 class NotificationRule:
     def __init__(
-        self, environment: str, channel_id: str, receivers: List[str], **kwargs
+        self, environment: str, channel_id: str, receivers: List[str], use_oncall: bool, **kwargs
     ) -> None:
         if not environment:
             raise ValueError('Missing mandatory value for "environment"')
@@ -25,6 +28,7 @@ class NotificationRule:
         self.environment = environment
         self.channel_id = channel_id
         self.receivers = receivers
+        self.use_oncall = use_oncall
         self.start_time: time = kwargs.get("start_time") or None
         self.end_time: time = kwargs.get("end_time") or None
         self.severity = kwargs.get("severity") or list()
@@ -72,6 +76,7 @@ class NotificationRule:
             environment=json["environment"],
             channel_id=json["channelId"],
             receivers=json["receivers"],
+            use_oncall=json.get("useOnCall", False),
             severity=json.get("severity", list()),
             service=json.get("service", list()),
             resource=json.get("resource", None),
@@ -108,6 +113,7 @@ class NotificationRule:
             "environment": self.environment,
             "channelId": self.channel_id,
             "receivers": self.receivers,
+            "useOnCall": self.use_oncall,
             "service": self.service,
             "severity": self.severity,
             "resource": self.resource,
@@ -160,6 +166,7 @@ class NotificationRule:
             environment=doc["environment"],
             channel_id=doc["channelId"],
             receivers=doc.get("receivers") or list(),
+            use_oncall=doc.get("useOnCall", False),
             service=doc.get("service", list()),
             severity=doc.get("severity", list()),
             resource=doc.get("resource", None),
@@ -199,6 +206,7 @@ class NotificationRule:
             environment=rec.environment,
             channel_id=rec.channel_id,
             receivers=rec.receivers,
+            use_oncall=rec.use_oncall,
             service=rec.service,
             severity=rec.severity,
             resource=rec.resource,
@@ -244,6 +252,12 @@ class NotificationRule:
     @staticmethod
     def count(query: Query = None) -> int:
         return db.get_notification_rules_count(query)
+
+    @ staticmethod
+    def find_all_active(alert: "Alert") -> "list[NotificationRule]":
+        if alert.duplicate_count:
+            return []
+        return [NotificationRule.from_db(db_notification_rule) for db_notification_rule in db.get_notification_rules_active(alert)]
 
     def update(self, **kwargs) -> "NotificationRule":
         return NotificationRule.from_db(db.update_notification_rule(self.id, **kwargs))

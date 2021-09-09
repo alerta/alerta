@@ -270,7 +270,7 @@ class NotificationChannels(QueryBuilder):
 
         # customer
         if customers:
-           customer_query = {'customer': {'$in': customers}}
+            customer_query = {'customer': {'$in': customers}}
         else:
             customer_query = None
 
@@ -280,7 +280,6 @@ class NotificationChannels(QueryBuilder):
 
         if customer_query:
             query = {'$and': [customer_query, query]}
-
 
         return Query(where=query, sort=sort, group=None)
 
@@ -318,10 +317,9 @@ class NotificationRules(QueryBuilder):
 
         # customer
         if customers:
-           customer_query = {'customer': {'$in': customers}}
+            customer_query = {'customer': {'$in': customers}}
         else:
             customer_query = None
-
 
         # filter, sort-by
         query = QueryBuilder.filter_query(params, NotificationRules.VALID_PARAMS, query)
@@ -332,6 +330,47 @@ class NotificationRules(QueryBuilder):
 
         return Query(where=query, sort=sort, group=None)
 
+
+class OnCalls(QueryBuilder):
+
+    VALID_PARAMS = {
+        # field (column, sort-by, direction)
+        'id': ('id', None, 0),
+        'customer': ('customer', 'customer', 1),
+        'user': ('user', 'user', 1),
+        'users': ('users', 'users', 1),
+        'groups': ('groups', 'groups', 1),
+        'startDate': ('start_date', 'start_date', 1),
+        'endDate': ('end_date', '"end_date"', 1),
+        'startTime': ('start_time', 'start_time', -1),
+        'endTime': ('end_time', 'end_time', -1),
+        'fullDay': ('full_day', 'full_day', 1),
+        'repeatType': ('repeat_type', 'repeat_type', 1),
+        'repeatDays': ('repeat_days', 'repeat_days', -1),
+        'repeatWeeks': ('repeat_weeks', 'repeat_weeks', -1),
+        'repeatMonths': ('repeat_months', 'repeat_months', -1),
+    }
+
+    @staticmethod
+    def from_params(params: MultiDict, customers=None, query_time=None):
+
+        query = dict()
+        params = MultiDict(params)
+
+       # customer
+        if customers:
+            customer_query = {'customer': {'$in': customers}}
+        else:
+            customer_query = None
+
+        # filter, sort-by
+        query = QueryBuilder.filter_query(params, OnCalls.VALID_PARAMS, query)
+        sort = QueryBuilder.sort_by_columns(params, OnCalls.VALID_PARAMS)
+
+        if customer_query:
+            query = {'$and': [customer_query, query]}
+
+        return Query(where=query, sort=sort, group=None)
 
 
 class Heartbeats(QueryBuilder):

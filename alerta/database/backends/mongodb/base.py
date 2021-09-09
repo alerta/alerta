@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta, date
 
 from flask import current_app
 from pymongo import ASCENDING, TEXT, MongoClient, ReturnDocument
@@ -1119,6 +1119,7 @@ class Backend(Database):
             'createTime': notification_rule.create_time,
             'text': notification_rule.text,
             'receivers': notification_rule.receivers,
+            'useOnCall': notification_rule.use_oncall,
             'channelId': notification_rule.channel_id,
         }
         if notification_rule.severity:
@@ -1168,15 +1169,15 @@ class Backend(Database):
         query['environment'] = alert.environment
         query['$and'] = [
             # {'environment': alert.environment},
-            {'$or': [{'startTime': None},{'startTime': {'$lte': alert.time.hour + alert.time.minute / 100}}]},
+            {'$or': [{'startTime': None}, {'startTime': {'$lte': alert.time.hour + alert.time.minute / 100}}]},
             {'$or': [{'endTime': None}, {'endTime': {'$gt': alert.time.hour + alert.time.minute / 100}}]},
             {'$or': [{'days': None}, {"days": {'$in': [alert.day]}}]},
-            {'$or': [{'severity': None},{'severity': {'$in': [alert.severity]}}]},
+            {'$or': [{'severity': None}, {'severity': {'$in': [alert.severity]}}]},
             {'$or': [{'resource': None}, {'resource': alert.resource}]},
-            {"$or": [{"service": None},{'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}}]},
+            {"$or": [{"service": None}, {'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}}]},
             {'$or': [{'event': None}, {'event': alert.event}]},
             {'$or': [{'group': None}, {'group': alert.group}]},
-            {"$or": [{"tags": None},{'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}}]},
+            {"$or": [{"tags": None}, {'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}}]},
         ]
 
         # if current_app.config['CUSTOMER_VIEWS']:
@@ -1184,10 +1185,10 @@ class Backend(Database):
         #         {'customer': None},
         #         {'customer': alert.customer}
         #     ]}
-            # query['$and'].append({'$or': [
-            #     {'customer': None},
-            #     {'customer': alert.customer}
-            # ]})
+        # query['$and'].append({'$or': [
+        #     {'customer': None},
+        #     {'customer': alert.customer}
+        # ]})
         return self.get_db().notification_rules.find(query)
 
     def update_notification_rule(self, id, **kwargs):
@@ -1206,6 +1207,114 @@ class Backend(Database):
 
     def delete_notification_rule(self, id):
         response = self.get_db().notification_rules.delete_one({'_id': id})
+        return True if response.deleted_count == 1 else False
+
+    # ON_CALLS
+
+    def create_on_call(self, on_call) -> 'dict | None':
+        data = {
+            '_id': on_call.id
+        }
+        if on_call.user_ids:
+            data['userIds'] = on_call.user_ids
+        if on_call.group_ids:
+            data['groupIds'] = on_call.group_ids
+        if on_call.user:
+            data['user'] = on_call.user
+        if on_call.start_time and on_call.end_time:
+            data['startTime'] = on_call.start_time.hour + on_call.start_time.minute / 100
+            data['endTime'] = on_call.end_time.hour + on_call.end_time.minute / 100
+        if on_call.start_date and on_call.end_date:
+            data['startDate'] = datetime.combine(date.fromisoformat(on_call.start_date), time())
+            data['endDate'] = datetime.combine(date.fromisoformat(on_call.end_date), time(23, 59, 59))
+        if on_call.repeat_type:
+            data['repeatType'] = on_call.repeat_type
+        if on_call.repeat_days:
+            data['event'] = on_call.repeat_days
+        if on_call.repeat_weeks:
+            data['group'] = on_call.repeat_weeks
+        if on_call.repeat_months:
+            data['tags'] = on_call.repeat_months
+        if on_call.customer:
+            data['customer'] = on_call.customer
+
+        if self.get_db().on_calls.insert_one(data).inserted_id == on_call.id:
+            return data
+
+    def get_on_call(self, id: str, customers: 'list | None' = None):
+        query = {'_id': id}
+
+        if customers:
+            query['customer'] = {'$in': customers}
+
+        return self.get_db().on_calls.find_one(query)
+
+    def get_on_calls(self, query: Query = None, page: int = None, page_size: int = None):
+        query = query or Query()
+        return self.get_db().on_calls.find(query.where, sort=query.sort)\
+            .skip((page - 1) * page_size).limit(page_size)
+
+    def get_on_calls_count(self, query: Query = None):
+        query = query or Query()
+        return self.get_db().notification_rules.count_documents(query.where)
+
+    def get_on_calls_active(self, alert):
+        date_data = {}
+        date_data["time"] = alert.create_time.time()
+        date_data["day"] = alert.create_time.strftime("%a")
+        _year, date_data["week"], _day_number = alert.create_time.isocalendar()
+        date_data["month"] = alert.create_time.strftime("%b")
+
+        query = dict()
+        query['$and'] = [
+            {"$and": [
+                {'$or': [
+                    {'startTime': None},
+                    {'startTime': {'$lte': date_data["time"].hour + date_data["time"].minute / 100}}]},
+                {'$or': [
+                    {'endTime': None},
+                    {'endTime': {'$gt': date_data["time"].hour + date_data["time"].minute / 100}}]}]},
+            {"$or": [
+                {'$or': [
+                    {"$and": [
+                        {'startDate': {'$lte': alert.create_time}},
+                        {'endDate': {'$gte': alert.create_time}}]}]},
+                {'$and': [
+                    {'repeatType': 'list'},
+                    {"$or": [{"repeatDays": None}, {"repeatDays": []}, {"repeatDays": {'$in': [date_data["day"]]}}]},
+                    {"$or": [{"repeatWeeks": None}, {"repeatWeeks": []}, {"repeatWeeks": {'$in': [date_data["week"]]}}]},
+                    {"$or": [{"repeatMonths": None}, {"repeatMonths": []}, {"repeatMonths": {'$in': [date_data["month"]]}}]}]}]},
+        ]
+
+        # if current_app.config['CUSTOMER_VIEWS']:
+        #     query['$and'] = {'$or': [
+        #         {'customer': None},
+        #         {'customer': alert.customer}
+        #     ]}
+        # query['$and'].append({'$or': [
+        #     {'customer': None},
+        #     {'customer': alert.customer}
+        # ]})
+        return self.get_db().on_calls.find(query)
+
+    def update_on_call(self, id, **kwargs):
+        if kwargs.get('startTime', None) is not None:
+            kwargs['startTime'] = float(kwargs['startTime'].replace(":", "."))
+        if kwargs.get('endTime', None) is not None:
+            kwargs['endTime'] = float(kwargs['endTime'].replace(":", "."))
+        if kwargs.get('startDate', None) is not None:
+            kwargs['startDate'] = datetime.combine(date.fromisoformat(kwargs['startDate']), time())
+        if kwargs.get('endDate', None) is not None:
+            kwargs['endDate'] = datetime.combine(date.fromisoformat(kwargs['endDate']), time(23, 59, 59))
+
+        return self.get_db().on_calls.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
+    def delete_on_call(self, id):
+        response = self.get_db().on_calls.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
 
     # HEARTBEATS
@@ -1358,6 +1467,8 @@ class Backend(Database):
             'login': user.login,
             'password': user.password,
             'email': user.email,
+            'phoneNumber': user.phone_number,
+            'country': user.country,
             'status': user.status,
             'roles': user.roles,
             'attributes': user.attributes,

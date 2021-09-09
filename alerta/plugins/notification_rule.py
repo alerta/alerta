@@ -1,4 +1,6 @@
 import logging
+from alerta.app import db
+from threading import Thread
 
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
@@ -6,18 +8,13 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
 from alerta.models.notification_rule import NotificationRule, NotificationChannel
+from alerta.models.on_call import OnCall
+from alerta.models.user import User
 from alerta.models.alert import Alert
 from alerta.plugins import PluginBase
 
 
 LOG = logging.getLogger('alerta.plugins.notification_rule')
-
-
-def get_notification_id(notification_rule: NotificationRule) -> 'str':
-    """
-    Returns id field of a notification rule
-    """
-    return notification_rule['id']
 
 
 def remove_unspeakable_chr(message: str, unspeakables: 'dict[str,str]' = None):
@@ -60,10 +57,11 @@ class NotificationRulesHandler(PluginBase):
             return
         return sms_client.messages.create(body=message, to=receiver, from_=channel.sender)
 
-    def send_email(self, message: str, channel: NotificationChannel, receivers: list, **kwargs):
+    def send_email(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', **kwargs):
+        mails = set([*receivers, *[user.email for user in on_call_users]])
         newMail = Mail(
             from_email=channel.sender,
-            to_emails=receivers,
+            to_emails=list(mails),
             subject='Alerta',
             html_content=message,
         )
@@ -75,7 +73,7 @@ class NotificationRulesHandler(PluginBase):
         for objname, objval in alertobj.items():
             try:
                 value_type = type(objval)
-                if objname != 'history' and objname != 'twilioRules' and objname != 'notificationRules' and value_type == list:
+                if objname != 'history' and objname != 'twilioRules' and objname != 'notificationRules' and objname != 'onCalls' and value_type == list:
                     alertobjcopy[objname] = ', '.join(objval)
                 if value_type == str and objname == 'severity':
                     alertobjcopy[objname] = objval.capitalize()
@@ -91,6 +89,40 @@ class NotificationRulesHandler(PluginBase):
 
         return alertobjcopy
 
+    def handle_notifications(self, alert: 'Alert', notifications: 'list[list[NotificationRule or NotificationChannel]]', users: 'list[set[User or None]]'):
+        standard_message = '%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s'
+        for notification_rule, channel in notifications:
+            if channel == None:
+                return
+
+            on_users: 'set[User]' = set()
+            if notification_rule.use_oncall:
+                for user in users:
+                    on_users.update(user)
+
+            message = (
+                notification_rule.text if notification_rule.text != '' and notification_rule.text is not None else standard_message
+            ) % self.get_message_obj(alert.serialize)
+            notification_type = channel.type
+            if notification_type == 'sendgrid':
+                try:
+                    self.send_email(message, channel, notification_rule.receivers, on_users)
+                except Exception as err:
+                    LOG.error('NotificationRule: ERROR - %s', str(err))
+            elif 'twilio' in notification_type:
+
+                for number in set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]]):
+                    if number == None or number == '':
+                        continue
+                    try:
+                        if 'call' in notification_type:
+                            self.make_call(message, channel, number)
+                        elif 'sms' in notification_type:
+                            self.send_sms(message, channel, number)
+
+                    except TwilioRestException as err:
+                        LOG.error('TwilioRule: ERROR - %s', str(err))
+
     def pre_receive(self, alert, **kwargs):
         return alert
 
@@ -98,29 +130,10 @@ class NotificationRulesHandler(PluginBase):
 
         if alert.repeat:
             return
-
-        standard_message = '%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s'
-        for notification_rule in alert.get_notification_rules():
-            message = (
-                notification_rule.text if notification_rule.text != '' and notification_rule.text is not None else standard_message
-            ) % self.get_message_obj(alert.serialize)
-            channel = notification_rule.channel
-            notification_type = channel.type
-            if notification_type == 'sendgrid':
-                try:
-                    self.send_email(message, channel, notification_rule.receivers)
-                except Exception as err:
-                    LOG.error('NotificationRule: ERROR - %s', str(err))
-            elif 'twilio' in notification_type:
-                for receiver in notification_rule.receivers:
-                    try:
-                        if 'call' in notification_type:
-                            self.make_call(message, channel, receiver)
-                        elif 'sms' in notification_type:
-                            self.send_sms(message, channel, receiver)
-
-                    except TwilioRestException as err:
-                        LOG.error('TwilioRule: ERROR - %s', str(err))
+        notification_rules = NotificationRule.find_all_active(alert)
+        notifications = [[notification_rule, notification_rule.channel] for notification_rule in notification_rules]
+        on_users = [on_call.users for on_call in OnCall.find_all_active(alert)]
+        Thread(target=self.handle_notifications, args=[alert, notifications, on_users]).start()
 
     def status_change(self, alert, status, text, **kwargs):
         return
