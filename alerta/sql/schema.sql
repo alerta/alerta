@@ -114,6 +114,13 @@ EXCEPTION
     WHEN duplicate_object THEN RAISE NOTICE 'constraint "check_available_type" already exists in notification_rules.';
 END$$;
 
+DO $$
+BEGIN
+    ALTER TABLE notification_channels ADD COLUMN "host" text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "host" already exists in notification_rules.';
+END$$;
+
 CREATE TABLE IF NOT EXISTS notification_rules (
     id text PRIMARY KEY,
     priority integer NOT NULL,

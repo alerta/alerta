@@ -960,8 +960,8 @@ class Backend(Database):
 
     def create_notification_channel(self, notification_channel):
         insert = """
-            INSERT INTO notification_channels (id, type, api_token, api_sid, sender, customer)
-            VALUES (%(id)s, %(type)s, %(api_token)s, %(api_sid)s, %(sender)s, %(customer)s)
+            INSERT INTO notification_channels (id, type, api_token, api_sid, sender, customer, host)
+            VALUES (%(id)s, %(type)s, %(api_token)s, %(api_sid)s, %(sender)s, %(customer)s, %(host)s)
             RETURNING *
         """
         return self._insert(insert, vars(notification_channel))
@@ -1010,6 +1010,8 @@ class Backend(Database):
             update += 'api_sid=%(tags)s, '
         if 'customer' in kwargs:
             update += 'customer=%(customer)s, '
+        if 'host' in kwargs:
+            update += 'host=%(host)s, '
         update += """
             "user"=COALESCE(%(user)s, "user")
             WHERE id=%(id)s

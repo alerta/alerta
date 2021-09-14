@@ -2,6 +2,8 @@ import logging
 from alerta.app import db
 from threading import Thread
 
+import smtplib
+
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 from sendgrid import SendGridAPIClient
@@ -57,6 +59,13 @@ class NotificationRulesHandler(PluginBase):
             return
         return sms_client.messages.create(body=message, to=receiver, from_=channel.sender)
 
+    def send_smtp_mail(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', **kwargs):
+        mails = set([*receivers, *[user.email for user in on_call_users]])
+        server = smtplib.SMTP_SSL(channel.host)
+        server.login(channel.api_sid, channel.api_token)
+        server.sendmail(channel.sender, list(mails), f"From: {channel.sender}\nTo: {','.join(mails)}\nSubject: Alerta\n\n{message}")
+        server.quit()
+
     def send_email(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', **kwargs):
         mails = set([*receivers, *[user.email for user in on_call_users]])
         newMail = Mail(
@@ -107,6 +116,11 @@ class NotificationRulesHandler(PluginBase):
             if notification_type == 'sendgrid':
                 try:
                     self.send_email(message, channel, notification_rule.receivers, on_users)
+                except Exception as err:
+                    LOG.error('NotificationRule: ERROR - %s', str(err))
+            elif notification_type == 'smtp':
+                try:
+                    self.send_smtp_mail(message, channel, notification_rule.receivers, on_users)
                 except Exception as err:
                     LOG.error('NotificationRule: ERROR - %s', str(err))
             elif 'twilio' in notification_type:

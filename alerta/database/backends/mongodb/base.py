@@ -1074,6 +1074,8 @@ class Backend(Database):
             data['apiSid'] = notification_channel.api_sid
         if notification_channel.customer:
             data['customer'] = notification_channel.customer
+        if notification_channel.host:
+            data['host'] = notification_channel.host
 
         if self.get_db().notification_channels.insert_one(data).inserted_id == notification_channel.id:
             return data
@@ -1171,8 +1173,8 @@ class Backend(Database):
             # {'environment': alert.environment},
             {'$or': [{'startTime': None}, {'startTime': {'$lte': alert.time.hour + alert.time.minute / 100}}]},
             {'$or': [{'endTime': None}, {'endTime': {'$gt': alert.time.hour + alert.time.minute / 100}}]},
-            {'$or': [{'days': None}, {"days": {'$in': [alert.day]}}]},
-            {'$or': [{'severity': None}, {'severity': {'$in': [alert.severity]}}]},
+            {'$or': [{'days': None}, {'days': []}, {"days": {'$in': [alert.day]}}]},
+            {'$or': [{'severity': None}, {'severity': []}, {'severity': {'$in': [alert.severity]}}]},
             {'$or': [{'resource': None}, {'resource': alert.resource}]},
             {"$or": [{"service": None}, {'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}}]},
             {'$or': [{'event': None}, {'event': alert.event}]},

@@ -24,6 +24,7 @@ class NotificationChannel:
         self.type = _type
         self.api_token = api_token
         self.sender = sender
+        self.host = kwargs.get('host', None)
         self.api_sid = kwargs.get('api_sid', None)
         self.customer = kwargs.get('customer', None)
 
@@ -74,6 +75,7 @@ class NotificationChannel:
             api_token=json['apiToken'],
             api_sid=json.get('apiSid', None),
             sender=json['sender'],
+            host=json.get('host', None),
             customer=json.get('customer', None),
         )
 
@@ -101,6 +103,7 @@ class NotificationChannel:
             api_token=doc['apiToken'],
             api_sid=doc.get('apiSid', None),
             sender=doc['sender'],
+            host=doc.get('host', None),
             customer=doc.get('customer', None),
         )
 
@@ -112,6 +115,7 @@ class NotificationChannel:
             api_token=rec.api_token,
             api_sid=rec.api_sid,
             sender=rec.sender,
+            host=rec.host,
             customer=rec.customer,
         )
 
