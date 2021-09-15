@@ -17,6 +17,7 @@ from alerta.plugins import PluginBase
 
 
 LOG = logging.getLogger('alerta.plugins.notification_rule')
+TWILIO_MAX_SMS_LENGTH = 1600
 
 
 def remove_unspeakable_chr(message: str, unspeakables: 'dict[str,str]' = None):
@@ -54,10 +55,12 @@ class NotificationRulesHandler(PluginBase):
         )
 
     def send_sms(self, message: str, channel: NotificationChannel, receiver: str, client: Client = None, **kwargs):
+        restricted_message = message[: TWILIO_MAX_SMS_LENGTH - 4]
+        body = message if len(message) <= TWILIO_MAX_SMS_LENGTH else restricted_message[: restricted_message.rfind(" ")] + " ..."
         sms_client = client or self.get_twilio_client(channel, **kwargs)
         if not sms_client:
             return
-        return sms_client.messages.create(body=message, to=receiver, from_=channel.sender)
+        return sms_client.messages.create(body=body, to=receiver, from_=channel.sender)
 
     def send_smtp_mail(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', **kwargs):
         mails = set([*receivers, *[user.email for user in on_call_users]])
