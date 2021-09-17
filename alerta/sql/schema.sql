@@ -107,7 +107,6 @@ CREATE TABLE IF NOT EXISTS notification_channels (
     sender text not null,
     customer text
 );
-DO $$
 
 DO $$
 BEGIN
