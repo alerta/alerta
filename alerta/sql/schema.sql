@@ -108,11 +108,6 @@ CREATE TABLE IF NOT EXISTS notification_channels (
     customer text
 );
 DO $$
-BEGIN
-    ALTER TABLE notification_channels ADD CONSTRAINT check_available_type CHECK (type = 'twilio_sms' OR type = 'twilio_call' OR type = 'sendgrid' OR type = 'smtp');
-EXCEPTION
-    WHEN duplicate_object THEN RAISE NOTICE 'constraint "check_available_type" already exists in notification_rules.';
-END$$;
 
 DO $$
 BEGIN
