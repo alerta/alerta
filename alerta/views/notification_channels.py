@@ -1,3 +1,4 @@
+from cryptography.fernet import Fernet
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
@@ -66,6 +67,18 @@ def notification_channel(notification_channel_id):
 
     if notification_channel:
         return jsonify(status='ok', total=1, notificationChannel=notification_channel.serialize)
+    else:
+        raise ApiError('not found', 404)
+
+
+@api.route('/notificationchannels/keygen', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.read_notification_channels)
+@jsonp
+def keygen():
+    key = Fernet.generate_key().decode()
+    if notification_channel:
+        return jsonify(status='ok', total=1, key=key)
     else:
         raise ApiError('not found', 404)
 

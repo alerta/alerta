@@ -19,4 +19,4 @@ werkzeug==2.2.3
 sendgrid==6.5.0
 python-http-client==3.2.1
 starkbank-ecdsa==1.0.0
-twilio==6.58.0
+twilio==7.0.0

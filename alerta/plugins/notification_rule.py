@@ -1,4 +1,6 @@
 import logging
+
+from cryptography.fernet import Fernet, InvalidToken
 from alerta.app import db
 from threading import Thread
 
@@ -39,8 +41,14 @@ class NotificationRulesHandler(PluginBase):
     when a notification rule is active during new alert status
     """
 
-    def get_twilio_client(self, channel: NotificationChannel, **kwargs):
-        return Client(channel.api_sid, channel.api_token)
+    def get_twilio_client(self, channel: NotificationChannel, fernet: Fernet, **kwargs):
+        try:
+            api_sid = fernet.decrypt(channel.api_sid.encode()).decode()
+            api_token = fernet.decrypt(channel.api_token.encode()).decode()
+        except InvalidToken:
+            api_sid = channel.api_sid
+            api_token = channel.api_token
+        return Client(api_sid, api_token)
 
     def make_call(self, message: str, channel: NotificationChannel, receiver: str, **kwargs):
         twiml_message = f'<Response><Pause/><Say>{remove_unspeakable_chr(message)}</Say></Response>'
@@ -54,22 +62,28 @@ class NotificationRulesHandler(PluginBase):
             from_=channel.sender,
         )
 
-    def send_sms(self, message: str, channel: NotificationChannel, receiver: str, client: Client = None, **kwargs):
+    def send_sms(self, message: str, channel: NotificationChannel, receiver: str, fernet: Fernet, client: Client = None, **kwargs):
         restricted_message = message[: TWILIO_MAX_SMS_LENGTH - 4]
         body = message if len(message) <= TWILIO_MAX_SMS_LENGTH else restricted_message[: restricted_message.rfind(" ")] + " ..."
-        sms_client = client or self.get_twilio_client(channel, **kwargs)
+        sms_client = client or self.get_twilio_client(channel, fernet, **kwargs)
         if not sms_client:
             return
         return sms_client.messages.create(body=body, to=receiver, from_=channel.sender)
 
-    def send_smtp_mail(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', **kwargs):
+    def send_smtp_mail(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', fernet: Fernet, **kwargs):
         mails = set([*receivers, *[user.email for user in on_call_users]])
         server = smtplib.SMTP_SSL(channel.host)
-        server.login(channel.api_sid, channel.api_token)
+        try:
+            api_sid = fernet.decrypt(channel.api_sid.encode()).decode()
+            api_token = fernet.decrypt(channel.api_token.encode()).decode()
+        except InvalidToken:
+            api_sid = channel.api_sid
+            api_token = channel.api_token
+        server.login(api_sid, api_token)
         server.sendmail(channel.sender, list(mails), f"From: {channel.sender}\nTo: {','.join(mails)}\nSubject: Alerta\n\n{message}")
         server.quit()
 
-    def send_email(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', **kwargs):
+    def send_email(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', fernet: Fernet, **kwargs):
         mails = set([*receivers, *[user.email for user in on_call_users]])
         newMail = Mail(
             from_email=channel.sender,
@@ -77,7 +91,11 @@ class NotificationRulesHandler(PluginBase):
             subject='Alerta',
             html_content=message,
         )
-        email_client = SendGridAPIClient(channel.api_token)
+        try:
+            api_token = fernet.decrypt(channel.api_token.encode()).decode()
+        except InvalidToken:
+            api_token = channel.api_token
+        email_client = SendGridAPIClient(api_token)
         return email_client.send(newMail)
 
     def get_message_obj(self, alertobj: 'dict[str,any]') -> 'dict[str,any]':
@@ -101,7 +119,7 @@ class NotificationRulesHandler(PluginBase):
 
         return alertobjcopy
 
-    def handle_notifications(self, alert: 'Alert', notifications: 'list[list[NotificationRule or NotificationChannel]]', users: 'list[set[User or None]]'):
+    def handle_notifications(self, alert: 'Alert', notifications: 'list[list[NotificationRule or NotificationChannel]]', users: 'list[set[User or None]]', fernet: Fernet):
         standard_message = '%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s'
         for notification_rule, channel in notifications:
             if channel == None:
@@ -118,12 +136,12 @@ class NotificationRulesHandler(PluginBase):
             notification_type = channel.type
             if notification_type == 'sendgrid':
                 try:
-                    self.send_email(message, channel, notification_rule.receivers, on_users)
+                    self.send_email(message, channel, notification_rule.receivers, on_users, fernet)
                 except Exception as err:
                     LOG.error('NotificationRule: ERROR - %s', str(err))
             elif notification_type == 'smtp':
                 try:
-                    self.send_smtp_mail(message, channel, notification_rule.receivers, on_users)
+                    self.send_smtp_mail(message, channel, notification_rule.receivers, on_users, fernet)
                 except Exception as err:
                     LOG.error('NotificationRule: ERROR - %s', str(err))
             elif 'twilio' in notification_type:
@@ -133,9 +151,9 @@ class NotificationRulesHandler(PluginBase):
                         continue
                     try:
                         if 'call' in notification_type:
-                            self.make_call(message, channel, number)
+                            self.make_call(message, channel, number, fernet)
                         elif 'sms' in notification_type:
-                            self.send_sms(message, channel, number)
+                            self.send_sms(message, channel, number, fernet)
 
                     except TwilioRestException as err:
                         LOG.error('TwilioRule: ERROR - %s', str(err))
@@ -144,13 +162,14 @@ class NotificationRulesHandler(PluginBase):
         return alert
 
     def post_receive(self, alert: 'Alert', **kwargs):
-
+        config = kwargs.get('config')
+        fernet = Fernet(config['NOTIFICATION_KEY'])
         if alert.repeat:
             return
         notification_rules = NotificationRule.find_all_active(alert)
         notifications = [[notification_rule, notification_rule.channel] for notification_rule in notification_rules]
         on_users = [on_call.users for on_call in OnCall.find_all_active(alert)]
-        Thread(target=self.handle_notifications, args=[alert, notifications, on_users]).start()
+        Thread(target=self.handle_notifications, args=[alert, notifications, on_users, fernet]).start()
 
     def status_change(self, alert, status, text, **kwargs):
         return

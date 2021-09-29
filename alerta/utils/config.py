@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from cryptography.fernet import Fernet
 
 
 class Config:
@@ -104,6 +105,11 @@ class Config:
         config['DEFAULT_ENVIRONMENT'] = get_config('DEFAULT_ENVIRONMENT', default=None, type=str, config=config)
 
         config['CLIPBOARD_TEMPLATE'] = get_config('CLIPBOARD_TEMPLATE', default=None, type=str, config=config)
+        # notification key
+        random_generated_key = Fernet.generate_key().decode()
+        config['NOTIFICATION_KEY'] = get_config('NOTIFICATION_KEY', default=random_generated_key, type=str, config=config)
+        # if config['NOTIFICATION_KEY'] == random_generated_key:
+        #     os.environ['NOTIFICATION_KEY'] = random_generated_key
 
         # Runtime config check
         if config['CUSTOMER_VIEWS'] and not config['AUTH_REQUIRED']:

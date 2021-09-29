@@ -6,6 +6,8 @@ from sendgrid import SendGridAPIClient, SendGridException
 from python_http_client.exceptions import ForbiddenError, UnauthorizedError
 from twilio.rest import Client as TwilioClient
 from twilio.base.exceptions import TwilioException, TwilioRestException
+from cryptography.fernet import Fernet
+from flask import current_app
 
 from alerta.app import db
 from alerta.database.base import Query
@@ -19,13 +21,14 @@ JSON = Dict[str, Any]
 
 
 class NotificationChannel:
+
     def __init__(self, _type: str, api_token: str, sender: str, **kwargs) -> None:
         self.id = kwargs.get('id') or str(uuid4())
         self.type = _type
-        self.api_token = api_token
+        self.api_token = api_token  # encrypted
         self.sender = sender
         self.host = kwargs.get('host', None)
-        self.api_sid = kwargs.get('api_sid', None)
+        self.api_sid = kwargs.get('api_sid', None)  # encrypted
         self.customer = kwargs.get('customer', None)
 
     def validate(self):
@@ -64,22 +67,23 @@ class NotificationChannel:
                 raise ApiError(f'validation of new notification channel "{self.id}" failed: twilio exception {str(err)}')
         else:
             raise ApiError(
-                f'validation of new notification channel "{self.id}" failed: type "{notification_type}" is not a known type. Please make sure that type is either sendgrid, twiliocall or twiliosms'
+                f'validation of new notification channel "{self.id}" failed: type "{notification_type}" is not a known type. Please make sure that type is either sendgrid, twilio-call, twilio-sms or smtp'
             )
 
     @classmethod
     def parse(cls, json: JSON) -> 'NotificationChannel':
+        fernet = Fernet(current_app.config['NOTIFICATION_KEY'])
         return NotificationChannel(
             id=json.get('id', None),
             _type=json['type'],
-            api_token=json['apiToken'],
-            api_sid=json.get('apiSid', None),
+            api_token=fernet.encrypt(str(json['apiToken']).encode()).decode(),
+            api_sid=fernet.encrypt(str(json['apiSid']).encode()).decode() if 'apiSid' in json else None,
             sender=json['sender'],
             host=json.get('host', None),
             customer=json.get('customer', None),
         )
 
-    @property
+    @ property
     def serialize(self) -> Dict[str, Any]:
         return {
             'id': self.id,
@@ -90,12 +94,12 @@ class NotificationChannel:
         }
 
     def __repr__(self) -> str:
-        more = '' if not self.api_sid else f'api_sid={self.api_sid}, '
+        more = ''
         if self.customer:
             more += f'customer={self.customer}, '
-        return f'NotificationRule(id={self.id}, type={self.type}, api_token={self.api_token}, sender={self.sender}, {more}'
+        return f'NotificationChannel(id={self.id}, type={self.type}, sender={self.sender}, {more}'
 
-    @classmethod
+    @ classmethod
     def from_document(cls, doc: Dict[str, Any]) -> 'NotificationChannel':
         return NotificationChannel(
             id=doc.get('id', None) or doc.get('_id'),
@@ -107,7 +111,7 @@ class NotificationChannel:
             customer=doc.get('customer', None),
         )
 
-    @classmethod
+    @ classmethod
     def from_record(cls, rec) -> 'NotificationChannel':
         return NotificationChannel(
             id=rec.id,
@@ -119,7 +123,7 @@ class NotificationChannel:
             customer=rec.customer,
         )
 
-    @classmethod
+    @ classmethod
     def from_db(cls, r: Union[Dict, Tuple]) -> 'NotificationChannel':
         if isinstance(r, dict):
             return cls.from_document(r)
@@ -133,18 +137,18 @@ class NotificationChannel:
         return NotificationChannel.from_db(db.create_notification_channel(self))
 
     # get a notification rule
-    @staticmethod
+    @ staticmethod
     def find_by_id(id: str, customers: List[str] = None) -> Optional['NotificationChannel']:
         return NotificationChannel.from_db(db.get_notification_channel(id, customers))
 
-    @staticmethod
+    @ staticmethod
     def find_all(query: Query = None, page: int = 1, page_size: int = 1000) -> List['NotificationChannel']:
         return [
             NotificationChannel.from_db(notification_channel)
             for notification_channel in db.get_notification_channels(query, page, page_size)
         ]
 
-    @staticmethod
+    @ staticmethod
     def count(query: Query = None) -> int:
         return db.get_notification_channels_count(query)
 
