@@ -31,45 +31,6 @@ class NotificationChannel:
         self.api_sid = kwargs.get('api_sid', None)  # encrypted
         self.customer = kwargs.get('customer', None)
 
-    def validate(self):
-        notification_type = self.type
-        sender = self.sender
-        if notification_type == 'sendgrid':
-            try:
-                response = SendGridAPIClient(self.api_token).send(
-                    Mail(
-                        from_email=sender,
-                        to_emails=[sender],
-                        subject="Alerta: Sendgrid Setup",
-                        html_content='Hello,\n This is an automated message sent from alerta to ensure notification channel has been created corectly',
-                    )
-                )
-                if response.status_code == 202:
-                    return
-            except (ForbiddenError, UnauthorizedError) as err:
-                raise ApiError(f'validation of new notification channel "{self.id}" failed: sendgrid exception {str(err)}')
-        elif 'twilio' in notification_type:
-            try:
-                client = TwilioClient(self.api_sid, self.api_token)
-                client_numbers = [number.phone_number for number in client.incoming_phone_numbers.list()]
-                account_numbers = [callid.phone_number for callid in client.outgoing_caller_ids.list()]
-                if sender in client_numbers:
-                    return
-                if 'sms' in notification_type:
-
-                    sms = client.messages.create(
-                        body='Test Melding',
-                        from_=sender,
-                        #  to='+14155240970'
-                        to=account_numbers[0],
-                    )
-            except (TwilioException, TwilioRestException) as err:
-                raise ApiError(f'validation of new notification channel "{self.id}" failed: twilio exception {str(err)}')
-        else:
-            raise ApiError(
-                f'validation of new notification channel "{self.id}" failed: type "{notification_type}" is not a known type. Please make sure that type is either sendgrid, twilio-call, twilio-sms or smtp'
-            )
-
     @classmethod
     def parse(cls, json: JSON) -> 'NotificationChannel':
         fernet = Fernet(current_app.config['NOTIFICATION_KEY'])
@@ -132,8 +93,6 @@ class NotificationChannel:
 
     # create a notification rule
     def create(self) -> 'NotificationChannel':
-        # self.validate()
-        # self.validate()
         return NotificationChannel.from_db(db.create_notification_channel(self))
 
     # get a notification rule
@@ -153,7 +112,6 @@ class NotificationChannel:
         return db.get_notification_channels_count(query)
 
     def update(self, **kwargs) -> 'NotificationChannel':
-        self.validate()
         return NotificationChannel.from_db(db.update_notification_channel(self.id, **kwargs))
 
     def delete(self) -> bool:
