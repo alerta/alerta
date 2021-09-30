@@ -179,7 +179,6 @@ class OnCallTestCase(unittest.TestCase):
             "repeatDays": [now.strftime("%a")],
             "repeatMonths": [now.strftime("%b")]
         }
-
         on_call_data = self.create_api_obj("/oncalls", on_call, self.headers)
         on_call_id = on_call_data["id"]
 
@@ -190,7 +189,7 @@ class OnCallTestCase(unittest.TestCase):
             on_call_id,
             map(get_id, active_oncalls),
         )
-        now_1 = datetime(now.year, now.month, now.day + 1)
+        now_1 = now + timedelta(days=1)  # datetime(now.year, now.month, (now.day + 1))
         update = {
             "userIds": ["test_2"],
             "endDate": now_1.date().isoformat(),
@@ -219,8 +218,8 @@ class OnCallTestCase(unittest.TestCase):
 
     def test_on_call_dates(self):
         now = datetime.now()
-        now_minus_fail = datetime(now.year, now.month, now.day - 1)
-        now_plus_fail = datetime(now.year, now.month, now.day + 1)
+        now_minus_fail = now - timedelta(days=1)
+        now_plus_fail = now + timedelta(days=1)
         on_call = {
             "userIds": ["test"],
             "startDate": now.date().isoformat(),
@@ -278,11 +277,14 @@ class OnCallTestCase(unittest.TestCase):
 
     def test_on_call_repeat(self):
         now = datetime.now()
-        now_minus_fail = datetime(now.year, now.month - 1, now.day - 1)
-        now_plus_fail = datetime(now.year, now.month + 1, now.day + 1)
+        day_minus_fail = now - timedelta(days=1)
+        day_plus_fail = now + timedelta(days=1)
+        now_minus_fail = datetime(now.year, now.month - 1, 28) if now.month > 1 else datetime(now.year - 1, 12, 28)
+        now_plus_fail = datetime(now.year, now.month + 1, 28) if now.month < 12 else datetime(now.year + 1, 1, 28)
+        print(now_minus_fail, now_plus_fail, now)
         now_week = now.isocalendar()[1]
-        now_minus_fail_week = now_week - 1
-        now_plus_fail_week = now_week + 1
+        now_minus_fail_week = now_week - 1 if now_week > 1 else 52
+        now_plus_fail_week = now_week + 1 if now_week < 52 else 1
         on_call = {
             "userIds": ["test"],
             "repeatType": "list",
@@ -292,12 +294,12 @@ class OnCallTestCase(unittest.TestCase):
         }
 
         repeat_update = {
-            "repeatDays": [now_minus_fail.strftime("%a"), now.strftime("%a"), now_plus_fail.strftime("%a")],
+            "repeatDays": [day_minus_fail.strftime("%a"), now.strftime("%a"), day_plus_fail.strftime("%a")],
             "repeatWeeks": [now_minus_fail_week, now_week, now_plus_fail_week],
             "repeatMonths": [now_minus_fail.strftime("%b"), now.strftime("%b"), now_plus_fail.strftime("%b")],
         }
 
-        day_fail = {**repeat_update, "repeatDays": [now_minus_fail.strftime("%a"), now_plus_fail.strftime("%a")]}
+        day_fail = {**repeat_update, "repeatDays": [day_minus_fail.strftime("%a"), day_plus_fail.strftime("%a")]}
         week_fail = {**repeat_update, "repeatWeeks": [now_minus_fail_week, now_plus_fail_week]}
         month_fail = {**repeat_update, "repeatMonths": [now_minus_fail.strftime("%b"), now_plus_fail.strftime("%b")]}
 
