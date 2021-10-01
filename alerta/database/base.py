@@ -44,6 +44,7 @@ def load_backend(backend):
 
 
 class Database(Base):
+
     def __init__(self, app=None):
         self.app = None
         if app is not None:
@@ -525,6 +526,7 @@ class Database(Base):
 
 
 class QueryBuilder(Base):
+
     def __init__(self, app=None):
         self.app = None
         if app is not None:
@@ -547,56 +549,67 @@ class QueryBuilder(Base):
         self.__class__.customers = type('CustomersQueryBuilder', (cls.Customers, self.Customers, QueryBuilder), {})
 
     class Alerts:
+
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('AlertsQueryBuilder has no from_params() method for alerts')
 
     class Blackouts:
+
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('BlackoutsQueryBuilder has no from_params() method')
 
     class NotificationChannels:
+
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('NotificationChannelsQueryBuilder has no from_params() method')
 
     class NotificationRules:
+
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('NotificationRulesQueryBuilder has no from_params() method')
 
     class OnCalls:
+
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('OnCallsQueryBuilder has no from_params() method')
 
     class Heartbeats:
+
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('HeartbeatsQueryBuilder has no from_params() method')
 
     class ApiKeys:
+
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('ApiKeysQueryBuilder has no from_params() method')
 
     class Users:
+
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('UsersQueryBuilder has no from_params() method')
 
     class Groups:
+
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('GroupsQueryBuilder has no from_params() method')
 
     class Permissions:
+
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('PermissionsQueryBuilder has no from_params() method')
 
     class Customers:
+
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('CustomersQueryBuilder has no from_params() method')
