@@ -53,10 +53,10 @@ class HistoryAdapter:
         return str(self.getquoted())
 
 
-Record = namedtuple("Record", [
-    "id", "resource", "event", "environment", "severity", "status", "service",
-    "group", "value", "text", "tags", "attributes", "origin", "update_time",
-    "user", "timeout", "type", "customer",
+Record = namedtuple('Record', [
+    'id', 'resource', 'event', 'environment', 'severity', 'status', 'service',
+    'group', 'value', 'text', 'tags', 'attributes', 'origin', 'update_time',
+    'user', 'timeout', 'type', 'customer',
 ])
 
 
