@@ -281,7 +281,6 @@ class OnCallTestCase(unittest.TestCase):
         day_plus_fail = now + timedelta(days=1)
         now_minus_fail = datetime(now.year, now.month - 1, 28) if now.month > 1 else datetime(now.year - 1, 12, 28)
         now_plus_fail = datetime(now.year, now.month + 1, 28) if now.month < 12 else datetime(now.year + 1, 1, 28)
-        print(now_minus_fail, now_plus_fail, now)
         now_week = now.isocalendar()[1]
         now_minus_fail_week = now_week - 1 if now_week > 1 else 52
         now_plus_fail_week = now_week + 1 if now_week < 52 else 1

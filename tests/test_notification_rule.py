@@ -792,3 +792,146 @@ class NotificationRuleTestCase(unittest.TestCase):
         self.assertEqual(data["message"], "not found")
 
         self.delete_api_obj("/notificationrules/" + notification_rule_id, self.headers)
+
+    def test_advanced_severity(self):
+
+        all = {
+            "environment": "Production",
+            "channelId": "SMS_Channel",
+            "receivers": [],
+            "useAdvancedSeverity": True,
+            "text": "administartively sms",
+        }
+        simple = {
+            **all,
+            "useAdvancedSeverity": False,
+            "severity": ["critical", "major"]
+        }
+        to_critical_major_from_all = {
+            **all,
+            "advancedSeverity": [{"from": [], "to":["major", "critical"]}],
+        }
+        to_normal_from_critical_major = {
+            **all,
+            "advancedSeverity": [{"from": ["major", "critical"], "to":["normal"]}],
+        }
+        alert_base = {
+            "environment": "Production",
+            "resource": "notification_net",
+            "event": "notification_down",
+            "severity": "normal",
+            "service": ["Core", "Web", "Network"],
+            "group": "Network",
+            "tags": ["notification_test", "network"],
+        }
+
+        self.create_api_obj("/alert", alert_base, self.headers)
+
+        channel_data = self.create_api_obj("/notificationchannels", self.sms_channel, self.headers)
+        data = self.get_api_obj("/notificationchannels", self.headers)
+        self.assertIn(channel_data["notificationChannel"], data["notificationChannels"])
+
+        data = self.create_api_obj("/notificationrules", all, self.headers)
+        notification_rule = data["notificationRule"]
+        data = self.create_api_obj("/notificationrules", to_critical_major_from_all, self.headers)
+        to_critical_major_from_all_rule = data["notificationRule"]
+        data = self.create_api_obj("/notificationrules", to_normal_from_critical_major, self.headers)
+        to_normal_from_critical_major_rule = data["notificationRule"]
+        data = self.create_api_obj("/notificationrules", simple, self.headers)
+        simple_rule = data["notificationRule"]
+
+        all_notifications_rules = self.get_api_obj("/notificationrules", self.headers)["notificationRules"]
+        self.assertIn(notification_rule, all_notifications_rules)
+        self.assertIn(to_critical_major_from_all_rule, all_notifications_rules)
+        self.assertIn(to_normal_from_critical_major_rule, all_notifications_rules)
+        self.assertIn(simple_rule, all_notifications_rules)
+
+        alert_base["severity"] = 'major'
+        alert = self.create_api_obj("/alert", alert_base, self.headers)["alert"]
+        active_notification_rules = self.create_api_obj("/notificationrules/active", alert, self.headers, 200)["notificationRules"]
+
+        self.assertIn(notification_rule, active_notification_rules)
+        self.assertIn(to_critical_major_from_all_rule, active_notification_rules)
+        self.assertNotIn(to_normal_from_critical_major_rule, active_notification_rules)
+        self.assertIn(simple_rule, active_notification_rules)
+
+        alert_base["severity"] = 'normal'
+        alert = self.create_api_obj("/alert", alert_base, self.headers)["alert"]
+        active_notification_rules = self.create_api_obj("/notificationrules/active", alert, self.headers, 200)["notificationRules"]
+
+        self.assertIn(notification_rule, active_notification_rules)
+        self.assertNotIn(to_critical_major_from_all_rule, active_notification_rules)
+        self.assertIn(to_normal_from_critical_major_rule, active_notification_rules)
+        self.assertNotIn(simple_rule, active_notification_rules)
+
+        alert_base["severity"] = 'critical'
+        alert = self.create_api_obj("/alert", alert_base, self.headers)["alert"]
+        active_notification_rules = self.create_api_obj("/notificationrules/active", alert, self.headers, 200)["notificationRules"]
+
+        self.assertIn(notification_rule, active_notification_rules)
+        self.assertIn(to_critical_major_from_all_rule, active_notification_rules)
+        self.assertNotIn(to_normal_from_critical_major_rule, active_notification_rules)
+        self.assertIn(simple_rule, active_notification_rules)
+
+        alert_base["severity"] = 'normal'
+        alert = self.create_api_obj("/alert", alert_base, self.headers)["alert"]
+        active_notification_rules = self.create_api_obj("/notificationrules/active", alert, self.headers, 200)["notificationRules"]
+
+        self.assertIn(notification_rule, active_notification_rules)
+        self.assertNotIn(to_critical_major_from_all_rule, active_notification_rules)
+        self.assertIn(to_normal_from_critical_major_rule, active_notification_rules)
+        self.assertNotIn(simple_rule, active_notification_rules)
+
+        alert_base["severity"] = 'informational'
+        alert = self.create_api_obj("/alert", alert_base, self.headers)["alert"]
+        active_notification_rules = self.create_api_obj("/notificationrules/active", alert, self.headers, 200)["notificationRules"]
+
+        self.assertIn(notification_rule, active_notification_rules)
+        self.assertNotIn(to_critical_major_from_all_rule, active_notification_rules)
+        self.assertNotIn(to_normal_from_critical_major_rule, active_notification_rules)
+        self.assertNotIn(simple_rule, active_notification_rules)
+
+        alert_base["severity"] = 'normal'
+        alert = self.create_api_obj("/alert", alert_base, self.headers)["alert"]
+        active_notification_rules = self.create_api_obj("/notificationrules/active", alert, self.headers, 200)["notificationRules"]
+
+        self.assertIn(notification_rule, active_notification_rules)
+        self.assertNotIn(to_critical_major_from_all_rule, active_notification_rules)
+        self.assertNotIn(to_normal_from_critical_major_rule, active_notification_rules)
+        self.assertNotIn(simple_rule, active_notification_rules)
+
+        alert_base["severity"] = 'informational'
+        alert = self.create_api_obj("/alert", alert_base, self.headers)["alert"]
+        active_notification_rules = self.create_api_obj("/notificationrules/active", alert, self.headers, 200)["notificationRules"]
+
+        self.assertIn(notification_rule, active_notification_rules)
+        self.assertNotIn(to_critical_major_from_all_rule, active_notification_rules)
+        self.assertNotIn(to_normal_from_critical_major_rule, active_notification_rules)
+        self.assertNotIn(simple_rule, active_notification_rules)
+
+        alert_base["severity"] = 'critical'
+        alert = self.create_api_obj("/alert", alert_base, self.headers)["alert"]
+        active_notification_rules = self.create_api_obj("/notificationrules/active", alert, self.headers, 200)["notificationRules"]
+
+        self.assertIn(notification_rule, active_notification_rules)
+        self.assertIn(to_critical_major_from_all_rule, active_notification_rules)
+        self.assertNotIn(to_normal_from_critical_major_rule, active_notification_rules)
+        self.assertIn(simple_rule, active_notification_rules)
+
+        alert_base["severity"] = 'informational'
+        alert = self.create_api_obj("/alert", alert_base, self.headers)["alert"]
+        active_notification_rules = self.create_api_obj("/notificationrules/active", alert, self.headers, 200)["notificationRules"]
+
+        self.assertIn(notification_rule, active_notification_rules)
+        self.assertNotIn(to_critical_major_from_all_rule, active_notification_rules)
+        self.assertNotIn(to_normal_from_critical_major_rule, active_notification_rules)
+        self.assertNotIn(simple_rule, active_notification_rules)
+
+        alert_base["severity"] = 'major'
+        alert = self.create_api_obj("/alert", alert_base, self.headers)["alert"]
+        active_notification_rules = self.create_api_obj("/notificationrules/active", alert, self.headers, 200)["notificationRules"]
+
+        self.assertIn(notification_rule, active_notification_rules)
+        self.assertIn(to_critical_major_from_all_rule, active_notification_rules)
+        self.assertNotIn(to_normal_from_critical_major_rule, active_notification_rules)
+        self.assertIn(simple_rule, active_notification_rules)
