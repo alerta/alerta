@@ -112,7 +112,19 @@ DO $$
 BEGIN
     ALTER TABLE notification_channels ADD COLUMN "host" text;
 EXCEPTION
-    WHEN duplicate_column THEN RAISE NOTICE 'column "host" already exists in notification_rules.';
+    WHEN duplicate_column THEN RAISE NOTICE 'column "host" already exists in notification_channels.';
+END$$;
+
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'severity_advanced') THEN
+        CREATE TYPE severity_advanced AS (
+            "from_" text[],
+            "to" text[]
+        );
+    END IF;
+
 END$$;
 
 CREATE TABLE IF NOT EXISTS notification_rules (
@@ -139,6 +151,13 @@ CREATE TABLE IF NOT EXISTS notification_rules (
 DO $$
 BEGIN
     ALTER TABLE notification_rules ADD COLUMN use_oncall boolean;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "use_on_call" already exists in notification_rules.';
+END$$;
+DO $$
+BEGIN
+    ALTER TABLE notification_rules ADD COLUMN advanced_severity severity_advanced[];
+    ALTER TABLE notification_rules ADD COLUMN use_advanced_severity boolean;
 EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column "use_on_call" already exists in notification_rules.';
 END$$;

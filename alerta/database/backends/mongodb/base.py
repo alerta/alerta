@@ -1123,9 +1123,12 @@ class Backend(Database):
             'receivers': notification_rule.receivers,
             'useOnCall': notification_rule.use_oncall,
             'channelId': notification_rule.channel_id,
+            'useAdvancedSeverity': notification_rule.use_advanced_severity,
         }
         if notification_rule.severity:
             data['severity'] = notification_rule.severity
+        if notification_rule.advanced_severity:
+            data['advancedSeverity'] = [n.serialize for n in notification_rule.advanced_severity]
         if notification_rule.days:
             data['days'] = notification_rule.days
         if notification_rule.user:
@@ -1174,7 +1177,8 @@ class Backend(Database):
             {'$or': [{'startTime': None}, {'startTime': {'$lte': alert.time.hour + alert.time.minute / 100}}]},
             {'$or': [{'endTime': None}, {'endTime': {'$gt': alert.time.hour + alert.time.minute / 100}}]},
             {'$or': [{'days': None}, {'days': []}, {"days": {'$in': [alert.day]}}]},
-            {'$or': [{'severity': None}, {'severity': []}, {'severity': {'$in': [alert.severity]}}]},
+            {'$or': [{'useAdvancedSeverity': True}, {'severity': None}, {'severity': []}, {'severity': {'$in': [alert.severity]}}]},
+            {'$or': [{'useAdvancedSeverity': False}, {'$and': [{'$or': [{'advancedSeverity.from': []}, {'advancedSeverity.from': {'$in': [alert.previous_severity]}}]}, {'$or': [{'advancedSeverity.to': []}, {'advancedSeverity.to': {'$in': [alert.severity]}}]}]}]},
             {'$or': [{'resource': None}, {'resource': alert.resource}]},
             {"$or": [{"service": None}, {'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}}]},
             {'$or': [{'event': None}, {'event': alert.event}]},

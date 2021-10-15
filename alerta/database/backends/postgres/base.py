@@ -53,6 +53,24 @@ class HistoryAdapter:
         return str(self.getquoted())
 
 
+class AdvancedSeverityAdapter:
+    def __init__(self, advanced_severity) -> None:
+        self.advanced_severity = advanced_severity
+        self.conn = None
+
+    def prepare(self, conn):
+        self.conn = conn
+
+    def getquoted(self):
+        def quoted(o):
+            a = adapt(o)
+            if hasattr(a, 'prepare'):
+                a.prepare(self.conn)
+            return a.getquoted().decode('utf-8')
+
+        return f'({quoted(self.advanced_severity.from_)},{quoted(self.advanced_severity.to)})::severity_advanced'
+
+
 Record = namedtuple('Record', [
     'id', 'resource', 'event', 'environment', 'severity', 'status', 'service',
     'group', 'value', 'text', 'tags', 'attributes', 'origin', 'update_time',
@@ -80,8 +98,11 @@ class Backend(Database):
             conn,
             globally=True
         )
+        register_composite('severity_advanced', conn, globally=True)
         from alerta.models.alert import History
+        from alerta.models.notification_rule import AdvancedSeverity
         register_adapter(History, HistoryAdapter)
+        register_adapter(AdvancedSeverity, AdvancedSeverityAdapter)
 
     def connect(self):
         retry = 0
@@ -958,9 +979,9 @@ class Backend(Database):
     def create_notification_rule(self, notification_rule):
         insert = """
             INSERT INTO notification_rules (id, priority, environment, service, resource, event, "group", tags,
-                customer, "user", create_time, start_time, end_time, days, receivers, use_oncall, severity, text, channel_id)
+                customer, "user", create_time, start_time, end_time, days, receivers, use_oncall, severity, text, channel_id, advanced_severity, use_advanced_severity)
             VALUES (%(id)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s,
-                %(customer)s, %(user)s, %(create_time)s, %(start_time)s, %(end_time)s, %(days)s, %(receivers)s, %(use_oncall)s, %(severity)s, %(text)s, %(channel_id)s)
+                %(customer)s, %(user)s, %(create_time)s, %(start_time)s, %(end_time)s, %(days)s, %(receivers)s, %(use_oncall)s, %(severity)s, %(text)s, %(channel_id)s, %(advanced_severity)s::severity_advanced[], %(use_advanced_severity)s )
             RETURNING *
         """
         return self._insert(insert, vars(notification_rule))
@@ -998,12 +1019,13 @@ class Backend(Database):
 
     def get_notification_rules_active(self, alert):
         select = """
-            SELECT *
-            FROM notification_rules
+            SELECT * from (select *, generate_subscripts(advanced_severity,1) as s 
+            FROM notification_rules) as foo
             WHERE (start_time IS NULL OR start_time <= %(time)s) AND (end_time IS NULL OR end_time > %(time)s)
               AND (days='{}' OR ARRAY[%(day)s] <@ days)
               AND environment=%(environment)s
-              AND (severity='{}' OR ARRAY[%(severity)s] <@ severity)
+              AND (use_advanced_severity=TRUE OR severity='{}' OR ARRAY[%(severity)s] <@ severity)
+              AND (use_advanced_severity=FALSE OR ((advanced_severity[s].from_='{}' OR ARRAY[%(previous_severity)s] <@ advanced_severity[s].from_) AND (advanced_severity[s].to='{}' OR ARRAY[%(severity)s] <@ advanced_severity[s].to)))
               AND (resource IS NULL OR resource=%(resource)s)
               AND (service='{}' OR service <@ %(service)s)
               AND (event IS NULL OR event=%(event)s)

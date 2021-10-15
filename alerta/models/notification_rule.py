@@ -13,6 +13,44 @@ if TYPE_CHECKING:
 JSON = Dict[str, Any]
 
 
+class AdvancedSeverity:
+    def __init__(self, _from: 'list[str]', _to: 'list[str]') -> None:
+        self.from_ = _from
+        self.to = _to
+
+    @property
+    def serialize(self):
+        return {
+            'from': self.from_,
+            'to': self.to
+        }
+
+    def __repr__(self):
+        return 'AdvancedSeverity(from={!r}, to={!r})'.format(
+            self.from_, self.to)
+
+    @classmethod
+    def from_document(cls, doc):
+        return AdvancedSeverity(
+            _from=doc.get('from', list()),
+            _to=doc.get('to', list())
+        )
+
+    @classmethod
+    def from_record(cls, rec):
+        return AdvancedSeverity(
+            _from=rec.from_,
+            _to=rec.to,
+        )
+
+    @classmethod
+    def from_db(cls, r):
+        if isinstance(r, dict):
+            return cls.from_document(r)
+        elif isinstance(r, tuple):
+            return cls.from_record(r)
+
+
 class NotificationRule:
     def __init__(
         self, environment: str, channel_id: str, receivers: List[str], use_oncall: bool, **kwargs
@@ -39,6 +77,8 @@ class NotificationRule:
         self.tags = kwargs.get("tags", None) or list()
         self.customer = kwargs.get("customer", None)
         self.days = kwargs.get("days", None) or list()
+        self.advanced_severity = kwargs.get("advanced_severity") or [AdvancedSeverity([], [])]
+        self.use_advanced_severity = kwargs.get("use_advanced_severity", False)
 
         self.user = kwargs.get("user", None)
         self.create_time = (
@@ -78,6 +118,8 @@ class NotificationRule:
             receivers=json["receivers"],
             use_oncall=json.get("useOnCall", False),
             severity=json.get("severity", list()),
+            advanced_severity=[AdvancedSeverity(severity["from"], severity["to"]) for severity in json.get("advancedSeverity", [])],
+            use_advanced_severity=json.get("useAdvancedSeverity", False),
             service=json.get("service", list()),
             resource=json.get("resource", None),
             event=json.get("event", None),
@@ -116,6 +158,8 @@ class NotificationRule:
             "useOnCall": self.use_oncall,
             "service": self.service,
             "severity": self.severity,
+            "advancedSeverity": [a_severity.serialize for a_severity in self.advanced_severity],
+            "useAdvancedSeverity": self.use_advanced_severity,
             "resource": self.resource,
             "event": self.event,
             "group": self.group,
@@ -149,6 +193,10 @@ class NotificationRule:
             more += "customer=%r, " % self.customer
         if self.severity:
             more += "severity=%r, " % self.severity
+        if self.advanced_severity:
+            more += "advanced_severity=%r, " % self.advanced_severity
+        if self.use_advanced_severity:
+            more += "use_advanced_severity=%r, " % self.use_advanced_severity
 
         return "NotificationRule(id={!r}, priority={!r}, environment={!r}, receivers={!r}, {})".format(
             self.id,
@@ -169,6 +217,8 @@ class NotificationRule:
             use_oncall=doc.get("useOnCall", False),
             service=doc.get("service", list()),
             severity=doc.get("severity", list()),
+            advanced_severity=[AdvancedSeverity.from_db(advanced_severity) for advanced_severity in doc.get("advancedSeverity", [])],
+            use_advanced_severity=doc.get("useAdvancedSeverity", list()),
             resource=doc.get("resource", None),
             event=doc.get("event", None),
             group=doc.get("group", None),
@@ -209,6 +259,8 @@ class NotificationRule:
             use_oncall=rec.use_oncall,
             service=rec.service,
             severity=rec.severity,
+            advanced_severity=[AdvancedSeverity.from_db(advanced_severity) for advanced_severity in rec.advanced_severity],
+            use_advanced_severity=rec.use_advanced_severity,
             resource=rec.resource,
             event=rec.event,
             group=rec.group,
@@ -231,6 +283,7 @@ class NotificationRule:
 
     # create a notification rule
     def create(self) -> "NotificationRule":
+        # self.advanced_severity = [AdvancedSeverity(_from=advanced_severity["from"], _to=advanced_severity["to"]) for advanced_severity in self.advanced_severity]
         return NotificationRule.from_db(db.create_notification_rule(self))
 
     # get a notification rule

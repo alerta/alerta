@@ -78,10 +78,10 @@ def get_notification_rule(notification_rule_id):
 @jsonp
 def get_notification_rules_active():
     alert_json = request.json
-    if alert_json == None or alert_json.get("duplicateCount"):
+    if alert_json == None or alert_json.get("id") == None:
         return jsonify(status="ok", total=0, notificationRules=[])
     try:
-        alert = Alert.parse(alert_json)
+        alert = Alert.find_by_id(alert_json.get("id"))
     except Exception as e:
         raise ApiError(str(e), 400)
 
