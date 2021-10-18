@@ -9,12 +9,12 @@ class MetricsTestCase(unittest.TestCase):
 
     def setUp(self):
         self.app = create_app()
+        self.client = self.app.test_client()
 
     def tearDown(self):
         db.destroy()
 
     def test_metrics(self):
-
         with self.app.test_request_context():
             self.app.preprocess_request()
 
@@ -34,3 +34,11 @@ class MetricsTestCase(unittest.TestCase):
             timer = [t for t in Timer.find_all() if t.title == 'Test timer'][0]
             self.assertGreaterEqual(timer.count, 1)
             self.assertGreaterEqual(timer.total_time, 999)
+
+    def test_prometheus(self):
+        response = self.client.get('/management/metrics')
+        self.assertEqual(response.status_code, 200)
+
+        data = response.data.decode('utf-8')
+        self.assertRegex(data, r'alerta_alerts_total \d+')
+        self.assertRegex(data, r'alerta_uptime_msecs \d+')

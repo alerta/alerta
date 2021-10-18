@@ -230,18 +230,19 @@ def prometheus_metrics():
     now = int(time.time() * 1000)
     total_alert_gauge.set(Alert.get_count())
 
-    output = Gauge.find_all()
-    output += Counter.find_all()
-    output += Timer.find_all()
-    outputs = [o.serialize(format='prometheus') for o in output]
-    outputs += (
-            '# HELP alerta_uptime_msecs milliseconds since app has started\n'
-            '# TYPE alerta_uptime counter\n'
-            'alerta_uptime_msecs {timestamp}\n'.format(
-                timestamp=int(now - started)
-            )
-        )
+    metrics = Gauge.find_all()
+    metrics += Counter.find_all()
+    metrics += Timer.find_all()
 
-    return Response(outputs,
-        content_type='text/plain; version=0.0.4; charset=utf-8'
+    output = [metric.serialize(format='prometheus') for metric in metrics]
+    output += (
+        '# HELP alerta_uptime_msecs milliseconds since app has started\n'
+        '# TYPE alerta_uptime_msecs counter\n'
+        'alerta_uptime_msecs {uptime}\n'.format(
+            uptime=int(now - started)
+        )
+    )
+
+    return Response(
+        output, content_type='text/plain; version=0.0.4; charset=utf-8'
     )
