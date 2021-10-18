@@ -259,7 +259,7 @@ class NotificationRule:
             use_oncall=rec.use_oncall,
             service=rec.service,
             severity=rec.severity,
-            advanced_severity=[AdvancedSeverity.from_db(advanced_severity) for advanced_severity in rec.advanced_severity],
+            advanced_severity=[AdvancedSeverity.from_db(advanced_severity) for advanced_severity in rec.advanced_severity or []],
             use_advanced_severity=rec.use_advanced_severity,
             resource=rec.resource,
             event=rec.event,
