@@ -15,7 +15,7 @@ from ..models.Rules import Rule
 @permission(Scope.admin_customers)
 @jsonp
 def create_customer_alert_forward_rule():
-    request_payload = request.get_json(silent=True)
+    request_payload = request.json
     rule = Rule(id=uuid.uuid4().hex, **request_payload)
     try:
         rule = rule.create()
