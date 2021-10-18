@@ -1648,7 +1648,7 @@ class Backend(Database):
 
     def create_rule(self, rule):
         insert = """
-                    INSERT INTO rules (id, customer_id, rules, is_active)
+                    INSERT INTO customer_rules (id, customer_id, rules, is_active)
                     VALUES (%(id)s, %(customer_id)s, %(rules)s, %(is_active)s)
                     RETURNING *
                 """
