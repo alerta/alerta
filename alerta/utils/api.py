@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Optional, Tuple
 
 from flask import current_app, g
@@ -35,7 +36,11 @@ def process_alert(alert: Alert) -> Alert:
     wanted_plugins, wanted_config = plugins.routing(alert)
     print("WANTED PLUGINS", wanted_plugins, " ", wanted_config)
     try:
-        alert.customer = alert.tags["workspaceId"]
+        customer_identification_tag = os.environ.get("CUSTOMER_IDENTIFICATION_TAG", None)
+        if customer_identification_tag:
+            for tag in alert.tags:
+                if customer_identification_tag in tag:
+                    alert.customer = tag.replace(f'{customer_identification_tag}=', '')
     except Exception as e:
         pass
     skip_plugins = False
