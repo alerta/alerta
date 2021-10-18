@@ -295,7 +295,8 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
-        return self._updateone(update, {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout, 'update_time': update_time, 'change': history}, returning=True)
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout,
+                                        'update_time': update_time, 'change': history}, returning=True)
 
     def tag_alert(self, id, tags):
         update = """
@@ -373,7 +374,8 @@ class Backend(Database):
             WHERE {query.where}
             RETURNING id
         """
-        return [row[0] for row in self._updateall(update, {**query.vars, **{'_attributes': attributes}}, returning=True)]
+        return [row[0] for row in
+                self._updateall(update, {**query.vars, **{'_attributes': attributes}}, returning=True)]
 
     def delete_alerts(self, query=None):
         query = query or Query()
@@ -401,10 +403,10 @@ class Backend(Database):
             select = '*'
         else:
             select = (
-                'id, resource, event, environment, severity, correlate, status, service, "group", value, "text",'
-                + 'tags, attributes, origin, type, create_time, timeout, {raw_data}, customer, duplicate_count, repeat,'
-                + 'previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time, update_time,'
-                + '{history}'
+                    'id, resource, event, environment, severity, correlate, status, service, "group", value, "text",'
+                    + 'tags, attributes, origin, type, create_time, timeout, {raw_data}, customer, duplicate_count, repeat,'
+                    + 'previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time, update_time,'
+                    + '{history}'
             ).format(
                 raw_data='raw_data' if raw_data else 'NULL as raw_data',
                 history='history' if history else 'array[]::history[] as history'
@@ -559,7 +561,8 @@ class Backend(Database):
                 'environments': t.environments,
                 'services': t.services,
                 f'{group}': t.event,
-                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in
+                              t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
@@ -582,7 +585,8 @@ class Backend(Database):
                 'environments': t.environments,
                 'services': t.services,
                 'event': t.event,
-                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in
+                              t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
@@ -606,7 +610,8 @@ class Backend(Database):
                 'environments': t.environments,
                 'services': t.services,
                 'event': t.event,
-                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in
+                              t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
@@ -702,7 +707,8 @@ class Backend(Database):
             WHERE {where}
             GROUP BY environment, tag
         """.format(where=query.where)
-        return [{'environment': t.environment, 'tag': t.tag, 'count': t.count} for t in self._fetchall(select, query.vars, limit=topn)]
+        return [{'environment': t.environment, 'tag': t.tag, 'count': t.count} for t in
+                self._fetchall(select, query.vars, limit=topn)]
 
     # BLACKOUTS
 
@@ -1639,3 +1645,26 @@ class Backend(Database):
     def _log(self, cursor, query, vars):
         current_app.logger.debug('{stars}\n{query}\n{stars}'.format(
             stars='*' * 40, query=cursor.mogrify(query, vars).decode('utf-8')))
+
+    def create_rule(self, rule):
+        insert = """
+                    INSERT INTO rules (id, customer_id, rules, is_active)
+                    VALUES (%(id)s, %(customer_id)s, %(rules)s, %(is_active)s)
+                    RETURNING *
+                """
+        return self._insert(insert, vars(rule))
+
+    def get_rule(self):
+        pass
+
+    def get_rules(self):
+        pass
+
+    def get_rules_count(self):
+        pass
+
+    def delete_rule(self):
+        pass
+
+    def update_rule(self):
+        pass
