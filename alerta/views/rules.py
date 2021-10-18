@@ -1,3 +1,5 @@
+import uuid
+
 from flask import jsonify, request
 from flask_cors import cross_origin
 
@@ -14,7 +16,7 @@ from ..models.Rules import Rule
 @jsonp
 def create_customer_alert_forward_rule():
     request_payload = request.get_json(silent=True)
-    rule = Rule(**request_payload)
+    rule = Rule(id=uuid.uuid4().hex, **request_payload)
     try:
         rule = rule.create()
     except Exception as e:
