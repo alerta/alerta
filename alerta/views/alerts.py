@@ -69,7 +69,6 @@ def receive():
         raise ApiError(e.message, code=e.code, errors=e.errors)
     except Exception as e:
         raise ApiError(str(e), 500)
-
     write_audit_trail.send(current_app._get_current_object(), event='alert-received', message=alert.text, user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 

@@ -6,7 +6,8 @@ from alerta.utils.response import absolute_url
 
 api = Blueprint('api', __name__)
 
-from . import alerts, blackouts, config, customers, groups, heartbeats, keys, oembed, permissions, users  # noqa isort:skip
+from . import alerts, blackouts, config, customers, groups, heartbeats, keys, oembed, permissions, \
+    users, customer_forward_config  # noqa isort:skip
 
 try:
     from . import bulk  # noqa
@@ -38,7 +39,8 @@ def index():
             'method': ','.join(rule.methods)
         })
 
-    return jsonify(status='ok', uri=absolute_url(), data={'description': 'Alerta API'}, links=sorted(links, key=lambda k: k['href']))
+    return jsonify(status='ok', uri=absolute_url(), data={'description': 'Alerta API'},
+                   links=sorted(links, key=lambda k: k['href']))
 
 
 @api.route('/_', methods=['GET'])

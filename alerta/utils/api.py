@@ -29,9 +29,15 @@ def assign_customer(wanted: str = None, permission: Scope = Scope.admin_alerts) 
 
 
 def process_alert(alert: Alert) -> Alert:
-
+    """
+    Load alert's customer's config and see what
+    """
     wanted_plugins, wanted_config = plugins.routing(alert)
-
+    print("WANTED PLUGINS", wanted_plugins, " ", wanted_config)
+    try:
+        alert.customer = alert.tags["workspaceId"]
+    except Exception as e:
+        pass
     skip_plugins = False
     for plugin in wanted_plugins:
         if alert.is_suppressed:
@@ -92,7 +98,6 @@ def process_alert(alert: Alert) -> Alert:
 
 
 def process_action(alert: Alert, action: str, text: str, timeout: int = None) -> Tuple[Alert, str, str, Optional[int]]:
-
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None
@@ -127,7 +132,6 @@ def process_action(alert: Alert, action: str, text: str, timeout: int = None) ->
 
 
 def process_note(alert: Alert, text: str) -> Tuple[Alert, str]:
-
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None
@@ -157,7 +161,6 @@ def process_note(alert: Alert, text: str) -> Tuple[Alert, str]:
 
 
 def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, str]:
-
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None
@@ -189,7 +192,6 @@ def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, st
 
 
 def process_delete(alert: Alert) -> bool:
-
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     delete = True
