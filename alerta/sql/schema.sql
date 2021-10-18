@@ -227,6 +227,13 @@ CREATE TABLE IF NOT EXISTS groups (
 );
 
 
+CREATE TABLE IF NOT EXISTS customer_rules (
+    id text PRIMARY KEY,
+    customer_id text,
+    rules jsonb,
+    is_active boolean
+);
+
 CREATE UNIQUE INDEX IF NOT EXISTS env_res_evt_cust_key ON alerts USING btree (environment, resource, event, (COALESCE(customer, ''::text)));
 
 
