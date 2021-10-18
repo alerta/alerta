@@ -157,9 +157,15 @@ END$$;
 DO $$
 BEGIN
     ALTER TABLE notification_rules ADD COLUMN advanced_severity severity_advanced[];
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "advanced_severity" already exists in notification_rules.';
+END$$;
+
+DO $$
+BEGIN
     ALTER TABLE notification_rules ADD COLUMN use_advanced_severity boolean;
 EXCEPTION
-    WHEN duplicate_column THEN RAISE NOTICE 'column "use_on_call" already exists in notification_rules.';
+    WHEN duplicate_column THEN RAISE NOTICE 'column "use_advanced_severity" already exists in notification_rules.';
 END$$;
 
 CREATE TABLE IF NOT EXISTS on_calls(
