@@ -80,7 +80,10 @@ def saml_response_from_idp():
     subject = authn_response.get_subject()
 
     name = current_app.config['SAML2_USER_NAME_FORMAT'].format(**dict(map(lambda x: (x[0], x[1][0]), identity.items())))
-    login = identity[current_app.config['SAML2_LOGIN_ATTRIBUTE']][0]
+    if current_app.config['SAML2_LOGIN_ATTRIBUTE']:
+        login = identity[current_app.config['SAML2_LOGIN_ATTRIBUTE']][0]
+    else:
+        login = subject.text
     email = identity[current_app.config['SAML2_EMAIL_ATTRIBUTE']][0]
 
     # Create user if not yet there

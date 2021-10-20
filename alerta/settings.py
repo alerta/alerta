@@ -149,7 +149,7 @@ SAML2_ENTITY_ID = None
 SAML2_METADATA_URL = None
 SAML2_USER_NAME_FORMAT = '{givenName} {surname}'
 SAML2_EMAIL_ATTRIBUTE = 'emailAddress'
-SAML2_LOGIN_ATTRIBUTE = 'identifier'
+SAML2_LOGIN_ATTRIBUTE = None
 SAML2_CONFIG = {}  # type: Dict[str, Any]
 ALLOWED_SAML2_GROUPS = ['*']
 
