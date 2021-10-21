@@ -1,5 +1,8 @@
 import logging
 import os
+import threading
+from functools import wraps
+from threading import Thread
 from typing import Optional, Tuple
 
 from flask import current_app, g
@@ -30,37 +33,27 @@ def assign_customer(wanted: str = None, permission: Scope = Scope.admin_alerts) 
 
 
 def process_alert(alert: Alert) -> Alert:
-    """
-    Load alert's customer's config and see what
-    """
-    wanted_plugins, wanted_config = plugins.routing(alert)
-    print("WANTED PLUGINS", wanted_plugins, " ", wanted_config)
-    try:
-        customer_identification_tag = os.environ.get("CUSTOMER_IDENTIFICATION_TAG", None)
-        if customer_identification_tag:
-            for tag in alert.tags:
-                if customer_identification_tag in tag:
-                    alert.customer = tag.replace(f'{customer_identification_tag}=', '')
-    except Exception as e:
-        pass
-    skip_plugins = False
-    for plugin in wanted_plugins:
-        if alert.is_suppressed:
-            skip_plugins = True
-            break
-        try:
-            alert = plugin.pre_receive(alert, config=wanted_config)
-        except TypeError:
-            alert = plugin.pre_receive(alert)  # for backward compatibility
-        except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit, ForwardingLoop, AlertaException):
-            raise
-        except Exception as e:
-            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise RuntimeError(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
-            else:
-                logging.error(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
-        if not alert:
-            raise SyntaxError(f"Plugin '{plugin.name}' pre-receive hook did not return modified alert")
+    # wanted_plugins, wanted_config = plugins.routing(alert)
+    # print("WANTED PLUGINS", wanted_plugins, " ", wanted_config)
+    #
+    # skip_plugins = False
+    # for plugin in wanted_plugins:
+    #     if alert.is_suppressed:
+    #         skip_plugins = True
+    #         break
+    #     try:
+    #         alert = plugin.pre_receive(alert, config=wanted_config)
+    #     except TypeError:
+    #         alert = plugin.pre_receive(alert)  # for backward compatibility
+    #     except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit, ForwardingLoop, AlertaException):
+    #         raise
+    #     except Exception as e:
+    #         if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+    #             raise RuntimeError(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
+    #         else:
+    #             logging.error(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
+    #     if not alert:
+    #         raise SyntaxError(f"Plugin '{plugin.name}' pre-receive hook did not return modified alert")
 
     try:
         is_duplicate = alert.is_duplicate()
@@ -75,29 +68,29 @@ def process_alert(alert: Alert) -> Alert:
     except Exception as e:
         raise ApiError(str(e))
 
-    wanted_plugins, wanted_config = plugins.routing(alert)
-
-    updated = None
-    for plugin in wanted_plugins:
-        if skip_plugins:
-            break
-        try:
-            updated = plugin.post_receive(alert, config=wanted_config)
-        except TypeError:
-            updated = plugin.post_receive(alert)  # for backward compatibility
-        except AlertaException:
-            raise
-        except Exception as e:
-            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
-            else:
-                logging.error(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
-        if updated:
-            alert = updated
-
-    if updated:
-        alert.update_tags(alert.tags)
-        alert.attributes = alert.update_attributes(alert.attributes)
+    # wanted_plugins, wanted_config = plugins.routing(alert)
+    #
+    # updated = None
+    # for plugin in wanted_plugins:
+    #     if skip_plugins:
+    #         break
+    #     try:
+    #         updated = plugin.post_receive(alert, config=wanted_config)
+    #     except TypeError:
+    #         updated = plugin.post_receive(alert)  # for backward compatibility
+    #     except AlertaException:
+    #         raise
+    #     except Exception as e:
+    #         if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+    #             raise ApiError(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
+    #         else:
+    #             logging.error(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
+    #     if updated:
+    #         alert = updated
+    #
+    # if updated:
+    #     alert.update_tags(alert.tags)
+    #     alert.attributes = alert.update_attributes(alert.attributes)
 
     return alert
 
@@ -214,3 +207,28 @@ def process_delete(alert: Alert) -> bool:
                 logging.error(f"Error while running delete plugin '{plugin.name}': {str(e)}")
 
     return delete and alert.delete()
+
+
+def run_on_separate_thread(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        thr = threading.Thread(target=f, args=args, kwargs=kwargs)
+        thr.start()
+
+    return wrapper
+
+
+def get_alert_customer_from_tags(alert: Alert):
+    try:
+        customer_identification_tag = os.environ.get("CUSTOMER_IDENTIFICATION_TAG", None)
+        if customer_identification_tag:
+            for tag in alert.tags:
+                if customer_identification_tag in tag:
+                    return tag.replace(f'{customer_identification_tag}=', '')
+    except Exception as e:
+        return None
+
+
+@run_on_separate_thread
+def process_alert_for_forward_rules(alert):
+    pass

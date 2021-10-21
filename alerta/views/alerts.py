@@ -14,7 +14,7 @@ from alerta.models.metrics import Timer, timer
 from alerta.models.note import Note
 from alerta.models.switch import Switch
 from alerta.utils.api import (assign_customer, process_action, process_alert,
-                              process_delete, process_note, process_status)
+                              process_delete, process_note, process_status, get_alert_customer_from_tags)
 from alerta.utils.audit import write_audit_trail
 from alerta.utils.paging import Page
 from alerta.utils.response import absolute_url, jsonp
@@ -42,12 +42,12 @@ def receive():
         alert = Alert.parse(request.json)
     except ValueError as e:
         raise ApiError(str(e), 400)
-
-    alert.customer = assign_customer(wanted=alert.customer)
+    alert.customer = get_alert_customer_from_tags(alert)
 
     def audit_trail_alert(event: str):
         write_audit_trail.send(current_app._get_current_object(), event=event, message=alert.text, user=g.login,
-                               customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+                               customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
+                               request=request)
 
     try:
         alert = process_alert(alert)
@@ -71,7 +71,7 @@ def receive():
         raise ApiError(str(e), 500)
     write_audit_trail.send(current_app._get_current_object(), event='alert-received', message=alert.text, user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
-
+    process_alert_for_forward_rules()
     if alert:
         return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
     else:
@@ -252,7 +252,8 @@ def update_attributes(alert_id):
     if not alert:
         raise ApiError('not found', 404)
 
-    write_audit_trail.send(current_app._get_current_object(), event='alert-attributes-updated', message='', user=g.login,
+    write_audit_trail.send(current_app._get_current_object(), event='alert-attributes-updated', message='',
+                           user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     if alert.update_attributes(attributes):
@@ -303,15 +304,18 @@ def delete_alert(alert_id):
 def search_alerts():
     query_time = datetime.utcnow()
     query = qb.alerts.from_params(request.args, customers=g.customers, query_time=query_time)
-    show_raw_data = request.args.get('show-raw-data', default=False, type=lambda x: x.lower() in ['true', 't', '1', 'yes', 'y', 'on'])
-    show_history = request.args.get('show-history', default=False, type=lambda x: x.lower() in ['true', 't', '1', 'yes', 'y', 'on'])
+    show_raw_data = request.args.get('show-raw-data', default=False,
+                                     type=lambda x: x.lower() in ['true', 't', '1', 'yes', 'y', 'on'])
+    show_history = request.args.get('show-history', default=False,
+                                    type=lambda x: x.lower() in ['true', 't', '1', 'yes', 'y', 'on'])
     severity_count = Alert.get_counts_by_severity(query)
     status_count = Alert.get_counts_by_status(query)
 
     total = sum(severity_count.values())
     paging = Page.from_params(request.args, total)
 
-    alerts = Alert.find_all(query, raw_data=show_raw_data, history=show_history, page=paging.page, page_size=paging.page_size)
+    alerts = Alert.find_all(query, raw_data=show_raw_data, history=show_history, page=paging.page,
+                            page_size=paging.page_size)
 
     if alerts:
         return jsonify(
@@ -607,7 +611,8 @@ def add_note(alert_id):
                            customers=g.customers, scopes=g.scopes, resource_id=note.id, type='note', request=request)
 
     if note:
-        return jsonify(status='ok', id=note.id, note=note.serialize), 201, {'Location': absolute_url(f'/alert/{alert.id}/note/{note.id}')}
+        return jsonify(status='ok', id=note.id, note=note.serialize), 201, {
+            'Location': absolute_url(f'/alert/{alert.id}/note/{note.id}')}
     else:
         raise ApiError('failed to add note for alert', 500)
 
