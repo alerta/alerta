@@ -115,6 +115,78 @@ jobs:
           steps: ${{ toJson(steps) }}
         if: failure()
 
+  test-cosmosdb:
+    runs-on: ubuntu-latest
+
+    services:
+      cosmosdb:
+        image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator
+        env:
+          AZURE_COSMOS_EMULATOR_PARTITION_COUNT: 2
+          AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE: false
+          AZURE_COSMOS_EMULATOR_MONGODB_COMPUTE_ENDPOINT: true
+          AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE:
+        ports:
+          - 8081:8081
+          - 10251:10251
+          - 10252:10252
+          - 10253:10253
+          - 10254:10254
+          - 10255:10255
+        options: '-m 3g --cpus=2.0'
+
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        id: install-deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install .
+      - name: Get Host IP Address
+        run: |
+          ip_addr=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+          echo "IP_ADDR=$(echo $ip_addr)" >> $GITHUB_ENV
+          echo "Using HOST IP Address: $ip_addr"
+      - run: env
+      - name: Install certificate
+        id: cert
+        run: |
+          curl -k https://${{ env.IP_ADDR }}:8081/_explorer/emulator.pem > ~/emulatorcert.crt
+          sudo cp ~/emulatorcert.crt /usr/local/share/ca-certificates/
+          sudo update-ca-certificates
+          export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+      - name: Pre-commit hooks
+        id: hooks
+        run: |
+          pre-commit run -a --show-diff-on-failure
+      - name: Lint with flake8
+        id: lint
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=50 --max-line-length=127 --statistics
+      - name: Test with pytest
+        id: test
+        env:
+          DATABASE_URL: mongodb://localhost:C2y6yDjf5%2FR%2Bob0N8A7Cgv30VRDJIWEHLM%2B4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw%2FJw%3D%3D@${{ env.IP_ADDR }}:10255/admin?ssl=true
+        run: |
+          pytest --cov=alerta tests/*.py
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+        if: failure()
+
   test-integration:
     runs-on: ubuntu-latest
 
