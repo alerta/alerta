@@ -165,6 +165,11 @@ jobs:
           sudo cp ~/emulatorcert.crt /usr/local/share/ca-certificates/
           sudo update-ca-certificates
           export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+      - name: Wait for CosmosDB
+        run: |
+          echo "Waiting for Cosmos to start..."
+          until [ `docker logs --tail 1 cosmosdb | tr -d '\r\n' | grep '^Started$'` ]; do printf '.'; sleep 2; done
+          echo "CosmosDB is up!"
       - name: Pre-commit hooks
         id: hooks
         run: |
