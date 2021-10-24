@@ -132,7 +132,7 @@ jobs:
           - 10253:10253
           - 10254:10254
           - 10255:10255
-        options: '-m 3g --cpus=2.0'
+        options: '--name cosmosdb -m 3g --cpus=2.0'
 
     strategy:
       matrix:
