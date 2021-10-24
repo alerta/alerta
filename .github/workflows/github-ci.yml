@@ -125,7 +125,6 @@ jobs:
           AZURE_COSMOS_EMULATOR_PARTITION_COUNT: 2
           AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE: false
           AZURE_COSMOS_EMULATOR_MONGODB_COMPUTE_ENDPOINT: true
-          AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE:
         ports:
           - 8081:8081
           - 10251:10251
@@ -154,11 +153,11 @@ jobs:
           pip install -r requirements-dev.txt
           pip install .
       - name: Get Host IP Address
+        id: get-ip-address
         run: |
           ip_addr=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
           echo "IP_ADDR=$(echo $ip_addr)" >> $GITHUB_ENV
           echo "Using HOST IP Address: $ip_addr"
-      - run: env
       - name: Install certificate
         id: cert
         run: |
