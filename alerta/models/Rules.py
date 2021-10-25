@@ -10,11 +10,12 @@ JSON = Dict[str, Any]
 
 class Rule:
 
-    def __init__(self, id: str, customer_id: str, is_active: bool, rules: dict, **kwargs) -> None:
+    def __init__(self, customer_id: str, is_active: bool, name: str, rules: dict, id=None, **kwargs) -> None:
         self.id = id
         self.customer_id = customer_id
         self.is_active = is_active
         self.rules = rules
+        self.name = name
 
     @classmethod
     def parse(cls, json: JSON) -> 'Rule':
@@ -22,22 +23,22 @@ class Rule:
             id=json.get('id', None),
             customer_id=json.get('customer_id', None),
             is_active=json.get('is_active', False),
-            rules=json.get('rules', None)
+            rules=json.get('rules', None),
+            name=json.get('name', None)
         )
 
     @property
     def serialize(self) -> Dict[str, Any]:
         return {
             'id': self.id,
-            'href': absolute_url('/rule/' + self.id),
+            'href': absolute_url(f'/rule/{self.id}'),
             'customer_id': self.customer_id,
             'is_active': self.is_active,
-            'rules': self.rules
+            'rules': self.rules,
+            'name': self.name
         }
 
     def __repr__(self) -> str:
-        # return 'Rule(id={rul}, customer_id={},)'.format(
-        #     self.id, self.match, self.customer)
         return f"Rule(id={self.id}, customer_id={self.customer_id}, is_active={self.is_active})"
 
     @classmethod
@@ -46,7 +47,8 @@ class Rule:
             id=doc.get('id', None) or doc.get('_id'),
             customer_id=doc.get('customer_id', None),
             is_active=doc.get('is_active', None),
-            rules=doc.get('rules', None)
+            rules=doc.get('rules', None),
+            name=doc.get('name', None)
         )
 
     @classmethod
@@ -55,7 +57,8 @@ class Rule:
             id=rec.id,
             customer_id=rec.customer_id,
             rules=rec.rules,
-            is_active=rec.is_active
+            is_active=rec.is_active,
+            name=rec.name
         )
 
     @classmethod
@@ -69,8 +72,8 @@ class Rule:
         return Rule.from_db(db.create_rule(self))
 
     @staticmethod
-    def find_by_id(id: str) -> Optional['Rule']:
-        return Rule.from_db(db.get_rule(id))
+    def find_by_id(id: int, customer_id: str) -> Optional['Rule']:
+        return Rule.from_db(db.get_rule(id, customer_id))
 
     @staticmethod
     def find_all(query: Query = None, page: int = 1, page_size: int = 1000) -> List['Rule']:
@@ -91,3 +94,11 @@ class Rule:
         # rules = db.get_rules_by_match(login, matches=groups)
         # return rules if rules != '*' else []
         raise NotImplementedError()
+
+    @staticmethod
+    def update_by_id(rule_id, customer_id, **kwargs):
+        return db.update_rule_by_id(rule_id, customer_id, **kwargs)
+
+    @staticmethod
+    def delete_by_id(rule_id, customer_id):
+        return db.delete_by_id(rule_id, customer_id)

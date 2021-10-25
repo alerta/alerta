@@ -1648,14 +1648,15 @@ class Backend(Database):
 
     def create_rule(self, rule):
         insert = """
-                    INSERT INTO customer_rules (id, customer_id, rules, is_active)
-                    VALUES (%(id)s, %(customer_id)s, %(rules)s, %(is_active)s)
+                    INSERT INTO customer_rules (customer_id, rules, is_active, name)
+                    VALUES (%(customer_id)s, %(rules)s, %(is_active)s, %(name)s)
                     RETURNING *
                 """
         return self._insert(insert, vars(rule))
 
-    def get_rule(self):
-        pass
+    def get_rule(self, rule_id, customer_id):
+        select = f"SELECT * FROM customer_rules WHERE id={rule_id} and customer_id='{customer_id}'"
+        return self._fetchone(select, ())
 
     def get_rules(self):
         pass
@@ -1668,3 +1669,16 @@ class Backend(Database):
 
     def update_rule(self):
         pass
+
+    def update_rule_by_id(self, rule_id, customer_id, rules, is_active, name):
+        query = """
+        update customer_rule set rules=%(rules)s, is_active=%(is_active)s, name=%(name)s where id=%(rule_id)s and customer_id=%(customer_id)s
+        """
+        return self._updateone(query, dict(rule_id=rule_id, customer_id=customer_id, rules=rules, is_active=is_active,
+                                           name=name), returning=True)
+
+    def delete_by_id(self, rule_id, customer_id):
+        query = """
+        DELETE FROM customer_rules where id=%(rule_id)s and customer_id=%(customer_id)s
+        """
+        return self._deleteone(query, dict(rule_id=rule_id, customer_id=customer_id), returning=True)

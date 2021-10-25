@@ -1,3 +1,4 @@
+import multiprocessing
 from datetime import datetime
 
 from flask import current_app, g, jsonify, request
@@ -14,7 +15,7 @@ from alerta.models.metrics import Timer, timer
 from alerta.models.note import Note
 from alerta.models.switch import Switch
 from alerta.utils.api import (assign_customer, process_action, process_alert,
-                              process_delete, process_note, process_status, get_alert_customer_from_tags)
+                              process_delete, process_note, process_status, get_alert_customer_from_tags, )
 from alerta.utils.audit import write_audit_trail
 from alerta.utils.paging import Page
 from alerta.utils.response import absolute_url, jsonp
@@ -71,7 +72,6 @@ def receive():
         raise ApiError(str(e), 500)
     write_audit_trail.send(current_app._get_current_object(), event='alert-received', message=alert.text, user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
-    process_alert_for_forward_rules()
     if alert:
         return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
     else:

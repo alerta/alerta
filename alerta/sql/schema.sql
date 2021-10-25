@@ -228,10 +228,20 @@ CREATE TABLE IF NOT EXISTS groups (
 
 
 CREATE TABLE IF NOT EXISTS customer_rules (
-    id text PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     customer_id text,
     rules text[],
-    is_active boolean
+    is_active boolean,
+    name text
+);
+
+
+CREATE TABLE IF NOT EXISTS plugin_rule_map (
+    id SERIAL PRIMARY KEY,
+    rule_id int,
+    plugin text,
+    properties jsonb,
+    FOREIGN KEY (rule_id) REFERENCES customer_rules(id)
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS env_res_evt_cust_key ON alerts USING btree (environment, resource, event, (COALESCE(customer, ''::text)));

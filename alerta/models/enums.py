@@ -3,7 +3,6 @@ from enum import Enum
 
 
 class Severity(str, Enum):
-
     Security = 'security'
     Critical = 'critical'
     Major = 'major'
@@ -20,7 +19,6 @@ class Severity(str, Enum):
 
 
 class Status(str, Enum):
-
     Open = 'open'
     Assign = 'assign'
     Ack = 'ack'
@@ -33,7 +31,6 @@ class Status(str, Enum):
 
 
 class Action(str, Enum):
-
     OPEN = 'open'
     ASSIGN = 'assign'
     ACK = 'ack'
@@ -46,14 +43,12 @@ class Action(str, Enum):
 
 
 class TrendIndication(str, Enum):
-
     More_Severe = 'moreSevere'
     No_Change = 'noChange'
     Less_Severe = 'lessSevere'
 
 
 class Scope(str):
-
     read = 'read'
     write = 'write'
     admin = 'admin'
@@ -83,6 +78,8 @@ class Scope(str):
     read_management = 'read:management'
     admin_management = 'admin:management'
     read_userinfo = 'read:userinfo'
+    write_rules = 'write:rules'
+    read_rules = 'read:rules'
 
     @staticmethod
     def init_app(app):
@@ -101,7 +98,8 @@ class Scope(str):
 
     @classmethod
     def find_all(cls):
-        return [s for s in vars(Scope).values() if isinstance(s, str) and s.startswith(('admin', 'write', 'read', 'delete'))]
+        return [s for s in vars(Scope).values() if
+                isinstance(s, str) and s.startswith(('admin', 'write', 'read', 'delete'))]
 
     @property
     def action(self):
@@ -144,7 +142,6 @@ ADMIN_SCOPES = [Scope.admin, Scope.read, Scope.write]
 
 
 class ChangeType(str, Enum):
-
     open = 'open'
     assign = 'assign'
     ack = 'ack'
@@ -165,7 +162,6 @@ class ChangeType(str, Enum):
 
 
 class NoteType(str, Enum):
-
     alert = 'alert'
     blackout = 'blackout'
     customer = 'customer'

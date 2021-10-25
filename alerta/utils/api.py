@@ -2,17 +2,15 @@ import logging
 import os
 import threading
 from functools import wraps
-from threading import Thread
 from typing import Optional, Tuple
 
 from flask import current_app, g
 
 from alerta.app import plugins
-from alerta.exceptions import (AlertaException, ApiError, BlackoutPeriod,
-                               ForwardingLoop, HeartbeatReceived,
-                               InvalidAction, RateLimit, RejectException)
+from alerta.exceptions import (AlertaException, ApiError, ForwardingLoop, InvalidAction, RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
+from alerta.utils.rule_processor import process_forward_rules_for_alert
 
 
 def assign_customer(wanted: str = None, permission: Scope = Scope.admin_alerts) -> Optional[str]:
@@ -67,31 +65,7 @@ def process_alert(alert: Alert) -> Alert:
                 alert = alert.create()
     except Exception as e:
         raise ApiError(str(e))
-
-    # wanted_plugins, wanted_config = plugins.routing(alert)
-    #
-    # updated = None
-    # for plugin in wanted_plugins:
-    #     if skip_plugins:
-    #         break
-    #     try:
-    #         updated = plugin.post_receive(alert, config=wanted_config)
-    #     except TypeError:
-    #         updated = plugin.post_receive(alert)  # for backward compatibility
-    #     except AlertaException:
-    #         raise
-    #     except Exception as e:
-    #         if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-    #             raise ApiError(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
-    #         else:
-    #             logging.error(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
-    #     if updated:
-    #         alert = updated
-    #
-    # if updated:
-    #     alert.update_tags(alert.tags)
-    #     alert.attributes = alert.update_attributes(alert.attributes)
-
+    process_forward_rules(alert)
     return alert
 
 
@@ -230,5 +204,5 @@ def get_alert_customer_from_tags(alert: Alert):
 
 
 @run_on_separate_thread
-def process_alert_for_forward_rules(alert):
-    pass
+def process_forward_rules(alert):
+    process_forward_rules_for_alert(alert)

@@ -3,6 +3,8 @@ import logging
 import os
 from typing import TYPE_CHECKING, Any, Optional
 
+from alerta.utils.rule_processor import get_plugin_properties_by_rule_id
+
 if TYPE_CHECKING:
     from alerta.models.alert import Alert  # noqa
 
@@ -67,6 +69,9 @@ class PluginBase(metaclass=abc.ABCMeta):
         except KeyError:
             rv = default
         return rv
+
+    def get_properties(self, rule_id, plugin):
+        return get_plugin_properties_by_rule_id(rule_id, plugin)
 
 
 class FakeApp:
