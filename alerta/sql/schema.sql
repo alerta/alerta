@@ -236,10 +236,11 @@ CREATE TABLE IF NOT EXISTS customer_rules (
 );
 
 
-CREATE TABLE IF NOT EXISTS plugin_rule_map (
+CREATE TABLE IF NOT EXISTS customer_channels (
     id SERIAL PRIMARY KEY,
     rule_id int,
-    plugin text,
+    name text,
+    channel_type text,
     properties jsonb,
     FOREIGN KEY (rule_id) REFERENCES customer_rules(id)
 );

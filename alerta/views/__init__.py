@@ -7,7 +7,7 @@ from alerta.utils.response import absolute_url
 api = Blueprint('api', __name__)
 
 from . import alerts, blackouts, config, customers, groups, heartbeats, keys, oembed, permissions, \
-    users, customer_forward_config, rules  # noqa isort:skip
+    users, customer_forward_config, rules, channels  # noqa isort:skip
 
 try:
     from . import bulk  # noqa

@@ -27,7 +27,11 @@ def create_customer_alert_forward_rule():
 @cross_origin()
 @permission(Scope.read_rules)
 def get_customer_rules():
-    return jsonify()
+    customer_id = request.args.get('customer_id')
+    if not customer_id:
+        raise ApiError("customer_id is not present in query parameters")
+    rules = Rule.find_all(customer_id)
+    return jsonify(rules=[r.serialize for r in rules])
 
 
 @api.route('/rule/<rule_id>', methods=['OPTIONS', 'GET'])
@@ -54,6 +58,11 @@ def update_rule_by_rule_id(rule_id):
     if not customer_id:
         raise ApiError('customer_id not found in query params')
     request_json = request.get_json()
+    """
+    Drop customer_id and id for sanity
+    """
+    request_json.pop('customer_id', None)
+    request_json.pop('id', None)
     rule = Rule.update_by_id(rule_id, customer_id, **request_json)
     if not rule:
         raise ApiError('not found', 404)
@@ -71,4 +80,4 @@ def delete_rule_by_rule_id(rule_id):
     rule = Rule.delete_by_id(rule_id, customer_id)
     if not rule:
         raise ApiError('not found', 404)
-    return jsonify(status='ok', rule=rule.serialize)
+    return jsonify(status='ok')

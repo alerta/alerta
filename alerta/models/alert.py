@@ -155,7 +155,8 @@ class Alert:
     def get_body(self, history: bool = True) -> Dict[str, Any]:
         body = self.serialize
         body.update({
-            key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime', 'updateTime'] if body[key]
+            key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime', 'updateTime']
+            if body[key]
         })
         if not history:
             body['history'] = []
@@ -477,7 +478,8 @@ class Alert:
 
     # search alerts
     @staticmethod
-    def find_all(query: Query = None, raw_data: bool = False, history: bool = False, page: int = 1, page_size: int = 1000) -> List['Alert']:
+    def find_all(query: Query = None, raw_data: bool = False, history: bool = False, page: int = 1,
+                 page_size: int = 1000) -> List['Alert']:
         return [Alert.from_db(alert) for alert in db.get_alerts(query, raw_data, history, page, page_size)]
 
     @staticmethod

@@ -80,6 +80,8 @@ class Scope(str):
     read_userinfo = 'read:userinfo'
     write_rules = 'write:rules'
     read_rules = 'read:rules'
+    write_channels = "write:channels"
+    read_channels = "write:channels"
 
     @staticmethod
     def init_app(app):

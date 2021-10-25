@@ -76,8 +76,8 @@ class Rule:
         return Rule.from_db(db.get_rule(id, customer_id))
 
     @staticmethod
-    def find_all(query: Query = None, page: int = 1, page_size: int = 1000) -> List['Rule']:
-        return [Rule.from_db(rule) for rule in db.get_rules(query, page, page_size)]
+    def find_all(customer_id, page: int = 1, page_size: int = 1000) -> List['Rule']:
+        return [Rule.from_db(rule) for rule in db.get_rules(customer_id, page, page_size)]
 
     @staticmethod
     def count(query: Query = None) -> int:
@@ -97,8 +97,8 @@ class Rule:
 
     @staticmethod
     def update_by_id(rule_id, customer_id, **kwargs):
-        return db.update_rule_by_id(rule_id, customer_id, **kwargs)
+        return Rule.from_db(db.update_rule_by_id(rule_id, customer_id, **kwargs))
 
     @staticmethod
     def delete_by_id(rule_id, customer_id):
-        return db.delete_by_id(rule_id, customer_id)
+        return Rule.from_db(db.delete_by_id(rule_id, customer_id))

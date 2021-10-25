@@ -1658,8 +1658,9 @@ class Backend(Database):
         select = f"SELECT * FROM customer_rules WHERE id={rule_id} and customer_id='{customer_id}'"
         return self._fetchone(select, ())
 
-    def get_rules(self):
-        pass
+    def get_rules(self, customer_id, *args, **kwargs):
+        select = f"SELECT * FROM customer_rules WHERE customer_id='{customer_id}'"
+        return self._fetchall(select, ())
 
     def get_rules_count(self):
         pass
@@ -1670,15 +1671,53 @@ class Backend(Database):
     def update_rule(self):
         pass
 
-    def update_rule_by_id(self, rule_id, customer_id, rules, is_active, name):
-        query = """
-        update customer_rule set rules=%(rules)s, is_active=%(is_active)s, name=%(name)s where id=%(rule_id)s and customer_id=%(customer_id)s
-        """
-        return self._updateone(query, dict(rule_id=rule_id, customer_id=customer_id, rules=rules, is_active=is_active,
-                                           name=name), returning=True)
+    def update_rule_by_id(self, rule_id, customer_id, rules=None, is_active=None, name=None):
+        vars_dict = dict()
+        if isinstance(rules, list):
+            vars_dict['rules'] = rules
+        if isinstance(is_active, bool):
+            vars_dict['is_active'] = is_active
+        if isinstance(name, str):
+            vars_dict['name'] = name
+        if len(vars_dict) == 0:
+            return
+        update_clause = ",".join([f"{key}=%({key})s" for key in vars_dict.keys()])
+        query = f"""update customer_rules set {update_clause}  where id=%(rule_id)s and customer_id=%(customer_id)s returning * """
+        return self._updateone(query, {**vars_dict, "rule_id": rule_id, "customer_id": customer_id}, returning=True)
 
     def delete_by_id(self, rule_id, customer_id):
-        query = """
-        DELETE FROM customer_rules where id=%(rule_id)s and customer_id=%(customer_id)s
-        """
+        query = """DELETE FROM customer_rules where id=%(rule_id)s and customer_id=%(customer_id)s returning *"""
         return self._deleteone(query, dict(rule_id=rule_id, customer_id=customer_id), returning=True)
+
+    def create_channel(self, customer_channel):
+        insert = """
+            INSERT INTO customer_channels (name,channel_type,properties,rule_id)
+            VALUES (%(name)s, %(channel_type)s, %(properties)s, %(rule_id)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(customer_channel))
+
+    def get_channels(self, rule_id):
+        query = """
+                    select * from customer_channels where rule_id=%(rule_id)s
+                """
+        return self._fetchall(query, {"rule_id": rule_id})
+
+    def find_channel_by_id(self, channel_id):
+        query = f"""select * from customer_channels where id={channel_id}"""
+        return self._fetchone(query, ())
+
+    def update_channel_by_id(self, channel_id, name=None, properties=None):
+        updated_list = []
+        if isinstance(name, str):
+            updated_list.append("name=%(name)s")
+        if isinstance(properties, dict):
+            updated_list.append("properties=%(properties)s")
+        if len(updated_list) == 0:
+            return
+        query = f"UPDATE customer_channels set {','.join(updated_list)} where id={channel_id} returning * "
+        return self._updateone(query, {"name": name, "properties": properties}, returning=True)
+
+    def delete_channel_by_id(self, channel_id):
+        query = f"DELETE from customer_channels where id={channel_id} returning * "
+        return self._deleteone(query, (), True)
