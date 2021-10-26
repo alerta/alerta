@@ -30,7 +30,11 @@ def get_channels():
     rule_id = request.args.get('rule_id')
     if not rule_id:
         raise ApiError('rule_id not present in query parameters')
-    rules = CustomerChannel.find_all(rule_id)
+    sort_by = request.args.get('sort_by', 'id')
+    limit = int(request.args.get('limit', 10))
+    offset = int(request.args.get('offset', 0))
+    ascending = request.args.get('sort_order', 'asc') == 'asc'
+    rules = CustomerChannel.find_all(rule_id, sort_by, ascending, limit, offset)
     return jsonify(channels=[r.serialize for r in rules])
 
 

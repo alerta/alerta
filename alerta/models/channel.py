@@ -35,8 +35,9 @@ class CustomerChannel:
         }
 
     @staticmethod
-    def find_all(rule_id):
-        return [CustomerChannel.from_db(channel) for channel in db.get_channels(rule_id)]
+    def find_all(rule_id, sort_by, ascending, limit, offset):
+        return [CustomerChannel.from_db(channel) for channel in
+                db.get_channels(rule_id, sort_by, ascending, limit, offset)]
 
     @staticmethod
     def find_by_id(channel_id):

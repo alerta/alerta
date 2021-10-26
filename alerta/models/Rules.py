@@ -72,8 +72,8 @@ class Rule:
         return Rule.from_db(db.create_rule(self))
 
     @staticmethod
-    def find_by_id(id: int, customer_id: str, sort_by, ascending, limit, offset) -> Optional['Rule']:
-        return Rule.from_db(db.get_rule(id, customer_id, sort_by, ascending, limit, offset))
+    def find_by_id(id: int, customer_id: str) -> Optional['Rule']:
+        return Rule.from_db(db.get_rule(id, customer_id))
 
     @staticmethod
     def find_all(customer_id, sort_by='id', ascending=True, limit=10, offset=0) -> List['Rule']:

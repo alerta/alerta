@@ -1698,11 +1698,10 @@ class Backend(Database):
         """
         return self._insert(insert, vars(customer_channel))
 
-    def get_channels(self, rule_id):
-        query = """
-                    select * from customer_channels where rule_id=%(rule_id)s
-                """
-        return self._fetchall(query, {"rule_id": rule_id})
+    def get_channels(self, rule_id, sort_by, ascending, limit, offset):
+        ascending_order = 'asc' if ascending else 'desc'
+        query = f"""select * from customer_channels where rule_id=%(rule_id)s order by {sort_by} {ascending_order} """
+        return self._fetchall(query, {"rule_id": rule_id}, limit, offset)
 
     def find_channel_by_id(self, channel_id):
         query = f"""select * from customer_channels where id={channel_id}"""
