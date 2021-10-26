@@ -31,28 +31,6 @@ def assign_customer(wanted: str = None, permission: Scope = Scope.admin_alerts) 
 
 
 def process_alert(alert: Alert) -> Alert:
-    # wanted_plugins, wanted_config = plugins.routing(alert)
-    # print("WANTED PLUGINS", wanted_plugins, " ", wanted_config)
-    #
-    # skip_plugins = False
-    # for plugin in wanted_plugins:
-    #     if alert.is_suppressed:
-    #         skip_plugins = True
-    #         break
-    #     try:
-    #         alert = plugin.pre_receive(alert, config=wanted_config)
-    #     except TypeError:
-    #         alert = plugin.pre_receive(alert)  # for backward compatibility
-    #     except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit, ForwardingLoop, AlertaException):
-    #         raise
-    #     except Exception as e:
-    #         if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-    #             raise RuntimeError(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
-    #         else:
-    #             logging.error(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
-    #     if not alert:
-    #         raise SyntaxError(f"Plugin '{plugin.name}' pre-receive hook did not return modified alert")
-
     try:
         is_duplicate = alert.is_duplicate()
         if is_duplicate:
