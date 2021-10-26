@@ -224,7 +224,6 @@ def status():
 
 @mgmt.route('/management/metrics', methods=['OPTIONS', 'GET'])
 @cross_origin()
-@permission(Scope.read_management)
 def prometheus_metrics():
 
     now = int(time.time() * 1000)
