@@ -30,7 +30,11 @@ def get_customer_rules():
     customer_id = request.args.get('customer_id')
     if not customer_id:
         raise ApiError("customer_id is not present in query parameters")
-    rules = Rule.find_all(customer_id)
+    sort_by = request.args.get('sort_by', 'id')
+    limit = int(request.args.get('limit', 10))
+    offset = int(request.args.get('offset', 0))
+    ascending = request.args.get('sort_order', 'asc') == 'asc'
+    rules = Rule.find_all(customer_id, sort_by, ascending, limit, offset)
     return jsonify(rules=[r.serialize for r in rules])
 
 

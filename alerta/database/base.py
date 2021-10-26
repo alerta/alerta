@@ -453,7 +453,7 @@ class Database(Base):
     def get_rule(self, id, customer_id):
         raise NotImplementedError
 
-    def get_rules(self):
+    def get_rules(self, customer_id, sort_by, ascending, limit, offset):
         raise NotImplementedError
 
     def get_rules_count(self):

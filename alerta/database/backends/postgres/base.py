@@ -1658,9 +1658,10 @@ class Backend(Database):
         select = f"SELECT * FROM customer_rules WHERE id={rule_id} and customer_id='{customer_id}'"
         return self._fetchone(select, ())
 
-    def get_rules(self, customer_id, *args, **kwargs):
-        select = f"SELECT * FROM customer_rules WHERE customer_id='{customer_id}'"
-        return self._fetchall(select, ())
+    def get_rules(self, customer_id, sort_by, ascending, limit, offset, *args, **kwargs):
+        ascending_order = 'asc' if ascending else 'desc'
+        select = f"SELECT * FROM customer_rules WHERE customer_id='{customer_id}' order by {sort_by} {ascending_order}"
+        return self._fetchall(select, (), limit=limit, offset=offset)
 
     def get_rules_count(self):
         pass
