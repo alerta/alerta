@@ -43,7 +43,6 @@ def process_alert(alert: Alert) -> Alert:
                 alert = alert.create()
     except Exception as e:
         raise ApiError(str(e))
-    process_forward_rules(alert)
     return alert
 
 

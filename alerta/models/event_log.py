@@ -1,5 +1,4 @@
-from types import Union
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 from alerta.app import db
 from alerta.models.alert import Alert

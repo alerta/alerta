@@ -1643,8 +1643,11 @@ class Backend(Database):
         return cursor.fetchall() if returning else None
 
     def _log(self, cursor, query, vars):
+        _vars = {}
+        for k, v in vars.items():
+            _vars[k] = str(v) if isinstance(v, datetime) else v
         current_app.logger.debug('{stars}\n{query}\n{stars}'.format(
-            stars='*' * 40, query=cursor.mogrify(query, vars).decode('utf-8')))
+            stars='*' * 40, query=cursor.mogrify(query, _vars).decode('utf-8')))
 
     def create_rule(self, rule):
         insert = """
