@@ -149,6 +149,38 @@ class Alert:
             'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)]
         }
 
+    @property
+    def properties(self):
+        return {
+            'id': self.id,
+            'resource': self.resource,
+            'event': self.event,
+            'environment': self.environment,
+            'severity': self.severity,
+            'correlate': self.correlate,
+            'status': self.status,
+            'service': self.service,
+            'group': self.group,
+            'value': self.value,
+            'text': self.text,
+            'tags': self.tags,
+            'attributes': self.attributes,
+            'origin': self.origin,
+            'type': self.event_type,
+            'createTime': self.create_time.isoformat(),
+            'timeout': self.timeout,
+            'rawData': self.raw_data,
+            'customer': self.customer,
+            'duplicateCount': self.duplicate_count,
+            'repeat': self.repeat,
+            'previousSeverity': self.previous_severity,
+            'trendIndication': self.trend_indication,
+            'receiveTime': self.receive_time.isoformat(),
+            'lastReceiveId': self.last_receive_id,
+            'lastReceiveTime': self.last_receive_time.isoformat(),
+            'updateTime': self.update_time.isoformat(),
+        }
+
     def get_id(self, short: bool = False) -> str:
         return self.id[:8] if short else self.id
 

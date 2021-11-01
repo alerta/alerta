@@ -1643,11 +1643,8 @@ class Backend(Database):
         return cursor.fetchall() if returning else None
 
     def _log(self, cursor, query, vars):
-        _vars = {}
-        for k, v in vars.items():
-            _vars[k] = str(v) if isinstance(v, datetime) else v
         current_app.logger.debug('{stars}\n{query}\n{stars}'.format(
-            stars='*' * 40, query=cursor.mogrify(query, _vars).decode('utf-8')))
+            stars='*' * 40, query=cursor.mogrify(query, vars).decode('utf-8')))
 
     def create_rule(self, rule):
         insert = """
@@ -1747,7 +1744,7 @@ class Backend(Database):
     def multiplex_event_log(self, event_log):
         query = """
         INSERT INTO event_log_multiplexed(event_id ,event_name ,resource ,customer_id ,environment,channel_id )
-        SELECT %(event_id)s ,%(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s, id FROM customer_channels 
+        SELECT %(id)s ,%(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s, id FROM customer_channels 
         where customer_id = %(customer_id)s
         """
         return self._insert(query, vars(event_log))
