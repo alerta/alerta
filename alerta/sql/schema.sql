@@ -238,14 +238,55 @@ CREATE TABLE IF NOT EXISTS customer_rules (
 
 CREATE TABLE IF NOT EXISTS customer_channels (
     id SERIAL PRIMARY KEY,
-    rule_id int,
+    customer_id text,
     name text,
     channel_type text,
-    properties jsonb,
+    properties jsonb
+);
+
+
+CREATE TABLE IF NOT EXISTS customer_channel_rules_map(
+    id SERIAL PRIMARY KEY,
+    channel_id int,
+    rule_id int,
+    FOREIGN KEY (channel_id) REFERENCES customer_channels(id),
     FOREIGN KEY (rule_id) REFERENCES customer_rules(id)
+);
+
+CREATE TABLE IF NOT EXISTS event_log(
+    id SERIAL PRIMARY KEY,
+    event_name text,
+    resource text,
+    customer_id text,
+    environment text,
+    event_properties jsonb
+);
+
+CREATE TABLE IF NOT EXISTS event_log_multiplexed(
+    id SERIAL PRIMARY KEY,
+    event_id int,
+    event_name text,
+    resource text,
+    customer_id text,
+    channel_id int,
+    environment text,
+    FOREIGN KEY (event_id) REFERENCES event_log(id),
+    FOREIGN KEY(channel_id) REFERENCES customer_channels(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS worker_event_id_map(
+    id SERIAL PRIMARY KEY,
+    worker_id text,
+    event_name text,
+    resource text,
+    customer_id text,
+    channel_id int
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS env_res_evt_cust_key ON alerts USING btree (environment, resource, event, (COALESCE(customer, ''::text)));
 
 
 CREATE UNIQUE INDEX IF NOT EXISTS org_cust_key ON heartbeats USING btree (origin, (COALESCE(customer, ''::text)));
+
+CREATE UNIQUE INDEX IF NOT EXISTS event_name_resource_customer_id_channel_id ON worker_event_id_map USING btree (event_name,resource,customer_id,channel_id::text,environment);

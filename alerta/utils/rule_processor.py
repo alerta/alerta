@@ -6,6 +6,8 @@ import psycopg2
 import six
 from psycopg2.extras import NamedTupleCursor
 
+from alerta.models.alert import Alert
+
 
 def rule_matches(regex, value):
     if isinstance(value, list):
@@ -37,8 +39,9 @@ def get_customer_forward_rules(customer_id):
         conn.close()
 
 
-def process_forward_rules_for_alert(alert):
-    rules = get_customer_forward_rules(alert.customer_id)
+def process_forward_rules_for_alert(alert: Alert):
+    from alerta.app import webhook
+    rules = get_customer_forward_rules(alert.customer)
     for rule in rules:
         logging.getLogger('').debug('Evaluating rule %s', rule['name'])
         is_matching = False
@@ -56,28 +59,10 @@ def process_forward_rules_for_alert(alert):
                 break
         matching_rule_id = rule.id
         if is_matching:
-            wanted_plugins, wanted_config = plugins.routing(alert)
-            for plugin in wanted_plugins:
+            for plugin in [webhook]:
                 try:
-                    plugin.post_receive(alert, config=wanted_config, rule_id=matching_rule_id)
+                    plugin.post_receive(alert, rule_id=matching_rule_id)
                 except TypeError:
                     plugin.post_receive(alert, rule_id=matching_rule_id)
                 except Exception as e:
                     logging.error(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
-
-
-def get_plugin_properties_by_rule_id(rule_id, plugin):
-    query = f"select * from rule_properties where rule_id='{rule_id}' and plugin='{plugin}'"
-    conn = psycopg2.connect(
-        dsn=os.environ['DATABASE_URL'],
-        dbname=os.environ.get('DATABASE_NAME'),
-        cursor_factory=NamedTupleCursor
-    )
-    conn.set_client_encoding('UTF8')
-    cursor = conn.cursor()
-    cursor.execute(query)
-    try:
-        result = cursor.fetchall()
-        return result
-    finally:
-        conn.close()

@@ -21,6 +21,8 @@ from alerta.utils.paging import Page
 from alerta.utils.response import absolute_url, jsonp
 
 from . import api
+from ..models.channel_rule import CustomerChannelRuleMap
+from ..models.event_log import EventLog
 
 receive_timer = Timer('alerts', 'received', 'Received alerts', 'Total time and number of received alerts')
 gets_timer = Timer('alerts', 'queries', 'Alert queries', 'Total time and number of alert queries')
@@ -72,6 +74,8 @@ def receive():
         raise ApiError(str(e), 500)
     write_audit_trail.send(current_app._get_current_object(), event='alert-received', message=alert.text, user=g.login,
                            customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
+    event_log = EventLog.from_alert(alert)
+    event_log.create()
     if alert:
         return jsonify(status='ok', id=alert.id, alert=alert.serialize), 201
     else:

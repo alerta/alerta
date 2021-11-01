@@ -1692,16 +1692,16 @@ class Backend(Database):
 
     def create_channel(self, customer_channel):
         insert = """
-            INSERT INTO customer_channels (name,channel_type,properties,rule_id)
-            VALUES (%(name)s, %(channel_type)s, %(properties)s, %(rule_id)s)
+            INSERT INTO customer_channels (name,channel_type,properties,customer_id)
+            VALUES (%(name)s, %(channel_type)s, %(properties)s, %(customer_id)s)
             RETURNING *
         """
         return self._insert(insert, vars(customer_channel))
 
-    def get_channels(self, rule_id, sort_by, ascending, limit, offset):
+    def get_channels(self, customer_id, sort_by, ascending, limit, offset):
         ascending_order = 'asc' if ascending else 'desc'
-        query = f"""select * from customer_channels where rule_id=%(rule_id)s order by {sort_by} {ascending_order} """
-        return self._fetchall(query, {"rule_id": rule_id}, limit, offset)
+        query = f"""select * from customer_channels where customer_id=%(customer_id)s order by {sort_by} {ascending_order} """
+        return self._fetchall(query, {"customer_id": customer_id}, limit, offset)
 
     def find_channel_by_id(self, channel_id):
         query = f"""select * from customer_channels where id={channel_id}"""
@@ -1721,3 +1721,22 @@ class Backend(Database):
     def delete_channel_by_id(self, channel_id):
         query = f"DELETE from customer_channels where id={channel_id} returning * "
         return self._deleteone(query, (), True)
+
+    def create_customer_rule_map(self, customer_channel_rule_map):
+        insert = """
+                    INSERT INTO customer_channel_rules_map (channel_id,rule_id)
+                    VALUES (%(channel_id)s, %(rule_id)s)
+                    RETURNING *
+                """
+        return self._insert(insert, vars(customer_channel_rule_map))
+
+    def delete_customer_rule_map_by_id(self, customer_rule_map_id):
+        query = f"DELETE from customer_channel_rules_map where id={customer_rule_map_id} returning * "
+        return self._deleteone(query, (), True)
+
+    def create_event_log(self, event_log):
+        query = f"""INSERT INTO event_log(event_name ,resource ,customer_id ,environment ,event_properties) 
+        VALUES (%(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s)
+        RETURNING *
+        """
+        return self._insert(query, vars(event_log))

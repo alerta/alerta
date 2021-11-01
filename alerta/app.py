@@ -21,6 +21,7 @@ from alerta.utils.plugin import Plugins
 from alerta.utils.tracing import Tracing
 from alerta.utils.webhook import CustomWebhooks
 from alerta.version import __version__
+from alerta_webhook import AlertaWebhookPlugin
 
 # Sentry will read the DSN from SENTRY_DSN environment variable.
 sentry_sdk.init(integrations=[FlaskIntegration()], release=__version__)
@@ -43,6 +44,7 @@ qb = QueryBuilder()
 mailer = Mailer()
 plugins = Plugins()
 custom_webhooks = CustomWebhooks()
+webhook = AlertaWebhookPlugin()
 
 
 def create_app(config_override: Dict[str, Any] = None, environment: str = None) -> Flask:

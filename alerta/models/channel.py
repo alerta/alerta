@@ -3,22 +3,22 @@ from alerta.app import db
 
 
 class CustomerChannel:
-    def __init__(self, name, channel_type, properties, rule_id, id=None):
+    def __init__(self, name, channel_type, properties, customer_id, id=None):
         self.id = id
         self.name = name
         self.channel_type = channel_type
         self.properties = properties
-        self.rule_id = rule_id
+        self.customer_id = customer_id
 
     def create(self):
         return CustomerChannel.from_db(db.create_channel(self))
 
     @classmethod
     def from_record(cls, rec) -> 'CustomerChannel':
-        return CustomerChannel(rec.name, rec.channel_type, rec.properties, rec.rule_id, rec.id)
+        return CustomerChannel(rec.name, rec.channel_type, rec.properties, rec.customer_id, rec.id)
 
     @classmethod
-    def from_db(cls, r: Union[Dict, Tuple]) -> 'Rule':
+    def from_db(cls, r: Union[Dict, Tuple]) -> 'CustomerChannel':
         if isinstance(r, dict):
             return cls.from_document(r)
         elif isinstance(r, tuple):
@@ -31,13 +31,13 @@ class CustomerChannel:
             "name": self.name,
             "channel_type": self.channel_type,
             "properties": self.properties,
-            "rule_id": self.rule_id
+            "customer_id": self.customer_id
         }
 
     @staticmethod
-    def find_all(rule_id, sort_by, ascending, limit, offset):
+    def find_all(customer_id, sort_by, ascending, limit, offset):
         return [CustomerChannel.from_db(channel) for channel in
-                db.get_channels(rule_id, sort_by, ascending, limit, offset)]
+                db.get_channels(customer_id, sort_by, ascending, limit, offset)]
 
     @staticmethod
     def find_by_id(channel_id):

@@ -8,6 +8,7 @@ from alerta.utils.response import jsonp
 from . import api
 from ..exceptions import ApiError
 from ..models.channel import CustomerChannel
+from ..models.channel_rule import CustomerChannelRuleMap
 
 
 @api.route("/channel", methods=['POST'])
@@ -27,14 +28,14 @@ def create_channel():
 @permission(Scope.read_rules)
 @jsonp
 def get_channels():
-    rule_id = request.args.get('rule_id')
-    if not rule_id:
-        raise ApiError('rule_id not present in query parameters')
+    customer_id = request.args.get('customer_id')
+    if not customer_id:
+        raise ApiError('customer_id not present in query parameters')
     sort_by = request.args.get('sort_by', 'id')
     limit = int(request.args.get('limit', 10))
     offset = int(request.args.get('offset', 0))
     ascending = request.args.get('sort_order', 'asc') == 'asc'
-    rules = CustomerChannel.find_all(rule_id, sort_by, ascending, limit, offset)
+    rules = CustomerChannel.find_all(customer_id, sort_by, ascending, limit, offset)
     return jsonify(channels=[r.serialize for r in rules])
 
 
@@ -69,3 +70,28 @@ def delete_channel_by_id(channel_id):
     if not channel:
         raise ApiError("not found", 404)
     return jsonify(status='ok')
+
+
+@api.route("/channel-rule", methods=['POST'])
+@cross_origin()
+@permission(Scope.write_rules)
+@jsonp
+def link_channel_rule():
+    channel_id = request.json['channel_id']
+    rule_id = request.json['rule_id']
+    channel_rule_map = CustomerChannelRuleMap(channel_id, rule_id)
+    channel_rule_map = channel_rule_map.create()
+    if not channel_rule_map:
+        raise ApiError("not found", 404)
+    return jsonify(status='ok')
+
+
+@api.route("/channel-rule/<channel_rule_map_id>", methods=['POST'])
+@cross_origin()
+@permission(Scope.write_rules)
+@jsonp
+def unlink_channel_rule(channel_rule_map_id):
+    channel_rule_map = CustomerChannelRuleMap.delete_by_id(int(channel_rule_map_id))
+    if channel_rule_map:
+        return jsonify(status='ok')
+    raise ApiError('not found', 404)
