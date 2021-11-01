@@ -1740,3 +1740,11 @@ class Backend(Database):
         RETURNING *
         """
         return self._insert(query, vars(event_log))
+
+    def multiplex_event_log(self, event_log):
+        query = """
+        INSERT INTO event_log_multiplexed(event_id ,event_name ,resource ,customer_id ,environment,channel_id )
+        SELECT %(event_id)s ,%(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s, id FROM customer_channels 
+        where customer_id = %(customer_id)s
+        """
+        return self._insert(query, vars(event_log))
