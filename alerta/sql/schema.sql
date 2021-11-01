@@ -259,18 +259,8 @@ CREATE TABLE IF NOT EXISTS event_log(
     resource text,
     customer_id text,
     environment text,
-    event_properties jsonb
-);
-
-CREATE TABLE IF NOT EXISTS event_log_multiplexed(
-    id SERIAL PRIMARY KEY,
-    event_id int,
-    event_name text,
-    resource text,
-    customer_id text,
+    event_properties jsonb,
     channel_id int,
-    environment text,
-    FOREIGN KEY (event_id) REFERENCES event_log(id),
     FOREIGN KEY(channel_id) REFERENCES customer_channels(id)
 );
 
@@ -282,7 +272,8 @@ CREATE TABLE IF NOT EXISTS worker_event_id_map(
     resource text,
     customer_id text,
     channel_id int,
-    environment text
+    environment text,
+    events int[]
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS env_res_evt_cust_key ON alerts USING btree (environment, resource, event, (COALESCE(customer, ''::text)));

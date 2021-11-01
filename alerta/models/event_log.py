@@ -34,7 +34,3 @@ class EventLog:
     @staticmethod
     def from_alert(alert: Alert):
         return EventLog(alert.event, alert.resource, alert.customer, alert.properties, alert.environment)
-
-    @staticmethod
-    def multiplex_event_log(event_log):
-        return db.multiplex_event_log(event_log)

@@ -1735,16 +1735,9 @@ class Backend(Database):
         return self._deleteone(query, (), True)
 
     def create_event_log(self, event_log):
-        query = f"""INSERT INTO event_log(event_name ,resource ,customer_id ,environment ,event_properties) 
-        VALUES (%(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s)
+        query = f"""INSERT INTO event_log(event_name ,resource ,customer_id ,environment ,event_properties,channel_id) 
+        select %(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s, id FROM 
+        customer_channels where customer_id = %(customer_id)s
         RETURNING *
-        """
-        return self._insert(query, vars(event_log))
-
-    def multiplex_event_log(self, event_log):
-        query = """
-        INSERT INTO event_log_multiplexed(event_id ,event_name ,resource ,customer_id ,environment,channel_id )
-        SELECT %(id)s ,%(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s, id FROM customer_channels 
-        where customer_id = %(customer_id)s
         """
         return self._insert(query, vars(event_log))
