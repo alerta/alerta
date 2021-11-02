@@ -273,7 +273,8 @@ CREATE TABLE IF NOT EXISTS worker_event_id_map(
     customer_id text,
     channel_id int,
     environment text,
-    events int[]
+    events int[],
+    last_heart_beat_at TIMESTAMP
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS env_res_evt_cust_key ON alerts USING btree (environment, resource, event, (COALESCE(customer, ''::text)));
