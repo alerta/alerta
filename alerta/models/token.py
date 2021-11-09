@@ -45,7 +45,7 @@ class Jwt:
             json = jwt.decode(
                 token,
                 key=key or current_app.config['SECRET_KEY'],
-                options={"verify_signature": verify},
+                options={'verify_signature': verify},
                 algorithms=algorithm,
                 audience=current_app.config['OAUTH2_CLIENT_ID'] or current_app.config['SAML2_ENTITY_ID'] or absolute_url()
             )
