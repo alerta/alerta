@@ -33,7 +33,7 @@ class Plugins:
         for ep in iter_entry_points('alerta.plugins'):
             LOG.debug(f"Server plugin '{ep.name}' found.")
             entry_points[ep.name] = ep
-
+        LOG.info(f"Server plugins are {entry_points}")
         for name in self.config['PLUGINS']:
             try:
                 plugin = entry_points[name].load()

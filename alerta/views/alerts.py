@@ -15,7 +15,7 @@ from alerta.models.metrics import Timer, timer
 from alerta.models.note import Note
 from alerta.models.switch import Switch
 from alerta.utils.api import (assign_customer, process_action, process_alert,
-                              process_delete, process_note, process_status, get_alert_customer_from_tags, )
+                              process_delete, process_note, process_status, )
 from alerta.utils.audit import write_audit_trail
 from alerta.utils.paging import Page
 from alerta.utils.response import absolute_url, jsonp
@@ -45,7 +45,6 @@ def receive():
         alert = Alert.parse(request.json)
     except ValueError as e:
         raise ApiError(str(e), 400)
-    alert.customer = get_alert_customer_from_tags(alert)
 
     def audit_trail_alert(event: str):
         write_audit_trail.send(current_app._get_current_object(), event=event, message=alert.text, user=g.login,
