@@ -10,6 +10,7 @@ from alerta.app import plugins
 from alerta.exceptions import (AlertaException, ApiError, ForwardingLoop, InvalidAction, RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
+from alerta.stats import StatsD
 from alerta.utils.rule_processor import process_forward_rules_for_alert
 from alerta.exceptions import (AlertaException, ApiError, BlackoutPeriod,
                                ForwardingLoop, HeartbeatReceived,
@@ -36,23 +37,24 @@ def assign_customer(wanted: str = None, permission: Scope = Scope.admin_alerts) 
 def process_alert(alert: Alert) -> Alert:
     wanted_plugins, wanted_config = plugins.routing(alert)
     skip_plugins = False
-    for plugin in wanted_plugins:
-        if alert.is_suppressed:
-            skip_plugins = True
-            break
-        try:
-            alert = plugin.pre_receive(alert, config=wanted_config)
-        except TypeError:
-            alert = plugin.pre_receive(alert)  # for backward compatibility
-        except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit, ForwardingLoop, AlertaException):
-            raise
-        except Exception as e:
-            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise RuntimeError(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
-            else:
-                logging.error(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
-        if not alert:
-            raise SyntaxError(f"Plugin '{plugin.name}' pre-receive hook did not return modified alert")
+    with StatsD.stats_client.timer("plugin_pre_process_time"):
+        for plugin in wanted_plugins:
+            if alert.is_suppressed:
+                skip_plugins = True
+                break
+            try:
+                alert = plugin.pre_receive(alert, config=wanted_config)
+            except TypeError:
+                alert = plugin.pre_receive(alert)  # for backward compatibility
+            except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit, ForwardingLoop, AlertaException):
+                raise
+            except Exception as e:
+                if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                    raise RuntimeError(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
+                else:
+                    logging.error(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
+            if not alert:
+                raise SyntaxError(f"Plugin '{plugin.name}' pre-receive hook did not return modified alert")
     try:
         is_duplicate = alert.is_duplicate()
         if is_duplicate:
@@ -68,22 +70,23 @@ def process_alert(alert: Alert) -> Alert:
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None
-    for plugin in wanted_plugins:
-        if skip_plugins:
-            break
-        try:
-            updated = plugin.post_receive(alert, config=wanted_config)
-        except TypeError:
-            updated = plugin.post_receive(alert)  # for backward compatibility
-        except AlertaException:
-            raise
-        except Exception as e:
-            if current_app.config['PLUGINS_RAISE_ON_ERROR']:
-                raise ApiError(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
-            else:
-                logging.error(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
-        if updated:
-            alert = updated
+    with StatsD.stats_client.timer("plugin_post_process_time"):
+        for plugin in wanted_plugins:
+            if skip_plugins:
+                break
+            try:
+                updated = plugin.post_receive(alert, config=wanted_config)
+            except TypeError:
+                updated = plugin.post_receive(alert)  # for backward compatibility
+            except AlertaException:
+                raise
+            except Exception as e:
+                if current_app.config['PLUGINS_RAISE_ON_ERROR']:
+                    raise ApiError(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
+                else:
+                    logging.error(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
+            if updated:
+                alert = updated
 
     if updated:
         alert.update_tags(alert.tags)
