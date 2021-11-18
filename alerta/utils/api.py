@@ -80,11 +80,15 @@ def process_alert(alert: Alert) -> Alert:
                 break
             try:
                 updated = plugin.post_receive(alert, config=wanted_config)
+                StatsD.increment("plugin_post_process_count", 1, {"name": plugin.name})
             except TypeError:
                 updated = plugin.post_receive(alert)  # for backward compatibility
+                StatsD.increment("plugin_post_process_count", 1, {"name": plugin.name})
             except AlertaException:
+                StatsD.increment("plugin_post_process_error", 1, {"name": plugin.name})
                 raise
             except Exception as e:
+                StatsD.increment("plugin_post_process_error", 1, {"name": plugin.name})
                 if current_app.config['PLUGINS_RAISE_ON_ERROR']:
                     raise ApiError(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
                 else:
