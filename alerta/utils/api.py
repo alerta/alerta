@@ -44,11 +44,15 @@ def process_alert(alert: Alert) -> Alert:
                 break
             try:
                 alert = plugin.pre_receive(alert, config=wanted_config)
+                StatsD.increment("plugin_pre_process_count", 1, {"name": plugin.name})
             except TypeError:
                 alert = plugin.pre_receive(alert)  # for backward compatibility
+                StatsD.increment("plugin_pre_process_count", 1, {"name": plugin.name})
             except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit, ForwardingLoop, AlertaException):
+                StatsD.increment("plugin_pre_process_error", 1, {"name": plugin.name})
                 raise
             except Exception as e:
+                StatsD.increment("plugin_pre_process_error", 1, {"name": plugin.name})
                 if current_app.config['PLUGINS_RAISE_ON_ERROR']:
                     raise RuntimeError(f"Error while running pre-receive plugin '{plugin.name}': {str(e)}")
                 else:
