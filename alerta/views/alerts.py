@@ -1,4 +1,5 @@
 import multiprocessing
+import time
 from datetime import datetime
 
 from flask import current_app, g, jsonify, request
@@ -23,6 +24,7 @@ from alerta.utils.response import absolute_url, jsonp
 from . import api
 from ..models.channel_rule import CustomerChannelRuleMap
 from ..models.event_log import EventLog
+from ..stats import StatsD
 
 receive_timer = Timer('alerts', 'received', 'Received alerts', 'Total time and number of received alerts')
 gets_timer = Timer('alerts', 'queries', 'Alert queries', 'Total time and number of alert queries')
@@ -42,8 +44,10 @@ count_timer = Timer('alerts', 'counts', 'Count alerts', 'Total time and number o
 @jsonp
 def receive():
     try:
-        alert = Alert.parse(request.json)
+        with StatsD.stats_client.timer('request_parse_time'):
+            alert = Alert.parse(request.json)
     except ValueError as e:
+        StatsD.increment('request_parse_error', 1)
         raise ApiError(str(e), 400)
 
     def audit_trail_alert(event: str):
