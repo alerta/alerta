@@ -33,32 +33,36 @@ $(PIP):
 	python3 -m venv $(VENV)
 
 $(PYLINT): $(PIP)
-	$(PIP) install pylint
+	$(PIP) install pylint==2.11.1
 
 $(MYPY): $(PIP)
-	$(PIP) install mypy
+	$(PIP) install mypy==0.812
 
 $(BLACK): $(PIP)
-	$(PIP) install black
+	$(PIP) install black==21.11b1
 
 $(TOX): $(PIP)
 	$(PIP) install tox
 
 $(PYTEST): $(PIP)
-	$(PIP) install pytest
+	$(PIP) install pytest==6.2.5 pytest-cov==3.0.0
 
 $(PRE_COMMIT): $(PIP)
-	$(PIP) install pre-commit
+	$(PIP) install pre-commit==2.15.0
 
 $(WHEEL): $(PIP)
 	$(PIP) install wheel
 
 $(TWINE): $(PIP)
-	$(PIP) install twine
+	$(PIP) install wheel twine
 
 ifdef TOXENV
 toxparams?=-e $(TOXENV)
 endif
+
+## install			- Install dependencies.
+install: $(PIP)
+	$(PIP) install -r requirements.txt
 
 ## format			- Code formatter.
 format: $(BLACK)
@@ -74,8 +78,10 @@ lint: $(PYLINT) $(BLACK) $(MYPY)
 	$(BLACK) -l120 -S --check -v $(PROJECT) || true
 	$(MYPY) $(PROJECT)/
 
+## test			- Run all tests.
+test: test.unit test.integration
+
 ## test.unit		- Run unit tests.
-test: test.unit
 test.unit: $(TOX) $(PYTEST)
 	$(TOX) $(toxparams)
 
@@ -85,6 +91,7 @@ test.integration: $(PYTEST)
 	$(DOCKER_COMPOSE) -f docker-compose.ci.yml up -d
 	$(PYTEST) tests/integration $(toxparams)
 
+## test.forwarder	- Run forwarder tests.
 test.forwarder:
 	$(DOCKER_COMPOSE) -f tests/integration/fixtures/docker-compose.yml pull
 	$(DOCKER_COMPOSE) -f tests/integration/fixtures/docker-compose.yml up
