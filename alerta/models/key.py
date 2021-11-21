@@ -20,7 +20,7 @@ class ApiKeyStatus(str, Enum):
 
 class ApiKey:
 
-    def __init__(self, user: str, scopes: List[Scope], text: str = '', expire_time: datetime = None, customer: str = None, **kwargs) -> None:
+    def __init__(self, user: str, scopes: List[str], text: str = '', expire_time: datetime = None, customer: str = None, **kwargs) -> None:
 
         self.id = kwargs.get('id') or str(uuid4())
         self.key = kwargs.get('key', None) or key_helper.generate()
