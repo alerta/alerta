@@ -46,7 +46,7 @@ class Jwt:
                 token,
                 key=key or current_app.config['SECRET_KEY'],
                 options={'verify_signature': verify},
-                algorithms=algorithm,
+                algorithms=[algorithm],
                 audience=current_app.config['OAUTH2_CLIENT_ID'] or current_app.config['SAML2_ENTITY_ID'] or absolute_url()
             )
         except (DecodeError, ExpiredSignatureError, InvalidAudienceError):
@@ -114,7 +114,6 @@ class Jwt:
             data['oid'] = self.oid
         return data
 
-    @property
     def tokenize(self, algorithm: str = 'HS256') -> str:
         return jwt.encode(self.serialize, key=current_app.config['SECRET_KEY'], algorithm=algorithm)
 

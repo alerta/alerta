@@ -164,4 +164,4 @@ def openid():
     token = create_token(user_id=subject, name=name, login=login, provider=current_app.config['AUTH_PROVIDER'],
                          customers=customers, scopes=scopes, **custom_claims,
                          email=email, email_verified=email_verified, picture=picture)
-    return jsonify(token=token.tokenize)
+    return jsonify(token=token.tokenize())

@@ -46,7 +46,7 @@ def receive():
     alert.customer = assign_customer(wanted=alert.customer)
 
     def audit_trail_alert(event: str):
-        write_audit_trail.send(current_app._get_current_object(), event=event, message=alert.text, user=g.login,
+        write_audit_trail.send(current_app._get_current_object(), event=event, message=alert.text, user=g.login,  # type: ignore
                                customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert', request=request)
 
     try:

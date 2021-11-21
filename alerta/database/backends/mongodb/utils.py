@@ -2,6 +2,7 @@ import json
 import re
 from collections import namedtuple
 from datetime import datetime
+from typing import Any, Dict, List
 
 import pytz
 from pyparsing import ParseException
@@ -213,8 +214,8 @@ class Blackouts(QueryBuilder):
     @staticmethod
     def from_params(params: ImmutableMultiDict, customers=None, query_time=None):
 
-        query = dict()
-        params = MultiDict(params)
+        query = dict()  # type: Dict[str, Any]
+        params = MultiDict(params)  # type: ignore
 
         # customer
         if customers:
@@ -223,7 +224,7 @@ class Blackouts(QueryBuilder):
             customer_query = None  # type: ignore
 
         # status
-        status = params.poplist('status')
+        status = params.poplist('status')  # type: List[str]
         if status:
             query['$or'] = list()
             if BlackoutStatus.Active in status:
@@ -265,8 +266,8 @@ class Heartbeats(QueryBuilder):
     @staticmethod
     def from_params(params: ImmutableMultiDict, customers=None, query_time=None):
 
-        query = dict()
-        params = MultiDict(params)
+        query = dict()  # type: Dict[str, Any]
+        params = MultiDict(params)  # type: ignore
 
         # customer
         if customers:
@@ -308,8 +309,8 @@ class ApiKeys(QueryBuilder):
     @staticmethod
     def from_params(params: MultiDict, customers=None, query_time=None):
 
-        query = dict()
-        params = MultiDict(params)
+        query = dict()  # type: Dict[str, Any]
+        params = MultiDict(params)  # type: ignore
 
         # customer
         if customers:
@@ -359,8 +360,8 @@ class Users(QueryBuilder):
     @staticmethod
     def from_params(params: MultiDict, customers=None, query_time=None):
 
-        query = dict()
-        params = MultiDict(params)
+        query = dict()  # type: Dict[str, Any]
+        params = MultiDict(params)  # type: ignore
 
         # filter, sort-by, group-by
         query = QueryBuilder.filter_query(params, Users.VALID_PARAMS, query)
@@ -382,8 +383,8 @@ class Groups(QueryBuilder):
     @staticmethod
     def from_params(params: MultiDict, customers=None, query_time=None):
 
-        query = dict()
-        params = MultiDict(params)
+        query = dict()  # type: Dict[str, Any]
+        params = MultiDict(params)  # type: ignore
 
         # filter, sort-by, group-by
         query = QueryBuilder.filter_query(params, Groups.VALID_PARAMS, query)
@@ -405,8 +406,8 @@ class Permissions(QueryBuilder):
     @staticmethod
     def from_params(params: MultiDict, customers=None, query_time=None):
 
-        query = dict()
-        params = MultiDict(params)
+        query = dict()  # type: Dict[str, Any]
+        params = MultiDict(params)  # type: ignore
 
         # filter, sort-by, group-by
         query = QueryBuilder.filter_query(params, Permissions.VALID_PARAMS, query)
@@ -427,8 +428,8 @@ class Customers(QueryBuilder):
     @staticmethod
     def from_params(params: MultiDict, customers=None, query_time=None):
 
-        query = dict()
-        params = MultiDict(params)
+        query = dict()  # type: Dict[str, Any]
+        params = MultiDict(params)  # type: ignore
 
         # filter, sort-by, group-by
         query = QueryBuilder.filter_query(params, Customers.VALID_PARAMS, query)

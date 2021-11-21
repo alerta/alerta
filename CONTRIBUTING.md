@@ -50,7 +50,7 @@ Alerta can be run in "development mode" from the command-line:
 $ alertad run
 ```
 
-Test that Alerta API is working by `curl`-ing the API endpoint: 
+Test that Alerta API is working by `curl`-ing the API endpoint:
 
 ```bash
 $ curl http://localhost:8080/

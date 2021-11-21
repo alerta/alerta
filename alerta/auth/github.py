@@ -80,4 +80,4 @@ def github():
     token = create_token(user_id=subject, name=name, login=login, provider='github',
                          customers=customers, scopes=scopes, roles=user.roles, orgs=organizations,
                          email=email, email_verified=email_verified, picture=picture)
-    return jsonify(token=token.tokenize)
+    return jsonify(token=token.tokenize())

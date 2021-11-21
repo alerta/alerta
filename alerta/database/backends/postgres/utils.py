@@ -359,7 +359,7 @@ class Users(QueryBuilder):
     def from_params(params: MultiDict, customers=None, query_time=None):
 
         query = ['1=1']
-        qvars = dict()
+        qvars = dict()  # type: Dict[str, Any]
         params = MultiDict(params)
 
         # filter, sort-by
@@ -383,7 +383,7 @@ class Groups(QueryBuilder):
     def from_params(params: MultiDict, customers=None, query_time=None):
 
         query = ['1=1']
-        qvars = dict()
+        qvars = dict()  # type: Dict[str, Any]
         params = MultiDict(params)
 
         # filter, sort-by
@@ -407,7 +407,7 @@ class Permissions(QueryBuilder):
     def from_params(params: MultiDict, customers=None, query_time=None):
 
         query = ['1=1']
-        qvars = dict()
+        qvars = dict()  # type: Dict[str, Any]
         params = MultiDict(params)
 
         # filter, sort-by
@@ -430,7 +430,7 @@ class Customers(QueryBuilder):
     def from_params(params: MultiDict, customers=None, query_time=None):
 
         query = ['1=1']
-        qvars = dict()
+        qvars = dict()  # type: Dict[str, Any]
         params = MultiDict(params)
 
         # filter, sort-by

@@ -28,7 +28,7 @@ class ApiKey:
         self.scopes = scopes or key_helper.user_default_scopes
         self.text = text
         self.expire_time = expire_time or datetime.utcnow() + timedelta(days=key_helper.api_key_expire_days)
-        self.count = kwargs.get('count', 0)
+        self.count = kwargs.get('count', 0)  # type: ignore
         self.last_used_time = kwargs.get('last_used_time', None)
         self.customer = customer
 
