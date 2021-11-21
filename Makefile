@@ -45,6 +45,7 @@ $(PYTEST): $(PIP)
 
 $(PRE_COMMIT): $(PIP)
 	$(PIP) install pre-commit==2.15.0
+	$(PRE_COMMIT) install
 
 $(WHEEL): $(PIP)
 	$(PIP) install wheel

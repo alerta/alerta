@@ -1,4 +1,4 @@
-name: release
+name: Release
 
 on:
   push:
@@ -11,22 +11,47 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_DB: alerta
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v2
-      - name: Install
-        id: install
-        run: make install
-      - name: Lint
-        id: lint
-        run: make lint
-      - name: Test
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        id: install-deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install .
+      - name: Test with pytest
         id: test
-        run: make test
-
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/alerta
+        run: |
+          pytest --cov=alerta tests/*.py
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
+        if: failure()
 
   release:
     needs: test
