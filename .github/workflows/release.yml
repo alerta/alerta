@@ -18,9 +18,7 @@ jobs:
         run: make install
       - name: Lint
         id: lint
-        run: |
-          make format
-          make lint
+        run: make lint
       - name: Test
         id: test
         run: make test
