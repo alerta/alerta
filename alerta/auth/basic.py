@@ -60,7 +60,7 @@ def signup():
     token = create_token(user_id=user.id, name=user.name, login=user.login, provider='basic',
                          customers=customers, scopes=scopes, roles=user.roles, groups=groups,
                          email=user.email, email_verified=user.email_verified)
-    return jsonify(token=token.tokenize)
+    return jsonify(token=token.tokenize())
 
 
 def login():
@@ -101,7 +101,7 @@ def login():
     token = create_token(user_id=user.id, name=user.name, login=user.login, provider='basic',
                          customers=customers, scopes=scopes, roles=user.roles, groups=groups,
                          email=user.email, email_verified=user.email_verified)
-    return jsonify(token=token.tokenize)
+    return jsonify(token=token.tokenize())
 
 
 @auth.route('/auth/confirm/<hash>', methods=['OPTIONS', 'POST'])

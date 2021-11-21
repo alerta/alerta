@@ -3,9 +3,8 @@
 VENV=venv
 PYTHON=$(VENV)/bin/python
 PIP=$(VENV)/bin/pip --disable-pip-version-check
-PYLINT=$(VENV)/bin/pylint
+FLAKE8=$(VENV)/bin/flake8
 MYPY=$(VENV)/bin/mypy
-BLACK=$(VENV)/bin/black
 TOX=$(VENV)/bin/tox
 PYTEST=$(VENV)/bin/pytest
 DOCKER_COMPOSE=docker-compose
@@ -32,14 +31,11 @@ all:	help
 $(PIP):
 	python3 -m venv $(VENV)
 
-$(PYLINT): $(PIP)
-	$(PIP) install pylint==2.11.1
+$(FLAKE8): $(PIP)
+	$(PIP) install flake8==4.0.1
 
 $(MYPY): $(PIP)
 	$(PIP) install mypy==0.812
-
-$(BLACK): $(PIP)
-	$(PIP) install black==21.11b1
 
 $(TOX): $(PIP)
 	$(PIP) install tox
@@ -60,22 +56,17 @@ ifdef TOXENV
 toxparams?=-e $(TOXENV)
 endif
 
-## install			- Install dependencies.
+## install		- Install dependencies.
 install: $(PIP)
 	$(PIP) install -r requirements.txt
-
-## format			- Code formatter.
-format: $(BLACK)
-	$(BLACK) -l120 -S -v $(PROJECT)
 
 ## hooks			- Run pre-commit hooks.
 hooks: $(PRE_COMMIT)
 	$(PRE_COMMIT) run --all-files --show-diff-on-failure
 
 ## lint			- Lint and type checking.
-lint: $(PYLINT) $(BLACK) $(MYPY)
-	$(PYLINT) --rcfile pylintrc $(PROJECT)
-	$(BLACK) -l120 -S --check -v $(PROJECT) || true
+lint: $(FLAKE8) $(MYPY)
+	$(FLAKE8) $(PROJECT)/
 	$(MYPY) $(PROJECT)/
 
 ## test			- Run all tests.
@@ -91,7 +82,7 @@ test.integration: $(PYTEST)
 	$(DOCKER_COMPOSE) -f docker-compose.ci.yml up -d
 	$(PYTEST) tests/integration $(toxparams)
 
-## test.forwarder	- Run forwarder tests.
+## test.forwarder		- Run forwarder tests.
 test.forwarder:
 	$(DOCKER_COMPOSE) -f tests/integration/fixtures/docker-compose.yml pull
 	$(DOCKER_COMPOSE) -f tests/integration/fixtures/docker-compose.yml up

@@ -19,7 +19,7 @@ class TimeoutPolicy(PluginBase):
         return alert
 
     def post_receive(self, alert: 'Alert', **kwargs) -> Optional['Alert']:
-        return
+        return None
 
     def status_change(self, alert: 'Alert', status: str, text: str, **kwargs) -> Any:
         return

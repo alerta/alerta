@@ -114,7 +114,7 @@ def saml_response_from_idp():
                          customers=customers, scopes=scopes, roles=user.roles, groups=groups,
                          email=user.email, email_verified=user.email_verified)
 
-    message = {'status': 'ok', 'token': token.tokenize}
+    message = {'status': 'ok', 'token': token.tokenize()}
     return render_template('auth/saml2.html', message=message, origin=origin), 200
 
 

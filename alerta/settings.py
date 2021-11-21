@@ -69,8 +69,9 @@ USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includ
 DEFAULT_GUEST_ROLE = 'guest'
 GUEST_ROLES = [DEFAULT_GUEST_ROLE]
 GUEST_DEFAULT_SCOPES = ['read:alerts']
-CUSTOM_SCOPES = []
-DELETE_SCOPES = []  # Set to "delete:alerts" to prevent users with "write:alerts" scope being able to delete alerts
+CUSTOM_SCOPES = []  # type: List[str]
+# Set DELETE_SCOPES to "delete:alerts" to prevent users with "write:alerts" scope being able to delete alerts
+DELETE_SCOPES = []  # type: List[str]
 CUSTOMER_VIEWS = False
 
 ALLOW_READONLY = False
@@ -112,7 +113,7 @@ LDAP_CACERT = ''  # Path to CA certificate to verify LDAPS connection against
 LDAP_ALLOW_SELF_SIGNED_CERT = False
 LDAP_DOMAINS = {
     # 'planetexpress.com': 'cn=%s,ou=people,dc=planetexpress,dc=com'
-}
+}  # type: Dict[str, Any]
 LDAP_BIND_USERNAME = ''  # required if using LDAP_SEARCH_QUERY eg. uid=admin,ou=users,dc=domain,dc=com
 LDAP_BIND_PASSWORD = ''  # required if using LDAP_BIND_USERNAME
 LDAP_USER_BASEDN = ''  # BASEDN for user search (default: LDAP_BASEDN)

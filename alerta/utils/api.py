@@ -11,7 +11,7 @@ from alerta.models.alert import Alert
 from alerta.models.enums import Scope
 
 
-def assign_customer(wanted: str = None, permission: Scope = Scope.admin_alerts) -> Optional[str]:
+def assign_customer(wanted: str = None, permission: str = Scope.admin_alerts) -> Optional[str]:
     customers = g.get('customers', [])
     if wanted:
         if Scope.admin in g.scopes or permission in g.scopes:
