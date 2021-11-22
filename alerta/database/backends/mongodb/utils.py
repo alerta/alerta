@@ -16,7 +16,7 @@ from alerta.utils.format import DateTime
 from .queryparser import QueryParser
 
 Query = namedtuple('Query', ['where', 'sort', 'group'])
-Query.__new__.__defaults__ = ({}, {}, '_id', 'status')  # type: ignore
+Query.__new__.__defaults__ = ({}, [('_id', 1)], 'status')  # type: ignore
 
 
 EXCLUDE_FROM_QUERY = [
