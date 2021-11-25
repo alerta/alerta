@@ -58,7 +58,7 @@ RUN pip install --no-cache-dir pip virtualenv && \
     /venv/bin/pip install --no-cache-dir --requirement /app/requirements-docker.txt
 ENV PATH $PATH:/venv/bin
 
-RUN /venv/bin/pip install alerta==${CLIENT_VERSION} 
+RUN /venv/bin/pip install alerta==${CLIENT_VERSION} alerta-server==8.6.3
 COPY install-plugins.sh /app/install-plugins.sh
 COPY plugins.txt /app/plugins.txt
 RUN /app/install-plugins.sh
@@ -92,6 +92,19 @@ COPY docker-entrypoint.sh /usr/local/bin/
 COPY supervisord.conf /app/supervisord.conf
 
 ADD . /app
+ARG FLASK_APP
+ARG DATABASE_URL
+ARG AUTH_REQUIRED
+ARG ADMIN_USERS
+ARG ADMIN_KEY
+ARG STATS_URL
+ARG STATS_PORT
+ARG RUDDER_CONFIG_BACKEND_SERVICE_BASE_URL
+ARG RUDDER_CONFIG_BACKEND_ADMIN_USERNAME
+ARG RUDDER_CONFIG_BACKEND_ADMIN_PASSWORD
+ARG RUDDER_CONFIG_BACKEND_DATA_CACHE_TTL
+ARG RUDDER_CONFIG_BACKEND_CACHE_STORE_MAX_SIZE
+ARG RUDDER_WEB_APP_URL_PREFIX
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 8080
