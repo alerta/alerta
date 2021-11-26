@@ -99,6 +99,8 @@ COGNITO_DOMAIN = None
 
 # GitHub OAuth2
 GITHUB_URL = 'https://github.com'
+GITHUB_ROLE_CLAIM = 'teams'  # used in role mapping
+GITHUB_GROUP_CLAIM = 'organizations'  # used in customer mapping
 ALLOWED_GITHUB_ORGS = ['*']
 
 # GitLab OAuth2
