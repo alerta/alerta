@@ -586,6 +586,9 @@ class AuthProvidersTestCase(unittest.TestCase):
             # 'GITHUB_URL': 'https://github.com',
             'OAUTH2_CLIENT_ID': '',
             'OAUTH2_CLIENT_SECRET': '',
+            # note that for testing ROLE and GROUP are reversed
+            'GITHUB_ROLE_CLAIM': 'organizations',
+            'GITHUB_GROUP_CLAIM': 'teams',
             'ALLOWED_GITHUB_ORGS': ['alerta'],
             'CUSTOMER_VIEWS': True,
         }
@@ -642,6 +645,59 @@ class AuthProvidersTestCase(unittest.TestCase):
         }
         """
 
+        teams = """
+        [
+          {
+            "id": 1,
+            "node_id": "MDQ6VGVhbTE=",
+            "url": "https://api.github.com/teams/1",
+            "html_url": "https://github.com/orgs/github/teams/justice-league",
+            "name": "Justice League",
+            "slug": "justice-league",
+            "description": "A great team.",
+            "privacy": "closed",
+            "permission": "admin",
+            "members_url": "https://api.github.com/teams/1/members{/member}",
+            "repositories_url": "https://api.github.com/teams/1/repos",
+            "parent": null,
+            "members_count": 3,
+            "repos_count": 10,
+            "created_at": "2017-07-14T16:53:42Z",
+            "updated_at": "2017-08-17T12:37:15Z",
+            "organization": {
+              "login": "github",
+              "id": 1,
+              "node_id": "MDEyOk9yZ2FuaXphdGlvbjE=",
+              "url": "https://api.github.com/orgs/github",
+              "repos_url": "https://api.github.com/orgs/github/repos",
+              "events_url": "https://api.github.com/orgs/github/events",
+              "hooks_url": "https://api.github.com/orgs/github/hooks",
+              "issues_url": "https://api.github.com/orgs/github/issues",
+              "members_url": "https://api.github.com/orgs/github/members{/member}",
+              "public_members_url": "https://api.github.com/orgs/github/public_members{/member}",
+              "avatar_url": "https://github.com/images/error/octocat_happy.gif",
+              "description": "A great organization",
+              "name": "github",
+              "company": "GitHub",
+              "blog": "https://github.com/blog",
+              "location": "San Francisco",
+              "email": "octocat@github.com",
+              "is_verified": true,
+              "has_organization_projects": true,
+              "has_repository_projects": true,
+              "public_repos": 2,
+              "public_gists": 1,
+              "followers": 20,
+              "following": 0,
+              "html_url": "https://github.com/octocat",
+              "created_at": "2008-01-14T04:33:35Z",
+              "updated_at": "2017-08-17T12:37:15Z",
+              "type": "Organization"
+            }
+          }
+        ]
+        """
+
         orgs = """
         [
           {
@@ -677,6 +733,7 @@ class AuthProvidersTestCase(unittest.TestCase):
 
         m.post('https://github.com/login/oauth/access_token', text=access_token)
         m.get('https://api.github.com/user', text=profile)
+        m.get('https://api.github.com/user/teams', text=teams)
         m.get('https://api.github.com/user/orgs', text=orgs)
 
         self.app = create_app(test_config)
@@ -696,10 +753,17 @@ class AuthProvidersTestCase(unittest.TestCase):
             'Content-type': 'application/json'
         }
 
-        # add customer mapping
+        # add customer mappings
         payload = {
             'customer': 'Alerta IO',
             'match': 'alerta'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        payload = {
+            'customer': 'Justice League',
+            'match': 'github/justice-league'
         }
         response = self.client.post('/customer', data=json.dumps(payload),
                                     content_type='application/json', headers=self.headers)
@@ -715,10 +779,11 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims.name, 'Nick Satterly', claims)
         self.assertEqual(claims.preferred_username, '@satterly', claims)
         self.assertEqual(claims.provider, 'github', claims)
+        self.assertEqual(claims.groups, ['github/justice-league'], claims)
         self.assertEqual(claims.orgs, ['ganglia', 'alerta'], claims)
         self.assertEqual(claims.scopes, ['read', 'write'], claims)
         self.assertEqual(claims.email_verified, False, claims)
-        self.assertEqual(claims.customers, ['Alerta IO'], claims)
+        self.assertEqual(claims.customers, ['Justice League'], claims)
 
     @requests_mock.mock()
     def test_gitlab(self, m):
