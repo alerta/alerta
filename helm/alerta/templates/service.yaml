@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "alerta.fullname" . }}
+  labels:
+    app: {{ include "alerta.name" . }}
+    chart: {{ include "alerta.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+{{- if contains "NodePort" .Values.service.type }}
+      nodePort: {{ default "30080" .Values.service.nodeport }}
+{{- end}}
+  selector:
+    app: {{ include "alerta.name" . }}
+    release: {{ .Release.Name }}

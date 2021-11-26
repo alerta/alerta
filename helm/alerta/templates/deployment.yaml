@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "alerta.fullname" . }}
+  labels:
+    app: {{ include "alerta.name" . }}
+    chart: {{ include "alerta.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "alerta.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "alerta.name" . }}
+        release: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+              {{- if .Values.alertaAdminUsers }}
+            - name: ADMIN_USERS
+              value: {{ .Values.alertaAdminUsers | join "," }}
+              {{- end }}
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "alerta.fullname" . }}
+                  key: alerta-admin-password
+              {{- if .Values.alertaAdminKey }}
+            - name: ADMIN_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "alerta.fullname" . }}
+                  key: alerta-admin-key
+            - name: ALERTA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "alerta.fullname" . }}
+                  key: alerta-api-key
+              {{- end }}
+              {{- if .Values.alertaInstallPlugins }}
+            - name: INSTALL_PLUGINS
+              value: {{ .Values.alertaInstallPlugins | join "," }}
+              {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 300
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+          volumeMounts:
+          {{- range .Values.extraSecretMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              subPath: {{ .subPath }}
+              readOnly: {{ .readOnly }}
+          {{- end }}
+            - name: alerta-config
+              mountPath: /app/alertad.conf
+              subPath: alertad.conf
+              {{- if .Values.alertaWebUIConfig }}
+            - name: alerta-config
+              mountPath: /app/config.js
+              subPath: config.js
+              {{- end }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: alerta-config
+          configMap:
+            name: {{ include "alerta.fullname" . }}
+      {{- range .Values.extraSecretMounts }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+      {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
