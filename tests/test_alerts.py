@@ -701,6 +701,41 @@ class AlertsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['timeout'], 120)
 
+    def test_filter_params(self):
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.fatal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        alert_id = data['id']
+
+        response = self.client.get('/alerts?service=Network')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['total'], 1)
+
+        response = self.client.get('/alerts?event=node_down&severity=critical')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['total'], 1)
+        self.assertEqual(data['alerts'][0]['event'], 'node_down')
+
+        response = self.client.get('/alerts?attributes.foo=abc def')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['total'], 1)
+        self.assertEqual(data['alerts'][0]['event'], 'node_down')
+
+        attributes = {'attributes': {'acked-by': 'Big X'}}
+        response = self.client.put(f'/alert/{alert_id}/attributes', data=json.dumps(attributes), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/alerts?attributes.acked-by=Big X')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['total'], 1)
+        self.assertEqual(data['alerts'][0]['event'], 'node_down')
+
     def test_query_param(self):
         # create alert
         response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
@@ -708,6 +743,18 @@ class AlertsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
 
         response = self.client.get('/alerts?q=event:node_up')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['total'], 1)
+        self.assertEqual(data['alerts'][0]['event'], 'node_up')
+
+    def test_filter_and_query_params(self):
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        response = self.client.get('/alerts?service=Network&q=event:node_up')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['total'], 1)
