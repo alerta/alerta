@@ -19,13 +19,25 @@ from .utils import Query
 
 class Backend(Database):
 
-    def create_engine(self, app, uri, dbname=None):
+    def create_engine(self, app, uri, dbname=None, raise_on_error=True):
         self.uri = uri
         self.dbname = dbname
 
         db = self.connect()
-        self._create_indexes(db)
-        self._update_lookups(db)
+
+        try:
+            self._create_indexes(db)
+        except Exception as e:
+            if raise_on_error:
+                raise
+            app.logger.warning(e)
+
+        try:
+            self._update_lookups(db)
+        except Exception as e:
+            if raise_on_error:
+                raise
+            app.logger.warning(e)
 
     def connect(self):
         self.client = MongoClient(self.uri)
