@@ -10,13 +10,13 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
+    - port: 8080
       targetPort: http
       protocol: TCP
       name: http
-{{- if contains "NodePort" .Values.service.type }}
-      nodePort: {{ default "30080" .Values.service.nodeport }}
-{{- end}}
+# {{- if contains "NodePort" .Values.service.type }}
+#       nodePort: {{ default "30080" .Values.service.nodeport }}
+# {{- end}}
   selector:
     app: {{ include "alerta.name" . }}
     release: {{ .Release.Name }}

@@ -31,31 +31,10 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-              {{- if .Values.alertaAdminUsers }}
-            - name: ADMIN_USERS
-              value: {{ .Values.alertaAdminUsers | join "," }}
-              {{- end }}
-            - name: ADMIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ template "alerta.fullname" . }}
-                  key: alerta-admin-password
-              {{- if .Values.alertaAdminKey }}
-            - name: ADMIN_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ template "alerta.fullname" . }}
-                  key: alerta-admin-key
-            - name: ALERTA_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ template "alerta.fullname" . }}
-                  key: alerta-api-key
-              {{- end }}
-              {{- if .Values.alertaInstallPlugins }}
-            - name: INSTALL_PLUGINS
-              value: {{ .Values.alertaInstallPlugins | join "," }}
-              {{- end }}
+            {{- range $key, $val := .Values.env }}
+              - name: {{ $key }}
+                value: {{ $val | quote }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 8080
