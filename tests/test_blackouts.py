@@ -1,7 +1,8 @@
 import json
 import os
+import time
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from alerta.app import create_app, db, plugins
 from alerta.exceptions import BlackoutPeriod
@@ -672,6 +673,55 @@ class BlackoutsTestCase(unittest.TestCase):
         response = self.client.delete('/blackout/' + blackout_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
+    def test_custom_notify(self):
+
+        os.environ['NOTIFICATION_BLACKOUT'] = 'True'
+        plugins.plugins['blackout'] = Blackout()
+        plugins.plugins['notify'] = CustomNotify()
+
+        self.headers = {
+            'Authorization': f'Key {self.admin_api_key.key}',
+            'Content-type': 'application/json'
+        }
+
+        # create new blackout with end time 1 second in the future
+        one_second_from_now = datetime.utcnow() + timedelta(seconds=1)
+        blackout = {
+            'environment': 'Production',
+            'service': ['Core'],
+            'endTime': one_second_from_now.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        }
+        response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        # new alert should be status=blackout
+        response = self.client.post('/alert', data=json.dumps(self.prod_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'blackout')
+
+        alert_receive_time = data['alert']['receiveTime']
+
+        # wait for blackout to expire
+        time.sleep(1)
+
+        # resend duplicate alert now that blackout has expired
+        response = self.client.post('/alert', data=json.dumps(self.prod_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'open')
+        self.assertEqual(data['alert']['duplicateCount'], 1)
+        self.assertEqual(data['alert']['repeat'], True)
+        self.assertEqual(data['alert']['receiveTime'], alert_receive_time)
+        self.assertEqual(
+            data['alert']['attributes']['is_blackout'], True  # original alert received within blackout period
+        )
+        self.assertEqual(
+            data['alert']['attributes']['is_suppressed'], False  # duplicate received after blackout period expired
+        )
+        self.assertEqual(data['alert']['attributes']['notify'], True)
+
     def test_edit_blackout(self):
 
         # create new blackout
@@ -762,6 +812,33 @@ class Blackout(PluginBase):
         return alert
 
     def post_receive(self, alert, **kwargs):
+        return alert
+
+    def status_change(self, alert, status, text, **kwargs):
+        return
+
+
+class CustomNotify(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+
+        is_blackout = alert.is_suppressed
+        do_not_notify = os.environ['NOTIFICATION_BLACKOUT']
+
+        if do_not_notify and is_blackout:
+            alert.attributes['notify'] = False
+        elif 'shelved' in alert.status:
+            alert.attributes['notify'] = False
+        elif do_not_notify and not is_blackout:
+            alert.attributes['notify'] = True
+
+        # to help with debug
+        alert.attributes['is_blackout'] = alert.is_blackout()
+        alert.attributes['is_suppressed'] = alert.is_suppressed
+
         return alert
 
     def status_change(self, alert, status, text, **kwargs):

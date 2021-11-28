@@ -405,7 +405,7 @@ class Alert:
         return Alert.from_db(db.get_alert(id, customers))
 
     def is_blackout(self) -> bool:
-        """Does this alert match a blackout period?"""
+        """Does the alert create time fall within an existing blackout period?"""
         if not current_app.config['NOTIFICATION_BLACKOUT']:
             if self.severity in current_app.config['BLACKOUT_ACCEPT']:
                 return False
