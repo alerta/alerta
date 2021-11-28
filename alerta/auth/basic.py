@@ -50,7 +50,7 @@ def signup():
 
     groups = [g.name for g in user.get_groups()]
     scopes = Permission.lookup(login=user.login, roles=user.roles + groups)
-    customers = get_customers(login=user.login, groups=[user.domain] + groups)
+    customers = get_customers(login=user.login, groups=groups + ([user.domain] if user.domain else []))
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-signup', message='user signup using BasicAuth',
                           user=user.login, customers=customers, scopes=scopes, roles=user.roles, groups=groups,
@@ -91,7 +91,7 @@ def login():
 
     groups = [g.name for g in user.get_groups()]
     scopes = Permission.lookup(login=user.login, roles=user.roles + groups)
-    customers = get_customers(login=user.login, groups=[user.domain] + groups)
+    customers = get_customers(login=user.login, groups=groups + ([user.domain] if user.domain else []))
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-auth-login', message='user login via BasicAuth',
                           user=user.login, customers=customers, scopes=scopes, roles=user.roles, groups=groups,

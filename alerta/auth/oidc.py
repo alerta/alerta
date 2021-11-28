@@ -155,7 +155,7 @@ def openid():
     user.update_last_login()
 
     scopes = Permission.lookup(login, roles=roles)
-    customers = get_customers(login, groups=[user.domain] + groups)
+    customers = get_customers(login, groups=groups + ([user.domain] if user.domain else []))
 
     auth_audit_trail.send(current_app._get_current_object(), event='openid-login', message='user login via OpenID Connect',
                           user=login, customers=customers, scopes=scopes, **custom_claims,
