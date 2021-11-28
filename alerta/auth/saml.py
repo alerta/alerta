@@ -104,7 +104,7 @@ def saml_response_from_idp():
     user.update_last_login()
 
     scopes = Permission.lookup(login=user.email, roles=user.roles + groups)
-    customers = get_customers(login=user.email, groups=[user.domain] + groups)
+    customers = get_customers(login=user.email, groups=groups + ([user.domain] if user.domain else []))
 
     auth_audit_trail.send(current_app._get_current_object(), event='saml2-login', message='user login via SAML2',
                           user=user.email, customers=customers, scopes=scopes, roles=user.roles, groups=groups,
