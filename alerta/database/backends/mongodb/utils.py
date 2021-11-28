@@ -35,13 +35,19 @@ class QueryBuilder:
         if params.get('sort-by', None):
             for sort_by in params.getlist('sort-by'):
                 reverse = 1
+                attribute = None
                 if sort_by.startswith('-'):
                     reverse = -1
                     sort_by = sort_by[1:]
+                if sort_by.startswith('attributes.'):
+                    attribute = sort_by.split('.')[1]
+                    sort_by = 'attributes'
                 valid_sort_params = [k for k, v in valid_params.items() if v[1]]
                 if sort_by not in valid_sort_params:
                     raise ApiError(f"Sorting by '{sort_by}' field not supported.", 400)
                 _, column, direction = valid_params[sort_by]
+                if attribute:
+                    column = f'attributes.{attribute}'
                 sort.append((column, direction * reverse))
         else:
             sort.append(('_id', direction))
@@ -112,7 +118,7 @@ class Alerts(QueryBuilder):
         'text': ('text', 'text', 1),
         'tag': ('tags', None, 0),  # filter
         'tags': (None, 'tags', 1),  # sort-by
-        'attributes': ('', '', 1),
+        'attributes': ('attributes', 'attributes', 1),
         'origin': ('origin', 'origin', 1),
         'type': ('type', 'type', 1),
         'createTime': ('createTime', 'createTime', -1),

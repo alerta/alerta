@@ -31,15 +31,22 @@ class QueryBuilder:
         if params.get('sort-by', None):
             for sort_by in params.getlist('sort-by'):
                 reverse = 1
+                attribute = None
                 if sort_by.startswith('-'):
                     reverse = -1
                     sort_by = sort_by[1:]
+                if sort_by.startswith('attributes.'):
+                    attribute = sort_by.split('.')[1]
+                    sort_by = 'attributes'
                 valid_sort_params = [k for k, v in valid_params.items() if v[1]]
                 if sort_by not in valid_sort_params:
                     raise ApiError(f"Sorting by '{sort_by}' field not supported.", 400)
                 _, column, direction = valid_params[sort_by]
                 direction = 'ASC' if direction * reverse == 1 else 'DESC'
-                sort.append(f'{column} {direction}')
+                if attribute:
+                    sort.append(f"attributes->'{attribute}' {direction}")
+                else:
+                    sort.append(f'{column} {direction}')
         else:
             sort.append('(false)')
         return sort
