@@ -250,6 +250,54 @@ class Blackouts(QueryBuilder):
         return Query(where=query, sort=sort, group=None)
 
 
+class Filters(QueryBuilder):
+
+    VALID_PARAMS = {
+        # field (column, sort-by, direction)
+        'id': ('_id', None, 0),
+        'environment': ('environment', 'environment', 1),
+        'service': ('service', 'service', 1),
+        'resource': ('resource', 'resource', 1),
+        'event': ('event', 'event', 1),
+        'group': ('"group"', '"group"', 1),
+        'tag': ('tags', None, 0),  # filter
+        'tags': (None, 'tags', 1),  # sort-by
+        'origin': ('origin', 'origin', 1),
+        'customer': ('customer', 'customer', 1),
+        'type': ('type', 'type', 1),
+        'attributes': (None, 'attributes', 1),
+        'status': ('status', 'status', 1),
+        'remaining': ('remaining', 'remaining', -1),
+        'user': ('user', 'user', 1),
+        'createTime': ('createTime', 'createTime', -1),
+        'text': ('text', 'text', 1),
+    }
+
+    @staticmethod
+    def from_params(params: ImmutableMultiDict, customers=None, query_time=None):
+
+        query = dict()
+        params = MultiDict(params)
+
+        # customer
+        if customers:
+            customer_query = {'customer': {'$in': customers}}
+        else:
+            customer_query = None  # type: ignore
+
+        # status
+        params.poplist('status')
+
+        # filter, sort-by, group-by
+        query = QueryBuilder.filter_query(params, Filters.VALID_PARAMS, query)
+        sort = QueryBuilder.sort_by_columns(params, Filters.VALID_PARAMS)
+
+        if customer_query:
+            query = {'$and': [customer_query, query]}
+
+        return Query(where=query, sort=sort, group=None)
+
+
 class Heartbeats(QueryBuilder):
 
     VALID_PARAMS = {
