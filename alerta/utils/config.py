@@ -45,6 +45,9 @@ class Config:
         config['SIGNUP_ENABLED'] = get_config('SIGNUP_ENABLED', default=True, type=bool, config=config)
         config['CUSTOMER_VIEWS'] = get_config('CUSTOMER_VIEWS', default=False, type=bool, config=config)
 
+        config['USER_DEFAULT_SCOPES'] = get_config('USER_DEFAULT_SCOPES', default=['read', 'write'], type=list, config=config)
+        config['GUEST_DEFAULT_SCOPES'] = get_config('GUEST_DEFAULT_SCOPES', default=['read:alerts'], type=list, config=config)
+
         config['OAUTH2_CLIENT_ID'] = get_config('OAUTH2_CLIENT_ID', default=None, type=str, config=config)
         config['OAUTH2_CLIENT_SECRET'] = get_config('OAUTH2_CLIENT_SECRET', default=None, type=str, config=config)
         config['ALLOWED_EMAIL_DOMAINS'] = get_config('ALLOWED_EMAIL_DOMAINS', default=[], type=list, config=config)
@@ -67,6 +70,10 @@ class Config:
 
         config['OIDC_ISSUER_URL'] = get_config('OIDC_ISSUER_URL', default=None, type=str, config=config)
         config['ALLOWED_OIDC_ROLES'] = get_config('ALLOWED_OIDC_ROLES', default=[], type=list, config=config)
+
+        config['OIDC_GROUP_CLAIM'] = get_config('OIDC_GROUP_CLAIM', default='groups', type=str, config=config)
+        config['OIDC_ROLE_CLAIM'] = get_config('OIDC_ROLE_CLAIM', default='roles', type=str, config=config)
+        config['OIDC_CUSTOM_CLAIM'] = get_config('OIDC_CUSTOM_CLAIM', default='roles', type=str, config=config)
 
         config['CORS_ORIGINS'] = get_config('CORS_ORIGINS', default=[], type=list, config=config)
 
