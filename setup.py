@@ -46,7 +46,6 @@ setuptools.setup(
         'Flask-Cors>=3.0.2',
         'mohawk',
         'PyJWT>=2.0.0',
-        'pymongo>=3.6',
         'pyparsing',
         'python-dateutil',
         'pytz',
@@ -56,7 +55,7 @@ setuptools.setup(
         'sentry-sdk[flask]>=0.10.2',
     ],
     extras_require={
-        'mongodb': ['pymongo>=3.0'],
+        'mongodb': ['pymongo>=3.6,<4.0'],
         'postgres': ['psycopg2']
     },
     include_package_data=True,
