@@ -1606,7 +1606,7 @@ class Backend(Database):
 
         if info_threshold:
             info_seconds_ago = datetime.utcnow() - timedelta(seconds=info_threshold)
-            self.get_db().alerts.delete_many({'severity': 'informational', 'lastReceiveTime': {'$lt': info_seconds_ago}})
+            self.get_db().alerts.delete_many({'severity': alarm_model.DEFAULT_INFORM_SEVERITY, 'lastReceiveTime': {'$lt': info_seconds_ago}})
 
         # get list of alerts to be newly expired
         pipeline = [
