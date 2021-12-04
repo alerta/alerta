@@ -1,5 +1,6 @@
 import json
 import unittest
+from urllib.parse import parse_qs
 
 import requests_mock
 
@@ -25,6 +26,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'AUTH_PROVIDER': 'cognito',
             'AWS_REGION': 'eu-west-1',
+            'OAUTH2_CLIENT_ID': '6gms81dft7up216pqnv7pcq194',
+            'OAUTH2_CLIENT_SECRET': 'oauth2-client-secret',
             'COGNITO_USER_POOL_ID': 'eu-west-1_BMkhxuZsn',
             'COGNITO_DOMAIN': 'alerta-webui',
             'CUSTOMER_VIEWS': True,
@@ -140,6 +143,12 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims.email_verified, True, claims)
         self.assertEqual(claims.customers, ['Alphabet'], claims)
 
+        token_endpoint_request = m.request_history[2]
+        self.assertEqual(
+            token_endpoint_request.headers.get('Authorization'),
+            'Basic NmdtczgxZGZ0N3VwMjE2cHFudjdwY3ExOTQ6b2F1dGgyLWNsaWVudC1zZWNyZXQ='
+        )
+
     @requests_mock.mock()
     def test_azure_v1(self, m):
 
@@ -148,6 +157,9 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'AUTH_PROVIDER': 'openid',
             'OIDC_ISSUER_URL': 'https://sts.windows.net/f24341ef-7a6f-4cff-abb7-99a11ab11127/',
+            'OIDC_TOKEN_AUTH_METHODS': ['client_secret_post', 'client_secret_basic'],
+            'OAUTH2_CLIENT_ID': '38ba6223-a887-43e2-9f7d-8d539df55f67',
+            'OAUTH2_CLIENT_SECRET': 'oauth2-client-secret',
             'CUSTOMER_VIEWS': True,
         }
 
@@ -345,6 +357,11 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims.email_verified, True, claims)
         self.assertEqual(claims.customers, ['Alerta IO'], claims)
 
+        token_endpoint_request = m.request_history[2]
+        data = parse_qs(token_endpoint_request.text)
+        self.assertEqual(data['client_id'], ['38ba6223-a887-43e2-9f7d-8d539df55f67'])
+        self.assertEqual(data['client_secret'], ['oauth2-client-secret'])
+
     @requests_mock.mock()
     def test_azure_v2(self, m):
 
@@ -353,6 +370,9 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'AUTH_PROVIDER': 'azure',
             'AZURE_TENANT': 'common',
+            'OIDC_TOKEN_AUTH_METHODS': ['client_secret_post', 'client_secret_basic'],
+            'OAUTH2_CLIENT_ID': '00bb046a-36d9-4411-b93a-2f10fb35f0b5',
+            'OAUTH2_CLIENT_SECRET': 'oauth2-client-secret',
             'CUSTOMER_VIEWS': True,
         }
 
@@ -576,6 +596,11 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims.email_verified, True, claims)
         self.assertEqual(claims.customers, ['Hotmail'], claims)
 
+        token_endpoint_request = m.request_history[2]
+        data = parse_qs(token_endpoint_request.text)
+        self.assertEqual(data['client_id'], ['00bb046a-36d9-4411-b93a-2f10fb35f0b5'])
+        self.assertEqual(data['client_secret'], ['oauth2-client-secret'])
+
     @requests_mock.mock()
     def test_github(self, m):
 
@@ -584,8 +609,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'AUTH_PROVIDER': 'github',
             # 'GITHUB_URL': 'https://github.com',
-            'OAUTH2_CLIENT_ID': '',
-            'OAUTH2_CLIENT_SECRET': '',
+            'OAUTH2_CLIENT_ID': '4f846ebb21eec62ebdf0',
+            'OAUTH2_CLIENT_SECRET': 'oauth2-client-secret',
             # note that for testing ROLE and GROUP are reversed
             'GITHUB_ROLE_CLAIM': 'organizations',
             'GITHUB_GROUP_CLAIM': 'teams',
@@ -793,6 +818,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'AUTH_PROVIDER': 'gitlab',
             # 'OIDC_ISSUER_URL': 'https://gitlab.com',
+            'OAUTH2_CLIENT_ID': '765904e9909fc9cc5c448a887849029d999cc2e400e097221bf910be39a16678',
+            'OAUTH2_CLIENT_SECRET': 'oauth2-client-secret',
             # 'OIDC_CUSTOM_CLAIM': 'groups',
             'ALLOWED_GITLAB_GROUPS': ['alerta-project'],
             'CUSTOMER_VIEWS': True,
@@ -978,6 +1005,12 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims.email_verified, True, claims)
         self.assertEqual(claims.customers, ['Alerta IO'], claims)
 
+        token_endpoint_request = m.request_history[2]
+        self.assertEqual(
+            token_endpoint_request.headers.get('Authorization'),
+            'Basic NzY1OTA0ZTk5MDlmYzljYzVjNDQ4YTg4Nzg0OTAyOWQ5OTljYzJlNDAwZTA5NzIyMWJmOTEwYmUzOWExNjY3ODpvYXV0aDItY2xpZW50LXNlY3JldA=='
+        )
+
     @requests_mock.mock()
     def test_google(self, m):
 
@@ -986,6 +1019,9 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'AUTH_PROVIDER': 'google',
             # 'OIDC_ISSUER_URL': 'https://accounts.google.com',
+            'OIDC_TOKEN_AUTH_METHODS': ['client_secret_post', 'client_secret_basic'],
+            'OAUTH2_CLIENT_ID': '736147134702-glkb1pesv716j1utg4llg7c3rr7nnhli.apps.googleusercontent.com',
+            'OAUTH2_CLIENT_SECRET': 'oauth2-client-secret',
             'CUSTOMER_VIEWS': True,
         }
 
@@ -1144,6 +1180,11 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims.email_verified, True, claims)
         self.assertEqual(claims.customers, ['Google Inc.'], claims)
 
+        token_endpoint_request = m.request_history[1]
+        data = parse_qs(token_endpoint_request.text)
+        self.assertEqual(data['client_id'], ['736147134702-glkb1pesv716j1utg4llg7c3rr7nnhli.apps.googleusercontent.com'])
+        self.assertEqual(data['client_secret'], ['oauth2-client-secret'])
+
     @requests_mock.mock()
     def test_keycloak(self, m):
 
@@ -1153,6 +1194,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_PROVIDER': 'keycloak',
             'KEYCLOAK_URL': 'http://keycloak.local.alerta.io:9090',
             'KEYCLOAK_REALM': 'master',
+            'OAUTH2_CLIENT_ID': 'alerta-ui',
+            'OAUTH2_CLIENT_SECRET': 'oauth2-client-secret',
             'OIDC_CUSTOM_CLAIM': 'roles',
             # 'OIDC_ISSUER_URL': 'http://keycloak.local.alerta.io:9090/auth/realms/master',
             # 'OIDC_ROLE_CLAIM': 'roles',
@@ -1376,6 +1419,12 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims.email_verified, True, claims)
         self.assertEqual(claims.customers, ['Domain Customer'], claims)
 
+        token_endpoint_request = m.request_history[2]
+        self.assertEqual(
+            token_endpoint_request.headers.get('Authorization'),
+            'Basic YWxlcnRhLXVpOm9hdXRoMi1jbGllbnQtc2VjcmV0'
+        )
+
     @requests_mock.mock()
     def test_openid_auth0(self, m):
 
@@ -1384,6 +1433,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'AUTH_PROVIDER': 'openid',
             'OIDC_ISSUER_URL': 'https://dev-66191jdr.eu.auth0.com/',
+            'OAUTH2_CLIENT_ID': 'LMMEZSlPYKvM14cFxnWNWkC4DgvRk0dZ',
+            'OAUTH2_CLIENT_SECRET': 'oauth2-client-secret',
             'CUSTOMER_VIEWS': True
         }
 
@@ -1557,6 +1608,12 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims.email_verified, False, claims)
         self.assertEqual(claims.customers, ['Foo Corp'], claims)
 
+        token_endpoint_request = m.request_history[2]
+        self.assertEqual(
+            token_endpoint_request.headers.get('Authorization'),
+            'Basic TE1NRVpTbFBZS3ZNMTRjRnhuV05Xa0M0RGd2UmswZFo6b2F1dGgyLWNsaWVudC1zZWNyZXQ='
+        )
+
     @requests_mock.mock()
     def test_openid_idp(self, m):
 
@@ -1565,6 +1622,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'AUTH_PROVIDER': 'openid',
             'OIDC_ISSUER_URL': 'https://dev-66191jdr.eu.auth0.com/',
+            'OAUTH2_CLIENT_ID': 'LMMEZSlPYKvM14cFxnWNWkC4DgvRk0dZ',
+            'OAUTH2_CLIENT_SECRET': 'oauth2-client-secret',
         }
 
         authorization_grant = """
@@ -1769,6 +1828,12 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims.email, 'nfsatterly@gmail.com', claims)
         self.assertEqual(claims.email_verified, True, claims)
 
+        token_endpoint_request = m.request_history[2]
+        self.assertEqual(
+            token_endpoint_request.headers.get('Authorization'),
+            'Basic TE1NRVpTbFBZS3ZNMTRjRnhuV05Xa0M0RGd2UmswZFo6b2F1dGgyLWNsaWVudC1zZWNyZXQ='
+        )
+
     @requests_mock.mock()
     def test_openid_okta(self, m):
 
@@ -1777,6 +1842,8 @@ class AuthProvidersTestCase(unittest.TestCase):
             'AUTH_REQUIRED': True,
             'AUTH_PROVIDER': 'openid',
             'OIDC_ISSUER_URL': 'https://dev-490527.okta.com/oauth2/default',
+            'OAUTH2_CLIENT_ID': '0oac5s46zwh5crGiH356',
+            'OAUTH2_CLIENT_SECRET': 'oauth2-client-secret',
             'OIDC_ROLE_CLAIM': 'groups',
             # 'OIDC_CUSTOM_CLAIM': 'groups',
             'CUSTOMER_VIEWS': True,
@@ -1998,3 +2065,9 @@ class AuthProvidersTestCase(unittest.TestCase):
         self.assertEqual(claims.scopes, ['read', 'write'], claims)
         self.assertEqual(claims.email_verified, True, claims)
         self.assertEqual(claims.customers, ['Alerta Dev'], claims)
+
+        token_endpoint_request = m.request_history[2]
+        self.assertEqual(
+            token_endpoint_request.headers.get('Authorization'),
+            'Basic MG9hYzVzNDZ6d2g1Y3JHaUgzNTY6b2F1dGgyLWNsaWVudC1zZWNyZXQ='
+        )
