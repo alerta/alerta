@@ -20,8 +20,8 @@ SEVERITY_MAP = {
     Severity.Unknown: 10
 }
 DEFAULT_NORMAL_SEVERITY = Severity.Normal  # 'normal', 'ok', 'cleared'
+DEFAULT_INFORM_SEVERITY = Severity.Informational
 DEFAULT_PREVIOUS_SEVERITY = Severity.Indeterminate
-
 
 COLOR_MAP = {
     'severity': {
@@ -87,6 +87,7 @@ class StateMachine(AlarmModel):
 
         StateMachine.DEFAULT_STATUS = Status.Open
         StateMachine.DEFAULT_NORMAL_SEVERITY = app.config['DEFAULT_NORMAL_SEVERITY'] or DEFAULT_NORMAL_SEVERITY
+        StateMachine.DEFAULT_INFORM_SEVERITY = app.config['DEFAULT_INFORM_SEVERITY'] or DEFAULT_INFORM_SEVERITY
         StateMachine.DEFAULT_PREVIOUS_SEVERITY = app.config['DEFAULT_PREVIOUS_SEVERITY'] or DEFAULT_PREVIOUS_SEVERITY
 
         if StateMachine.DEFAULT_NORMAL_SEVERITY not in StateMachine.Severity:
