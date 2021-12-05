@@ -255,18 +255,27 @@ class Alert:
 
     def _get_hist_info(self, action=None):
         h_loop = self.get_alert_history(alert=self)
+        if not h_loop:
+            return None, None, None, None
+
+        current_status = h_loop[0].status
+        current_value = h_loop[0].value
+
         if len(h_loop) == 1:
-            return h_loop[0].status, h_loop[0].value, None, None
+            return current_status, current_value, None, None
         if action == ChangeType.unack:
             find = ChangeType.ack
         elif action == ChangeType.unshelve:
             find = ChangeType.shelve
         else:
             find = None
-        for h, h_next in zip(h_loop, h_loop[1:]):
-            if not find or h.change_type == find:
-                return h_loop[0].status, h_loop[0].value, h_next.status, h_next.timeout
-        return None, None, None, None
+
+        if find:
+            for h, h_next in zip(h_loop, h_loop[1:]):
+                if h.change_type == find:
+                    return current_status, current_value, h_next.status, h_next.timeout
+
+        return current_status, current_value, h_loop[1].status, h_loop[1].timeout
 
     # de-duplicate an alert
     def deduplicate(self, duplicate_of) -> 'Alert':
