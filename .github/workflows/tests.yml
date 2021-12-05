@@ -1,4 +1,4 @@
-name: CI Tests
+name: Tests
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres
+        image: postgres:13
         env:
           POSTGRES_DB: alerta
           POSTGRES_USER: postgres
@@ -30,7 +30,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: [3.7, 3.8, 3.9]
 
     steps:
       - uses: actions/checkout@v2
@@ -72,13 +72,13 @@ jobs:
 
     services:
       mongodb:
-        image: mongo
+        image: mongo:4.4
         ports:
           - 27017:27017
 
     strategy:
       matrix:
-        python-version: [3.6, 3.7]
+        python-version: [3.7, 3.8, 3.9]
 
     steps:
       - uses: actions/checkout@v2
