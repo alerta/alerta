@@ -704,7 +704,7 @@ class BlackoutsTestCase(unittest.TestCase):
         alert_receive_time = data['alert']['receiveTime']
 
         # wait for blackout to expire
-        time.sleep(1)
+        time.sleep(2)
 
         # resend duplicate alert now that blackout has expired
         response = self.client.post('/alert', data=json.dumps(self.prod_alert), headers=self.headers)
