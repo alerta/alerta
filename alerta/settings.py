@@ -88,8 +88,8 @@ HMAC_AUTH_CREDENTIALS = [
     # }
 ]  # type: List[Dict[str, Any]]
 
-OAUTH2_CLIENT_ID = None  # OAuth2 client ID and secret
-OAUTH2_CLIENT_SECRET = None
+OAUTH2_CLIENT_ID = ''  # OAuth2 client ID and secret
+OAUTH2_CLIENT_SECRET = ''
 ALLOWED_EMAIL_DOMAINS = ['*']
 
 # Amazon Cognito
@@ -140,6 +140,7 @@ ALLOWED_KEYCLOAK_ROLES = ['*']
 # OpenID Connect
 OIDC_ISSUER_URL = None
 OIDC_AUTH_URL = None
+OIDC_TOKEN_AUTH_METHODS = ['client_secret_basic', 'client_secret_post', 'client_secret_jwt']
 OIDC_LOGOUT_URL = None
 OIDC_VERIFY_TOKEN = False
 OIDC_ROLE_CLAIM = OIDC_CUSTOM_CLAIM = 'roles'  # JWT claim name whose value is used in role mapping

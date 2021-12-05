@@ -1,4 +1,6 @@
 import json
+from datetime import datetime, timedelta
+from uuid import uuid4
 
 import jwt
 import requests
@@ -72,10 +74,46 @@ def openid():
         'grant_type': 'authorization_code',
         'code': request.json['code'],
         'redirect_uri': request.json['redirectUri'],
-        'client_id': request.json['clientId'],
-        'client_secret': current_app.config['OAUTH2_CLIENT_SECRET'],
     }
-    r = requests.post(token_endpoint, data)
+
+    if type(oidc_configuration['token_endpoint_auth_methods_supported']) == list:
+        token_endpoint_auth_methods = oidc_configuration['token_endpoint_auth_methods_supported']
+    else:
+        token_endpoint_auth_methods = [oidc_configuration['token_endpoint_auth_methods_supported']]
+
+    preferred_token_auth_method = 'client_secret_post'
+    for token_auth_method in current_app.config['OIDC_TOKEN_AUTH_METHODS']:
+        if token_auth_method in token_endpoint_auth_methods:
+            preferred_token_auth_method = token_auth_method
+            break
+
+    if preferred_token_auth_method == 'client_secret_basic':
+        auth = (request.json['clientId'], current_app.config['OAUTH2_CLIENT_SECRET'])
+        r = requests.post(token_endpoint, data, auth=auth)
+    elif preferred_token_auth_method == 'client_secret_post':
+        data['client_id'] = request.json['clientId']
+        data['client_secret'] = current_app.config['OAUTH2_CLIENT_SECRET']
+        r = requests.post(token_endpoint, data)
+    elif preferred_token_auth_method == 'client_secret_jwt':
+        now = datetime.utcnow()
+        payload = dict(
+            iss=request.json['clientId'],
+            sub=request.json['clientId'],
+            aud=token_endpoint,
+            jti=str(uuid4()),
+            exp=(now + timedelta(minutes=5)),
+            iat=now
+        )
+        client_assertion = jwt.encode(
+            payload=payload,
+            key=current_app.config['OAUTH2_CLIENT_SECRET'],
+            algorithm='HS256'
+        )
+        data['client_assertion_type'] = 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+        data['client_assertion'] = client_assertion
+        r = requests.post(token_endpoint, data)
+    else:
+        raise ApiError(f"Token endpoint auth method '{preferred_token_auth_method}' is not supported by Alerta.", 400)
     token = r.json()
 
     if 'error' in token:
