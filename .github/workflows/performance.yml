@@ -17,17 +17,15 @@ jobs:
       alerta:
         image: ghcr.io/alerta/alerta-api
         env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/alerta
+          DATABASE_URL: postgres://postgres:postgres@db:5432/alerta
         ports:
           - 8080:8080
-      postgres:
+      db:
         image: postgres:13
         env:
           POSTGRES_DB: alerta
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
