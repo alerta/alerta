@@ -1,0 +1,46 @@
+name: Performance
+
+on:
+  push:
+    branches: [ master, release/* ]
+    tags: [ '**' ]
+
+env:
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+jobs:
+  load-test:
+    name: Load Test
+    runs-on: ubuntu-latest
+
+    services:
+      alerta:
+        image: ghcr.io/alerta/alerta-api
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/alerta
+        ports:
+          - 8080:8080
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: alerta
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - run: docker pull ghcr.io/act10ns/hey
+      - name: Run test
+        run: >-
+          docker run ghcr.io/act10ns/hey
+          -z 60s
+          -m POST
+          -T application/json
+          -d '{"resource":"router01", "event":"node_down"}'
+          http://localhost:8080/alert
