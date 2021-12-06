@@ -24,6 +24,7 @@ jobs:
         run: >-
           docker build
           -t $IMAGE_NAME
+          -t $REPOSITORY_URL/$IMAGE_NAME:$(cat VERSION)
           -t $REPOSITORY_URL/$IMAGE_NAME:${{ steps.vars.outputs.SHORT_COMMIT_ID }}
           -t $REPOSITORY_URL/$IMAGE_NAME:latest .
       - name: Docker Login
