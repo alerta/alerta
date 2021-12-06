@@ -33,6 +33,7 @@ jobs:
           --health-retries 5
 
     steps:
+      - run: sleep 20
       - name: Run test
         run: >-
           docker run ghcr.io/act10ns/hey
