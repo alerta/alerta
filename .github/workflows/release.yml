@@ -10,6 +10,7 @@ env:
 
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
 
     services:
@@ -54,6 +55,7 @@ jobs:
         if: failure()
 
   release:
+    name: Publish
     needs: test
     runs-on: ubuntu-latest
     steps:
