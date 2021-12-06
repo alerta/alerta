@@ -39,8 +39,9 @@ jobs:
       - name: Run test
         run: >-
           docker run ghcr.io/act10ns/hey
-          -z 60s
-          -m POST
-          -T application/json
-          -d '{"resource":"router01", "event":"node_down"}'
-          http://localhost:8080/alert
+          -z 2s
+          http://localhost:8080/_
+#          -m POST
+#          -T application/json
+#          -d '{"resource":"router01", "event":"node_down"}'
+#          http://localhost:8080/alert
