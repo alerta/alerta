@@ -5,6 +5,9 @@ on:
     branches: [ master, release/* ]
     tags: [ '**' ]
 
+env:
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
 jobs:
   build:
     name: Build & Push
@@ -12,7 +15,6 @@ jobs:
     env:
       REPOSITORY_URL: ghcr.io
       IMAGE_NAME: ${{ github.repository_owner }}/alerta-api
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -28,10 +30,11 @@ jobs:
           -t $REPOSITORY_URL/$IMAGE_NAME:${{ steps.vars.outputs.SHORT_COMMIT_ID }}
           -t $REPOSITORY_URL/$IMAGE_NAME:latest .
       - name: Docker Login
-        env:
-          DOCKER_USERNAME: ${{ github.actor }}
-          DOCKER_PASSWORD: ${{ secrets.ghcr_token }}
-        run: echo $DOCKER_PASSWORD | docker login $REPOSITORY_URL --username "$DOCKER_USERNAME" --password-stdin
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REPOSITORY_URL }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish Image
         id: docker-push
         run: docker push --all-tags $REPOSITORY_URL/$IMAGE_NAME
