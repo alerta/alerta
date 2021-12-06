@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from alerta.app import create_app, db, plugins
 from alerta.exceptions import AlertaException, InvalidAction
+from alerta.models.enums import Status
 from alerta.plugins import PluginBase
 
 
@@ -413,6 +414,41 @@ class PluginsTestCase(unittest.TestCase):
         del plugins.plugins['action1']
         del plugins.plugins['action2']
 
+    def test_custom_ack(self):
+
+        plugins.plugins['ack1'] = CustAckPlugin1()
+
+        # create alert
+        response = self.client.post('/alert', json=self.critical_alert, headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        alert_id = data['id']
+
+        # shelve and unshelve the alert to create some history
+        response = self.client.put('/alert/' + alert_id + '/action', json={'action': 'shelve'}, headers=self.headers)
+        response = self.client.put('/alert/' + alert_id + '/action', json={'action': 'unshelve'}, headers=self.headers)
+
+        response = self.client.put('/alert/' + alert_id + '/action', json={'action': 'ack1'}, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['status'], 'ack')
+
+        response = self.client.put('/alert/' + alert_id + '/action', json={'action': 'unack'}, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'critical')
+        self.assertEqual(data['alert']['status'], 'open')
+
+        del plugins.plugins['ack1']
+
 
 class OldPlugin1(PluginBase):
 
@@ -617,6 +653,27 @@ class CustDeletePlugin2(PluginBase):
 
     def take_action(self, alert, action, text, **kwargs):
         return alert, action, text
+
+    def delete(self, alert, **kwargs):
+        return True
+
+
+class CustAckPlugin1(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        return
+
+    def status_change(self, alert, status, text, **kwargs):
+        return alert, status, text
+
+    def take_action(self, alert, action: str, text: str, **kwargs):
+        if not action == 'ack1':
+            return
+        alert.status = Status.Ack
+        return alert
 
     def delete(self, alert, **kwargs):
         return True

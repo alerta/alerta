@@ -1519,10 +1519,10 @@ class Backend(Database):
         if info_threshold:
             delete = """
                 DELETE FROM alerts
-                 WHERE (severity='informational'
+                 WHERE (severity=%(inform_severity)s
                         AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(info_threshold)s seconds'))
             """
-            self._deleteall(delete, {'info_threshold': info_threshold})
+            self._deleteall(delete, {'inform_severity': alarm_model.DEFAULT_INFORM_SEVERITY, 'info_threshold': info_threshold})
 
         # get list of alerts to be newly expired
         select = """
