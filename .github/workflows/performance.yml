@@ -17,9 +17,15 @@ jobs:
       alerta:
         image: ghcr.io/alerta/alerta-api
         env:
+          DEBUG: 1
           DATABASE_URL: postgres://postgres:postgres@postgres:5432/alerta
         ports:
           - 8080:8080
+        options: >-
+          --health-cmd "curl --fail http://localhost:8080/_ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       postgres:
         image: postgres:13
         env:
