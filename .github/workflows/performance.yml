@@ -33,7 +33,7 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
-          - 5432:5432
+          - 5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -41,7 +41,6 @@ jobs:
           --health-retries 5
 
     steps:
-      - run: sleep 20
       - name: Run test
         run: >-
           docker run ghcr.io/act10ns/hey
