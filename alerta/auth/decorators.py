@@ -120,6 +120,21 @@ def permission(scope=None):
                 else:
                     return f(*args, **kwargs)
 
+            # Proxy auth
+            if current_app.config['AUTH_PROXY'] and current_app.config['AUTH_PROXY_USER_HEADER'] in request.headers:
+                user_id = request.headers[current_app.config['AUTH_PROXY_USER_HEADER']]
+                roles = request.headers.get(current_app.config['AUTH_PROXY_ROLE_HEADER'], '').split(current_app.config['AUTH_PROXY_ROLE_SEPARATOR'])
+                user = User.find_by_id(user_id)
+                g.user_id = user_id
+                g.login = user.login
+                g.customers = get_customers(user.email, groups=[user.domain] + user.get_groups())
+                g.scopes = Permission.lookup(user_id, roles=roles)  # type: List[Scope]
+
+                if not Permission.is_in_scope(scope, have_scopes=g.scopes):
+                    raise BasicAuthError(f'Missing required scope: {scope}', 403)
+                else:
+                    return f(*args, **kwargs)
+
             # auth not required
             if not current_app.config['AUTH_REQUIRED']:
                 g.user_id = None
