@@ -111,7 +111,8 @@ class AuditTrail:
                 'url': request.url,
                 'args': request.args.to_dict(),
                 'data': get_redacted_data(request),
-                'ipAddress': request.remote_addr
+                'remoteIp': request.remote_addr,
+                'userAgent': request.headers.get('User-Agent')
             },
             'extra': extra
         }, cls=CustomJSONEncoder)
