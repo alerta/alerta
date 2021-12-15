@@ -64,7 +64,7 @@ class FiltersTestCase(unittest.TestCase):
         post = {
             'environment': 'Development',
             'type': 'test',
-            'attributes':  {'strings': 'Mountains and fjords', 'int': 9001 }
+            'attributes': {'strings': 'Mountains and fjords', 'int': 9001}
         }
 
         # create filter
@@ -81,8 +81,8 @@ class FiltersTestCase(unittest.TestCase):
         update = {
             'environment': 'Development',
             'type': 'test',
-            'attributes':  {'strings': 'Mountains and fjords', 'int': 9001 },
-            'tags': [ 'test' ]
+            'attributes': {'strings': 'Mountains and fjords', 'int': 9001},
+            'tags': ['test']
         }
         response = self.client.put('/filter/' + filter_id, data=json.dumps(update), headers=self.headers)
         self.assertEqual(response.status_code, 200)
@@ -107,7 +107,7 @@ class FiltersTestCase(unittest.TestCase):
             'resource': 'the_missing_node',
             'service': ['Network', 'Web'],
             'type': 'test',
-            'attributes':  {'strings': 'Mountains and fjords', 'int': 9001 }
+            'attributes': {'strings': 'Mountains and fjords', 'int': 9001}
         }
 
         response = self.client.post('/filter', data=json.dumps(filter), headers=self.headers)
@@ -142,7 +142,7 @@ class FiltersTestCase(unittest.TestCase):
         filter = {
             'environment': 'Production',
             'type': 'test',
-            'attributes':  {'strings': 'Mountains and fjords', 'int': 9001 },
+            'attributes': {'strings': 'Mountains and fjords', 'int': 9001},
             'resource': 'node404',
             'service': ['Network', 'Web']
         }
@@ -169,7 +169,7 @@ class FiltersTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['filter']['environment'], 'Development')
         self.assertEqual(data['filter']['type'], 'test')
-        self.assertEqual(data['filter']['attributes'], {'strings': 'Mountains and fjords', 'int': 9001 })
+        self.assertEqual(data['filter']['attributes'], {'strings': 'Mountains and fjords', 'int': 9001})
         self.assertEqual(data['filter']['resource'], 'node404')
         self.assertEqual(data['filter']['service'], ['Network', 'Web'])
         self.assertEqual(data['filter']['group'], None)
@@ -186,7 +186,7 @@ class FiltersTestCase(unittest.TestCase):
         filter = {
             'environment': 'Production',
             'type': 'test',
-            'attributes':  {'strings': 'Mountains and fjords', 'int': 9001 },
+            'attributes': {'strings': 'Mountains and fjords', 'int': 9001},
         }
 
         response = self.client.post('/filter', data=json.dumps(filter), headers=self.headers)
@@ -195,7 +195,7 @@ class FiltersTestCase(unittest.TestCase):
         filter_id = data['id']
 
         update = {
-            'attributes':  {'strings': 'No fjords', 'int': 9001 },
+            'attributes': {'strings': 'No fjords', 'int': 9001},
         }
 
         response = self.client.put('/filter/' + filter_id, data=json.dumps(update), headers=self.headers)
@@ -207,8 +207,7 @@ class FiltersTestCase(unittest.TestCase):
         response = self.client.get('/filter/' + filter_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        self.assertEqual(data['filter']['attributes'], {'strings': 'No fjords', 'int': 9001 })
-
+        self.assertEqual(data['filter']['attributes'], {'strings': 'No fjords', 'int': 9001})
 
     def test_user_info(self):
 
@@ -220,7 +219,7 @@ class FiltersTestCase(unittest.TestCase):
         filter = {
             'environment': 'Production',
             'type': 'test',
-            'attributes':  {'strings': 'Mountains and fjords', 'int': 9001 },
+            'attributes': {'strings': 'Mountains and fjords', 'int': 9001},
             'resource': 'node404',
             'service': ['Network', 'Web'],
             'text': 'test plugin'
@@ -237,7 +236,7 @@ class FiltersTestCase(unittest.TestCase):
 class DummyPlugin(PluginBase):
 
     def pre_receive(self, alert, **kwargs):
-        filters = [f.serialize for f in Filter.find_matching_filters(alert, "test")]
+        filters = [f.serialize for f in Filter.find_matching_filters(alert, 'test')]
         if filters:
             alert.tags.append('test')
         return alert

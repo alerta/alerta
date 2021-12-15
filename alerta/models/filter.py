@@ -1,17 +1,14 @@
-from datetime import datetime, timedelta
-from enum import Enum
-from collections import namedtuple
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
-from flask import current_app
-
 from alerta.app import db
+
 from alerta.database.base import Query
-from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
 JSON = Dict[str, Any]
+
 
 class Filter:
 
@@ -96,11 +93,10 @@ class Filter:
                 raise ValueError("'type' must be string")
 
         if 'attributes' in json:
-            if not isinstance(json.get('attributes'), (dict , type(None))):
+            if not isinstance(json.get('attributes'), (dict, type(None))):
                 raise ValueError("'attributes' must be a JSON object")
 
         return True
-
 
     @property
     def serialize(self) -> Dict[str, Any]:

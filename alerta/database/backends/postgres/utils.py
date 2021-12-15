@@ -252,6 +252,7 @@ class Blackouts(QueryBuilder):
 
         return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
 
+
 class Filters(QueryBuilder):
 
     VALID_PARAMS = {
@@ -266,8 +267,8 @@ class Filters(QueryBuilder):
         'tags': (None, 'tags', 1),  # sort-by
         'origin': ('origin', 'origin', 1),
         'customer': ('customer', 'customer', 1),
-        'type':('type', 'type', 1),
-        'attributes':(None, 'attributes', 1),
+        'type': ('type', 'type', 1),
+        'attributes': (None, 'attributes', 1),
         'status': ('status', 'status', 1),
         'remaining': ('remaining', 'remaining', -1),
         'user': ('user', 'user', 1),

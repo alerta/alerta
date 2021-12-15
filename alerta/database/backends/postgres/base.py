@@ -993,7 +993,6 @@ class Backend(Database):
         kwargs['type'] = type
         return self._fetchall(select, kwargs)
 
-
     def update_filter(self, id, **kwargs):
         update = """
             UPDATE filters
