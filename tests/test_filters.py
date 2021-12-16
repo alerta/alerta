@@ -3,8 +3,8 @@ import unittest
 from datetime import datetime
 
 from alerta.app import create_app, db, plugins
-from alerta.models.key import ApiKey
 from alerta.models.filter import Filter
+from alerta.models.key import ApiKey
 from alerta.plugins import PluginBase
 from alerta.utils.format import DateTime
 
