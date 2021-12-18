@@ -235,6 +235,235 @@ class PostgresQueryTestCase(unittest.TestCase):
             r, '(("status" ILIKE \'%%active%%\' OR "status" ILIKE \'%%pending%%\') OR ("title" ILIKE \'%%full%%\' OR "title" ILIKE \'%%text%%\'))')
 
 
+def skip_mysql():
+    try:
+        import sqlalchemy  # noqa
+    except ImportError:
+        return True
+    return False
+
+
+class MySQLQueryTestCase(unittest.TestCase):
+
+    def setUp(self):
+
+        if skip_mysql():
+            self.skipTest('sqlalchemy import failed')
+        from alerta.database.backends.mysql.queryparser import \
+            QueryParser as MySQLQueryParser
+        self.parser = MySQLQueryParser()
+
+    def test_word_and_phrase_terms(self):
+
+        # default field (ie. "text") contains word
+        string = r'''quick'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, "LOWER(`text`) LIKE LOWER('%%quick%%')")
+
+        # default field (ie. "text") contains either words
+        string = r'''quick OR brown'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`text`) LIKE LOWER(\'%%quick%%\') OR LOWER(`text`) LIKE LOWER(\'%%brown%%\'))')
+
+        # default field (ie. "text") contains either words (default operator)
+        string = r'''quick brown'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`text`) LIKE LOWER(\'%%quick%%\') OR LOWER(`text`) LIKE LOWER(\'%%brown%%\'))')
+
+        # default field (ie. "text") contains exact phrase
+        string = r'''"quick brown"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, 'LOWER(`text`) REGEXP \'\\\\bquick brown\\\\b\'')
+
+    def test_field_names(self):
+
+        # field contains word
+        string = r'''status:active'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, 'LOWER(`status`) LIKE LOWER(\'%%active%%\')')
+
+        # field contains either words
+        string = r'''title:(quick OR brown)'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`title`) LIKE LOWER(\'%%quick%%\') OR LOWER(`title`) LIKE LOWER(\'%%brown%%\'))')
+
+        # field contains either words (default operator)
+        string = r'''title:(quick brown)'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`title`) LIKE LOWER(\'%%quick%%\') OR LOWER(`title`) LIKE LOWER(\'%%brown%%\'))')
+
+        # field contains exact phrase
+        string = r'''author:"John Smith"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, 'LOWER(`author`) REGEXP \'\\\\bJohn Smith\\\\b\'')
+
+        # attribute field has non-null value
+        string = r'''_exists_:title'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '`attributes` ->\'$.title\' IS NOT NULL')
+
+        # attribute contains word
+        string = r'''foo.vendor:cisco'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, 'LOWER(`foo` ->\'$.vendor\') LIKE LOWER(\'%%cisco%%\')')
+
+        # attribute contains word ("_" shortcut)
+        string = r'''_.vendor:cisco'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, 'LOWER(`attributes` ->\'$.vendor\') LIKE LOWER(\'%%cisco%%\')')
+
+        # attribute contains either words
+        string = r'''attributes.vendor:(cisco OR juniper)'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`attributes` ->\'$.vendor\') LIKE LOWER(\'%%cisco%%\') OR LOWER(`attributes` ->\'$.vendor\') LIKE LOWER(\'%%juniper%%\'))')
+
+        # attribute contains either words (default operator)
+        string = r'''attributes.vendor:(cisco juniper)'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`attributes` ->\'$.vendor\') LIKE LOWER(\'%%cisco%%\') OR LOWER(`attributes` ->\'$.vendor\') LIKE LOWER(\'%%juniper%%\'))')
+
+        # attribute contains either words ("_" shortcut, default operator)
+        string = r'''_.vendor:(cisco juniper)'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`attributes` ->\'$.vendor\') LIKE LOWER(\'%%cisco%%\') OR LOWER(`attributes` ->\'$.vendor\') LIKE LOWER(\'%%juniper%%\'))')
+
+        # attribute contains exact phrase
+        string = r'''foo.vendor:"quick brown"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, 'LOWER(`foo` ->\'$.vendor\') REGEXP \'\\\\bquick brown\\\\b\'')
+
+        # attribute contains exact phrase ("_" shortcut)
+        string = r'''_.vendor:"quick brown"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, 'LOWER(`attributes` ->\'$.vendor\') REGEXP \'\\\\bquick brown\\\\b\'')
+
+    def test_wildcards(self):
+
+        # ? = single character, * = one or more characters
+        string = r'''text:qu?ck bro*'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`text`) REGEXP \'\\\\bqu.?ck\\\\b\' OR LOWER(`text`) REGEXP \'\\\\bbro.*\\\\b\')')
+
+    def test_regular_expressions(self):
+
+        string = r'''name:/joh?n(ath[oa]n)/'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, 'LOWER(`name`) REGEXP \'joh?n(ath[oa]n)\'')
+
+    def test_fuzziness(self):
+        pass
+
+    def test_proximity_searches(self):
+        pass
+
+    def test_ranges(self):
+
+        string = r'''date:[2012-01-01 TO 2012-12-31]'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(`date` >= \'2012-01-01\' AND `date` <= \'2012-12-31\')')
+
+        string = r'''count:[1 TO 5]'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(`count` >= \'1\' AND `count` <= \'5\')')
+
+        string = r'''tag:{alpha TO omega}'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(`tag` > \'alpha\' AND `tag` < \'omega\')')
+
+        string = r'''count:[10 TO *]'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(`count` >= \'10\' AND 1=1)')
+
+        string = r'''date:{* TO 2012-01-01}'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(1=1 AND `date` < \'2012-01-01\')')
+
+        string = r'''count:[1 TO 5}'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(`count` >= \'1\' AND `count` < \'5\')')
+
+    def test_unbounded_ranges(self):
+
+        string = r'''age:>10'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(`age` > \'10\')')
+
+        string = r'''age:>=10'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(`age` >= \'10\')')
+
+        string = r'''age:<10'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(`age` < \'10\')')
+
+        string = r'''age:<=10'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(`age` <= \'10\')')
+
+    def test_boosting(self):
+        pass
+
+    def test_boolean_operators(self):
+
+        # OR (||)
+        string = r'''"jakarta apache" jakarta'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`text`) REGEXP \'\\\\bjakarta apache\\\\b\' OR LOWER(`text`) LIKE LOWER(\'%%jakarta%%\'))')
+
+        string = r'''"jakarta apache" OR jakarta'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`text`) REGEXP \'\\\\bjakarta apache\\\\b\' OR LOWER(`text`) LIKE LOWER(\'%%jakarta%%\'))')
+
+        string = r'''"jakarta apache" || jakarta'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`text`) REGEXP \'\\\\bjakarta apache\\\\b\' OR LOWER(`text`) LIKE LOWER(\'%%jakarta%%\'))')
+
+        # AND (&&)
+        string = r'''"jakarta apache" AND "Apache Lucene"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`text`) REGEXP \'\\\\bjakarta apache\\\\b\' AND LOWER(`text`) REGEXP \'\\\\bApache Lucene\\\\b\')')
+
+        string = r'''"jakarta apache" && "Apache Lucene"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`text`) REGEXP \'\\\\bjakarta apache\\\\b\' AND LOWER(`text`) REGEXP \'\\\\bApache Lucene\\\\b\')')
+
+        # + (required)
+        pass
+
+        # NOT (!)
+        string = r'''"jakarta apache" NOT "Apache Lucene"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`text`) REGEXP \'\\\\bjakarta apache\\\\b\' AND NOT (LOWER(`text`) REGEXP \'\\\\bApache Lucene\\\\b\'))')
+
+        string = r'''"jakarta apache" !"Apache Lucene"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`text`) REGEXP \'\\\\bjakarta apache\\\\b\' AND NOT (LOWER(`text`) REGEXP \'\\\\bApache Lucene\\\\b\'))')
+
+        string = r'''NOT "jakarta apache"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, 'NOT (LOWER(`text`) REGEXP \'\\\\bjakarta apache\\\\b\')')
+
+        string = r'''group:"jakarta apache" NOT group:"Apache Lucene"'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '(LOWER(`group`) REGEXP \'\\\\bjakarta apache\\\\b\' AND NOT (LOWER(`group`) REGEXP \'\\\\bApache Lucene\\\\b\'))')
+
+        # - (prohibit)
+        pass
+
+    def test_grouping(self):
+
+        # field exact match
+        string = r'''(quick OR brown) AND fox'''
+        r = self.parser.parse(string)
+        self.assertEqual(r, '((LOWER(`text`) LIKE LOWER(\'%%quick%%\') OR LOWER(`text`) LIKE LOWER(\'%%brown%%\')) AND LOWER(`text`) LIKE LOWER(\'%%fox%%\'))')
+
+        # field exact match
+        string = r'''status:(active OR pending) title:(full text search)'''
+        r = self.parser.parse(string)
+        self.assertEqual(
+            r, '((LOWER(`status`) LIKE LOWER(\'%%active%%\') OR LOWER(`status`) LIKE LOWER(\'%%pending%%\')) OR (LOWER(`title`) LIKE LOWER(\'%%full%%\') OR LOWER(`title`) LIKE LOWER(\'%%text%%\')))')
+
+
 def skip_mongodb():
     try:
         import pymongo  # noqa

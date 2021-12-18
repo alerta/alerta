@@ -56,7 +56,8 @@ setuptools.setup(
     ],
     extras_require={
         'mongodb': ['pymongo>=3.9.0,<4.0'],
-        'postgres': ['psycopg2']
+        'postgres': ['psycopg2'],
+        'mysql': ['PyMySQL']
     },
     include_package_data=True,
     zip_safe=False,

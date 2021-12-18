@@ -21,10 +21,11 @@ Requirements
 
 Release 8 only supports Python 3.7 or higher.
 
-The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
+The only mandatory dependency is MongoDB or PostgreSQL or MySQL. Everything else is optional.
 
 - Postgres version 10 or better
 - MongoDB version 4.2 or better
+- MySQL version 8 or better
 
 Installation
 ------------

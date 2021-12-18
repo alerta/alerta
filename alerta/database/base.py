@@ -23,8 +23,10 @@ def get_backend(app):
 
     if backend.startswith('mongodb'):
         backend = 'mongodb'
-    if backend == 'postgresql':
+    elif backend == 'postgresql':
         backend = 'postgres'
+    elif backend.startswith('mysql'):
+        backend = 'mysql'
     return backend
 
 

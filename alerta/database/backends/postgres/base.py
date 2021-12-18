@@ -825,6 +825,7 @@ class Backend(Database):
         """
         if current_app.config['CUSTOMER_VIEWS']:
             select += ' AND (customer IS NULL OR customer=%(customer)s)'
+
         if self._fetchone(select, vars(alert)):
             return True
         return False
