@@ -255,29 +255,39 @@ class Filters(QueryBuilder):
     VALID_PARAMS = {
         # field (column, sort-by, direction)
         'id': ('_id', None, 0),
-        'environment': ('environment', 'environment', 1),
-        'service': ('service', 'service', 1),
         'resource': ('resource', 'resource', 1),
         'event': ('event', 'event', 1),
-        'group': ('"group"', '"group"', 1),
+        'environment': ('environment', 'environment', 1),
+        'status': ('status', 'status', 1),
+        'service': ('service', 'service', 1),
+        'group': ('group', 'group', 1),
+        'text': ('text', 'text', 1),
         'tag': ('tags', None, 0),  # filter
         'tags': (None, 'tags', 1),  # sort-by
         'origin': ('origin', 'origin', 1),
         'customer': ('customer', 'customer', 1),
         'type': ('type', 'type', 1),
         'attributes': (None, 'attributes', 1),
-        'status': ('status', 'status', 1),
-        'remaining': ('remaining', 'remaining', -1),
         'user': ('user', 'user', 1),
         'createTime': ('createTime', 'createTime', -1),
-        'text': ('text', 'text', 1),
     }
 
     @staticmethod
     def from_params(params: ImmutableMultiDict, customers=None, query_time=None):
 
-        query = dict()
-        params = MultiDict(params)
+        # ?q=
+        if params.get('q', None):
+            try:
+                parser = QueryParser()
+                query = json.loads(parser.parse(
+                    query=params['q'],
+                    default_field=params.get('q.df'),
+                    default_operator=params.get('q.op')
+                ))
+            except ParseException as e:
+                raise ApiError('Failed to parse query string.', 400, [e])
+        else:
+            query = dict()
 
         # customer
         if customers:
@@ -285,17 +295,22 @@ class Filters(QueryBuilder):
         else:
             customer_query = None  # type: ignore
 
-        # status
-        params.poplist('status')
+        # id
+        ids = params.getlist('id')
+        if len(ids) == 1:
+            query['$or'] = [{'_id': {'$regex': '^' + ids[0]}}]
+        elif ids:
+            query['$or'] = [{'_id': {'$regex': re.compile('|'.join(['^' + i for i in ids]))}}]
 
         # filter, sort-by, group-by
         query = QueryBuilder.filter_query(params, Filters.VALID_PARAMS, query)
         sort = QueryBuilder.sort_by_columns(params, Filters.VALID_PARAMS)
+        group = params.getlist('group-by')
 
         if customer_query:
             query = {'$and': [customer_query, query]}
 
-        return Query(where=query, sort=sort, group=None)
+        return Query(where=query, sort=sort, group=group)
 
 
 class Heartbeats(QueryBuilder):

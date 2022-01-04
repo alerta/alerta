@@ -93,6 +93,39 @@ class FiltersTestCase(unittest.TestCase):
         response = self.client.delete('/filter/' + filter_id, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
+    def test_filter_filters(self):
+        self.headers = {
+            'Authorization': f'Key {self.admin_api_key.key}',
+            'Content-type': 'application/json'
+        }
+
+        # Filter data type 1
+        post = {
+            'environment': 'Development',
+            'type': 'test1',
+            'attributes': {'strings': 'Mountains and fjords', 'int': 9001}
+        }
+
+        response = self.client.post('/filter', data=json.dumps(post), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        # Filter data type 2
+        post = {
+            'environment': 'Development',
+            'type': 'test2',
+            'attributes': {'strings': 'Dare not to sleep', 'int': 6000000}
+        }
+
+        response = self.client.post('/filter', data=json.dumps(post), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.get('/filters?q=type:test2', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['total'], 1)
+        self.assertEqual(data['filters'][0]['type'], 'test2')
+
     def test_match_type(self):
 
         self.headers = {

@@ -1101,7 +1101,13 @@ class Backend(Database):
 
     def get_filters(self, query=None, page=None, page_size=None):
         query = query or Query()
-        return self.get_db().filters.find(query.where, sort=query.sort).skip((page - 1) * page_size).limit(page_size)
+        pipeline = [
+            {'$match': query.where},
+            {'$sort': {k: v for k, v in query.sort}},
+            {'$skip': (page - 1) * page_size},
+            {'$limit': page_size}
+        ]
+        return self.get_db().filters.aggregate(pipeline)
 
     def get_filters_count(self, query=None):
         query = query or Query()

@@ -62,7 +62,7 @@ def get_filter(filter_id):
 @cross_origin()
 @permission(Scope.read_filters)
 @jsonp
-def list_filters():
+def search_filters():
     query = qb.filters.from_params(request.args, customers=g.customers)
     total = Filter.count(query)
     paging = Page.from_params(request.args, total)
