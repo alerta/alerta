@@ -209,6 +209,11 @@ class Filter:
     def count(query: Query = None) -> int:
         return db.get_filters_count(query)
 
+    # get types
+    @staticmethod
+    def get_types(query: Query = None) -> List[str]:
+        return db.get_filter_types(query)
+
     def update(self, **kwargs) -> 'Filter':
         return Filter.from_db(db.update_filter(self.id, **kwargs))
 

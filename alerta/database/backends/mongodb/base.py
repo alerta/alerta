@@ -1113,6 +1113,28 @@ class Backend(Database):
         query = query or Query()
         return self.get_db().filters.count_documents(query.where)
 
+    def get_filter_types(self, query=None, topn=1000):
+        query = query or Query()
+        pipeline = [
+            {'$match': query.where},
+            {'$unwind': '$type'},
+            {'$project': {'environment': 1, 'type': 1}},
+            {'$limit': topn},
+            {'$group': {'_id': {'environment': '$environment', 'type': '$type'}, 'count': {'$sum': 1}}}
+        ]
+        responses = self.get_db().filters.aggregate(pipeline)
+
+        types = list()
+        for response in responses:
+            types.append(
+                {
+                    'environment': response['_id']['environment'],
+                    'type': response['_id']['type'],
+                    'count': response['count']
+                }
+            )
+        return types
+
     def get_matching_filters_by_type(self, alert, type):
         query = dict()
         query['environment'] = alert.environment

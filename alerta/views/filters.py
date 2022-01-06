@@ -91,6 +91,29 @@ def search_filters():
         )
 
 
+@api.route('/filters/types', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.read_filters)
+@jsonp
+def get_types():
+    query = qb.filters.from_params(request.args, customers=g.customers)
+    types = Filter.get_types(query)
+
+    if types:
+        return jsonify(
+            status='ok',
+            types=types,
+            total=len(types)
+        )
+    else:
+        return jsonify(
+            status='ok',
+            message='not found',
+            types=[],
+            total=0
+        )
+
+
 @api.route('/filter/<filter_id>', methods=['OPTIONS', 'PUT'])
 @cross_origin()
 @permission(Scope.write_filters)

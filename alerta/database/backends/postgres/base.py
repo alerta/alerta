@@ -913,6 +913,15 @@ class Backend(Database):
         """.format(where=query.where)
         return self._fetchone(select, query.vars).count
 
+    def get_filter_types(self, query=None, topn=1000):
+        query = query or Query()
+        select = """
+            SELECT environment, type, count(1) FROM filters, UNNEST(types) type
+            WHERE {where}
+            GROUP BY environment, type
+        """.format(where=query.where)
+        return [{'environment': t.environment, 'type': t.type, 'count': t.count} for t in self._fetchall(select, query.vars, limit=topn)]
+
     def get_matching_filters_by_type(self, alert, type):
         select = """
             SELECT *
