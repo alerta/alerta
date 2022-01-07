@@ -196,7 +196,10 @@ class Database(Base):
 
     # ENVIRONMENTS
 
-    def get_environments(self, query=None, topn=1000):
+    def get_environments(self, query=None, page=1, page_size=100):
+        raise NotImplementedError
+
+    def get_environments_count(query: Query = None) -> int:
         raise NotImplementedError
 
     # SERVICES
