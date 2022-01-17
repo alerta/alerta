@@ -3,6 +3,9 @@ import logging
 import os
 from typing import TYPE_CHECKING, Any, Optional
 
+import psycopg2
+from psycopg2.extras import NamedTupleCursor
+
 if TYPE_CHECKING:
     from alerta.models.alert import Alert  # noqa
 
@@ -67,6 +70,22 @@ class PluginBase(metaclass=abc.ABCMeta):
         except KeyError:
             rv = default
         return rv
+
+    def get_properties(self, rule_id, plugin):
+        query = f"select * from rule_properties where rule_id='{rule_id}' and plugin='{plugin}'"
+        conn = psycopg2.connect(
+            dsn=os.environ['DATABASE_URL'],
+            dbname=os.environ.get('DATABASE_NAME'),
+            cursor_factory=NamedTupleCursor
+        )
+        conn.set_client_encoding('UTF8')
+        cursor = conn.cursor()
+        cursor.execute(query)
+        try:
+            result = cursor.fetchall()
+            return result
+        finally:
+            conn.close()
 
 
 class FakeApp:
