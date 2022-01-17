@@ -1,0 +1,9 @@
+[
+    {
+        "name": "foo",
+        "fields": [
+            {"field": "resource", "regex": ".+"}
+        ],
+        "contacts": ["dba@lists.mycompany.com", "dev@lists.mycompany.com"]
+    }
+]

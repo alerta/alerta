@@ -4,9 +4,11 @@ from alerta.app import alarm_model
 from alerta.utils.response import absolute_url
 
 from . import api
+from flask_cors import cross_origin
 
 
 @api.route('/config', methods=['GET'])
+@cross_origin()
 def config():
     return jsonify({
         'debug': current_app.debug,
@@ -27,7 +29,8 @@ def config():
         'readonly_scopes': current_app.config['READONLY_SCOPES'],
         'provider': current_app.config['AUTH_PROVIDER'],
         'customer_views': current_app.config['CUSTOMER_VIEWS'],
-        'signup_enabled': current_app.config['SIGNUP_ENABLED'] if current_app.config['AUTH_PROVIDER'] == 'basic' else False,
+        'signup_enabled': current_app.config['SIGNUP_ENABLED'] if current_app.config[
+                                                                      'AUTH_PROVIDER'] == 'basic' else False,
         'email_verification': current_app.config['EMAIL_VERIFICATION'],
         'client_id': current_app.config['OAUTH2_CLIENT_ID'],
         'azure_tenant': current_app.config['AZURE_TENANT'],

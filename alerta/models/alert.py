@@ -77,6 +77,7 @@ class Alert:
         self.last_receive_time = kwargs.get('last_receive_time', None)
         self.update_time = kwargs.get('update_time', None)
         self.history = kwargs.get('history', None) or list()
+        self.enriched_data = kwargs.get('enriched_data', None)
 
     @classmethod
     def parse(cls, json: JSON) -> 'Alert':
@@ -112,7 +113,8 @@ class Alert:
             create_time=DateTime.parse(json['createTime']) if 'createTime' in json else None,
             timeout=json.get('timeout', None),
             raw_data=json.get('rawData', None),
-            customer=json.get('customer', None)
+            customer=json.get('customer', None),
+            enriched_data=json.get('enriched_data', None)
         )
 
     @property
@@ -146,7 +148,41 @@ class Alert:
             'lastReceiveId': self.last_receive_id,
             'lastReceiveTime': self.last_receive_time,
             'updateTime': self.update_time,
-            'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)]
+            'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)],
+            'enriched_data': self.enriched_data
+        }
+
+    @property
+    def properties(self):
+        return {
+            'id': self.id,
+            'resource': self.resource,
+            'event': self.event,
+            'environment': self.environment,
+            'severity': self.severity,
+            'correlate': self.correlate,
+            'status': self.status,
+            'service': self.service,
+            'group': self.group,
+            'value': self.value,
+            'text': self.text,
+            'tags': self.tags,
+            'attributes': self.attributes,
+            'origin': self.origin,
+            'type': self.event_type,
+            'createTime': self.create_time.isoformat(),
+            'timeout': self.timeout,
+            'rawData': self.raw_data,
+            'customer': self.customer,
+            'duplicateCount': self.duplicate_count,
+            'repeat': self.repeat,
+            'previousSeverity': self.previous_severity,
+            'trendIndication': self.trend_indication,
+            'receiveTime': self.receive_time.isoformat(),
+            'lastReceiveId': self.last_receive_id,
+            'lastReceiveTime': self.last_receive_time.isoformat(),
+            'updateTime': self.update_time.isoformat(),
+            'enriched_data': self.enriched_data,
         }
 
     def get_id(self, short: bool = False) -> str:
@@ -155,7 +191,8 @@ class Alert:
     def get_body(self, history: bool = True) -> Dict[str, Any]:
         body = self.serialize
         body.update({
-            key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime', 'updateTime'] if body[key]
+            key: DateTime.iso8601(body[key]) for key in ['createTime', 'lastReceiveTime', 'receiveTime', 'updateTime']
+            if body[key]
         })
         if not history:
             body['history'] = []
@@ -196,11 +233,16 @@ class Alert:
             last_receive_id=doc.get('lastReceiveId', None),
             last_receive_time=doc.get('lastReceiveTime', None),
             update_time=doc.get('updateTime', None),
-            history=[History.from_db(h) for h in doc.get('history', list())]
+            history=[History.from_db(h) for h in doc.get('history', list())],
+            enriched_data=doc.get('enriched_data', None),
         )
 
     @classmethod
     def from_record(cls, rec) -> 'Alert':
+        try:
+            enriched_data = rec.enriched_data
+        except AttributeError as e:
+            enriched_data = None
         return Alert(
             id=rec.id,
             resource=rec.resource,
@@ -229,7 +271,8 @@ class Alert:
             last_receive_id=rec.last_receive_id,
             last_receive_time=rec.last_receive_time,
             update_time=getattr(rec, 'update_time'),
-            history=[History.from_db(h) for h in rec.history]
+            history=[History.from_db(h) for h in rec.history],
+            enriched_data=enriched_data,
         )
 
     @classmethod
@@ -477,7 +520,8 @@ class Alert:
 
     # search alerts
     @staticmethod
-    def find_all(query: Query = None, raw_data: bool = False, history: bool = False, page: int = 1, page_size: int = 1000) -> List['Alert']:
+    def find_all(query: Query = None, raw_data: bool = False, history: bool = False, page: int = 1,
+                 page_size: int = 1000) -> List['Alert']:
         return [Alert.from_db(alert) for alert in db.get_alerts(query, raw_data, history, page, page_size)]
 
     @staticmethod

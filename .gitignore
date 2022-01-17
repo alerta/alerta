@@ -115,3 +115,6 @@ pg-data/
 *.log*
 .vscode
 .env.development
+values.yaml
+
+rudder-alerta-enrichment-plugin/

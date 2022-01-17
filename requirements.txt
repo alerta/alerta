@@ -15,3 +15,5 @@ PyYAML==5.4.1
 requests==2.26.0
 requests_hawk==1.1.1
 sentry-sdk[flask]==1.4.1
+statsd-telegraf==3.2.1.post1
+validators==0.18.2

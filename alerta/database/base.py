@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 from flask import g
 
+
 # http://stackoverflow.com/questions/8544983/dynamically-mixin-a-base-class-to-an-instance-in-python
 
 
@@ -444,6 +445,24 @@ class Database(Base):
         raise NotImplementedError
 
     def get_unack(self):
+        raise NotImplementedError
+
+    def create_rule(self, role):
+        raise NotImplementedError
+
+    def get_rule(self, id, customer_id):
+        raise NotImplementedError
+
+    def get_rules(self, customer_id, sort_by, ascending, limit, offset):
+        raise NotImplementedError
+
+    def get_rules_count(self):
+        raise NotImplementedError
+
+    def update_rule(self):
+        raise NotImplementedError
+
+    def delete_rule(self):
         raise NotImplementedError
 
 

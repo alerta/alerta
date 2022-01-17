@@ -227,7 +227,76 @@ CREATE TABLE IF NOT EXISTS groups (
 );
 
 
+CREATE TABLE IF NOT EXISTS customer_rules (
+    id SERIAL PRIMARY KEY,
+    customer_id text,
+    rules text[],
+    is_active boolean,
+    name text
+);
+
+
+CREATE TABLE IF NOT EXISTS customer_channels (
+    id SERIAL PRIMARY KEY,
+    customer_id text,
+    name text,
+    channel_type text,
+    properties jsonb
+);
+
+
+CREATE TABLE IF NOT EXISTS customer_channel_rules_map(
+    id SERIAL PRIMARY KEY,
+    channel_id int,
+    rule_id int,
+    FOREIGN KEY (channel_id) REFERENCES customer_channels(id),
+    FOREIGN KEY (rule_id) REFERENCES customer_rules(id)
+);
+
+CREATE TABLE IF NOT EXISTS event_log(
+    id SERIAL PRIMARY KEY,
+    event_name text,
+    resource text,
+    customer_id text,
+    environment text,
+    event_properties jsonb,
+    channel_id int,
+    FOREIGN KEY(channel_id) REFERENCES customer_channels(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS worker_event_id_map(
+    id SERIAL PRIMARY KEY,
+    worker_id text,
+    event_name text,
+    resource text,
+    customer_id text,
+    channel_id int,
+    environment text,
+    events int[],
+    last_heart_beat_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS worker_failed_deliveries(
+    id SERIAL PRIMARY KEY,
+    worker_id text,
+    error text,
+    event_properties jsonb,
+    channel_properties jsonb,
+    created_at timestamp
+);
+
+ALTER TABLE IF EXISTS alerts add if not exists enriched_data jsonb;
+
 CREATE UNIQUE INDEX IF NOT EXISTS env_res_evt_cust_key ON alerts USING btree (environment, resource, event, (COALESCE(customer, ''::text)));
 
 
 CREATE UNIQUE INDEX IF NOT EXISTS org_cust_key ON heartbeats USING btree (origin, (COALESCE(customer, ''::text)));
+
+CREATE UNIQUE INDEX IF NOT EXISTS event_name_resource_customer_id_channel_id ON worker_event_id_map USING btree (event_name,resource,customer_id,channel_id,environment);
+
+INSERT INTO CUSTOMER_CHANNELS(id) values(0) ON CONFLICT DO NOTHING;
+delete from customer_channels where id=0;
+alter table if exists customer_channels add if not exists is_active boolean not null default true;
+alter table if exists customer_channels add if not exists system_added boolean not null default false;
+create unique index if not exists cust_channel_sys_added on customer_channels(customer_id) where system_added=true;
