@@ -33,7 +33,7 @@ class Plugins:
         for ep in iter_entry_points('alerta.plugins'):
             LOG.debug(f"Server plugin '{ep.name}' found.")
             entry_points[ep.name] = ep
-
+        LOG.info(f"Server plugins are {entry_points}")
         for name in self.config['PLUGINS']:
             try:
                 plugin = entry_points[name].load()
@@ -41,7 +41,7 @@ class Plugins:
                     self.plugins[name] = plugin()
                     LOG.info(f"Server plugin '{name}' loaded.")
             except Exception as e:
-                LOG.error(f"Failed to load plugin '{name}': {str(e)}")
+                LOG.error(f"Failed to load plugin '{name}': {str(e)}",exc_info=True)
         LOG.info(f"All server plugins enabled: {', '.join(self.plugins.keys())}")
         try:
             self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')  # type: ignore

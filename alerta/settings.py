@@ -169,6 +169,8 @@ CORS_ORIGINS = [
     # 'http://explorer.alerta.io',
     'http://localhost',
     'http://localhost:8000',
+    'http://192.168.*',
+    'http://10.*',
     r'https?://\w*\.?local\.alerta\.io:?\d*/?.*'  # => http(s)://*.local.alerta.io:<port>
 ]
 CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
@@ -241,7 +243,7 @@ GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
 
 # Plugins
-PLUGINS = ['remote_ip', 'reject', 'heartbeat', 'blackout', 'forwarder']
+PLUGINS = ['remote_ip', 'reject', 'heartbeat', 'blackout', 'forwarder','rudder_enrichment']
 PLUGINS_RAISE_ON_ERROR = True  # raise RuntimeError exception on first failure
 
 # reject plugin settings

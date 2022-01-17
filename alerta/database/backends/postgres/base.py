@@ -213,7 +213,8 @@ class Backend(Database):
                    timeout=%(timeout)s, raw_data=%(raw_data)s, repeat=%(repeat)s,
                    last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
                    tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)), attributes=attributes || %(attributes)s,
-                   duplicate_count=duplicate_count + 1, {update_time}, history=(%(history)s || history)[1:{limit}]
+                   duplicate_count=duplicate_count + 1, {update_time}, history=(%(history)s || history)[1:{limit}],
+                   enriched_data=%(enriched_data)s
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND event=%(event)s
@@ -236,7 +237,8 @@ class Backend(Database):
                    duplicate_count=%(duplicate_count)s, repeat=%(repeat)s, previous_severity=%(previous_severity)s,
                    trend_indication=%(trend_indication)s, receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
                    last_receive_time=%(last_receive_time)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
-                   attributes=attributes || %(attributes)s, {update_time}, history=(%(history)s || history)[1:{limit}]
+                   attributes=attributes || %(attributes)s, {update_time}, history=(%(history)s || history)[1:{limit}],
+                   enriched_data=%(enriched_data)s
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
@@ -254,12 +256,12 @@ class Backend(Database):
             INSERT INTO alerts (id, resource, event, environment, severity, correlate, status, service, "group",
                 value, text, tags, attributes, origin, type, create_time, timeout, raw_data, customer,
                 duplicate_count, repeat, previous_severity, trend_indication, receive_time, last_receive_id,
-                last_receive_time, update_time, history)
+                last_receive_time, update_time, history, enriched_data)
             VALUES (%(id)s, %(resource)s, %(event)s, %(environment)s, %(severity)s, %(correlate)s, %(status)s,
                 %(service)s, %(group)s, %(value)s, %(text)s, %(tags)s, %(attributes)s, %(origin)s,
                 %(event_type)s, %(create_time)s, %(timeout)s, %(raw_data)s, %(customer)s, %(duplicate_count)s,
                 %(repeat)s, %(previous_severity)s, %(trend_indication)s, %(receive_time)s, %(last_receive_id)s,
-                %(last_receive_time)s, %(update_time)s, %(history)s::history[])
+                %(last_receive_time)s, %(update_time)s, %(history)s::history[], %(enriched_data)s)
             RETURNING *
         """
         return self._insert(insert, vars(alert))
@@ -295,7 +297,8 @@ class Backend(Database):
             WHERE id=%(id)s OR id LIKE %(like_id)s
             RETURNING *
         """.format(limit=current_app.config['HISTORY_LIMIT'])
-        return self._updateone(update, {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout, 'update_time': update_time, 'change': history}, returning=True)
+        return self._updateone(update, {'id': id, 'like_id': id + '%', 'status': status, 'timeout': timeout,
+                                        'update_time': update_time, 'change': history}, returning=True)
 
     def tag_alert(self, id, tags):
         update = """
@@ -373,7 +376,8 @@ class Backend(Database):
             WHERE {query.where}
             RETURNING id
         """
-        return [row[0] for row in self._updateall(update, {**query.vars, **{'_attributes': attributes}}, returning=True)]
+        return [row[0] for row in
+                self._updateall(update, {**query.vars, **{'_attributes': attributes}}, returning=True)]
 
     def delete_alerts(self, query=None):
         query = query or Query()
@@ -401,10 +405,10 @@ class Backend(Database):
             select = '*'
         else:
             select = (
-                'id, resource, event, environment, severity, correlate, status, service, "group", value, "text",'
-                + 'tags, attributes, origin, type, create_time, timeout, {raw_data}, customer, duplicate_count, repeat,'
-                + 'previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time, update_time,'
-                + '{history}'
+                    'id, resource, event, environment, severity, correlate, status, service, "group", value, "text",'
+                    + 'tags, attributes, origin, type, create_time, timeout, {raw_data}, customer, duplicate_count, repeat,'
+                    + 'previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time, update_time,'
+                    + '{history}'
             ).format(
                 raw_data='raw_data' if raw_data else 'NULL as raw_data',
                 history='history' if history else 'array[]::history[] as history'
@@ -559,7 +563,8 @@ class Backend(Database):
                 'environments': t.environments,
                 'services': t.services,
                 f'{group}': t.event,
-                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in
+                              t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
@@ -582,7 +587,8 @@ class Backend(Database):
                 'environments': t.environments,
                 'services': t.services,
                 'event': t.event,
-                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in
+                              t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
@@ -606,7 +612,8 @@ class Backend(Database):
                 'environments': t.environments,
                 'services': t.services,
                 'event': t.event,
-                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
+                'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in
+                              t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
@@ -702,7 +709,8 @@ class Backend(Database):
             WHERE {where}
             GROUP BY environment, tag
         """.format(where=query.where)
-        return [{'environment': t.environment, 'tag': t.tag, 'count': t.count} for t in self._fetchall(select, query.vars, limit=topn)]
+        return [{'environment': t.environment, 'tag': t.tag, 'count': t.count} for t in
+                self._fetchall(select, query.vars, limit=topn)]
 
     # BLACKOUTS
 
@@ -1639,3 +1647,135 @@ class Backend(Database):
     def _log(self, cursor, query, vars):
         current_app.logger.debug('{stars}\n{query}\n{stars}'.format(
             stars='*' * 40, query=cursor.mogrify(query, vars).decode('utf-8')))
+
+    def create_rule(self, rule):
+        insert = """
+                    INSERT INTO customer_rules (customer_id, rules, is_active, name)
+                    VALUES (%(customer_id)s, %(rules)s, %(is_active)s, %(name)s)
+                    RETURNING *
+                """
+        return self._insert(insert, vars(rule))
+
+    def get_rule(self, rule_id, customer_id):
+        select = f"SELECT * FROM customer_rules WHERE id={rule_id} and customer_id='{customer_id}'"
+        return self._fetchone(select, ())
+
+    def get_rules(self, customer_id, sort_by, ascending, limit, offset, *args, **kwargs):
+        ascending_order = 'asc' if ascending else 'desc'
+        select = f"SELECT * FROM customer_rules WHERE customer_id='{customer_id}' order by {sort_by} {ascending_order}"
+        return self._fetchall(select, (), limit=limit, offset=offset)
+
+    def get_rules_count(self):
+        pass
+
+    def delete_rule(self):
+        pass
+
+    def update_rule(self):
+        pass
+
+    def update_rule_by_id(self, rule_id, customer_id, rules=None, is_active=None, name=None):
+        vars_dict = dict()
+        if isinstance(rules, list):
+            vars_dict['rules'] = rules
+        if isinstance(is_active, bool):
+            vars_dict['is_active'] = is_active
+        if isinstance(name, str):
+            vars_dict['name'] = name
+        if len(vars_dict) == 0:
+            return
+        update_clause = ",".join([f"{key}=%({key})s" for key in vars_dict.keys()])
+        query = f"""update customer_rules set {update_clause}  where id=%(rule_id)s and customer_id=%(customer_id)s returning * """
+        return self._updateone(query, {**vars_dict, "rule_id": rule_id, "customer_id": customer_id}, returning=True)
+
+    def delete_by_id(self, rule_id, customer_id):
+        query = """DELETE FROM customer_rules where id=%(rule_id)s and customer_id=%(customer_id)s returning *"""
+        return self._deleteone(query, dict(rule_id=rule_id, customer_id=customer_id), returning=True)
+
+    def create_channel(self, customer_channel):
+        insert = """
+            INSERT INTO customer_channels (name,channel_type,properties,customer_id)
+            VALUES (%(name)s, %(channel_type)s, %(properties)s, %(customer_id)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(customer_channel))
+
+    def get_channels(self, customer_id, sort_by, ascending, limit, offset):
+        ascending_order = 'asc' if ascending else 'desc'
+        query = f"""select * from customer_channels where customer_id=%(customer_id)s order by {sort_by} {ascending_order} """
+        return self._fetchall(query, {"customer_id": customer_id}, limit, offset)
+
+    def find_channel_by_id(self, customer_id, channel_id):
+        query = f"""select * from customer_channels where customer_id='{customer_id}' and id={channel_id}"""
+        return self._fetchone(query, ())
+
+    def update_channel_by_id(self, customer_id, channel_id, name=None, properties=None, is_active=None):
+        updated_list = []
+        if isinstance(name, str):
+            updated_list.append("name=%(name)s")
+        if isinstance(properties, dict):
+            updated_list.append("properties=%(properties)s")
+        if isinstance(is_active, bool):
+            updated_list.append("is_active=%(is_active)s")
+        if len(updated_list) == 0:
+            return
+        query = f"""UPDATE customer_channels set {','.join(updated_list)} 
+        where customer_id='{customer_id}' and id={channel_id} returning * """
+        return self._updateone(query, {"name": name, "properties": properties}, returning=True)
+
+    def delete_channel_by_id(self, customer_id, channel_id):
+        query = f"DELETE from customer_channels where customer_id='{customer_id}' and id={channel_id} returning * "
+        return self._deleteone(query, (), True)
+
+    def create_customer_rule_map(self, customer_channel_rule_map):
+        insert = """
+                    INSERT INTO customer_channel_rules_map (channel_id,rule_id)
+                    VALUES (%(channel_id)s, %(rule_id)s)
+                    RETURNING *
+                """
+        return self._insert(insert, vars(customer_channel_rule_map))
+
+    def delete_customer_rule_map_by_id(self, channel_id, customer_rule_map_id):
+        query = f"""DELETE from customer_channel_rules_map where id=(
+            select customer_channel_rules_map.id from customer_channel_rules_map join customer_channels on
+            customer_channel_rules_map.channel_id=customer_channels.id and customer_channels.customer_id='{channel_id}'
+            and customer_channel_rules_map.id={customer_rule_map_id}
+        ) returning * """
+        return self._deleteone(query, (), True)
+
+    def create_event_log(self, event_log):
+        query = f"""INSERT INTO event_log(event_name ,resource ,customer_id ,environment ,event_properties,channel_id) 
+                select %(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s, id FROM 
+                customer_channels where customer_id = %(customer_id)s and is_active=true
+                RETURNING id
+                """
+        return self._insert(query, vars(event_log))
+
+    def health_check(self):
+        query = """select 'ALERTA SERVER' as msg,NOW() as time;"""
+        return self._fetchone(query, {})
+
+    def get_customer_channel_rule_maps_by_customer_id(self, customer_id, limit=100, offset=0):
+        query = f"""select customer_channel_rules_map.* from customer_channel_rules_map join customer_channels on 
+            customer_channel_rules_map.channel_id=customer_channels.id and customer_channels.customer_id='{customer_id}'
+            order by customer_channel_rules_map.id asc
+        """
+        return self._fetchall(query, {}, limit=limit, offset=offset)
+
+    def create_email_based_event_log(self, event_log):
+        query = f"""INSERT INTO event_log(event_name ,resource ,customer_id ,environment ,event_properties,channel_id) 
+                select %(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s, 0
+                RETURNING id
+                """
+        return self._insert(query, vars(event_log))
+
+    def get_customer_rules_count(self, customer_id):
+        query = f"""select count(*) from customer_rules where customer_id='{customer_id}'"""
+        return self._fetchone(query, {})
+
+    def create_system_added_channel(self, channel):
+        query = f"""
+        insert into customer_channels(customer_id,name,channel_type,properties,system_added)
+        values (%(customer_id)s, %(name)s, %(channel_type)s, %(properties)s, true) on conflict do nothing returning *;
+        """
+        return self._insert(query, vars(channel))
