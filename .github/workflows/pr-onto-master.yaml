@@ -21,7 +21,7 @@ jobs:
     - name: Check Release Version
       uses: thebongy/version-check@v1
       with:
-        file: version.json
+        file: package.json
         tagFormat: v${version}
         failBuild: true
     # - run: |
