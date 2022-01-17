@@ -1,0 +1,35 @@
+name: Pull Request Onto Develop
+on:
+  pull_request:
+    branches:
+      - develop
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: '0'
+    - name: Set private key
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+          ssh-private-key: ${{ secrets.GIT_SSH_KEY }}
+    - name: Get branch name
+      id: branch-name
+      uses: tj-actions/branch-names@v5.1
+    - run: git fetch --all --tags
+    - name: Check Release Version
+      uses: thebongy/version-check@v1
+      with:
+        file: version.json
+        tagFormat: v${version}
+        failBuild: true
+    # - run: |
+    #     docker login --username rudderlabs --password '${{ secrets.DOCKER_HUB_PASSWORD }}'
+    #     export VERSION=${{ steps.branch-name.outputs.current_branch }}
+    #     rm -rf rudder-alerta-enrichment-plugin
+    #     git clone -b "$(cat RUDDER_ENRICH_PLUGIN_BRANCH_NAME)" git@github.com:rudderlabs/rudder-alerta-enrichment-plugin.git
+    #     docker build --no-cache --build-arg=COMMIT_ID_VALUE="$(git log --format="%H" -n 1)" -t rudderlabs/alerta:$VERSION .
+    #     docker push rudderlabs/alerta:$VERSION
+    #     rm -rf rudder-alerta-enrichment-plugin
+    #   name: Docker build and push
