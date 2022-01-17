@@ -1,6 +1,6 @@
 name: Pull Request Onto Develop
 on:
-  pull_request:
+  push:
     branches:
       - master
 jobs:
@@ -21,7 +21,7 @@ jobs:
     - name: Check Release Version
       uses: thebongy/version-check@v1
       with:
-        file: worker/package.json
+        file: package.json
         tagFormat: v${version}
         failBuild: true
       id: version_check_staging
