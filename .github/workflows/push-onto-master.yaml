@@ -34,3 +34,13 @@ jobs:
         docker push rudderlabs/alerta:$VERSION
         rm -rf rudder-alerta-enrichment-plugin
       name: Docker build and push
+    - name: Create tag
+      uses: actions/github-script@v5
+      with:
+        script: |
+          github.rest.git.createRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: 'refs/tags/${{steps.version_check_staging.outputs.releaseVersion}}',
+            sha: context.sha
+          })
