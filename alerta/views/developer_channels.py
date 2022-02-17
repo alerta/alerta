@@ -47,9 +47,6 @@ def get_dev_channels():
 @permission(Scope.read_rules)
 @jsonp
 def get_dev_channel_by_id(channel_id):
-    customer_id = request.args.get('customer_id')
-    if not customer_id:
-        raise ApiError('customer_id not present in query parameters', 400)
     channel = DeveloperChannel.find_by_id(channel_id)
     if not channel:
         raise ApiError('not found', 404)
@@ -61,11 +58,8 @@ def get_dev_channel_by_id(channel_id):
 @permission(Scope.write_rules)
 @jsonp
 def update_dev_channel_by_id(channel_id):
-    customer_id = request.args.get('customer_id')
-    if not customer_id:
-        raise ApiError('customer_id not present in query parameters', 400)
     try:
-        channel = DeveloperChannel.update_by_id(customer_id, channel_id, **request.json)
+        channel = DeveloperChannel.update_by_id(channel_id, **request.json)
     except Exception as e:
         raise ApiError(str(e), 400)
     if not channel:

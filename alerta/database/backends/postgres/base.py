@@ -1811,9 +1811,9 @@ class Backend(Database):
             updated_list.append("is_active=%(is_active)s")
         if len(updated_list) == 0:
             return
-        query = f"""UPDATE customer_channels set {','.join(updated_list)} where id={channel_id} returning * """
+        query = f"""UPDATE developer_channels set {','.join(updated_list)} where id={channel_id} returning * """
         return self._updateone(query, {"name": name, "properties": properties}, returning=True)
 
     def delete_dev_channel_by_id(self, channel_id):
-        query = f"DELETE from customer_channels where id={channel_id} returning * "
+        query = f"DELETE from developer_channels where id={channel_id} returning * "
         return self._deleteone(query, (), True)
