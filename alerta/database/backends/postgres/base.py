@@ -1744,9 +1744,13 @@ class Backend(Database):
         return self._deleteone(query, (), True)
 
     def create_event_log(self, event_log):
-        query = f"""INSERT INTO event_log(event_name ,resource ,customer_id ,environment ,event_properties,channel_id) 
-                select %(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s, id FROM 
-                customer_channels where customer_id = %(customer_id)s and is_active=true
+        query = f"""INSERT INTO event_log(event_name ,resource ,customer_id ,environment ,event_properties,channel_id,channel_type) 
+                select * from (
+                    select %(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s, id, 'customer' FROM 
+                    customer_channels where customer_id = %(customer_id)s and is_active=true union select %(event_name)s,
+                    %(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s, id, 'developer' FROM 
+                    developer_channels where customer_id = %(customer_id)s and is_active=true
+                )
                 RETURNING id
                 """
         return self._insert(query, vars(event_log))
@@ -1779,3 +1783,37 @@ class Backend(Database):
         values (%(customer_id)s, %(name)s, %(channel_type)s, %(properties)s, true) on conflict do nothing returning *;
         """
         return self._insert(query, vars(channel))
+
+    def create_dev_channel(self, developer_channel):
+        insert = """
+                    INSERT INTO developer_channels (name,channel_type,properties,customer_id)
+                    VALUES (%(name)s, %(channel_type)s, %(properties)s, %(customer_id)s)
+                    RETURNING *
+                """
+        return self._insert(insert, vars(developer_channel))
+
+    def get_dev_channels(self, sort_by, ascending, limit, offset):
+        ascending_order = 'asc' if ascending else 'desc'
+        query = f"""select * from developer_channels order by {sort_by} {ascending_order} """
+        return self._fetchall(query, limit, offset)
+
+    def find_dev_channel_by_id(self, channel_id):
+        query = f"""select * from developer_channels where id={channel_id}"""
+        return self._fetchone(query, ())
+
+    def update_dev_channel_by_id(self, channel_id, name, properties, is_active):
+        updated_list = []
+        if isinstance(name, str):
+            updated_list.append("name=%(name)s")
+        if isinstance(properties, dict):
+            updated_list.append("properties=%(properties)s")
+        if isinstance(is_active, bool):
+            updated_list.append("is_active=%(is_active)s")
+        if len(updated_list) == 0:
+            return
+        query = f"""UPDATE customer_channels set {','.join(updated_list)} where id={channel_id} returning * """
+        return self._updateone(query, {"name": name, "properties": properties}, returning=True)
+
+    def delete_dev_channel_by_id(self, channel_id):
+        query = f"DELETE from customer_channels where id={channel_id} returning * "
+        return self._deleteone(query, (), True)

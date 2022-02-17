@@ -300,3 +300,16 @@ delete from customer_channels where id=0;
 alter table if exists customer_channels add if not exists is_active boolean not null default true;
 alter table if exists customer_channels add if not exists system_added boolean not null default false;
 create unique index if not exists cust_channel_sys_added on customer_channels(customer_id) where system_added=true;
+-- adding channel_type supports identify customer-channel and developer-channels--
+alter table event_log add column channel_type text;
+-- adding channel_type supports identify customer-channel and developer-channels--
+alter table worker_event_id_map add column channel_type text;
+
+CREATE TABLE IF NOT EXISTS developer_channels (
+    id SERIAL PRIMARY KEY,
+    name text,
+    notify_on text,
+    channel_type text,
+    is_active boolean not null default true,
+    properties jsonb
+);
