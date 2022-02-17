@@ -118,12 +118,13 @@ class CustomerChannel:
 class DeveloperChannel:
     SUPPORTED_CHANNEL_TYPES = ["webhook", "email"]
 
-    def __init__(self, name, channel_type, properties, is_active=True, id=None):
+    def __init__(self, name, channel_type, properties, notify_on, is_active=True, id=None):
         self.id = id
         self.name = name
         self.channel_type = channel_type
         self.is_active = is_active
         self.properties = properties
+        self.notify_on = notify_on
 
     def create(self):
         self.validate()
@@ -150,7 +151,7 @@ class DeveloperChannel:
 
     @classmethod
     def from_record(cls, rec) -> 'DeveloperChannel':
-        return DeveloperChannel(rec.name, rec.channel_type, rec.properties, rec.rec.is_active, rec.id)
+        return DeveloperChannel(rec.name, rec.channel_type, rec.properties, rec.notify_on, rec.is_active, rec.id)
 
     @classmethod
     def from_db(cls, r: Union[Dict, Tuple]) -> 'DeveloperChannel':
@@ -167,6 +168,7 @@ class DeveloperChannel:
             "channel_type": self.channel_type,
             "properties": self.properties,
             "is_active": self.is_active,
+            "notify_on": self.notify_on
         }
 
     @staticmethod
@@ -209,4 +211,6 @@ class DeveloperChannel:
             raise Exception(f"Channel type must be one of {DeveloperChannel.SUPPORTED_CHANNEL_TYPES}")
         if not isinstance(json.get('properties'), dict):
             raise Exception("Channel properties are required")
+        if not isinstance(json.get('notify_on'), str):
+            raise Exception("Notify on is required")
         return DeveloperChannel(**json)
