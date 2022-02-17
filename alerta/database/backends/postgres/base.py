@@ -1747,9 +1747,9 @@ class Backend(Database):
         query = f"""INSERT INTO event_log(event_name ,resource ,customer_id ,environment ,event_properties,channel_id,channel_type) 
                 select * from (
                     select %(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s, id, 'customer' FROM 
-                    customer_channels where customer_id = %(customer_id)s and is_active=true union select %(event_name)s,
+                    customer_channels where customer_id = %(customer_id)s and is_active=true union all select %(event_name)s,
                     %(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s, id, 'developer' FROM 
-                    developer_channels where customer_id = %(customer_id)s and is_active=true
+                    developer_channels where is_active=true and notify_on=%(resource)s
                 )
                 RETURNING id
                 """
