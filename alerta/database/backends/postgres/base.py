@@ -1795,7 +1795,7 @@ class Backend(Database):
     def get_dev_channels(self, sort_by, ascending, limit, offset):
         ascending_order = 'asc' if ascending else 'desc'
         query = f"""select * from developer_channels order by {sort_by} {ascending_order} """
-        return self._fetchall(query,(), limit, offset)
+        return self._fetchall(query, (), limit, offset)
 
     def find_dev_channel_by_id(self, channel_id):
         query = f"""select * from developer_channels where id={channel_id}"""
@@ -1817,3 +1817,11 @@ class Backend(Database):
     def delete_dev_channel_by_id(self, channel_id):
         query = f"DELETE from developer_channels where id={channel_id} returning * "
         return self._deleteone(query, (), True)
+
+    def create_suppression_rule(self, suppression_rule):
+        insert = """
+            INSERT INTO suppression_rules (name,properties)
+            VALUES (%(name)s,%(properties)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(suppression_rule))

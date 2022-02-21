@@ -311,3 +311,20 @@ CREATE TABLE IF NOT EXISTS developer_channels (
     is_active boolean not null default true,
     properties jsonb
 );
+
+alter table if exists alerts add if not exists properties jsonb;
+
+CREATE TABLE IF NOT EXISTS suppression_rules(
+    id SERIAL PRIMARY KEY,
+    name text,
+    is_active boolean not null default true,
+    properties jsonb
+);
+
+CREATE TABLE IF NOT EXISTS customer_suppression_rules(
+    id SERIAL PRIMARY KEY,
+    name text,
+    customer_id text,
+    is_active boolean not null default true,
+    properties jsonb
+);
