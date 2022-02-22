@@ -1812,7 +1812,7 @@ class Backend(Database):
         if len(updated_list) == 0:
             return
         query = f"""UPDATE developer_channels set {','.join(updated_list)} where id={channel_id} returning * """
-        return self._updateone(query, {"name": name, "properties": properties}, returning=True)
+        return self._updateone(query, {"name": name, "properties": properties, "is_active": is_active}, returning=True)
 
     def delete_dev_channel_by_id(self, channel_id):
         query = f"DELETE from developer_channels where id={channel_id} returning * "
@@ -1825,3 +1825,29 @@ class Backend(Database):
             RETURNING *
         """
         return self._insert(insert, vars(suppression_rule))
+
+    def update_suppression_rule_by_id(self, suppression_rule_id, name, rules, is_active):
+        updated_list = []
+        if isinstance(name, str):
+            updated_list.append("name=%(name)s")
+        if isinstance(rules, list):
+            updated_list.append("rules=%(rules)s")
+        if isinstance(is_active, bool):
+            updated_list.append("is_active=%(is_active)s")
+        if len(updated_list) == 0:
+            return
+        query = f"""UPDATE suppression_rules set {','.join(updated_list)} where id={suppression_rule_id} returning * """
+        return self._updateone(query, {"name": name, "rules": rules, "is_active": is_active}, returning=True)
+
+    def delete_suppression_rule_by_id(self, suppression_rule_id):
+        query = f"DELETE from suppression_rules where id={suppression_rule_id} returning * "
+        return self._deleteone(query, (), True)
+
+    def get_suppression_rules(self, sort_by, ascending, limit, offset):
+        ascending_order = 'asc' if ascending else 'desc'
+        query = f"""select * from suppression_rules order by {sort_by} {ascending_order} """
+        return self._fetchall(query, (), limit, offset)
+
+    def find_suppression_rule_by_id(self, suppression_rule_id):
+        query = f"""select * from suppression_rules where id={suppression_rule_id}"""
+        return self._fetchone(query, ())

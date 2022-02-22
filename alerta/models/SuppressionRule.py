@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -50,6 +51,33 @@ class SuppressionRule:
         return {
             "id": self.id,
             "name": self.name,
-            "rules": self.rules,
+            "rules": [json.loads(r) for r in self.rules],
             "is_active": self.is_active
         }
+
+    @staticmethod
+    def find_all(sort_by, ascending, limit, offset):
+        return [SuppressionRule.from_db(channel) for channel in
+                db.get_suppression_rules(sort_by, ascending, limit, offset)]
+
+    @staticmethod
+    def find_by_id(channel_id):
+        return SuppressionRule.from_db(db.find_suppression_rule_by_id(channel_id))
+
+    @staticmethod
+    def update_by_id(suppression_rule_id, name=None, rules=None, is_active=None, **kwargs):
+        suppression_rule = SuppressionRule.find_by_id(suppression_rule_id)
+        if not suppression_rule:
+            raise Exception("not found")
+        if name:
+            suppression_rule.name = name
+        if rules:
+            suppression_rule.rules = rules
+        if isinstance(is_active, bool):
+            suppression_rule.is_active = is_active
+        suppression_rule.validate()
+        return SuppressionRule.from_db(db.update_suppression_rule_by_id(suppression_rule_id, name, rules, is_active))
+
+    @staticmethod
+    def delete_by_id(suppression_rule_id):
+        return SuppressionRule.from_db(db.delete_suppression_rule_by_id(suppression_rule_id))
