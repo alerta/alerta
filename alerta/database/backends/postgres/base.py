@@ -214,7 +214,7 @@ class Backend(Database):
                    last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
                    tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)), attributes=attributes || %(attributes)s,
                    duplicate_count=duplicate_count + 1, {update_time}, history=(%(history)s || history)[1:{limit}],
-                   enriched_data=%(enriched_data)s
+                   enriched_data=%(enriched_data)s, properties=%(properties)s
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND event=%(event)s
@@ -238,7 +238,7 @@ class Backend(Database):
                    trend_indication=%(trend_indication)s, receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
                    last_receive_time=%(last_receive_time)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
                    attributes=attributes || %(attributes)s, {update_time}, history=(%(history)s || history)[1:{limit}],
-                   enriched_data=%(enriched_data)s
+                   enriched_data=%(enriched_data)s, properties=%(properties)s
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
@@ -256,12 +256,12 @@ class Backend(Database):
             INSERT INTO alerts (id, resource, event, environment, severity, correlate, status, service, "group",
                 value, text, tags, attributes, origin, type, create_time, timeout, raw_data, customer,
                 duplicate_count, repeat, previous_severity, trend_indication, receive_time, last_receive_id,
-                last_receive_time, update_time, history, enriched_data)
+                last_receive_time, update_time, history, enriched_data, properties)
             VALUES (%(id)s, %(resource)s, %(event)s, %(environment)s, %(severity)s, %(correlate)s, %(status)s,
                 %(service)s, %(group)s, %(value)s, %(text)s, %(tags)s, %(attributes)s, %(origin)s,
                 %(event_type)s, %(create_time)s, %(timeout)s, %(raw_data)s, %(customer)s, %(duplicate_count)s,
                 %(repeat)s, %(previous_severity)s, %(trend_indication)s, %(receive_time)s, %(last_receive_id)s,
-                %(last_receive_time)s, %(update_time)s, %(history)s::history[], %(enriched_data)s)
+                %(last_receive_time)s, %(update_time)s, %(history)s::history[], %(enriched_data)s, %(properties)s)
             RETURNING *
         """
         return self._insert(insert, vars(alert))
@@ -1820,8 +1820,8 @@ class Backend(Database):
 
     def create_suppression_rule(self, suppression_rule):
         insert = """
-            INSERT INTO suppression_rules (name,properties)
-            VALUES (%(name)s,%(properties)s)
+            INSERT INTO suppression_rules (name,rules)
+            VALUES (%(name)s,%(rules)s)
             RETURNING *
         """
         return self._insert(insert, vars(suppression_rule))

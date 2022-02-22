@@ -318,7 +318,7 @@ CREATE TABLE IF NOT EXISTS suppression_rules(
     id SERIAL PRIMARY KEY,
     name text,
     is_active boolean not null default true,
-    properties jsonb
+    rules text[]
 );
 
 CREATE TABLE IF NOT EXISTS customer_suppression_rules(
@@ -326,5 +326,5 @@ CREATE TABLE IF NOT EXISTS customer_suppression_rules(
     name text,
     customer_id text,
     is_active boolean not null default true,
-    properties jsonb
+    rules text[]
 );

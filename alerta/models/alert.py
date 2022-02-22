@@ -78,6 +78,7 @@ class Alert:
         self.update_time = kwargs.get('update_time', None)
         self.history = kwargs.get('history', None) or list()
         self.enriched_data = kwargs.get('enriched_data', None)
+        self.properties = kwargs.get('properties', None)
 
     @classmethod
     def parse(cls, json: JSON) -> 'Alert':
@@ -153,7 +154,7 @@ class Alert:
         }
 
     @property
-    def properties(self):
+    def data_properties(self):
         return {
             'id': self.id,
             'resource': self.resource,

@@ -9,9 +9,9 @@ JSON = Dict[str, Any]
 
 
 class SuppressionRule:
-    def __init__(self, name, properties, is_active=True, id=None):
+    def __init__(self, name, rules, is_active=True, id=None):
         self.name = name
-        self.properties = properties
+        self.rules = rules
         self.is_active = is_active
         self.id = id
 
@@ -21,14 +21,14 @@ class SuppressionRule:
     def validate(self):
         if not isinstance(self.name, str) or not self.name.strip():
             raise Exception("Suppression rule name must be a valid text value")
-        if not isinstance(self.properties, dict):
+        if not isinstance(self.rules, list):
             raise Exception("Suppression rule properties must be valid to create a suppression rule")
         if not isinstance(self.is_active, bool):
             raise Exception("Suppression rule is_active flag must be true or false")
 
     @classmethod
     def from_record(cls, rec) -> 'SuppressionRule':
-        return SuppressionRule(rec.name, rec.properties, rec.is_active, rec.id)
+        return SuppressionRule(rec.name, rec.rules, rec.is_active, rec.id)
 
     @classmethod
     def from_db(cls, r: Union[Dict, Tuple]) -> 'SuppressionRule':
@@ -41,7 +41,7 @@ class SuppressionRule:
     def parse(cls, json: JSON) -> 'SuppressionRule':
         if not isinstance(json.get('name'), str) or json.get('name').strip() == "":
             raise Exception("Suppression rule name is required, it must be a string")
-        if not isinstance(json.get('properties'), dict):
+        if not isinstance(json.get('rules'), list):
             raise Exception("Suppression rule properties are required")
         return SuppressionRule(**json)
 
@@ -50,6 +50,6 @@ class SuppressionRule:
         return {
             "id": self.id,
             "name": self.name,
-            "properties": self.properties,
+            "rules": self.rules,
             "is_active": self.is_active
         }
