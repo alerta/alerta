@@ -184,6 +184,7 @@ class Alert:
             'lastReceiveTime': self.last_receive_time.isoformat(),
             'updateTime': self.update_time.isoformat(),
             'enriched_data': self.enriched_data,
+            'properties': self.properties
         }
 
     def get_id(self, short: bool = False) -> str:
