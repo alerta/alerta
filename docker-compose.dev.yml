@@ -1,0 +1,26 @@
+version: '2.1'
+services:
+  db:
+    image: postgres
+    volumes:
+      - ./pg-data-2:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: monitoring
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5430:5432
+    restart: always
+
+  pgbouncer:
+    image: brainsam/pgbouncer:latest
+    ports:
+      - 6430:6432
+    environment:
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DEFAULT_POOL_SIZE=100
+      - MAX_CLIENT_CONN=1000
+      - LISTEN_PORT=6432
+      # - POOL_MODE=transaction

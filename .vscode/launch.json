@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "name": "Debug Alerta",
+            "type": "python",
+            "request": "launch",
+            "program": "wsgi.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}
