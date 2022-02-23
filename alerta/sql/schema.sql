@@ -302,6 +302,8 @@ alter table if exists customer_channels add if not exists system_added boolean n
 create unique index if not exists cust_channel_sys_added on customer_channels(customer_id) where system_added=true;
 alter table if exists event_log add if not exists channel_type text;
 alter table if exists worker_event_id_map add if not exists channel_type text;
+CREATE UNIQUE INDEX IF NOT EXISTS event_name_resource_customer_id_channel_id_channel_type ON worker_event_id_map USING btree (event_name,resource,customer_id,channel_id,channel_type,environment);
+DROP INDEX event_name_resource_customer_id_channel_id;
 
 CREATE TABLE IF NOT EXISTS developer_channels (
     id SERIAL PRIMARY KEY,
