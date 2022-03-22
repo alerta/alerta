@@ -33,4 +33,4 @@ class EventLog:
 
     @staticmethod
     def from_alert(alert: Alert):
-        return EventLog(alert.event, alert.resource, alert.customer, alert.properties, alert.environment)
+        return EventLog(alert.event, alert.resource, alert.customer, alert.data_properties, alert.environment)

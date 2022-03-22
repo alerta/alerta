@@ -72,7 +72,6 @@ def process_alert(alert: Alert) -> Alert:
     except Exception as e:
         raise ApiError(str(e))
     wanted_plugins, wanted_config = plugins.routing(alert)
-
     updated = None
     with StatsD.stats_client.timer("plugin_post_process_time"):
         for plugin in wanted_plugins:

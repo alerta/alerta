@@ -78,6 +78,7 @@ class Alert:
         self.update_time = kwargs.get('update_time', None)
         self.history = kwargs.get('history', None) or list()
         self.enriched_data = kwargs.get('enriched_data', None)
+        self.properties = kwargs.get('properties', None)
 
     @classmethod
     def parse(cls, json: JSON) -> 'Alert':
@@ -114,7 +115,8 @@ class Alert:
             timeout=json.get('timeout', None),
             raw_data=json.get('rawData', None),
             customer=json.get('customer', None),
-            enriched_data=json.get('enriched_data', None)
+            enriched_data=json.get('enriched_data', None),
+            properties=json.get('properties', None),
         )
 
     @property
@@ -149,11 +151,12 @@ class Alert:
             'lastReceiveTime': self.last_receive_time,
             'updateTime': self.update_time,
             'history': [h.serialize for h in sorted(self.history, key=lambda x: x.update_time)],
-            'enriched_data': self.enriched_data
+            'enriched_data': self.enriched_data,
+            'properties': self.properties,
         }
 
     @property
-    def properties(self):
+    def data_properties(self):
         return {
             'id': self.id,
             'resource': self.resource,
@@ -183,6 +186,7 @@ class Alert:
             'lastReceiveTime': self.last_receive_time.isoformat(),
             'updateTime': self.update_time.isoformat(),
             'enriched_data': self.enriched_data,
+            'properties': self.properties
         }
 
     def get_id(self, short: bool = False) -> str:
@@ -235,6 +239,7 @@ class Alert:
             update_time=doc.get('updateTime', None),
             history=[History.from_db(h) for h in doc.get('history', list())],
             enriched_data=doc.get('enriched_data', None),
+            properties=doc.get('properties', None),
         )
 
     @classmethod
@@ -243,6 +248,10 @@ class Alert:
             enriched_data = rec.enriched_data
         except AttributeError as e:
             enriched_data = None
+        try:
+            alert_properties = rec.properties
+        except AttributeError as e:
+            alert_properties = None
         return Alert(
             id=rec.id,
             resource=rec.resource,
@@ -273,6 +282,7 @@ class Alert:
             update_time=getattr(rec, 'update_time'),
             history=[History.from_db(h) for h in rec.history],
             enriched_data=enriched_data,
+            properties=alert_properties,
         )
 
     @classmethod
@@ -439,7 +449,6 @@ class Alert:
             user=g.login,
             timeout=self.timeout
         )]
-
         return Alert.from_db(db.create_alert(self))
 
     # retrieve an alert

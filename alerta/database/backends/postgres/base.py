@@ -214,7 +214,7 @@ class Backend(Database):
                    last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
                    tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)), attributes=attributes || %(attributes)s,
                    duplicate_count=duplicate_count + 1, {update_time}, history=(%(history)s || history)[1:{limit}],
-                   enriched_data=%(enriched_data)s
+                   enriched_data=%(enriched_data)s, properties=%(properties)s
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND event=%(event)s
@@ -238,7 +238,7 @@ class Backend(Database):
                    trend_indication=%(trend_indication)s, receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
                    last_receive_time=%(last_receive_time)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
                    attributes=attributes || %(attributes)s, {update_time}, history=(%(history)s || history)[1:{limit}],
-                   enriched_data=%(enriched_data)s
+                   enriched_data=%(enriched_data)s, properties=%(properties)s
              WHERE environment=%(environment)s
                AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
@@ -256,12 +256,12 @@ class Backend(Database):
             INSERT INTO alerts (id, resource, event, environment, severity, correlate, status, service, "group",
                 value, text, tags, attributes, origin, type, create_time, timeout, raw_data, customer,
                 duplicate_count, repeat, previous_severity, trend_indication, receive_time, last_receive_id,
-                last_receive_time, update_time, history, enriched_data)
+                last_receive_time, update_time, history, enriched_data, properties)
             VALUES (%(id)s, %(resource)s, %(event)s, %(environment)s, %(severity)s, %(correlate)s, %(status)s,
                 %(service)s, %(group)s, %(value)s, %(text)s, %(tags)s, %(attributes)s, %(origin)s,
                 %(event_type)s, %(create_time)s, %(timeout)s, %(raw_data)s, %(customer)s, %(duplicate_count)s,
                 %(repeat)s, %(previous_severity)s, %(trend_indication)s, %(receive_time)s, %(last_receive_id)s,
-                %(last_receive_time)s, %(update_time)s, %(history)s::history[], %(enriched_data)s)
+                %(last_receive_time)s, %(update_time)s, %(history)s::history[], %(enriched_data)s, %(properties)s)
             RETURNING *
         """
         return self._insert(insert, vars(alert))
@@ -1744,9 +1744,13 @@ class Backend(Database):
         return self._deleteone(query, (), True)
 
     def create_event_log(self, event_log):
-        query = f"""INSERT INTO event_log(event_name ,resource ,customer_id ,environment ,event_properties,channel_id) 
-                select %(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s, id FROM 
-                customer_channels where customer_id = %(customer_id)s and is_active=true
+        query = f"""INSERT INTO event_log(event_name ,resource ,customer_id ,environment ,event_properties,channel_id,channel_type) 
+                select %(event_name)s ,%(resource)s ,%(customer_id)s ,%(environment)s ,%(event_properties)s, * from (
+                    select id, 'customer' FROM 
+                    customer_channels where customer_id = %(customer_id)s and is_active=true union all 
+                    select  id,'developer' FROM 
+                    developer_channels where is_active=true and notify_on=%(resource)s
+                ) t
                 RETURNING id
                 """
         return self._insert(query, vars(event_log))
@@ -1779,3 +1783,71 @@ class Backend(Database):
         values (%(customer_id)s, %(name)s, %(channel_type)s, %(properties)s, true) on conflict do nothing returning *;
         """
         return self._insert(query, vars(channel))
+
+    def create_dev_channel(self, developer_channel):
+        insert = """
+                    INSERT INTO developer_channels (name,channel_type,properties,notify_on)
+                    VALUES (%(name)s, %(channel_type)s, %(properties)s,%(notify_on)s)
+                    RETURNING *
+                """
+        return self._insert(insert, vars(developer_channel))
+
+    def get_dev_channels(self, sort_by, ascending, limit, offset):
+        ascending_order = 'asc' if ascending else 'desc'
+        query = f"""select * from developer_channels order by {sort_by} {ascending_order} """
+        return self._fetchall(query, (), limit, offset)
+
+    def find_dev_channel_by_id(self, channel_id):
+        query = f"""select * from developer_channels where id={channel_id}"""
+        return self._fetchone(query, ())
+
+    def update_dev_channel_by_id(self, channel_id, name, properties, is_active):
+        updated_list = []
+        if isinstance(name, str):
+            updated_list.append("name=%(name)s")
+        if isinstance(properties, dict):
+            updated_list.append("properties=%(properties)s")
+        if isinstance(is_active, bool):
+            updated_list.append("is_active=%(is_active)s")
+        if len(updated_list) == 0:
+            return
+        query = f"""UPDATE developer_channels set {','.join(updated_list)} where id={channel_id} returning * """
+        return self._updateone(query, {"name": name, "properties": properties, "is_active": is_active}, returning=True)
+
+    def delete_dev_channel_by_id(self, channel_id):
+        query = f"DELETE from developer_channels where id={channel_id} returning * "
+        return self._deleteone(query, (), True)
+
+    def create_suppression_rule(self, suppression_rule):
+        insert = """
+            INSERT INTO suppression_rules (name,rules)
+            VALUES (%(name)s,%(rules)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(suppression_rule))
+
+    def update_suppression_rule_by_id(self, suppression_rule_id, name, rules, is_active):
+        updated_list = []
+        if isinstance(name, str):
+            updated_list.append("name=%(name)s")
+        if isinstance(rules, list):
+            updated_list.append("rules=%(rules)s")
+        if isinstance(is_active, bool):
+            updated_list.append("is_active=%(is_active)s")
+        if len(updated_list) == 0:
+            return
+        query = f"""UPDATE suppression_rules set {','.join(updated_list)} where id={suppression_rule_id} returning * """
+        return self._updateone(query, {"name": name, "rules": rules, "is_active": is_active}, returning=True)
+
+    def delete_suppression_rule_by_id(self, suppression_rule_id):
+        query = f"DELETE from suppression_rules where id={suppression_rule_id} returning * "
+        return self._deleteone(query, (), True)
+
+    def get_suppression_rules(self, sort_by, ascending, limit, offset):
+        ascending_order = 'asc' if ascending else 'desc'
+        query = f"""select * from suppression_rules order by {sort_by} {ascending_order} """
+        return self._fetchall(query, (), limit, offset)
+
+    def find_suppression_rule_by_id(self, suppression_rule_id):
+        query = f"""select * from suppression_rules where id={suppression_rule_id}"""
+        return self._fetchone(query, ())
