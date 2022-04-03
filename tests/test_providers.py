@@ -1192,7 +1192,7 @@ class AuthProvidersTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'AUTH_PROVIDER': 'keycloak',
-            'KEYCLOAK_URL': 'http://keycloak.local.alerta.io:9090',
+            'KEYCLOAK_URL': 'http://keycloak.local.alerta.io:9090/auth',
             'KEYCLOAK_REALM': 'master',
             'OAUTH2_CLIENT_ID': 'alerta-ui',
             'OAUTH2_CLIENT_SECRET': 'oauth2-client-secret',
