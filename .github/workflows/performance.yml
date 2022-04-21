@@ -8,8 +8,13 @@ on:
 env:
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
+permissions:
+  contents: read
+
 jobs:
   load-test:
+    permissions:
+      contents: none
     name: Load Test
     runs-on: ubuntu-latest
 
