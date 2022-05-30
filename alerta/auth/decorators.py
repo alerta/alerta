@@ -89,6 +89,38 @@ def permission(scope=None):
                 else:
                     return f(*args, **kwargs)
 
+            # HTTP Header Auth
+            auth_header_user = request.headers.get(current_app.config['HTTP_HEADER_USER_HEADER'], '')
+            auth_header_p2p_token = request.headers.get(current_app.config['HTTP_HEADER_P2P_HEADER'], '')
+            if current_app.config['HTTP_HEADER_AUTH']:
+                if auth_header_p2p_token == current_app.config['HTTP_HEADER_P2P_TOKEN']:
+                    if current_app.config['HTTP_HEADER_AUTH_FIELD'] == 'username':
+                        user = User.find_by_username(auth_header_user)
+                    elif current_app.config['HTTP_HEADER_AUTH_FIELD'] == 'email':
+                        user = User.find_by_email(auth_header_user)
+                    else:
+                        user = None
+                    if not user:
+                        raise ApiError('Unauthorized', 401)
+                    if current_app.config['EMAIL_VERIFICATION'] and not user.email_verified:
+                        raise BasicAuthError('email not verified', 401)
+
+                    if not_authorized('ALLOWED_EMAIL_DOMAINS', groups=[user.domain]):
+                        raise BasicAuthError('Unauthorized domain', 403)
+
+                    g.user_id = user.id
+                    g.login = user.email
+                    g.customers = get_customers(user.email, groups=[user.domain])
+                    g.scopes = Permission.lookup(user.email, roles=user.roles)
+
+                    if not Permission.is_in_scope(scope, have_scopes=g.scopes):
+                        raise BasicAuthError(f'Missing required scope: {scope}', 403)
+                    
+                    return f(*args, **kwargs)
+
+                raise ApiError(f'P2P forwarding the request not trusted', 403)
+
+
             # Basic Auth
             auth_header = request.headers.get('Authorization', '')
             m = re.match(r'Basic (\S+)', auth_header)

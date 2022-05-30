@@ -92,6 +92,13 @@ OAUTH2_CLIENT_ID = ''  # OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = ''
 ALLOWED_EMAIL_DOMAINS = ['*']
 
+# HTTP Headers Auth
+HTTP_HEADER_AUTH = False
+HTTP_HEADER_AUTH_FIELD = 'email'
+HTTP_HEADER_USER_HEADER = 'X-Forwarded-User'
+HTTP_HEADER_P2P_HEADER = 'X-Forwarded-Token'
+HTTP_HEADER_P2P_TOKEN = None
+
 # Amazon Cognito
 AWS_REGION = 'us-east-1'  # US East - N. Virginia (default)
 COGNITO_USER_POOL_ID = None

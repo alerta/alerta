@@ -30,6 +30,13 @@ class AuthBlueprint(Blueprint):
             except Exception as e:
                 raise RuntimeError(e)
 
+        if app.config['AUTH_PROVIDER'] in ['http_header']:
+            app.config['AUTH_HTTP_HEADER'] = True
+            assert app.config['HTTP_HEADER_P2P_TOKEN'], \
+                'Must set at least HTTP_HEADER_P2P_TOKEN to use http_header authentication module'
+            assert app.config['HTTP_HEADER_USER_FIELD'] in ['username', 'email'], \
+                'HTTP_HEADER_USER_FIELD must be either username or email'
+
         super().register(app, options)
 
 

@@ -25,6 +25,7 @@ class AuthTestCase(unittest.TestCase):
             'ADMIN_USERS': ['admin@alerta.io'],
             'DELETE_SCOPES': ['delete:alerts'],
             'ALLOWED_EMAIL_DOMAINS': ['bonaparte.fr', 'debeauharnais.fr', 'manorfarm.ru'],
+            'HTTP_HEADER_P2P_TOKEN': 'supersecuredontrevealit',
             'HMAC_AUTH_CREDENTIALS': [
                 {
                     'key': self.access_key,
@@ -588,3 +589,60 @@ class AuthTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['event'], 'Foo')
+
+    def test_http_header_auth(self):
+
+        # add customer mapping
+        payload = {
+            'customer': 'Bonaparte Industries',
+            'match': 'bonaparte.fr'
+        }
+        response = self.client.post('/customer', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        payload = {
+            'login': 'napoleon',
+            'name': 'Napoleon Bonaparte',
+            'email': 'napoleon@bonaparte.fr',
+            'password': 'blackforest',
+            'text': 'added to circle of trust'
+        }
+
+        # create user
+        response = self.client.post('/auth/signup', data=json.dumps(payload),
+                                    content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # authenticate using http header
+        self.app.config['HTTP_HEADER_AUTH'] = True
+
+        headers = {
+            'X-Forwarded-User': 'napoleon@bonaparte.fr',
+            'X-Forwarded-Token': 'supersecuredontrevealitplease'
+        }
+
+        response = self.client.get('/users', headers=headers)
+        self.assertEqual(response.status_code, 403)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['message'], 'P2P forwarding the request not trusted')
+
+        headers = {
+            'X-Forwarded-User': 'napoleon@bonaparte.fr',
+            'X-Forwarded-Token': 'supersecuredontrevealit'
+        }
+
+        response = self.client.get('/alerts', headers=headers)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok', response.data)
+
+        self.app.config['HTTP_HEADER_AUTH_FIELD'] = 'username'
+        headers = {
+            'X-Forwarded-User': 'napoleon',
+            'X-Forwarded-Token': 'supersecuredontrevealit'
+        }
+
+        response = self.client.get('/alerts', headers=headers)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['status'], 'ok', response.data)
+
