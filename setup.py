@@ -41,7 +41,7 @@ setuptools.setup(
         'bcrypt',
         'blinker',
         'cryptography',
-        'Flask>=2.0.1',
+        'Flask>=2.1.2',
         'Flask-Compress>=1.4.0',
         'Flask-Cors>=3.0.2',
         'mohawk',
