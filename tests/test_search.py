@@ -1,7 +1,7 @@
 import json
 import unittest
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from werkzeug.datastructures import MultiDict
 
@@ -196,10 +196,8 @@ class SearchTestCase(unittest.TestCase):
     @patch('alerta.database.backends.mongodb.utils.datetime')
     def test_blackouts_query(self, mock_datetime):
 
-        # mock datetime.utcnow()
         now = datetime(2021, 1, 17, 20, 58, 0)
-        mock_datetime.utcnow = MagicMock(return_value=now)
-        mock_datetime.strftime = datetime.strftime
+        mock_datetime.utcnow.return_value = now
 
         # ?status=expired&status=pending&page=2&page-size=20&sort-by=-startTime
         search_params = MultiDict([
@@ -340,9 +338,8 @@ class SearchTestCase(unittest.TestCase):
     @patch('alerta.database.backends.mongodb.utils.datetime')
     def test_keys_query(self, mock_datetime):
 
-        # mock datetime.utcnow()
         now = datetime(2021, 1, 17, 20, 58, 0)
-        mock_datetime.utcnow = MagicMock(return_value=now)
+        mock_datetime.utcnow.return_value = now
         mock_datetime.strftime = datetime.strftime
 
         self.maxDiff = None
