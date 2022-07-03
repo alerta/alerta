@@ -60,7 +60,7 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/alerta
         run: |
-          pytest --cov=alerta tests/*.py
+          python -Wd -Werror -m pytest --cov=alerta tests/*.py
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
@@ -117,7 +117,7 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/alerta
         run: |
-          pytest --cov=alerta tests/*.py
+          python -Wd -Werror -m pytest --cov=alerta tests/*.py
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
@@ -165,7 +165,7 @@ jobs:
         env:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
         run: |
-          pytest --cov=alerta tests/*.py
+          python -Wd -Werror -m pytest --cov=alerta tests/*.py
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
@@ -213,7 +213,7 @@ jobs:
         env:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
         run: |
-          pytest --cov=alerta tests/*.py
+          python -Wd -Werror -m pytest --cov=alerta tests/*.py
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
@@ -271,7 +271,7 @@ jobs:
         env:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
         run: |
-          pytest tests/integration
+          python -Wd -Werror -m pytest tests/integration
       - uses: act10ns/slack@v1
         with:
           status: ${{ job.status }}
