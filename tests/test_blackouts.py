@@ -685,11 +685,11 @@ class BlackoutsTestCase(unittest.TestCase):
         }
 
         # create new blackout with end time 1 second in the future
-        one_second_from_now = datetime.utcnow() + timedelta(seconds=1)
+        three_second_from_now = datetime.utcnow() + timedelta(seconds=3)
         blackout = {
             'environment': 'Production',
             'service': ['Core'],
-            'endTime': one_second_from_now.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            'endTime': three_second_from_now.strftime('%Y-%m-%dT%H:%M:%S.000Z')
         }
         response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
         self.assertEqual(response.status_code, 201)
@@ -704,7 +704,7 @@ class BlackoutsTestCase(unittest.TestCase):
         alert_receive_time = data['alert']['receiveTime']
 
         # wait for blackout to expire
-        time.sleep(2)
+        time.sleep(5)
 
         # resend duplicate alert now that blackout has expired
         response = self.client.post('/alert', data=json.dumps(self.prod_alert), headers=self.headers)
