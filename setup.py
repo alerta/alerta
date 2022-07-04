@@ -55,7 +55,7 @@ setuptools.setup(
         'sentry-sdk[flask]>=0.10.2',
     ],
     extras_require={
-        'mongodb': ['pymongo>=3.9.0,<4.0'],
+        'mongodb': ['pymongo>=3.9.0,<5.0'],
         'postgres': ['psycopg2']
     },
     include_package_data=True,
