@@ -158,7 +158,7 @@ def login():
     user.update_last_login()
 
     scopes = Permission.lookup(login=login, roles=user.roles + groups)
-    customers = get_customers(login=login, groups=([user.domain] if user.domain else []) + groups)
+    customers = get_customers(login=login, groups=groups + ([user.domain] if user.domain else []))
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
                           user=login, customers=customers, scopes=scopes, roles=user.roles, groups=groups,
