@@ -24,7 +24,7 @@ def get_oidc_configuration(app):
         'cognito': f"https://cognito-idp.{app.config['AWS_REGION']}.amazonaws.com/{app.config['COGNITO_USER_POOL_ID']}",
         'gitlab': app.config['GITLAB_URL'],
         'google': 'https://accounts.google.com',
-        'keycloak': f"{app.config['KEYCLOAK_URL']}/auth/realms/{app.config['KEYCLOAK_REALM']}"
+        'keycloak': f"{app.config['KEYCLOAK_URL']}/realms/{app.config['KEYCLOAK_REALM']}"
     }
 
     issuer_url = OIDC_ISSUER_URL_BY_PROVIDER.get(app.config['AUTH_PROVIDER']) or app.config['OIDC_ISSUER_URL']
