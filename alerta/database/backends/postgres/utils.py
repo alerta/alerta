@@ -123,7 +123,7 @@ class Alerts(QueryBuilder):
         'tags': (None, 'tags', 1),  # sort-by
         'attributes': ('attributes', 'attributes', 1),
         'origin': ('origin', 'origin', 1),
-        'type': ('event_type', 'event_type', 1),
+        'type': ('event', 'event', 1),
         'createTime': ('create_time', 'create_time', -1),
         'timeout': ('timeout', 'timeout', 1),
         'rawData': ('raw_data', 'raw_data', 1),
