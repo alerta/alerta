@@ -193,11 +193,7 @@ class SearchTestCase(unittest.TestCase):
         except Exception as e:
             self.fail(f'Unexpected exception in blackouts sort-by query: {e}')
 
-    @patch('alerta.database.backends.mongodb.utils.datetime')
-    def test_blackouts_query(self, mock_datetime):
-
-        now = datetime(2021, 1, 17, 20, 58, 0)
-        mock_datetime.utcnow.return_value = now
+    def test_blackouts_query(self):
 
         # ?status=expired&status=pending&page=2&page-size=20&sort-by=-startTime
         search_params = MultiDict([
@@ -216,8 +212,13 @@ class SearchTestCase(unittest.TestCase):
                 self.assertEqual(query.vars, {})
                 self.assertEqual(query.sort, 'start_time ASC')
             else:
-                self.assertEqual(query.where, {'$or': [{'startTime': {'$gt': now}}, {'endTime': {'$lte': now}}]})
-                self.assertEqual(query.sort, [('startTime', 1)])
+                now = datetime(2021, 1, 17, 20, 58, 0)
+                with patch('alerta.database.backends.mongodb.utils.datetime') as mock_datetime:
+                    mock_datetime.utcnow.return_value = now
+                    mock_datetime.strftime = datetime.strftime
+
+                    self.assertEqual(query.where, {'$or': [{'startTime': {'$gt': now}}, {'endTime': {'$lte': now}}]})
+                    self.assertEqual(query.sort, [('startTime', 1)])
 
     def test_heartbeats_filter(self):
 
@@ -335,12 +336,7 @@ class SearchTestCase(unittest.TestCase):
         except Exception as e:
             self.fail(f'Unexpected exception in API keys sort-by query: {e}')
 
-    @patch('alerta.database.backends.mongodb.utils.datetime')
-    def test_keys_query(self, mock_datetime):
-
-        now = datetime(2021, 1, 17, 20, 58, 0)
-        mock_datetime.utcnow.return_value = now
-        mock_datetime.strftime = datetime.strftime
+    def test_keys_query(self):
 
         self.maxDiff = None
 
@@ -360,8 +356,13 @@ class SearchTestCase(unittest.TestCase):
             self.assertEqual(query.vars, {})
             self.assertEqual(query.sort, 'count DESC')
         else:
-            self.assertEqual(query.where, {'$or': [{'expireTime': {'$gte': now}}]}, query.where)
-            self.assertEqual(query.sort, [('count', -1)])
+            now = datetime(2021, 1, 17, 20, 58, 0)
+            with patch('alerta.database.backends.mongodb.utils.datetime') as mock_datetime:
+                mock_datetime.utcnow.return_value = now
+                mock_datetime.strftime = datetime.strftime
+
+                self.assertEqual(query.where, {'$or': [{'expireTime': {'$gte': now}}]}, query.where)
+                self.assertEqual(query.sort, [('count', -1)])
 
     def test_users_filter(self):
 
