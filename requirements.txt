@@ -7,7 +7,7 @@ Flask-Cors==3.0.10
 mohawk==1.1.0
 psycopg2==2.9.2
 PyJWT==2.4.0
-pymongo==3.12.2
+pymongo==3.12.3
 pyparsing==3.0.9
 python-dateutil==2.8.2
 pytz==2022.1
@@ -15,4 +15,4 @@ PyYAML==6.0
 requests==2.28.1
 requests_hawk==1.1.1
 sentry-sdk[flask]==1.9.8
-werkzeug==2.0.3
+werkzeug==2.2.2
