@@ -26,12 +26,12 @@ def custom(webhook, path):
         rv = custom_webhooks.webhooks[webhook].incoming(
             path=path or request.path,
             query_string=request.args,
-            payload=request.get_json() or request.form or request.get_data(as_text=True)
+            payload=request.get_json(silent=True) or request.form or request.get_data(as_text=True)
         )
     except TypeError:
         rv = custom_webhooks.webhooks[webhook].incoming(
             query_string=request.args,
-            payload=request.get_json() or request.form or request.get_data(as_text=True)
+            payload=request.get_json(silent=True) or request.form or request.get_data(as_text=True)
         )
     except AlertaException as e:
         raise ApiError(e.message, code=e.code, errors=e.errors)
