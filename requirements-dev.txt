@@ -1,4 +1,4 @@
-mypy==0.910
+mypy==0.971
 pre-commit==2.19.0
 pylint==2.14.4
 pytest-cov
