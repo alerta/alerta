@@ -2,7 +2,7 @@ bcrypt==3.2.0
 blinker==1.4
 cryptography==37.0.2
 Flask==2.1.2
-Flask-Compress==1.10.1
+Flask-Compress==1.12
 Flask-Cors==3.0.10
 mohawk==1.1.0
 psycopg2==2.9.2
