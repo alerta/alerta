@@ -5,7 +5,7 @@ Flask==2.2.2
 Flask-Compress==1.12
 Flask-Cors==3.0.10
 mohawk==1.1.0
-psycopg2==2.9.2
+psycopg2==2.9.3
 PyJWT==2.4.0
 pymongo==3.12.3
 pyparsing==3.0.9
