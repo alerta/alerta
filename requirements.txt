@@ -1,5 +1,5 @@
 bcrypt==4.0.0
-blinker==1.4
+blinker==1.5
 cryptography==38.0.1
 Flask==2.2.2
 Flask-Compress==1.12
