@@ -1,4 +1,4 @@
-bcrypt==3.2.0
+bcrypt==4.0.0
 blinker==1.4
 cryptography==37.0.2
 Flask==2.2.2
