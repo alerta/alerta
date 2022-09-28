@@ -57,7 +57,7 @@ class NotificationChannel:
             'sender': self.sender,
             'customer': self.customer,
             'host': self.host,
-            'platformId': self.platform_partner_id,
+            'platformId': self.platform_id,
             'platformPartnerId': self.platform_partner_id
         }
 

@@ -116,7 +116,7 @@ def list_notification_channels():
         )
 
 
-@api.route('/notificationchannels/<notification_channels_id>', methods=['OPTIONS', 'PUT'])
+@api.route('/notificationchannels/<notification_channel_id>', methods=['OPTIONS', 'PUT'])
 @cross_origin()
 @permission(Scope.write_notification_channels)
 @jsonp
@@ -135,7 +135,6 @@ def update_notification_channel(notification_channel_id):
         raise ApiError('not found', 404)
 
     update = request.json
-    update['user'] = g.login
     update['customer'] = assign_customer(wanted=update.get('customer'), permission=Scope.admin_notification_channels)
 
     write_audit_trail.send(
@@ -162,10 +161,8 @@ def update_notification_channel(notification_channel_id):
 @permission(Scope.write_notification_channels)
 @jsonp
 def delete_notification_channel(notification_channel_id):
-    LOG.error(notification_channel_id)
     customer = g.get('customer', None)
     notification_channel = NotificationChannel.find_by_id(notification_channel_id, customer)
-    LOG.error(notification_channel)
 
     if not notification_channel:
         raise ApiError('not found', 404)
