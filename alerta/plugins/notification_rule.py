@@ -2,8 +2,9 @@ import logging
 
 from cryptography.fernet import Fernet, InvalidToken
 from alerta.app import db
+import json
 from threading import Thread
-
+import requests
 import smtplib
 
 from twilio.rest import Client
@@ -22,7 +23,7 @@ LOG = logging.getLogger('alerta.plugins.notification_rule')
 TWILIO_MAX_SMS_LENGTH = 1600
 
 
-def remove_unspeakable_chr(message: str, unspeakables: 'dict[str,str]' = None):
+def remove_unspeakable_chr(message: str, unspeakables: 'dict[str,str]|None' = None):
     """
     Removes unspeakable characters from string like _,-,:.
     unspeakables: dictionary with keys as unspeakable charecters and value as replace string
@@ -70,6 +71,20 @@ class NotificationRulesHandler(PluginBase):
             return
         return sms_client.messages.create(body=body, to=receiver, from_=channel.sender)
 
+    def send_link_mobility_sms(self, message: str, channel: NotificationChannel, receivers: "list[str]", fernet: Fernet, **kwargs):
+        numberOfReceivers = len(receivers)
+        if numberOfReceivers == 0:
+            return
+        headers = {"Content-Type": "application/json"}
+        try:
+            headers["Authentication"] = f"Basic {fernet.decrypt(channel.api_sid.encode()).decode()}:{fernet.decrypt(channel.api_token.encode()).decode()}"
+        except InvalidToken:
+            headers["Authentication"] = f"Basic {channel.api_sid}:{channel.api_token}"
+        data = json.dumps({"platformId": channel.platform_id, "platformPartnerId": channel.platform_partner_id, "useDeliveryReport": False, "sendRequestMessages": [{"source": channel.sender, "destination": receiver, "userData": message} for receiver in receivers]} if numberOfReceivers > 1 else {"platformId": channel.platform_id, "platformPartnerId": channel.platform_partner_id, "useDeliveryReport": False, "source": channel.sender, "destination": receivers[0], "userData": message})
+        LOG.error(data)
+        LOG.error(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}")
+        return requests.post(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}", data, headers=headers)
+
     def send_smtp_mail(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', fernet: Fernet, **kwargs):
         mails = set([*receivers, *[user.email for user in on_call_users]])
         server = smtplib.SMTP_SSL(channel.host)
@@ -98,7 +113,7 @@ class NotificationRulesHandler(PluginBase):
         email_client = SendGridAPIClient(api_token)
         return email_client.send(newMail)
 
-    def get_message_obj(self, alertobj: 'dict[str,any]') -> 'dict[str,any]':
+    def get_message_obj(self, alertobj: 'dict') -> 'dict':
         alertobjcopy = alertobj.copy()
         for objname, objval in alertobj.items():
             try:
@@ -119,16 +134,13 @@ class NotificationRulesHandler(PluginBase):
 
         return alertobjcopy
 
-    def handle_notifications(self, alert: 'Alert', notifications: 'list[list[NotificationRule or NotificationChannel]]', users: 'list[set[User or None]]', fernet: Fernet):
+    def handle_notifications(self, alert: 'Alert', notifications: 'list[tuple[NotificationRule,NotificationChannel]]', users: 'list[set[User or None]]', fernet: Fernet):
         standard_message = '%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s'
         for notification_rule, channel in notifications:
             if channel == None:
                 return
 
-            on_users: 'set[User]' = set()
-            if notification_rule.use_oncall:
-                for user in users:
-                    on_users.update(user)
+            on_users: 'set[User]' = set(*users) if notification_rule.use_oncall else set()
 
             message = (
                 notification_rule.text if notification_rule.text != '' and notification_rule.text is not None else standard_message
@@ -157,6 +169,8 @@ class NotificationRulesHandler(PluginBase):
 
                     except TwilioRestException as err:
                         LOG.error('TwilioRule: ERROR - %s', str(err))
+            elif notification_type == 'link_mobility':
+                LOG.error(self.send_link_mobility_sms(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet))
 
     def pre_receive(self, alert, **kwargs):
         return alert

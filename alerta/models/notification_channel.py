@@ -28,7 +28,9 @@ class NotificationChannel:
         self.api_token = api_token  # encrypted
         self.sender = sender
         self.host = kwargs.get('host', None)
-        self.api_sid = kwargs.get('api_sid', None)  # encrypted
+        self.platform_id = kwargs.get('platform_id', None)
+        self.platform_partner_id = kwargs.get('platform_partner_id', None)
+        self.api_sid: "str|None" = kwargs.get('api_sid', None)  # encrypted
         self.customer = kwargs.get('customer', None)
 
     @classmethod
@@ -41,6 +43,8 @@ class NotificationChannel:
             api_sid=fernet.encrypt(str(json['apiSid']).encode()).decode() if 'apiSid' in json else None,
             sender=json['sender'],
             host=json.get('host', None),
+            platform_id=json.get('platfromId', None),
+            platform_partner_id=json.get('platfromPartnerId', None),
             customer=json.get('customer', None),
         )
 
@@ -52,6 +56,9 @@ class NotificationChannel:
             'type': self.type,
             'sender': self.sender,
             'customer': self.customer,
+            'host': self.host,
+            'platformId': self.platform_partner_id,
+            'platformPartnerId': self.platform_partner_id
         }
 
     def __repr__(self) -> str:
@@ -69,6 +76,8 @@ class NotificationChannel:
             api_sid=doc.get('apiSid', None),
             sender=doc['sender'],
             host=doc.get('host', None),
+            platform_id=doc.get('platfromId', None),
+            platform_partner_id=doc.get('platfromPartnerId', None),
             customer=doc.get('customer', None),
         )
 
@@ -81,6 +90,8 @@ class NotificationChannel:
             api_sid=rec.api_sid,
             sender=rec.sender,
             host=rec.host,
+            platform_id=rec.platform_id,
+            platform_partner_id=rec.platform_partner_id,
             customer=rec.customer,
         )
 
@@ -97,18 +108,18 @@ class NotificationChannel:
 
     # get a notification rule
     @ staticmethod
-    def find_by_id(id: str, customers: List[str] = None) -> Optional['NotificationChannel']:
+    def find_by_id(id: str, customers: "list[str]|None" = None) -> Optional['NotificationChannel']:
         return NotificationChannel.from_db(db.get_notification_channel(id, customers))
 
     @ staticmethod
-    def find_all(query: Query = None, page: int = 1, page_size: int = 1000) -> List['NotificationChannel']:
+    def find_all(query: "Query|None" = None, page: int = 1, page_size: int = 1000) -> List['NotificationChannel']:
         return [
             NotificationChannel.from_db(notification_channel)
             for notification_channel in db.get_notification_channels(query, page, page_size)
         ]
 
     @ staticmethod
-    def count(query: Query = None) -> int:
+    def count(query: "Query|None" = None) -> int:
         return db.get_notification_channels_count(query)
 
     def update(self, **kwargs) -> 'NotificationChannel':

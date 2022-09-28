@@ -80,7 +80,7 @@ Record = namedtuple('Record', [
 
 class Backend(Database):
 
-    def create_engine(self, app, uri, dbname=None):
+    def create_engine(self, app, uri, dbname=None, raise_on_error=True):
         self.uri = uri
         self.dbname = dbname
 
@@ -88,8 +88,13 @@ class Backend(Database):
         with lock:
             conn = self.connect()
             with app.open_resource('sql/schema.sql') as f:
-                conn.cursor().execute(f.read())
-                conn.commit()
+                try:
+                    conn.cursor().execute(f.read())
+                    conn.commit()
+                except Exception as e:
+                    if raise_on_error:
+                        raise
+                    app.logger.warning(e)
 
         register_adapter(dict, Json)
         register_adapter(datetime, self._adapt_datetime)
@@ -905,8 +910,8 @@ class Backend(Database):
 
     def create_notification_channel(self, notification_channel):
         insert = """
-            INSERT INTO notification_channels (id, type, api_token, api_sid, sender, customer, host)
-            VALUES (%(id)s, %(type)s, %(api_token)s, %(api_sid)s, %(sender)s, %(customer)s, %(host)s)
+            INSERT INTO notification_channels (id, type, api_token, api_sid, sender, customer, host, platform_id, platform_partner_id)
+            VALUES (%(id)s, %(type)s, %(api_token)s, %(api_sid)s, %(sender)s, %(customer)s, %(host)s, %(platform_id)s, %(platform_partner_id)s)
             RETURNING *
         """
         return self._insert(insert, vars(notification_channel))
@@ -950,18 +955,23 @@ class Backend(Database):
         if kwargs.get('type') is not None:
             update += 'type=%(type)s, '
         if 'apiToken' in kwargs:
-            update += 'api_token=%(group)s, '
+            update += 'api_token=%(apiToken)s, '
         if 'apiSid' in kwargs:
-            update += 'api_sid=%(tags)s, '
+            update += 'api_sid=%(apiSid)s, '
         if 'customer' in kwargs:
             update += 'customer=%(customer)s, '
         if 'host' in kwargs:
             update += 'host=%(host)s, '
+        if 'platformId' in kwargs:
+            update += 'platform_id=%(platformId)s, '
+        if 'platformPartnerId' in kwargs:
+            update += 'platform_partner_id=%(platformPartnerId)s, '
+        update = update[0:-2]
         update += """
-            "user"=COALESCE(%(user)s, "user")
             WHERE id=%(id)s
             RETURNING *
         """
+        print(update)
         kwargs['id'] = id
         kwargs['user'] = kwargs.get('user')
         return self._updateone(update, kwargs, returning=True)
@@ -1853,7 +1863,7 @@ class Backend(Database):
                  WHERE (severity=%(inform_severity)s
                         AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(info_threshold)s seconds'))
             """
-            self._deleteall(delete, {'info_threshold': info_threshold})
+            self._deleteall(delete, {'inform_severity': alarm_model.DEFAULT_INFORM_SEVERITY, 'info_threshold': info_threshold})
 
         # get list of alerts to be newly expired
         select = """

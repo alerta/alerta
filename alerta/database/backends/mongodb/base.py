@@ -1186,15 +1186,6 @@ class Backend(Database):
             {"$or": [{"tags": None}, {'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}}]},
         ]
 
-        # if current_app.config['CUSTOMER_VIEWS']:
-        #     query['$and'] = {'$or': [
-        #         {'customer': None},
-        #         {'customer': alert.customer}
-        #     ]}
-        # query['$and'].append({'$or': [
-        #     {'customer': None},
-        #     {'customer': alert.customer}
-        # ]})
         return self.get_db().notification_rules.find(query)
 
     def update_notification_rule(self, id, **kwargs):
@@ -1291,16 +1282,6 @@ class Backend(Database):
                     {"$or": [{"repeatWeeks": None}, {"repeatWeeks": []}, {"repeatWeeks": {'$in': [date_data["week"]]}}]},
                     {"$or": [{"repeatMonths": None}, {"repeatMonths": []}, {"repeatMonths": {'$in': [date_data["month"]]}}]}]}]},
         ]
-
-        # if current_app.config['CUSTOMER_VIEWS']:
-        #     query['$and'] = {'$or': [
-        #         {'customer': None},
-        #         {'customer': alert.customer}
-        #     ]}
-        # query['$and'].append({'$or': [
-        #     {'customer': None},
-        #     {'customer': alert.customer}
-        # ]})
         return self.get_db().on_calls.find(query)
 
     def update_on_call(self, id, **kwargs):

@@ -115,6 +115,20 @@ EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column "host" already exists in notification_channels.';
 END$$;
 
+DO $$
+BEGIN
+    ALTER TABLE notification_channels ADD COLUMN "platform_id" text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "platform_id" already exists in notification_channels.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE notification_channels ADD COLUMN "platform_partner_id" text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "platform_partner_id" already exists in notification_channels.';
+END$$;
+
 
 DO $$
 BEGIN
