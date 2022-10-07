@@ -77,9 +77,9 @@ class NotificationRulesHandler(PluginBase):
             return
         headers = {"Content-Type": "application/json"}
         try:
-            headers["Authentication"] = f"Basic {fernet.decrypt(channel.api_sid.encode()).decode()}:{fernet.decrypt(channel.api_token.encode()).decode()}"
+            headers["Authorization"] = f"Basic {fernet.decrypt(channel.api_sid.encode()).decode()}:{fernet.decrypt(channel.api_token.encode()).decode()}"
         except InvalidToken:
-            headers["Authentication"] = f"Basic {channel.api_sid}:{channel.api_token}"
+            headers["Authorization"] = f"Basic {channel.api_sid}:{channel.api_token}"
         data = json.dumps({"platformId": channel.platform_id, "platformPartnerId": channel.platform_partner_id, "useDeliveryReport": False, "sendRequestMessages": [{"source": channel.sender, "destination": receiver, "userData": message} for receiver in receivers]} if numberOfReceivers > 1 else {"platformId": channel.platform_id, "platformPartnerId": channel.platform_partner_id, "useDeliveryReport": False, "source": channel.sender, "destination": receivers[0], "userData": message})
         LOG.error(data)
         LOG.error(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}")
