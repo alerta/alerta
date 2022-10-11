@@ -22,6 +22,21 @@ from alerta.plugins import PluginBase
 LOG = logging.getLogger('alerta.plugins.notification_rule')
 TWILIO_MAX_SMS_LENGTH = 1600
 
+LINK_MOBILITY_XML = """
+<?xml version="1.0"?>
+<SESSION>
+  <CLIENT>%(username)s</CLIENT>
+  <PW>%(password)s</PW>
+  <MSGLST>
+    <MSG>
+      <TEXT>%(message)s</TEXT>
+      <SND>%(sender)s</SND>
+      <RCV>{receivers}</RCV>
+    </MSG>
+  </MSGLST>
+</SESSION>
+""".split("\n")
+
 
 def remove_unspeakable_chr(message: str, unspeakables: 'dict[str,str]|None' = None):
     """
@@ -84,6 +99,26 @@ class NotificationRulesHandler(PluginBase):
         LOG.error(data)
         LOG.error(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}")
         return requests.post(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}", data, headers=headers)
+    
+    def send_link_mobility_xml(message: str, host: str, channel: NotificationChannel, receivers: "list[str]", fernet: Fernet, **kwargs):
+        try:
+            content = {"message": message, "username": fernet.decrypt(channel.api_sid.encode()).decode(), "sender": channel.sender, "password": fernet.decrypt(channel.api_token.encode()).decode()}
+        except InvalidToken:
+            content = {"message": message, "username": channel.api_sid, "sender": channel.sender, "password": channel.api_token}
+            
+        xml_content: "list[str]" = kwargs["xml"]
+        for line in xml_content:
+            receive_start = line.find("{receivers}")
+            if receive_start == -1:
+                continue
+            _receiver_lines = [line.replace("{receivers}", receiver.replace("+", "")) for receiver in receivers]
+            xml_content[xml_content.index(line)] = "".join(_receiver_lines)
+        xml_string = "".join(xml_content)
+            
+        data = xml_string.replace("{", "%(").replace("}", ")s") % content
+        
+        headers = {"Content-Type": "application/xml"}
+        return requests.post(f"{host}", data, headers=headers)
 
     def send_smtp_mail(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', fernet: Fernet, **kwargs):
         mails = set([*receivers, *[user.email for user in on_call_users]])
@@ -171,6 +206,8 @@ class NotificationRulesHandler(PluginBase):
                         LOG.error('TwilioRule: ERROR - %s', str(err))
             elif notification_type == 'link_mobility':
                 LOG.error(self.send_link_mobility_sms(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet))
+            elif notification_type == 'link_mobility_xml':
+                self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet, xml = LINK_MOBILITY_XML)
 
     def pre_receive(self, alert, **kwargs):
         return alert
