@@ -100,7 +100,7 @@ class NotificationRulesHandler(PluginBase):
         LOG.error(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}")
         return requests.post(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}", data, headers=headers)
     
-    def send_link_mobility_xml(message: str, host: str, channel: NotificationChannel, receivers: "list[str]", fernet: Fernet, **kwargs):
+    def send_link_mobility_xml(self, message: str, channel: NotificationChannel, receivers: "list[str]", fernet: Fernet, **kwargs):
         try:
             content = {"message": message, "username": fernet.decrypt(channel.api_sid.encode()).decode(), "sender": channel.sender, "password": fernet.decrypt(channel.api_token.encode()).decode()}
         except InvalidToken:
@@ -118,7 +118,7 @@ class NotificationRulesHandler(PluginBase):
         data = xml_string.replace("{", "%(").replace("}", ")s") % content
         
         headers = {"Content-Type": "application/xml"}
-        return requests.post(f"{host}", data, headers=headers)
+        return requests.post(f"{channel.host}", data, headers=headers)
 
     def send_smtp_mail(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', fernet: Fernet, **kwargs):
         mails = set([*receivers, *[user.email for user in on_call_users]])
@@ -205,9 +205,9 @@ class NotificationRulesHandler(PluginBase):
                     except TwilioRestException as err:
                         LOG.error('TwilioRule: ERROR - %s', str(err))
             elif notification_type == 'link_mobility':
-                LOG.error(self.send_link_mobility_sms(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet))
+                self.send_link_mobility_sms(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet)
             elif notification_type == 'link_mobility_xml':
-                self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet, xml = LINK_MOBILITY_XML)
+                self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet, xml=LINK_MOBILITY_XML)
 
     def pre_receive(self, alert, **kwargs):
         return alert
