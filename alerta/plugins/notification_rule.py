@@ -207,7 +207,7 @@ class NotificationRulesHandler(PluginBase):
             elif notification_type == 'link_mobility':
                 self.send_link_mobility_sms(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet)
             elif notification_type == 'link_mobility_xml':
-                self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet, xml=LINK_MOBILITY_XML)
+                LOG.debug(self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet, xml=LINK_MOBILITY_XML))
 
     def pre_receive(self, alert, **kwargs):
         return alert
