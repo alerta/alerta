@@ -1195,6 +1195,9 @@ class Backend(Database):
         if kwargs.get('endTime', None) is not None:
             end_split = kwargs['endTime'].split(':')
             kwargs['endTime'] = float(end_split[0]) + float(end_split[1]) / 100
+        
+        if kwargs.get("advancedSeverity"):
+            kwargs['advancedSeverity'] = [n.serialize for n in kwargs['advancedSeverity']]
 
         return self.get_db().notification_rules.find_one_and_update(
             {'_id': id},

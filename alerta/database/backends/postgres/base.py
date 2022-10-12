@@ -1077,6 +1077,10 @@ class Backend(Database):
             update += "use_oncall=%(useOnCall)s, "
         if kwargs.get('severity') is not None:
             update += 'severity=%(severity)s, '
+        if kwargs.get('advancedSeverity') is not None:
+            update += 'advanced_severity=%(advancedSeverity)s::severity_advanced[], '
+        if kwargs.get('useAdvancedSeverity') is not None:
+            update += 'use_advanced_severity=%(useAdvancedSeverity)s, '
         if 'text' in kwargs:
             update += 'text=%(text)s, '
         if 'channelId' in kwargs:
