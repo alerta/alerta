@@ -98,7 +98,7 @@ class NotificationRulesHandler(PluginBase):
         data = json.dumps({"platformId": channel.platform_id, "platformPartnerId": channel.platform_partner_id, "useDeliveryReport": False, "sendRequestMessages": [{"source": channel.sender, "destination": receiver, "userData": message} for receiver in receivers]} if numberOfReceivers > 1 else {"platformId": channel.platform_id, "platformPartnerId": channel.platform_partner_id, "useDeliveryReport": False, "source": channel.sender, "destination": receivers[0], "userData": message})
         LOG.error(data)
         LOG.error(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}")
-        return requests.post(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}", data, headers=headers)
+        return requests.post(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}", data, headers=headers, verify=channel.verify if channel.verify == None or channel.verify.lower() != "false" else False)
     
     def send_link_mobility_xml(self, message: str, channel: NotificationChannel, receivers: "list[str]", fernet: Fernet, **kwargs):
         try:
@@ -118,7 +118,7 @@ class NotificationRulesHandler(PluginBase):
         data = xml_string.replace("{", "%(").replace("}", ")s") % content
         
         headers = {"Content-Type": "application/xml"}
-        return requests.post(f"{channel.host}", data, headers=headers)
+        return requests.post(f"{channel.host}", data, headers=headers, verify=channel.verify if channel.verify == None or channel.verify.lower() != "false" else False)
 
     def send_smtp_mail(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', fernet: Fernet, **kwargs):
         mails = set([*receivers, *[user.email for user in on_call_users]])

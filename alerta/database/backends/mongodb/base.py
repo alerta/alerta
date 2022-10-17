@@ -1076,6 +1076,8 @@ class Backend(Database):
             data['customer'] = notification_channel.customer
         if notification_channel.host:
             data['host'] = notification_channel.host
+        if notification_channel.verify:
+            data['verify'] = notification_channel.verify
 
         if self.get_db().notification_channels.insert_one(data).inserted_id == notification_channel.id:
             return data

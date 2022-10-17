@@ -32,6 +32,7 @@ class NotificationChannel:
         self.platform_partner_id = kwargs.get('platform_partner_id', None)
         self.api_sid: "str|None" = kwargs.get('api_sid', None)  # encrypted
         self.customer = kwargs.get('customer', None)
+        self.verify = kwargs.get('verify', None)
 
     @classmethod
     def parse(cls, json: JSON) -> 'NotificationChannel':
@@ -46,6 +47,7 @@ class NotificationChannel:
             platform_id=json.get('platfromId', None),
             platform_partner_id=json.get('platfromPartnerId', None),
             customer=json.get('customer', None),
+            verify=json.get('verify', None),
         )
 
     @ property
@@ -58,7 +60,8 @@ class NotificationChannel:
             'customer': self.customer,
             'host': self.host,
             'platformId': self.platform_id,
-            'platformPartnerId': self.platform_partner_id
+            'platformPartnerId': self.platform_partner_id,
+            'verify': self.verify
         }
 
     def __repr__(self) -> str:
@@ -79,6 +82,7 @@ class NotificationChannel:
             platform_id=doc.get('platfromId', None),
             platform_partner_id=doc.get('platfromPartnerId', None),
             customer=doc.get('customer', None),
+            verify=doc.get('verify', None),
         )
 
     @ classmethod
@@ -93,6 +97,7 @@ class NotificationChannel:
             platform_id=rec.platform_id,
             platform_partner_id=rec.platform_partner_id,
             customer=rec.customer,
+            verify=rec.verify,
         )
 
     @ classmethod

@@ -129,6 +129,13 @@ EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column "platform_partner_id" already exists in notification_channels.';
 END$$;
 
+DO $$
+BEGIN
+    ALTER TABLE notification_channels ADD COLUMN "verify" text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "verify" already exists in notification_channels.';
+END$$;
+
 
 DO $$
 BEGIN
