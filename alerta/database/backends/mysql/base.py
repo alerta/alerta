@@ -552,11 +552,11 @@ class Backend(Database):
         join = ''
         if 's.code' in query.sort:
             join += 'JOIN (VALUES {}) AS s(sev, code) ON alerts.severity = s.sev '.format(
-                ', '.join((f"('{k}', {v})" for k, v in alarm_model.Severity.items()))
+                ', '.join((f"ROW('{k}', {v})" for k, v in alarm_model.Severity.items()))
             )
         if 'st.state' in query.sort:
             join += 'JOIN (VALUES {}) AS st(sts, state) ON alerts.status = st.sts '.format(
-                ', '.join((f"('{k}', '{v}')" for k, v in alarm_model.Status.items()))
+                ', '.join((f"ROW('{k}', '{v}')" for k, v in alarm_model.Status.items()))
             )
         select = f"""
             SELECT {select}

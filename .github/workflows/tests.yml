@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ master, release/* ]
+    branches: [master, release/*]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 env:
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -212,6 +212,59 @@ jobs:
         id: test
         env:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
+        run: |
+          pytest --cov=alerta tests/*.py
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+        if: failure()
+
+  test-mysql:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: mysql:8
+        env:
+          MYSQL_RANDOM_ROOT_PASSWORD: true
+          MYSQL_USER: mysql
+          MYSQL_PASSWORD: mysql
+          MYSQL_DATABASE: monitoring
+        ports:
+          - 3306:3306
+
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.10']
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        id: install-deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install .
+      - name: Pre-commit hooks
+        id: hooks
+        run: |
+          pre-commit run -a --show-diff-on-failure
+      - name: Lint with flake8
+        id: lint
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=50 --max-line-length=127 --statistics
+      - name: Test with pytest
+        id: test
+        env:
+          DATABASE_URL: mysql://mysql:mysql@localhost:3306/monitoring
         run: |
           pytest --cov=alerta tests/*.py
       - uses: act10ns/slack@v1

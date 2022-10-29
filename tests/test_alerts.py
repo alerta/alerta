@@ -785,6 +785,22 @@ class AlertsTestCase(unittest.TestCase):
         self.assertEqual(data['alerts'][0]['rawData'], None)
         self.assertEqual(len(data['alerts'][0]['history']), 1)
 
+    def test_alerts_sort_by(self):
+        # create alerts
+        response = self.client.post('/alert', data=json.dumps(self.normal_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        response = self.client.post('/alert', data=json.dumps(self.ok2_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        response = self.client.get('/alerts?sort-by=severity')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['total'], 2)
+        self.assertEqual(data['alerts'][0]['severity'], 'normal')
+        self.assertEqual(data['alerts'][1]['severity'], 'ok')
+
     def test_get_body(self):
         from flask import g
         with self.app.test_request_context('/'):
