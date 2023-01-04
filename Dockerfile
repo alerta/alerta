@@ -12,6 +12,7 @@ RUN apt-get update && \
     libsasl2-dev \
     postgresql-client \
     python3-dev \
+    curl \
     xmlsec1 && \
     apt-get -y clean && \
     apt-get -y autoremove && \

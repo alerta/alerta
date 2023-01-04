@@ -15,7 +15,7 @@ jobs:
 
     services:
       alerta:
-        image: ghcr.io/alerta/alerta-api
+        image: ghcr.io/${{ github.repository_owner }}/alerta-api
         env:
           DEBUG: 1
           DATABASE_URL: postgres://postgres:postgres@postgres:5432/alerta
@@ -26,6 +26,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+          --health-start-period 30s
       postgres:
         image: postgres:13
         env:
@@ -46,7 +47,7 @@ jobs:
           docker run ghcr.io/act10ns/hey
           -z 2s
           http://localhost:8080/_
-#          -m POST
-#          -T application/json
-#          -d '{"resource":"router01", "event":"node_down"}'
-#          http://localhost:8080/alert
+          -m POST
+          -T application/json
+          -d '{"resource":"router01", "event":"node_down"}'
+          http://localhost:8080/alert
