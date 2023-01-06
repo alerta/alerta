@@ -1,4 +1,4 @@
-FROM python:3.8-slim-buster
+FROM python:3.11-slim-buster
 
 ENV ALERTA_ENDPOINT=http://localhost:8080
 
@@ -11,7 +11,7 @@ RUN apt-get update && \
     libpq-dev \
     libsasl2-dev \
     postgresql-client \
-    python3-dev \
+    python3.11-dev \
     curl \
     xmlsec1 && \
     apt-get -y clean && \
