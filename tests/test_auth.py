@@ -18,7 +18,7 @@ class AuthTestCase(unittest.TestCase):
         self.secret_key = 'MjM0ODU4NGI1YWQxZWMyYzcxNjAxZDA4MzczNGQ1M2IK'
 
         test_config = {
-            'DEBUG': True,
+            'DEBUG': False,
             'TESTING': True,
             'AUTH_REQUIRED': True,
             'CUSTOMER_VIEWS': True,
