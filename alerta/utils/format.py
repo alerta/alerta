@@ -1,6 +1,7 @@
 import datetime
 import traceback
 from typing import Any, Optional
+from decimal import Decimal
 
 import json
 from flask.json.provider import JSONProvider
@@ -39,6 +40,8 @@ class CustomJSONEncoder(json.JSONEncoder):
             return DateTime.iso8601(o)
         elif isinstance(o, datetime.timedelta):
             return int(o.total_seconds())
+        elif isinstance(o, Decimal):
+            return str(o)
         elif isinstance(o, (Alert, History)):
             return o.serialize
         elif isinstance(o, Exception):
