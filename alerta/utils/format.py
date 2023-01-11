@@ -2,7 +2,7 @@ import datetime
 import traceback
 from typing import Any, Optional
 
-from flask import json
+import json
 from flask.json.provider import JSONProvider
 
 dt = datetime.datetime
