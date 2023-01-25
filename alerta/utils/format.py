@@ -1,9 +1,9 @@
 import datetime
-import traceback
-from typing import Any, Optional
-from decimal import Decimal
-
 import json
+import traceback
+from decimal import Decimal
+from typing import Any, Optional
+
 from flask.json.provider import JSONProvider
 
 dt = datetime.datetime
@@ -16,8 +16,8 @@ class AlertaJsonProvider(JSONProvider):
     sort_keys: bool = True
 
     def dumps(self, obj, **kwargs):
-        kwargs.setdefault("ensure_ascii", self.ensure_ascii)
-        kwargs.setdefault("sort_keys", self.sort_keys)
+        kwargs.setdefault('ensure_ascii', self.ensure_ascii)
+        kwargs.setdefault('sort_keys', self.sort_keys)
         return json.dumps(obj, **kwargs, cls=CustomJSONEncoder)
 
     def loads(self, s: str | bytes, **kwargs):

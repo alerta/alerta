@@ -78,7 +78,6 @@ def create_app(config_override: Dict[str, Any] = None, environment: str = None) 
     app.json_provider_class = AlertaJsonProvider
     app.json = AlertaJsonProvider(app)
 
-
     from alerta.views import api
     app.register_blueprint(api)
 
