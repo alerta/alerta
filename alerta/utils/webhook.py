@@ -5,6 +5,7 @@ from pkg_resources import iter_entry_points
 
 if TYPE_CHECKING:
     from typing import Dict  # noqa
+
     from alerta.webhooks import WebhookBase  # noqa
 
 

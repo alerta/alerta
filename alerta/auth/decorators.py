@@ -17,7 +17,8 @@ from alerta.models.token import Jwt
 from alerta.models.user import User
 
 if TYPE_CHECKING:
-    from typing import List   # noqa
+    from typing import List  # noqa
+
     from alerta.models.enums import Scope  # noqa
 
 
