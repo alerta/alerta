@@ -189,6 +189,26 @@ EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column "use_advanced_severity" already exists in notification_rules.';
 END$$;
 
+DO $$
+BEGIN
+    ALTER TABLE notification_rules ADD COLUMN active boolean;
+    UPDATE notification_rules SET active = true;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "active" already exists in notification_rules.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE notification_rules ADD COLUMN user_ids text[];
+    ALTER TABLE notification_rules ADD COLUMN group_ids text[];
+    UPDATE notification_rules SET user_ids = '{}';
+    UPDATE notification_rules SET group_ids = '{}';
+    ALTER TABLE notification_rules ALTER COLUMN user_ids SET NOT NULL;
+    ALTER TABLE notification_rules ALTER COLUMN group_ids SET NOT NULL;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "user_ids" and "gruop_ids" already exists in notification_rules.';
+END$$;
+
 CREATE TABLE IF NOT EXISTS on_calls(
     id text PRIMARY KEY,
     customer text,

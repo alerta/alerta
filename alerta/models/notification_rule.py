@@ -6,6 +6,8 @@ from alerta.app import db
 from alerta.database.base import Query
 from alerta.utils.response import absolute_url
 from alerta.models.notification_channel import NotificationChannel
+from alerta.models.user import User
+
 
 if TYPE_CHECKING:
     from alerta.models.alert import Alert
@@ -63,9 +65,12 @@ class NotificationRule:
             raise ValueError('Missing mandatory value for "receivers"')
 
         self.id = kwargs.get("id") or str(uuid4())
+        self.active = kwargs.get("active") or True
         self.environment = environment
         self.channel_id = channel_id
         self.receivers = receivers
+        self.user_ids = kwargs.get("user_ids") or []
+        self.group_ids = kwargs.get("group_ids") or []
         self.use_oncall = use_oncall
         self.start_time: time = kwargs.get("start_time") or None
         self.end_time: time = kwargs.get("end_time") or None
@@ -105,6 +110,15 @@ class NotificationRule:
     def channel(self):
         return NotificationChannel.find_by_id(self.channel_id)
 
+    @property
+    def users(self):
+        group_users = [db.get_group_users(group_id) for group_id in self.group_ids]
+        users = set([User.find_by_id(user_id) for user_id in self.user_ids])
+        for user_list in group_users:
+            for user in user_list:
+                users.add(User.find_by_id(user.id))
+        return users
+
     @classmethod
     def parse(cls, json: JSON) -> "NotificationRule":
         if not isinstance(json.get("service", []), list):
@@ -113,9 +127,12 @@ class NotificationRule:
             raise ValueError("tags must be a list")
         notification_rule = NotificationRule(
             id=json.get("id", None),
+            active=json.get("active", True),
             environment=json["environment"],
             channel_id=json["channelId"],
             receivers=json["receivers"],
+            user_ids=json.get("userIds"),
+            group_ids=json.get("groupIds"),
             use_oncall=json.get("useOnCall", False),
             severity=json.get("severity", list()),
             advanced_severity=[AdvancedSeverity(severity["from"], severity["to"]) for severity in json.get("advancedSeverity", [])],
@@ -150,11 +167,14 @@ class NotificationRule:
     def serialize(self) -> Dict[str, Any]:
         return {
             "id": self.id,
+            "active": self.active,
             "href": absolute_url("/notificationrule/" + self.id),
             "priority": self.priority,
             "environment": self.environment,
             "channelId": self.channel_id,
             "receivers": self.receivers,
+            "userIds": self.user_ids,
+            "groupIds": self.group_ids,
             "useOnCall": self.use_oncall,
             "service": self.service,
             "severity": self.severity,
@@ -210,10 +230,13 @@ class NotificationRule:
     def from_document(cls, doc: Dict[str, Any]) -> "NotificationRule":
         return NotificationRule(
             id=doc.get("id", None) or doc.get("_id"),
+            active=doc.get("active", True),
             priority=doc.get("priority", None),
             environment=doc["environment"],
             channel_id=doc["channelId"],
             receivers=doc.get("receivers") or list(),
+            user_ids=doc.get("userIds"),
+            group_ids=doc.get("groupIds"),
             use_oncall=doc.get("useOnCall", False),
             service=doc.get("service", list()),
             severity=doc.get("severity", list()),
@@ -252,10 +275,13 @@ class NotificationRule:
     def from_record(cls, rec) -> "NotificationRule":
         return NotificationRule(
             id=rec.id,
+            active=rec.active,
             priority=rec.priority,
             environment=rec.environment,
             channel_id=rec.channel_id,
             receivers=rec.receivers,
+            user_ids=rec.user_ids,
+            group_ids=rec.group_ids,
             use_oncall=rec.use_oncall,
             service=rec.service,
             severity=rec.severity,

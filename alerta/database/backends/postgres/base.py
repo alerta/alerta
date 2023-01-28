@@ -990,10 +990,10 @@ class Backend(Database):
 
     def create_notification_rule(self, notification_rule):
         insert = """
-            INSERT INTO notification_rules (id, priority, environment, service, resource, event, "group", tags,
-                customer, "user", create_time, start_time, end_time, days, receivers, use_oncall, severity, text, channel_id, advanced_severity, use_advanced_severity)
-            VALUES (%(id)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s,
-                %(customer)s, %(user)s, %(create_time)s, %(start_time)s, %(end_time)s, %(days)s, %(receivers)s, %(use_oncall)s, %(severity)s, %(text)s, %(channel_id)s, %(advanced_severity)s::severity_advanced[], %(use_advanced_severity)s )
+            INSERT INTO notification_rules (id, active, priority, environment, service, resource, event, "group", tags,
+                customer, "user", create_time, start_time, end_time, days, receivers, user_ids, group_ids, use_oncall, severity, text, channel_id, advanced_severity, use_advanced_severity)
+            VALUES (%(id)s, %(active)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s,
+                %(customer)s, %(user)s, %(create_time)s, %(start_time)s, %(end_time)s, %(days)s, %(receivers)s, %(user_ids)s, %(group_ids)s, %(use_oncall)s, %(severity)s, %(text)s, %(channel_id)s, %(advanced_severity)s::severity_advanced[], %(use_advanced_severity)s )
             RETURNING *
         """
         return self._insert(insert, vars(notification_rule))
@@ -1043,6 +1043,7 @@ class Backend(Database):
               AND (event IS NULL OR event=%(event)s)
               AND ("group" IS NULL OR "group"=%(group)s)
               AND (tags='{}' OR tags <@ %(tags)s)
+              AND active=true
         """
         if current_app.config['CUSTOMER_VIEWS']:
             select += ' AND (customer IS NULL OR customer=%(customer)s)'
@@ -1087,6 +1088,12 @@ class Backend(Database):
             update += 'text=%(text)s, '
         if 'channelId' in kwargs:
             update += 'channel_id=%(channelId)s,'
+        if "active" in kwargs:
+            update += "active=%(active)s,"
+        if "userIds" in kwargs:
+            update += "user_ids=%(userIds)s, "
+        if "groupIds" in kwargs:
+            update += "group_ids=%(groupIds)s, "
         update += """
             "user"=COALESCE(%(user)s, "user")
             WHERE id=%(id)s
