@@ -65,7 +65,7 @@ class NotificationRule:
             raise ValueError('Missing mandatory value for "receivers"')
 
         self.id = kwargs.get("id") or str(uuid4())
-        self.active = kwargs.get("active") or True
+        self.active = kwargs.get("active", True)
         self.environment = environment
         self.channel_id = channel_id
         self.receivers = receivers
