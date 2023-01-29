@@ -135,6 +135,7 @@ class NotificationRulesHandler(PluginBase):
 
     def send_email(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', fernet: Fernet, **kwargs):
         mails = set([*receivers, *[user.email for user in on_call_users]])
+        print(mails)
         newMail = Mail(
             from_email=channel.sender,
             to_emails=list(mails),
@@ -169,13 +170,14 @@ class NotificationRulesHandler(PluginBase):
 
         return alertobjcopy
 
-    def handle_notifications(self, alert: 'Alert', notifications: 'list[tuple[NotificationRule,NotificationChannel]]', users: 'list[set[User or None]]', fernet: Fernet):
+    def handle_notifications(self, alert: 'Alert', notifications: 'list[tuple[NotificationRule,NotificationChannel, list[set[User or None]]]]', on_users: 'list[set[User or None]]', fernet: Fernet):
         standard_message = '%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s'
-        for notification_rule, channel in notifications:
+        for notification_rule, channel, users in notifications:
             if channel == None:
                 return
 
-            on_users: 'set[User]' = set(*users) if notification_rule.use_oncall else set()
+            if notification_rule.use_oncall:
+                users.update(on_users)
 
             message = (
                 notification_rule.text if notification_rule.text != '' and notification_rule.text is not None else standard_message
@@ -183,17 +185,17 @@ class NotificationRulesHandler(PluginBase):
             notification_type = channel.type
             if notification_type == 'sendgrid':
                 try:
-                    self.send_email(message, channel, notification_rule.receivers, on_users, fernet)
+                    self.send_email(message, channel, notification_rule.receivers, users, fernet)
                 except Exception as err:
                     LOG.error('NotificationRule: ERROR - %s', str(err))
             elif notification_type == 'smtp':
                 try:
-                    self.send_smtp_mail(message, channel, notification_rule.receivers, on_users, fernet)
+                    self.send_smtp_mail(message, channel, notification_rule.receivers, users, fernet)
                 except Exception as err:
                     LOG.error('NotificationRule: ERROR - %s', str(err))
             elif 'twilio' in notification_type:
 
-                for number in set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]]):
+                for number in set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]]):
                     if number == None or number == '':
                         continue
                     try:
@@ -205,9 +207,9 @@ class NotificationRulesHandler(PluginBase):
                     except TwilioRestException as err:
                         LOG.error('TwilioRule: ERROR - %s', str(err))
             elif notification_type == 'link_mobility':
-                self.send_link_mobility_sms(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet)
+                self.send_link_mobility_sms(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]])), fernet)
             elif notification_type == 'link_mobility_xml':
-                response = self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in on_users]])), fernet, xml=LINK_MOBILITY_XML)
+                response = self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]])), fernet, xml=LINK_MOBILITY_XML)
                 if response.content.decode().find("FAIL") != -1:
                     LOG.error(response.content)
                 else:
@@ -222,8 +224,10 @@ class NotificationRulesHandler(PluginBase):
         if alert.repeat:
             return
         notification_rules = NotificationRule.find_all_active(alert)
-        notifications = [[notification_rule, notification_rule.channel] for notification_rule in notification_rules]
-        on_users = [on_call.users for on_call in OnCall.find_all_active(alert)]
+        notifications = [[notification_rule, notification_rule.channel, notification_rule.users] for notification_rule in notification_rules]
+        on_users = set()
+        for on_call in OnCall.find_all_active(alert):
+            on_users.update(on_call.users)
         Thread(target=self.handle_notifications, args=[alert, notifications, on_users, fernet]).start()
 
     def status_change(self, alert, status, text, **kwargs):
