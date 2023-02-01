@@ -9,10 +9,9 @@ psycopg2==2.9.3
 PyJWT==2.6.0
 pymongo==3.12.3
 pyparsing==3.0.9
-python-dateutil==2.8.2
-pytz==2022.2.1
+pytz==2022.7.1
 PyYAML==6.0
-requests==2.28.1
+requests==2.28.2
 requests_hawk==1.1.1
 sentry-sdk[flask]==1.14.0
 werkzeug==2.2.2

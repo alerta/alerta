@@ -1,0 +1,104 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "alerta-server"
+dynamic = ["version"]
+description = "Alerta server WSGI application"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.7"
+authors = [
+    { name = "Nick Satterly", email = "nfsatterly@gmail.com" },
+]
+maintainers = [
+    { name = "Are Schjetne", email = "sixcare.as@gmail.com" },
+    { name = "Terje Nomeland", email = "tjnome@gmail.com" }
+]
+keywords = [
+    "alert",
+    "api",
+    "application",
+    "monitoring",
+    "system",
+    "wsgi",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Plugins",
+    "Environment :: Web Environment",
+    "Framework :: Flask",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Telecommunications Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "blinker>=1.5",
+    "cryptography>=38.0.1",
+    "Flask-Compress>=1.13",
+    "Flask-Cors>=3.0.2",
+    "Flask>=2.0.1",
+    "mohawk>=1.1.0",
+    "PyJWT>=2.6.0",
+    "pyparsing>=3.0.9",
+    "pytz>=2022.7.1",
+    "PyYAML>=6.0",
+    "requests-hawk>=1.1.1",
+    "requests>=2.28.2",
+    "sentry-sdk[flask]>=1.14.0",
+    "packaging",
+]
+
+[project.optional-dependencies]
+mongodb = [
+    "pymongo>=3.9.0,<4.0",
+]
+postgres = [
+    "psycopg2>=2.9.5",
+]
+
+[project.scripts]
+alertad = "alerta.commands:cli"
+
+[project.entry-points."alerta.plugins"]
+acked_by = "alerta.plugins.acked_by:AckedBy"
+blackout = "alerta.plugins.blackout:BlackoutHandler"
+escalate = "alerta.plugins.escalate:EscalateSeverity"
+forwarder = "alerta.plugins.forwarder:Forwarder"
+heartbeat = "alerta.plugins.heartbeat:HeartbeatReceiver"
+reject = "alerta.plugins.reject:RejectPolicy"
+remote_ip = "alerta.plugins.remote_ip:RemoteIpAddr"
+timeout = "alerta.plugins.timeout:TimeoutPolicy"
+
+[project.entry-points."alerta.webhooks"]
+cloudwatch = "alerta.webhooks.cloudwatch:CloudWatchWebhook"
+grafana = "alerta.webhooks.grafana:GrafanaWebhook"
+graylog = "alerta.webhooks.graylog:GraylogWebhook"
+newrelic = "alerta.webhooks.newrelic:NewRelicWebhook"
+pagerduty = "alerta.webhooks.pagerduty:PagerDutyWebhook"
+pingdom = "alerta.webhooks.pingdom:PingdomWebhook"
+prometheus = "alerta.webhooks.prometheus:PrometheusWebhook"
+riemann = "alerta.webhooks.riemann:RiemannWebhook"
+serverdensity = "alerta.webhooks.serverdensity:ServerDensityWebhook"
+slack = "alerta.webhooks.slack:SlackWebhook"
+stackdriver = "alerta.webhooks.stackdriver:StackDriverWebhook"
+telegram = "alerta.webhooks.telegram:TelegramWebhook"
+
+[project.urls]
+Homepage = "https://github.com/alerta/alerta"
+
+[tool.hatch.version]
+path = "alerta/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/alerta",
+]

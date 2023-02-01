@@ -26,3 +26,5 @@ https://github.com/alerta/alerta/wiki/Python-3
 """)
 
 from .app import create_app  # noqa isort:skip
+
+__version__ = '8.7.0'
