@@ -195,7 +195,6 @@ class SearchTestCase(unittest.TestCase):
 
     @patch('alerta.database.backends.mongodb.utils.datetime')
     def test_blackouts_query(self, mock_datetime):
-
         now = datetime(2021, 1, 17, 20, 58, 0)
         mock_datetime.utcnow.return_value = now
 

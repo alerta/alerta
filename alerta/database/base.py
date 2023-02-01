@@ -31,8 +31,8 @@ def get_backend(app):
 def load_backend(backend):
     try:
         return import_module(f'alerta.database.backends.{backend}')
-    except Exception:
-        raise ImportError(f'Failed to load {backend} database backend')
+    except Exception as e:
+        raise ImportError(f'Failed to load {backend} database backend: {e}')
 
 
 class Database(Base):
