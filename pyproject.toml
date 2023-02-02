@@ -58,6 +58,22 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+ci = [
+    "lxml==4.9.1",
+    "pysaml2==7.2.1",
+    "python-ldap==3.4.3",
+]
+dev = [
+    "mypy==0.971",
+    "pre-commit==2.20.0",
+    "pylint==2.15.10",
+    "pytest==7.2.1",
+    "pytest-cov==4.0.0",
+    "python-dotenv==0.21.1",
+    "requests_mock==1.10.0",
+    "twine==4.0.2",
+    "wheel==0.38.4",
+]
 mongodb = [
     "pymongo>=3.9.0,<4.0",
 ]
