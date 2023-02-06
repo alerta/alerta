@@ -2,7 +2,7 @@ name: Tests
 
 on:
   push:
-    branches: [ master, release/* ]
+    branches: [ master, release/*, gr-* ]
   pull_request:
     branches: [ master ]
 
