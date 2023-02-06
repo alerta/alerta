@@ -13,7 +13,7 @@ from alerta.utils.format import DateTime
 from .queryparser import QueryParser
 
 Query = namedtuple('Query', ['where', 'vars', 'sort', 'group'])
-Query.__new__.__defaults__ = ('1=1', {}, '(false)', 'status')  # type: ignore
+Query.__new__.__defaults__ = ('1=1', {}, '', 'status')  # type: ignore
 
 
 EXCLUDE_FROM_QUERY = [
@@ -48,7 +48,7 @@ class QueryBuilder:
                 else:
                     sort.append(f'{column} {direction}')
         else:
-            sort.append('(false)')
+            return False
         return sort
 
     @staticmethod
@@ -103,6 +103,12 @@ class QueryBuilder:
                         qvars[column] = value
         return query, qvars
 
+    @staticmethod
+    def generate_query_obj(query, qvars, sort, group =''):
+        if sort:
+            return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group=group)
+        else:
+            return Query(where='\n'.join(query), vars=qvars, group=group)
 
 class Alerts(QueryBuilder):
 
@@ -193,8 +199,7 @@ class Alerts(QueryBuilder):
         query, qvars = QueryBuilder.filter_query(params, Alerts.VALID_PARAMS, query, qvars)
         sort = QueryBuilder.sort_by_columns(params, Alerts.VALID_PARAMS)
         group = params.getlist('group-by')
-
-        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group=group)
+        return QueryBuilder.generate_query_obj(query=query, qvars=qvars, sort=sort, group=group)
 
 
 class Blackouts(QueryBuilder):
@@ -249,8 +254,7 @@ class Blackouts(QueryBuilder):
         # filter, sort-by
         query, qvars = QueryBuilder.filter_query(params, Blackouts.VALID_PARAMS, query, qvars)
         sort = QueryBuilder.sort_by_columns(params, Blackouts.VALID_PARAMS)
-
-        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
+        return QueryBuilder.generate_query_obj(query=query, qvars=qvars, sort=sort)
 
 
 class Heartbeats(QueryBuilder):
@@ -290,8 +294,7 @@ class Heartbeats(QueryBuilder):
         # filter, sort-by
         query, qvars = QueryBuilder.filter_query(params, Heartbeats.VALID_PARAMS, query, qvars)
         sort = QueryBuilder.sort_by_columns(params, Heartbeats.VALID_PARAMS)
-
-        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
+        return QueryBuilder.generate_query_obj(query=query, qvars=qvars, sort=sort)
 
 
 class ApiKeys(QueryBuilder):
@@ -338,8 +341,7 @@ class ApiKeys(QueryBuilder):
         # filter, sort-by
         query, qvars = QueryBuilder.filter_query(params, ApiKeys.VALID_PARAMS, query, qvars)
         sort = QueryBuilder.sort_by_columns(params, ApiKeys.VALID_PARAMS)
-
-        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
+        return QueryBuilder.generate_query_obj(query=query, qvars=qvars, sort=sort)
 
 
 class Users(QueryBuilder):
@@ -372,8 +374,7 @@ class Users(QueryBuilder):
         # filter, sort-by
         query, qvars = QueryBuilder.filter_query(params, Users.VALID_PARAMS, query, qvars)
         sort = QueryBuilder.sort_by_columns(params, Users.VALID_PARAMS)
-
-        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
+        return QueryBuilder.generate_query_obj(query=query, qvars=qvars, sort=sort)
 
 
 class Groups(QueryBuilder):
@@ -396,8 +397,7 @@ class Groups(QueryBuilder):
         # filter, sort-by
         query, qvars = QueryBuilder.filter_query(params, Groups.VALID_PARAMS, query, qvars)
         sort = QueryBuilder.sort_by_columns(params, Groups.VALID_PARAMS)
-
-        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
+        return QueryBuilder.generate_query_obj(query=query, qvars=qvars, sort=sort)
 
 
 class Permissions(QueryBuilder):
@@ -420,8 +420,7 @@ class Permissions(QueryBuilder):
         # filter, sort-by
         query, qvars = QueryBuilder.filter_query(params, Permissions.VALID_PARAMS, query, qvars)
         sort = QueryBuilder.sort_by_columns(params, Permissions.VALID_PARAMS)
-
-        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
+        return QueryBuilder.generate_query_obj(query=query, qvars=qvars, sort=sort)
 
 
 class Customers(QueryBuilder):
@@ -443,5 +442,4 @@ class Customers(QueryBuilder):
         # filter, sort-by
         query, qvars = QueryBuilder.filter_query(params, Customers.VALID_PARAMS, query, qvars)
         sort = QueryBuilder.sort_by_columns(params, Customers.VALID_PARAMS)
-
-        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
+        return QueryBuilder.generate_query_obj(query=query, qvars=qvars, sort=sort)

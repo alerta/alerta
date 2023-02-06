@@ -738,8 +738,9 @@ class Backend(Database):
             SELECT *, GREATEST(EXTRACT(EPOCH FROM (end_time - GREATEST(start_time, NOW() at time zone 'utc'))), 0) AS remaining
               FROM blackouts
              WHERE {where}
-          ORDER BY {order}
         """.format(where=query.where, order=query.sort)
+        if query.sort:
+            select += f""" ORDER BY {query.sort}"""
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_blackouts_count(self, query=None):
@@ -908,8 +909,9 @@ class Backend(Database):
                    EXTRACT(EPOCH FROM (NOW() - receive_time)) AS since
               FROM heartbeats
              WHERE {where}
-          ORDER BY {order}
         """.format(where=query.where, order=query.sort)
+        if query.sort:
+            select += f""" ORDER BY {query.sort}"""
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_heartbeats_by_status(self, status=None, query=None, page=None, page_size=None):
@@ -943,8 +945,9 @@ class Backend(Database):
               FROM heartbeats
              WHERE {where}
              {swhere}
-          ORDER BY {order}
         """.format(where=query.where, swhere=swhere, order=query.sort)
+        if query.sort:
+            select += f""" ORDER BY {query.sort}"""
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_heartbeats_count(self, query=None):
@@ -986,8 +989,9 @@ class Backend(Database):
         select = f"""
             SELECT * FROM keys
              WHERE {query.where}
-          ORDER BY {query.sort}
         """
+        if query.sort:
+            select += f""" ORDER BY {query.sort}"""
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_keys_by_user(self, user):
@@ -1065,8 +1069,9 @@ class Backend(Database):
         select = f"""
             SELECT * FROM users
              WHERE {query.where}
-          ORDER BY {query.sort}
         """
+        if query.sort:
+            select += f" ORDER BY {query.sort}"
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_users_count(self, query=None):
@@ -1175,8 +1180,9 @@ class Backend(Database):
         select = """
             SELECT *, COALESCE(CARDINALITY(users), 0) AS count FROM groups
              WHERE {where}
-          ORDER BY {order}
         """.format(where=query.where, order=query.sort)
+        if query.sort:
+            select += f""" ORDER BY {query.sort}"""
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_groups_count(self, query=None):
@@ -1266,8 +1272,10 @@ class Backend(Database):
         select = f"""
             SELECT * FROM perms
              WHERE {query.where}
-          ORDER BY {query.sort}
         """
+        if query.sort:
+            select += f""" ORDER BY {query.sort}"""
+
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_perms_count(self, query=None):
@@ -1340,8 +1348,10 @@ class Backend(Database):
         select = f"""
             SELECT * FROM customers
              WHERE {query.where}
-          ORDER BY {query.sort}
         """
+        if query.sort:
+            select += f""" ORDER BY {query.sort}"""
+
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_customers_count(self, query=None):
