@@ -738,7 +738,7 @@ class Backend(Database):
             SELECT *, GREATEST(EXTRACT(EPOCH FROM (end_time - GREATEST(start_time, NOW() at time zone 'utc'))), 0) AS remaining
               FROM blackouts
              WHERE {where}
-        """.format(where=query.where, order=query.sort)
+        """.format(where=query.where)
         if query.sort:
             select += f""" ORDER BY {query.sort}"""
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
@@ -909,7 +909,7 @@ class Backend(Database):
                    EXTRACT(EPOCH FROM (NOW() - receive_time)) AS since
               FROM heartbeats
              WHERE {where}
-        """.format(where=query.where, order=query.sort)
+        """.format(where=query.where)
         if query.sort:
             select += f""" ORDER BY {query.sort}"""
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
@@ -945,7 +945,7 @@ class Backend(Database):
               FROM heartbeats
              WHERE {where}
              {swhere}
-        """.format(where=query.where, swhere=swhere, order=query.sort)
+        """.format(where=query.where, swhere=swhere)
         if query.sort:
             select += f""" ORDER BY {query.sort}"""
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
@@ -1071,7 +1071,7 @@ class Backend(Database):
              WHERE {query.where}
         """
         if query.sort:
-            select += f" ORDER BY {query.sort}"
+            select += f' ORDER BY {query.sort}'
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
 
     def get_users_count(self, query=None):
@@ -1180,7 +1180,7 @@ class Backend(Database):
         select = """
             SELECT *, COALESCE(CARDINALITY(users), 0) AS count FROM groups
              WHERE {where}
-        """.format(where=query.where, order=query.sort)
+        """.format(where=query.where)
         if query.sort:
             select += f""" ORDER BY {query.sort}"""
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)

@@ -104,11 +104,12 @@ class QueryBuilder:
         return query, qvars
 
     @staticmethod
-    def generate_query_obj(query, qvars, sort, group =''):
+    def generate_query_obj(query, qvars, sort, group=''):
         if sort:
             return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group=group)
         else:
             return Query(where='\n'.join(query), vars=qvars, group=group)
+
 
 class Alerts(QueryBuilder):
 
