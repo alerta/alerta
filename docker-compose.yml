@@ -4,8 +4,6 @@ services:
   api:
     build:
       context: .
-      args:
-        - DATABASE_TYPE=${ALT_DATABASE_TYPE:-postgres}
     environment:
       - DEBUG=${ALT_DEBUG:-False}
       - DATABASE_URL=postgres://${PG_USER:-alerta}:${PG_PASS:-alertapw}@alerta-postgres:5432/${PG_DB:-monitoring}
@@ -24,7 +22,7 @@ services:
       - alerta-network
 
   alerta-postgres:
-    image: postgres:13-alpine
+    image: postgres:14-alpine
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
