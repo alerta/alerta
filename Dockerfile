@@ -1,30 +1,28 @@
 FROM python:3.11-slim-buster
 
+ARG DATABASE_TYPE=mongodb
+
+
 ENV ALERTA_ENDPOINT=http://localhost:8080
 
-RUN apt-get update && \
-    apt-get upgrade -y && \
+RUN if [ ${DATABASE_TYPE} = postgres ]; then apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
-    gnupg2 \
     libldap2-dev \
     libpq-dev \
-    libsasl2-dev \
-    postgresql-client \
-    python3.11-dev \
-    curl \
-    xmlsec1 && \
+    postgresql-client && \
     apt-get -y clean && \
     apt-get -y autoremove && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*; fi
 
-COPY . /app
-WORKDIR /app
 
-RUN python -m pip install --upgrade pip && \
-    pip install -r requirements.txt && \
-    pip install -r requirements-ci.txt && \
-    pip install .
+RUN pip install --upgrade pip
+
+WORKDIR /alerta
+
+COPY . .
+
+RUN pip install --no-cache-dir .['dev',"${DATABASE_TYPE}"]
 
 EXPOSE 8080
 ENV FLASK_SKIP_DOTENV=1
