@@ -2,22 +2,45 @@ version: '3.4'
 
 services:
   api:
-    image: ghcr.io/alerta/alerta-api
+    build:
+      context: .
+      args:
+        - DATABASE_TYPE=${ALT_DATABASE_TYPE:-postgres}
+    environment:
+      - DEBUG=${ALT_DEBUG:-False}
+      - DATABASE_URL=postgres://${PG_USER:-alerta}:${PG_PASS:-alertapw}@alerta-postgres:5432/${PG_DB:-monitoring}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/_"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
     ports:
-      - 8080:8080
+      - '${ALT_PORT:-8080}:8080'
     depends_on:
-      - db
-    environment:
-      # - DEBUG=1  # remove this line to turn DEBUG off
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/monitoring
-    restart: always
+      - alerta-postgres
+    networks:
+      - alerta-network
 
-  db:
-    image: postgres
+  alerta-postgres:
+    image: postgres:13-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
     ports:
-      - 5432
+      - '5432:5432'
     environment:
-      POSTGRES_DB: monitoring
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    restart: always
+      - POSTGRES_DB=${PG_DB:-monitoring}
+      - POSTGRES_USER=${PG_USER:-alerta}
+      - POSTGRES_PASSWORD=${PG_PASS:-alertapw}
+    networks:
+      - alerta-network
+
+networks:
+  alerta-network:
+    name: alerta-network
