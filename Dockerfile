@@ -5,6 +5,13 @@ ARG DATABASE_TYPE=mongodb
 
 ENV ALERTA_ENDPOINT=http://localhost:8080
 
+RUN apt-get update && \
+    apt-get install -y curl && \
+    if [ ${DATABASE_TYPE} != postgres ]; then \
+    apt-get -y clean && \
+    apt-get -y autoremove && \
+    rm -rf /var/lib/apt/lists/*; fi
+
 RUN if [ ${DATABASE_TYPE} = postgres ]; then apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
