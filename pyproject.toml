@@ -114,7 +114,14 @@ Homepage = "https://github.com/alerta/alerta"
 [tool.hatch.version]
 path = "alerta/__init__.py"
 
-[tool.hatch.build.targets.sdist]
+[tool.hatch.build]
 include = [
-    "/alerta",
+  "alerta/**/",
+  "LICENSE",
+  "NOTICE",
+  "README.md",
+  "wsgi.py"
+]
+exclude = [
+  "tests/**",
 ]
