@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Variables
         id: vars
-        run: echo "::set-output name=SHORT_COMMIT_ID::$(git rev-parse --short HEAD)"
+        run: echo "SHORT_COMMIT_ID=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - name: Build image
         id: docker-build
         run: >-
