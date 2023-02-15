@@ -14,7 +14,8 @@ authors = [
 ]
 maintainers = [
     { name = "Are Schjetne", email = "sixcare.as@gmail.com" },
-    { name = "Terje Nomeland", email = "tjnome@gmail.com" }
+    { name = "Terje Nomeland", email = "tjnome@gmail.com" },
+    { name = "Sigurd Våg Aaknes", email = "sigurdvaa@gmail.com" }
 ]
 keywords = [
     "alert",
