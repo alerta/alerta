@@ -1,4 +1,4 @@
-Alerta Release 8.7
+Alerta Release 9.0
 ==================
 
 [![Actions Status](https://github.com/alerta/alerta/workflows/CI%20Tests/badge.svg)](https://github.com/alerta/alerta/actions)
@@ -19,12 +19,12 @@ The Alerta monitoring tool was developed with the following aims in mind:
 Requirements
 ------------
 
-Release 8 only supports Python 3.7 or higher.
+Release 9 only supports Python 3.8 or higher.
 
 The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 
-- Postgres version 10 or better
-- MongoDB version 4.2 or better
+- Postgres version 11 or better
+- MongoDB version 4.4 or better
 
 Installation
 ------------
