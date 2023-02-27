@@ -13,8 +13,9 @@ from . import auth
 @auth.route('/auth/signup', methods=['OPTIONS', 'POST'])
 @cross_origin(supports_credentials=True)
 def signup():
+    signup_enabled = current_app.config['SIGNUP_ENABLED'] if current_app.config['AUTH_PROVIDER'] == 'basic' else False
 
-    if not current_app.config['SIGNUP_ENABLED']:
+    if not signup_enabled:
         raise ApiError('user signup is disabled', 403)
 
     try:
