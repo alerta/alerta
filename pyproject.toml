@@ -42,6 +42,7 @@ classifiers = [
 ]
 dependencies = [
     "blinker>=1.5",
+    "bcrypt==4.0.1",
     "cryptography>=38.0.1",
     "Flask-Compress>=1.13",
     "Flask-Cors>=3.0.2",
@@ -112,7 +113,19 @@ telegram = "alerta.webhooks.telegram:TelegramWebhook"
 Homepage = "https://github.com/alerta/alerta"
 
 [tool.hatch.version]
-path = "alerta/__init__.py"
+path = "alerta/__about__.py"
+
+[tool.hatch.envs.test]
+dependencies = [
+  "requests-mock",
+  "lxml"
+]
+
+[tool.hatch.envs.default.scripts]
+cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=alerta --cov=tests {args}"
+no-cov = "cov --no-cov {args}"
+lint = "pre-commit run -a"
+
 
 [tool.hatch.build.targets.sdist]
 include = [
