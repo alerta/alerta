@@ -10,10 +10,22 @@ env:
 
 jobs:
   load-test:
-    name: Load Test
     runs-on: ubuntu-latest
 
     services:
+      db:
+        image: postgres:13
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: monitoring
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
       alerta:
         image: ghcr.io/${{ github.repository_owner }}/alerta-api
         env:
@@ -21,6 +33,9 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@postgres:5432/alerta
         ports:
           - 8080:8080
+        env:
+          DEBUG: 1
+          DATABASE_URL: postgres://postgres:postgres@db:5432/monitoring
         options: >-
           --health-cmd "curl --fail http://localhost:8080/_ || exit 1"
           --health-interval 10s
@@ -42,12 +57,19 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Run test
+      - name: Perf test
         run: >-
-          docker run ghcr.io/act10ns/hey
+          docker run
+          --network host
+          ghcr.io/act10ns/hey
           -z 2s
           http://localhost:8080/_
           -m POST
           -T application/json
-          -d '{"resource":"router01", "event":"node_down"}'
+          -d '{"environment":"Production","service":["network"],"resource":"router01","event":"node_down"}'
           http://localhost:8080/alert
+      - uses: act10ns/slack@v2
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+        if: failure()
