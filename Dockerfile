@@ -7,6 +7,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
     build-essential \
+    curl \
+    gnupg2 \
     libldap2-dev \
     libpq-dev \
     libsasl2-dev \
