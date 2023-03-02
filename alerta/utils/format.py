@@ -2,7 +2,7 @@ import datetime
 import json
 import traceback
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from flask.json.provider import JSONProvider
 
@@ -20,7 +20,7 @@ class AlertaJsonProvider(JSONProvider):
         kwargs.setdefault('sort_keys', self.sort_keys)
         return json.dumps(obj, **kwargs, cls=CustomJSONEncoder)
 
-    def loads(self, s: str | bytes, **kwargs):
+    def loads(self, s: Union[str, bytes], **kwargs):
         return json.loads(s, **kwargs)
 
 
