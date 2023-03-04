@@ -221,7 +221,7 @@ COLUMNS = [
 ]
 SORT_LIST_BY = ['severity', 'lastReceiveTime']  # eg. newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
 DEFAULT_FILTER = {'status': ['open', 'ack']}
-CLIPBOARD_TEMPLATE = ""
+CLIPBOARD_TEMPLATE = ''
 
 
 # Alert Status Indicators
