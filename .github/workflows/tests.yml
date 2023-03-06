@@ -66,12 +66,12 @@ jobs:
           steps: ${{ toJson(steps) }}
         if: failure()
 
-  test-postgres14:
+  test-postgres15:
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres:14
+        image: postgres:15
         env:
           POSTGRES_DB: alerta
           POSTGRES_USER: postgres
