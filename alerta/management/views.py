@@ -36,6 +36,17 @@ total_alert_gauge = Gauge('alerts', 'total', 'Total alerts', 'Total number of al
 started = time.time() * 1000
 
 
+def version_info():
+    if current_app.config['SERVER_VERSION'] == 'full':
+        return __version__
+    elif current_app.config['SERVER_VERSION'] == 'major':
+        return __version__.split('.')[0]
+    elif current_app.config['SERVER_VERSION'] == 'off':
+        return
+    else:
+        return __version__
+
+
 @mgmt.route('/management', methods=['OPTIONS', 'GET'])
 @cross_origin()
 def management():
@@ -59,7 +70,7 @@ def management():
 def manifest():
 
     manifest = {
-        'release': __version__,
+        'release': version_info(),
         'build': build.BUILD_NUMBER,
         'date': build.BUILD_DATE,
         'revision': build.BUILD_VCS_NUMBER
@@ -218,7 +229,7 @@ def status():
     metrics.extend(Timer.find_all())
     metrics.extend(Switch.find_all())
 
-    return jsonify(application='alerta', version=__version__, time=now, uptime=int(now - started),
+    return jsonify(application='alerta', version=version_info(), time=now, uptime=int(now - started),
                    metrics=[metric.serialize() for metric in metrics])
 
 

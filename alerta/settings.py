@@ -244,6 +244,8 @@ DEFAULT_FONT = {
 
 # List of custom actions
 ACTIONS = []  # type: List[str]
+
+SERVER_VERSION = 'full'  # show/hide server version eg. full, major, off
 GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
 
