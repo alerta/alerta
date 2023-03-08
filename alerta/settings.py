@@ -221,6 +221,8 @@ COLUMNS = [
 ]
 SORT_LIST_BY = ['severity', 'lastReceiveTime']  # eg. newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
 DEFAULT_FILTER = {'status': ['open', 'ack']}
+CLIPBOARD_TEMPLATE = ''
+
 
 # Alert Status Indicators
 ASI_SEVERITY = [
@@ -242,6 +244,8 @@ DEFAULT_FONT = {
 
 # List of custom actions
 ACTIONS = []  # type: List[str]
+
+SERVER_VERSION = 'full'  # show/hide server version eg. full, major, off
 GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
 

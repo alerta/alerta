@@ -103,6 +103,8 @@ class Config:
         # webhooks
         config['DEFAULT_ENVIRONMENT'] = get_config('DEFAULT_ENVIRONMENT', default=None, type=str, config=config)
 
+        config['CLIPBOARD_TEMPLATE'] = get_config('CLIPBOARD_TEMPLATE', default=None, type=str, config=config)
+
         # Runtime config check
         if config['CUSTOMER_VIEWS'] and not config['AUTH_REQUIRED']:
             raise RuntimeError('Must enable authentication to use customer views')
