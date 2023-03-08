@@ -76,14 +76,14 @@ Development
 
 To run in development mode, listening on port 5000:
 
-    $ export FLASK_APP=alerta FLASK_ENV=development
+    $ export FLASK_APP=alerta FLASK_DEBUG=1
     $ pip install -e .
     $ flask run
 
 To run in development mode, listening on port 8080, using Postgres and
 reporting errors to [Sentry](https://sentry.io):
 
-    $ export FLASK_APP=alerta FLASK_ENV=development
+    $ export FLASK_APP=alerta FLASK_DEBUG=1
     $ export DATABASE_URL=postgres://localhost:5432/alerta5
     $ export SENTRY_DSN=https://8b56098250544fb78b9578d8af2a7e13:fa9d628da9c4459c922293db72a3203f@sentry.io/153768
     $ pip install -e .[postgres]
