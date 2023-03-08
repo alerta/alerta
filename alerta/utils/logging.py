@@ -215,7 +215,7 @@ class JSONFormatter(logging.Formatter):
         payload['message'] = record.getMessage()
 
         # do not assume there's a Flask request context here so must use FLASK_DEBUG env var not app.debug
-        indent = 2 if os.environ.get('FLASK_DEBUG', False) else None
+        indent = 2 if os.environ.get('FLASK_DEBUG', '') == '1' else None
         return json.dumps(payload, indent=indent)
 
 
