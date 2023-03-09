@@ -1,4 +1,4 @@
-from flask import jsonify, request
+from flask import g, jsonify, request
 from flask_cors import cross_origin
 
 from alerta.app import qb
@@ -40,7 +40,7 @@ def bulk_set_status():
     if not status:
         raise ApiError("must supply 'status' as json data", 400)
 
-    query = qb.from_params(request.args)
+    query = qb.alerts.from_params(request.args)
     alerts = Alert.find_all(query)
 
     if not alerts:
@@ -82,13 +82,13 @@ def bulk_action_alert():
     if not action:
         raise ApiError("must supply 'action' as json data", 400)
 
-    query = qb.from_params(request.args)
+    query = qb.alerts.from_params(request.args)
     alerts = [alert.id for alert in Alert.find_all(query)]
 
     if not alerts:
         raise ApiError('not found', 404)
 
-    task = action_alerts.delay(alerts, action, text, timeout)
+    task = action_alerts.delay(alerts, action, text, timeout, g.login)
 
     return jsonify(status='ok', message=f'{len(alerts)} alerts queued for action'), 202, {'Location': absolute_url('/_bulk/task/' + task.id)}
 
@@ -102,7 +102,7 @@ def bulk_tag_alert():
     if not request.json.get('tags', None):
         raise ApiError("must supply 'tags' as json list")
 
-    query = qb.from_params(request.args)
+    query = qb.alerts.from_params(request.args)
     updated = Alert.tag_find_all(query, tags=request.json['tags'])
 
     return jsonify(status='ok', updated=updated, count=len(updated))
@@ -117,7 +117,7 @@ def bulk_untag_alert():
     if not request.json.get('tags', None):
         raise ApiError("must supply 'tags' as json list")
 
-    query = qb.from_params(request.args)
+    query = qb.alerts.from_params(request.args)
     updated = Alert.untag_find_all(query, tags=request.json['tags'])
 
     return jsonify(status='ok', updated=updated, count=len(updated))
@@ -132,7 +132,7 @@ def bulk_update_attributes():
     if not request.json.get('attributes', None):
         raise ApiError("must supply 'attributes' as json data", 400)
 
-    query = qb.from_params(request.args)
+    query = qb.alerts.from_params(request.args)
     updated = Alert.update_attributes_find_all(query, request.json['attributes'])
 
     return jsonify(status='ok', updated=updated, count=len(updated))
@@ -144,7 +144,7 @@ def bulk_update_attributes():
 @timer(delete_timer)
 @jsonp
 def bulk_delete_alert():
-    query = qb.from_params(request.args)
+    query = qb.alerts.from_params(request.args)
     deleted = Alert.delete_find_all(query)
 
     return jsonify(status='ok', deleted=deleted, count=len(deleted))
