@@ -30,7 +30,7 @@ def get_backend(app):
 
 
 def load_backend(backend):
-    for ep in iter_entry_points('alerta.backends'):
+    for ep in iter_entry_points('alerta.database.backends'):
         if ep.name == backend:
             module_name = ep.module_name
             break
