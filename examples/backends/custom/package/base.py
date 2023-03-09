@@ -1,4 +1,3 @@
-
 from alerta.database.backends.postgres import Backend as PGBackend
 
 
@@ -10,4 +9,4 @@ class Backend(PGBackend):
 
     def create_alert(self, alert):
         alert.attributes['custom_attribute'] = 'value'
-        return super(Backend, self).create_alert(alert)
+        return super().create_alert(alert)

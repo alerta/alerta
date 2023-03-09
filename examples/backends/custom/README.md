@@ -12,7 +12,7 @@ The module providing that class must be referenced as an 'alerta.database.backen
 python package setup.
 
 ```
-   ... 
+   ...
     entry_points={
         'alerta.database.backends': [
             'custom = package'
@@ -22,7 +22,7 @@ python package setup.
 ```
 
 To use the custom database backend, the name used for the entry-point has to be used as schema in
-`DATABASE_URL` configuration setting: 
+`DATABASE_URL` configuration setting:
 
 ```
 DATABASE_URL = "custom://user@db_server/monitoring?connect_timeout=10&application_name=alerta"
