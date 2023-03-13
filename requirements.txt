@@ -1,7 +1,7 @@
 bcrypt==4.0.0
 blinker==1.5
 cryptography==39.0.1
-Flask==2.2.2
+Flask==2.2.3
 Flask-Compress==1.13
 Flask-Cors==3.0.10
 mohawk==1.1.0
