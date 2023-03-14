@@ -17,20 +17,17 @@ jobs:
       IMAGE_NAME: ${{ github.repository_owner }}/alerta-api
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Variables
-        id: vars
-        run: echo "::set-output name=SHORT_COMMIT_ID::$(git rev-parse --short HEAD)"
+        uses: actions/checkout@v3
       - name: Build image
         id: docker-build
         run: >-
           docker build
           -t $IMAGE_NAME
           -t $REPOSITORY_URL/$IMAGE_NAME:$(cat VERSION)
-          -t $REPOSITORY_URL/$IMAGE_NAME:${{ steps.vars.outputs.SHORT_COMMIT_ID }}
+          -t $REPOSITORY_URL/$IMAGE_NAME:$(git rev-parse --short HEAD)
           -t $REPOSITORY_URL/$IMAGE_NAME:latest .
       - name: Docker Login
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: ${{ env.REPOSITORY_URL }}
           username: ${{ github.actor }}
@@ -39,7 +36,7 @@ jobs:
         id: docker-push
         run: docker push --all-tags $REPOSITORY_URL/$IMAGE_NAME
 
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}

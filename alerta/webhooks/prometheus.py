@@ -35,6 +35,10 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
         except Exception:
             annotations[k] = v
 
+    # Allow custom alertname
+    if 'alertname' in annotations and annotations['alertname']:
+        labels['alertname'] = annotations['alertname']
+
     if status == 'firing':
         severity = labels.pop('severity', 'warning')
     elif status == 'resolved':

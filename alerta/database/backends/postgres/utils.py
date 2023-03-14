@@ -13,7 +13,7 @@ from alerta.utils.format import DateTime
 from .queryparser import QueryParser
 
 Query = namedtuple('Query', ['where', 'vars', 'sort', 'group'])
-Query.__new__.__defaults__ = ('1=1', {}, '(false)', 'status')  # type: ignore
+Query.__new__.__defaults__ = ('1=1', {}, '(select 1)', 'status')  # type: ignore
 
 
 EXCLUDE_FROM_QUERY = [
@@ -48,7 +48,7 @@ class QueryBuilder:
                 else:
                     sort.append(f'{column} {direction}')
         else:
-            sort.append('(false)')
+            sort.append('(select 1)')
         return sort
 
     @staticmethod

@@ -1,24 +1,49 @@
 import datetime
+import json
 import traceback
-from typing import Any, Optional
+from decimal import Decimal
+from typing import Any, Optional, Union
 
-from bson import ObjectId
-from flask import json
+from flask.json.provider import JSONProvider
 
 dt = datetime.datetime
+
+
+class AlertaJsonProvider(JSONProvider):
+    """JSON Provider for Flask app to use CustomJSONEncoder."""
+
+    ensure_ascii: bool = True
+    sort_keys: bool = True
+
+    def dumps(self, obj, **kwargs):
+        kwargs.setdefault('ensure_ascii', self.ensure_ascii)
+        kwargs.setdefault('sort_keys', self.sort_keys)
+        return json.dumps(obj, **kwargs, cls=CustomJSONEncoder)
+
+    def loads(self, s: Union[str, bytes], **kwargs):
+        return json.loads(s, **kwargs)
 
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:  # pylint: disable=method-hidden
         from alerta.models.alert import Alert, History
+
+        # only required if using MongoDB backend
+        try:
+            from bson import ObjectId
+            if isinstance(o, ObjectId):
+                return str(o)
+        except ModuleNotFoundError:
+            pass
+
         if isinstance(o, datetime.datetime):
             return DateTime.iso8601(o)
         elif isinstance(o, datetime.timedelta):
             return int(o.total_seconds())
+        elif isinstance(o, Decimal):
+            return str(o)
         elif isinstance(o, (Alert, History)):
             return o.serialize
-        elif isinstance(o, ObjectId):
-            return str(o)
         elif isinstance(o, Exception):
             return traceback.format_exception_only(o.__class__, o)
         else:

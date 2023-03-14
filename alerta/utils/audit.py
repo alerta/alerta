@@ -81,7 +81,7 @@ class AuditTrail:
              resource_id: str, type: str, request: Any, **extra: Any) -> str:
 
         def get_redacted_data(r):
-            data = r.get_json()
+            data = r.get_json(silent=True)
             if data and app.config['AUDIT_LOG_REDACT']:
                 if 'password' in data:
                     data['password'] = '[REDACTED]'
@@ -111,7 +111,8 @@ class AuditTrail:
                 'url': request.url,
                 'args': request.args.to_dict(),
                 'data': get_redacted_data(request),
-                'ipAddress': request.remote_addr
+                'remoteIp': request.remote_addr,
+                'userAgent': request.headers.get('User-Agent')
             },
             'extra': extra
         }, cls=CustomJSONEncoder)

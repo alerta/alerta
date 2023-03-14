@@ -18,7 +18,9 @@ class ManagementTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': False,
             # 'ACK_TIMEOUT': 2,
-            # 'SHELVE_TIMEOUT': 3
+            # 'SHELVE_TIMEOUT': 3,
+            'SERVER_VERSION': 'off',
+            # 'SERVER_VERSION': 'major'
         }
 
         with mod_env(
@@ -104,6 +106,8 @@ class ManagementTestCase(unittest.TestCase):
 
         response = self.client.get('/management/manifest')
         self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['release'], None)
 
     def test_properties(self):
 
@@ -300,6 +304,7 @@ class ManagementTestCase(unittest.TestCase):
         response = self.client.get('/management/status', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['version'], None)
         for metric in data['metrics']:
             if metric['name'] == 'total':
                 self.assertGreaterEqual(metric['value'], 1)
