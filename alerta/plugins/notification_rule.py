@@ -209,7 +209,7 @@ class NotificationRulesHandler(PluginBase):
             elif notification_type == 'link_mobility':
                 self.send_link_mobility_sms(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]])), fernet)
             elif notification_type == 'link_mobility_xml':
-                response = self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]])), fernet, xml=LINK_MOBILITY_XML)
+                response = self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]])), fernet, xml=LINK_MOBILITY_XML.copy())
                 if response.content.decode().find("FAIL") != -1:
                     LOG.error(response.content)
                 else:
