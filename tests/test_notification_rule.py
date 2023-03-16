@@ -500,6 +500,10 @@ class NotificationRuleTestCase(unittest.TestCase):
             "text": "Hey, this is a test of notification rules",
         }
 
+        inactive_rule = {**base_rule, "active": False}
+        active_rule = {**base_rule, "active": True}
+        no_state_rule = {**base_rule}
+
         wrong_environment_rule = {**base_rule, "environment": "wrong"}
         none_environment_rule = {**base_rule, "environment": None}
         pop_environment_rule = {**base_rule}
@@ -557,6 +561,10 @@ class NotificationRuleTestCase(unittest.TestCase):
 
         self.channel_id = self.create_api_obj("/notificationchannels", self.sms_channel, self.headers)["id"]
         base_rule_data = self.create_api_obj("/notificationrules", base_rule, self.headers)["notificationRule"]
+
+        inactive_rule_data = self.create_api_obj("/notificationrules", inactive_rule, self.headers)["notificationRule"]
+        active_rule_data = self.create_api_obj("/notificationrules", active_rule, self.headers)["notificationRule"]
+        no_state_rule_data = self.create_api_obj("/notificationrules", no_state_rule, self.headers)["notificationRule"]
 
         wrong_environment_rule_data = self.create_api_obj("/notificationrules", wrong_environment_rule, self.headers)[
             "notificationRule"
@@ -659,6 +667,10 @@ class NotificationRuleTestCase(unittest.TestCase):
         active_notification_rules = self.create_api_obj("/notificationrules/active", data["alert"], self.headers, 200)["notificationRules"]
         notification_rules = active_notification_rules
 
+        self.assertNotIn(inactive_rule_data, notification_rules)
+        self.assertIn(active_rule_data, notification_rules)
+        self.assertIn(no_state_rule_data, notification_rules)
+
         self.assertNotIn(wrong_environment_rule_data, notification_rules)
         self.assertNotIn(none_environment_rule_data, notification_rules)
         self.assertNotIn(pop_environment_rule_data, notification_rules)
@@ -740,6 +752,70 @@ class NotificationRuleTestCase(unittest.TestCase):
         self.assertEqual(data["notificationRule"]["text"], "administartively sms")
 
         self.delete_api_obj("/notificationrules/" + data["id"], self.headers)
+
+    def test_receivers(self):
+
+        user = {
+            'name': 'Napoleon Bonaparte',
+            'email': 'napoleon@bonaparte.fr',
+            'password': 'blackforest',
+            'text': 'added to circle of trust'
+        }
+        user_data = self.create_api_obj("/user", user, self.headers)
+        user_id = user_data["id"]
+        group = {
+            'name': 'Group 1',
+            'text': 'Test group #1'
+        }
+        group_data = self.create_api_obj("/group", group, self.headers)
+        group_id = group_data["id"]
+
+        notification_rule_number = {
+            "environment": "Production",
+            "channelId": "SMS_Channel",
+            "service": ["Network"],
+            "receivers": ["+4700000000"],
+        }
+
+        notification_rule_mail = {
+            "environment": "Production",
+            "channelId": "SMS_Channel",
+            "service": ["Network"],
+            "receivers": ["napoleon@bonaparte.fr"],
+        }
+
+        notification_rule_user = {
+            "environment": "Production",
+            "channelId": "SMS_Channel",
+            "service": ["Network"],
+            "receivers": [],
+            "userIds": [user_id]
+        }
+
+        notification_rule_group = {
+            "environment": "Production",
+            "channelId": "SMS_Channel",
+            "service": ["Network"],
+            "receivers": [],
+            "groupIds": [group_id]
+        }
+
+        self.channel_id = self.create_api_obj("/notificationchannels", self.sms_channel, self.headers)["id"]
+        
+        data = self.create_api_obj("/notificationrules", notification_rule_number, self.headers)["notificationRule"]
+        self.assertEqual(data["receivers"], ["+4700000000"])
+        data = self.create_api_obj("/notificationrules", notification_rule_mail, self.headers)["notificationRule"]
+        self.assertEqual(data["receivers"], ["napoleon@bonaparte.fr"])
+        data = self.create_api_obj("/notificationrules", notification_rule_user, self.headers)["notificationRule"]
+        self.assertEqual(data["userIds"], [user_id])
+        data = self.create_api_obj("/notificationrules", notification_rule_group, self.headers)["notificationRule"]
+        self.assertEqual(data["groupIds"], [group_id])
+
+
+
+
+
+
 
     def test_status_codes(self):
 
