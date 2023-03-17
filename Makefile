@@ -18,7 +18,7 @@ GIT=git
 -include .env .env.local .env.*.local
 
 ifndef PROJECT
-$(error PROJECT is not set)
+    $(error PROJECT is not set)
 endif
 
 VERSION=$(shell cut -d "'" -f 2 $(PROJECT)/version.py)
@@ -28,29 +28,29 @@ PKG_WHEEL=dist/*-$(VERSION)-*.whl
 
 all:	help
 
-$(PIP):
-	python3 -m venv $(VENV)
+$(VENV):
+	@python3 -m venv $(VENV) >/dev/null
 
-$(FLAKE8): $(PIP)
-	$(PIP) install flake8==4.0.1
+$(FLAKE8): $(VENV)
+	@$(PIP) install flake8
 
-$(MYPY): $(PIP)
-	$(PIP) install mypy==0.812
+$(MYPY): $(VENV)
+	$(PIP) install mypy
 
-$(TOX): $(PIP)
+$(TOX): $(VENV)
 	$(PIP) install tox
 
-$(PYTEST): $(PIP)
-	$(PIP) install pytest==6.2.5 pytest-cov==3.0.0
+$(PYTEST): $(VENV)
+	$(PIP) install pytest pytest-cov
 
-$(PRE_COMMIT): $(PIP)
-	$(PIP) install pre-commit==2.15.0
+$(PRE_COMMIT): $(VENV)
+	$(PIP) install pre-commit
 	$(PRE_COMMIT) install
 
-$(WHEEL): $(PIP)
+$(WHEEL): $(VENV)
 	$(PIP) install wheel
 
-$(TWINE): $(PIP)
+$(TWINE): $(VENV)
 	$(PIP) install wheel twine
 
 ifdef TOXENV
@@ -58,7 +58,7 @@ toxparams?=-e $(TOXENV)
 endif
 
 ## install		- Install dependencies.
-install: $(PIP)
+install: $(VENV)
 	$(PIP) install -r requirements.txt
 
 ## hooks			- Run pre-commit hooks.
