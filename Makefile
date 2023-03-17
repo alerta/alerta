@@ -1,7 +1,7 @@
 #!make
 
 VENV=venv
-PYTHON=$(VENV)/bin/python
+PYTHON=$(VENV)/bin/python3
 PIP=$(VENV)/bin/pip --disable-pip-version-check
 FLAKE8=$(VENV)/bin/flake8
 MYPY=$(VENV)/bin/mypy
@@ -9,6 +9,7 @@ TOX=$(VENV)/bin/tox
 PYTEST=$(VENV)/bin/pytest
 DOCKER_COMPOSE=docker-compose
 PRE_COMMIT=$(VENV)/bin/pre-commit
+BUILD=$(VENV)/bin/build
 WHEEL=$(VENV)/bin/wheel
 TWINE=$(VENV)/bin/twine
 GIT=git
@@ -21,18 +22,16 @@ ifndef PROJECT
     $(error PROJECT is not set)
 endif
 
+PYPI_REPOSITORY ?= pypi
 VERSION=$(shell cut -d "'" -f 2 $(PROJECT)/version.py)
-
-PKG_SDIST=dist/*-$(VERSION).tar.gz
-PKG_WHEEL=dist/*-$(VERSION)-*.whl
 
 all:	help
 
 $(VENV):
-	@python3 -m venv $(VENV) >/dev/null
+	python3 -m venv $(VENV)
 
 $(FLAKE8): $(VENV)
-	@$(PIP) install flake8
+	$(PIP) install flake8
 
 $(MYPY): $(VENV)
 	$(PIP) install mypy
@@ -47,11 +46,14 @@ $(PRE_COMMIT): $(VENV)
 	$(PIP) install pre-commit
 	$(PRE_COMMIT) install
 
+$(BUILD): $(VENV)
+	$(PIP) install --upgrade build
+
 $(WHEEL): $(VENV)
-	$(PIP) install wheel
+	$(PIP) install --upgrade wheel
 
 $(TWINE): $(VENV)
-	$(PIP) install wheel twine
+	$(PIP) install --upgrade wheel twine
 
 ifdef TOXENV
 toxparams?=-e $(TOXENV)
@@ -98,17 +100,13 @@ tag:
 	$(GIT) push --tags
 
 ## build			- Build package.
-build: $(PIP) $(WHEEL) $(PKG_SDIST) $(PKG_WHEEL)
-
-$(PKG_SDIST):
-	$(PYTHON) setup.py sdist
-
-$(PKG_WHEEL): $(WHEEL)
-	$(PYTHON) setup.py bdist_wheel
+build: $(BUILD)
+	$(PYTHON) -m build
 
 ## upload			- Upload package to PyPI.
 upload: $(TWINE)
-	$(TWINE) upload dist/*
+	$(TWINE) check dist/*
+	$(TWINE) upload --repository $(PYPI_REPOSITORY) --verbose dist/*
 
 ## clean			- Clean source.
 clean:
