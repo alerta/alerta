@@ -88,6 +88,12 @@ HMAC_AUTH_CREDENTIALS = [
     # }
 ]  # type: List[Dict[str, Any]]
 
+AUTH_PROXY = False
+AUTH_PROXY_USER_HEADER = 'X-Proxy-User'  # header field containing the authenticated username (X-Forwarded-User)
+AUTH_PROXY_ROLES_HEADER = 'X-Proxy-Roles'  # list of authenticated role names (X-Forwarded-Groups)
+AUTH_PROXY_ROLES_SEPARATOR = ','  # default comma-separated list (,;|)
+AUTH_PROXY_AUTO_SIGNUP = True
+
 OAUTH2_CLIENT_ID = ''  # OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = ''
 ALLOWED_EMAIL_DOMAINS = ['*']
