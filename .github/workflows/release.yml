@@ -42,6 +42,10 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
           pip install .
+      - name: Pre-commit hooks
+        id: hooks
+        run: |
+          pre-commit run -a --show-diff-on-failure
       - name: Test with pytest
         id: test
         env:
