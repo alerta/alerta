@@ -12,13 +12,14 @@ jobs:
   build:
     name: Build & Push
     runs-on: ubuntu-latest
+
     env:
       REPOSITORY_URL: ghcr.io
       IMAGE_NAME: ${{ github.repository_owner }}/alerta-api
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Build image
+      - uses: actions/checkout@v3
+      - name: Build Image
         id: docker-build
         run: >-
           docker build
