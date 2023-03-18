@@ -3,7 +3,6 @@ name: Release
 on:
   push:
     tags: [ 'v*' ]
-    branches: [ develop ]
 
 env:
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
