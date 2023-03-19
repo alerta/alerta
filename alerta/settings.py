@@ -175,8 +175,8 @@ AUDIT_URL = None  # send audit log events via webhook URL
 # CORS settings
 CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin', 'X-Request-ID']
 CORS_ORIGINS = [
-    # 'http://try.alerta.io',
-    # 'http://explorer.alerta.io',
+    # 'https://try.alerta.io',
+    # 'https://explorer.alerta.io',
     'http://localhost',
     'http://localhost:8000',
     r'https?://\w*\.?local\.alerta\.io:?\d*/?.*'  # => http(s)://*.local.alerta.io:<port>

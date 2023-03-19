@@ -6,8 +6,13 @@ kill_timeout = 5
 processes = []
 
 [env]
-  # DATABASE_URL = [set by fly.io]
+  # DATABASE_URL = [set by fly.io automatically]
   CORS_ORIGINS = "*"
+  AUTH_REQUIRED = "True"
+  AUTH_PROVIDER = "google"
+  OAUTH2_CLIENT_ID = "736147134702-glkb1pesv716j1utg4llg7c3rr7nnhli.apps.googleusercontent.com"
+  # OAUTH2_CLIENT_SECRET = [set as a fly.io secret]
+  # => flyctl secrets set OAUTH2_CLIENT_SECRET=client-secret-goes-here
   GOOGLE_TRACKING_ID = "UA-44644195-7"
 
 [experimental]
