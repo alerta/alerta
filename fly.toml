@@ -6,6 +6,9 @@ kill_timeout = 5
 processes = []
 
 [env]
+  # DATABASE_URL = [set by fly.io]
+  CORS_ORIGINS = "https://beta.alerta.io"
+  GOOGLE_TRACKING_ID = "UA-44644195-7"
 
 [experimental]
   allowed_public_ports = []
