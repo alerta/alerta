@@ -10,6 +10,7 @@ processes = []
   CORS_ORIGINS = "*"
   AUTH_REQUIRED = "True"
   AUTH_PROVIDER = "google"
+  ADMIN_USERS = "nfsatterly@gmail.com"
   OAUTH2_CLIENT_ID = "736147134702-glkb1pesv716j1utg4llg7c3rr7nnhli.apps.googleusercontent.com"
   # OAUTH2_CLIENT_SECRET = [set as a fly.io secret]
   # => flyctl secrets set OAUTH2_CLIENT_SECRET=client-secret-goes-here
