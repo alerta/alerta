@@ -255,6 +255,9 @@ SERVER_VERSION = 'full'  # show/hide server version eg. full, major, off
 GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
 
+# Routing
+ROUTING_DIST = 'alerta-routing'
+
 # Plugins
 PLUGINS = ['remote_ip', 'reject', 'heartbeat', 'blackout', 'forwarder']
 PLUGINS_RAISE_ON_ERROR = True  # raise RuntimeError exception on first failure
