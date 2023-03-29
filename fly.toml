@@ -1,0 +1,53 @@
+# fly.toml file
+
+app = "alerta-api"
+kill_signal = "SIGINT"
+kill_timeout = 5
+processes = []
+
+[env]
+  # DATABASE_URL = [set by fly.io automatically]
+  CORS_ORIGINS = "*"
+  AUTH_REQUIRED = "True"
+  AUTH_PROVIDER = "basic"
+  BASIC_AUTH_REALM = "Try Alerta"
+  SIGNUP_ENABLED = "True"
+  ADMIN_USERS = "satterly"
+  # ADMIN_USERS = "nfsatterly@gmail.com"
+  # OAUTH2_CLIENT_ID = "736147134702-glkb1pesv716j1utg4llg7c3rr7nnhli.apps.googleusercontent.com"
+  # OAUTH2_CLIENT_SECRET = [set as a fly.io secret]
+  # => flyctl secrets set OAUTH2_CLIENT_SECRET=client-secret-goes-here
+  GOOGLE_TRACKING_ID = "UA-44644195-7"
+
+[experimental]
+  allowed_public_ports = []
+  auto_rollback = true
+  cmd = []
+  entrypoint = []
+  exec = []
+
+[[services]]
+  http_checks = []
+  internal_port = 8080
+  processes = ["app"]
+  protocol = "tcp"
+  script_checks = []
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+    type = "connections"
+
+  [[services.ports]]
+    force_https = true
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.tcp_checks]]
+    grace_period = "1s"
+    interval = "15s"
+    restart_limit = 0
+    timeout = "2s"
