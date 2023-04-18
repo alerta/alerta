@@ -62,7 +62,7 @@ Record = namedtuple('Record', [
 
 class Backend(Database):
 
-    def create_engine(self, app, uri, dbname=None, schema=None, raise_on_error=True):
+    def create_engine(self, app, uri, dbname=None, schema='public', raise_on_error=True):
         self.uri = uri
         self.dbname = dbname
         self.schema = schema
