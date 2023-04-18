@@ -2,8 +2,7 @@ name: Release
 
 on:
   push:
-    tags:
-    - 'v*'
+    tags: [ 'v*' ]
 
 env:
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -15,7 +14,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres
+        image: postgres:15
         env:
           POSTGRES_DB: alerta
           POSTGRES_USER: postgres
@@ -29,26 +28,30 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: 3.11
       - name: Install dependencies
         id: install-deps
         run: |
-          python -m pip install --upgrade pip
+          python3 -m pip install --upgrade pip
           pip install flake8 pytest
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
           pip install .
+      - name: Pre-commit hooks
+        id: hooks
+        run: |
+          pre-commit run -a --show-diff-on-failure
       - name: Test with pytest
         id: test
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/alerta
         run: |
           pytest --cov=alerta tests/*.py
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -58,19 +61,34 @@ jobs:
     name: Publish
     needs: test
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
       - name: Build
         id: build
-        run: make build
+        run: |
+          python3 -m pip install --upgrade build
+          python3 -m build
       - name: Publish to PyPI
         id: publish
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python3 -m pip install --upgrade twine
+          python3 -m twine check dist/*
+          python3 -m twine upload --verbose dist/*
 
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
+
+      - name: Test Install
+        run: |
+          python3 -m pip install --upgrade alerta-server
+          python3 -m pip freeze
