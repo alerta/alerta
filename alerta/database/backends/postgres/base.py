@@ -6,7 +6,7 @@ from datetime import datetime
 import psycopg2
 from flask import current_app
 from psycopg2.extensions import AsIs, adapt, register_adapter
-from psycopg2.extras import Json, NamedTupleCursor, register_composite
+from psycopg2.extras import Json, NamedTupleCursor, register_composite, CompositeCaster
 
 from alerta.app import alarm_model
 from alerta.database.base import Database
@@ -62,26 +62,33 @@ Record = namedtuple('Record', [
 
 class Backend(Database):
 
-    def create_engine(self, app, uri, dbname=None, raise_on_error=True):
+    def create_engine(self, app, uri, dbname=None, schema=None, raise_on_error=True):
         self.uri = uri
         self.dbname = dbname
+        self.schema = schema
 
         lock = threading.Lock()
         with lock:
             conn = self.connect()
+
+            conn.cursor().execute("SET search_path TO {}".format(self.schema))
+            conn.commit()
+
             with app.open_resource('sql/schema.sql') as f:
                 try:
                     conn.cursor().execute(f.read())
                     conn.commit()
                 except Exception as e:
+                    print("\n\n\n\nErreur\n\n\n\n")
                     if raise_on_error:
                         raise
                     app.logger.warning(e)
 
+        print(schema + '.history' if schema else 'history')
         register_adapter(dict, Json)
         register_adapter(datetime, self._adapt_datetime)
         register_composite(
-            'history',
+            schema + '.history' if schema else 'history',
             conn,
             globally=True
         )
@@ -97,6 +104,7 @@ class Backend(Database):
                     dbname=self.dbname,
                     cursor_factory=NamedTupleCursor
                 )
+                
                 conn.set_client_encoding('UTF8')
                 break
             except Exception as e:
