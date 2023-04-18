@@ -84,7 +84,6 @@ class Backend(Database):
                         raise
                     app.logger.warning(e)
 
-        print(schema + '.history' if schema else 'history')
         register_adapter(dict, Json)
         register_adapter(datetime, self._adapt_datetime)
         register_composite(
