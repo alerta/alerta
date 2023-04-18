@@ -71,9 +71,6 @@ class Backend(Database):
         with lock:
             conn = self.connect()
 
-            conn.cursor().execute("SET search_path TO {}".format(self.schema))
-            conn.commit()
-
             with app.open_resource('sql/schema.sql') as f:
                 try:
                     conn.cursor().execute(f.read())
@@ -118,6 +115,8 @@ class Backend(Database):
                     time.sleep(backoff)
 
         if conn:
+            conn.cursor().execute("SET search_path TO {}".format(self.schema))
+            conn.commit()
             return conn
         else:
             raise RuntimeError(f'Database connect error. Failed to connect after {MAX_RETRIES} retries.')
