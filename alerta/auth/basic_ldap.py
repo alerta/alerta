@@ -82,12 +82,16 @@ def login():
     # Else
     #   Set the DN as the one found in LDAP_DOMAINS variable
     user_filter = current_app.config['LDAP_USER_FILTER']
-    user_base_dn = current_app.config['LDAP_USER_BASEDN']
-    user_attrs = [
-        current_app.config['LDAP_USER_NAME_ATTR'],
-        current_app.config['LDAP_USER_EMAIL_ATTR']
-    ]
+    groups = list()
     if user_filter:
+        user_attrs = [
+            current_app.config['LDAP_USER_NAME_ATTR'],
+            current_app.config['LDAP_USER_EMAIL_ATTR']
+        ]
+        user_memberof_attr = current_app.config.get('LDAP_USER_MEMBEROF_ATTR', None)
+        if user_memberof_attr:
+            user_attrs.append(user_memberof_attr)
+        user_base_dn = current_app.config['LDAP_USER_BASEDN']
         result = [r for r in ldap_connection.search_s(
             base=user_base_dn or base_dn,
             scope=ldap.SCOPE_SUBTREE,
@@ -102,6 +106,8 @@ def login():
         user_dn = result[0][0]
         name = result[0][1][current_app.config['LDAP_USER_NAME_ATTR']][0].decode('utf-8', 'ignore')
         email = result[0][1][current_app.config['LDAP_USER_EMAIL_ATTR']][0].decode('utf-8', 'ignore')
+        if user_memberof_attr:
+            groups.extend([g.decode('utf-8', 'ignore') for g in result[0][1][user_memberof_attr]])
         email_verified = bool(email)
     else:
         if '%' in current_app.config['LDAP_DOMAINS'][domain]:
@@ -134,27 +140,31 @@ def login():
             raise ApiError('invalid ldap bind credentials', 500)
 
     # Assign customers & update last login time
-    group_filter = current_app.config['LDAP_GROUP_FILTER']
-    group_base_dn = current_app.config['LDAP_GROUP_BASEDN']
-    groups = list()
-    if group_filter:
-        result = ldap_connection.search_s(
-            base=group_base_dn or base_dn,
-            scope=ldap.SCOPE_SUBTREE,
-            filterstr=group_filter.format(username=username, email=email, userdn=user_dn),
-            attrlist=[current_app.config['LDAP_GROUP_NAME_ATTR']]
-        )
-        for group_dn, group_attrs in result:
-            if current_app.config['LDAP_GROUP_NAME_ATTR'] in group_attrs.keys():
-                groups.extend([g.decode('utf-8', 'ignore') for g in group_attrs[current_app.config['LDAP_GROUP_NAME_ATTR']]])
-            else:
-                groups.append(group_dn)
+    if not groups:
+        group_filter = current_app.config['LDAP_GROUP_FILTER']
+        if group_filter:
+            group_base_dn = current_app.config['LDAP_GROUP_BASEDN']
+            result = ldap_connection.search_s(
+                base=group_base_dn or base_dn,
+                scope=ldap.SCOPE_SUBTREE,
+                filterstr=group_filter.format(username=username, email=email, userdn=user_dn),
+                attrlist=[current_app.config['LDAP_GROUP_NAME_ATTR']]
+            )
+            for group_dn, group_attrs in result:
+                if current_app.config['LDAP_GROUP_NAME_ATTR'] in group_attrs.keys():
+                    groups.extend([g.decode('utf-8', 'ignore') for g in group_attrs[current_app.config['LDAP_GROUP_NAME_ATTR']]])
+                else:
+                    groups.append(group_dn)
 
     # Check user is active
     if user.status != 'active':
         raise ApiError(f'User {login} not active', 403)
-    if not_authorized('ALLOWED_LDAP_GROUPS', groups):
-        raise ApiError(f'User {login} is not authorized', 403)
+    allowed_groups = current_app.config['ALLOWED_LDAP_GROUPS']
+    matched_groups = list()
+    if current_app.config['AUTH_REQUIRED'] and not '*' in allowed_groups:
+        matched_groups.extend(set(allowed_groups).intersection(groups))
+        if len(matched_groups) == 0:
+            raise ApiError(f'User {login} is not authorized', 403)
     user.update_last_login()
 
     scopes = Permission.lookup(login=login, roles=user.roles + groups)
@@ -166,6 +176,6 @@ def login():
 
     # Generate token
     token = create_token(user_id=user.id, name=user.name, login=user.email, provider='ldap',
-                         customers=customers, scopes=scopes, roles=user.roles, groups=groups,
+                         customers=customers, scopes=scopes, roles=user.roles, groups=matched_groups,
                          email=user.email, email_verified=user.email_verified)
     return jsonify(token=token.tokenize())
