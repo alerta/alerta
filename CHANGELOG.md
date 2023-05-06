@@ -1,3 +1,10 @@
+## v9.0.1 (2023-05-06)
+
+### Feat
+
+- Add support for fetching `member_of` atttribute for LDAP authentication
+
+
 ## v9.0.0 (2023-03-17)
 
 ### Feat
