@@ -170,6 +170,48 @@ class NotificationRulesHandler(PluginBase):
 
         return alertobjcopy
 
+
+    def handle_channel(self, message: str, channel: NotificationChannel, notification_rule: NotificationRule, users: 'set[User]', fernet: Fernet):
+        notification_type = channel.type
+        if notification_type == 'sendgrid':
+            try:
+                self.send_email(message, channel, notification_rule.receivers, users, fernet)
+            except Exception as err:
+                LOG.error('NotificationRule: ERROR - %s', str(err))
+        elif notification_type == 'smtp':
+            try:
+                self.send_smtp_mail(message, channel, notification_rule.receivers, users, fernet)
+            except Exception as err:
+                LOG.error('NotificationRule: ERROR - %s', str(err))
+        elif 'twilio' in notification_type:
+
+            for number in set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]]):
+                if number == None or number == '':
+                    continue
+                try:
+                    if 'call' in notification_type:
+                        self.make_call(message, channel, number, fernet)
+                    elif 'sms' in notification_type:
+                        self.send_sms(message, channel, number, fernet)
+
+                except TwilioRestException as err:
+                    LOG.error('TwilioRule: ERROR - %s', str(err))
+
+        elif notification_type == 'link_mobility':
+            self.send_link_mobility_sms(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]])), fernet)
+        elif notification_type == 'link_mobility_xml':
+            response = self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]])), fernet, xml=LINK_MOBILITY_XML.copy())
+            if response.content.decode().find("FAIL") != -1:
+                LOG.error(response.content)
+            else:
+                LOG.info(response.content)
+
+    
+    def handle_test(self, channel: NotificationChannel, info: NotificationRule, config):
+        message = info.text if info.text != "" else "this is a test message for testing a notification_channel in alerta"
+        self.handle_channel(message, channel, info, [], Fernet(config['NOTIFICATION_KEY']))
+    
+
     def handle_notifications(self, alert: 'Alert', notifications: 'list[tuple[NotificationRule,NotificationChannel, list[set[User or None]]]]', on_users: 'list[set[User or None]]', fernet: Fernet):
         standard_message = '%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s'
         for notification_rule, channel, users in notifications:
@@ -182,38 +224,9 @@ class NotificationRulesHandler(PluginBase):
             message = (
                 notification_rule.text if notification_rule.text != '' and notification_rule.text is not None else standard_message
             ) % self.get_message_obj(alert.serialize)
-            notification_type = channel.type
-            if notification_type == 'sendgrid':
-                try:
-                    self.send_email(message, channel, notification_rule.receivers, users, fernet)
-                except Exception as err:
-                    LOG.error('NotificationRule: ERROR - %s', str(err))
-            elif notification_type == 'smtp':
-                try:
-                    self.send_smtp_mail(message, channel, notification_rule.receivers, users, fernet)
-                except Exception as err:
-                    LOG.error('NotificationRule: ERROR - %s', str(err))
-            elif 'twilio' in notification_type:
 
-                for number in set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]]):
-                    if number == None or number == '':
-                        continue
-                    try:
-                        if 'call' in notification_type:
-                            self.make_call(message, channel, number, fernet)
-                        elif 'sms' in notification_type:
-                            self.send_sms(message, channel, number, fernet)
-
-                    except TwilioRestException as err:
-                        LOG.error('TwilioRule: ERROR - %s', str(err))
-            elif notification_type == 'link_mobility':
-                self.send_link_mobility_sms(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]])), fernet)
-            elif notification_type == 'link_mobility_xml':
-                response = self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]])), fernet, xml=LINK_MOBILITY_XML.copy())
-                if response.content.decode().find("FAIL") != -1:
-                    LOG.error(response.content)
-                else:
-                    LOG.info(response.content)
+            self.handle_channel(message, channel, notification_rule, users, fernet)
+            
 
     def pre_receive(self, alert, **kwargs):
         return alert

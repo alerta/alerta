@@ -2,10 +2,11 @@ from cryptography.fernet import Fernet
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
-from alerta.app import qb
+from alerta.app import qb, plugins
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
 from alerta.models.notification_channel import NotificationChannel
+from alerta.models.notification_rule import NotificationRule
 from alerta.models.enums import Scope
 from alerta.utils.api import assign_customer
 from alerta.utils.audit import write_audit_trail
@@ -69,6 +70,26 @@ def notification_channel(notification_channel_id):
         return jsonify(status='ok', total=1, notificationChannel=notification_channel.serialize)
     else:
         raise ApiError('not found', 404)
+    
+
+@api.route('/notificationchannels/<notification_channel_id>/test', methods=['OPTIONS', 'POST'])
+@cross_origin()
+@permission(Scope.write_notification_channels)
+@jsonp
+def notification_channel_test(notification_channel_id):
+    notification_channel = NotificationChannel.find_by_id(notification_channel_id)
+
+    try:
+        notification_rule = NotificationRule.parse({**request.json, "channelId": notification_channel_id, "environment": plugins.config.get("DEFAULT_ENVIRONMENT")})
+    except Exception as e:
+        print(str(e))
+        raise ApiError(str(e), 400)
+    try:
+        plugins.plugins.get("notification_rule").handle_test(notification_channel, notification_rule, plugins.config)
+    except Exception as e:
+        raise ApiError(str(e), 500)
+    
+    return jsonify(status='ok')
 
 
 @api.route('/notificationchannels/keygen', methods=['OPTIONS', 'GET'])
