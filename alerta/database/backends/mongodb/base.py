@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta, date
 
 from flask import current_app
 from pymongo import ASCENDING, TEXT, MongoClient, ReturnDocument
@@ -1061,6 +1061,254 @@ class Backend(Database):
         response = self.get_db().blackouts.delete_one({'_id': id})
         return True if response.deleted_count == 1 else False
 
+    # NOTIFICATION_CHANNELS
+
+    def create_notification_channel(self, notification_channel):
+        data = {
+            '_id': notification_channel.id,
+            'type': notification_channel.type,
+            'apiToken': notification_channel.api_token,
+            'sender': notification_channel.sender,
+        }
+        if notification_channel.api_sid:
+            data['apiSid'] = notification_channel.api_sid
+        if notification_channel.customer:
+            data['customer'] = notification_channel.customer
+        if notification_channel.host:
+            data['host'] = notification_channel.host
+        if notification_channel.verify:
+            data['verify'] = notification_channel.verify
+
+        if self.get_db().notification_channels.insert_one(data).inserted_id == notification_channel.id:
+            return data
+
+    def get_notification_channel(self, id: str, customers: list = None):
+        query = {'_id': id}
+
+        if customers:
+            query['customer'] = {'$in': customers}
+
+        return self.get_db().notification_channels.find_one(query)
+
+    def get_notification_channels(self, query: Query = None, page: int = None, page_size: int = None):
+        query = query or Query()
+        return self.get_db().notification_channels.find(query.where, sort=query.sort)\
+            .skip((page - 1) * page_size).limit(page_size)
+
+    def get_notification_channels_count(self, query: Query = None):
+        query = query or Query()
+        return self.get_db().notification_channels.count_documents(query.where)
+
+    def update_notification_channel(self, id, **kwargs):
+        return self.get_db().notification_channels.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
+    def delete_notification_channel(self, id):
+        response = self.get_db().notification_channels.delete_one({'_id': id})
+        return True if response.deleted_count == 1 else False
+
+    # NOTIFICATION_RULES
+
+    def create_notification_rule(self, notification_rule) -> 'dict | None':
+        if self.get_notification_channel(notification_rule.channel_id, [notification_rule.customer] if notification_rule.customer else None) == None:
+            return None
+
+        data = {
+            '_id': notification_rule.id,
+            'priority': notification_rule.priority,
+            'environment': notification_rule.environment,
+            'createTime': notification_rule.create_time,
+            'text': notification_rule.text,
+            'receivers': notification_rule.receivers,
+            'useOnCall': notification_rule.use_oncall,
+            'channelId': notification_rule.channel_id,
+            'useAdvancedSeverity': notification_rule.use_advanced_severity,
+        }
+        if notification_rule.severity:
+            data['severity'] = notification_rule.severity
+        if notification_rule.advanced_severity:
+            data['advancedSeverity'] = [n.serialize for n in notification_rule.advanced_severity]
+        if notification_rule.days:
+            data['days'] = notification_rule.days
+        if notification_rule.user:
+            data['user'] = notification_rule.user
+        if notification_rule.start_time and notification_rule.end_time:
+            data['startTime'] = notification_rule.start_time.hour + notification_rule.start_time.minute / 100
+            data['endTime'] = notification_rule.end_time.hour + notification_rule.end_time.minute / 100
+        if notification_rule.service:
+            data['service'] = notification_rule.service
+        if notification_rule.resource:
+            data['resource'] = notification_rule.resource
+        if notification_rule.event:
+            data['event'] = notification_rule.event
+        if notification_rule.group:
+            data['group'] = notification_rule.group
+        if notification_rule.tags:
+            data['tags'] = notification_rule.tags
+        if notification_rule.customer:
+            data['customer'] = notification_rule.customer
+
+        if self.get_db().notification_rules.insert_one(data).inserted_id == notification_rule.id:
+            return data
+
+    def get_notification_rule(self, id: str, customers: 'list | None' = None):
+        query = {'_id': id}
+
+        if customers:
+            query['customer'] = {'$in': customers}
+
+        return self.get_db().notification_rules.find_one(query)
+
+    def get_notification_rules(self, query: Query = None, page: int = None, page_size: int = None):
+        query = query or Query()
+        return self.get_db().notification_rules.find(query.where, sort=query.sort)\
+            .skip((page - 1) * page_size).limit(page_size)
+
+    def get_notification_rules_count(self, query: Query = None):
+        query = query or Query()
+        return self.get_db().notification_rules.count_documents(query.where)
+
+    def get_notification_rules_active(self, alert):
+        query = dict()
+        query['environment'] = alert.environment
+        query['$and'] = [
+            # {'environment': alert.environment},
+            {'$or': [{'startTime': None}, {'startTime': {'$lte': alert.time.hour + alert.time.minute / 100}}]},
+            {'$or': [{'endTime': None}, {'endTime': {'$gt': alert.time.hour + alert.time.minute / 100}}]},
+            {'$or': [{'days': None}, {'days': []}, {"days": {'$in': [alert.day]}}]},
+            {'$or': [{'useAdvancedSeverity': True}, {'severity': None}, {'severity': []}, {'severity': {'$in': [alert.severity]}}]},
+            {'$or': [{'useAdvancedSeverity': False}, {'$and': [{'$or': [{'advancedSeverity.from': []}, {'advancedSeverity.from': {'$in': [alert.previous_severity]}}]}, {'$or': [{'advancedSeverity.to': []}, {'advancedSeverity.to': {'$in': [alert.severity]}}]}]}]},
+            {'$or': [{'resource': None}, {'resource': alert.resource}]},
+            {"$or": [{"service": None}, {'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}}]},
+            {'$or': [{'event': None}, {'event': alert.event}]},
+            {'$or': [{'group': None}, {'group': alert.group}]},
+            {"$or": [{"tags": None}, {'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}}]},
+        ]
+
+        return self.get_db().notification_rules.find(query)
+
+    def update_notification_rule(self, id, **kwargs):
+        if kwargs.get('startTime', None) is not None:
+            start_split = kwargs['startTime'].split(':')
+            kwargs['startTime'] = float(start_split[0]) + float(start_split[1]) / 100
+        if kwargs.get('endTime', None) is not None:
+            end_split = kwargs['endTime'].split(':')
+            kwargs['endTime'] = float(end_split[0]) + float(end_split[1]) / 100
+        
+        if kwargs.get("advancedSeverity"):
+            kwargs['advancedSeverity'] = [n.serialize for n in kwargs['advancedSeverity']]
+
+        return self.get_db().notification_rules.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
+    def delete_notification_rule(self, id):
+        response = self.get_db().notification_rules.delete_one({'_id': id})
+        return True if response.deleted_count == 1 else False
+
+    # ON_CALLS
+
+    def create_on_call(self, on_call) -> 'dict | None':
+        data = {
+            '_id': on_call.id
+        }
+        if on_call.user_ids:
+            data['userIds'] = on_call.user_ids
+        if on_call.group_ids:
+            data['groupIds'] = on_call.group_ids
+        if on_call.user:
+            data['user'] = on_call.user
+        if on_call.start_time and on_call.end_time:
+            data['startTime'] = on_call.start_time.hour + on_call.start_time.minute / 100
+            data['endTime'] = on_call.end_time.hour + on_call.end_time.minute / 100
+        if on_call.start_date and on_call.end_date:
+            data['startDate'] = datetime.combine(date.fromisoformat(on_call.start_date), time())
+            data['endDate'] = datetime.combine(date.fromisoformat(on_call.end_date), time(23, 59, 59))
+        if on_call.repeat_type:
+            data['repeatType'] = on_call.repeat_type
+        if on_call.repeat_days:
+            data['event'] = on_call.repeat_days
+        if on_call.repeat_weeks:
+            data['group'] = on_call.repeat_weeks
+        if on_call.repeat_months:
+            data['tags'] = on_call.repeat_months
+        if on_call.customer:
+            data['customer'] = on_call.customer
+
+        if self.get_db().on_calls.insert_one(data).inserted_id == on_call.id:
+            return data
+
+    def get_on_call(self, id: str, customers: 'list | None' = None):
+        query = {'_id': id}
+
+        if customers:
+            query['customer'] = {'$in': customers}
+
+        return self.get_db().on_calls.find_one(query)
+
+    def get_on_calls(self, query: Query = None, page: int = None, page_size: int = None):
+        query = query or Query()
+        return self.get_db().on_calls.find(query.where, sort=query.sort)\
+            .skip((page - 1) * page_size).limit(page_size)
+
+    def get_on_calls_count(self, query: Query = None):
+        query = query or Query()
+        return self.get_db().notification_rules.count_documents(query.where)
+
+    def get_on_calls_active(self, alert):
+        date_data = {}
+        date_data["time"] = alert.create_time.time()
+        date_data["day"] = alert.create_time.strftime("%a")
+        _year, date_data["week"], _day_number = alert.create_time.isocalendar()
+        date_data["month"] = alert.create_time.strftime("%b")
+
+        query = dict()
+        query['$and'] = [
+            {"$and": [
+                {'$or': [
+                    {'startTime': None},
+                    {'startTime': {'$lte': date_data["time"].hour + date_data["time"].minute / 100}}]},
+                {'$or': [
+                    {'endTime': None},
+                    {'endTime': {'$gt': date_data["time"].hour + date_data["time"].minute / 100}}]}]},
+            {"$or": [
+                {'$or': [
+                    {"$and": [
+                        {'startDate': {'$lte': alert.create_time}},
+                        {'endDate': {'$gte': alert.create_time}}]}]},
+                {'$and': [
+                    {'repeatType': 'list'},
+                    {"$or": [{"repeatDays": None}, {"repeatDays": []}, {"repeatDays": {'$in': [date_data["day"]]}}]},
+                    {"$or": [{"repeatWeeks": None}, {"repeatWeeks": []}, {"repeatWeeks": {'$in': [date_data["week"]]}}]},
+                    {"$or": [{"repeatMonths": None}, {"repeatMonths": []}, {"repeatMonths": {'$in': [date_data["month"]]}}]}]}]},
+        ]
+        return self.get_db().on_calls.find(query)
+
+    def update_on_call(self, id, **kwargs):
+        if kwargs.get('startTime', None) is not None:
+            kwargs['startTime'] = float(kwargs['startTime'].replace(":", "."))
+        if kwargs.get('endTime', None) is not None:
+            kwargs['endTime'] = float(kwargs['endTime'].replace(":", "."))
+        if kwargs.get('startDate', None) is not None:
+            kwargs['startDate'] = datetime.combine(date.fromisoformat(kwargs['startDate']), time())
+        if kwargs.get('endDate', None) is not None:
+            kwargs['endDate'] = datetime.combine(date.fromisoformat(kwargs['endDate']), time(23, 59, 59))
+
+        return self.get_db().on_calls.find_one_and_update(
+            {'_id': id},
+            update={'$set': kwargs},
+            return_document=ReturnDocument.AFTER
+        )
+
+    def delete_on_call(self, id):
+        response = self.get_db().on_calls.delete_one({'_id': id})
+        return True if response.deleted_count == 1 else False
+
     # HEARTBEATS
 
     def upsert_heartbeat(self, heartbeat):
@@ -1211,6 +1459,8 @@ class Backend(Database):
             'login': user.login,
             'password': user.password,
             'email': user.email,
+            'phoneNumber': user.phone_number,
+            'country': user.country,
             'status': user.status,
             'roles': user.roles,
             'attributes': user.attributes,

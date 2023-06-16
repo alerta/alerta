@@ -96,6 +96,136 @@ ADD COLUMN IF NOT EXISTS create_time timestamp without time zone,
 ADD COLUMN IF NOT EXISTS text text,
 ADD COLUMN IF NOT EXISTS origin text;
 
+DROP TABLE IF EXISTS twilio_rules;
+
+
+CREATE TABLE IF NOT EXISTS notification_channels (
+    id text PRIMARY KEY,
+    type text NOT NULL,
+    api_token text not null,
+    api_sid text,
+    sender text not null,
+    customer text
+);
+
+DO $$
+BEGIN
+    ALTER TABLE notification_channels ADD COLUMN "host" text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "host" already exists in notification_channels.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE notification_channels ADD COLUMN "platform_id" text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "platform_id" already exists in notification_channels.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE notification_channels ADD COLUMN "platform_partner_id" text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "platform_partner_id" already exists in notification_channels.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE notification_channels ADD COLUMN "verify" text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "verify" already exists in notification_channels.';
+END$$;
+
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'severity_advanced') THEN
+        CREATE TYPE severity_advanced AS (
+            "from_" text[],
+            "to" text[]
+        );
+    END IF;
+
+END$$;
+
+CREATE TABLE IF NOT EXISTS notification_rules (
+    id text PRIMARY KEY,
+    priority integer NOT NULL,
+    environment text NOT NULL,
+    service text[],
+    resource text,
+    event text,
+    "group" text,
+    tags text[],
+    customer text,
+    "user" text,
+    create_time timestamp without time zone,
+    start_time time without time zone,
+    end_time time without time zone,
+    days text[],
+    receivers text[],
+    severity text[],
+    text text,
+    channel_id text not null,
+    FOREIGN key (channel_id) references notification_channels(id)
+);
+DO $$
+BEGIN
+    ALTER TABLE notification_rules ADD COLUMN use_oncall boolean;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "use_on_call" already exists in notification_rules.';
+END$$;
+DO $$
+BEGIN
+    ALTER TABLE notification_rules ADD COLUMN advanced_severity severity_advanced[];
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "advanced_severity" already exists in notification_rules.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE notification_rules ADD COLUMN use_advanced_severity boolean;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "use_advanced_severity" already exists in notification_rules.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE notification_rules ADD COLUMN active boolean;
+    UPDATE notification_rules SET active = true;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "active" already exists in notification_rules.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE notification_rules ADD COLUMN user_ids text[];
+    ALTER TABLE notification_rules ADD COLUMN group_ids text[];
+    UPDATE notification_rules SET user_ids = '{}';
+    UPDATE notification_rules SET group_ids = '{}';
+    ALTER TABLE notification_rules ALTER COLUMN user_ids SET NOT NULL;
+    ALTER TABLE notification_rules ALTER COLUMN group_ids SET NOT NULL;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "user_ids" and "gruop_ids" already exists in notification_rules.';
+END$$;
+
+CREATE TABLE IF NOT EXISTS on_calls(
+    id text PRIMARY KEY,
+    customer text,
+    "user" text,
+    user_ids text[] NOT NULL,
+    group_ids text[] NOT NULL,
+    "start_date" date,
+    end_date date,
+    start_time time without time zone,
+    end_time time without time zone,
+	repeat_type text,
+	repeat_days text[] CONSTRAINT repeat_days_check CHECK (repeat_days IS NULL or repeat_type = 'list' ),
+	repeat_weeks integer[] CONSTRAINT repeat_weeks_check CHECK (repeat_weeks IS NULL or repeat_type = 'list' ),
+	repeat_months text[] CONSTRAINT repeat_months_check CHECK (repeat_months IS NULL or repeat_type = 'list' ),
+    CONSTRAINT check_user_length CHECK (cardinality(user_ids) > 0 OR cardinality(group_ids) > 0)
+);
+
 
 CREATE TABLE IF NOT EXISTS customers (
     id text PRIMARY KEY,
@@ -179,6 +309,14 @@ BEGIN
     ALTER TABLE users ALTER COLUMN login SET NOT NULL;
 EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column "login" already exists in users.';
+END$$;
+
+DO $$
+BEGIN
+    ALTER TABLE users ADD COLUMN phone_number text;
+    ALTER TABLE users ADD COLUMN country text;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "phone_number" already exists in users.';
 END$$;
 
 CREATE TABLE IF NOT EXISTS groups (

@@ -53,10 +53,28 @@ class HistoryAdapter:
         return str(self.getquoted())
 
 
+class AdvancedSeverityAdapter:
+    def __init__(self, advanced_severity) -> None:
+        self.advanced_severity = advanced_severity
+        self.conn = None
+
+    def prepare(self, conn):
+        self.conn = conn
+
+    def getquoted(self):
+        def quoted(o):
+            a = adapt(o)
+            if hasattr(a, 'prepare'):
+                a.prepare(self.conn)
+            return a.getquoted().decode('utf-8')
+
+        return f'({quoted(self.advanced_severity.from_)},{quoted(self.advanced_severity.to)})::severity_advanced'
+
+
 Record = namedtuple('Record', [
     'id', 'resource', 'event', 'environment', 'severity', 'status', 'service',
     'group', 'value', 'text', 'tags', 'attributes', 'origin', 'update_time',
-    'user', 'timeout', 'type', 'customer'
+    'user', 'timeout', 'type', 'customer',
 ])
 
 
@@ -85,8 +103,11 @@ class Backend(Database):
             conn,
             globally=True
         )
+        register_composite('severity_advanced', conn, globally=True)
         from alerta.models.alert import History
+        from alerta.models.notification_rule import AdvancedSeverity
         register_adapter(History, HistoryAdapter)
+        register_adapter(AdvancedSeverity, AdvancedSeverityAdapter)
 
     def connect(self):
         retry = 0
@@ -143,7 +164,7 @@ class Backend(Database):
     def destroy(self):
         conn = self.connect()
         cursor = conn.cursor()
-        for table in ['alerts', 'blackouts', 'customers', 'groups', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
+        for table in ['alerts', 'blackouts', 'notification_rules', 'notification_channels', 'on_calls', 'customers', 'groups', 'heartbeats', 'keys', 'metrics', 'perms', 'users', ]:
             cursor.execute(f'DROP TABLE IF EXISTS {table}')
         conn.commit()
         conn.close()
@@ -885,6 +906,325 @@ class Backend(Database):
         """
         return self._deleteone(delete, (id,), returning=True)
 
+    # NOTIFICATION CHANNELS
+
+    def create_notification_channel(self, notification_channel):
+        insert = """
+            INSERT INTO notification_channels (id, type, api_token, api_sid, sender, customer, host, platform_id, platform_partner_id, verify)
+            VALUES (%(id)s, %(type)s, %(api_token)s, %(api_sid)s, %(sender)s, %(customer)s, %(host)s, %(platform_id)s, %(platform_partner_id)s, %(verify)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(notification_channel))
+
+    def get_notification_channel(self, id, customers=None):
+        select = """
+            SELECT * FROM notification_channels
+            WHERE id=%(id)s
+              AND {customer}
+        """.format(
+            customer='customer=ANY(%(customers)s)' if customers else '1=1'
+        )
+        return self._fetchone(select, {'id': id, 'customers': customers})
+
+    def get_notification_channels(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        select = """
+            SELECT * FROM notification_channels
+             WHERE {where}
+          ORDER BY {order}
+        """.format(
+            where=query.where, order=query.sort
+        )
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_notification_channels_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM notification_channels
+             WHERE {where}
+        """.format(
+            where=query.where
+        )
+        return self._fetchone(select, query.vars).count
+
+    def update_notification_channel(self, id, **kwargs):
+        update = """
+            UPDATE notification_channels
+            SET
+        """
+        if kwargs.get('type') is not None:
+            update += 'type=%(type)s, '
+        if 'apiToken' in kwargs:
+            update += 'api_token=%(apiToken)s, '
+        if 'apiSid' in kwargs:
+            update += 'api_sid=%(apiSid)s, '
+        if 'customer' in kwargs:
+            update += 'customer=%(customer)s, '
+        if 'host' in kwargs:
+            update += 'host=%(host)s, '
+        if 'platformId' in kwargs:
+            update += 'platform_id=%(platformId)s, '
+        if 'platformPartnerId' in kwargs:
+            update += 'platform_partner_id=%(platformPartnerId)s, '
+        if 'verify' in kwargs:
+            update += 'verify=%(verify)s, '
+        update = update[0:-2]
+        update += """
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        print(update)
+        kwargs['id'] = id
+        kwargs['user'] = kwargs.get('user')
+        return self._updateone(update, kwargs, returning=True)
+
+    def delete_notification_channel(self, id):
+        delete = """
+            DELETE FROM notification_channels
+            WHERE id=%s
+            RETURNING id
+        """
+        return self._deleteone(delete, (id,), returning=True)
+
+    # NOTIFICATION RULES
+
+    def create_notification_rule(self, notification_rule):
+        insert = """
+            INSERT INTO notification_rules (id, active, priority, environment, service, resource, event, "group", tags,
+                customer, "user", create_time, start_time, end_time, days, receivers, user_ids, group_ids, use_oncall, severity, text, channel_id, advanced_severity, use_advanced_severity)
+            VALUES (%(id)s, %(active)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s,
+                %(customer)s, %(user)s, %(create_time)s, %(start_time)s, %(end_time)s, %(days)s, %(receivers)s, %(user_ids)s, %(group_ids)s, %(use_oncall)s, %(severity)s, %(text)s, %(channel_id)s, %(advanced_severity)s::severity_advanced[], %(use_advanced_severity)s )
+            RETURNING *
+        """
+        return self._insert(insert, vars(notification_rule))
+
+    def get_notification_rule(self, id, customers=None):
+        select = """
+            SELECT * FROM notification_rules
+            WHERE id=%(id)s
+              AND {customer}
+        """.format(
+            customer='customer=ANY(%(customers)s)' if customers else '1=1'
+        )
+        return self._fetchone(select, {'id': id, 'customers': customers})
+
+    def get_notification_rules(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        select = """
+            SELECT * FROM notification_rules
+             WHERE {where}
+          ORDER BY {order}
+        """.format(
+            where=query.where, order=query.sort
+        )
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_notification_rules_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM notification_rules
+             WHERE {where}
+        """.format(
+            where=query.where
+        )
+        return self._fetchone(select, query.vars).count
+
+    def get_notification_rules_active(self, alert):
+        select = """
+            SELECT * from (select *, generate_subscripts(advanced_severity,1) as s 
+            FROM notification_rules) as foo
+            WHERE (start_time IS NULL OR start_time <= %(time)s) AND (end_time IS NULL OR end_time > %(time)s)
+              AND (days='{}' OR ARRAY[%(day)s] <@ days)
+              AND environment=%(environment)s
+              AND (use_advanced_severity=TRUE OR severity='{}' OR ARRAY[%(severity)s] <@ severity)
+              AND (use_advanced_severity=FALSE OR ((advanced_severity[s].from_='{}' OR ARRAY[%(previous_severity)s] <@ advanced_severity[s].from_) AND (advanced_severity[s].to='{}' OR ARRAY[%(severity)s] <@ advanced_severity[s].to)))
+              AND (resource IS NULL OR resource=%(resource)s)
+              AND (service='{}' OR service <@ %(service)s)
+              AND (event IS NULL OR event=%(event)s)
+              AND ("group" IS NULL OR "group"=%(group)s)
+              AND (tags='{}' OR tags <@ %(tags)s)
+              AND active=true
+        """
+        if current_app.config['CUSTOMER_VIEWS']:
+            select += ' AND (customer IS NULL OR customer=%(customer)s)'
+        return self._fetchall(select, vars(alert))
+
+    def update_notification_rule(self, id, **kwargs):
+        update = """
+            UPDATE notification_rules
+            SET
+        """
+        if kwargs.get('environment') is not None:
+            update += 'environment=%(environment)s, '
+        if 'service' in kwargs:
+            update += 'service=%(service)s, '
+        if 'resource' in kwargs:
+            update += 'resource=%(resource)s, '
+        if 'event' in kwargs:
+            update += 'event=%(event)s, '
+        if 'group' in kwargs:
+            update += '"group"=%(group)s, '
+        if 'tags' in kwargs:
+            update += 'tags=%(tags)s, '
+        if 'customer' in kwargs:
+            update += 'customer=%(customer)s, '
+        if 'startTime' in kwargs:
+            update += 'start_time=%(startTime)s, '
+        if 'endTime' in kwargs:
+            update += 'end_time=%(endTime)s, '
+        if 'days' in kwargs:
+            update += 'days=%(days)s, '
+        if 'receivers' in kwargs:
+            update += 'receivers=%(receivers)s, '
+        if 'useOnCall' in kwargs:
+            update += "use_oncall=%(useOnCall)s, "
+        if kwargs.get('severity') is not None:
+            update += 'severity=%(severity)s, '
+        if kwargs.get('advancedSeverity') is not None:
+            update += 'advanced_severity=%(advancedSeverity)s::severity_advanced[], '
+        if kwargs.get('useAdvancedSeverity') is not None:
+            update += 'use_advanced_severity=%(useAdvancedSeverity)s, '
+        if 'text' in kwargs:
+            update += 'text=%(text)s, '
+        if 'channelId' in kwargs:
+            update += 'channel_id=%(channelId)s,'
+        if "active" in kwargs:
+            update += "active=%(active)s,"
+        if "userIds" in kwargs:
+            update += "user_ids=%(userIds)s, "
+        if "groupIds" in kwargs:
+            update += "group_ids=%(groupIds)s, "
+        update += """
+            "user"=COALESCE(%(user)s, "user")
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs['id'] = id
+        kwargs['user'] = kwargs.get('user')
+        return self._updateone(update, kwargs, returning=True)
+
+    def delete_notification_rule(self, id):
+        delete = """
+            DELETE FROM notification_rules
+            WHERE id=%s
+            RETURNING id
+        """
+        return self._deleteone(delete, (id,), returning=True)
+
+    # ON CALLS
+
+    def create_on_call(self, on_call):
+        insert = """
+            INSERT INTO on_calls (id, user_ids, group_ids, "start_date", end_date, start_time, end_time, "user", customer,
+                repeat_type, repeat_days, repeat_weeks, repeat_months)
+            VALUES (%(id)s, %(user_ids)s, %(group_ids)s, %(start_date)s, %(end_date)s, %(start_time)s, %(end_time)s, %(user)s, %(customer)s,
+                %(repeat_type)s, %(repeat_days)s, %(repeat_weeks)s, %(repeat_months)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(on_call))
+
+    def get_on_call(self, id, customers=None):
+        select = """
+            SELECT * FROM on_calls
+            WHERE id=%(id)s
+              AND {customer}
+        """.format(
+            customer="customer=ANY(%(customers)s)" if customers else "1=1"
+        )
+        return self._fetchone(select, {"id": id, "customers": customers})
+
+    def get_on_calls(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        select = """
+            SELECT * FROM on_calls
+             WHERE {where}
+          ORDER BY {order}
+        """.format(
+            where=query.where, order=query.sort
+        )
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size if page else None)
+
+    def get_on_calls_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM on_calls
+             WHERE {where}
+        """.format(
+            where=query.where
+        )
+        return self._fetchone(select, query.vars).count
+
+    def get_on_calls_active(self, alert):
+        date_data = {}
+        date_data["date"] = alert.create_time.date()
+        date_data["time"] = alert.create_time.time()
+        date_data["day"] = alert.create_time.strftime("%a")
+        _year, date_data["week"], _day_number = alert.create_time.isocalendar()
+        date_data["month"] = alert.create_time.strftime("%b")
+        select = """
+            SELECT *
+            FROM on_calls
+            WHERE ((start_time IS NULL OR start_time <= %(time)s) AND (end_time IS NULL OR end_time > %(time)s))
+            AND (
+              (start_date = %(date)s) OR (start_date < %(date)s AND end_date >= %(date)s)
+              OR (
+                repeat_type = 'list'
+                AND (repeat_days IS NULL OR repeat_days='{}' OR ARRAY[%(day)s] <@ repeat_days)
+                AND (repeat_weeks IS NULL OR repeat_weeks='{}' OR ARRAY[%(week)s] <@ repeat_weeks)
+                AND (repeat_months IS NULL OR repeat_months='{}' OR ARRAY[%(month)s] <@ repeat_months)
+              )
+            )
+
+        """
+        if current_app.config["CUSTOMER_VIEWS"]:
+            select += " AND (customer IS NULL OR customer=%(customer)s)"
+        return self._fetchall(select, {**vars(alert), **date_data})
+
+    def update_on_call(self, id, **kwargs):
+        update = """
+            UPDATE on_calls
+            SET
+        """
+        if "userIds" in kwargs:
+            update += "user_ids=%(userIds)s, "
+        if "groupIds" in kwargs:
+            update += "group_ids=%(groupIds)s, "
+        if "startDate" in kwargs:
+            update += "start_date=%(startDate)s, "
+        if "endDate" in kwargs:
+            update += '"end_date"=%(endDate)s, '
+        if "startTime" in kwargs:
+            update += "start_time=%(startTime)s, "
+        if "endTime" in kwargs:
+            update += "end_time=%(endTime)s, "
+        if "fullDay" in kwargs:
+            update += "full_day=%(fullDay)s, "
+        if "repeatType" in kwargs:
+            update += "repeat_type=%(repeatType)s, "
+        if "repeatDays" in kwargs:
+            update += "repeat_days=%(repeatDays)s, "
+        if "repeatWeeks" in kwargs:
+            update += "repeat_weeks=%(repeatWeeks)s, "
+        if "repeatMonths" in kwargs:
+            update += "repeat_months=%(repeatMonths)s,"
+
+        update += """
+            "user"=COALESCE(%(user)s, "user")
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs["id"] = id
+        kwargs["user"] = kwargs.get("user")
+        return self._updateone(update, kwargs, returning=True)
+
+    def delete_on_call(self, id):
+        delete = """
+            DELETE FROM on_calls
+            WHERE id=%s
+            RETURNING id
+        """
+        return self._deleteone(delete, (id,), returning=True)
+
     # HEARTBEATS
 
     def upsert_heartbeat(self, heartbeat):
@@ -1058,10 +1398,10 @@ class Backend(Database):
 
     def create_user(self, user):
         insert = """
-            INSERT INTO users (id, name, login, password, email, status, roles, attributes,
-                create_time, last_login, text, update_time, email_verified)
-            VALUES (%(id)s, %(name)s, %(login)s, %(password)s, %(email)s, %(status)s, %(roles)s, %(attributes)s, %(create_time)s,
-                %(last_login)s, %(text)s, %(update_time)s, %(email_verified)s)
+            INSERT INTO users (id, name, login, password, email, phone_number, country, status,
+                roles, attributes, create_time, last_login, text, update_time, email_verified)
+            VALUES (%(id)s, %(name)s, %(login)s, %(password)s, %(email)s, %(phone_number)s, %(country)s, %(status)s,
+                %(roles)s, %(attributes)s, %(create_time)s, %(last_login)s, %(text)s, %(update_time)s, %(email_verified)s)
             RETURNING *
         """
         return self._insert(insert, vars(user))
@@ -1120,6 +1460,10 @@ class Backend(Database):
             update += 'password=%(password)s, '
         if kwargs.get('email', None) is not None:
             update += 'email=%(email)s, '
+        if kwargs.get('phoneNumber', None) is not None:
+            update += 'phone_number=%(phoneNumber)s, '
+        if kwargs.get('country', None) is not None:
+            update += 'country=%(country)s, '
         if kwargs.get('status', None) is not None:
             update += 'status=%(status)s, '
         if kwargs.get('roles', None) is not None:
