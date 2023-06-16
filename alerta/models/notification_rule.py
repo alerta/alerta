@@ -116,7 +116,10 @@ class NotificationRule:
         users = set([User.find_by_id(user_id) for user_id in self.user_ids])
         for user_list in group_users:
             for user in user_list:
-                users.add(User.find_by_id(user.id))
+                if isinstance(user, dict):
+                    users.add(User.find_by_id(user.get("id")))
+                else:
+                    users.add(User.find_by_id(user.id))
         return users
 
     @classmethod
