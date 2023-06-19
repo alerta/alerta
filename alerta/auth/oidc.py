@@ -76,10 +76,11 @@ def openid():
         'redirect_uri': request.json['redirectUri'],
     }
 
-    if type(oidc_configuration['token_endpoint_auth_methods_supported']) == list:
-        token_endpoint_auth_methods = oidc_configuration['token_endpoint_auth_methods_supported']
-    else:
-        token_endpoint_auth_methods = [oidc_configuration['token_endpoint_auth_methods_supported']]
+    token_endpoint_auth_methods = oidc_configuration.get(
+                                     'token_endpoint_auth_methods_supported',
+                                     ['client_secret_basic'])
+    if type(token_endpoint_auth_methods) != list:
+        token_endpoint_auth_methods = [token_endpoint_auth_methods]
 
     preferred_token_auth_method = 'client_secret_post'
     for token_auth_method in current_app.config['OIDC_TOKEN_AUTH_METHODS']:
