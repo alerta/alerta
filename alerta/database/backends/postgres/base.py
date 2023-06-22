@@ -6,7 +6,7 @@ from datetime import datetime
 import psycopg2
 from flask import current_app
 from psycopg2.extensions import AsIs, adapt, register_adapter
-from psycopg2.extras import Json, NamedTupleCursor, register_composite, CompositeCaster
+from psycopg2.extras import Json, NamedTupleCursor, register_composite
 
 from alerta.app import alarm_model
 from alerta.database.base import Database
@@ -76,7 +76,6 @@ class Backend(Database):
                     conn.cursor().execute(f.read())
                     conn.commit()
                 except Exception as e:
-                    print("\n\n\n\nErreur\n\n\n\n")
                     if raise_on_error:
                         raise
                     app.logger.warning(e)
@@ -100,7 +99,7 @@ class Backend(Database):
                     dbname=self.dbname,
                     cursor_factory=NamedTupleCursor
                 )
-                
+
                 conn.set_client_encoding('UTF8')
                 break
             except Exception as e:
@@ -115,7 +114,7 @@ class Backend(Database):
                     time.sleep(backoff)
 
         if conn:
-            conn.cursor().execute("SET search_path TO {}".format(self.schema))
+            conn.cursor().execute('SET search_path TO {}'.format(self.schema))
             conn.commit()
             return conn
         else:
