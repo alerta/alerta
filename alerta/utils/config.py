@@ -38,6 +38,7 @@ class Config:
         # Use app config for DATABASE_URL if no env var from above override it
         config['DATABASE_URL'] = get_config('DATABASE_URL', default=database_url, type=str, config=config)
         config['DATABASE_NAME'] = get_config('DATABASE_NAME', default=None, type=str, config=config)
+        config['DATABASE_SCHEMA'] = get_config('DATABASE_SCHEMA', default='public', type=str, config=config)
 
         config['AUTH_REQUIRED'] = get_config('AUTH_REQUIRED', default=None, type=bool, config=config)
         config['AUTH_PROVIDER'] = get_config('AUTH_PROVIDER', default=None, type=str, config=config)
