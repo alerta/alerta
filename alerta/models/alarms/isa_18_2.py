@@ -66,6 +66,7 @@ NO_CHANGE = 'noChange'
 LESS_SEVERE = 'lessSevere'
 
 ACTION_ACK = 'ack'
+ACTION_UNACK = 'unack'
 ACTION_SHELVE = 'shelve'
 ACTION_UNSHELVE = 'unshelve'
 
@@ -135,6 +136,10 @@ class StateMachine(AlarmModel):
         if state == B_UNACK:
             if action == ACTION_ACK:
                 return next_state('Operator Ack, Unack (B) -> Ack (C)', current_severity, C_ACKED)
+        # Operator Unack, Ack (C) -> Unack (B)
+        if state == C_ACKED:
+            if action == ACTION_UNACK:
+                return next_state('Operator Unack, Ack (C) -> Unack (B)', current_severity, B_UNACK)
         # Re-Alarm, Ack (C) -> Unack (B)
         if state == C_ACKED:
             if self.trend(previous_severity, current_severity) == MORE_SEVERE:
