@@ -2,7 +2,6 @@ name: Tests
 
 on:
   push:
-    branches: [ master, release/* ]
   pull_request:
     branches: [ master ]
 
@@ -10,12 +9,12 @@ env:
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
 jobs:
-  test-postgres10:
+  test-postgres11:
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres:10
+        image: postgres:11
         env:
           POSTGRES_DB: alerta
           POSTGRES_USER: postgres
@@ -30,12 +29,12 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.10']
+        python-version: ['3.8', '3.11']
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -61,18 +60,18 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/alerta
         run: |
           pytest --cov=alerta tests/*.py
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
         if: failure()
 
-  test-postgres14:
+  test-postgres15:
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres:14
+        image: postgres:15
         env:
           POSTGRES_DB: alerta
           POSTGRES_USER: postgres
@@ -87,12 +86,12 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.10']
+        python-version: ['3.8', '3.11']
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -118,29 +117,29 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/alerta
         run: |
           pytest --cov=alerta tests/*.py
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
         if: failure()
 
-  test-mongodb42:
+  test-mongodb44:
     runs-on: ubuntu-latest
 
     services:
       mongodb:
-        image: mongo:4.2
+        image: mongo:4.4
         ports:
           - 27017:27017
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.10']
+        python-version: ['3.8', '3.11']
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -166,7 +165,7 @@ jobs:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
         run: |
           pytest --cov=alerta tests/*.py
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -177,18 +176,18 @@ jobs:
 
     services:
       mongodb:
-        image: mongo:5.0
+        image: mongo:6.0
         ports:
           - 27017:27017
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.10']
+        python-version: ['3.8', '3.11']
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -214,7 +213,7 @@ jobs:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
         run: |
           pytest --cov=alerta tests/*.py
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -242,7 +241,7 @@ jobs:
           SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE: http://localhost:8080/auth/saml
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install packages
         run: |
           sudo apt-get update
@@ -252,10 +251,10 @@ jobs:
             libldap2-dev \
             libsasl2-dev \
             xmlsec1
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.7'
+          python-version: '3.8'
           architecture: 'x64'
       - name: Install dependencies
         id: install-deps
@@ -272,7 +271,7 @@ jobs:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
         run: |
           pytest tests/integration
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}

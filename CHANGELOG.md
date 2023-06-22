@@ -1,3 +1,71 @@
+## v9.0.0 (2023-03-17)
+
+### Feat
+
+- Add support for AuthProxy auth (#1657)
+- show/hide API server version info (#1821)
+- **plugin**: add alertname in labels when annotations.alertname (#1801)
+- Add userAgent to audit log (#1656)
+
+### Fix
+
+- Bulk operations did not work properly (#1825)
+- Replace FLASK_ENV with FLASK_DEBUG (#1824)
+- Change ORDER BY no-op for Postgres 15 (#1820)
+- **security**: do not expose exception errors to end users (#1811)
+- **auth**: auth bypass via registering when AUTH_PROVIDER != basic (#1782)
+- **plugin**: fixes an issue if the last plugin in the order (#1798)
+- Do not 400 error if content type not application/json (#1756)
+- Keycloak url base (#1683)
+- Audit log should handle empty body on http delete (#1655)
+
+### Refactor
+
+- **db**: Use Psql 9.6 syntax for ADD COLUMN (#1653)
+
+### Perf
+
+- Add load test workflow
+
+## v8.7.0 (2021-12-06)
+
+## v8.6.5 (2021-12-05)
+
+### Feat
+
+- Support all OpenID client_secret_* token endpoint auth methods (#1641)
+
+### Fix
+
+- Switch docker build from alpine to debian buster
+- Empty blackout values should be null (#1643)
+- Allow unack when status set to ack in plugin (#1642)
+- Do not hardcode inform severity (#1640)
+- Housekeeping config variable precedence (#1639)
+- **deps**: PyMongo 4.0 is currently not supported (#1636)
+
+## v8.6.4 (2021-12-01)
+
+### Feat
+
+- Optionally print warnings if db create fails (#1627)
+- Use GitHub teams for role lookup (#1625)
+
+### Fix
+
+- Customer lookup failed when no user email (#1629)
+- special handling of sorting by custom attributes (#1628)
+
+## v8.6.3 (2021-11-25)
+
+## v8.6.2 (2021-11-21)
+
+## v8.6.1 (2021-11-20)
+
+### Feat
+
+- add uptime stat to prometheus metrics (#1546)
+
 ## v8.6.0 (2021-05-20)
 
 ### Refactor

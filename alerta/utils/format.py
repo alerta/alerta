@@ -1,10 +1,27 @@
 import datetime
+import json
 import traceback
-from typing import Any, Optional
+from decimal import Decimal
+from typing import Any, Optional, Union
 
-from flask import json
+from flask.json.provider import JSONProvider
 
 dt = datetime.datetime
+
+
+class AlertaJsonProvider(JSONProvider):
+    """JSON Provider for Flask app to use CustomJSONEncoder."""
+
+    ensure_ascii: bool = True
+    sort_keys: bool = True
+
+    def dumps(self, obj, **kwargs):
+        kwargs.setdefault('ensure_ascii', self.ensure_ascii)
+        kwargs.setdefault('sort_keys', self.sort_keys)
+        return json.dumps(obj, **kwargs, cls=CustomJSONEncoder)
+
+    def loads(self, s: Union[str, bytes], **kwargs):
+        return json.loads(s, **kwargs)
 
 
 class CustomJSONEncoder(json.JSONEncoder):
@@ -23,6 +40,8 @@ class CustomJSONEncoder(json.JSONEncoder):
             return DateTime.iso8601(o)
         elif isinstance(o, datetime.timedelta):
             return int(o.total_seconds())
+        elif isinstance(o, Decimal):
+            return str(o)
         elif isinstance(o, (Alert, History)):
             return o.serialize
         elif isinstance(o, Exception):

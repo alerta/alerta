@@ -88,6 +88,12 @@ HMAC_AUTH_CREDENTIALS = [
     # }
 ]  # type: List[Dict[str, Any]]
 
+AUTH_PROXY = False
+AUTH_PROXY_USER_HEADER = 'X-Proxy-User'  # header field containing the authenticated username (X-Forwarded-User)
+AUTH_PROXY_ROLES_HEADER = 'X-Proxy-Roles'  # list of authenticated role names (X-Forwarded-Groups)
+AUTH_PROXY_ROLES_SEPARATOR = ','  # default comma-separated list (,;|)
+AUTH_PROXY_AUTO_SIGNUP = True
+
 OAUTH2_CLIENT_ID = ''  # OAuth2 client ID and secret
 OAUTH2_CLIENT_SECRET = ''
 ALLOWED_EMAIL_DOMAINS = ['*']
@@ -169,8 +175,8 @@ AUDIT_URL = None  # send audit log events via webhook URL
 # CORS settings
 CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin', 'X-Request-ID']
 CORS_ORIGINS = [
-    # 'http://try.alerta.io',
-    # 'http://explorer.alerta.io',
+    # 'https://try.alerta.io',
+    # 'https://explorer.alerta.io',
     'http://localhost',
     'http://localhost:8000',
     r'https?://\w*\.?local\.alerta\.io:?\d*/?.*'  # => http(s)://*.local.alerta.io:<port>
@@ -221,6 +227,8 @@ COLUMNS = [
 ]
 SORT_LIST_BY = ['severity', 'lastReceiveTime']  # eg. newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
 DEFAULT_FILTER = {'status': ['open', 'ack']}
+CLIPBOARD_TEMPLATE = ''
+
 
 # Alert Status Indicators
 ASI_SEVERITY = [
@@ -242,8 +250,13 @@ DEFAULT_FONT = {
 
 # List of custom actions
 ACTIONS = []  # type: List[str]
+
+SERVER_VERSION = 'full'  # show/hide server version eg. full, major, off
 GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
+
+# Routing
+ROUTING_DIST = 'alerta-routing'
 
 # Plugins
 PLUGINS = ['remote_ip', 'reject', 'heartbeat', 'blackout', 'forwarder']

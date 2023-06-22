@@ -1,7 +1,7 @@
 #!make
 
 VENV=venv
-PYTHON=$(VENV)/bin/python
+PYTHON=$(VENV)/bin/python3
 PIP=$(VENV)/bin/pip --disable-pip-version-check
 FLAKE8=$(VENV)/bin/flake8
 MYPY=$(VENV)/bin/mypy
@@ -9,6 +9,7 @@ TOX=$(VENV)/bin/tox
 PYTEST=$(VENV)/bin/pytest
 DOCKER_COMPOSE=docker-compose
 PRE_COMMIT=$(VENV)/bin/pre-commit
+BUILD=$(VENV)/bin/build
 WHEEL=$(VENV)/bin/wheel
 TWINE=$(VENV)/bin/twine
 GIT=git
@@ -18,47 +19,48 @@ GIT=git
 -include .env .env.local .env.*.local
 
 ifndef PROJECT
-$(error PROJECT is not set)
+    $(error PROJECT is not set)
 endif
 
+PYPI_REPOSITORY ?= pypi
 VERSION=$(shell cut -d "'" -f 2 $(PROJECT)/version.py)
-
-PKG_SDIST=dist/*-$(VERSION).tar.gz
-PKG_WHEEL=dist/*-$(VERSION)-*.whl
 
 all:	help
 
-$(PIP):
+$(VENV):
 	python3 -m venv $(VENV)
 
-$(FLAKE8): $(PIP)
-	$(PIP) install flake8==4.0.1
+$(FLAKE8): $(VENV)
+	$(PIP) install flake8
 
-$(MYPY): $(PIP)
-	$(PIP) install mypy==0.812
+$(MYPY): $(VENV)
+	$(PIP) install mypy
 
-$(TOX): $(PIP)
+$(TOX): $(VENV)
 	$(PIP) install tox
 
-$(PYTEST): $(PIP)
-	$(PIP) install pytest==6.2.5 pytest-cov==3.0.0
+$(PYTEST): $(VENV)
+	$(PIP) install pytest pytest-cov
 
-$(PRE_COMMIT): $(PIP)
-	$(PIP) install pre-commit==2.15.0
+$(PRE_COMMIT): $(VENV)
+	$(PIP) install pre-commit
 	$(PRE_COMMIT) install
 
-$(WHEEL): $(PIP)
-	$(PIP) install wheel
+$(BUILD): $(VENV)
+	$(PIP) install --upgrade build
 
-$(TWINE): $(PIP)
-	$(PIP) install wheel twine
+$(WHEEL): $(VENV)
+	$(PIP) install --upgrade wheel
+
+$(TWINE): $(VENV)
+	$(PIP) install --upgrade wheel twine
 
 ifdef TOXENV
-toxparams?=-e $(TOXENV)
+    toxparams?=-e $(TOXENV)
 endif
 
 ## install		- Install dependencies.
-install: $(PIP)
+install: $(VENV)
 	$(PIP) install -r requirements.txt
 
 ## hooks			- Run pre-commit hooks.
@@ -98,17 +100,13 @@ tag:
 	$(GIT) push --tags
 
 ## build			- Build package.
-build: $(PIP) $(WHEEL) $(PKG_SDIST) $(PKG_WHEEL)
-
-$(PKG_SDIST):
-	$(PYTHON) setup.py sdist
-
-$(PKG_WHEEL): $(WHEEL)
-	$(PYTHON) setup.py bdist_wheel
+build: $(BUILD)
+	$(PYTHON) -m build
 
 ## upload			- Upload package to PyPI.
 upload: $(TWINE)
-	$(TWINE) upload dist/*
+	$(TWINE) check dist/*
+	$(TWINE) upload --repository $(PYPI_REPOSITORY) --verbose dist/*
 
 ## clean			- Clean source.
 clean:

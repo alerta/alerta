@@ -89,6 +89,37 @@ def permission(scope=None):
                 else:
                     return f(*args, **kwargs)
 
+            # AuthProxy
+            proxy_user_header = current_app.config['AUTH_PROXY_USER_HEADER']
+            proxy_roles_header = current_app.config['AUTH_PROXY_ROLES_HEADER']
+            proxy_roles_header_sep = current_app.config['AUTH_PROXY_ROLES_SEPARATOR']
+
+            if current_app.config['AUTH_PROXY'] and proxy_user_header in request.headers:
+                username = request.headers[proxy_user_header]
+                roles = request.headers.get(proxy_roles_header, '').split(proxy_roles_header_sep)
+
+                user = User.find_by_username(username)
+
+                if not user:
+                    if current_app.config['AUTH_PROXY_AUTO_SIGNUP']:
+                        try:
+                            user = User(name=username, login=username, password='', email='', roles=roles, text='Proxy user')
+                            user = user.create()
+                        except Exception as e:
+                            ApiError(str(e), 500)
+                    else:
+                        raise ApiError('user auto-signup is disabled', 403)
+
+                g.user_id = user.id
+                g.login = user.login
+                g.customers = get_customers(user.login, groups=user.get_groups())
+                g.scopes = Permission.lookup(user.login, roles=roles)  # type: List[Scope]
+
+                if not Permission.is_in_scope(scope, have_scopes=g.scopes):
+                    raise BasicAuthError(f'Missing required scope: {scope}', 403)
+                else:
+                    return f(*args, **kwargs)
+
             # Basic Auth
             auth_header = request.headers.get('Authorization', '')
             m = re.match(r'Basic (\S+)', auth_header)
