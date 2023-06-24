@@ -56,7 +56,7 @@ class Database(Base):
         self.__class__ = type('DatabaseImpl', (cls.Backend, Database), {})
 
         try:
-            self.create_engine(app, uri=app.config['DATABASE_URL'], dbname=app.config['DATABASE_NAME'],
+            self.create_engine(app, uri=app.config['DATABASE_URL'], dbname=app.config['DATABASE_NAME'], schema=app.config['DATABASE_SCHEMA'],
                                raise_on_error=app.config['DATABASE_RAISE_ON_ERROR'])
         except Exception as e:
             if app.config['DATABASE_RAISE_ON_ERROR']:
@@ -65,7 +65,7 @@ class Database(Base):
 
         app.teardown_appcontext(self.teardown_db)
 
-    def create_engine(self, app, uri, dbname=None, raise_on_error=True):
+    def create_engine(self, app, uri, dbname=None, schema=None, raise_on_error=True):
         raise NotImplementedError('Database engine has no create_engine() method')
 
     def connect(self):

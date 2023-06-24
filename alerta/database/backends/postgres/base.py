@@ -62,13 +62,15 @@ Record = namedtuple('Record', [
 
 class Backend(Database):
 
-    def create_engine(self, app, uri, dbname=None, raise_on_error=True):
+    def create_engine(self, app, uri, dbname=None, schema='public', raise_on_error=True):
         self.uri = uri
         self.dbname = dbname
+        self.schema = schema
 
         lock = threading.Lock()
         with lock:
             conn = self.connect()
+
             with app.open_resource('sql/schema.sql') as f:
                 try:
                     conn.cursor().execute(f.read())
@@ -81,7 +83,7 @@ class Backend(Database):
         register_adapter(dict, Json)
         register_adapter(datetime, self._adapt_datetime)
         register_composite(
-            'history',
+            schema + '.history' if schema else 'history',
             conn,
             globally=True
         )
@@ -97,6 +99,7 @@ class Backend(Database):
                     dbname=self.dbname,
                     cursor_factory=NamedTupleCursor
                 )
+
                 conn.set_client_encoding('UTF8')
                 break
             except Exception as e:
@@ -111,6 +114,8 @@ class Backend(Database):
                     time.sleep(backoff)
 
         if conn:
+            conn.cursor().execute('SET search_path TO {}'.format(self.schema))
+            conn.commit()
             return conn
         else:
             raise RuntimeError(f'Database connect error. Failed to connect after {MAX_RETRIES} retries.')
