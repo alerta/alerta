@@ -1,3 +1,14 @@
+## v9.0.1 (2023-06-22)
+
+### Feat
+
+- Add support for ACTION_UNACK to ISA 18.2 alarm model (#1715)
+- add db schema (#1839)
+
+### Fix
+
+- `token_endpoint_auth_methods_supported` is optional (#1856)
+
 ## v9.0.0 (2023-03-17)
 
 ### Feat

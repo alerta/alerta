@@ -366,6 +366,80 @@ class Isa182TestCase(unittest.TestCase):
         self.assertEqual(data['alert']['severity'], 'OK')
         self.assertEqual(data['alert']['status'], 'NORM')
 
+    def test_operator_unack(self):
+
+        # Create OK alarm
+        response = self.client.post('/alert', data=json.dumps(self.ok_alarm), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+
+        alert_id = data['id']
+
+        # Alarm Occurs, Normal (A) -> Unack (B)
+        response = self.client.post('/alert', data=json.dumps(self.high_alarm), content_type='application/json')
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn(alert_id, data['alert']['id'])
+        self.assertEqual(data['alert']['resource'], 'LIC_101')
+        self.assertEqual(data['alert']['event'], 'HI_ALM')
+        self.assertEqual(data['alert']['environment'], 'Production')
+        self.assertEqual(data['alert']['severity'], 'High')
+        self.assertEqual(data['alert']['status'], 'UNACK')
+        self.assertEqual(data['alert']['service'], ['REACTORS'])
+        self.assertEqual(data['alert']['group'], 'PROCESS')
+        self.assertEqual(data['alert']['value'], '13')
+        self.assertEqual(data['alert']['text'], 'High Alarm Limit 10')
+        self.assertEqual(data['alert']['tags'], [])
+        self.assertEqual(data['alert']['attributes'], {})
+        self.assertEqual(data['alert']['origin'], 'PID1')
+        self.assertEqual(data['alert']['type'], 'ALARM')
+        self.assertEqual(data['alert']['duplicateCount'], 0)
+        self.assertEqual(data['alert']['repeat'], False)
+        self.assertEqual(data['alert']['previousSeverity'], alarm_model.DEFAULT_PREVIOUS_SEVERITY)
+        self.assertEqual(data['alert']['trendIndication'], 'moreSevere')
+
+        # Operator Ack, Unack (B) -> Ack (C)
+        data = {
+            'action': 'ack',
+            'text': 'operator ack'
+        }
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'High')
+        self.assertEqual(data['alert']['status'], 'ACKED')
+
+        # Operator Unack, Ack (C) -> Unack (B)
+        data = {
+            'action': 'unack',
+            'text': 'operator unack'
+        }
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'High')
+        self.assertEqual(data['alert']['status'], 'UNACK')
+
+        # Operator Ack (again), Unack (B) -> Ack (C)
+        data = {
+            'action': 'ack',
+            'text': 'operator ack'
+        }
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps(data), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['severity'], 'High')
+        self.assertEqual(data['alert']['status'], 'ACKED')
+
     def test_operator_shelve(self):
 
         # Create OK alarm
