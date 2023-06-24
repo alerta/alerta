@@ -442,7 +442,7 @@ class Alert:
             user=g.login,
             timeout=self.timeout
         )
-        return db.set_status(self.id, status, timeout, update_time=now, history=history)
+        return Alert.from_db(db.set_status(self.id, status, timeout, update_time=now, history=history))
 
     # tag an alert
     def tag(self, tags: List[str]) -> bool:
