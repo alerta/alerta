@@ -80,10 +80,17 @@ test.unit: $(TOX) $(PYTEST)
 	$(TOX) $(toxparams)
 
 ## test.integration	- Run integration tests.
-test.integration: $(PYTEST)
+test.integration: test.integration.ldap test.integration.saml
+
+test.integration.ldap: $(PYTEST)
 	$(PIP) install -r requirements-ci.txt
 	$(DOCKER_COMPOSE) -f docker-compose.ci.yml up -d
-	$(PYTEST) tests/integration $(toxparams)
+	$(PYTEST) tests/integration/test_auth_ldap.py $(toxparams)
+
+test.integration.saml: $(PYTEST)
+	$(PIP) install -r requirements-ci.txt
+	$(DOCKER_COMPOSE) -f docker-compose.ci.yml up -d
+	$(PYTEST) tests/integration/test_auth_saml.py $(toxparams)
 
 ## test.forwarder		- Run forwarder tests.
 test.forwarder:
