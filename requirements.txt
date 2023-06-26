@@ -3,7 +3,7 @@ blinker==1.6.2
 cryptography==41.0.1
 Flask==2.3.2
 Flask-Compress==1.13
-Flask-Cors==3.0.10
+Flask-Cors==4.0.0
 mohawk==1.1.0
 psycopg2==2.9.6
 PyJWT==2.7.0
