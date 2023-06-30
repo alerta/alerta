@@ -1,4 +1,5 @@
 import datetime
+import os
 from typing import Any, Dict
 
 from flask import current_app
@@ -15,6 +16,7 @@ dt = datetime.datetime
 
 def parse_prometheus(alert: JSON, external_url: str) -> Alert:
 
+    text_annotaion_key = os.environ.get('PROMETHEUS_TEXT_KEY') or current_app.config.get('PROMETHEUS_TEXT_KEY')
     status = alert.get('status', 'firing')
 
     # Allow labels and annotations to use python string formats that refer to
@@ -67,7 +69,10 @@ def parse_prometheus(alert: JSON, external_url: str) -> Alert:
     value = annotations.pop('value', None)
     summary = annotations.pop('summary', None)
     description = annotations.pop('description', None)
-    text = description or summary or f'{severity.upper()}: {resource} is {event}'
+    if text_annotaion_key:
+        text = annotations.pop(text_annotaion_key, None)
+    else:
+        text = description or summary or f'{severity.upper()}: {resource} is {event}'
 
     if external_url:
         annotations['externalUrl'] = external_url  # needed as raw URL for bi-directional integration
