@@ -220,8 +220,21 @@ class Blackouts(QueryBuilder):
     @staticmethod
     def from_params(params: ImmutableMultiDict, customers=None, query_time=None):
 
-        query = dict()  # type: Dict[str, Any]
         params = MultiDict(params)  # type: ignore
+
+        # ?q=
+        if params.get('q', None):
+            try:
+                parser = QueryParser()
+                query = json.loads(parser.parse(
+                    query=params['q'],
+                    default_field=params.get('q.df'),
+                    default_operator=params.get('q.op')
+                ))
+            except ParseException as e:
+                raise ApiError('Failed to parse query string.', 400, [e])
+        else:
+            query = dict()
 
         # customer
         if customers:
