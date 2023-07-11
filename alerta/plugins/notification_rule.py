@@ -66,12 +66,12 @@ class NotificationRulesHandler(PluginBase):
             api_token = channel.api_token
         return Client(api_sid, api_token)
 
-    def make_call(self, message: str, channel: NotificationChannel, receiver: str, **kwargs):
+    def make_call(self, message: str, channel: NotificationChannel, receiver: str, fernet: Fernet, **kwargs):
         twiml_message = f'<Response><Pause/><Say>{remove_unspeakable_chr(message)}</Say></Response>'
-        call_client = self.get_twilio_client(channel, **kwargs)
+        call_client = self.get_twilio_client(channel, fernet, **kwargs)
         if not call_client:
             return
-        self.send_sms(message, channel, receiver, client=call_client)
+        self.send_sms(message, channel, receiver, fernet, client=call_client)
         return call_client.calls.create(
             twiml=twiml_message,
             to=receiver,
