@@ -1,19 +1,20 @@
 import json
+import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
-from alerta.exceptions import ApiError
-from sendgrid import SendGridAPIClient, SendGridException
-from python_http_client.exceptions import ForbiddenError, UnauthorizedError
-from twilio.rest import Client as TwilioClient
-from twilio.base.exceptions import TwilioException, TwilioRestException
+
 from cryptography.fernet import Fernet
 from flask import current_app
+from python_http_client.exceptions import ForbiddenError, UnauthorizedError
+from sendgrid import SendGridAPIClient, SendGridException
+from sendgrid.helpers.mail import Mail
+from twilio.base.exceptions import TwilioException, TwilioRestException
+from twilio.rest import Client as TwilioClient
 
 from alerta.app import db
 from alerta.database.base import Query
+from alerta.exceptions import ApiError
 from alerta.utils.response import absolute_url
-from sendgrid.helpers.mail import Mail
-import logging
 
 LOG = logging.getLogger('alerta.models.notification_channel')
 
@@ -30,7 +31,7 @@ class NotificationChannel:
         self.host = kwargs.get('host', None)
         self.platform_id = kwargs.get('platform_id', None)
         self.platform_partner_id = kwargs.get('platform_partner_id', None)
-        self.api_sid: "str|None" = kwargs.get('api_sid', None)  # encrypted
+        self.api_sid: 'str|None' = kwargs.get('api_sid', None)  # encrypted
         self.customer = kwargs.get('customer', None)
         self.verify = kwargs.get('verify', None)
 
@@ -113,18 +114,18 @@ class NotificationChannel:
 
     # get a notification rule
     @ staticmethod
-    def find_by_id(id: str, customers: "list[str]|None" = None) -> Optional['NotificationChannel']:
+    def find_by_id(id: str, customers: 'list[str]|None' = None) -> Optional['NotificationChannel']:
         return NotificationChannel.from_db(db.get_notification_channel(id, customers))
 
     @ staticmethod
-    def find_all(query: "Query|None" = None, page: int = 1, page_size: int = 1000) -> List['NotificationChannel']:
+    def find_all(query: 'Query|None' = None, page: int = 1, page_size: int = 1000) -> List['NotificationChannel']:
         return [
             NotificationChannel.from_db(notification_channel)
             for notification_channel in db.get_notification_channels(query, page, page_size)
         ]
 
     @ staticmethod
-    def count(query: "Query|None" = None) -> int:
+    def count(query: 'Query|None' = None) -> int:
         return db.get_notification_channels_count(query)
 
     def update(self, **kwargs) -> 'NotificationChannel':

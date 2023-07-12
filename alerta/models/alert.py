@@ -64,7 +64,7 @@ class Alert:
         self.origin = kwargs.get('origin', None) or f'{os.path.basename(sys.argv[0])}/{platform.uname()[1]}'
         self.event_type = kwargs.get('event_type', kwargs.get('type', None)) or 'exceptionAlert'
         self.create_time = kwargs.get('create_time', None) or datetime.utcnow()
-        self.day = self.create_time.strftime("%a")
+        self.day = self.create_time.strftime('%a')
         self.time = self.create_time.time()
         self.timeout = timeout
         self.raw_data = kwargs.get('raw_data', None)

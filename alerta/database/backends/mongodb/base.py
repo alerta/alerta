@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, time, timedelta, date
+from datetime import date, datetime, time, timedelta
 
 from flask import current_app
 from pymongo import ASCENDING, TEXT, MongoClient, ReturnDocument
@@ -1183,14 +1183,14 @@ class Backend(Database):
             {'active': True},
             {'$or': [{'startTime': None}, {'startTime': {'$lte': alert.time.hour + alert.time.minute / 100}}]},
             {'$or': [{'endTime': None}, {'endTime': {'$gt': alert.time.hour + alert.time.minute / 100}}]},
-            {'$or': [{'days': None}, {'days': []}, {"days": {'$in': [alert.day]}}]},
+            {'$or': [{'days': None}, {'days': []}, {'days': {'$in': [alert.day]}}]},
             {'$or': [{'useAdvancedSeverity': True}, {'severity': None}, {'severity': []}, {'severity': {'$in': [alert.severity]}}]},
             {'$or': [{'useAdvancedSeverity': False}, {'$and': [{'$or': [{'advancedSeverity.from': []}, {'advancedSeverity.from': {'$in': [alert.previous_severity]}}]}, {'$or': [{'advancedSeverity.to': []}, {'advancedSeverity.to': {'$in': [alert.severity]}}]}]}]},
             {'$or': [{'resource': None}, {'resource': alert.resource}]},
-            {"$or": [{"service": None}, {'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}}]},
+            {'$or': [{'service': None}, {'service': {'$not': {'$elemMatch': {'$nin': alert.service}}}}]},
             {'$or': [{'event': None}, {'event': alert.event}]},
             {'$or': [{'group': None}, {'group': alert.group}]},
-            {"$or": [{"tags": None}, {'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}}]},
+            {'$or': [{'tags': None}, {'tags': {'$not': {'$elemMatch': {'$nin': alert.tags}}}}]},
         ]
 
         return self.get_db().notification_rules.find(query)
@@ -1202,8 +1202,8 @@ class Backend(Database):
         if kwargs.get('endTime', None) is not None:
             end_split = kwargs['endTime'].split(':')
             kwargs['endTime'] = float(end_split[0]) + float(end_split[1]) / 100
-        
-        if kwargs.get("advancedSeverity"):
+
+        if kwargs.get('advancedSeverity'):
             kwargs['advancedSeverity'] = [n.serialize for n in kwargs['advancedSeverity']]
 
         return self.get_db().notification_rules.find_one_and_update(
@@ -1267,38 +1267,38 @@ class Backend(Database):
 
     def get_on_calls_active(self, alert):
         date_data = {}
-        date_data["time"] = alert.create_time.time()
-        date_data["day"] = alert.create_time.strftime("%a")
-        _year, date_data["week"], _day_number = alert.create_time.isocalendar()
-        date_data["month"] = alert.create_time.strftime("%b")
+        date_data['time'] = alert.create_time.time()
+        date_data['day'] = alert.create_time.strftime('%a')
+        _year, date_data['week'], _day_number = alert.create_time.isocalendar()
+        date_data['month'] = alert.create_time.strftime('%b')
 
         query = dict()
         query['$and'] = [
-            {"$and": [
+            {'$and': [
                 {'$or': [
                     {'startTime': None},
-                    {'startTime': {'$lte': date_data["time"].hour + date_data["time"].minute / 100}}]},
+                    {'startTime': {'$lte': date_data['time'].hour + date_data['time'].minute / 100}}]},
                 {'$or': [
                     {'endTime': None},
-                    {'endTime': {'$gt': date_data["time"].hour + date_data["time"].minute / 100}}]}]},
-            {"$or": [
+                    {'endTime': {'$gt': date_data['time'].hour + date_data['time'].minute / 100}}]}]},
+            {'$or': [
                 {'$or': [
-                    {"$and": [
+                    {'$and': [
                         {'startDate': {'$lte': alert.create_time}},
                         {'endDate': {'$gte': alert.create_time}}]}]},
                 {'$and': [
                     {'repeatType': 'list'},
-                    {"$or": [{"repeatDays": None}, {"repeatDays": []}, {"repeatDays": {'$in': [date_data["day"]]}}]},
-                    {"$or": [{"repeatWeeks": None}, {"repeatWeeks": []}, {"repeatWeeks": {'$in': [date_data["week"]]}}]},
-                    {"$or": [{"repeatMonths": None}, {"repeatMonths": []}, {"repeatMonths": {'$in': [date_data["month"]]}}]}]}]},
+                    {'$or': [{'repeatDays': None}, {'repeatDays': []}, {'repeatDays': {'$in': [date_data['day']]}}]},
+                    {'$or': [{'repeatWeeks': None}, {'repeatWeeks': []}, {'repeatWeeks': {'$in': [date_data['week']]}}]},
+                    {'$or': [{'repeatMonths': None}, {'repeatMonths': []}, {'repeatMonths': {'$in': [date_data['month']]}}]}]}]},
         ]
         return self.get_db().on_calls.find(query)
 
     def update_on_call(self, id, **kwargs):
         if kwargs.get('startTime', None) is not None:
-            kwargs['startTime'] = float(kwargs['startTime'].replace(":", "."))
+            kwargs['startTime'] = float(kwargs['startTime'].replace(':', '.'))
         if kwargs.get('endTime', None) is not None:
-            kwargs['endTime'] = float(kwargs['endTime'].replace(":", "."))
+            kwargs['endTime'] = float(kwargs['endTime'].replace(':', '.'))
         if kwargs.get('startDate', None) is not None:
             kwargs['startDate'] = datetime.combine(date.fromisoformat(kwargs['startDate']), time())
         if kwargs.get('endDate', None) is not None:

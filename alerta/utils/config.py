@@ -1,7 +1,7 @@
 import os
 
-from flask import Flask
 from cryptography.fernet import Fernet
+from flask import Flask
 
 
 class Config:

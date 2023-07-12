@@ -1,23 +1,22 @@
-import logging
-
-from cryptography.fernet import Fernet, InvalidToken
-from alerta.app import db
 import json
-from threading import Thread
-import requests
+import logging
 import smtplib
+from threading import Thread
 
-from twilio.rest import Client
-from twilio.base.exceptions import TwilioRestException
+import requests
+from cryptography.fernet import Fernet, InvalidToken
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from twilio.base.exceptions import TwilioRestException
+from twilio.rest import Client
 
-from alerta.models.notification_rule import NotificationRule, NotificationChannel
+from alerta.app import db
+from alerta.models.alert import Alert
+from alerta.models.notification_rule import (NotificationChannel,
+                                             NotificationRule)
 from alerta.models.on_call import OnCall
 from alerta.models.user import User
-from alerta.models.alert import Alert
 from alerta.plugins import PluginBase
-
 
 LOG = logging.getLogger('alerta.plugins.notification_rule')
 TWILIO_MAX_SMS_LENGTH = 1600
@@ -35,7 +34,7 @@ LINK_MOBILITY_XML = """
     </MSG>
   </MSGLST>
 </SESSION>
-""".split("\n")
+""".split('\n')
 
 
 def remove_unspeakable_chr(message: str, unspeakables: 'dict[str,str]|None' = None):
@@ -80,48 +79,48 @@ class NotificationRulesHandler(PluginBase):
 
     def send_sms(self, message: str, channel: NotificationChannel, receiver: str, fernet: Fernet, client: Client = None, **kwargs):
         restricted_message = message[: TWILIO_MAX_SMS_LENGTH - 4]
-        body = message if len(message) <= TWILIO_MAX_SMS_LENGTH else restricted_message[: restricted_message.rfind(" ")] + " ..."
+        body = message if len(message) <= TWILIO_MAX_SMS_LENGTH else restricted_message[: restricted_message.rfind(' ')] + ' ...'
         sms_client = client or self.get_twilio_client(channel, fernet, **kwargs)
         if not sms_client:
             return
         return sms_client.messages.create(body=body, to=receiver, from_=channel.sender)
 
-    def send_link_mobility_sms(self, message: str, channel: NotificationChannel, receivers: "list[str]", fernet: Fernet, **kwargs):
+    def send_link_mobility_sms(self, message: str, channel: NotificationChannel, receivers: 'list[str]', fernet: Fernet, **kwargs):
         numberOfReceivers = len(receivers)
         if numberOfReceivers == 0:
             return
-        headers = {"Content-Type": "application/json"}
+        headers = {'Content-Type': 'application/json'}
         try:
-            headers["Authorization"] = f"Basic {fernet.decrypt(channel.api_sid.encode()).decode()}:{fernet.decrypt(channel.api_token.encode()).decode()}"
+            headers['Authorization'] = f'Basic {fernet.decrypt(channel.api_sid.encode()).decode()}:{fernet.decrypt(channel.api_token.encode()).decode()}'
         except InvalidToken:
-            headers["Authorization"] = f"Basic {channel.api_sid}:{channel.api_token}"
-        data = json.dumps({"platformId": channel.platform_id, "platformPartnerId": channel.platform_partner_id, "useDeliveryReport": False, "sendRequestMessages": [{"source": channel.sender, "destination": receiver, "userData": message} for receiver in receivers]} if numberOfReceivers > 1 else {"platformId": channel.platform_id, "platformPartnerId": channel.platform_partner_id, "useDeliveryReport": False, "source": channel.sender, "destination": receivers[0], "userData": message})
+            headers['Authorization'] = f'Basic {channel.api_sid}:{channel.api_token}'
+        data = json.dumps({'platformId': channel.platform_id, 'platformPartnerId': channel.platform_partner_id, 'useDeliveryReport': False, 'sendRequestMessages': [{'source': channel.sender, 'destination': receiver, 'userData': message} for receiver in receivers]} if numberOfReceivers > 1 else {'platformId': channel.platform_id, 'platformPartnerId': channel.platform_partner_id, 'useDeliveryReport': False, 'source': channel.sender, 'destination': receivers[0], 'userData': message})
         LOG.error(data)
         LOG.error(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}")
-        return requests.post(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}", data, headers=headers, verify=channel.verify if channel.verify == None or channel.verify.lower() != "false" else False)
-    
-    def send_link_mobility_xml(self, message: str, channel: NotificationChannel, receivers: "list[str]", fernet: Fernet, **kwargs):
+        return requests.post(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}", data, headers=headers, verify=channel.verify if channel.verify == None or channel.verify.lower() != 'false' else False)
+
+    def send_link_mobility_xml(self, message: str, channel: NotificationChannel, receivers: 'list[str]', fernet: Fernet, **kwargs):
         try:
-            content = {"message": message, "username": fernet.decrypt(channel.api_sid.encode()).decode(), "sender": channel.sender, "password": fernet.decrypt(channel.api_token.encode()).decode()}
+            content = {'message': message, 'username': fernet.decrypt(channel.api_sid.encode()).decode(), 'sender': channel.sender, 'password': fernet.decrypt(channel.api_token.encode()).decode()}
         except InvalidToken:
-            content = {"message": message, "username": channel.api_sid, "sender": channel.sender, "password": channel.api_token}
-            
-        xml_content: "list[str]" = kwargs["xml"]
+            content = {'message': message, 'username': channel.api_sid, 'sender': channel.sender, 'password': channel.api_token}
+
+        xml_content: 'list[str]' = kwargs['xml']
         for line in xml_content:
-            receive_start = line.find("{receivers}")
+            receive_start = line.find('{receivers}')
             if receive_start == -1:
                 continue
-            _receiver_lines = [line.replace("{receivers}", receiver.replace("+", "")) for receiver in receivers]
-            xml_content[xml_content.index(line)] = "".join(_receiver_lines)
-        xml_string = "".join(xml_content)
-            
-        data = xml_string.replace("{", "%(").replace("}", ")s") % content
-        
-        headers = {"Content-Type": "application/xml"}
-        return requests.post(f"{channel.host}", data, headers=headers, verify=channel.verify if channel.verify == None or channel.verify.lower() != "false" else False)
+            _receiver_lines = [line.replace('{receivers}', receiver.replace('+', '')) for receiver in receivers]
+            xml_content[xml_content.index(line)] = ''.join(_receiver_lines)
+        xml_string = ''.join(xml_content)
+
+        data = xml_string.replace('{', '%(').replace('}', ')s') % content
+
+        headers = {'Content-Type': 'application/xml'}
+        return requests.post(f'{channel.host}', data, headers=headers, verify=channel.verify if channel.verify == None or channel.verify.lower() != 'false' else False)
 
     def send_smtp_mail(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', fernet: Fernet, **kwargs):
-        mails = set([*receivers, *[user.email for user in on_call_users]])
+        mails = {*receivers, *[user.email for user in on_call_users]}
         server = smtplib.SMTP_SSL(channel.host)
         try:
             api_sid = fernet.decrypt(channel.api_sid.encode()).decode()
@@ -134,7 +133,7 @@ class NotificationRulesHandler(PluginBase):
         server.quit()
 
     def send_email(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', fernet: Fernet, **kwargs):
-        mails = set([*receivers, *[user.email for user in on_call_users]])
+        mails = {*receivers, *[user.email for user in on_call_users]}
         newMail = Mail(
             from_email=channel.sender,
             to_emails=list(mails),
@@ -169,7 +168,6 @@ class NotificationRulesHandler(PluginBase):
 
         return alertobjcopy
 
-
     def handle_channel(self, message: str, channel: NotificationChannel, notification_rule: NotificationRule, users: 'set[User]', fernet: Fernet):
         notification_type = channel.type
         if notification_type == 'sendgrid':
@@ -184,7 +182,7 @@ class NotificationRulesHandler(PluginBase):
                 LOG.error('NotificationRule: ERROR - %s', str(err))
         elif 'twilio' in notification_type:
 
-            for number in set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]]):
+            for number in {*notification_rule.receivers, *[f'{user.country_code}{user.phone_number}' for user in users]}:
                 if number == None or number == '':
                     continue
                 try:
@@ -197,19 +195,17 @@ class NotificationRulesHandler(PluginBase):
                     LOG.error('TwilioRule: ERROR - %s', str(err))
 
         elif notification_type == 'link_mobility':
-            self.send_link_mobility_sms(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]])), fernet)
+            self.send_link_mobility_sms(message, channel, list({*notification_rule.receivers, *[f'{user.country_code}{user.phone_number}' for user in users]}), fernet)
         elif notification_type == 'link_mobility_xml':
-            response = self.send_link_mobility_xml(message, channel, list(set([*notification_rule.receivers, *[f"{user.country_code}{user.phone_number}" for user in users]])), fernet, xml=LINK_MOBILITY_XML.copy())
-            if response.content.decode().find("FAIL") != -1:
+            response = self.send_link_mobility_xml(message, channel, list({*notification_rule.receivers, *[f'{user.country_code}{user.phone_number}' for user in users]}), fernet, xml=LINK_MOBILITY_XML.copy())
+            if response.content.decode().find('FAIL') != -1:
                 LOG.error(response.content)
             else:
                 LOG.info(response.content)
 
-    
     def handle_test(self, channel: NotificationChannel, info: NotificationRule, config):
-        message = info.text if info.text != "" else "this is a test message for testing a notification_channel in alerta"
+        message = info.text if info.text != '' else 'this is a test message for testing a notification_channel in alerta'
         self.handle_channel(message, channel, info, [], Fernet(config['NOTIFICATION_KEY']))
-    
 
     def handle_notifications(self, alert: 'Alert', notifications: 'list[tuple[NotificationRule,NotificationChannel, list[set[User or None]]]]', on_users: 'list[set[User or None]]', fernet: Fernet):
         standard_message = '%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s'
@@ -225,7 +221,6 @@ class NotificationRulesHandler(PluginBase):
             ) % self.get_message_obj(alert.serialize)
 
             self.handle_channel(message, channel, notification_rule, users, fernet)
-            
 
     def pre_receive(self, alert, **kwargs):
         return alert

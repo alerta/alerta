@@ -1030,7 +1030,7 @@ class Backend(Database):
 
     def get_notification_rules_active(self, alert):
         select = """
-            SELECT * from (select *, generate_subscripts(advanced_severity,1) as s 
+            SELECT * from (select *, generate_subscripts(advanced_severity,1) as s
             FROM notification_rules) as foo
             WHERE (start_time IS NULL OR start_time <= %(time)s) AND (end_time IS NULL OR end_time > %(time)s)
               AND (days='{}' OR ARRAY[%(day)s] <@ days)
@@ -1076,7 +1076,7 @@ class Backend(Database):
         if 'receivers' in kwargs:
             update += 'receivers=%(receivers)s, '
         if 'useOnCall' in kwargs:
-            update += "use_oncall=%(useOnCall)s, "
+            update += 'use_oncall=%(useOnCall)s, '
         if kwargs.get('severity') is not None:
             update += 'severity=%(severity)s, '
         if kwargs.get('advancedSeverity') is not None:
@@ -1087,12 +1087,12 @@ class Backend(Database):
             update += 'text=%(text)s, '
         if 'channelId' in kwargs:
             update += 'channel_id=%(channelId)s,'
-        if "active" in kwargs:
-            update += "active=%(active)s,"
-        if "userIds" in kwargs:
-            update += "user_ids=%(userIds)s, "
-        if "groupIds" in kwargs:
-            update += "group_ids=%(groupIds)s, "
+        if 'active' in kwargs:
+            update += 'active=%(active)s,'
+        if 'userIds' in kwargs:
+            update += 'user_ids=%(userIds)s, '
+        if 'groupIds' in kwargs:
+            update += 'group_ids=%(groupIds)s, '
         update += """
             "user"=COALESCE(%(user)s, "user")
             WHERE id=%(id)s
@@ -1128,9 +1128,9 @@ class Backend(Database):
             WHERE id=%(id)s
               AND {customer}
         """.format(
-            customer="customer=ANY(%(customers)s)" if customers else "1=1"
+            customer='customer=ANY(%(customers)s)' if customers else '1=1'
         )
-        return self._fetchone(select, {"id": id, "customers": customers})
+        return self._fetchone(select, {'id': id, 'customers': customers})
 
     def get_on_calls(self, query=None, page=None, page_size=None):
         query = query or Query()
@@ -1155,11 +1155,11 @@ class Backend(Database):
 
     def get_on_calls_active(self, alert):
         date_data = {}
-        date_data["date"] = alert.create_time.date()
-        date_data["time"] = alert.create_time.time()
-        date_data["day"] = alert.create_time.strftime("%a")
-        _year, date_data["week"], _day_number = alert.create_time.isocalendar()
-        date_data["month"] = alert.create_time.strftime("%b")
+        date_data['date'] = alert.create_time.date()
+        date_data['time'] = alert.create_time.time()
+        date_data['day'] = alert.create_time.strftime('%a')
+        _year, date_data['week'], _day_number = alert.create_time.isocalendar()
+        date_data['month'] = alert.create_time.strftime('%b')
         select = """
             SELECT *
             FROM on_calls
@@ -1175,8 +1175,8 @@ class Backend(Database):
             )
 
         """
-        if current_app.config["CUSTOMER_VIEWS"]:
-            select += " AND (customer IS NULL OR customer=%(customer)s)"
+        if current_app.config['CUSTOMER_VIEWS']:
+            select += ' AND (customer IS NULL OR customer=%(customer)s)'
         return self._fetchall(select, {**vars(alert), **date_data})
 
     def update_on_call(self, id, **kwargs):
@@ -1184,36 +1184,36 @@ class Backend(Database):
             UPDATE on_calls
             SET
         """
-        if "userIds" in kwargs:
-            update += "user_ids=%(userIds)s, "
-        if "groupIds" in kwargs:
-            update += "group_ids=%(groupIds)s, "
-        if "startDate" in kwargs:
-            update += "start_date=%(startDate)s, "
-        if "endDate" in kwargs:
+        if 'userIds' in kwargs:
+            update += 'user_ids=%(userIds)s, '
+        if 'groupIds' in kwargs:
+            update += 'group_ids=%(groupIds)s, '
+        if 'startDate' in kwargs:
+            update += 'start_date=%(startDate)s, '
+        if 'endDate' in kwargs:
             update += '"end_date"=%(endDate)s, '
-        if "startTime" in kwargs:
-            update += "start_time=%(startTime)s, "
-        if "endTime" in kwargs:
-            update += "end_time=%(endTime)s, "
-        if "fullDay" in kwargs:
-            update += "full_day=%(fullDay)s, "
-        if "repeatType" in kwargs:
-            update += "repeat_type=%(repeatType)s, "
-        if "repeatDays" in kwargs:
-            update += "repeat_days=%(repeatDays)s, "
-        if "repeatWeeks" in kwargs:
-            update += "repeat_weeks=%(repeatWeeks)s, "
-        if "repeatMonths" in kwargs:
-            update += "repeat_months=%(repeatMonths)s,"
+        if 'startTime' in kwargs:
+            update += 'start_time=%(startTime)s, '
+        if 'endTime' in kwargs:
+            update += 'end_time=%(endTime)s, '
+        if 'fullDay' in kwargs:
+            update += 'full_day=%(fullDay)s, '
+        if 'repeatType' in kwargs:
+            update += 'repeat_type=%(repeatType)s, '
+        if 'repeatDays' in kwargs:
+            update += 'repeat_days=%(repeatDays)s, '
+        if 'repeatWeeks' in kwargs:
+            update += 'repeat_weeks=%(repeatWeeks)s, '
+        if 'repeatMonths' in kwargs:
+            update += 'repeat_months=%(repeatMonths)s,'
 
         update += """
             "user"=COALESCE(%(user)s, "user")
             WHERE id=%(id)s
             RETURNING *
         """
-        kwargs["id"] = id
-        kwargs["user"] = kwargs.get("user")
+        kwargs['id'] = id
+        kwargs['user'] = kwargs.get('user')
         return self._updateone(update, kwargs, returning=True)
 
     def delete_on_call(self, id):

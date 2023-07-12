@@ -540,7 +540,7 @@ class QueryBuilder(Base):
         self.__class__.blackouts = type('BlackoutsQueryBuilder', (cls.Blackouts, self.Blackouts, QueryBuilder), {})
         self.__class__.notification_channels = type('NotificationChannelsQueryBuilder', (cls.NotificationChannels, self.NotificationChannels, QueryBuilder), {})
         self.__class__.notification_rules = type('NotificationRulesQueryBuilder', (cls.NotificationRules, self.NotificationRules, QueryBuilder), {})
-        self.__class__.on_calls = type("OnCallQueryBuilder", (cls.OnCalls, self.OnCalls, QueryBuilder), {})
+        self.__class__.on_calls = type('OnCallQueryBuilder', (cls.OnCalls, self.OnCalls, QueryBuilder), {})
         self.__class__.heartbeats = type('HeartbeatsQueryBuilder', (cls.Heartbeats, self.Heartbeats, QueryBuilder), {})
         self.__class__.keys = type('ApiKeysQueryBuilder', (cls.ApiKeys, self.ApiKeys, QueryBuilder), {})
         self.__class__.users = type('UsersQueryBuilder', (cls.Users, self.Users, QueryBuilder), {})

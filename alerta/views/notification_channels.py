@@ -1,13 +1,15 @@
+import logging
+
 from cryptography.fernet import Fernet
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
-from alerta.app import qb, plugins
+from alerta.app import plugins, qb
 from alerta.auth.decorators import permission
 from alerta.exceptions import ApiError
+from alerta.models.enums import Scope
 from alerta.models.notification_channel import NotificationChannel
 from alerta.models.notification_rule import NotificationRule
-from alerta.models.enums import Scope
 from alerta.utils.api import assign_customer
 from alerta.utils.audit import write_audit_trail
 from alerta.utils.paging import Page
@@ -15,9 +17,7 @@ from alerta.utils.response import absolute_url, jsonp
 
 from . import api
 
-import logging
-
-LOG = logging.getLogger("alerta/views/notification_channels")
+LOG = logging.getLogger('alerta/views/notification_channels')
 
 
 @api.route('/notificationchannels', methods=['OPTIONS', 'POST'])
@@ -70,7 +70,7 @@ def notification_channel(notification_channel_id):
         return jsonify(status='ok', total=1, notificationChannel=notification_channel.serialize)
     else:
         raise ApiError('not found', 404)
-    
+
 
 @api.route('/notificationchannels/<notification_channel_id>/test', methods=['OPTIONS', 'POST'])
 @cross_origin()
@@ -80,14 +80,14 @@ def notification_channel_test(notification_channel_id):
     notification_channel = NotificationChannel.find_by_id(notification_channel_id)
 
     try:
-        notification_rule = NotificationRule.parse({**request.json, "channelId": notification_channel_id, "environment": plugins.config.get("DEFAULT_ENVIRONMENT")})
+        notification_rule = NotificationRule.parse({**request.json, 'channelId': notification_channel_id, 'environment': plugins.config.get('DEFAULT_ENVIRONMENT')})
     except Exception as e:
         raise ApiError(str(e), 400)
     try:
-        plugins.plugins.get("notification_rule").handle_test(notification_channel, notification_rule, plugins.config)
+        plugins.plugins.get('notification_rule').handle_test(notification_channel, notification_rule, plugins.config)
     except Exception as e:
         raise ApiError(str(e), 500)
-    
+
     return jsonify(status='ok')
 
 
