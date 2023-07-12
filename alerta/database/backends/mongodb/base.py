@@ -1126,6 +1126,7 @@ class Backend(Database):
             'useOnCall': notification_rule.use_oncall,
             'channelId': notification_rule.channel_id,
             'useAdvancedSeverity': notification_rule.use_advanced_severity,
+            'active': notification_rule.active,
         }
         if notification_rule.severity:
             data['severity'] = notification_rule.severity
@@ -1150,6 +1151,10 @@ class Backend(Database):
             data['tags'] = notification_rule.tags
         if notification_rule.customer:
             data['customer'] = notification_rule.customer
+        if notification_rule.user_ids:
+            data['userIds'] = notification_rule.user_ids
+        if notification_rule.group_ids:
+            data['groupIds'] = notification_rule.group_ids
 
         if self.get_db().notification_rules.insert_one(data).inserted_id == notification_rule.id:
             return data
@@ -1175,7 +1180,7 @@ class Backend(Database):
         query = dict()
         query['environment'] = alert.environment
         query['$and'] = [
-            # {'environment': alert.environment},
+            {'active': True},
             {'$or': [{'startTime': None}, {'startTime': {'$lte': alert.time.hour + alert.time.minute / 100}}]},
             {'$or': [{'endTime': None}, {'endTime': {'$gt': alert.time.hour + alert.time.minute / 100}}]},
             {'$or': [{'days': None}, {'days': []}, {"days": {'$in': [alert.day]}}]},
