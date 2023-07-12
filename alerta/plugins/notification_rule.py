@@ -10,7 +10,6 @@ from sendgrid.helpers.mail import Mail
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
 
-from alerta.app import db
 from alerta.models.alert import Alert
 from alerta.models.notification_rule import (NotificationChannel,
                                              NotificationRule)
@@ -97,7 +96,7 @@ class NotificationRulesHandler(PluginBase):
         data = json.dumps({'platformId': channel.platform_id, 'platformPartnerId': channel.platform_partner_id, 'useDeliveryReport': False, 'sendRequestMessages': [{'source': channel.sender, 'destination': receiver, 'userData': message} for receiver in receivers]} if numberOfReceivers > 1 else {'platformId': channel.platform_id, 'platformPartnerId': channel.platform_partner_id, 'useDeliveryReport': False, 'source': channel.sender, 'destination': receivers[0], 'userData': message})
         LOG.error(data)
         LOG.error(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}")
-        return requests.post(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}", data, headers=headers, verify=channel.verify if channel.verify == None or channel.verify.lower() != 'false' else False)
+        return requests.post(f"{channel.host}/sms/{'send' if numberOfReceivers == 1 else 'sendbatch'}", data, headers=headers, verify=channel.verify if channel.verify is None or channel.verify.lower() != 'false' else False)
 
     def send_link_mobility_xml(self, message: str, channel: NotificationChannel, receivers: 'list[str]', fernet: Fernet, **kwargs):
         try:
@@ -117,7 +116,7 @@ class NotificationRulesHandler(PluginBase):
         data = xml_string.replace('{', '%(').replace('}', ')s') % content
 
         headers = {'Content-Type': 'application/xml'}
-        return requests.post(f'{channel.host}', data, headers=headers, verify=channel.verify if channel.verify == None or channel.verify.lower() != 'false' else False)
+        return requests.post(f'{channel.host}', data, headers=headers, verify=channel.verify if channel.verify is None or channel.verify.lower() != 'false' else False)
 
     def send_smtp_mail(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', fernet: Fernet, **kwargs):
         mails = {*receivers, *[user.email for user in on_call_users]}
@@ -183,7 +182,7 @@ class NotificationRulesHandler(PluginBase):
         elif 'twilio' in notification_type:
 
             for number in {*notification_rule.receivers, *[f'{user.country_code}{user.phone_number}' for user in users]}:
-                if number == None or number == '':
+                if number is None or number == '':
                     continue
                 try:
                     if 'call' in notification_type:
@@ -210,7 +209,7 @@ class NotificationRulesHandler(PluginBase):
     def handle_notifications(self, alert: 'Alert', notifications: 'list[tuple[NotificationRule,NotificationChannel, list[set[User or None]]]]', on_users: 'list[set[User or None]]', fernet: Fernet):
         standard_message = '%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s'
         for notification_rule, channel, users in notifications:
-            if channel == None:
+            if channel is None:
                 return
 
             if notification_rule.use_oncall:

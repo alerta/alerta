@@ -10,13 +10,13 @@ PyJWT==2.6.0
 pymongo==3.12.3
 pyparsing==3.0.9
 python-dateutil==2.8.2
+python-http-client==3.2.1
 pytz==2022.7.1
 PyYAML==6.0
 requests==2.28.1
 requests_hawk==1.1.1
-sentry-sdk[flask]==1.16.0
-werkzeug==2.2.3
 sendgrid==6.5.0
-python-http-client==3.2.1
+sentry-sdk[flask]==1.16.0
 starkbank-ecdsa==1.0.0
 twilio==7.0.0
+werkzeug==2.2.3

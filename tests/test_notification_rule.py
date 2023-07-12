@@ -558,7 +558,7 @@ class NotificationRuleTestCase(unittest.TestCase):
         pop_endTime_rule.pop('endTime')
 
         self.channel_id = self.create_api_obj('/notificationchannels', self.sms_channel, self.headers)['id']
-        base_rule_data = self.create_api_obj('/notificationrules', base_rule, self.headers)['notificationRule']
+        self.create_api_obj('/notificationrules', base_rule, self.headers)['notificationRule']
 
         inactive_rule_data = self.create_api_obj('/notificationrules', inactive_rule, self.headers)['notificationRule']
         active_rule_data = self.create_api_obj('/notificationrules', active_rule, self.headers)['notificationRule']

@@ -1,19 +1,12 @@
-import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from cryptography.fernet import Fernet
 from flask import current_app
-from python_http_client.exceptions import ForbiddenError, UnauthorizedError
-from sendgrid import SendGridAPIClient, SendGridException
-from sendgrid.helpers.mail import Mail
-from twilio.base.exceptions import TwilioException, TwilioRestException
-from twilio.rest import Client as TwilioClient
 
 from alerta.app import db
 from alerta.database.base import Query
-from alerta.exceptions import ApiError
 from alerta.utils.response import absolute_url
 
 LOG = logging.getLogger('alerta.models.notification_channel')

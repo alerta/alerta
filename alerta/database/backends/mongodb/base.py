@@ -1113,7 +1113,7 @@ class Backend(Database):
     # NOTIFICATION_RULES
 
     def create_notification_rule(self, notification_rule) -> 'dict | None':
-        if self.get_notification_channel(notification_rule.channel_id, [notification_rule.customer] if notification_rule.customer else None) == None:
+        if self.get_notification_channel(notification_rule.channel_id, [notification_rule.customer] if notification_rule.customer else None) is None:
             return None
 
         data = {

@@ -342,7 +342,7 @@ class NotificationRule:
 
     def update(self, **kwargs) -> 'NotificationRule':
         advanced_severities = kwargs.get('advancedSeverity')
-        if advanced_severities != None:
+        if advanced_severities is not None:
             kwargs['advancedSeverity'] = [AdvancedSeverity.from_document(advanced_severity) for advanced_severity in advanced_severities]
         return NotificationRule.from_db(db.update_notification_rule(self.id, **kwargs))
 

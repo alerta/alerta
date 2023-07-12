@@ -62,7 +62,7 @@ class User:
 
     @property
     def country_code(self) -> 'str':
-        if self.country == '' or self.country == None:
+        if self.country == '' or self.country is None:
             return ''
         cc_start, cc_stop = [self.country.find('(') + 1, self.country.find(')')]
         return self.country[cc_start:cc_stop]

@@ -151,13 +151,12 @@ class OnCall:
 
     @ classmethod
     def from_record(cls, rec) -> 'OnCall':
-        start_date = rec.start_date.strftime('%Y-%m-%d') if rec.start_date != None else rec.start_date
         return OnCall(
             id=rec.id,
             user_ids=rec.user_ids,
             group_ids=rec.group_ids,
-            start_date=rec.start_date.strftime('%Y-%m-%d') if rec.start_date != None else rec.start_date,
-            end_date=rec.end_date.strftime('%Y-%m-%d') if rec.end_date != None else rec.end_date,
+            start_date=rec.start_date.strftime('%Y-%m-%d') if rec.start_date is not None else rec.start_date,
+            end_date=rec.end_date.strftime('%Y-%m-%d') if rec.end_date is not None else rec.end_date,
             start_time=rec.start_time,
             end_time=rec.end_time,
             repeat_type=rec.repeat_type,

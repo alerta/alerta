@@ -78,7 +78,7 @@ def get_notification_rule(notification_rule_id):
 @jsonp
 def get_notification_rules_active():
     alert_json = request.json
-    if alert_json == None or alert_json.get('id') == None:
+    if alert_json is None or alert_json.get('id') is None:
         return jsonify(status='ok', total=0, notificationRules=[])
     try:
         alert = Alert.find_by_id(alert_json.get('id'))

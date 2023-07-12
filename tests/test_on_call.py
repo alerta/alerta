@@ -4,7 +4,6 @@ import unittest
 from datetime import datetime, timedelta
 
 from alerta.app import create_app, db, plugins
-from alerta.models.alert import Alert
 from alerta.models.key import ApiKey
 
 LOG = logging.getLogger('test.test_notification_rule')
