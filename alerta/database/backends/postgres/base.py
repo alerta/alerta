@@ -973,7 +973,6 @@ class Backend(Database):
             WHERE id=%(id)s
             RETURNING *
         """
-        print(update)
         kwargs['id'] = id
         kwargs['user'] = kwargs.get('user')
         return self._updateone(update, kwargs, returning=True)

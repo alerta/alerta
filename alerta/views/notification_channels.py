@@ -82,7 +82,6 @@ def notification_channel_test(notification_channel_id):
     try:
         notification_rule = NotificationRule.parse({**request.json, "channelId": notification_channel_id, "environment": plugins.config.get("DEFAULT_ENVIRONMENT")})
     except Exception as e:
-        print(str(e))
         raise ApiError(str(e), 400)
     try:
         plugins.plugins.get("notification_rule").handle_test(notification_channel, notification_rule, plugins.config)

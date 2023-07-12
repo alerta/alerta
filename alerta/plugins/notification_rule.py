@@ -135,7 +135,6 @@ class NotificationRulesHandler(PluginBase):
 
     def send_email(self, message: str, channel: NotificationChannel, receivers: list, on_call_users: 'set[User]', fernet: Fernet, **kwargs):
         mails = set([*receivers, *[user.email for user in on_call_users]])
-        print(mails)
         newMail = Mail(
             from_email=channel.sender,
             to_emails=list(mails),
