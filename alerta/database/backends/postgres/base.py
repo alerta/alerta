@@ -72,8 +72,8 @@ class Backend(Database):
         with lock:
             conn = self.connect()
             migrations_dir = Path(app.root_path).joinpath('sql')
-            
-            try:            
+
+            try:
                 self._create_migrations_table(conn)
                 for migration in migrations_dir.glob('*_*.sql'):
                     self._apply_migration(conn, migration)
@@ -1679,13 +1679,13 @@ class Backend(Database):
             conn.rollback()
             current_app.logger.error('Failed to apply migration %s: %s', migration, e)
             raise e
-    
+
     def _create_migrations_table(self, conn):
         """
         Create migrations table if it doesn't exist.
         """
         cursor = conn.cursor()
-        
+
         cursor.execute("""
             SELECT EXISTS (
                 SELECT FROM pg_tables WHERE schemaname = %s AND tablename = %s
@@ -1702,5 +1702,4 @@ class Backend(Database):
                 conn.commit()
             except Exception as e:
                 conn.rollback()
-                current_app.logger.error('Failed to create migrations table: %s', e)
-                raise e
+                raise RuntimeError('Failed to create migrations table: %s', e)
