@@ -9,6 +9,7 @@ https://www.isa.org/store/ansi/isa-182-2016/46962105
 
 from flask import current_app
 
+from alerta.exceptions import InvalidAction
 from alerta.models.alarms import AlarmModel
 from alerta.models.enums import Action, Severity, Status
 
@@ -71,8 +72,10 @@ NO_CHANGE = 'noChange'
 LESS_SEVERE = 'lessSevere'
 
 ACTION_ACK = 'ack'
+ACTION_UNACK = 'unack'
 ACTION_SHELVE = 'shelve'
 ACTION_UNSHELVE = 'unshelve'
+ACTION_OPEN = 'open'
 
 
 class StateMachine(AlarmModel):
@@ -132,6 +135,11 @@ class StateMachine(AlarmModel):
                 return next_state('Operator Unshelve, Shelve (E) -> Normal (A)', current_severity, Status.Closed)
             else:
                 return next_state('Operator Unshelve, Shelve (E) -> Unack (B)', current_severity, Status.Open)
+        # Operator Open, Any(*) to Open
+        if action == ACTION_OPEN:
+            if state == Status.Open:
+                raise InvalidAction(f'alert is already in {state} status')
+            return next_state('Operator Open, Any(*) to Open', current_severity, Status.Open)
 
         # Alarm Occurs, Normal (A) -> Unack (B)
         if state == Status.Closed:
@@ -150,6 +158,10 @@ class StateMachine(AlarmModel):
         if state == Status.Ack:
             if current_severity == StateMachine.DEFAULT_NORMAL_SEVERITY:
                 return next_state('Process RTN Alarm Clears, Ack (C) -> Normal (A)', current_severity, Status.Closed)
+        # Operator Unack, Ack (C) -> Open (B)
+        if state == Status.Ack:
+            if action == ACTION_UNACK:
+                return next_state('Operator Unack, Ack (C) -> Unack (B)', current_severity, Status.Open)
         # Process RTN and Alarm Clears, Unack (B) -> RTN Unack (D)
         if state == Status.Open:
             if current_severity == StateMachine.DEFAULT_NORMAL_SEVERITY:
