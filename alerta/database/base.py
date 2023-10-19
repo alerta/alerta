@@ -125,6 +125,9 @@ class Database(Base):
     def create_alert(self, alert):
         raise NotImplementedError
 
+    def get_escalate(self):
+        raise NotImplementedError
+
     def set_alert(self, id, severity, status, tags, attributes, timeout, previous_severity, update_time, history=None):
         raise NotImplementedError
 

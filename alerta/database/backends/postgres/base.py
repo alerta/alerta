@@ -1,7 +1,7 @@
 import threading
 import time
 from collections import defaultdict, namedtuple
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import psycopg2
 from flask import current_app
@@ -452,6 +452,17 @@ class Backend(Database):
           ORDER BY {query.sort or 'last_receive_time'}
         """
         return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_escalate(self):
+        select = """
+            SELECT id, resource, event, environment, severity, correlate, status, service, "group",
+                value, text, tags, attributes, origin, type, create_time, timeout, raw_data, customer,
+                duplicate_count, repeat, previous_severity, trend_indication, receive_time, last_receive_id,
+                last_receive_time, update_time, history
+            FROM alerts
+            WHERE status='open' AND last_receive_time < %(etime)s
+        """
+        return self._fetchall(select, {"etime": datetime.utcnow() - timedelta(minutes=current_app.config['ESCALATE_TIME'])}, limit=1000)
 
     def get_alert_history(self, alert, page=None, page_size=None):
         select = """

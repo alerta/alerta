@@ -79,6 +79,30 @@ def receive():
         raise ApiError('insert or update of received alert failed', 500)
 
 
+@api.route('/alert/escalate', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.write_alerts)
+@jsonp
+def escalate():
+    severities = current_app.config["ESCALATE_SEVERITIES"]
+    alerts = Alert.get_escalate()
+    escalated_alerts = []
+    for alert in alerts:
+        try:
+            print(alert.severity)
+            if alert.severity not in severities:
+                continue
+            severity_index = severities.index(alert.severity)
+            if severity_index < 1:
+                continue
+            alert.severity = severities[severity_index - 1]
+            escalated_alerts.append(alert)
+            process_alert(alert)
+        except Exception as e:
+            raise ApiError(str(e), 500)
+    return jsonify(status='ok', alerts=[alert.serialize for alert in escalated_alerts]), 200
+
+
 @api.route('/alert/<alert_id>', methods=['OPTIONS', 'GET'])
 @cross_origin()
 @permission(Scope.read_alerts)

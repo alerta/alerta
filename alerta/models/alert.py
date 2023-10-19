@@ -486,6 +486,11 @@ class Alert:
     def delete_find_all(query=None):
         return db.delete_alerts(query)
 
+    # bulk delete
+    @staticmethod
+    def get_escalate():
+        return [Alert.from_db(alert) for alert in db.get_escalate()]
+
     # search alerts
     @staticmethod
     def find_all(query: Query = None, raw_data: bool = False, history: bool = False, page: int = 1, page_size: int = 1000) -> List['Alert']:
