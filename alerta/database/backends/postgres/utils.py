@@ -328,6 +328,48 @@ class NotificationRules(QueryBuilder):
         return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
 
 
+class EscalationRules(QueryBuilder):
+
+    VALID_PARAMS = {
+        # field (column, sort-by, direction)
+        'id': ('id', None, 0),
+        'priority': ('priority', 'priority', 1),
+        'environment': ('environment', 'environment', 1),
+        'service': ('service', 'service', 1),
+        'resource': ('resource', 'resource', 1),
+        'event': ('event', 'event', 1),
+        'group': ('group', '"group"', 1),
+        'tag': ('tags', None, 0),  # filter
+        'tags': (None, 'tags', 1),  # sort-by
+        'customer': ('customer', 'customer', 1),
+        'user': ('user', 'user', 1),
+        'createTime': ('create_time', 'create_time', -1),
+        'startTime': ('start_time', 'start_time', -1),
+        'endTime': ('end_time', 'end_time', -1),
+        'days': ('days', 'days', -1),
+        'severity': ('severity', 'severity', -1),
+        'text': ('text', 'text', 1),
+    }
+
+    @staticmethod
+    def from_params(params: MultiDict, customers=None, query_time=None):
+
+        query = ['1=1']
+        qvars = dict()
+        params = MultiDict(params)
+
+        # customer
+        if customers:
+            query.append('AND customer=ANY(%(customers)s)')
+            qvars['customers'] = customers
+
+        # filter, sort-by
+        query, qvars = QueryBuilder.filter_query(params, EscalationRules.VALID_PARAMS, query, qvars)
+        sort = QueryBuilder.sort_by_columns(params, EscalationRules.VALID_PARAMS)
+
+        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
+
+
 class OnCalls(QueryBuilder):
 
     VALID_PARAMS = {

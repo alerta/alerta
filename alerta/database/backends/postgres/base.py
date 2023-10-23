@@ -1121,6 +1121,120 @@ class Backend(Database):
         """
         return self._deleteone(delete, (id,), returning=True)
 
+# ESCALATION RULES
+
+    def create_escalation_rule(self, escalation_rule):
+        insert = """
+            INSERT INTO escalation_rules (id, active, "time", priority, environment, service, resource, event, "group", tags,
+                customer, "user", create_time, start_time, end_time, days, severity, advanced_severity, use_advanced_severity)
+            VALUES (%(id)s, %(active)s, %(time)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s,
+                %(customer)s, %(user)s, %(create_time)s, %(start_time)s, %(end_time)s, %(days)s, %(severity)s, %(advanced_severity)s::severity_advanced[], %(use_advanced_severity)s )
+            RETURNING *
+        """
+        test = self._insert(insert, vars(escalation_rule))
+        return test
+
+    def get_escalation_rule(self, id, customers=None):
+        select = """
+            SELECT * FROM escalation_rules
+            WHERE id=%(id)s
+              AND {customer}
+        """.format(
+            customer='customer=ANY(%(customers)s)' if customers else '1=1'
+        )
+        return self._fetchone(select, {'id': id, 'customers': customers})
+
+    def get_escalation_rules(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        select = """
+            SELECT * FROM escalation_rules
+             WHERE {where}
+          ORDER BY {order}
+        """.format(
+            where=query.where, order=query.sort
+        )
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_escalation_rules_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM escalation_rules
+             WHERE {where}
+        """.format(
+            where=query.where
+        )
+        return self._fetchone(select, query.vars).count
+
+    def get_escalation_alerts(self):
+        select = """
+            SELECT DISTINCT a.id, a.resource, a.event, a.severity, a.environment, a.service, a.text, a.value, a.timeout
+            FROM public.alerts as a, public.escalation_rules as e, generate_subscripts(e.advanced_severity,1) as s
+            WHERE e.active
+                AND a.status = 'open'
+                AND (%(now)s - a.last_receive_time > e.time)
+                AND a.environment=e.environment
+                AND (e.resource IS NULL OR e.resource=a.resource OR e.resource = '')
+                AND (e.service='{}' OR e.service <@ a.service)
+                AND (e.event IS NULL OR e.event=a.event or e.event = '')
+                AND (e.group IS NULL OR e.group=a.group)
+                AND (e.tags='{}' OR e.tags <@ a.tags)
+                AND (e.use_advanced_severity=TRUE OR e.severity='{}' OR ARRAY[a.severity] <@ e.severity)
+                AND (e.use_advanced_severity=FALSE OR ((e.advanced_severity[s].from_='{}' OR ARRAY[a.previous_severity] <@ e.advanced_severity[s].from_) AND (e.advanced_severity[s].to='{}' OR ARRAY[a.severity] <@ e.advanced_severity[s].to)))
+        """
+        return self._fetchall(select, {"now": datetime.utcnow()}, limit='ALL')
+
+    def update_escalation_rule(self, id, **kwargs):
+        update = """
+            UPDATE escalation_rules
+            SET
+        """
+        if kwargs.get('environment') is not None:
+            update += 'environment=%(environment)s, '
+        if 'service' in kwargs:
+            update += 'service=%(service)s, '
+        if 'time' in kwargs:
+            update += '"time"=%(time)s, '
+        if 'resource' in kwargs:
+            update += 'resource=%(resource)s, '
+        if 'event' in kwargs:
+            update += 'event=%(event)s, '
+        if 'group' in kwargs:
+            update += '"group"=%(group)s, '
+        if 'tags' in kwargs:
+            update += 'tags=%(tags)s, '
+        if 'customer' in kwargs:
+            update += 'customer=%(customer)s, '
+        if 'startTime' in kwargs:
+            update += 'start_time=%(startTime)s, '
+        if 'endTime' in kwargs:
+            update += 'end_time=%(endTime)s, '
+        if 'days' in kwargs:
+            update += 'days=%(days)s, '
+        if kwargs.get('severity') is not None:
+            update += 'severity=%(severity)s, '
+        if kwargs.get('advancedSeverity') is not None:
+            update += 'advanced_severity=%(advancedSeverity)s::severity_advanced[], '
+        if kwargs.get('useAdvancedSeverity') is not None:
+            update += 'use_advanced_severity=%(useAdvancedSeverity)s, '
+        if 'active' in kwargs:
+            update += 'active=%(active)s,'
+        update += """
+            "user"=COALESCE(%(user)s, "user")
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs['id'] = id
+        kwargs['user'] = kwargs.get('user')
+        return self._updateone(update, kwargs, returning=True)
+
+    def delete_escalation_rule(self, id):
+        delete = """
+            DELETE FROM escalation_rules
+            WHERE id=%s
+            RETURNING id
+        """
+        return self._deleteone(delete, (id,), returning=True)
+
     # ON CALLS
 
     def create_on_call(self, on_call):

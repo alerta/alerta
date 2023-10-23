@@ -148,6 +148,28 @@ BEGIN
 
 END$$;
 
+CREATE TABLE IF NOT EXISTS escalation_rules (
+    id text PRIMARY KEY,
+    priority integer NOT NULL,
+    environment text NOT NULL,
+    "time" interval,
+    service text[],
+    resource text,
+    event text,
+    "group" text,
+    tags text[],
+    customer text,
+    "user" text,
+    create_time timestamp without time zone,
+    start_time time without time zone,
+    end_time time without time zone,
+    days text[],
+    severity text[],
+    use_advanced_severity boolean,
+    advanced_severity severity_advanced[],
+    active boolean
+);
+
 CREATE TABLE IF NOT EXISTS notification_rules (
     id text PRIMARY KEY,
     priority integer NOT NULL,
