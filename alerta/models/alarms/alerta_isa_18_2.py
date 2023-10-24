@@ -29,6 +29,7 @@ SEVERITY_MAP = {
     Severity.Unknown: 0
 }
 DEFAULT_NORMAL_SEVERITY = Severity.Normal
+DEFAULT_INFORM_SEVERITY = Severity.Informational
 DEFAULT_PREVIOUS_SEVERITY = Severity.Normal
 
 COLOR_MAP = {
@@ -90,6 +91,7 @@ class StateMachine(AlarmModel):
 
         StateMachine.DEFAULT_STATUS = Status.Closed
         StateMachine.DEFAULT_NORMAL_SEVERITY = app.config['DEFAULT_NORMAL_SEVERITY'] or DEFAULT_NORMAL_SEVERITY
+        StateMachine.DEFAULT_INFORM_SEVERITY = app.config['DEFAULT_INFORM_SEVERITY'] or DEFAULT_INFORM_SEVERITY
         StateMachine.DEFAULT_PREVIOUS_SEVERITY = app.config['DEFAULT_PREVIOUS_SEVERITY'] or DEFAULT_PREVIOUS_SEVERITY
 
     def trend(self, previous, current):
