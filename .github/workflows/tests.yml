@@ -9,12 +9,12 @@ env:
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
 jobs:
-  test-postgres11:
+  test-postgres13:
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres:11
+        image: postgres:13
         env:
           POSTGRES_DB: alerta
           POSTGRES_USER: postgres
@@ -57,12 +57,12 @@ jobs:
           steps: ${{ toJson(steps) }}
         if: failure()
 
-  test-postgres15:
+  test-postgres16:
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16
         env:
           POSTGRES_DB: alerta
           POSTGRES_USER: postgres
@@ -105,12 +105,12 @@ jobs:
           steps: ${{ toJson(steps) }}
         if: failure()
 
-  test-mongodb44:
+  test-mongodb60:
     runs-on: ubuntu-latest
 
     services:
       mongodb:
-        image: mongo:4.4
+        image: mongo:6.0
         ports:
           - 27017:27017
 
@@ -144,12 +144,12 @@ jobs:
           steps: ${{ toJson(steps) }}
         if: failure()
 
-  test-mongodb50:
+  test-mongodb71:
     runs-on: ubuntu-latest
 
     services:
       mongodb:
-        image: mongo:6.0
+        image: mongo:7.1
         ports:
           - 27017:27017
 
