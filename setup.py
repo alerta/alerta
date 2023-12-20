@@ -99,11 +99,11 @@ setuptools.setup(
         'Intended Audience :: System Administrators',
         'Intended Audience :: Telecommunications Industry',
         'License :: OSI Approved :: Apache Software License',
+        'Programming Language :: Python :: 3.12',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.8',
         'Topic :: System :: Monitoring',
     ],
-    python_requires='>=3.8'
+    python_requires='>=3.9'
 )
