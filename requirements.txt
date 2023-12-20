@@ -15,4 +15,4 @@ PyYAML==6.0
 requests==2.31.0
 requests_hawk==1.2.1
 sentry-sdk[flask]==1.26.0
-werkzeug==2.3.6
+werkzeug==2.3.8
