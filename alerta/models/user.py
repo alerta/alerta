@@ -1,9 +1,9 @@
 from datetime import datetime
-from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from flask import current_app
+from strenum import StrEnum
 
 from alerta.app import db
 from alerta.auth import utils
@@ -14,7 +14,7 @@ from alerta.utils.response import absolute_url
 JSON = Dict[str, Any]
 
 
-class UserStatus(str, Enum):
+class UserStatus(StrEnum):
 
     Active = 'active'
     Inactive = 'inactive'

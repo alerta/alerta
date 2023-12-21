@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
-from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
+
+from strenum import StrEnum
 
 from alerta.app import db, key_helper
 from alerta.database.base import Query
@@ -12,7 +13,7 @@ from alerta.utils.response import absolute_url
 JSON = Dict[str, Any]
 
 
-class ApiKeyStatus(str, Enum):
+class ApiKeyStatus(StrEnum):
 
     Active = 'active'
     Expired = 'expired'
