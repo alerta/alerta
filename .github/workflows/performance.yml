@@ -13,14 +13,14 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      db:
-        image: postgres:13
-        ports:
-          - 5432:5432
+      postgres:
+        image: postgres:15
         env:
-          POSTGRES_DB: monitoring
+          POSTGRES_DB: alerta
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -32,7 +32,7 @@ jobs:
           - 8080:8080
         env:
           DEBUG: 1
-          DATABASE_URL: postgres://postgres:postgres@db:5432/monitoring
+          DATABASE_URL: postgres://postgres:postgres@postgres:5432/alerta
         options: >-
           --health-cmd "curl --fail http://localhost:8080/_ || exit 1"
           --health-interval 10s

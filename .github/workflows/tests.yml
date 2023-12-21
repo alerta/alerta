@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -91,7 +91,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -139,7 +139,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -187,7 +187,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -252,7 +252,7 @@ jobs:
             libsasl2-dev \
             xmlsec1
       - name: Set up Python 3.8
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.8'
           architecture: 'x64'
@@ -265,12 +265,18 @@ jobs:
           pip install -r requirements-dev.txt
           pip install -r requirements-ci.txt
           pip install .
-      - name: Integration Test with pytest
-        id: integration-test
+      - name: Integration Test (LDAP) with pytest
+        id: integration-test-ldap
         env:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
         run: |
-          pytest tests/integration
+          pytest tests/integration/test_auth_ldap.py
+      - name: Integration Test (SAML) with pytest
+        id: integration-test-saml
+        env:
+          DATABASE_URL: mongodb://127.0.0.1:27017/alerta
+        run: |
+          pytest tests/integration/test_auth_saml.py
       - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}

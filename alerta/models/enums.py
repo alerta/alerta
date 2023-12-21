@@ -1,8 +1,9 @@
 import re
-from enum import Enum
+
+from strenum import StrEnum
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
 
     Security = 'security'
     Critical = 'critical'
@@ -19,7 +20,7 @@ class Severity(str, Enum):
     Unknown = 'unknown'
 
 
-class Status(str, Enum):
+class Status(StrEnum):
 
     Open = 'open'
     Assign = 'assign'
@@ -32,7 +33,7 @@ class Status(str, Enum):
     Not_Valid = 'notValid'
 
 
-class Action(str, Enum):
+class Action(StrEnum):
 
     OPEN = 'open'
     ASSIGN = 'assign'
@@ -45,7 +46,7 @@ class Action(str, Enum):
     TIMEOUT = 'timeout'
 
 
-class TrendIndication(str, Enum):
+class TrendIndication(StrEnum):
 
     More_Severe = 'moreSevere'
     No_Change = 'noChange'
@@ -143,7 +144,7 @@ class Scope(str):
 ADMIN_SCOPES = [Scope.admin, Scope.read, Scope.write]
 
 
-class ChangeType(str, Enum):
+class ChangeType(StrEnum):
 
     open = 'open'
     assign = 'assign'
@@ -164,7 +165,7 @@ class ChangeType(str, Enum):
     expired = 'expired'
 
 
-class NoteType(str, Enum):
+class NoteType(StrEnum):
 
     alert = 'alert'
     blackout = 'blackout'

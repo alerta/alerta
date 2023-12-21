@@ -2,13 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches:
-      - master
-      - 'release/**'
-  pull_request:
-    branches:
-      - master
-      - 'release/**'
+    branches: [ master, release/* ]
 
 jobs:
   deploy:
@@ -20,3 +14,7 @@ jobs:
       - run: flyctl deploy --remote-only --app alerta-api
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - uses: act10ns/slack@v2
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
