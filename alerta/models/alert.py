@@ -542,8 +542,12 @@ class Alert:
 
     # get environments
     @staticmethod
-    def get_environments(query: Query = None) -> List[str]:
-        return db.get_environments(query)
+    def get_environments(query: Query = None, page: int = 1, page_size: int = 100) -> List[str]:
+        return db.get_environments(query, page, page_size)
+
+    @staticmethod
+    def get_environments_count(query: Query = None) -> int:
+        return db.get_environments_count(query)
 
     # get services
     @staticmethod
