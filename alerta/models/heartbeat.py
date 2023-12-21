@@ -2,11 +2,11 @@ import os
 import platform
 import sys
 from datetime import datetime
-from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from flask import current_app
+from strenum import StrEnum
 
 from alerta.app import db
 from alerta.database.base import Query
@@ -16,7 +16,7 @@ from alerta.utils.response import absolute_url
 JSON = Dict[str, Any]
 
 
-class HeartbeatStatus(str, Enum):
+class HeartbeatStatus(StrEnum):
 
     OK = 'ok'
     Slow = 'slow'
