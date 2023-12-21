@@ -97,6 +97,7 @@ def process_action(alert: Alert, action: str, text: str, timeout: int = None, po
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None
+    alert_was_updated = False
     for plugin in wanted_plugins:
         if alert.is_suppressed:
             break
@@ -122,8 +123,10 @@ def process_action(alert: Alert, action: str, text: str, timeout: int = None, po
                 alert, action, text, timeout = updated
             elif len(updated) == 3:
                 alert, action, text = updated
+        if updated:
+            alert_was_updated = True
 
-    if updated:
+    if alert_was_updated:
         alert.update_tags(alert.tags)
         alert.attributes = alert.update_attributes(alert.attributes)
 
@@ -135,6 +138,7 @@ def process_note(alert: Alert, text: str) -> Tuple[Alert, str]:
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None
+    alert_was_updated = False
     for plugin in wanted_plugins:
         try:
             updated = plugin.take_note(alert, text, config=wanted_config)
@@ -152,8 +156,10 @@ def process_note(alert: Alert, text: str) -> Tuple[Alert, str]:
             updated = updated, text
         if isinstance(updated, tuple) and len(updated) == 2:
             alert, text = updated
+        if updated:
+            alert_was_updated = True
 
-    if updated:
+    if alert_was_updated:
         alert.update_tags(alert.tags)
         alert.update_attributes(alert.attributes)
 
@@ -165,6 +171,7 @@ def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, st
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     updated = None
+    alert_was_updated = False
     for plugin in wanted_plugins:
         if alert.is_suppressed:
             break
@@ -180,12 +187,13 @@ def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, st
             else:
                 logging.error(f"Error while running status plugin '{plugin.name}': {str(e)}")
         if updated:
+            alert_was_updated = True
             try:
                 alert, status, text = updated
             except Exception:
                 alert = updated
 
-    if updated:
+    if alert_was_updated:
         alert.update_tags(alert.tags)
         alert.attributes = alert.update_attributes(alert.attributes)
 
