@@ -4,6 +4,10 @@ on:
   push:
     branches: [ master, release/* ]
 
+env:
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  BUILD_NUMBER: ${{ format('{0}-{1}-{2}', github.run_id, github.run_number, github.run_attempt) }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -11,7 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only --app alerta-api
+      - run: >-
+          flyctl deploy
+          --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          --build-arg BUILD_NUMBER=$BUILD_NUMBER
+          --build-arg RELEASE=$(cat VERSION)
+          --build-arg VERSION=${{ github.sha }}
+          --remote-only
+          --app alerta-api
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       - uses: act10ns/slack@v2
