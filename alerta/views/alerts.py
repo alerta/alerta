@@ -497,7 +497,6 @@ def get_environments():
             pages=paging.pages,
             more=paging.has_more,
             total=total
-            
         )
     else:
         return jsonify(

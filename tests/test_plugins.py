@@ -1,7 +1,7 @@
 import json
 import os
-from typing import Any
 import unittest
+from typing import Any
 from uuid import uuid4
 
 from alerta.app import create_app, db, plugins
