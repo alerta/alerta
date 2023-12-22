@@ -147,7 +147,8 @@ def health_check():
                 return f'HEARTBEAT_STALE: {heartbeat.origin}', 503
 
     except Exception as e:
-        return f'HEALTH_CHECK_FAILED: {e}', 503
+        current_app.logger.exception(e)
+        return 'HEALTH_CHECK_FAILED: Internal Error!', 503
 
     return 'OK'
 
