@@ -632,14 +632,14 @@ class Backend(Database):
 
     # ENVIRONMENTS
 
-    def get_environments(self, query=None, page=None, page_size=None):
+    def get_environments(self, query=None, topn=1000):
         query = query or Query()
         select = f"""
             SELECT environment, severity, status, count(1) FROM alerts
             WHERE {query.where}
             GROUP BY environment, CUBE(severity, status)
         """
-        result = self._fetchall(select, query.vars, limit=page_size)
+        result = self._fetchall(select, query.vars, limit=topn)
 
         severity_count = defaultdict(list)
         status_count = defaultdict(list)
@@ -654,7 +654,7 @@ class Backend(Database):
                 total_count[row.environment] = row.count
 
         select = """SELECT DISTINCT environment FROM alerts"""
-        environments = self._fetchall(select, {}, limit=page_size, offset=(page - 1) * page_size)
+        environments = self._fetchall(select, {})
         return [
             {
                 'environment': e.environment,
@@ -662,14 +662,6 @@ class Backend(Database):
                 'statusCounts': dict(status_count[e.environment]),
                 'count': total_count[e.environment]
             } for e in environments]
-
-    def get_environments_count(self, query=None):
-        query = query or Query()
-        select = """
-            SELECT COUNT(DISTINCT environment) FROM alerts
-             WHERE {where}
-        """.format(where=query.where)
-        return self._fetchone(select, query.vars).count
 
     # SERVICES
 
