@@ -1,4 +1,5 @@
 import ldap  # pylint: disable=import-error
+import ldap.filter
 from flask import current_app, jsonify, request
 
 from alerta.auth.utils import create_token, get_customers, not_authorized
@@ -87,11 +88,13 @@ def login():
         current_app.config['LDAP_USER_NAME_ATTR'],
         current_app.config['LDAP_USER_EMAIL_ATTR']
     ]
+    safe_username = ldap.filter.escape_filter_chars(username)
+    safe_domain = ldap.filter.escape_filter_chars(domain)
     if user_filter:
         result = [r for r in ldap_connection.search_s(
             base=user_base_dn or base_dn,
             scope=ldap.SCOPE_SUBTREE,
-            filterstr=user_filter.format(username=username),
+            filterstr=user_filter.format(username=safe_username),
             attrlist=user_attrs
         ) if None not in r]
 
@@ -105,11 +108,11 @@ def login():
         email_verified = bool(email)
     else:
         if '%' in current_app.config['LDAP_DOMAINS'][domain]:
-            user_dn = current_app.config['LDAP_DOMAINS'][domain] % username
+            user_dn = current_app.config['LDAP_DOMAINS'][domain] % safe_username
         else:
-            user_dn = current_app.config['LDAP_DOMAINS'][domain].format(username)
-        name = username
-        email = f'{username}@{domain}'
+            user_dn = current_app.config['LDAP_DOMAINS'][domain].format(safe_username)
+        name = safe_username
+        email = f'{safe_username}@{safe_domain}'
         email_verified = False
 
     # Authenticate user logging in
@@ -141,7 +144,7 @@ def login():
         result = ldap_connection.search_s(
             base=group_base_dn or base_dn,
             scope=ldap.SCOPE_SUBTREE,
-            filterstr=group_filter.format(username=username, email=email, userdn=user_dn),
+            filterstr=group_filter.format(username=safe_username, email=email, userdn=user_dn),
             attrlist=[current_app.config['LDAP_GROUP_NAME_ATTR']]
         )
         for group_dn, group_attrs in result:
