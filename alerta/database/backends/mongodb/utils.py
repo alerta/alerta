@@ -2,7 +2,7 @@ import json
 import re
 from collections import namedtuple
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List  # noqa
 
 import pytz
 from pyparsing import ParseException

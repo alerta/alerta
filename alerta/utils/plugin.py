@@ -12,6 +12,7 @@ LOG = logging.getLogger('alerta.plugins')
 
 if TYPE_CHECKING:
     from typing import Iterable, Tuple  # noqa
+
     from alerta.models.alert import Alert  # noqa
     from alerta.plugins import PluginBase  # noqa
 
