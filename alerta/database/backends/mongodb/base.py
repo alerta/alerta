@@ -797,7 +797,7 @@ class Backend(Database):
 
     # ENVIRONMENTS
 
-    def get_environments(self, query=None, topn=1000):
+    def get_environments(self, query=None, page=1, page_size=100):
         query = query or Query()
 
         def pipeline(group_by):
@@ -810,7 +810,9 @@ class Backend(Database):
                      'count': {'$sum': 1}
                  }
                  },
-                {'$limit': topn}
+                {'$sort': {'_id.environment': 1}},
+                {'$skip': (page - 1) * page_size},
+                {'$limit': page_size}
             ]
 
         response_severity = self.get_db().alerts.aggregate(pipeline('severity'))
@@ -823,14 +825,24 @@ class Backend(Database):
         for r in response_status:
             status_count[r['_id']['environment']].append((r['_id']['status'], r['count']))
 
-        environments = self.get_db().alerts.find().distinct('environment')
+        environments = self.get_db().alerts.distinct('environment')
+        # environments = self.get_db().alerts.distinct('environment', query.where)
+        # environments = environments[(page - 1) * page_size:page * page_size]
         return [
             {
                 'environment': env,
                 'severityCounts': dict(severity_count[env]),
                 'statusCounts': dict(status_count[env]),
                 'count': sum(t[1] for t in severity_count[env])
-            } for env in environments]
+            } for env in environments
+        ]
+
+    def get_environments_count(self, query=None):
+        query = query or Query()
+        where = query.where
+        distinct_values = self.get_db().alerts.distinct("environment", where)
+        count = len(distinct_values) if distinct_values else 0
+        return count
 
     # SERVICES
 
