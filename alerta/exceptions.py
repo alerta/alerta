@@ -124,12 +124,13 @@ def handle_exception(error: Exception) -> Union[Tuple[Response, int], Exception]
         return error
 
     current_app.logger.exception(error)
+    current_app.logger.exception(traceback.format_exc())
     return jsonify({
         'status': 'error',
-        'message': str(error),
+        'message': 'An internal error has occurred!',
         'code': 500,
         'errors': [
-            traceback.format_exc()
+            str(error)
         ],
         'requestId': g.request_id
     }), 500
