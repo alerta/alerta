@@ -38,6 +38,7 @@ class Config:
         # Use app config for DATABASE_URL if no env var from above override it
         config['DATABASE_URL'] = get_config('DATABASE_URL', default=database_url, type=str, config=config)
         config['DATABASE_NAME'] = get_config('DATABASE_NAME', default=None, type=str, config=config)
+        config['DATABASE_SCHEMA'] = get_config('DATABASE_SCHEMA', default='public', type=str, config=config)
 
         config['AUTH_REQUIRED'] = get_config('AUTH_REQUIRED', default=None, type=bool, config=config)
         config['AUTH_PROVIDER'] = get_config('AUTH_PROVIDER', default=None, type=str, config=config)
@@ -76,19 +77,17 @@ class Config:
         config['GOOGLE_TRACKING_ID'] = get_config('GOOGLE_TRACKING_ID', default=None, type=str, config=config)
 
         # housekeeping
-        delete_expired_hrs = (
-            os.environ.get('DEFAULT_EXPIRED_DELETE_HRS', None)
-            or os.environ.get('HK_EXPIRED_DELETE_HRS', None)
+        config['DELETE_EXPIRED_AFTER'] = (
+            get_config('DEFAULT_EXPIRED_DELETE_HRS', default=0, type=int, config=config) * 60 * 60
+            or get_config('HK_EXPIRED_DELETE_HRS', default=0, type=int) * 60 * 60
+            or get_config('DELETE_EXPIRED_AFTER', default=None, type=int, config=config)
         )
-        delete_expired = delete_expired_hrs * 60 * 60 if delete_expired_hrs else None
-        config['DELETE_EXPIRED_AFTER'] = get_config('DELETE_EXPIRED_AFTER', default=delete_expired, type=int, config=config)
 
-        delete_info_hrs = (
-            os.environ.get('DEFAULT_INFO_DELETE_HRS', None)
-            or os.environ.get('HK_INFO_DELETE_HRS', None)
+        config['DELETE_INFO_AFTER'] = (
+            get_config('DEFAULT_INFO_DELETE_HRS', default=0, type=int, config=config) * 60 * 60
+            or get_config('HK_INFO_DELETE_HRS', default=0, type=int) * 60 * 60
+            or get_config('DELETE_INFO_AFTER', default=None, type=int, config=config)
         )
-        delete_info = delete_info_hrs * 60 * 60 if delete_info_hrs else None
-        config['DELETE_INFO_AFTER'] = get_config('DELETE_INFO_AFTER', default=delete_info, type=int, config=config)
 
         # plugins
         config['PLUGINS'] = get_config('PLUGINS', default=[], type=list, config=config)
@@ -104,6 +103,8 @@ class Config:
 
         # webhooks
         config['DEFAULT_ENVIRONMENT'] = get_config('DEFAULT_ENVIRONMENT', default=None, type=str, config=config)
+
+        config['CLIPBOARD_TEMPLATE'] = get_config('CLIPBOARD_TEMPLATE', default=None, type=str, config=config)
 
         # Runtime config check
         if config['CUSTOMER_VIEWS'] and not config['AUTH_REQUIRED']:

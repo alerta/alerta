@@ -1,8 +1,7 @@
-name: CI Tests
+name: Tests
 
 on:
   push:
-    branches: [ master, release/* ]
   pull_request:
     branches: [ master ]
 
@@ -10,12 +9,12 @@ env:
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
 jobs:
-  test-postgres:
+  test-postgres13:
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres
+        image: postgres:13
         env:
           POSTGRES_DB: alerta
           POSTGRES_USER: postgres
@@ -30,12 +29,12 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: ['3.9', '3.12']
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -46,44 +45,44 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
           pip install .
-      - name: Pre-commit hooks
-        id: hooks
-        run: |
-          pre-commit run -a --show-diff-on-failure
-      - name: Lint with flake8
-        id: lint
-        run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=50 --max-line-length=127 --statistics
       - name: Test with pytest
         id: test
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/alerta
         run: |
           pytest --cov=alerta tests/*.py
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
         if: failure()
 
-  test-mongodb:
+  test-postgres16:
     runs-on: ubuntu-latest
 
     services:
-      mongodb:
-        image: mongo
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: alerta
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
         ports:
-          - 27017:27017
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     strategy:
       matrix:
-        python-version: [3.6, 3.7]
+        python-version: ['3.9', '3.12']
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -94,22 +93,91 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
           pip install .
-      - name: Pre-commit hooks
-        id: hooks
+      - name: Test with pytest
+        id: test
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/alerta
         run: |
-          pre-commit run -a --show-diff-on-failure
-      - name: Lint with flake8
-        id: lint
+          pytest --cov=alerta tests/*.py
+      - uses: act10ns/slack@v2
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+        if: failure()
+
+  test-mongodb60:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.12']
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        id: install-deps
         run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=50 --max-line-length=127 --statistics
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install .
       - name: Test with pytest
         id: test
         env:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
         run: |
           pytest --cov=alerta tests/*.py
-      - uses: act10ns/slack@v1
+      - uses: act10ns/slack@v2
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+        if: failure()
+
+  test-mongodb70:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.12']
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        id: install-deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install .
+      - name: Test with pytest
+        id: test
+        env:
+          DATABASE_URL: mongodb://127.0.0.1:27017/alerta
+        run: |
+          pytest --cov=alerta tests/*.py
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}
@@ -137,7 +205,7 @@ jobs:
           SIMPLESAMLPHP_SP_ASSERTION_CONSUMER_SERVICE: http://localhost:8080/auth/saml
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install packages
         run: |
           sudo apt-get update
@@ -147,10 +215,10 @@ jobs:
             libldap2-dev \
             libsasl2-dev \
             xmlsec1
-      - name: Set up Python 3.x
-        uses: actions/setup-python@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.9'
           architecture: 'x64'
       - name: Install dependencies
         id: install-deps
@@ -161,13 +229,19 @@ jobs:
           pip install -r requirements-dev.txt
           pip install -r requirements-ci.txt
           pip install .
-      - name: Integration Test with pytest
-        id: integration-test
+      - name: Integration Test (LDAP) with pytest
+        id: integration-test-ldap
         env:
           DATABASE_URL: mongodb://127.0.0.1:27017/alerta
         run: |
-          pytest tests/integration
-      - uses: act10ns/slack@v1
+          pytest tests/integration/test_auth_ldap.py
+      - name: Integration Test (SAML) with pytest
+        id: integration-test-saml
+        env:
+          DATABASE_URL: mongodb://127.0.0.1:27017/alerta
+        run: |
+          pytest tests/integration/test_auth_saml.py
+      - uses: act10ns/slack@v2
         with:
           status: ${{ job.status }}
           steps: ${{ toJson(steps) }}

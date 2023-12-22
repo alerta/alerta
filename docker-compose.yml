@@ -1,0 +1,23 @@
+version: '3.1'
+
+services:
+  api:
+    image: ghcr.io/alerta/alerta-api
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    environment:
+      # - DEBUG=1  # remove this line to turn DEBUG off
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/monitoring
+    restart: always
+
+  db:
+    image: postgres
+    ports:
+      - 5432
+    environment:
+      POSTGRES_DB: monitoring
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    restart: always

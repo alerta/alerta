@@ -1,4 +1,6 @@
 import json
+from datetime import datetime, timedelta
+from uuid import uuid4
 
 import jwt
 import requests
@@ -22,7 +24,7 @@ def get_oidc_configuration(app):
         'cognito': f"https://cognito-idp.{app.config['AWS_REGION']}.amazonaws.com/{app.config['COGNITO_USER_POOL_ID']}",
         'gitlab': app.config['GITLAB_URL'],
         'google': 'https://accounts.google.com',
-        'keycloak': f"{app.config['KEYCLOAK_URL']}/auth/realms/{app.config['KEYCLOAK_REALM']}"
+        'keycloak': f"{app.config['KEYCLOAK_URL']}/realms/{app.config['KEYCLOAK_REALM']}"
     }
 
     issuer_url = OIDC_ISSUER_URL_BY_PROVIDER.get(app.config['AUTH_PROVIDER']) or app.config['OIDC_ISSUER_URL']
@@ -72,10 +74,47 @@ def openid():
         'grant_type': 'authorization_code',
         'code': request.json['code'],
         'redirect_uri': request.json['redirectUri'],
-        'client_id': request.json['clientId'],
-        'client_secret': current_app.config['OAUTH2_CLIENT_SECRET'],
     }
-    r = requests.post(token_endpoint, data)
+
+    token_endpoint_auth_methods = oidc_configuration.get(
+        'token_endpoint_auth_methods_supported',
+        ['client_secret_basic'])
+    if not isinstance(token_endpoint_auth_methods, list):
+        token_endpoint_auth_methods = [token_endpoint_auth_methods]
+
+    preferred_token_auth_method = 'client_secret_post'
+    for token_auth_method in current_app.config['OIDC_TOKEN_AUTH_METHODS']:
+        if token_auth_method in token_endpoint_auth_methods:
+            preferred_token_auth_method = token_auth_method
+            break
+
+    if preferred_token_auth_method == 'client_secret_basic':
+        auth = (request.json['clientId'], current_app.config['OAUTH2_CLIENT_SECRET'])
+        r = requests.post(token_endpoint, data, auth=auth)
+    elif preferred_token_auth_method == 'client_secret_post':
+        data['client_id'] = request.json['clientId']
+        data['client_secret'] = current_app.config['OAUTH2_CLIENT_SECRET']
+        r = requests.post(token_endpoint, data)
+    elif preferred_token_auth_method == 'client_secret_jwt':
+        now = datetime.utcnow()
+        payload = dict(
+            iss=request.json['clientId'],
+            sub=request.json['clientId'],
+            aud=token_endpoint,
+            jti=str(uuid4()),
+            exp=(now + timedelta(minutes=5)),
+            iat=now
+        )
+        client_assertion = jwt.encode(
+            payload=payload,
+            key=current_app.config['OAUTH2_CLIENT_SECRET'],
+            algorithm='HS256'
+        )
+        data['client_assertion_type'] = 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+        data['client_assertion'] = client_assertion
+        r = requests.post(token_endpoint, data)
+    else:
+        raise ApiError(f"Token endpoint auth method '{preferred_token_auth_method}' is not supported by Alerta.", 400)
     token = r.json()
 
     if 'error' in token:
@@ -155,7 +194,7 @@ def openid():
     user.update_last_login()
 
     scopes = Permission.lookup(login, roles=roles)
-    customers = get_customers(login, groups=[user.domain] + groups)
+    customers = get_customers(login, groups=groups + ([user.domain] if user.domain else []))
 
     auth_audit_trail.send(current_app._get_current_object(), event='openid-login', message='user login via OpenID Connect',
                           user=login, customers=customers, scopes=scopes, **custom_claims,
@@ -164,4 +203,4 @@ def openid():
     token = create_token(user_id=subject, name=name, login=login, provider=current_app.config['AUTH_PROVIDER'],
                          customers=customers, scopes=scopes, **custom_claims,
                          email=email, email_verified=email_verified, picture=picture)
-    return jsonify(token=token.tokenize)
+    return jsonify(token=token.tokenize())

@@ -26,12 +26,12 @@ def custom(webhook, path):
         rv = custom_webhooks.webhooks[webhook].incoming(
             path=path or request.path,
             query_string=request.args,
-            payload=request.get_json() or request.form or request.get_data(as_text=True)
+            payload=request.get_json(silent=True) or request.form or request.get_data(as_text=True)
         )
     except TypeError:
         rv = custom_webhooks.webhooks[webhook].incoming(
             query_string=request.args,
-            payload=request.get_json() or request.form or request.get_data(as_text=True)
+            payload=request.get_json(silent=True) or request.form or request.get_data(as_text=True)
         )
     except AlertaException as e:
         raise ApiError(e.message, code=e.code, errors=e.errors)
@@ -47,7 +47,7 @@ def custom(webhook, path):
             alert.customer = assign_customer(wanted=alert.customer)
 
             def audit_trail_alert(event: str):
-                write_audit_trail.send(current_app._get_current_object(), event=event, message=alert.text, user=g.login,
+                write_audit_trail.send(current_app._get_current_object(), event=event, message=alert.text, user=g.login,  # type: ignore
                                        customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
                                        request=request)
 

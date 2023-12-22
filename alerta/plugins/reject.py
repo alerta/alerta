@@ -28,7 +28,7 @@ class RejectPolicy(PluginBase):
             LOG.warning("[POLICY] Alert origin '%s' has been blacklisted", alert.origin)
             raise RejectException(f"[POLICY] Alert origin '{alert.origin}' has been blacklisted")
 
-        if not any(regex.match(alert.environment) for regex in ALLOWED_ENVIRONMENT_REGEX):
+        if not any(regex.fullmatch(alert.environment) for regex in ALLOWED_ENVIRONMENT_REGEX):
             LOG.warning('[POLICY] Alert environment does not match one of %s', ', '.join(ALLOWED_ENVIRONMENTS))
             raise RejectException('[POLICY] Alert environment does not match one of %s' %
                                   ', '.join(ALLOWED_ENVIRONMENTS))

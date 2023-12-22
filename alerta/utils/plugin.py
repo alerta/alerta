@@ -12,6 +12,7 @@ LOG = logging.getLogger('alerta.plugins')
 
 if TYPE_CHECKING:
     from typing import Iterable, Tuple  # noqa
+
     from alerta.models.alert import Alert  # noqa
     from alerta.plugins import PluginBase  # noqa
 
@@ -44,7 +45,8 @@ class Plugins:
                 LOG.error(f"Failed to load plugin '{name}': {str(e)}")
         LOG.info(f"All server plugins enabled: {', '.join(self.plugins.keys())}")
         try:
-            self.rules = load_entry_point('alerta-routing', 'alerta.routing', 'rules')  # type: ignore
+            routing_dist = self.config['ROUTING_DIST']
+            self.rules = load_entry_point(routing_dist, 'alerta.routing', 'rules')  # type: ignore
         except (DistributionNotFound, ImportError):
             LOG.info('No plugin routing rules found. All plugins will be evaluated.')
 

@@ -29,6 +29,16 @@ class ApiResponseTestCase(unittest.TestCase):
     def tearDown(self):
         db.destroy()
 
+    def test_response_custom_id(self):
+
+        # create alert
+        response = self.client.post('/alert', json=self.prod_alert)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['id'], 'custom-alert-id')
+        self.assertEqual(data['id'], 'custom-alert-id')
+        self.assertEqual(data['status'], 'ok')
+
     def test_response_href(self):
 
         # create alert
@@ -36,3 +46,4 @@ class ApiResponseTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['href'], 'https://api.alerta.dev:9898/_/alert/custom-alert-id')
+        self.assertEqual(data['status'], 'ok')

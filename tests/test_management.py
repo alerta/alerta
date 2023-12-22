@@ -18,7 +18,9 @@ class ManagementTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': False,
             # 'ACK_TIMEOUT': 2,
-            # 'SHELVE_TIMEOUT': 3
+            # 'SHELVE_TIMEOUT': 3,
+            'SERVER_VERSION': 'off',
+            # 'SERVER_VERSION': 'major'
         }
 
         with mod_env(
@@ -100,18 +102,27 @@ class ManagementTestCase(unittest.TestCase):
     def tearDown(self):
         db.destroy()
 
-    def test_status(self):
+    def test_manifest(self):
 
-        # create alert
-        response = self.client.post('/alert', data=json.dumps(self.expired_alert), headers=self.headers)
-        self.assertEqual(response.status_code, 201)
-
-        response = self.client.get('/management/status', headers=self.headers)
+        response = self.client.get('/management/manifest')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
-        for metric in data['metrics']:
-            if metric['name'] == 'total':
-                self.assertGreaterEqual(metric['value'], 1)
+        self.assertEqual(data['release'], None)
+
+    def test_properties(self):
+
+        response = self.client.get('/management/properties')
+        self.assertEqual(response.status_code, 200)
+
+    def test_good_to_go(self):
+
+        response = self.client.get('/management/gtg')
+        self.assertEqual(response.status_code, 200)
+
+    def test_health_check(self):
+
+        response = self.client.get('/management/healthcheck')
+        self.assertEqual(response.status_code, 200)
 
     def test_housekeeping(self):
 
@@ -283,3 +294,22 @@ class ManagementTestCase(unittest.TestCase):
         self.assertListEqual(data['expired'], [])
         self.assertListEqual(data['unshelve'], [])
         self.assertListEqual(data['unack'], [])
+
+    def test_status(self):
+
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.expired_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.get('/management/status', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['version'], None)
+        for metric in data['metrics']:
+            if metric['name'] == 'total':
+                self.assertGreaterEqual(metric['value'], 1)
+
+    def test_prometheus(self):
+
+        response = self.client.get('/management/metrics')
+        self.assertEqual(response.status_code, 200)

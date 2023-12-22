@@ -1,7 +1,7 @@
 import json
 import unittest
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from werkzeug.datastructures import MultiDict
 
@@ -16,6 +16,88 @@ class SearchTestCase(unittest.TestCase):
 
     def setUp(self):
         self.app = create_app()
+
+    def test_alerts_filter(self):
+
+        self.maxDiff = None
+
+        search_params = MultiDict([
+            ('id', '8b4e22b7-58b3-4c7c-9d00-1d50ca412b0e'),
+            ('resource', 'res1'),
+            ('event', 'event1'),
+            ('environment', 'Development'),
+            ('severity', 'major'),
+            ('correlate', 'event2'),
+            ('status', 'closed'),
+            ('service', 'Network'),
+            ('service', 'Shared'),
+            ('group', 'OS'),
+            ('value', '100rps'),
+            ('text', 'this is text'),
+            ('tag', 'tag1'),
+            ('tag', 'tag2'),
+            ('attributes.foo', 'bar'),
+            ('attributes.baz', 'quux'),
+            ('origin', 'origin/foo'),
+            ('type', 'exceptionAlert'),
+            ('createTime', ''),
+            ('timeout', '3600'),
+            ('rawData', '/Volumes/GoogleDrive'),
+            ('customer', 'cust1'),
+            ('duplicateCount', '3'),
+            ('repeat', 'true'),
+            ('previousSeverity', 'warning'),
+            ('trendIndication', 'moreSevere'),
+            ('receiveTime', ''),
+            ('lastReceiveId', '69dbf798-0dad-475a-9375-18d2471ae08b'),
+            ('lastReceiveTime', ''),
+            ('updateTime', '')
+        ])
+
+        try:
+            with self.app.test_request_context():
+                query = qb.alerts.from_params(search_params)  # noqa
+        except Exception as e:
+            self.fail(f'Unexpected exception in alerts filter query: {e}')
+
+    def test_alerts_sort_by(self):
+
+        sort_params = MultiDict([
+            ('sort-by', 'resource'),
+            ('sort-by', 'event'),
+            ('sort-by', 'environment'),
+            ('sort-by', 'severity'),
+            ('sort-by', 'correlate'),
+            ('sort-by', 'status'),
+            ('sort-by', 'service'),
+            ('sort-by', 'service'),
+            ('sort-by', 'group'),
+            ('sort-by', 'value'),
+            ('sort-by', 'text'),
+            ('sort-by', 'tags'),
+            ('sort-by', 'attributes.foo'),
+            ('sort-by', 'attributes.bar'),
+            ('sort-by', 'origin'),
+            ('sort-by', 'type'),
+            ('sort-by', 'createTime'),
+            ('sort-by', 'timeout'),
+            ('sort-by', 'rawData'),
+            ('sort-by', 'customer'),
+            ('sort-by', 'duplicateCount'),
+            ('sort-by', 'repeat'),
+            ('sort-by', 'previousSeverity'),
+            ('sort-by', 'trendIndication'),
+            ('sort-by', 'receiveTime'),
+            ('sort-by', 'lastReceiveId'),
+            ('sort-by', 'lastReceiveTime'),
+            ('sort-by', 'updateTime')
+        ])
+
+        try:
+            with self.app.test_request_context():
+                query = qb.alerts.from_params(sort_params)  # noqa
+        except Exception as e:
+            self.fail(f'Unexpected exception in alerts sort-by query: {e}')
 
     def test_alerts_query(self):
 
@@ -82,7 +164,7 @@ class SearchTestCase(unittest.TestCase):
             with self.app.test_request_context():
                 query = qb.blackouts.from_params(search_params)  # noqa
         except Exception as e:
-            self.fail(f'Unexpected exception in blackout filter query: {e}')
+            self.fail(f'Unexpected exception in blackouts filter query: {e}')
 
     def test_blackouts_sort_by(self):
 
@@ -114,10 +196,8 @@ class SearchTestCase(unittest.TestCase):
     @patch('alerta.database.backends.mongodb.utils.datetime')
     def test_blackouts_query(self, mock_datetime):
 
-        # mock datetime.utcnow()
         now = datetime(2021, 1, 17, 20, 58, 0)
-        mock_datetime.utcnow = MagicMock(return_value=now)
-        mock_datetime.strftime = datetime.strftime
+        mock_datetime.utcnow.return_value = now
 
         # ?status=expired&status=pending&page=2&page-size=20&sort-by=-startTime
         search_params = MultiDict([
@@ -258,9 +338,8 @@ class SearchTestCase(unittest.TestCase):
     @patch('alerta.database.backends.mongodb.utils.datetime')
     def test_keys_query(self, mock_datetime):
 
-        # mock datetime.utcnow()
         now = datetime(2021, 1, 17, 20, 58, 0)
-        mock_datetime.utcnow = MagicMock(return_value=now)
+        mock_datetime.utcnow.return_value = now
         mock_datetime.strftime = datetime.strftime
 
         self.maxDiff = None

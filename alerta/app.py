@@ -74,8 +74,9 @@ def create_app(config_override: Dict[str, Any] = None, environment: str = None) 
     plugins.register(app)
     custom_webhooks.register(app)
 
-    from alerta.utils.format import CustomJSONEncoder
-    app.json_encoder = CustomJSONEncoder
+    from alerta.utils.format import AlertaJsonProvider
+    app.json_provider_class = AlertaJsonProvider
+    app.json = AlertaJsonProvider(app)
 
     from alerta.views import api
     app.register_blueprint(api)

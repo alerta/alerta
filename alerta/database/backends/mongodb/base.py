@@ -19,13 +19,25 @@ from .utils import Query
 
 class Backend(Database):
 
-    def create_engine(self, app, uri, dbname=None):
+    def create_engine(self, app, uri, dbname=None, schema=None, raise_on_error=True):
         self.uri = uri
         self.dbname = dbname
 
         db = self.connect()
-        self._create_indexes(db)
-        self._update_lookups(db)
+
+        try:
+            self._create_indexes(db)
+        except Exception as e:
+            if raise_on_error:
+                raise
+            app.logger.warning(e)
+
+        try:
+            self._update_lookups(db)
+        except Exception as e:
+            if raise_on_error:
+                raise
+            app.logger.warning(e)
 
     def connect(self):
         self.client = MongoClient(self.uri)
@@ -1594,7 +1606,7 @@ class Backend(Database):
 
         if info_threshold:
             info_seconds_ago = datetime.utcnow() - timedelta(seconds=info_threshold)
-            self.get_db().alerts.delete_many({'severity': 'informational', 'lastReceiveTime': {'$lt': info_seconds_ago}})
+            self.get_db().alerts.delete_many({'severity': alarm_model.DEFAULT_INFORM_SEVERITY, 'lastReceiveTime': {'$lt': info_seconds_ago}})
 
         # get list of alerts to be newly expired
         pipeline = [

@@ -158,7 +158,7 @@ def login():
     user.update_last_login()
 
     scopes = Permission.lookup(login=login, roles=user.roles + groups)
-    customers = get_customers(login=login, groups=[user.domain] + groups)
+    customers = get_customers(login=login, groups=groups + ([user.domain] if user.domain else []))
 
     auth_audit_trail.send(current_app._get_current_object(), event='basic-ldap-login', message='user login via LDAP',
                           user=login, customers=customers, scopes=scopes, roles=user.roles, groups=groups,
@@ -168,4 +168,4 @@ def login():
     token = create_token(user_id=user.id, name=user.name, login=user.email, provider='ldap',
                          customers=customers, scopes=scopes, roles=user.roles, groups=groups,
                          email=user.email, email_verified=user.email_verified)
-    return jsonify(token=token.tokenize)
+    return jsonify(token=token.tokenize())

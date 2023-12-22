@@ -62,21 +62,28 @@ Record = namedtuple('Record', [
 
 class Backend(Database):
 
-    def create_engine(self, app, uri, dbname=None):
+    def create_engine(self, app, uri, dbname=None, schema='public', raise_on_error=True):
         self.uri = uri
         self.dbname = dbname
+        self.schema = schema
 
         lock = threading.Lock()
         with lock:
             conn = self.connect()
+
             with app.open_resource('sql/schema.sql') as f:
-                conn.cursor().execute(f.read())
-                conn.commit()
+                try:
+                    conn.cursor().execute(f.read())
+                    conn.commit()
+                except Exception as e:
+                    if raise_on_error:
+                        raise
+                    app.logger.warning(e)
 
         register_adapter(dict, Json)
         register_adapter(datetime, self._adapt_datetime)
         register_composite(
-            'history',
+            schema + '.history' if schema else 'history',
             conn,
             globally=True
         )
@@ -92,6 +99,7 @@ class Backend(Database):
                     dbname=self.dbname,
                     cursor_factory=NamedTupleCursor
                 )
+
                 conn.set_client_encoding('UTF8')
                 break
             except Exception as e:
@@ -106,6 +114,8 @@ class Backend(Database):
                     time.sleep(backoff)
 
         if conn:
+            conn.cursor().execute('SET search_path TO {}'.format(self.schema))
+            conn.commit()
             return conn
         else:
             raise RuntimeError(f'Database connect error. Failed to connect after {MAX_RETRIES} retries.')
@@ -541,10 +551,14 @@ class Backend(Database):
         """
         return {s.status: s.count for s in self._fetchall(select, query.vars)}
 
-    def get_topn_count(self, query=None, group='event', topn=100):
+    def get_topn_count(self, query=None, topn=100):
         query = query or Query()
+        group = 'event'
+        if query and query.group:
+            group = query.group[0]
+
         select = """
-            SELECT event, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
+            SELECT {group}, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
                    array_agg(DISTINCT environment) AS environments, array_agg(DISTINCT svc) AS services,
                    array_agg(DISTINCT ARRAY[id, resource]) AS resources
               FROM alerts, UNNEST (service) svc
@@ -558,16 +572,19 @@ class Backend(Database):
                 'duplicateCount': t.duplicate_count,
                 'environments': t.environments,
                 'services': t.services,
-                f'{group}': t.event,
+                group: getattr(t, group),
                 'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
-    def get_topn_flapping(self, query=None, group='event', topn=100):
+    def get_topn_flapping(self, query=None, topn=100):
         query = query or Query()
+        group = 'event'
+        if query and query.group:
+            group = query.group[0]
         select = """
             WITH topn AS (SELECT * FROM alerts WHERE {where})
-            SELECT topn.event, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
+            SELECT topn.{group}, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
                    array_agg(DISTINCT environment) AS environments, array_agg(DISTINCT svc) AS services,
                    array_agg(DISTINCT ARRAY[topn.id, resource]) AS resources
               FROM topn, UNNEST (service) svc, UNNEST (history) hist
@@ -581,16 +598,19 @@ class Backend(Database):
                 'duplicateCount': t.duplicate_count,
                 'environments': t.environments,
                 'services': t.services,
-                'event': t.event,
+                group: getattr(t, group),
                 'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
 
-    def get_topn_standing(self, query=None, group='event', topn=100):
+    def get_topn_standing(self, query=None, topn=100):
         query = query or Query()
+        group = 'event'
+        if query and query.group:
+            group = query.group[0]
         select = """
             WITH topn AS (SELECT * FROM alerts WHERE {where})
-            SELECT topn.event, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
+            SELECT topn.{group}, COUNT(1) as count, SUM(duplicate_count) AS duplicate_count,
                    SUM(last_receive_time - create_time) as life_time,
                    array_agg(DISTINCT environment) AS environments, array_agg(DISTINCT svc) AS services,
                    array_agg(DISTINCT ARRAY[topn.id, resource]) AS resources
@@ -605,7 +625,7 @@ class Backend(Database):
                 'duplicateCount': t.duplicate_count,
                 'environments': t.environments,
                 'services': t.services,
-                'event': t.event,
+                group: getattr(t, group),
                 'resources': [{'id': r[0], 'resource': r[1], 'href': absolute_url(f'/alert/{r[0]}')} for r in t.resources]
             } for t in self._fetchall(select, query.vars, limit=topn)
         ]
@@ -1514,10 +1534,10 @@ class Backend(Database):
         if info_threshold:
             delete = """
                 DELETE FROM alerts
-                 WHERE (severity='informational'
+                 WHERE (severity=%(inform_severity)s
                         AND last_receive_time < (NOW() at time zone 'utc' - INTERVAL '%(info_threshold)s seconds'))
             """
-            self._deleteall(delete, {'info_threshold': info_threshold})
+            self._deleteall(delete, {'inform_severity': alarm_model.DEFAULT_INFORM_SEVERITY, 'info_threshold': info_threshold})
 
         # get list of alerts to be newly expired
         select = """

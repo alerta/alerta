@@ -75,7 +75,7 @@ class Group:
         self.id = kwargs.get('id') or str(uuid4())
         self.name = name
         self.text = text or ''
-        self.count = kwargs.get('count')
+        self.count = kwargs.get('count')  # type: ignore
 
     @classmethod
     def parse(cls, json: JSON) -> 'Group':

@@ -1,5 +1,7 @@
 from typing import List, Optional
 
+from flask import g
+
 from alerta.app import create_celery_app
 from alerta.exceptions import InvalidAction, RejectException
 from alerta.models.alert import Alert
@@ -9,13 +11,14 @@ celery = create_celery_app()
 
 
 @celery.task
-def action_alerts(alerts: List[str], action: str, text: str, timeout: Optional[int]) -> None:
+def action_alerts(alerts: List[str], action: str, text: str, timeout: Optional[int], login: str) -> None:
     updated = []
     errors = []
     for alert_id in alerts:
         alert = Alert.find_by_id(alert_id)
 
         try:
+            g.login = login
             previous_status = alert.status
             alert, action, text, timeout = process_action(alert, action, text, timeout)
             alert = alert.from_action(action, text, timeout)

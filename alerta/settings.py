@@ -45,6 +45,7 @@ POSTGRES_DB = None
 DATABASE_URL = MONGO_URI  # default: MongoDB
 DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
 DATABASE_RAISE_ON_ERROR = MONGO_RAISE_ON_ERROR  # True - terminate, False - ignore and continue
+DATABASE_SCHEMA = 'public'  # default: None to use default schema
 
 # Search
 DEFAULT_FIELD = 'text'  # default field if no search prefix specified (Postgres only)
@@ -69,8 +70,9 @@ USER_DEFAULT_SCOPES = ['read', 'write']  # Note: 'write' scope implicitly includ
 DEFAULT_GUEST_ROLE = 'guest'
 GUEST_ROLES = [DEFAULT_GUEST_ROLE]
 GUEST_DEFAULT_SCOPES = ['read:alerts']
-CUSTOM_SCOPES = []
-DELETE_SCOPES = []  # Set to "delete:alerts" to prevent users with "write:alerts" scope being able to delete alerts
+CUSTOM_SCOPES = []  # type: List[str]
+# Set DELETE_SCOPES to "delete:alerts" to prevent users with "write:alerts" scope being able to delete alerts
+DELETE_SCOPES = []  # type: List[str]
 CUSTOMER_VIEWS = False
 
 ALLOW_READONLY = False
@@ -87,8 +89,14 @@ HMAC_AUTH_CREDENTIALS = [
     # }
 ]  # type: List[Dict[str, Any]]
 
-OAUTH2_CLIENT_ID = None  # OAuth2 client ID and secret
-OAUTH2_CLIENT_SECRET = None
+AUTH_PROXY = False
+AUTH_PROXY_USER_HEADER = 'X-Proxy-User'  # header field containing the authenticated username (X-Forwarded-User)
+AUTH_PROXY_ROLES_HEADER = 'X-Proxy-Roles'  # list of authenticated role names (X-Forwarded-Groups)
+AUTH_PROXY_ROLES_SEPARATOR = ','  # default comma-separated list (,;|)
+AUTH_PROXY_AUTO_SIGNUP = True
+
+OAUTH2_CLIENT_ID = ''  # OAuth2 client ID and secret
+OAUTH2_CLIENT_SECRET = ''
 ALLOWED_EMAIL_DOMAINS = ['*']
 
 # Amazon Cognito
@@ -98,6 +106,8 @@ COGNITO_DOMAIN = None
 
 # GitHub OAuth2
 GITHUB_URL = 'https://github.com'
+GITHUB_ROLE_CLAIM = 'teams'  # used in role mapping
+GITHUB_GROUP_CLAIM = 'organizations'  # used in customer mapping
 ALLOWED_GITHUB_ORGS = ['*']
 
 # GitLab OAuth2
@@ -112,7 +122,7 @@ LDAP_CACERT = ''  # Path to CA certificate to verify LDAPS connection against
 LDAP_ALLOW_SELF_SIGNED_CERT = False
 LDAP_DOMAINS = {
     # 'planetexpress.com': 'cn=%s,ou=people,dc=planetexpress,dc=com'
-}
+}  # type: Dict[str, Any]
 LDAP_BIND_USERNAME = ''  # required if using LDAP_SEARCH_QUERY eg. uid=admin,ou=users,dc=domain,dc=com
 LDAP_BIND_PASSWORD = ''  # required if using LDAP_BIND_USERNAME
 LDAP_USER_BASEDN = ''  # BASEDN for user search (default: LDAP_BASEDN)
@@ -137,6 +147,7 @@ ALLOWED_KEYCLOAK_ROLES = ['*']
 # OpenID Connect
 OIDC_ISSUER_URL = None
 OIDC_AUTH_URL = None
+OIDC_TOKEN_AUTH_METHODS = ['client_secret_basic', 'client_secret_post', 'client_secret_jwt']
 OIDC_LOGOUT_URL = None
 OIDC_VERIFY_TOKEN = False
 OIDC_ROLE_CLAIM = OIDC_CUSTOM_CLAIM = 'roles'  # JWT claim name whose value is used in role mapping
@@ -165,8 +176,8 @@ AUDIT_URL = None  # send audit log events via webhook URL
 # CORS settings
 CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin', 'X-Request-ID']
 CORS_ORIGINS = [
-    # 'http://try.alerta.io',
-    # 'http://explorer.alerta.io',
+    # 'https://try.alerta.io',
+    # 'https://explorer.alerta.io',
     'http://localhost',
     'http://localhost:8000',
     r'https?://\w*\.?local\.alerta\.io:?\d*/?.*'  # => http(s)://*.local.alerta.io:<port>
@@ -176,6 +187,7 @@ CORS_SUPPORTS_CREDENTIALS = AUTH_REQUIRED
 # Serverity settings
 SEVERITY_MAP = {}  # type: Dict[str, Any]
 DEFAULT_NORMAL_SEVERITY = None
+DEFAULT_INFORM_SEVERITY = None
 DEFAULT_PREVIOUS_SEVERITY = None
 COLOR_MAP = {}  # type: Dict[str, Any]
 
@@ -216,6 +228,8 @@ COLUMNS = [
 ]
 SORT_LIST_BY = ['severity', 'lastReceiveTime']  # eg. newest='lastReceiveTime' or oldest='-createTime' (Note: minus means reverse)
 DEFAULT_FILTER = {'status': ['open', 'ack']}
+CLIPBOARD_TEMPLATE = ''
+
 
 # Alert Status Indicators
 ASI_SEVERITY = [
@@ -237,8 +251,13 @@ DEFAULT_FONT = {
 
 # List of custom actions
 ACTIONS = []  # type: List[str]
+
+SERVER_VERSION = 'full'  # show/hide server version eg. full, major, off
 GOOGLE_TRACKING_ID = None
 AUTO_REFRESH_INTERVAL = 5000  # ms
+
+# Routing
+ROUTING_DIST = 'alerta-routing'
 
 # Plugins
 PLUGINS = ['remote_ip', 'reject', 'heartbeat', 'blackout', 'forwarder']

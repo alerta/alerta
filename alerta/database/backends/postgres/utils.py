@@ -13,7 +13,7 @@ from alerta.utils.format import DateTime
 from .queryparser import QueryParser
 
 Query = namedtuple('Query', ['where', 'vars', 'sort', 'group'])
-Query.__new__.__defaults__ = ('1=1', {}, '(false)', 'status')  # type: ignore
+Query.__new__.__defaults__ = ('1=1', {}, '(select 1)', 'status')  # type: ignore
 
 
 EXCLUDE_FROM_QUERY = [
@@ -31,17 +31,24 @@ class QueryBuilder:
         if params.get('sort-by', None):
             for sort_by in params.getlist('sort-by'):
                 reverse = 1
+                attribute = None
                 if sort_by.startswith('-'):
                     reverse = -1
                     sort_by = sort_by[1:]
+                if sort_by.startswith('attributes.'):
+                    attribute = sort_by.split('.')[1]
+                    sort_by = 'attributes'
                 valid_sort_params = [k for k, v in valid_params.items() if v[1]]
                 if sort_by not in valid_sort_params:
                     raise ApiError(f"Sorting by '{sort_by}' field not supported.", 400)
                 _, column, direction = valid_params[sort_by]
                 direction = 'ASC' if direction * reverse == 1 else 'DESC'
-                sort.append(f'{column} {direction}')
+                if attribute:
+                    sort.append(f"attributes->'{attribute}' {direction}")
+                else:
+                    sort.append(f'{column} {direction}')
         else:
-            sort.append('(false)')
+            sort.append('(select 1)')
         return sort
 
     @staticmethod
@@ -217,9 +224,22 @@ class Blackouts(QueryBuilder):
     @staticmethod
     def from_params(params: MultiDict, customers=None, query_time=None):
 
-        query = ['1=1']
-        qvars = dict()
         params = MultiDict(params)
+
+        # ?q=
+        if params.get('q', None):
+            try:
+                parser = QueryParser()
+                query = [parser.parse(
+                    query=params['q'],
+                    default_field=params.get('q.df')
+                )]
+                qvars = dict()  # type: Dict[str, Any]
+            except ParseException as e:
+                raise ApiError('Failed to parse query string.', 400, [e])
+        else:
+            query = ['1=1']
+            qvars = dict()
 
         # customer
         if customers:
@@ -359,7 +379,7 @@ class Users(QueryBuilder):
     def from_params(params: MultiDict, customers=None, query_time=None):
 
         query = ['1=1']
-        qvars = dict()
+        qvars = dict()  # type: Dict[str, Any]
         params = MultiDict(params)
 
         # filter, sort-by
@@ -383,7 +403,7 @@ class Groups(QueryBuilder):
     def from_params(params: MultiDict, customers=None, query_time=None):
 
         query = ['1=1']
-        qvars = dict()
+        qvars = dict()  # type: Dict[str, Any]
         params = MultiDict(params)
 
         # filter, sort-by
@@ -407,7 +427,7 @@ class Permissions(QueryBuilder):
     def from_params(params: MultiDict, customers=None, query_time=None):
 
         query = ['1=1']
-        qvars = dict()
+        qvars = dict()  # type: Dict[str, Any]
         params = MultiDict(params)
 
         # filter, sort-by
@@ -430,7 +450,7 @@ class Customers(QueryBuilder):
     def from_params(params: MultiDict, customers=None, query_time=None):
 
         query = ['1=1']
-        qvars = dict()
+        qvars = dict()  # type: Dict[str, Any]
         params = MultiDict(params)
 
         # filter, sort-by

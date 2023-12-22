@@ -3,6 +3,7 @@ from typing import NamedTuple
 from urllib.parse import urlparse
 
 from flask import g
+from pkg_resources import iter_entry_points
 
 # http://stackoverflow.com/questions/8544983/dynamically-mixin-a-base-class-to-an-instance-in-python
 
@@ -29,8 +30,15 @@ def get_backend(app):
 
 
 def load_backend(backend):
+    for ep in iter_entry_points('alerta.database.backends'):
+        if ep.name == backend:
+            module_name = ep.module_name
+            break
+    else:
+        module_name = f'alerta.database.backends.{backend}'
+
     try:
-        return import_module(f'alerta.database.backends.{backend}')
+        return import_module(module_name)
     except Exception:
         raise ImportError(f'Failed to load {backend} database backend')
 
@@ -48,7 +56,8 @@ class Database(Base):
         self.__class__ = type('DatabaseImpl', (cls.Backend, Database), {})
 
         try:
-            self.create_engine(app, uri=app.config['DATABASE_URL'], dbname=app.config['DATABASE_NAME'])
+            self.create_engine(app, uri=app.config['DATABASE_URL'], dbname=app.config['DATABASE_NAME'], schema=app.config['DATABASE_SCHEMA'],
+                               raise_on_error=app.config['DATABASE_RAISE_ON_ERROR'])
         except Exception as e:
             if app.config['DATABASE_RAISE_ON_ERROR']:
                 raise
@@ -56,7 +65,7 @@ class Database(Base):
 
         app.teardown_appcontext(self.teardown_db)
 
-    def create_engine(self, app, uri, dbname=None):
+    def create_engine(self, app, uri, dbname=None, schema=None, raise_on_error=True):
         raise NotImplementedError('Database engine has no create_engine() method')
 
     def connect(self):

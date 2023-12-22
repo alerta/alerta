@@ -1,7 +1,7 @@
 
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'history') THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'history' AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = current_schema())) THEN
         CREATE TYPE history AS (
             id text,
             event text,
@@ -59,12 +59,8 @@ CREATE TABLE IF NOT EXISTS alerts (
     history history[]
 );
 
-DO $$
-BEGIN
-    ALTER TABLE alerts ADD COLUMN update_time timestamp without time zone;
-EXCEPTION
-    WHEN duplicate_column THEN RAISE NOTICE 'column "update_time" already exists in alerts.';
-END$$;
+ALTER TABLE alerts ADD COLUMN IF NOT EXISTS update_time timestamp without time zone;
+
 
 CREATE TABLE IF NOT EXISTS notes (
     id text PRIMARY KEY,
@@ -94,39 +90,12 @@ CREATE TABLE IF NOT EXISTS blackouts (
     duration integer
 );
 
--- Support for "IF NOT EXISTS" added to "ADD COLUMN" in Postgres 9.6
--- ALTER TABLE blackouts
--- ADD COLUMN IF NOT EXISTS "user" text,
--- ADD COLUMN IF NOT EXISTS create_time timestamp without time zone,
--- ADD COLUMN IF NOT EXISTS text text;
+ALTER TABLE blackouts
+ADD COLUMN IF NOT EXISTS "user" text,
+ADD COLUMN IF NOT EXISTS create_time timestamp without time zone,
+ADD COLUMN IF NOT EXISTS text text,
+ADD COLUMN IF NOT EXISTS origin text;
 
-DO $$
-BEGIN
-    ALTER TABLE blackouts ADD COLUMN "user" text;
-EXCEPTION
-    WHEN duplicate_column THEN RAISE NOTICE 'column "user" already exists in blackouts.';
-END$$;
-
-DO $$
-BEGIN
-    ALTER TABLE blackouts ADD COLUMN create_time timestamp without time zone;
-EXCEPTION
-    WHEN duplicate_column THEN RAISE NOTICE 'column "create_time" already exists in blackouts.';
-END$$;
-
-DO $$
-BEGIN
-    ALTER TABLE blackouts ADD COLUMN text text;
-EXCEPTION
-    WHEN duplicate_column THEN RAISE NOTICE 'column "text" already exists in blackouts.';
-END$$;
-
-DO $$
-BEGIN
-    ALTER TABLE blackouts ADD COLUMN origin text;
-EXCEPTION
-    WHEN duplicate_column THEN RAISE NOTICE 'column "origin" already exists in blackouts.';
-END$$;
 
 CREATE TABLE IF NOT EXISTS customers (
     id text PRIMARY KEY,
@@ -148,12 +117,7 @@ CREATE TABLE IF NOT EXISTS heartbeats (
     customer text
 );
 
-DO $$
-BEGIN
-    ALTER TABLE heartbeats ADD COLUMN attributes jsonb;
-EXCEPTION
-    WHEN duplicate_column THEN RAISE NOTICE 'column "attributes" already exists in heartbeats.';
-END$$;
+ALTER TABLE heartbeats ADD COLUMN IF NOT EXISTS attributes jsonb;
 
 
 CREATE TABLE IF NOT EXISTS keys (
@@ -181,6 +145,7 @@ CREATE TABLE IF NOT EXISTS metrics (
     CONSTRAINT metrics_pkey PRIMARY KEY ("group", name, type)
 );
 ALTER TABLE metrics ALTER COLUMN total_time TYPE BIGINT;
+ALTER TABLE metrics ALTER COLUMN count TYPE BIGINT;
 
 
 CREATE TABLE IF NOT EXISTS perms (

@@ -1,4 +1,4 @@
-Alerta Release 8.0
+Alerta Release 9.1
 ==================
 
 [![Actions Status](https://github.com/alerta/alerta/workflows/CI%20Tests/badge.svg)](https://github.com/alerta/alerta/actions)
@@ -19,12 +19,12 @@ The Alerta monitoring tool was developed with the following aims in mind:
 Requirements
 ------------
 
-Release 8 only supports Python 3.6 or higher.
+Release 9 only supports Python 3.9 or higher.
 
 The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 
-- Postgres version 9.5 or better
-- MongoDB version 3.6 or better (4.0.7 required for full query syntax support)
+- Postgres version 13 or better
+- MongoDB version 6.0 or better
 
 Installation
 ------------
@@ -76,14 +76,14 @@ Development
 
 To run in development mode, listening on port 5000:
 
-    $ export FLASK_APP=alerta FLASK_ENV=development
+    $ export FLASK_APP=alerta FLASK_DEBUG=1
     $ pip install -e .
     $ flask run
 
 To run in development mode, listening on port 8080, using Postgres and
 reporting errors to [Sentry](https://sentry.io):
 
-    $ export FLASK_APP=alerta FLASK_ENV=development
+    $ export FLASK_APP=alerta FLASK_DEBUG=1
     $ export DATABASE_URL=postgres://localhost:5432/alerta5
     $ export SENTRY_DSN=https://8b56098250544fb78b9578d8af2a7e13:fa9d628da9c4459c922293db72a3203f@sentry.io/153768
     $ pip install -e .[postgres]
@@ -135,7 +135,7 @@ License
 -------
 
     Alerta monitoring system and console
-    Copyright 2012-2020 Nick Satterly
+    Copyright 2012-2023 Nick Satterly
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

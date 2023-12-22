@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
-from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 from uuid import uuid4
 
 from flask import current_app
+from strenum import StrEnum
 
 from alerta.app import db
 from alerta.database.base import Query
@@ -13,7 +13,7 @@ from alerta.utils.response import absolute_url
 JSON = Dict[str, Any]
 
 
-class BlackoutStatus(str, Enum):
+class BlackoutStatus(StrEnum):
 
     Pending = 'pending'
     Active = 'active'
@@ -25,6 +25,14 @@ class Blackout:
     def __init__(self, environment: str, **kwargs) -> None:
         if not environment:
             raise ValueError('Missing mandatory value for "environment"')
+        if kwargs.get('resource') == '':
+            raise ValueError('resource can not be an empty string')
+        if kwargs.get('event') == '':
+            raise ValueError('event can not be an empty string')
+        if kwargs.get('group') == '':
+            raise ValueError('group can not be an empty string')
+        if kwargs.get('origin') == '':
+            raise ValueError('origin can not be an empty string')
 
         start_time = kwargs.get('start_time', None) or datetime.utcnow()
         if kwargs.get('end_time', None):
@@ -53,6 +61,8 @@ class Blackout:
         self.text = kwargs.get('text', None)
 
         if self.environment:
+            self.priority = 0
+        if self.origin:
             self.priority = 1
         if self.resource and not self.event:
             self.priority = 2
@@ -166,7 +176,7 @@ class Blackout:
             event=doc.get('event', None),
             group=doc.get('group', None),
             tags=doc.get('tags', list()),
-            origin=doc.get('origin'),
+            origin=doc.get('origin', None),
             customer=doc.get('customer', None),
             start_time=doc.get('startTime', None),
             end_time=doc.get('endTime', None),
@@ -184,11 +194,11 @@ class Blackout:
             priority=rec.priority,
             environment=rec.environment,
             service=rec.service,
-            resource=rec.resource,
-            event=rec.event,
-            group=rec.group,
+            resource=rec.resource if rec.resource != '' else None,
+            event=rec.event if rec.event != '' else None,
+            group=rec.group if rec.group != '' else None,
             tags=rec.tags,
-            origin=rec.origin,
+            origin=rec.origin if rec.origin != '' else None,
             customer=rec.customer,
             start_time=rec.start_time,
             end_time=rec.end_time,

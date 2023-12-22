@@ -35,7 +35,7 @@ setuptools.setup(
     url='https://github.com/guardian/alerta',
     license='Apache License 2.0',
     author='Nick Satterly',
-    author_email='nick.satterly@gmail.com',
+    author_email='nfsatterly@gmail.com',
     packages=setuptools.find_packages(exclude=['tests']),
     install_requires=[
         'bcrypt',
@@ -46,7 +46,6 @@ setuptools.setup(
         'Flask-Cors>=3.0.2',
         'mohawk',
         'PyJWT>=2.0.0',
-        'pymongo>=3.6',
         'pyparsing',
         'python-dateutil',
         'pytz',
@@ -56,7 +55,7 @@ setuptools.setup(
         'sentry-sdk[flask]>=0.10.2',
     ],
     extras_require={
-        'mongodb': ['pymongo>=3.0'],
+        'mongodb': ['pymongo'],
         'postgres': ['psycopg2']
     },
     include_package_data=True,
@@ -100,10 +99,11 @@ setuptools.setup(
         'Intended Audience :: System Administrators',
         'Intended Audience :: Telecommunications Industry',
         'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.9',
         'Topic :: System :: Monitoring',
     ],
-    python_requires='>=3.6'
+    python_requires='>=3.9'
 )

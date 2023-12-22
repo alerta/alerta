@@ -21,19 +21,22 @@ def oembed(format):
         url = request.args['url']
         title = request.args['title']
     except Exception as e:
-        return jsonify(status='error', message=str(e)), 400
+        current_app.logger.exception(e)
+        return jsonify(status='error', message='Client Error'), 400
 
     try:
         o = urlparse(url)
     except Exception as e:
-        return jsonify(status='error', message=str(e)), 400
+        current_app.logger.exception(e)
+        return jsonify(status='error', message='Client Error'), 400
 
     if o.path.endswith('/alerts/count'):
         try:
             query = qb.alerts.from_params(parse_qs(o.query))
             severity_count = db.get_counts_by_severity(query)
         except Exception as e:
-            return jsonify(status='error', message=str(e)), 500
+            current_app.logger.exception(e)
+            return jsonify(status='error', message='Server Error'), 500
 
         max = 'none'
         if severity_count.get('informational', 0) > 0:
