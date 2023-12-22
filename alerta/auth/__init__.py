@@ -9,6 +9,7 @@ class AuthBlueprint(Blueprint):
         if app.config['AUTH_PROVIDER'] == 'ldap':
             try:
                 import ldap  # noqa
+
                 from . import basic_ldap  # noqa
             except ImportError:
                 raise RuntimeError('Must install python-ldap to use LDAP authentication module')
@@ -18,6 +19,7 @@ class AuthBlueprint(Blueprint):
         if app.config['AUTH_PROVIDER'] == 'saml2':
             try:
                 import saml2  # noqa
+
                 from . import saml  # noqa
             except ImportError:
                 raise RuntimeError('Must install pysaml2 to use SAML2 authentication module')

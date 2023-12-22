@@ -1,4 +1,4 @@
 [flake8]
-ignore = F403, E501, W503
+ignore = F403, E501, W503, E231
 exclude = *.wsgi
 max-line-length = 140

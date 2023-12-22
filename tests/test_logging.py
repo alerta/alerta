@@ -65,4 +65,4 @@ class LoggingTestCase(unittest.TestCase):
         self.assertEqual(delete_blackout_request['request']['method'], 'DELETE')
         self.assertTrue(delete_blackout_request['request']['url'].startswith('http://localhost/blackout/'))
         self.assertEqual(delete_blackout_request['request']['data'], None)
-        self.assertTrue(delete_blackout_request['request']['userAgent'].startswith('werkzeug/'))
+        self.assertTrue(delete_blackout_request['request']['userAgent'].startswith('Werkzeug/'), delete_blackout_request)
