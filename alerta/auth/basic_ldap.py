@@ -89,6 +89,7 @@ def login():
         current_app.config['LDAP_USER_EMAIL_ATTR']
     ]
     safe_username = ldap.filter.escape_filter_chars(username)
+    safe_domain = ldap.filter.escape_filter_chars(domain)
     if user_filter:
         result = [r for r in ldap_connection.search_s(
             base=user_base_dn or base_dn,
@@ -111,7 +112,7 @@ def login():
         else:
             user_dn = current_app.config['LDAP_DOMAINS'][domain].format(safe_username)
         name = safe_username
-        email = f'{safe_username}@{domain}'
+        email = f'{safe_username}@{safe_domain}'
         email_verified = False
 
     # Authenticate user logging in
