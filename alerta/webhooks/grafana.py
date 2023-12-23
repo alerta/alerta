@@ -48,7 +48,7 @@ def parse_grafana(args: ImmutableMultiDict, alert: JSON, match: Dict[str, Any]) 
         attributes = {k.replace('.', '_'): v for (k, v) in match_tags.items()}
     if grafana_tags_as_tags:
         for (k, v) in match_tags.items():
-            tags.append("%s=%s" % (k, v))
+            tags.append('{}={}'.format(k, v))
 
     # get alert rule tags
     rules_tags = copy.copy(alert.get('tags') or {})
@@ -73,7 +73,7 @@ def parse_grafana(args: ImmutableMultiDict, alert: JSON, match: Dict[str, Any]) 
         attributes.update({k.replace('.', '_'): v for (k, v) in rules_tags.items()})
     if grafana_tags_as_tags:
         for (k, v) in rules_tags.items():
-            tags.append("%s=%s" % (k, v))
+            tags.append('{}={}'.format(k, v))
 
     attributes['ruleId'] = str(alert['ruleId'])
     if 'ruleUrl' in alert:
