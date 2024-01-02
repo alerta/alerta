@@ -79,7 +79,7 @@ def openid():
     token_endpoint_auth_methods = oidc_configuration.get(
         'token_endpoint_auth_methods_supported',
         ['client_secret_basic'])
-    if type(token_endpoint_auth_methods) != list:
+    if not isinstance(token_endpoint_auth_methods, list):
         token_endpoint_auth_methods = [token_endpoint_auth_methods]
 
     preferred_token_auth_method = 'client_secret_post'

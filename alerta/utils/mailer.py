@@ -4,10 +4,9 @@ try:
     import smtplib
     import socket
     import ssl
-
-    from smtplib import SMTP  # noqa
-    from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from smtplib import SMTP  # noqa
 except ImportError:
     pass
 

@@ -27,7 +27,8 @@ try:
         return bcrypt.checkpw(password.encode('utf-8'), pwhash.encode('utf-8'))
 
 except ImportError:  # Google App Engine
-    from werkzeug.security import generate_password_hash, check_password_hash  # noqa
+    from werkzeug.security import check_password_hash  # noqa
+    from werkzeug.security import generate_password_hash  # noqa
 
 
 def not_authorized(allowed_setting: str, groups: List[str]) -> bool:
