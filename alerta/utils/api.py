@@ -103,11 +103,11 @@ def process_action(alert: Alert, action: str, text: str, timeout: int = None, po
             break
         try:
             if post_action:
-                updated = plugin.post_take_action(alert, action, text, timeout=timeout, config=wanted_config)
+                updated = plugin.post_action(alert, action, text, timeout=timeout, config=wanted_config)
             else:
                 updated = plugin.take_action(alert, action, text, timeout=timeout, config=wanted_config)
         except NotImplementedError:
-            pass  # plugin does not support take_action() method or post_take_action() method
+            pass  # plugin does not support take_action() method or post_action() method
         except (RejectException, ForwardingLoop, InvalidAction, AlertaException):
             raise
         except Exception as e:

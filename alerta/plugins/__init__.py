@@ -41,7 +41,7 @@ class PluginBase(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    def post_take_action(self, alert: 'Alert', action: str, text: str, **kwargs) -> Any:
+    def post_action(self, alert: 'Alert', action: str, text: str, **kwargs) -> Any:
         """
         Trigger integrations based on external actions. (optional)
         Post-trigger, eg. after the status is updated"""

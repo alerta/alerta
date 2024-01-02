@@ -181,7 +181,7 @@ class PluginsTestCase(unittest.TestCase):
         response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
-        # check post_take_action (check if tag was added)
+        # check post_action (check if tag was added)
         response = self.client.put('/alert/' + alert_id + '/action', json={'action': 'test-post-action'}, headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
@@ -568,7 +568,7 @@ class CustActionPlugin1(PluginBase):
 
         return alert, action, text
 
-    def post_take_action(self, alert, action, text, **kwargs):
+    def post_action(self, alert, action, text, **kwargs):
 
         if action == 'test-post-action':
             alert.tags.append('test-post-action')
@@ -595,7 +595,7 @@ class CustActionPlugin2(PluginBase):
 
         return alert, action, text
 
-    def post_take_action(self, alert: Alert, action: str, text: str, **kwargs) -> Any:
+    def post_action(self, alert: Alert, action: str, text: str, **kwargs) -> Any:
         raise NotImplementedError
 
 
@@ -617,7 +617,7 @@ class CustActionPlugin3(PluginBase):
 
         return alert, action, text
 
-    def post_take_action(self, alert: Alert, action: str, text: str, **kwargs) -> Any:
+    def post_action(self, alert: Alert, action: str, text: str, **kwargs) -> Any:
         pass
 
 
