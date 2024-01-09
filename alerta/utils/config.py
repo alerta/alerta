@@ -108,7 +108,6 @@ class Config:
         # notification key
         random_generated_key = Fernet.generate_key().decode()
         config['NOTIFICATION_KEY'] = get_config('NOTIFICATION_KEY', default=random_generated_key, type=str, config=config)
-        config['HISTORY_PAGE_SIZE'] = get_config('HISTORY_PAGE_SIZE', default=1000, type=int, config=config)
 
         config['ESCALATE_TIME'] = get_config('ESCALATE_TIME', default=60, type=int, config=config)
         config['ESCALATE_SEVERITIES'] = get_config('ESCALATE_SEVERITIES', default=["critical", "major", "minor", "warning"], type=list, config=config)
