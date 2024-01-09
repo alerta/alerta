@@ -352,7 +352,9 @@ def search_alerts():
 @jsonp
 def history():
     query = qb.alerts.from_params(request.args, customers=g.customers)
-    paging = Page.from_params(request.args, items=0)
+    args = request.args.copy()
+    args["page-size"] = current_app.config["HISTORY_PAGE_SIZE"]
+    paging = Page.from_params(args, items=0)
     history = Alert.get_history(query, paging.page, paging.page_size)
 
     if history:
