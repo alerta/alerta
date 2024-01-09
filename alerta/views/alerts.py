@@ -352,16 +352,15 @@ def search_alerts():
 @jsonp
 def history():
     query = qb.alerts.from_params(request.args, customers=g.customers)
-    args = request.args.copy()
-    args["page-size"] = current_app.config["HISTORY_PAGE_SIZE"]
-    paging = Page.from_params(args, items=0)
+    total = Alert.get_history_count()
+    paging = Page.from_params(request.args, total)
     history = Alert.get_history(query, paging.page, paging.page_size)
 
     if history:
         return jsonify(
             status='ok',
             history=[h.serialize for h in history],
-            total=len(history)
+            total=total
         )
     else:
         return jsonify(
