@@ -174,8 +174,8 @@ def housekeeping():
     errors = []
     for alert in has_expired:
         try:
-            alert, _, text, timeout = process_action(alert, action='expired', text='', timeout=None)
             alert = alert.from_expired(text, timeout)
+            alert, _, text, timeout = process_action(alert, action='expired', text='', timeout=None)
         except RejectException as e:
             write_audit_trail.send(current_app._get_current_object(), event='alert-expire-rejected', message=alert.text,
                                    user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
