@@ -190,8 +190,8 @@ def housekeeping():
 
     for alert in shelve_timeout + ack_timeout:
         try:
-            alert, _, text, timeout = process_action(alert, action='timeout', text='', timeout=None)
             alert = alert.from_timeout(text, timeout)
+            alert, _, text, timeout = process_action(alert, action='timeout', text='', timeout=None)
         except RejectException as e:
             write_audit_trail.send(current_app._get_current_object(), event='alert-timeout-rejected', message=alert.text,
                                    user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
