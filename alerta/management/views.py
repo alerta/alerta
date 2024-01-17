@@ -175,8 +175,13 @@ def housekeeping():
     errors = []
     for alert in has_expired:
         try:
+            # pre actioon
             alert, _, text, timeout = process_action(alert, action='expired', text='', timeout=None)
+            # update status
             alert = alert.from_expired(text, timeout)
+            # post action
+            alert, _, text, timeout = process_action(alert, action='expired', text=text, timeout=timeout, post_action=True)
+
         except RejectException as e:
             write_audit_trail.send(current_app._get_current_object(), event='alert-expire-rejected', message=alert.text,
                                    user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
@@ -191,8 +196,12 @@ def housekeeping():
 
     for alert in shelve_timeout + ack_timeout:
         try:
+            # pre action
             alert, _, text, timeout = process_action(alert, action='timeout', text='', timeout=None)
+            # update status
             alert = alert.from_timeout(text, timeout)
+            # post action
+            alert, _, text, timeout = process_action(alert, action='timeout', text=text, timeout=timeout, post_action=True)            
         except RejectException as e:
             write_audit_trail.send(current_app._get_current_object(), event='alert-timeout-rejected', message=alert.text,
                                    user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',
