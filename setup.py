@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 import os
-import subprocess
-from datetime import datetime
 
 import setuptools
 
@@ -10,21 +8,6 @@ import setuptools
 def read(filename):
     return open(os.path.join(os.path.dirname(__file__), filename)).read()
 
-
-try:
-    with open('alerta/build.py', 'w') as f:
-        build = """
-        BUILD_NUMBER = '{build_number}'
-        BUILD_DATE = '{date}'
-        BUILD_VCS_NUMBER = '{revision}'
-        """.format(
-            build_number=os.environ.get('BUILD_NUMBER', 'PROD'),
-            date=datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
-            revision=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()
-        ).replace('    ', '')
-        f.write(build)
-except Exception:
-    pass
 
 setuptools.setup(
     name='alerta-server',

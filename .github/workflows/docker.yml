@@ -7,6 +7,7 @@ on:
 
 env:
   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  BUILD_NUMBER: ${{ format('{0}-{1}-{2}', github.run_id, github.run_number, github.run_attempt) }}
 
 jobs:
   build:
@@ -23,6 +24,10 @@ jobs:
         id: docker-build
         run: >-
           docker build
+          --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          --build-arg BUILD_NUMBER=$BUILD_NUMBER
+          --build-arg RELEASE=$(cat VERSION)
+          --build-arg VERSION=${{ github.sha }}
           -t $IMAGE_NAME
           -t $REPOSITORY_URL/$IMAGE_NAME:$(cat VERSION)
           -t $REPOSITORY_URL/$IMAGE_NAME:$(git rev-parse --short HEAD)

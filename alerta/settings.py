@@ -287,3 +287,7 @@ FWD_DESTINATIONS = [
 
 # Webhooks
 DEFAULT_ENVIRONMENT = 'Production'  # default environment used by webhooks, value must be in ALLOWED_ENVIRONMENTS
+
+# Grafana webhook keep legacy behavior by default
+GRAFANA_TAGS_AS_ATTRIBUTES = True
+GRAFANA_TAGS_AS_TAGS = False

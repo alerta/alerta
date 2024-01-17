@@ -17,6 +17,10 @@ JSON = Dict[str, Any]
 
 def parse_grafana(args: ImmutableMultiDict, alert: JSON, match: Dict[str, Any]) -> Alert:
 
+    # default to setting attributes from tags for backwards compat. with users using legacy behavior
+    grafana_tags_as_attributes = current_app.config.get('GRAFANA_TAGS_AS_ATTRIBUTES', True)
+    grafana_tags_as_tags = current_app.config.get('GRAFANA_TAGS_AS_TAGS', False)
+
     # get values from request params
     environment = args.get('environment', current_app.config['DEFAULT_ENVIRONMENT'])
     alerting_severity = args.get('severity', 'major')
@@ -36,8 +40,15 @@ def parse_grafana(args: ImmutableMultiDict, alert: JSON, match: Dict[str, Any]) 
     customer = match_tags.pop('customer', customer)
     origin = match_tags.pop('origin', origin)
 
+    attributes = {}
+    tags = []
+
     # assign leftover match tags as attributes
-    attributes = {k.replace('.', '_'): v for (k, v) in match_tags.items()}
+    if grafana_tags_as_attributes:
+        attributes = {k.replace('.', '_'): v for (k, v) in match_tags.items()}
+    if grafana_tags_as_tags:
+        for (k, v) in match_tags.items():
+            tags.append('{}={}'.format(k, v))
 
     # get alert rule tags
     rules_tags = copy.copy(alert.get('tags') or {})
@@ -58,7 +69,11 @@ def parse_grafana(args: ImmutableMultiDict, alert: JSON, match: Dict[str, Any]) 
         severity = 'indeterminate'
 
     # assign leftover rule tags as attributes
-    attributes.update({k.replace('.', '_'): v for (k, v) in rules_tags.items()})
+    if grafana_tags_as_attributes:
+        attributes.update({k.replace('.', '_'): v for (k, v) in rules_tags.items()})
+    if grafana_tags_as_tags:
+        for (k, v) in rules_tags.items():
+            tags.append('{}={}'.format(k, v))
 
     attributes['ruleId'] = str(alert['ruleId'])
     if 'ruleUrl' in alert:
@@ -75,7 +90,7 @@ def parse_grafana(args: ImmutableMultiDict, alert: JSON, match: Dict[str, Any]) 
         group=group,
         value=f"{match['value']}",
         text=alert.get('message', None) or alert.get('title', alert['state']),
-        tags=list(),
+        tags=tags,
         attributes=attributes,
         customer=customer,
         origin=origin,
