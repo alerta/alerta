@@ -221,6 +221,13 @@ END$$;
 
 DO $$
 BEGIN
+    ALTER TABLE notification_rules ADD COLUMN name text UNIQUE;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "name" already exists in notification_rules.';
+END$$;
+
+DO $$
+BEGIN
     ALTER TABLE notification_rules ADD COLUMN user_ids text[];
     ALTER TABLE notification_rules ADD COLUMN group_ids text[];
     UPDATE notification_rules SET user_ids = '{}';

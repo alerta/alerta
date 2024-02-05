@@ -1005,9 +1005,9 @@ class Backend(Database):
 
     def create_notification_rule(self, notification_rule):
         insert = """
-            INSERT INTO notification_rules (id, active, priority, environment, service, resource, event, "group", tags,
+            INSERT INTO notification_rules (id, name, active, priority, environment, service, resource, event, "group", tags,
                 customer, "user", create_time, start_time, end_time, days, receivers, user_ids, group_ids, use_oncall, severity, text, channel_id, advanced_severity, use_advanced_severity)
-            VALUES (%(id)s, %(active)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s,
+            VALUES (%(id)s, %(name)s, %(active)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s,
                 %(customer)s, %(user)s, %(create_time)s, %(start_time)s, %(end_time)s, %(days)s, %(receivers)s, %(user_ids)s, %(group_ids)s, %(use_oncall)s, %(severity)s, %(text)s, %(channel_id)s, %(advanced_severity)s::severity_advanced[], %(use_advanced_severity)s )
             RETURNING *
         """
@@ -1071,6 +1071,8 @@ class Backend(Database):
         """
         if kwargs.get('environment') is not None:
             update += 'environment=%(environment)s, '
+        if 'name' in kwargs:
+            update += 'name=%(name)s, '
         if 'service' in kwargs:
             update += 'service=%(service)s, '
         if 'resource' in kwargs:

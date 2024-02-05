@@ -64,6 +64,7 @@ class NotificationRule:
             raise ValueError('Missing mandatory value for "receivers"')
 
         self.id = kwargs.get('id') or str(uuid4())
+        self.name = kwargs.get('name')
         self.active = kwargs.get('active', True)
         self.environment = environment
         self.channel_id = channel_id
@@ -129,6 +130,7 @@ class NotificationRule:
             raise ValueError('tags must be a list')
         notification_rule = NotificationRule(
             id=json.get('id', None),
+            name=json.get('name', None),
             active=json.get('active', True),
             environment=json['environment'],
             channel_id=json['channelId'],
@@ -169,6 +171,7 @@ class NotificationRule:
     def serialize(self) -> Dict[str, Any]:
         return {
             'id': self.id,
+            'name': self.name,
             'active': self.active,
             'href': absolute_url('/notificationrule/' + self.id),
             'priority': self.priority,
@@ -232,6 +235,7 @@ class NotificationRule:
     def from_document(cls, doc: Dict[str, Any]) -> 'NotificationRule':
         return NotificationRule(
             id=doc.get('id', None) or doc.get('_id'),
+            name=doc.get('name', None),
             active=doc.get('active', True),
             priority=doc.get('priority', None),
             environment=doc['environment'],
@@ -277,6 +281,7 @@ class NotificationRule:
     def from_record(cls, rec) -> 'NotificationRule':
         return NotificationRule(
             id=rec.id,
+            name=rec.name,
             active=rec.active,
             priority=rec.priority,
             environment=rec.environment,
