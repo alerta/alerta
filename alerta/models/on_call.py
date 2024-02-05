@@ -35,7 +35,7 @@ class OnCall:
 
     @property
     def users(self):
-        group_users = [db.get_group_users(group_id) for group_id in self.group_ids]
+        group_users = [db.get_notification_group_users(group_id) for group_id in self.group_ids]
         users = {User.find_by_id(user_id) for user_id in self.user_ids}
         for user_list in group_users:
             for user in user_list:

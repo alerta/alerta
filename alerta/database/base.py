@@ -293,7 +293,30 @@ class Database(Base):
 
     def delete_notification_rule(self, id):
         raise NotImplementedError
-    
+
+    # NOTIFICATION GROUPS
+
+    def create_notification_group(self, notification_group):
+        raise NotImplementedError
+
+    def get_notification_group(self, id, customers=None):
+        raise NotImplementedError
+
+    def get_notification_groups(self, query=None, page=None, page_size=None):
+        raise NotImplementedError
+
+    def get_notification_group_users(self, id):
+        raise NotImplementedError
+
+    def get_notification_groups_count(self, query=None):
+        raise NotImplementedError
+
+    def update_notification_group(self, id, **kwargs):
+        raise NotImplementedError
+
+    def delete_notification_group(self, id):
+        raise NotImplementedError
+
     # ESCALATION RULES
 
     def create_escalation_rule(self, escalation_rule):
@@ -569,6 +592,7 @@ class QueryBuilder(Base):
         self.__class__.notification_rules = type('NotificationRulesQueryBuilder', (cls.NotificationRules, self.NotificationRules, QueryBuilder), {})
         self.__class__.escalation_rules = type('EscalationRulesQueryBuilder', (cls.EscalationRules, self.EscalationRules, QueryBuilder), {})
         self.__class__.on_calls = type('OnCallQueryBuilder', (cls.OnCalls, self.OnCalls, QueryBuilder), {})
+        self.__class__.notification_groups = type('NotificationGroupQueryBuilder', (cls.NotificationGroups, self.NotificationGroups, QueryBuilder), {})
         self.__class__.heartbeats = type('HeartbeatsQueryBuilder', (cls.Heartbeats, self.Heartbeats, QueryBuilder), {})
         self.__class__.keys = type('ApiKeysQueryBuilder', (cls.ApiKeys, self.ApiKeys, QueryBuilder), {})
         self.__class__.users = type('UsersQueryBuilder', (cls.Users, self.Users, QueryBuilder), {})
@@ -605,6 +629,12 @@ class QueryBuilder(Base):
         @staticmethod
         def from_params(params, customers=None, query_time=None):
             raise NotImplementedError('OnCallsQueryBuilder has no from_params() method')
+
+    class NotificationGroups:
+
+        @staticmethod
+        def from_params(params, customers=None, query_time=None):
+            raise NotImplementedError('NotificationGroupsQueryBuilder has no from_params() method')
 
     class EscalationRules:
 

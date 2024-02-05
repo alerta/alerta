@@ -331,6 +331,36 @@ class NotificationRules(QueryBuilder):
         return Query(where=query, sort=sort, group=None)
 
 
+class NotificationGroups(QueryBuilder):
+
+    VALID_PARAMS = {
+        'id': ('id', None, 0),
+        'name': ('customer', 'customer', 1),
+        'users': ('users', 'users', 1),
+    }
+
+    @staticmethod
+    def from_params(params: MultiDict, customers=None, query_time=None):
+
+        query = dict()
+        params = MultiDict(params)
+
+        # customer
+        if customers:
+            customer_query = {'customer': {'$in': customers}}
+        else:
+            customer_query = None
+
+        # filter, sort-by
+        query = QueryBuilder.filter_query(params, NotificationGroups.VALID_PARAMS, query)
+        sort = QueryBuilder.sort_by_columns(params, NotificationGroups.VALID_PARAMS)
+
+        if customer_query:
+            query = {'$and': [customer_query, query]}
+
+        return Query(where=query, sort=sort, group=None)
+
+
 class OnCalls(QueryBuilder):
 
     VALID_PARAMS = {

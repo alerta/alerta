@@ -1126,6 +1126,76 @@ class Backend(Database):
         """
         return self._deleteone(delete, (id,), returning=True)
 
+# NOTIFICATION GROUPS
+    def create_notification_group(self, notification_group):
+        insert = """
+            INSERT INTO notification_groups (id, name, users)
+            VALUES (%(id)s, %(name)s, %(users)s)
+            RETURNING *
+        """
+        return self._insert(insert, vars(notification_group))
+
+    def get_notification_group(self, id):
+        select = """
+            SELECT * FROM notification_groups
+            WHERE id=%(id)s
+        """
+        return self._fetchone(select, {'id': id})
+
+    def get_notification_groups(self, query=None, page=None, page_size=None):
+        query = query or Query()
+        select = """
+            SELECT * FROM notification_groups
+             WHERE {where}
+          ORDER BY {order}
+        """.format(
+            where=query.where, order=query.sort
+        )
+        return self._fetchall(select, query.vars, limit=page_size, offset=(page - 1) * page_size)
+
+    def get_notification_group_users(self, id):
+        select = """
+            SELECT u.id, u.login, u.email, u.name, u.status
+            FROM (SELECT id, UNNEST(users) as uid FROM notification_groups) g
+            INNER JOIN users u on g.uid = u.id
+            WHERE g.id = %s
+        """
+        return self._fetchall(select, (id,))
+
+    def get_notification_groups_count(self, query=None):
+        query = query or Query()
+        select = """
+            SELECT COUNT(1) FROM notification_groups
+             WHERE {where}
+        """.format(
+            where=query.where
+        )
+        return self._fetchone(select, query.vars).count
+
+    def update_notification_group(self, id, **kwargs):
+        update = """
+            UPDATE notification_groups
+            SET
+        """
+        if 'name' in kwargs:
+            update += 'name=%(name)s, '
+        if 'users' in kwargs:
+            update += 'users=%(users)s '
+        update += """
+            WHERE id=%(id)s
+            RETURNING *
+        """
+        kwargs['id'] = id
+        return self._updateone(update, kwargs, returning=True)
+
+    def delete_notification_group(self, id):
+        delete = """
+            DELETE FROM notification_groups
+            WHERE id=%s
+            RETURNING id
+        """
+        return self._deleteone(delete, (id,), returning=True)
+
 # ESCALATION RULES
 
     def create_escalation_rule(self, escalation_rule):

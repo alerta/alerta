@@ -370,6 +370,34 @@ class EscalationRules(QueryBuilder):
         return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
 
 
+class NotificationGroups(QueryBuilder):
+
+    VALID_PARAMS = {
+        # field (column, sort-by, direction)
+        'id': ('id', None, 0),
+        'name': ('name', 'name', 1),
+        'users': ('users', 'users', 1),
+    }
+
+    @staticmethod
+    def from_params(params: MultiDict, customers=None, query_time=None):
+
+        query = ['1=1']
+        qvars = dict()
+        params = MultiDict(params)
+
+        # customer
+        if customers:
+            query.append('AND customer=ANY(%(customers)s)')
+            qvars['customers'] = customers
+
+        # filter, sort-by
+        query, qvars = QueryBuilder.filter_query(params, NotificationGroups.VALID_PARAMS, query, qvars)
+        sort = QueryBuilder.sort_by_columns(params, NotificationGroups.VALID_PARAMS)
+
+        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
+
+
 class OnCalls(QueryBuilder):
 
     VALID_PARAMS = {

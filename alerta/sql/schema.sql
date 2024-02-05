@@ -249,6 +249,13 @@ CREATE TABLE IF NOT EXISTS on_calls(
 );
 
 
+CREATE TABLE IF NOT EXISTS notification_groups(
+    id text PRIMARY KEY,
+    name text UNIQUE NOT NULL,
+    users text[]
+);
+
+
 CREATE TABLE IF NOT EXISTS customers (
     id text PRIMARY KEY,
     match text NOT NULL,
