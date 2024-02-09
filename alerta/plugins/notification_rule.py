@@ -206,7 +206,7 @@ class NotificationRulesHandler(PluginBase):
         message = info.text if info.text != '' else 'this is a test message for testing a notification_channel in alerta'
         self.handle_channel(message, channel, info, [], Fernet(config['NOTIFICATION_KEY']))
 
-    def handle_notifications(self, alert: 'Alert', notifications: 'list[tuple[NotificationRule,NotificationChannel, list[set[User or None]]]]', on_users: 'list[set[User or None]]', fernet: Fernet):
+    def handle_notifications(self, alert: 'Alert', notifications: 'list[tuple[NotificationRule,NotificationChannel, list[set[User or None]]]]', on_users: 'list[set[User or None]]', fernet: Fernet, status: str = ""):
         standard_message = '%(environment)s: %(severity)s alert for %(service)s - %(resource)s is %(event)s'
         for notification_rule, channel, users in notifications:
             if channel is None:
@@ -214,10 +214,10 @@ class NotificationRulesHandler(PluginBase):
 
             if notification_rule.use_oncall:
                 users.update(on_users)
-
+            msg_obj = {**alert.serialize, "status": status} if status != "" else alert.serialize
             message = (
                 notification_rule.text if notification_rule.text != '' and notification_rule.text is not None else standard_message
-            ) % self.get_message_obj(alert.serialize)
+            ) % self.get_message_obj(msg_obj)
 
             self.handle_channel(message, channel, notification_rule, users, fernet)
 
@@ -237,7 +237,15 @@ class NotificationRulesHandler(PluginBase):
         Thread(target=self.handle_notifications, args=[alert, notifications, on_users, fernet]).start()
 
     def status_change(self, alert, status, text, **kwargs):
-        return
+        stat = status if type(status) == str else status.value
+        config = kwargs.get('config')
+        fernet = Fernet(config['NOTIFICATION_KEY'])
+        notification_rules = NotificationRule.find_all_active_status(alert, stat)
+        notifications = [[notification_rule, notification_rule.channel, notification_rule.users] for notification_rule in notification_rules]
+        on_users = set()
+        for on_call in OnCall.find_all_active(alert):
+            on_users.update(on_call.users)
+        Thread(target=self.handle_notifications, args=[alert, notifications, on_users, fernet, stat]).start()
 
     def take_action(self, alert, action, text, **kwargs):
         raise NotImplementedError

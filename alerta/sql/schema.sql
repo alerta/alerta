@@ -213,6 +213,14 @@ END$$;
 
 DO $$
 BEGIN
+    ALTER TABLE notification_rules ADD COLUMN status text[];
+    UPDATE notification_rules SET status = '{}';
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "status" already exists in notification_rules.';
+END$$;
+
+DO $$
+BEGIN
     ALTER TABLE notification_rules ADD COLUMN active boolean;
     UPDATE notification_rules SET active = true;
 EXCEPTION

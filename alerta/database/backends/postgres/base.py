@@ -1005,9 +1005,9 @@ class Backend(Database):
 
     def create_notification_rule(self, notification_rule):
         insert = """
-            INSERT INTO notification_rules (id, name, active, priority, environment, service, resource, event, "group", tags,
+            INSERT INTO notification_rules (id, name, active, priority, environment, service, resource, event, "group", tags, status,
                 customer, "user", create_time, start_time, end_time, days, receivers, user_ids, group_ids, use_oncall, severity, text, channel_id, advanced_severity, use_advanced_severity)
-            VALUES (%(id)s, %(name)s, %(active)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s,
+            VALUES (%(id)s, %(name)s, %(active)s, %(priority)s, %(environment)s, %(service)s, %(resource)s, %(event)s, %(group)s, %(tags)s, %(status)s,
                 %(customer)s, %(user)s, %(create_time)s, %(start_time)s, %(end_time)s, %(days)s, %(receivers)s, %(user_ids)s, %(group_ids)s, %(use_oncall)s, %(severity)s, %(text)s, %(channel_id)s, %(advanced_severity)s::severity_advanced[], %(use_advanced_severity)s )
             RETURNING *
         """
@@ -1058,11 +1058,33 @@ class Backend(Database):
               AND (event IS NULL OR event=%(event)s)
               AND ("group" IS NULL OR "group"=%(group)s)
               AND (tags='{}' OR tags <@ %(tags)s)
+              AND status='{}' OR ARRAY[%(status)s] <@ status
               AND active=true
         """
         if current_app.config['CUSTOMER_VIEWS']:
             select += ' AND (customer IS NULL OR customer=%(customer)s)'
         return self._fetchall(select, vars(alert))
+
+    def get_notification_rules_active_status(self, alert, status):
+        select = """
+            SELECT * from (select *, generate_subscripts(advanced_severity,1) as s
+            FROM notification_rules) as foo
+            WHERE (start_time IS NULL OR start_time <= %(time)s) AND (end_time IS NULL OR end_time > %(time)s)
+              AND (days='{}' OR ARRAY[%(day)s] <@ days)
+              AND environment=%(environment)s
+              AND (use_advanced_severity=TRUE OR severity='{}' OR ARRAY[%(severity)s] <@ severity)
+              AND (use_advanced_severity=FALSE OR ((advanced_severity[s].from_='{}' OR ARRAY[%(previous_severity)s] <@ advanced_severity[s].from_) AND (advanced_severity[s].to='{}' OR ARRAY[%(severity)s] <@ advanced_severity[s].to)))
+              AND (resource IS NULL OR resource=%(resource)s)
+              AND (service='{}' OR service <@ %(service)s)
+              AND (event IS NULL OR event=%(event)s)
+              AND ("group" IS NULL OR "group"=%(group)s)
+              AND (tags='{}' OR tags <@ %(tags)s)
+              AND ARRAY[%(status)s] <@ status
+              AND active=true
+        """
+        if current_app.config['CUSTOMER_VIEWS']:
+            select += ' AND (customer IS NULL OR customer=%(customer)s)'
+        return self._fetchall(select, {**vars(alert), "status": status})
 
     def update_notification_rule(self, id, **kwargs):
         update = """
@@ -1091,6 +1113,8 @@ class Backend(Database):
             update += 'end_time=%(endTime)s, '
         if 'days' in kwargs:
             update += 'days=%(days)s, '
+        if 'status' in kwargs:
+            update += 'status=%(status)s, '
         if 'receivers' in kwargs:
             update += 'receivers=%(receivers)s, '
         if 'useOnCall' in kwargs:

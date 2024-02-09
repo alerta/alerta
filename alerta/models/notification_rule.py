@@ -75,6 +75,7 @@ class NotificationRule:
         self.start_time: time = kwargs.get('start_time') or None
         self.end_time: time = kwargs.get('end_time') or None
         self.severity = kwargs.get('severity') or list()
+        self.status = kwargs.get('status') or list()
         self.service = kwargs.get('service', None) or list()
         self.resource = kwargs.get('resource', None)
         self.event = kwargs.get('event', None)
@@ -139,6 +140,7 @@ class NotificationRule:
             group_ids=json.get('groupIds'),
             use_oncall=json.get('useOnCall', False),
             severity=json.get('severity', list()),
+            status=json.get('status', list()),
             advanced_severity=[AdvancedSeverity(severity['from'], severity['to']) for severity in json.get('advancedSeverity', [])],
             use_advanced_severity=json.get('useAdvancedSeverity', False),
             service=json.get('service', list()),
@@ -183,6 +185,7 @@ class NotificationRule:
             'useOnCall': self.use_oncall,
             'service': self.service,
             'severity': self.severity,
+            'status': self.status,
             'advancedSeverity': [a_severity.serialize for a_severity in self.advanced_severity],
             'useAdvancedSeverity': self.use_advanced_severity,
             'resource': self.resource,
@@ -218,6 +221,8 @@ class NotificationRule:
             more += 'customer=%r, ' % self.customer
         if self.severity:
             more += 'severity=%r, ' % self.severity
+        if self.status:
+            more += 'status=%r, ' % self.status
         if self.advanced_severity:
             more += 'advanced_severity=%r, ' % self.advanced_severity
         if self.use_advanced_severity:
@@ -246,6 +251,7 @@ class NotificationRule:
             use_oncall=doc.get('useOnCall', False),
             service=doc.get('service', list()),
             severity=doc.get('severity', list()),
+            status=doc.get('status', list()),
             advanced_severity=[AdvancedSeverity.from_db(advanced_severity) for advanced_severity in doc.get('advancedSeverity', [])],
             use_advanced_severity=doc.get('useAdvancedSeverity', list()),
             resource=doc.get('resource', None),
@@ -305,6 +311,7 @@ class NotificationRule:
             start_time=rec.start_time,
             end_time=rec.end_time,
             days=rec.days,
+            status=rec.status,
         )
 
     @classmethod
@@ -344,6 +351,10 @@ class NotificationRule:
         if alert.duplicate_count:
             return []
         return [NotificationRule.from_db(db_notification_rule) for db_notification_rule in db.get_notification_rules_active(alert)]
+
+    @ staticmethod
+    def find_all_active_status(alert: 'Alert', status: str) -> 'list[NotificationRule]':
+        return [NotificationRule.from_db(db_notification_rule) for db_notification_rule in db.get_notification_rules_active_status(alert, status)]
 
     def update(self, **kwargs) -> 'NotificationRule':
         advanced_severities = kwargs.get('advancedSeverity')
