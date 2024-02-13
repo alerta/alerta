@@ -10,10 +10,10 @@ PyJWT==2.8.0
 pymongo==4.4.1
 pyparsing==3.1.1
 python-dateutil==2.8.2
-pytz==2023.4
+pytz==2024.1
 PyYAML==6.0.1
 requests==2.31.0
 requests_hawk==1.2.1
-sentry-sdk[flask]==1.39.2
+sentry-sdk[flask]==1.40.3
 StrEnum==0.4.15
 werkzeug==3.0.1
