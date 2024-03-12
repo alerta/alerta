@@ -92,7 +92,7 @@ def process_alert(alert: Alert) -> Alert:
     return alert
 
 
-def process_action(alert: Alert, action: str, text: str, timeout: int = None) -> Tuple[Alert, str, str, Optional[int]]:
+def process_action(alert: Alert, action: str, text: str, timeout: int = None, post_action: bool = False) -> Tuple[Alert, str, str, Optional[int]]:
 
     wanted_plugins, wanted_config = plugins.routing(alert)
 
@@ -102,9 +102,12 @@ def process_action(alert: Alert, action: str, text: str, timeout: int = None) ->
         if alert.is_suppressed:
             break
         try:
-            updated = plugin.take_action(alert, action, text, timeout=timeout, config=wanted_config)
+            if post_action:
+                updated = plugin.post_action(alert, action, text, timeout=timeout, config=wanted_config)
+            else:
+                updated = plugin.take_action(alert, action, text, timeout=timeout, config=wanted_config)
         except NotImplementedError:
-            pass  # plugin does not support action() method
+            pass  # plugin does not support take_action() method or post_action() method
         except (RejectException, ForwardingLoop, InvalidAction, AlertaException):
             raise
         except Exception as e:

@@ -156,8 +156,12 @@ def action_alert(alert_id):
         raise ApiError('not found', 404)
 
     try:
+        # pre action
         alert, action, text, timeout = process_action(alert, action, text, timeout)
+        # update status
         alert = alert.from_action(action, text, timeout)
+        # post action
+        alert, action, text, timeout = process_action(alert, action, text, timeout, post_action=True)
     except RejectException as e:
         write_audit_trail.send(current_app._get_current_object(), event='alert-action-rejected', message=alert.text,
                                user=g.login, customers=g.customers, scopes=g.scopes, resource_id=alert.id, type='alert',

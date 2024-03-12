@@ -35,7 +35,16 @@ class PluginBase(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def take_action(self, alert: 'Alert', action: str, text: str, **kwargs) -> Any:
-        """Trigger integrations based on external actions. (optional)"""
+        """
+        Trigger integrations based on external actions. (optional)
+        Pre-trigger, eg. this triggers before the status are updated.
+        """
+        raise NotImplementedError
+
+    def post_action(self, alert: 'Alert', action: str, text: str, **kwargs) -> Any:
+        """
+        Trigger integrations based on external actions. (optional)
+        Post-trigger, eg. after the status is updated"""
         raise NotImplementedError
 
     def take_note(self, alert: 'Alert', text: Optional[str], **kwargs) -> Any:
