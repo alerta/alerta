@@ -2,6 +2,7 @@ import threading
 import time
 from collections import defaultdict, namedtuple
 from datetime import datetime
+from pathlib import Path
 
 import psycopg2
 from flask import current_app
@@ -70,15 +71,16 @@ class Backend(Database):
         lock = threading.Lock()
         with lock:
             conn = self.connect()
+            migrations_dir = Path(app.root_path).joinpath('sql')
 
-            with app.open_resource('sql/schema.sql') as f:
-                try:
-                    conn.cursor().execute(f.read())
-                    conn.commit()
-                except Exception as e:
-                    if raise_on_error:
-                        raise
-                    app.logger.warning(e)
+            try:
+                self._create_migrations_table(conn)
+                for migration in migrations_dir.glob('*_*.sql'):
+                    self._apply_migration(conn, migration)
+            except Exception as e:
+                if raise_on_error:
+                    raise
+                app.logger.warning(e)
 
         register_adapter(dict, Json)
         register_adapter(datetime, self._adapt_datetime)
@@ -1659,3 +1661,45 @@ class Backend(Database):
     def _log(self, cursor, query, vars):
         current_app.logger.debug('{stars}\n{query}\n{stars}'.format(
             stars='*' * 40, query=cursor.mogrify(query, vars).decode('utf-8')))
+
+    def _apply_migration(self, conn, migration):
+        ver, name = migration.stem.split('_', 1)
+
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM migrations WHERE version=%s", (ver,))
+        if cursor.fetchone():
+            return
+
+        try:
+            with open(migration.absolute()) as f:
+                cursor.execute(f.read())
+                cursor.execute("INSERT INTO migrations (version, name) VALUES (%s, %s)", (ver, name))
+                conn.commit()
+        except Exception as e:
+            conn.rollback()
+            current_app.logger.error('Failed to apply migration %s: %s', migration, e)
+            raise e
+
+    def _create_migrations_table(self, conn):
+        """
+        Create migrations table if it doesn't exist.
+        """
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT FROM pg_tables WHERE schemaname = %s AND tablename = %s
+                )""", (self.schema, 'migrations'))
+        if not cursor.fetchone()[0]:
+            try:
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS migrations (
+                        version VARCHAR(10) PRIMARY KEY,
+                        name VARCHAR(255) NOT NULL,
+                        create_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                conn.commit()
+            except Exception as e:
+                conn.rollback()
+                raise RuntimeError('Failed to create migrations table: %s', e)
