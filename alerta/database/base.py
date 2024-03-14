@@ -291,6 +291,9 @@ class Database(Base):
     def get_notification_rules_active_status(self, alert):
         raise NotImplementedError
 
+    def get_notification_rules_reactivate(self, time):
+        raise NotImplementedError
+
     def update_notification_rule(self, id, **kwargs):
         raise NotImplementedError
 

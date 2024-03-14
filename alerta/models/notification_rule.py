@@ -85,6 +85,7 @@ class NotificationRule:
         self.days = kwargs.get('days', None) or list()
         self.advanced_severity = kwargs.get('advanced_severity') or [AdvancedSeverity([], [])]
         self.use_advanced_severity = kwargs.get('use_advanced_severity', False)
+        self.reactivate = kwargs.get('reactivate', None)
 
         self.user = kwargs.get('user', None)
         self.create_time = (
@@ -149,6 +150,7 @@ class NotificationRule:
             group=json.get('group', None),
             tags=json.get('tags', list()),
             customer=json.get('customer', None),
+            reactivate=json.get('reactivate', None),
             start_time=(
                 datetime.strptime(json['startTime'], '%H:%M').time()
                 if json['startTime'] is not None and json['startTime'] != ''
@@ -195,6 +197,7 @@ class NotificationRule:
             'customer': self.customer,
             'user': self.user,
             'createTime': self.create_time,
+            'reactivate': self.reactivate,
             'text': self.text,
             'startTime': self.start_time.strftime('%H:%M')
             if self.start_time is not None
@@ -261,6 +264,7 @@ class NotificationRule:
             customer=doc.get('customer', None),
             user=doc.get('user', None),
             create_time=doc.get('createTime', None),
+            reactivate=doc.get('reactivate', None),
             text=doc.get('text', None),
             start_time=(
                 datetime.strptime(
@@ -307,6 +311,7 @@ class NotificationRule:
             customer=rec.customer,
             user=rec.user,
             create_time=rec.create_time,
+            reactivate=rec.reactivate,
             text=rec.text,
             start_time=rec.start_time,
             end_time=rec.end_time,
@@ -356,10 +361,16 @@ class NotificationRule:
     def find_all_active_status(alert: 'Alert', status: str) -> 'list[NotificationRule]':
         return [NotificationRule.from_db(db_notification_rule) for db_notification_rule in db.get_notification_rules_active_status(alert, status)]
 
+    @ staticmethod
+    def find_all_reactivate(**kwargs) -> 'list[NotificationRule]':
+        now = datetime.utcnow()
+        return [NotificationRule.from_db(db_notification_rule) for db_notification_rule in db.get_notification_rules_reactivate(now)]
+
     def update(self, **kwargs) -> 'NotificationRule':
         advanced_severities = kwargs.get('advancedSeverity')
         if advanced_severities is not None:
             kwargs['advancedSeverity'] = [AdvancedSeverity.from_document(advanced_severity) for advanced_severity in advanced_severities]
+        print(kwargs)
         return NotificationRule.from_db(db.update_notification_rule(self.id, **kwargs))
 
     def delete(self) -> bool:

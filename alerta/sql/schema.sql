@@ -229,6 +229,13 @@ END$$;
 
 DO $$
 BEGIN
+    ALTER TABLE notification_rules ADD COLUMN reactivate timestamp without time zone;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "reactivate" already exists in notification_rules.';
+END$$;
+
+DO $$
+BEGIN
     ALTER TABLE notification_rules ADD COLUMN name text UNIQUE;
 EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column "name" already exists in notification_rules.';

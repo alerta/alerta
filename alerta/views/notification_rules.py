@@ -191,3 +191,17 @@ def delete_notification_rule(notification_rule_id):
         return jsonify(status='ok')
     else:
         raise ApiError('failed to delete notification rule', 500)
+
+
+@api.route('/notificationrules/reactivate', methods=['OPTIONS', 'GET'])
+@cross_origin()
+@permission(Scope.write_alerts)
+@jsonp
+def reactivate_notification_rules():
+    notification_rules: 'list[NotificationRule]' = NotificationRule.find_all_reactivate()
+    for rule in notification_rules:
+        try:
+            rule.update(active=True, reactivate=None)
+        except Exception as e:
+            raise ApiError(str(e), 500)
+    return jsonify(status='ok', notificationRules=[rule.serialize for rule in notification_rules]), 200
