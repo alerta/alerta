@@ -253,6 +253,14 @@ EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column "user_ids" and "gruop_ids" already exists in notification_rules.';
 END$$;
 
+DO $$
+BEGIN
+    UPDATE public.notification_rules SET resource=NULL WHERE resource='';
+    UPDATE public.notification_rules SET event=NULL WHERE event='';
+    UPDATE public.notification_rules SET "group"=NULL WHERE "group"='';
+    
+END$$;  
+
 CREATE TABLE IF NOT EXISTS on_calls(
     id text PRIMARY KEY,
     customer text,

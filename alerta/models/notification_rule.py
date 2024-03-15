@@ -77,9 +77,10 @@ class NotificationRule:
         self.severity = kwargs.get('severity') or list()
         self.status = kwargs.get('status') or list()
         self.service = kwargs.get('service', None) or list()
-        self.resource = kwargs.get('resource', None)
-        self.event = kwargs.get('event', None)
-        self.group = kwargs.get('group', None)
+        self.resource = kwargs['resource'] if kwargs.get('resource', '') != '' else None
+        print(self.resource)
+        self.event = kwargs['event'] if kwargs.get('event', '') != '' else None
+        self.group = kwargs['group'] if kwargs.get('group', '') != '' else None
         self.tags = kwargs.get('tags', None) or list()
         self.customer = kwargs.get('customer', None)
         self.days = kwargs.get('days', None) or list()
@@ -370,7 +371,6 @@ class NotificationRule:
         advanced_severities = kwargs.get('advancedSeverity')
         if advanced_severities is not None:
             kwargs['advancedSeverity'] = [AdvancedSeverity.from_document(advanced_severity) for advanced_severity in advanced_severities]
-        print(kwargs)
         return NotificationRule.from_db(db.update_notification_rule(self.id, **kwargs))
 
     def delete(self) -> bool:

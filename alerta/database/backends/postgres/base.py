@@ -1107,11 +1107,11 @@ class Backend(Database):
         if 'service' in kwargs:
             update += 'service=%(service)s, '
         if 'resource' in kwargs:
-            update += 'resource=%(resource)s, '
+            update += 'resource=%(resource)s, ' if kwargs['resource'] != '' else 'resource=NULL, '
         if 'event' in kwargs:
-            update += 'event=%(event)s, '
+            update += 'event=%(event)s, ' if kwargs['event'] != '' else 'event=NULL, '
         if 'group' in kwargs:
-            update += '"group"=%(group)s, '
+            update += '"group"=%(group)s, ' if kwargs['group'] != '' else '"group"=NULL, '
         if 'tags' in kwargs:
             update += 'tags=%(tags)s, '
         if 'customer' in kwargs:
