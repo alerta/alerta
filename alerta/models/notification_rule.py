@@ -78,7 +78,6 @@ class NotificationRule:
         self.status = kwargs.get('status') or list()
         self.service = kwargs.get('service', None) or list()
         self.resource = kwargs['resource'] if kwargs.get('resource', '') != '' else None
-        print(self.resource)
         self.event = kwargs['event'] if kwargs.get('event', '') != '' else None
         self.group = kwargs['group'] if kwargs.get('group', '') != '' else None
         self.tags = kwargs.get('tags', None) or list()

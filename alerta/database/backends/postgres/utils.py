@@ -290,6 +290,7 @@ class NotificationRules(QueryBuilder):
         # field (column, sort-by, direction)
         'id': ('id', None, 0),
         'priority': ('priority', 'priority', 1),
+        'name': ('name', 'name', 1),
         'environment': ('environment', 'environment', 1),
         'service': ('service', 'service', 1),
         'resource': ('resource', 'resource', 1),
@@ -312,9 +313,19 @@ class NotificationRules(QueryBuilder):
     @staticmethod
     def from_params(params: MultiDict, customers=None, query_time=None):
 
-        query = ['1=1']
-        qvars = dict()
-        params = MultiDict(params)
+        if params.get('q', None):
+            try:
+                parser = QueryParser()
+                query = [parser.parse(
+                    query=params['q'],
+                    default_field=params.get('q.df')
+                )]
+                qvars = dict()  # type: Dict[str, Any]
+            except ParseException as e:
+                raise ApiError('Failed to parse query string.', 400, [e])
+        else:
+            query = ['1=1']
+            qvars = dict()
 
         # customer
         if customers:
