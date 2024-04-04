@@ -1062,7 +1062,7 @@ class Backend(Database):
               AND (event IS NULL OR event=%(event)s)
               AND ("group" IS NULL OR "group"=%(group)s)
               AND (tags='{}' OR tags <@ %(tags)s)
-              AND status='{}' OR ARRAY[%(status)s] <@ status
+              AND (status='{}' OR ARRAY[%(status)s] <@ status)
               AND active=true
         """
         if current_app.config['CUSTOMER_VIEWS']:
