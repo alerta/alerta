@@ -9,6 +9,7 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
+from datetime import datetime, timedelta
 
 from alerta.models.alert import Alert
 from alerta.models.notification_rule import (NotificationChannel,
@@ -83,6 +84,25 @@ class NotificationRulesHandler(PluginBase):
         if not sms_client:
             return
         return sms_client.messages.create(body=body, to=receiver, from_=channel.sender)
+
+    def mylink_bearer_request(self, channel: NotificationChannel, fernet: Fernet):
+        try:
+            data = {
+                'client_id': fernet.decrypt(channel.api_sid.encode()).decode(),
+                'client_secret': fernet.decrypt(channel.api_token.encode()).decode(),
+                'grant_type': 'client_credentials'
+            }
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            return requests.post('https://sso.linkmobility.com/auth/realms/CPaaS/protocol/openid-connect/token', headers=headers, data=data)
+        except InvalidToken:
+            LOG.error('Failed to send message due to invalid NOTIFICATION_KEY')
+            return
+
+    def send_mylink_sms(self, message: str, channel: NotificationChannel, receivers: 'list[str]', fernet: Fernet, **kwargs):
+        bearer = channel.bearer
+        data = json.dumps([{"recipient": receiver, 'content': {'text': message, 'options': {'sms.sender': channel.sender}}} for receiver in receivers])
+        headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {bearer}'}
+        return requests.post("https://api.linkmobility.com/sms/v1", data=data, headers=headers)
 
     def send_link_mobility_sms(self, message: str, channel: NotificationChannel, receivers: 'list[str]', fernet: Fernet, **kwargs):
         numberOfReceivers = len(receivers)
@@ -201,6 +221,12 @@ class NotificationRulesHandler(PluginBase):
                 LOG.error(response.content)
             else:
                 LOG.info(response.content)
+        elif notification_type == 'my_link':
+            response = self.send_mylink_sms(message, channel, list({*notification_rule.receivers, *[f'{user.country_code}{user.phone_number}' for user in users]}), fernet)
+            if response.status_code != 202:
+                LOG.error(f"Failed to send myLink message with response: {response.content}")
+            else:
+                LOG.info(f"Successfully Sent message to myLink with response: {response.content}")
 
     def handle_test(self, channel: NotificationChannel, info: NotificationRule, config):
         message = info.text if info.text != '' else 'this is a test message for testing a notification_channel in alerta'
@@ -224,13 +250,28 @@ class NotificationRulesHandler(PluginBase):
     def pre_receive(self, alert, **kwargs):
         return alert
 
+    def update_bearer(self, channel: NotificationChannel, fernet):
+        if channel.type == 'my_link':
+            now = datetime.now()
+            if channel.bearer is None or channel.bearer_timeout < datetime.now():
+                response = self.mylink_bearer_request(channel, fernet)
+                if response.status_code == 200:
+                    data = response.json()
+                    bearer = data['access_token']
+                    timeout = now + timedelta(0, data['expires_in'])
+                    channel = channel.update_bearer(bearer, timeout)
+                    LOG.info(f"Updated access_token for myLink channel {channel.id}")
+                else:
+                    LOG.error(f"Failed to update access token for myLink channel {channel.id} with response: {response.status_code} {response.content}")
+        return channel
+
     def post_receive(self, alert: 'Alert', **kwargs):
         config = kwargs.get('config')
         fernet = Fernet(config['NOTIFICATION_KEY'])
         if alert.repeat:
             return
         notification_rules = NotificationRule.find_all_active(alert)
-        notifications = [[notification_rule, notification_rule.channel, notification_rule.users] for notification_rule in notification_rules]
+        notifications = [[notification_rule, self.update_bearer(notification_rule.channel, fernet), notification_rule.users] for notification_rule in notification_rules]
         on_users = set()
         for on_call in OnCall.find_all_active(alert):
             on_users.update(on_call.users)

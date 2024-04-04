@@ -27,6 +27,8 @@ class NotificationChannel:
         self.api_sid: 'str|None' = kwargs.get('api_sid', None)  # encrypted
         self.customer = kwargs.get('customer', None)
         self.verify = kwargs.get('verify', None)
+        self.bearer = kwargs.get('bearer', None)
+        self.bearer_timeout = kwargs.get('bearer_timeout', None)
 
     @classmethod
     def parse(cls, json: JSON) -> 'NotificationChannel':
@@ -77,6 +79,8 @@ class NotificationChannel:
             platform_partner_id=doc.get('platfromPartnerId', None),
             customer=doc.get('customer', None),
             verify=doc.get('verify', None),
+            bearer=doc.get('bearer', None),
+            bearer_timeout=doc.get('bearer_timeout', None),
         )
 
     @ classmethod
@@ -92,6 +96,8 @@ class NotificationChannel:
             platform_partner_id=rec.platform_partner_id,
             customer=rec.customer,
             verify=rec.verify,
+            bearer=rec.bearer,
+            bearer_timeout=rec.bearer_timeout,
         )
 
     @ classmethod
@@ -126,3 +132,6 @@ class NotificationChannel:
 
     def delete(self) -> bool:
         return db.delete_notification_channel(self.id)
+
+    def update_bearer(self, bearer, timeout) -> 'NotificationChannel':
+        return NotificationChannel.from_db(db.update_notification_channel(self.id, bearer=bearer, bearer_timeout=timeout))

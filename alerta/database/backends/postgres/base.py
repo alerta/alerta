@@ -984,6 +984,10 @@ class Backend(Database):
             update += 'platform_partner_id=%(platformPartnerId)s, '
         if 'verify' in kwargs:
             update += 'verify=%(verify)s, '
+        if 'bearer' in kwargs:
+            update += 'bearer=%(bearer)s, '
+        if 'bearer_timeout' in kwargs:
+            update += 'bearer_timeout=%(bearer_timeout)s, '
         update = update[0:-2]
         update += """
             WHERE id=%(id)s

@@ -136,6 +136,14 @@ EXCEPTION
     WHEN duplicate_column THEN RAISE NOTICE 'column "verify" already exists in notification_channels.';
 END$$;
 
+DO $$
+BEGIN
+    ALTER TABLE notification_channels ADD COLUMN "bearer" text;
+    ALTER TABLE notification_channels ADD COLUMN "bearer_timeout" timestamp without time zone;
+EXCEPTION
+    WHEN duplicate_column THEN RAISE NOTICE 'column "bearer" and "bearer_timeout" already exists in notification_channels.';
+END$$;
+
 
 DO $$
 BEGIN
