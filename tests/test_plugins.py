@@ -1,10 +1,12 @@
 import json
 import os
 import unittest
+from typing import Any
 from uuid import uuid4
 
 from alerta.app import create_app, db, plugins
 from alerta.exceptions import AlertaException, InvalidAction
+from alerta.models.alert import Alert
 from alerta.models.enums import Status
 from alerta.plugins import PluginBase
 
@@ -178,6 +180,15 @@ class PluginsTestCase(unittest.TestCase):
         }
         response = self.client.put('/alert/' + alert_id + '/action', json=payload, headers=self.headers)
         self.assertEqual(response.status_code, 200)
+
+        # check post_action (check if tag was added)
+        response = self.client.put('/alert/' + alert_id + '/action', json={'action': 'test-post-action'}, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get('/alert/' + alert_id)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('test-post-action', data['alert']['tags'])
 
         # check status=closed
         response = self.client.get('/alert/' + alert_id)
@@ -557,6 +568,12 @@ class CustActionPlugin1(PluginBase):
 
         return alert, action, text
 
+    def post_action(self, alert, action, text, **kwargs):
+
+        if action == 'test-post-action':
+            alert.tags.append('test-post-action')
+            return alert
+
 
 class CustActionPlugin2(PluginBase):
 
@@ -578,6 +595,9 @@ class CustActionPlugin2(PluginBase):
 
         return alert, action, text
 
+    def post_action(self, alert: Alert, action: str, text: str, **kwargs) -> Any:
+        raise NotImplementedError
+
 
 class CustActionPlugin3(PluginBase):
 
@@ -596,6 +616,9 @@ class CustActionPlugin3(PluginBase):
             raise InvalidAction(f'{action} is not a valid action for this status')
 
         return alert, action, text
+
+    def post_action(self, alert: Alert, action: str, text: str, **kwargs) -> Any:
+        pass
 
 
 class CustNotePlugin1(PluginBase):
