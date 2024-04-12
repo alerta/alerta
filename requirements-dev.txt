@@ -1,6 +1,6 @@
-mypy==1.8.0
-pre-commit==3.6.0
-pylint==3.0.3
+mypy==1.9.0
+pre-commit==3.7.0
+pylint==3.1.0
 pytest>=5.4.3
 pytest-cov
 python-dotenv
