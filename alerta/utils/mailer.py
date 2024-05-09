@@ -32,6 +32,7 @@ class Mailer:
 
         self.smtp_use_ssl = app.config['SMTP_USE_SSL']
         self.smtp_starttls = app.config['SMTP_STARTTLS']
+        self.smtp_skip_ssl_verify = app.config['SMTP_SKIP_SSL_VERIFY']
 
     def send_email(self, email: str, subject: str, body: str, mime: str = 'plain') -> None:
 
@@ -47,6 +48,11 @@ class Mailer:
         try:
             # Create ssl context
             ctx = ssl.create_default_context()
+            if self.smtp_skip_ssl_verify:
+                # Disable SSL certificate verification
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+                
             if self.ssl_key_file and self.ssl_cert_file:
                 # Load client certificates
                 ctx.load_cert_chain(certfile=self.ssl_cert_file, keyfile=self.ssl_key_file)
