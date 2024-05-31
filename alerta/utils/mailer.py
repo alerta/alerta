@@ -52,7 +52,7 @@ class Mailer:
                 # Disable SSL certificate verification
                 ctx.check_hostname = False
                 ctx.verify_mode = ssl.CERT_NONE
-                
+
             if self.ssl_key_file and self.ssl_cert_file:
                 # Load client certificates
                 ctx.load_cert_chain(certfile=self.ssl_cert_file, keyfile=self.ssl_key_file)
