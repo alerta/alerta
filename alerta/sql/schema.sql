@@ -97,6 +97,23 @@ ADD COLUMN IF NOT EXISTS text text,
 ADD COLUMN IF NOT EXISTS origin text;
 
 
+CREATE TABLE IF NOT EXISTS filters (
+    id text PRIMARY KEY,
+    environment text NOT NULL,
+    service text[],
+    resource text,
+    event text,
+    "group" text,
+    tags text[],
+    customer text,
+    type text,
+    attributes jsonb,
+    "user" text,
+    create_time timestamp without time zone,
+    text text,
+    origin text
+);
+
 CREATE TABLE IF NOT EXISTS customers (
     id text PRIMARY KEY,
     match text NOT NULL,
