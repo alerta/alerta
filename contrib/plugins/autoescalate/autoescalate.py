@@ -1,7 +1,6 @@
 import logging
 import math
 
-from alerta.app import alarm_model
 from alerta.plugins import PluginBase
 from alerta.models.enums import Severity
 
