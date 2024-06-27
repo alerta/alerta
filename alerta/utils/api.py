@@ -67,6 +67,7 @@ def process_alert(alert: Alert) -> Alert:
     wanted_plugins, wanted_config = plugins.routing(alert)
 
     alert_was_updated: bool = False
+    alert_severity_updated: bool = False
     for plugin in wanted_plugins:
         if skip_plugins:
             break
@@ -81,13 +82,20 @@ def process_alert(alert: Alert) -> Alert:
                 raise ApiError(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
             else:
                 logging.error(f"Error while running post-receive plugin '{plugin.name}': {str(e)}")
-        if updated:
+        if isinstance(updated, Alert):
             alert = updated
+        if isinstance(updated, tuple):
+            if len(updated) == 2:
+                alert, alert_severity_updated = updated
+        if updated:
             alert_was_updated = True
 
     if alert_was_updated:
         alert.update_tags(alert.tags)
         alert.attributes = alert.update_attributes(alert.attributes)
+        if alert_severity_updated:
+            logging.debug('Triggering severity update')
+            alert.update_severity()
 
     return alert
 
