@@ -564,7 +564,7 @@ class Backend(Database):
               FROM alerts, UNNEST (service) svc
              WHERE {where}
           GROUP BY {group}
-          ORDER BY count DESC
+          ORDER BY count DESC, duplicate_count DESC
         """.format(where=query.where, group=group)
         return [
             {
@@ -590,7 +590,7 @@ class Backend(Database):
               FROM topn, UNNEST (service) svc, UNNEST (history) hist
              WHERE hist.type='severity'
           GROUP BY topn.{group}
-          ORDER BY count DESC
+          ORDER BY count DESC, duplicate_count DESC
         """.format(where=query.where, group=group)
         return [
             {

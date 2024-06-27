@@ -374,6 +374,44 @@ class Alert:
         self.status = new_status
         return Alert.from_db(db.correlate_alert(self, history))
 
+    # update severity of an alert
+    def update_severity(self) -> 'Alert':
+        now = datetime.utcnow()
+
+        self.previous_severity = db.get_severity(self)
+        self.trend_indication = alarm_model.trend(self.previous_severity, self.severity)
+
+        status, _, previous_status, _ = self._get_hist_info()
+
+        _, new_status = alarm_model.transition(
+            alert=self,
+            current_status=status,
+            previous_status=previous_status
+        )
+
+        if new_status != status:
+            r = status_change_hook.send(self, status=new_status, text=self.text)
+            _, (_, new_status, text) = r[0]
+            self.update_time = now
+        else:
+            text = self.text
+
+        history = [History(
+            id=self.id,
+            event=self.event,
+            severity=self.severity,
+            status=new_status,
+            value=self.value,
+            text=text,
+            change_type=ChangeType.severity,
+            update_time=self.create_time,
+            user=g.login,
+            timeout=self.timeout
+        )]
+
+        self.status = new_status
+        return Alert.from_db(db.correlate_alert(self, history))
+
     # create an alert
     def create(self) -> 'Alert':
         now = datetime.utcnow()
