@@ -1,8 +1,8 @@
 import logging
 import math
 
-from alerta.models.enums import Severity
 from alerta.models.alarms.alerta import SEVERITY_MAP
+from alerta.models.enums import Severity
 from alerta.plugins import PluginBase
 
 LOG = logging.getLogger('alerta.plugins')
