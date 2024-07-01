@@ -14,6 +14,6 @@ pytz==2024.1
 PyYAML==6.0.1
 requests==2.31.0
 requests-hawk==1.2.1
-sentry-sdk[flask]==1.45.0
+sentry-sdk[flask]==2.7.1
 StrEnum==0.4.15
 werkzeug==3.0.2
