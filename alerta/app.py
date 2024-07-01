@@ -28,8 +28,8 @@ if sentry_config:
     # Expected format: SENTRY_CONFIG="dsn=DSN,environment=ENVIRONMENT,release=RELEASE" etc. (comma-separated)
     sentry_options = dict(item.split('=') for item in sentry_config.split(','))
     sentry_options['integrations'] = [FlaskIntegration()]
-    if "release" not in sentry_options:
-        sentry_options["release"] = __version__
+    if 'release' not in sentry_options:
+        sentry_options['release'] = __version__
     sentry_sdk.init(**sentry_options)
 else:
     # Sentry will read the DSN from SENTRY_DSN environment variable.
