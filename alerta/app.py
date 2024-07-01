@@ -1,10 +1,10 @@
+from os import getenv
 from typing import Any, Dict
 
 import sentry_sdk
 from flask import Flask
 from flask_compress import Compress
 from flask_cors import CORS
-from os import getenv
 from sentry_sdk.integrations.flask import FlaskIntegration
 from werkzeug.middleware.proxy_fix import ProxyFix
 
