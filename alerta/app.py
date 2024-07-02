@@ -1,3 +1,4 @@
+from os import getenv
 from typing import Any, Dict
 
 import sentry_sdk
@@ -22,8 +23,17 @@ from alerta.utils.tracing import Tracing
 from alerta.utils.webhook import CustomWebhooks
 from alerta.version import __version__
 
-# Sentry will read the DSN from SENTRY_DSN environment variable.
-sentry_sdk.init(integrations=[FlaskIntegration()], release=__version__)
+sentry_config = getenv('SENTRY_CONFIG')
+if sentry_config:
+    # Expected format: SENTRY_CONFIG="dsn=DSN,environment=ENVIRONMENT,release=RELEASE" etc. (comma-separated)
+    sentry_options = dict(item.split('=') for item in sentry_config.split(','))
+    sentry_options['integrations'] = [FlaskIntegration()]
+    if 'release' not in sentry_options:
+        sentry_options['release'] = __version__
+    sentry_sdk.init(**sentry_options)
+else:
+    # Sentry will read the DSN from SENTRY_DSN environment variable.
+    sentry_sdk.init(integrations=[FlaskIntegration()], release=__version__)
 
 config = Config()
 tracing = Tracing()
