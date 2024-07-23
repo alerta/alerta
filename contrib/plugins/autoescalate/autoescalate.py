@@ -1,6 +1,7 @@
 import logging
 import math
 
+from alerta.models.alarms.alerta import SEVERITY_MAP
 from alerta.models.enums import Severity
 from alerta.plugins import PluginBase
 
@@ -42,13 +43,23 @@ class AutoEscalateSeverity(PluginBase):
 
     def post_receive(self, alert, **kwargs):
         count = alert.duplicate_count
+        LOG.debug(f'Count: {count}')
 
         if count > 1 and isPowerOfTwo(count):
-            index = Log2(count) - 1
+            index = int(Log2(count)) - 1
+
             if index > 4:
                 index = 4
-            alert.severity = escalate_map[index]
-        return alert
+
+            currentseverity = alert.severity
+
+            if SEVERITY_MAP[escalate_map[index]] < SEVERITY_MAP[currentseverity]:
+                alert.severity = escalate_map[index]
+                LOG.debug(f'index: {index}, currentseverity:{currentseverity}, new: {alert.severity}')
+
+            if currentseverity != alert.severity:
+                return alert, True
+        return
 
     def status_change(self, alert, status, text, **kwargs):
         return
