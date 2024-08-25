@@ -1,7 +1,8 @@
-mypy==1.9.0
+mypy==1.10.0
 pre-commit==3.7.0
 pylint==3.1.0
 pytest>=5.4.3
 pytest-cov
 python-dotenv
 requests_mock
+setuptools>=70.0.0
