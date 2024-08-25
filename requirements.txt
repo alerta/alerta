@@ -1,8 +1,8 @@
 bcrypt==4.1.2
-blinker==1.7.0
-cryptography==42.0.5
+blinker==1.8.2
+cryptography==42.0.7
 Flask==3.0.3
-Flask-Compress==1.14
+Flask-Compress==1.15
 Flask-Cors==4.0.1
 mohawk==1.1.0
 psycopg2==2.9.9
@@ -12,8 +12,8 @@ pyparsing==3.1.2
 python-dateutil==2.9.0.post0
 pytz==2024.1
 PyYAML==6.0.1
-requests==2.31.0
+requests==2.32.0
 requests-hawk==1.2.1
 sentry-sdk[flask]==1.45.0
 StrEnum==0.4.15
-werkzeug==3.0.2
+werkzeug==3.0.3
