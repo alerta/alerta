@@ -6,7 +6,7 @@ Flask-Compress==1.15
 Flask-Cors==4.0.1
 mohawk==1.1.0
 psycopg2==2.9.9
-PyJWT==2.8.0
+PyJWT==2.9.0
 pymongo==4.4.1
 pyparsing==3.1.2
 python-dateutil==2.9.0.post0
