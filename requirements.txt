@@ -16,4 +16,4 @@ requests==2.32.3
 requests-hawk==1.2.1
 sentry-sdk[flask]==2.13.0
 StrEnum==0.4.15
-werkzeug==3.0.3
+werkzeug==3.0.4
