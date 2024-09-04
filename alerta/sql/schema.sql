@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS keys (
     scopes text[],
     text text,
     expire_time timestamp without time zone,
-    count integer,
+    count bigint,
     last_used_time timestamp without time zone,
     customer text
 );
