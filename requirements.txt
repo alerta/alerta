@@ -11,7 +11,7 @@ pymongo==4.4.1
 pyparsing==3.1.4
 python-dateutil==2.9.0.post0
 pytz==2024.1
-PyYAML==6.0.1
+PyYAML==6.0.2
 requests==2.32.3
 requests-hawk==1.2.1
 sentry-sdk[flask]==2.13.0
