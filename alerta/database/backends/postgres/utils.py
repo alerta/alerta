@@ -266,6 +266,69 @@ class Blackouts(QueryBuilder):
         return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group='')
 
 
+class Filters(QueryBuilder):
+
+    VALID_PARAMS = {
+        # field (column, sort-by, direction)
+        'id': ('id', None, 0),
+        'resource': ('resource', 'resource', 1),
+        'event': ('event', 'event', 1),
+        'environment': ('environment', 'environment', 1),
+        'status': ('status', 'status', 1),
+        'service': ('service', 'service', 1),
+        'group': ('group', '"group"', 1),
+        'text': ('text', 'text', 1),
+        'tag': ('tags', None, 0),  # filter
+        'tags': (None, 'tags', 1),  # sort-by
+        'origin': ('origin', 'origin', 1),
+        'customer': ('customer', 'customer', 1),
+        'type': ('type', 'type', 1),
+        'attributes': (None, 'attributes', 1),
+        'user': ('user', 'user', 1),
+        'createTime': ('create_time', 'create_time', -1),
+    }
+
+    @staticmethod
+    def from_params(params: MultiDict, customers=None, query_time=None):
+
+        # ?q=
+        if params.get('q', None):
+            try:
+                parser = QueryParser()
+                query = [parser.parse(
+                    query=params['q'],
+                    default_field=params.get('q.df')
+                )]
+                qvars = dict()  # type: Dict[str, Any]
+            except ParseException as e:
+                raise ApiError('Failed to parse query string.', 400, [e])
+        else:
+            query = ['1=1']
+            qvars = dict()
+
+        # customer
+        if customers:
+            query.append('AND customer=ANY(%(customers)s)')
+            qvars['customers'] = customers
+
+        # id
+        ids = params.getlist('id')
+        if len(ids) == 1:
+            query.append('AND (filters.id LIKE %(id)s')
+            qvars['id'] = ids[0] + '%'
+        elif ids:
+            query.append('AND (id ~* (%(regex_id)s)')
+            qvars['regex_id'] = '|'.join(['^' + i for i in ids])
+
+        # filter, sort-by
+
+        query, qvars = QueryBuilder.filter_query(params, Filters.VALID_PARAMS, query, qvars)
+        sort = QueryBuilder.sort_by_columns(params, Filters.VALID_PARAMS)
+        group = params.getlist('group-by')
+
+        return Query(where='\n'.join(query), vars=qvars, sort=','.join(sort), group=group)
+
+
 class Heartbeats(QueryBuilder):
 
     VALID_PARAMS = {
