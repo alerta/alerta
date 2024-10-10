@@ -210,6 +210,7 @@ SMTP_PORT = 587
 MAIL_LOCALHOST = 'localhost'  # mail server to use in HELO/EHLO command
 SMTP_STARTTLS = True
 SMTP_USE_SSL = False
+SMTP_SKIP_SSL_VERIFY = False
 SSL_KEY_FILE = None
 SSL_CERT_FILE = None
 MAIL_FROM = ''  # replace with valid sender address eg you@gmail.com
