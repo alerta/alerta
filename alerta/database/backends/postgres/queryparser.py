@@ -16,9 +16,7 @@ class BinaryOperation:
     """takes two or more operands, e.g. and, or"""
 
     def __init__(self, tokens):
-        self.op = tokens[0][1]
-        self.lhs = tokens[0][0]
-        self.rhs = tokens[0][2]
+        self.tokens = tokens
 
 
 class SearchModifier(UnaryOperation):
@@ -30,15 +28,13 @@ class SearchModifier(UnaryOperation):
 class SearchAnd(BinaryOperation):
 
     def __repr__(self):
-        return f'({self.lhs} AND {self.rhs})'
+        return " AND ".join(map(repr, self.tokens[0]))
 
 
 class SearchOr(BinaryOperation):
 
     def __repr__(self):
-        if getattr(self.rhs, 'op', None) == 'NOT':
-            return f'({self.lhs} AND {self.rhs})'
-        return f'({self.lhs} OR {self.rhs})'
+        return " OR ".join(map(repr, self.tokens[0]))
 
 
 class SearchNot(UnaryOperation):
@@ -123,8 +119,8 @@ class SearchTerm:
 LBRACK, RBRACK, LBRACE, RBRACE, TILDE, CARAT = map(Literal, '[]{}~^')
 LPAR, RPAR, COLON, DOT = map(Suppress, '():.')
 
-AND = Keyword('AND') | Literal('&&')
-OR = Keyword('OR') | Literal('||')
+AND = Suppress(Keyword('AND') | Literal('&&'))
+OR = Suppress(Keyword('OR') | Literal('||'))
 NOT = Keyword('NOT') | Literal('!')
 TO = Keyword('TO')
 
@@ -170,8 +166,8 @@ query_expr << infixNotation(clause,
                             [
                                 (required_modifier | prohibit_modifier, 1, opAssoc.RIGHT, SearchModifier),
                                 (NOT.setParseAction(lambda: 'NOT'), 1, opAssoc.RIGHT, SearchNot),
-                                (AND.setParseAction(lambda: 'AND'), 2, opAssoc.LEFT, SearchAnd),
-                                (Optional(OR).setParseAction(lambda: 'OR'), 2, opAssoc.LEFT, SearchOr),
+                                (AND, 2, opAssoc.LEFT, SearchAnd),
+                                (Optional(OR), 2, opAssoc.LEFT, SearchOr),
                             ])
 
 
