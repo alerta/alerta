@@ -112,7 +112,7 @@ def login():
         else:
             if current_app.config.get('LDAP_USE_EMAIL_DOMAIN_WHITELIST', True):
                 raise ApiError('User LDAP entry missing required email attribute', 401)
-            email = f'{safe_username}@ldapdomain.invalid'
+            email = f'{safe_username.lower()}@ldapdomain.invalid'
             email_verified = False
     else:
         if '%' in current_app.config['LDAP_DOMAINS'][domain]:
