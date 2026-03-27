@@ -77,6 +77,12 @@ class Config:
 
         config['GOOGLE_TRACKING_ID'] = get_config('GOOGLE_TRACKING_ID', default=None, type=str, config=config)
 
+        config['CAS_SERVER'] = get_config('CAS_SERVER', default=None, type=str, config=config)
+        config['CAS_VALIDATE_ROUTE'] = get_config('CAS_VALIDATE_ROUTE', default='/serviceValidate', type=str, config=config)
+        config['CAS_ROLE_CLAIM'] = get_config('CAS_ROLE_CLAIM', default='roles', type=str, config=config)
+        config['CAS_GROUP_CLAIM'] = get_config('CAS_GROUP_CLAIM', default='groups', type=str, config=config)
+        config['CAS_RESPONSE_TYPE'] = get_config('CAS_RESPONSE_TYPE', default='AUTO', type=str, config=config)
+
         # housekeeping
         config['DELETE_EXPIRED_AFTER'] = (
             get_config('DEFAULT_EXPIRED_DELETE_HRS', default=0, type=int, config=config) * 60 * 60
