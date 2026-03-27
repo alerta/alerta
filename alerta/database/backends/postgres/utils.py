@@ -145,11 +145,12 @@ class Alerts(QueryBuilder):
         if params.get('q', None):
             try:
                 parser = QueryParser()
-                query = [parser.parse(
+                parsed_query, parsed_vars = parser.parse(
                     query=params['q'],
                     default_field=params.get('q.df')
-                )]
-                qvars = dict()  # type: Dict[str, Any]
+                )
+                query = [parsed_query]
+                qvars = dict(parsed_vars)  # type: Dict[str, Any]
             except ParseException as e:
                 raise ApiError('Failed to parse query string.', 400, [e])
         else:
@@ -230,11 +231,12 @@ class Blackouts(QueryBuilder):
         if params.get('q', None):
             try:
                 parser = QueryParser()
-                query = [parser.parse(
+                parsed_query, parsed_vars = parser.parse(
                     query=params['q'],
                     default_field=params.get('q.df')
-                )]
-                qvars = dict()  # type: Dict[str, Any]
+                )
+                query = [parsed_query]
+                qvars = dict(parsed_vars)  # type: Dict[str, Any]
             except ParseException as e:
                 raise ApiError('Failed to parse query string.', 400, [e])
         else:
