@@ -1,4 +1,4 @@
-FROM python:3.9-slim-buster
+FROM python:3.12-slim-bookworm
 
 ARG BUILD_DATE
 ARG BUILD_NUMBER
@@ -31,6 +31,8 @@ RUN apt-get update && \
     apt-get -y autoremove && \
     rm -rf /var/lib/apt/lists/*
 
+RUN groupadd -r alerta && useradd -r -g alerta -d /app -s /sbin/nologin alerta
+
 COPY . /app
 WORKDIR /app
 
@@ -42,6 +44,9 @@ RUN python -m pip install --upgrade pip && \
     pip install -r requirements.txt && \
     pip install -r requirements-ci.txt && \
     pip install .
+
+RUN chown -R alerta:alerta /app
+USER alerta
 
 EXPOSE 8080
 ENV FLASK_SKIP_DOTENV=1
