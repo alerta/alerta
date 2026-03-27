@@ -204,10 +204,10 @@ def update_me():
     if not request.json:
         raise ApiError('nothing to change', 400)
 
-    if 'roles' in request.json:
-        raise ApiError('not allowed to update roles', 400)
-    if 'email_verified' in request.json:
-        raise ApiError('not allowed to set email verified', 400)
+    ALLOWED_SELF_UPDATE_FIELDS = {'name', 'email', 'password', 'text'}
+    disallowed = set(request.json.keys()) - ALLOWED_SELF_UPDATE_FIELDS
+    if disallowed:
+        raise ApiError(f'not allowed to update: {", ".join(sorted(disallowed))}', 400)
 
     user = User.find_by_id(g.user_id)
 
