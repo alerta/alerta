@@ -129,6 +129,7 @@ LDAP_USER_BASEDN = ''  # BASEDN for user search (default: LDAP_BASEDN)
 LDAP_USER_FILTER = ''  # eg. (cn={username})
 LDAP_USER_NAME_ATTR = 'cn'  # eg. cn or displayName
 LDAP_USER_EMAIL_ATTR = 'mail'  # eg. mail or email
+LDAP_USE_EMAIL_DOMAIN_WHITELIST = True  # require email attribute and check against ALLOWED_EMAIL_DOMAINS
 LDAP_GROUP_BASEDN = ''  # BASEDN for group search (default: LDAP_BASEDN)
 LDAP_GROUP_FILTER = ''  # eg. (&(member={userdn})(objectClass=group))
 LDAP_GROUP_NAME_ATTR = 'dn'  # eg. dn, memberOf, or cn
