@@ -1186,7 +1186,7 @@ class DummyJsonWebhook(WebhookBase):
             service=['Foo'],
             attributes={
                 'path': path,
-                'qs': query_string,
+                'qs': dict(query_string),
                 'data': payload
             }
         )
