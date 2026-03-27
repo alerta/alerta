@@ -797,20 +797,19 @@ class Backend(Database):
 
     # ENVIRONMENTS
 
-    def get_environments(self, query=None, topn=1000):
+    def get_environments(self, query=None, page=1, page_size=1000):
         query = query or Query()
 
         def pipeline(group_by):
             return [
                 {'$match': query.where},
                 {'$project': {'environment': 1, group_by: 1}},
-                {'$group':
-                 {
-                     '_id': {'environment': '$environment', group_by: '$' + group_by},
-                     'count': {'$sum': 1}
-                 }
-                 },
-                {'$limit': topn}
+                {
+                    '$group': {
+                        '_id': {'environment': '$environment', group_by: '$' + group_by},
+                        'count': {'$sum': 1}
+                    }
+                }
             ]
 
         response_severity = self.get_db().alerts.aggregate(pipeline('severity'))
@@ -823,14 +822,31 @@ class Backend(Database):
         for r in response_status:
             status_count[r['_id']['environment']].append((r['_id']['status'], r['count']))
 
-        environments = self.get_db().alerts.find().distinct('environment')
+        pipeline_different_envs = [
+            {
+                '$group':{
+                    '_id': '$environment',
+                }
+            },
+            {'$sort': {'_id': 1}},
+            {'$skip': (page - 1) * page_size},
+            {'$limit': page_size}
+        ]
+        environments = self.get_db().alerts.aggregate(pipeline_different_envs)
         return [
             {
-                'environment': env,
-                'severityCounts': dict(severity_count[env]),
-                'statusCounts': dict(status_count[env]),
-                'count': sum(t[1] for t in severity_count[env])
+                'environment': env['_id'],
+                'severityCounts': dict(severity_count[env['_id']]),
+                'statusCounts': dict(status_count[env['_id']]),
+                'count': sum(t[1] for t in severity_count[env['_id']])
             } for env in environments]
+
+    def get_environments_count(self, query=None):
+        query = query or Query()
+        where = query.where
+        distinct_values = self.get_db().alerts.distinct('environment', where)
+        count = len(distinct_values) if distinct_values else 0
+        return count
 
     # SERVICES
 

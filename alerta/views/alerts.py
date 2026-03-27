@@ -484,19 +484,29 @@ def get_topn_standing():
 @jsonp
 def get_environments():
     query = qb.alerts.from_params(request.args, customers=g.customers)
-    environments = Alert.get_environments(query)
+    total = Alert.get_environments_count(query)
+    paging = Page.from_params(request.args, items=total)
+    environments = Alert.get_environments(query, paging.page, paging.page_size)
 
     if environments:
         return jsonify(
             status='ok',
             environments=environments,
-            total=len(environments)
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
+            total=total
         )
     else:
         return jsonify(
             status='ok',
             message='not found',
             environments=[],
+            page=paging.page,
+            pageSize=paging.page_size,
+            pages=paging.pages,
+            more=paging.has_more,
             total=0
         )
 

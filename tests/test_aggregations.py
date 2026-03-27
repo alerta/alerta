@@ -13,7 +13,8 @@ class AggregationsTestCase(unittest.TestCase):
             'TESTING': True,
             'AUTH_REQUIRED': False,
             'ALERT_TIMEOUT': 120,
-            'HISTORY_LIMIT': 5
+            'HISTORY_LIMIT': 5,
+            'ALLOWED_ENVIRONMENTS': ['Production', 'Development']
         }
         self.app = create_app(test_config)
         self.client = self.app.test_client()
@@ -102,7 +103,7 @@ class AggregationsTestCase(unittest.TestCase):
         self.ok2_alert = {
             'event': 'node_up',
             'resource': random_resource(),
-            'environment': 'Production',
+            'environment': 'Development',
             'service': ['Network'],
             'group': 'Network',
             'severity': 'ok',
@@ -172,28 +173,49 @@ class AggregationsTestCase(unittest.TestCase):
         self.assertIn('top10', data)
 
         # environments
-        response = self.client.get('/environments')
+        response = self.client.get('/environments?page=1&page-size=1')
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertIn('environments', data)
         self.assertCountEqual(data['environments'], [
             {
-                'count': 8,
+                'count': 1,
+                'environment': 'Development',
+                'severityCounts': {
+                    'ok': 1
+                },
+                'statusCounts': {
+                    'closed': 1
+                }
+            }
+        ])
+        self.assertEqual(data['page'], 1)
+        self.assertEqual(data['total'], 2)
+
+        response = self.client.get('/environments?page=2&page-size=1')
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('environments', data)
+        self.assertCountEqual(data['environments'], [
+            {
+                'count': 7,
                 'environment': 'Production',
                 'severityCounts': {
                     'cleared': 1,
                     'critical': 2,
                     'major': 1,
                     'normal': 1,
-                    'ok': 2,
+                    'ok': 1,
                     'warning': 1
                 },
                 'statusCounts': {
-                    'closed': 4,
+                    'closed': 3,
                     'open': 4
                 }
             }
         ])
+        self.assertEqual(data['page'], 2)
+        self.assertEqual(data['total'], 2)
 
         response = self.client.get('/environments?status=shelved')
         self.assertEqual(response.status_code, 200)
@@ -203,6 +225,14 @@ class AggregationsTestCase(unittest.TestCase):
             {
                 'count': 0,
                 'environment': 'Production',
+                'severityCounts': {
+                },
+                'statusCounts': {
+                }
+            },
+            {
+                'count': 0,
+                'environment': 'Development',
                 'severityCounts': {
                 },
                 'statusCounts': {
@@ -217,7 +247,7 @@ class AggregationsTestCase(unittest.TestCase):
         self.assertIn('services', data)
         self.assertCountEqual(data['services'], [
             {
-                'count': 8,
+                'count': 7,
                 'environment': 'Production',
                 'service': 'Network',
                 'severityCounts': {
@@ -225,11 +255,11 @@ class AggregationsTestCase(unittest.TestCase):
                     'critical': 2,
                     'major': 1,
                     'normal': 1,
-                    'ok': 2,
+                    'ok': 1,
                     'warning': 1
                 },
                 'statusCounts': {
-                    'closed': 4,
+                    'closed': 3,
                     'open': 4
                 }
             },
@@ -243,6 +273,17 @@ class AggregationsTestCase(unittest.TestCase):
                 },
                 'statusCounts': {
                     'open': 2
+                }
+            },
+            {
+                'count': 1,
+                'environment': 'Development',
+                'service': 'Network',
+                'severityCounts': {
+                    'ok': 1
+                },
+                'statusCounts': {
+                    'closed': 1
                 }
             }
         ])
@@ -269,6 +310,15 @@ class AggregationsTestCase(unittest.TestCase):
                 },
                 'statusCounts': {
                 }
+            },
+            {
+                'count': 0,
+                'environment': 'Development',
+                'service': 'Network',
+                'severityCounts': {
+                },
+                'statusCounts': {
+                }
             }
         ])
 
@@ -289,7 +339,7 @@ class AggregationsTestCase(unittest.TestCase):
                 'group': 'nw'
             },
             {
-                'count': 5,
+                'count': 4,
                 'environment': 'Production',
                 'group': 'Network'
             },
@@ -297,6 +347,11 @@ class AggregationsTestCase(unittest.TestCase):
                 'count': 1,
                 'environment': 'Production',
                 'group': 'net'
+            },
+            {
+                'count': 1,
+                'environment': 'Development',
+                'group': 'Network'
             }
         ])
 
@@ -307,7 +362,7 @@ class AggregationsTestCase(unittest.TestCase):
         self.assertIn('tags', data)
         self.assertCountEqual(data['tags'], [
             {
-                'count': 2,
+                'count': 1,
                 'environment': 'Production',
                 'tag': 'bar'
             },
@@ -325,5 +380,10 @@ class AggregationsTestCase(unittest.TestCase):
                 'count': 2,
                 'environment': 'Production',
                 'tag': 'foo'
+            },
+            {
+                'count': 1,
+                'environment': 'Development',
+                'tag': 'bar'
             }
         ])
