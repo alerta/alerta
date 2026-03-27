@@ -1,9 +1,9 @@
 from importlib import import_module
+from importlib.metadata import entry_points as _entry_points
 from typing import NamedTuple
 from urllib.parse import urlparse
 
 from flask import g
-from pkg_resources import iter_entry_points
 
 # http://stackoverflow.com/questions/8544983/dynamically-mixin-a-base-class-to-an-instance-in-python
 
@@ -30,9 +30,13 @@ def get_backend(app):
 
 
 def load_backend(backend):
-    for ep in iter_entry_points('alerta.database.backends'):
+    try:
+        eps = _entry_points(group='alerta.database.backends')
+    except TypeError:
+        eps = _entry_points().get('alerta.database.backends', [])
+    for ep in eps:
         if ep.name == backend:
-            module_name = ep.module_name
+            module_name = ep.value.split(':')[0]
             break
     else:
         module_name = f'alerta.database.backends.{backend}'
