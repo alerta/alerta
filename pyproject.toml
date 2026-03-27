@@ -1,0 +1,9 @@
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = [
+    "B101",  # assert_used -- used intentionally in non-test code
+    "B105",  # hardcoded_password_string -- false positives on default config values
+    "B106",  # hardcoded_password_funcarg -- false positives on default config values
+    "B113",  # request_without_timeout -- auth provider calls to external IdPs
+    "B608",  # hardcoded_sql_expressions -- SQL is parameterized via psycopg2
+]
