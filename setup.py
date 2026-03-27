@@ -37,6 +37,7 @@ setuptools.setup(
         'requests',
         'requests-hawk',
         'sentry-sdk[flask]>=0.10.2',
+        'StrEnum',
     ],
     extras_require={
         'mongodb': ['pymongo'],
