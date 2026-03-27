@@ -1,3 +1,4 @@
+import logging
 import threading
 import time
 from collections import defaultdict, namedtuple
@@ -5,6 +6,7 @@ from datetime import datetime
 
 import psycopg2
 from flask import current_app
+from psycopg2 import sql
 from psycopg2.extensions import AsIs, adapt, register_adapter
 from psycopg2.extras import Json, NamedTupleCursor, register_composite
 
@@ -103,18 +105,18 @@ class Backend(Database):
                 conn.set_client_encoding('UTF8')
                 break
             except Exception as e:
-                print(e)  # FIXME - should log this error instead of printing, but current_app is unavailable here
+                logging.getLogger('alerta.database').error('Database connection error: %s', e)
                 retry += 1
                 if retry > MAX_RETRIES:
                     conn = None
                     break
                 else:
                     backoff = 2 ** retry
-                    print(f'Retry attempt {retry}/{MAX_RETRIES} (wait={backoff}s)...')
+                    logging.getLogger('alerta.database').info('Retry attempt %d/%d (wait=%ds)...', retry, MAX_RETRIES, backoff)
                     time.sleep(backoff)
 
         if conn:
-            conn.cursor().execute('SET search_path TO {}'.format(self.schema))
+            conn.cursor().execute(sql.SQL('SET search_path TO {}').format(sql.Identifier(self.schema)))
             conn.commit()
             return conn
         else:
