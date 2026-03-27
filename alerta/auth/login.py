@@ -10,6 +10,9 @@ def login():
     if current_app.config['AUTH_PROVIDER'] == 'ldap':
         from . import basic_ldap
         return basic_ldap.login()
+    elif current_app.config['AUTH_PROVIDER'] == 'cas':
+        from . import cas
+        return cas.cas_login()
     else:
         from . import basic
         return basic.login()
