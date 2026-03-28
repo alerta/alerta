@@ -1558,9 +1558,8 @@ class Backend(Database):
         """
         Return multiple rows.
         """
-        if limit is None:
-            limit = current_app.config['DEFAULT_PAGE_SIZE']
-        query += f' LIMIT {limit} OFFSET {offset}'
+        if limit is not None:
+            query += f' LIMIT {limit} OFFSET {offset}'
         cursor = self.get_db().cursor()
         self._log(cursor, query, vars)
         cursor.execute(query, vars)
