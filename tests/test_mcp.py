@@ -1,3 +1,4 @@
+import contextlib
 import json
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -62,9 +63,6 @@ def _mock_response(status_code=200, json_data=None):
             'error', request=MagicMock(), response=resp
         )
     return resp
-
-
-import contextlib
 
 
 @contextlib.contextmanager

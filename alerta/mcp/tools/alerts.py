@@ -320,7 +320,7 @@ async def get_top_alerts(
         page_size: Number of results (default 10)
     """
     if metric not in ('count', 'flapping', 'standing'):
-        return {'status': 'error', 'message': "metric must be one of: count, flapping, standing"}
+        return {'status': 'error', 'message': 'metric must be one of: count, flapping, standing'}
 
     params = filter_params(
         environment=environment or None,

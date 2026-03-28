@@ -1,6 +1,5 @@
 from alerta.mcp.server import get_client, mcp
 
-
 # --- Users ---
 
 @mcp.tool()
