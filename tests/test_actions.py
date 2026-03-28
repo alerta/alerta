@@ -202,3 +202,43 @@ class ActionsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['alert']['severity'], 'warning')
         self.assertEqual(data['alert']['status'], 'open')
+
+    def test_unack_after_history_cap(self):
+        """Test that unack works even when the ack entry has been pushed out of history by duplicates."""
+
+        # HISTORY_LIMIT is 5 in test config
+
+        # create alert
+        response = self.client.post('/alert', data=json.dumps(self.major_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        alert_id = data['id']
+        self.assertEqual(data['alert']['status'], 'open')
+
+        # ack alert
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps({'action': 'ack', 'text': 'ack it'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'ack')
+
+        # send enough duplicates to push the ack entry out of history
+        for i in range(10):
+            alert = self.major_alert.copy()
+            alert['value'] = str(i)
+            response = self.client.post('/alert', data=json.dumps(alert), headers=self.headers)
+            self.assertEqual(response.status_code, 201)
+
+        # verify still acked
+        response = self.client.get('/alert/' + alert_id)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'ack')
+
+        # unack should transition back to open even though ack entry is gone from history
+        response = self.client.put('/alert/' + alert_id + '/action',
+                                   data=json.dumps({'action': 'unack'}), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get('/alert/' + alert_id)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['status'], 'open')
