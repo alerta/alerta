@@ -17,6 +17,13 @@ async def blackout_resource(blackout_id: str) -> str:
     return json.dumps(result, indent=2)
 
 
+@mcp.resource('alerta://heartbeat/{heartbeat_id}')
+async def heartbeat_resource(heartbeat_id: str) -> str:
+    """Get heartbeat details by ID."""
+    result = await get_client().get(f'/heartbeat/{heartbeat_id}')
+    return json.dumps(result, indent=2)
+
+
 @mcp.resource('alerta://config')
 async def config_resource() -> str:
     """Get Alerta server configuration."""

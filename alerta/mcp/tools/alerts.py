@@ -1,20 +1,5 @@
 from alerta.mcp.server import get_client, mcp
-
-
-def _filter_params(**kwargs) -> list[tuple[str, str]]:
-    """Build query params list, supporting multi-value fields."""
-    params: list[tuple[str, str]] = []
-    for key, value in kwargs.items():
-        if value is None:
-            continue
-        if isinstance(value, list):
-            for v in value:
-                params.append((key, str(v)))
-        elif isinstance(value, bool):
-            params.append((key, str(value).lower()))
-        else:
-            params.append((key, str(value)))
-    return params
+from alerta.mcp.utils import filter_params
 
 
 @mcp.tool()
@@ -54,7 +39,7 @@ async def search_alerts(
         page: Page number (1-based)
         page_size: Results per page (default 50)
     """
-    params = _filter_params(
+    params = filter_params(
         q=query or None,
         environment=environment or None,
         severity=severity or None,
@@ -267,7 +252,7 @@ async def get_alert_history(
         page: Page number (1-based)
         page_size: Results per page
     """
-    params = _filter_params(
+    params = filter_params(
         environment=environment or None,
         severity=severity or None,
         status=status or None,
@@ -300,7 +285,7 @@ async def get_alert_counts(
         group: Filter by group
         tag: Filter by tag
     """
-    params = _filter_params(
+    params = filter_params(
         environment=environment or None,
         severity=severity or None,
         status=status or None,
@@ -337,7 +322,7 @@ async def get_top_alerts(
     if metric not in ('count', 'flapping', 'standing'):
         return {'status': 'error', 'message': "metric must be one of: count, flapping, standing"}
 
-    params = _filter_params(
+    params = filter_params(
         environment=environment or None,
         severity=severity or None,
         status=status or None,

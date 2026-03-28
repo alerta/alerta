@@ -1,5 +1,5 @@
-from alerta.mcp.tools.alerts import _filter_params
 from alerta.mcp.server import get_client, mcp
+from alerta.mcp.utils import filter_params
 
 
 @mcp.tool()
@@ -31,7 +31,7 @@ async def bulk_action_alerts(
         text: Reason for the action
         timeout: Optional timeout in seconds
     """
-    params = _filter_params(
+    params = filter_params(
         environment=environment or None,
         severity=severity or None,
         status=status or None,
@@ -73,7 +73,7 @@ async def bulk_tag_alerts(
         resource: Filter by resource
         event: Filter by event
     """
-    params = _filter_params(
+    params = filter_params(
         environment=environment or None,
         severity=severity or None,
         status=status or None,
@@ -109,7 +109,7 @@ async def bulk_delete_alerts(
         resource: Filter by resource
         event: Filter by event
     """
-    params = _filter_params(
+    params = filter_params(
         environment=environment or None,
         severity=severity or None,
         status=status or None,
