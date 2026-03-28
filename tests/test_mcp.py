@@ -3,11 +3,13 @@ import json
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
 import pytest
 
-from alerta.mcp.client import AlertaClient
-from alerta.mcp.utils import filter_params
+httpx = pytest.importorskip('httpx')
+pytest.importorskip('mcp')
+
+from alerta.mcp.client import AlertaClient  # noqa: E402
+from alerta.mcp.utils import filter_params  # noqa: E402
 
 
 class FilterParamsTestCase(unittest.TestCase):

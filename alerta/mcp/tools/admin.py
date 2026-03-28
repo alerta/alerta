@@ -2,6 +2,7 @@ from alerta.mcp.server import get_client, mcp
 
 # --- Users ---
 
+
 @mcp.tool()
 async def list_users(page: int = 1, page_size: int = 50) -> dict:
     """List all users (requires admin:users scope).
