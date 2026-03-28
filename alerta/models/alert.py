@@ -274,6 +274,10 @@ class Alert:
             for h, h_next in zip(h_loop, h_loop[1:]):
                 if h.change_type == find:
                     return current_status, current_value, h_next.status, h_next.timeout
+            # action entry was evicted from history by HISTORY_LIMIT cap
+            # fall back to Open as the safest default for unack/unshelve
+            from alerta.models.enums import Status
+            return current_status, current_value, Status.Open, None
 
         return current_status, current_value, h_loop[1].status, h_loop[1].timeout
 
