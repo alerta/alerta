@@ -142,14 +142,18 @@ class Counter:
             return
 
     def inc(self, count=1):
-        c = Counter.from_db(db.inc_counter(Counter(
+        result = db.inc_counter(Counter(
             group=self.group,
             name=self.name,
             title=self.title,
             description=self.description,
             count=count
-        )))
-        self.count = c.count
+        ))
+        if isinstance(result, (int, float)):
+            self.count = result
+        else:
+            c = Counter.from_db(result)
+            self.count = c.count if c else self.count + count
 
     @classmethod
     def find_all(cls):

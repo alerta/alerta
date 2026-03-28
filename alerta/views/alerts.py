@@ -10,7 +10,7 @@ from alerta.exceptions import (AlertaException, ApiError, BlackoutPeriod,
                                InvalidAction, RateLimit, RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
-from alerta.models.metrics import Timer, timer
+from alerta.models.metrics import Counter, Timer, timer
 from alerta.models.note import Note
 from alerta.models.switch import Switch
 from alerta.utils.api import (assign_customer, process_action, process_alert,
@@ -21,6 +21,9 @@ from alerta.utils.response import absolute_url, jsonp
 
 from . import api
 
+reject_counter = Counter('alerts', 'rejected', 'Rejected alerts', 'Total number of alerts rejected by policy')
+ratelimit_counter = Counter('alerts', 'ratelimited', 'Rate-limited alerts', 'Total number of alerts rejected by rate limit')
+blackout_counter = Counter('alerts', 'blackout', 'Blackout alerts', 'Total number of alerts suppressed by blackout period')
 receive_timer = Timer('alerts', 'received', 'Received alerts', 'Total time and number of received alerts')
 gets_timer = Timer('alerts', 'queries', 'Alert queries', 'Total time and number of alert queries')
 status_timer = Timer('alerts', 'status', 'Alert status change', 'Total time and number of alerts with status changed')
@@ -52,15 +55,18 @@ def receive():
     try:
         alert = process_alert(alert)
     except RejectException as e:
+        reject_counter.inc()
         audit_trail_alert(event='alert-rejected')
         raise ApiError(str(e), 403)
     except RateLimit as e:
+        ratelimit_counter.inc()
         audit_trail_alert(event='alert-rate-limited')
         return jsonify(status='error', message=str(e), id=alert.id), 429
     except HeartbeatReceived as heartbeat:
         audit_trail_alert(event='alert-heartbeat')
         return jsonify(status='ok', message=str(heartbeat), id=heartbeat.id), 202
     except BlackoutPeriod as e:
+        blackout_counter.inc()
         audit_trail_alert(event='alert-blackout')
         return jsonify(status='ok', message=str(e), id=alert.id), 202
     except ForwardingLoop as e:
