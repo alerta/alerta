@@ -1,3 +1,55 @@
+## v9.1.0 (2026-03-28)
+
+### Feat
+
+- add counters for rejected, rate-limited, and blackout alerts (#2049)
+- **auth**: add CAS authentication provider (#2045)
+- Allow LDAP users with no email set to log in (#2038)
+- add SMTP_SKIP_SSL_VERIFY option (#1955)
+- add pagination support to environments endpoint (#2029)
+
+### Fix
+
+- remove default query limit cap on internal Postgres queries (#2051)
+- blackout matching fails when service/tags are NULL after update (#2050)
+- unack fails when ack entry evicted from history by HISTORY_LIMIT (#2048)
+- **security**: restrict self-update endpoint to allowlisted fields (#2047)
+- add missing StrEnum dependency, replace print with logging, fix schema injection (#2046)
+- mongodb querybuilder missing the valid_filter_params check (#2039)
+- **security**: parameterize Postgres query parser to prevent SQL injection (#2040)
+- **deps**: replace pkg_resources with importlib.metadata (#2041)
+- **db**: change keys.count field type from integer to bigint (#1976)
+
+## v9.0.4 (2024-09-04)
+
+### Feat
+
+- implement "post_action" for post processing actions. (#1899)
+
+### Fix
+
+- add setuptools to requirements to make tests pass in 3.12 (#1965)
+
+## v9.0.3 (2024-04-12)
+
+## v9.0.2 (2024-04-09)
+
+### Feat
+
+- Added pagination support to environments endpoint (#1665)
+- Add query string for blackouts (#1864)
+- Reject alerts that do not regex.fullmatch any configured allowed envi… (#1862)
+
+### Fix
+
+- lint errors on grafana webhook
+- **docker**: manifest endpoint build info
+- **codescan**: Sanitize username used in ldap filter (#1904)
+- **codescan**: info exposure via exception #1 (#1903)
+- **codescan**: info exposure via exception (#1902)
+- Address breaking change in Python 3.11 for Enums with `str` mixins (#1885)
+- issues if last plugin returns none or raises. (#1890)
+
 ## v9.0.1 (2023-06-22)
 
 ### Feat
