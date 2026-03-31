@@ -41,13 +41,15 @@ setuptools.setup(
     ],
     extras_require={
         'mongodb': ['pymongo'],
-        'postgres': ['psycopg2']
+        'postgres': ['psycopg2'],
+        'mcp': ['mcp>=1.0', 'httpx>=0.27']
     },
     include_package_data=True,
     zip_safe=False,
     entry_points={
         'console_scripts': [
-            'alertad = alerta.commands:cli'
+            'alertad = alerta.commands:cli',
+            'alerta-mcp = alerta.mcp.server:main [mcp]'
         ],
         'alerta.plugins': [
             'remote_ip = alerta.plugins.remote_ip:RemoteIpAddr',
