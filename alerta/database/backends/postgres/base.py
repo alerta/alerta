@@ -102,6 +102,7 @@ class Backend(Database):
                     cursor_factory=NamedTupleCursor
                 )
 
+                conn.autocommit = True
                 conn.set_client_encoding('UTF8')
                 break
             except Exception as e:
