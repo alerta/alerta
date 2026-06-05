@@ -60,7 +60,7 @@ CELERY_RESULT_SERIALIZER = 'customjson'
 
 # Authentication settings
 AUTH_REQUIRED = False
-AUTH_PROVIDER = 'basic'  # basic (default), ldap, github, openid, saml2, azure, cognito, gitlab, google, keycloak
+AUTH_PROVIDER = 'basic'  # basic (default), ldap, github, openid, saml2, azure, cognito, gitlab, google, keycloak, cas
 ADMIN_USERS = []  # type: List[str]
 DEFAULT_ADMIN_ROLE = 'admin'
 ADMIN_ROLES = [DEFAULT_ADMIN_ROLE]
@@ -129,6 +129,7 @@ LDAP_USER_BASEDN = ''  # BASEDN for user search (default: LDAP_BASEDN)
 LDAP_USER_FILTER = ''  # eg. (cn={username})
 LDAP_USER_NAME_ATTR = 'cn'  # eg. cn or displayName
 LDAP_USER_EMAIL_ATTR = 'mail'  # eg. mail or email
+LDAP_USE_EMAIL_DOMAIN_WHITELIST = True  # require email attribute and check against ALLOWED_EMAIL_DOMAINS
 LDAP_GROUP_BASEDN = ''  # BASEDN for group search (default: LDAP_BASEDN)
 LDAP_GROUP_FILTER = ''  # eg. (&(member={userdn})(objectClass=group))
 LDAP_GROUP_NAME_ATTR = 'dn'  # eg. dn, memberOf, or cn
@@ -162,6 +163,13 @@ SAML2_USER_NAME_FORMAT = '{givenName} {surname}'
 SAML2_EMAIL_ATTRIBUTE = 'emailAddress'
 SAML2_CONFIG = {}  # type: Dict[str, Any]
 ALLOWED_SAML2_GROUPS = ['*']
+
+# CAS settings
+CAS_SERVER = None  # eg. 'https://cas.example.com/cas'
+CAS_VALIDATE_ROUTE = '/serviceValidate'
+CAS_ROLE_CLAIM = 'roles'
+CAS_GROUP_CLAIM = 'groups'
+CAS_RESPONSE_TYPE = 'AUTO'  # AUTO, JSON, or XML
 
 TOKEN_EXPIRE_DAYS = 14
 API_KEY_EXPIRE_DAYS = 365  # 1 year
@@ -210,6 +218,7 @@ SMTP_PORT = 587
 MAIL_LOCALHOST = 'localhost'  # mail server to use in HELO/EHLO command
 SMTP_STARTTLS = True
 SMTP_USE_SSL = False
+SMTP_SKIP_SSL_VERIFY = False
 SSL_KEY_FILE = None
 SSL_CERT_FILE = None
 MAIL_FROM = ''  # replace with valid sender address eg you@gmail.com

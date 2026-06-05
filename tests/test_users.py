@@ -192,3 +192,76 @@ class UsersTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data.decode('utf-8'))
         self.assertEqual(data['attributes']['prefs'], {'isDark': True, 'isMute': None, 'refreshInterval': 5000})
+
+    def test_user_self_update_access_control(self):
+
+        # create a regular user
+        payload = {
+            'name': 'Jane Doe',
+            'email': 'jane@doe.com',
+            'password': 'p8ssw0rd',
+            'roles': ['user'],
+            'text': 'regular user'
+        }
+        response = self.client.post('/user', data=json.dumps(payload), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        user_id = data['id']
+
+        # verify user is active
+        response = self.client.get('/user/' + user_id, headers=self.headers)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['user']['status'], 'active')
+
+        # login as the regular user
+        response = self.client.post('/auth/login', data=json.dumps({
+            'email': 'jane@doe.com',
+            'password': 'p8ssw0rd'
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        token = json.loads(response.data.decode('utf-8'))['token']
+
+        user_headers = {
+            'Authorization': 'Bearer ' + token,
+            'Content-type': 'application/json'
+        }
+
+        # allowed: update own name
+        response = self.client.put('/user/me', data=json.dumps({
+            'name': 'Jane Smith'
+        }), headers=user_headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['user']['name'], 'Jane Smith')
+
+        # blocked: cannot change own roles
+        response = self.client.put('/user/me', data=json.dumps({
+            'roles': ['admin']
+        }), headers=user_headers)
+        self.assertEqual(response.status_code, 400)
+
+        # blocked: cannot change own email_verified
+        response = self.client.put('/user/me', data=json.dumps({
+            'email_verified': True
+        }), headers=user_headers)
+        self.assertEqual(response.status_code, 400)
+
+        # blocked: cannot change own status (e.g. reactivate after being disabled)
+        response = self.client.put('/user/me', data=json.dumps({
+            'status': 'active'
+        }), headers=user_headers)
+        self.assertEqual(response.status_code, 400)
+
+        # blocked: cannot change own login
+        response = self.client.put('/user/me', data=json.dumps({
+            'login': 'admin@alerta.io'
+        }), headers=user_headers)
+        self.assertEqual(response.status_code, 400)
+
+        # verify no restricted fields were changed
+        response = self.client.get('/user/' + user_id, headers=self.headers)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['user']['name'], 'Jane Smith')  # allowed change stuck
+        self.assertEqual(data['user']['roles'], ['user'])  # not escalated
+        self.assertEqual(data['user']['status'], 'active')  # unchanged
+        self.assertEqual(data['user']['email_verified'], False)  # unchanged

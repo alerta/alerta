@@ -65,6 +65,7 @@ class Config:
             config['ALLOWED_OIDC_ROLES'] = get_config('ALLOWED_KEYCLOAK_ROLES', default=[], type=list, config=config)
 
         config['LDAP_BIND_PASSWORD'] = get_config('LDAP_BIND_PASSWORD', default=None, type=str, config=config)
+        config['LDAP_USE_EMAIL_DOMAIN_WHITELIST'] = get_config('LDAP_USE_EMAIL_DOMAIN_WHITELIST', default=None, type=bool, config=config)
 
         config['OIDC_ISSUER_URL'] = get_config('OIDC_ISSUER_URL', default=None, type=str, config=config)
         config['ALLOWED_OIDC_ROLES'] = get_config('ALLOWED_OIDC_ROLES', default=[], type=list, config=config)
@@ -75,6 +76,12 @@ class Config:
         config['SMTP_PASSWORD'] = get_config('SMTP_PASSWORD', default=None, type=str, config=config)
 
         config['GOOGLE_TRACKING_ID'] = get_config('GOOGLE_TRACKING_ID', default=None, type=str, config=config)
+
+        config['CAS_SERVER'] = get_config('CAS_SERVER', default=None, type=str, config=config)
+        config['CAS_VALIDATE_ROUTE'] = get_config('CAS_VALIDATE_ROUTE', default='/serviceValidate', type=str, config=config)
+        config['CAS_ROLE_CLAIM'] = get_config('CAS_ROLE_CLAIM', default='roles', type=str, config=config)
+        config['CAS_GROUP_CLAIM'] = get_config('CAS_GROUP_CLAIM', default='groups', type=str, config=config)
+        config['CAS_RESPONSE_TYPE'] = get_config('CAS_RESPONSE_TYPE', default='AUTO', type=str, config=config)
 
         # housekeeping
         config['DELETE_EXPIRED_AFTER'] = (

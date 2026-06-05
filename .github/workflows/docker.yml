@@ -33,7 +33,7 @@ jobs:
           -t $REPOSITORY_URL/$IMAGE_NAME:$(git rev-parse --short HEAD)
           -t $REPOSITORY_URL/$IMAGE_NAME:latest .
       - name: Docker Login
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REPOSITORY_URL }}
           username: ${{ github.actor }}

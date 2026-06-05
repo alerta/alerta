@@ -1,3 +1,4 @@
+import inspect
 import logging
 from typing import Optional, Tuple
 
@@ -9,6 +10,17 @@ from alerta.exceptions import (AlertaException, ApiError, BlackoutPeriod,
                                InvalidAction, RateLimit, RejectException)
 from alerta.models.alert import Alert
 from alerta.models.enums import Scope
+
+
+def _accepts_config(method) -> bool:
+    try:
+        sig = inspect.signature(method)
+        params = sig.parameters
+        return 'config' in params or any(
+            p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()
+        )
+    except (ValueError, TypeError):
+        return False
 
 
 def assign_customer(wanted: str = None, permission: str = Scope.admin_alerts) -> Optional[str]:
@@ -38,9 +50,10 @@ def process_alert(alert: Alert) -> Alert:
             skip_plugins = True
             break
         try:
-            alert = plugin.pre_receive(alert, config=wanted_config)
-        except TypeError:
-            alert = plugin.pre_receive(alert)  # for backward compatibility
+            if _accepts_config(plugin.pre_receive):
+                alert = plugin.pre_receive(alert, config=wanted_config)
+            else:
+                alert = plugin.pre_receive(alert)
         except (RejectException, HeartbeatReceived, BlackoutPeriod, RateLimit, ForwardingLoop, AlertaException):
             raise
         except Exception as e:
@@ -71,9 +84,10 @@ def process_alert(alert: Alert) -> Alert:
         if skip_plugins:
             break
         try:
-            updated = plugin.post_receive(alert, config=wanted_config)
-        except TypeError:
-            updated = plugin.post_receive(alert)  # for backward compatibility
+            if _accepts_config(plugin.post_receive):
+                updated = plugin.post_receive(alert, config=wanted_config)
+            else:
+                updated = plugin.post_receive(alert)
         except AlertaException:
             raise
         except Exception as e:
@@ -176,9 +190,10 @@ def process_status(alert: Alert, status: str, text: str) -> Tuple[Alert, str, st
         if alert.is_suppressed:
             break
         try:
-            updated = plugin.status_change(alert, status, text, config=wanted_config)
-        except TypeError:
-            updated = plugin.status_change(alert, status, text)  # for backward compatibility
+            if _accepts_config(plugin.status_change):
+                updated = plugin.status_change(alert, status, text, config=wanted_config)
+            else:
+                updated = plugin.status_change(alert, status, text)
         except (RejectException, AlertaException):
             raise
         except Exception as e:

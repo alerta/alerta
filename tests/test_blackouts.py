@@ -782,6 +782,110 @@ class BlackoutsTestCase(unittest.TestCase):
         response = self.client.post('/alert', data=json.dumps(self.dev_alert), headers=self.headers)
         self.assertEqual(response.status_code, 202)
 
+    def test_blackout_matching_by_field(self):
+        """Test that blackout matching works correctly for each individual field and combinations."""
+
+        os.environ['NOTIFICATION_BLACKOUT'] = 'False'
+        plugins.plugins['blackout'] = Blackout()
+
+        self.headers = {
+            'Authorization': f'Key {self.admin_api_key.key}',
+            'Content-type': 'application/json'
+        }
+
+        alert = self.prod_alert  # env=Production, resource=node404, service=[Core,Web,Network], group=Network, tags=[level=20,switch:off], origin=foo/bar
+
+        def assert_blackout(blackout_fields, should_match=True, msg=''):
+            blackout = {'environment': 'Production'}
+            blackout.update(blackout_fields)
+            response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
+            self.assertEqual(response.status_code, 201, f'Failed to create blackout: {msg or blackout_fields}')
+            data = json.loads(response.data.decode('utf-8'))
+            blackout_id = data['id']
+
+            response = self.client.post('/alert', data=json.dumps(alert), headers=self.headers)
+            if should_match:
+                self.assertEqual(response.status_code, 202, f'Blackout should suppress: {msg or blackout_fields}')
+            else:
+                self.assertEqual(response.status_code, 201, f'Should NOT suppress: {msg or blackout_fields}')
+
+            self.client.delete('/blackout/' + blackout_id, headers=self.headers)
+
+        # --- Single field matches (wildcard for all other fields) ---
+        assert_blackout({}, msg='environment only')
+        assert_blackout({'resource': 'node404'}, msg='resource match')
+        assert_blackout({'resource': 'other-host'}, should_match=False, msg='resource mismatch')
+        assert_blackout({'service': ['Network']}, msg='service subset match')
+        assert_blackout({'service': ['Core', 'Web', 'Network']}, msg='service exact match')
+        assert_blackout({'service': ['Storage']}, should_match=False, msg='service mismatch')
+        assert_blackout({'event': 'node_down'}, msg='event match')
+        assert_blackout({'event': 'other_event'}, should_match=False, msg='event mismatch')
+        assert_blackout({'group': 'Network'}, msg='group match')
+        assert_blackout({'group': 'Other'}, should_match=False, msg='group mismatch')
+        assert_blackout({'tags': ['level=20']}, msg='tags subset match')
+        assert_blackout({'tags': ['nonexistent']}, should_match=False, msg='tags mismatch')
+        assert_blackout({'origin': 'foo/bar'}, msg='origin match')
+        assert_blackout({'origin': 'baz/quux'}, should_match=False, msg='origin mismatch')
+
+        # --- Multi-field combinations ---
+        assert_blackout({'resource': 'node404', 'service': ['Network']}, msg='resource + service')
+        assert_blackout({'resource': 'other', 'service': ['Network']}, should_match=False, msg='wrong resource + service')
+        assert_blackout({'resource': 'node404', 'event': 'node_down', 'group': 'Network'}, msg='resource + event + group')
+
+        # all fields matching
+        assert_blackout({
+            'resource': 'node404', 'service': ['Core'], 'event': 'node_down',
+            'group': 'Network', 'tags': ['level=20'], 'origin': 'foo/bar'
+        }, msg='all fields match')
+
+        # all fields but one mismatch
+        assert_blackout({
+            'resource': 'node404', 'service': ['Core'], 'event': 'node_down',
+            'group': 'Network', 'tags': ['level=20'], 'origin': 'wrong-origin'
+        }, should_match=False, msg='all fields but origin mismatch')
+
+    def test_blackout_after_update_with_null_service_tags(self):
+        """Test that blackout still works after updating with null service/tags. Fixes #1977."""
+
+        os.environ['NOTIFICATION_BLACKOUT'] = 'False'
+        plugins.plugins['blackout'] = Blackout()
+
+        self.headers = {
+            'Authorization': f'Key {self.admin_api_key.key}',
+            'Content-type': 'application/json'
+        }
+
+        # create blackout for resource
+        blackout = {
+            'environment': 'Production',
+            'resource': 'node404',
+            'service': ['Network'],
+            'tags': ['level=20'],
+            'startTime': '2019-01-01T00:00:00.000Z',
+            'endTime': '2049-12-31T23:59:59.999Z'
+        }
+        response = self.client.post('/blackout', data=json.dumps(blackout), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        blackout_id = data['id']
+
+        # verify blackout works
+        response = self.client.post('/alert', data=json.dumps(self.prod_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 202)
+
+        # update blackout -- set service and tags to null (simulates SDK behaviour)
+        update = {
+            'service': None,
+            'tags': None,
+            'endTime': '2099-12-31T23:59:59.999Z'
+        }
+        response = self.client.put('/blackout/' + blackout_id, data=json.dumps(update), headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+
+        # blackout should still work (now matches all services/tags for this resource)
+        response = self.client.post('/alert', data=json.dumps(self.prod_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 202)
+
     def test_user_info(self):
 
         self.headers = {

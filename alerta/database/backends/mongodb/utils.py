@@ -59,7 +59,8 @@ class QueryBuilder:
         for field in params.keys():
             if field.replace('!', '').split('.')[0] in EXCLUDE_FROM_QUERY:
                 continue
-            if field.replace('!', '').split('.')[0] not in valid_params:
+            valid_filter_params = [k for k, v in valid_params.items() if v[0]]
+            if field.replace('!', '').split('.')[0] not in valid_filter_params:
                 raise ApiError(f'Invalid filter parameter: {field}', 400)
             if field.startswith('attributes.'):
                 column = field

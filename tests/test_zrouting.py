@@ -1,8 +1,8 @@
 import json
 import os
 import unittest
-
-import pkg_resources
+from importlib.metadata import EntryPoint
+from unittest.mock import patch
 
 from alerta.app import create_app, plugins
 from alerta.models.enums import Scope
@@ -10,16 +10,33 @@ from alerta.models.key import ApiKey
 from alerta.plugins import PluginBase
 
 
+def _mock_entry_points(**kwargs):
+    group = kwargs.get('group', None)
+    name = kwargs.get('name', None)
+    if group == 'alerta.routing':
+        ep = EntryPoint(name='rules', value='tests.test_zrouting:rules', group='alerta.routing')
+        if name:
+            return [ep] if ep.name == name else []
+        return [ep]
+    # fall back to real entry_points for all other groups
+    from importlib.metadata import entry_points as _real
+    try:
+        return _real(**kwargs)
+    except TypeError:
+        eps = _real()
+        result = eps.get(group, []) if group else eps
+        if name and isinstance(result, list):
+            result = [ep for ep in result if ep.name == name]
+        return result
+
+
 class RoutingTestCase(unittest.TestCase):
 
     def setUp(self):
 
-        # create dummy routing rules
-        self.dist = pkg_resources.Distribution(__file__, project_name='alerta-routing', version='0.1')
-        s = 'rules = tests.test_zrouting:rules'
-        self.entry_point = pkg_resources.EntryPoint.parse(s, dist=self.dist)
-        self.dist._ep_map = {'alerta.routing': {'rules': self.entry_point}}
-        pkg_resources.working_set.add(self.dist)
+        # patch entry_points in alerta.utils.plugin to inject dummy routing rules
+        self.ep_patcher = patch('alerta.utils.plugin._entry_points', side_effect=_mock_entry_points)
+        self.ep_patcher.start()
 
         test_config = {
             'TESTING': True,
@@ -114,7 +131,7 @@ class RoutingTestCase(unittest.TestCase):
 
     def tearDown(self):
         plugins.plugins.clear()
-        self.dist._ep_map.clear()
+        self.ep_patcher.stop()
 
     def test_config(self):
 

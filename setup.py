@@ -24,6 +24,7 @@ setuptools.setup(
         'bcrypt',
         'blinker',
         'cryptography',
+        'defusedxml',
         'Flask>=2.0.1',
         'Flask-Compress>=1.4.0',
         'Flask-Cors>=3.0.2',
@@ -36,6 +37,7 @@ setuptools.setup(
         'requests',
         'requests-hawk',
         'sentry-sdk[flask]>=0.10.2',
+        'StrEnum',
     ],
     extras_require={
         'mongodb': ['pymongo'],

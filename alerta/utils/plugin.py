@@ -1,10 +1,10 @@
 import logging
 from collections import OrderedDict
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import entry_points as _entry_points
 from typing import TYPE_CHECKING
 
 from flask import Config, Flask
-from pkg_resources import (DistributionNotFound, iter_entry_points,
-                           load_entry_point)
 
 from alerta.plugins import app
 
@@ -30,14 +30,18 @@ class Plugins:
     def register(self, app: Flask) -> None:
         self.config = app.config
 
-        entry_points = {}
-        for ep in iter_entry_points('alerta.plugins'):
+        try:
+            all_eps = _entry_points(group='alerta.plugins')
+        except TypeError:
+            all_eps = _entry_points().get('alerta.plugins', [])
+        ep_map = {}
+        for ep in all_eps:
             LOG.debug(f"Server plugin '{ep.name}' found.")
-            entry_points[ep.name] = ep
+            ep_map[ep.name] = ep
 
         for name in self.config['PLUGINS']:
             try:
-                plugin = entry_points[name].load()
+                plugin = ep_map[name].load()
                 if plugin:
                     self.plugins[name] = plugin()
                     LOG.info(f"Server plugin '{name}' loaded.")
@@ -45,9 +49,15 @@ class Plugins:
                 LOG.error(f"Failed to load plugin '{name}': {str(e)}")
         LOG.info(f"All server plugins enabled: {', '.join(self.plugins.keys())}")
         try:
-            routing_dist = self.config['ROUTING_DIST']
-            self.rules = load_entry_point(routing_dist, 'alerta.routing', 'rules')  # type: ignore
-        except (DistributionNotFound, ImportError):
+            try:
+                routing_eps = _entry_points(group='alerta.routing', name='rules')
+            except TypeError:
+                routing_eps = [ep for ep in _entry_points().get('alerta.routing', []) if ep.name == 'rules']
+            if routing_eps:
+                self.rules = routing_eps[0].load()  # type: ignore
+            else:
+                raise ImportError('No routing entry point found')
+        except (PackageNotFoundError, ImportError):
             LOG.info('No plugin routing rules found. All plugins will be evaluated.')
 
     def routing(self, alert: 'Alert') -> 'Tuple[Iterable[PluginBase], Config]':

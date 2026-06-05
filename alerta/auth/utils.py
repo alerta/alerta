@@ -21,10 +21,12 @@ try:
     def generate_password_hash(password: Any) -> str:
         if isinstance(password, str):
             password = password.encode('utf-8')
+        password = password[:72]  # bcrypt max input length
         return bcrypt.hashpw(password, bcrypt.gensalt(prefix=b'2a')).decode('utf-8')
 
     def check_password_hash(pwhash: str, password: Any) -> bool:
-        return bcrypt.checkpw(password.encode('utf-8'), pwhash.encode('utf-8'))
+        password = password.encode('utf-8')[:72]  # bcrypt max input length
+        return bcrypt.checkpw(password, pwhash.encode('utf-8'))
 
 except ImportError:  # Google App Engine
     from werkzeug.security import check_password_hash  # noqa

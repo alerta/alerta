@@ -309,6 +309,37 @@ class ManagementTestCase(unittest.TestCase):
             if metric['name'] == 'total':
                 self.assertGreaterEqual(metric['value'], 1)
 
+    def test_housekeeping_not_capped_by_page_size(self):
+        """Test that housekeeping expires all alerts, not just DEFAULT_PAGE_SIZE. Fixes #1553."""
+
+        # Use a small page size to make the cap obvious
+        self.app.config['DEFAULT_PAGE_SIZE'] = 5
+
+        # Create 10 alerts with 1-second timeout
+        for i in range(10):
+            alert = {
+                'event': 'test_expire',
+                'resource': f'res-{uuid4().hex[:8]}',
+                'environment': 'Production',
+                'service': ['Test'],
+                'severity': 'warning',
+                'timeout': 1
+            }
+            response = self.client.post('/alert', data=json.dumps(alert), headers=self.headers)
+            self.assertEqual(response.status_code, 201)
+
+        # Wait for alerts to expire
+        time.sleep(2)
+
+        # Run housekeeping
+        response = self.client.get('/management/housekeeping', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.data.decode('utf-8'))
+
+        # All 10 should be expired, not just 5 (the page size)
+        expired_count = len(data.get('expired', []))
+        self.assertGreaterEqual(expired_count, 10, f'Expected >= 10 expired, got {expired_count}. DEFAULT_PAGE_SIZE cap still active.')
+
     def test_prometheus(self):
 
         response = self.client.get('/management/metrics')

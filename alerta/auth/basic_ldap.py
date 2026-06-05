@@ -33,9 +33,10 @@ def login():
             raise ApiError('expected username with domain', 401)
 
     # Validate LDAP domain
-    if (domain not in current_app.config['ALLOWED_EMAIL_DOMAINS']
-            and domain not in current_app.config['LDAP_DOMAINS']):
-        raise ApiError('unauthorized domain', 403)
+    if current_app.config.get('LDAP_USE_EMAIL_DOMAIN_WHITELIST', True):
+        if (domain not in current_app.config['ALLOWED_EMAIL_DOMAINS']
+                and domain not in current_app.config['LDAP_DOMAINS']):
+            raise ApiError('unauthorized domain', 403)
 
     # LDAP certificate settings
     if current_app.config['LDAP_CACERT']:
@@ -104,8 +105,15 @@ def login():
             raise ApiError('invalid username or password', 401)
         user_dn = result[0][0]
         name = result[0][1][current_app.config['LDAP_USER_NAME_ATTR']][0].decode('utf-8', 'ignore')
-        email = result[0][1][current_app.config['LDAP_USER_EMAIL_ATTR']][0].decode('utf-8', 'ignore')
-        email_verified = bool(email)
+        email_attrs = result[0][1].get(current_app.config['LDAP_USER_EMAIL_ATTR'])
+        if email_attrs:
+            email = email_attrs[0].decode('utf-8', 'ignore')
+            email_verified = bool(email)
+        else:
+            if current_app.config.get('LDAP_USE_EMAIL_DOMAIN_WHITELIST', True):
+                raise ApiError('User LDAP entry missing required email attribute', 401)
+            email = f'{safe_username.lower()}@ldapdomain.invalid'
+            email_verified = False
     else:
         if '%' in current_app.config['LDAP_DOMAINS'][domain]:
             user_dn = current_app.config['LDAP_DOMAINS'][domain] % safe_username

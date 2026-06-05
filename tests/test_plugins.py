@@ -461,6 +461,145 @@ class PluginsTestCase(unittest.TestCase):
         del plugins.plugins['ack1']
 
 
+class PluginTypeErrorTestCase(unittest.TestCase):
+    """Test that TypeError raised inside a plugin is not swallowed by
+    backward-compatibility logic. See alerta/alerta#2054."""
+
+    def setUp(self):
+        test_config = {
+            'TESTING': True,
+            'AUTH_REQUIRED': False,
+            'PLUGINS': [],
+            'PLUGINS_RAISE_ON_ERROR': True,
+        }
+        self.app = create_app(test_config)
+        self.client = self.app.test_client()
+
+        self.alert_data = {
+            'event': 'node_down',
+            'resource': str(uuid4()).upper()[:8],
+            'environment': 'Production',
+            'service': ['Network'],
+            'severity': 'critical',
+            'correlate': ['node_down', 'node_up'],
+        }
+
+        self.headers = {
+            'Content-type': 'application/json',
+        }
+
+    def tearDown(self):
+        plugins.plugins.clear()
+        db.destroy()
+
+    def test_typeerror_in_post_receive_not_swallowed(self):
+        """A TypeError raised inside post_receive must propagate, not be
+        silently caught by the backward-compat fallback."""
+        plugins.plugins['buggy'] = BuggyPostReceivePlugin()
+
+        response = self.client.post('/alert', data=json.dumps(self.alert_data), headers=self.headers)
+        self.assertEqual(response.status_code, 500)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('bug inside plugin', data['message'])
+
+    def test_typeerror_in_pre_receive_not_swallowed(self):
+        """A TypeError raised inside pre_receive must propagate."""
+        plugins.plugins['buggy'] = BuggyPreReceivePlugin()
+
+        response = self.client.post('/alert', data=json.dumps(self.alert_data), headers=self.headers)
+        self.assertEqual(response.status_code, 500)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('bug inside plugin', data['message'])
+
+    def test_typeerror_in_status_change_not_swallowed(self):
+        """A TypeError raised inside status_change must propagate."""
+        plugins.plugins['buggy_status'] = BuggyStatusChangePlugin()
+
+        # create alert first
+        response = self.client.post('/alert', data=json.dumps(self.alert_data), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        alert_id = data['id']
+
+        # status change should surface the TypeError
+        response = self.client.put(
+            '/alert/' + alert_id + '/status',
+            data=json.dumps({'status': 'ack', 'text': 'test'}),
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 500)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertIn('bug inside plugin', data['message'])
+
+    def test_old_style_plugin_still_works(self):
+        """Plugins without **kwargs (no config param) must still work."""
+        plugins.plugins['old'] = OldStylePlugin()
+
+        response = self.client.post('/alert', data=json.dumps(self.alert_data), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        data = json.loads(response.data.decode('utf-8'))
+        self.assertEqual(data['alert']['attributes']['old_style'], 'works')
+
+        alert_id = data['id']
+
+        response = self.client.put(
+            '/alert/' + alert_id + '/status',
+            data=json.dumps({'status': 'ack', 'text': 'test'}),
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+
+
+class BuggyPostReceivePlugin(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        raise TypeError('bug inside plugin')
+
+    def status_change(self, alert, status, text, **kwargs):
+        return alert, status, text
+
+
+class BuggyPreReceivePlugin(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        raise TypeError('bug inside plugin')
+
+    def post_receive(self, alert, **kwargs):
+        return alert
+
+    def status_change(self, alert, status, text, **kwargs):
+        return alert, status, text
+
+
+class BuggyStatusChangePlugin(PluginBase):
+
+    def pre_receive(self, alert, **kwargs):
+        return alert
+
+    def post_receive(self, alert, **kwargs):
+        return alert
+
+    def status_change(self, alert, status, text, **kwargs):
+        raise TypeError('bug inside plugin')
+
+
+class OldStylePlugin(PluginBase):
+    """Plugin using old-style signatures without **kwargs or config."""
+
+    def pre_receive(self, alert):
+        return alert
+
+    def post_receive(self, alert):
+        alert.attributes['old_style'] = 'works'
+        return alert
+
+    def status_change(self, alert, status, text):
+        return alert, status, text
+
+
 class OldPlugin1(PluginBase):
 
     def pre_receive(self, alert, **kwargs):

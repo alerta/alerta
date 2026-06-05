@@ -188,4 +188,28 @@ class BuiltinsTestCase(unittest.TestCase):
         data = json.loads(response.data.decode('utf-8'))
         self.assertNotIn('acked-by', data['alert']['attributes'])
 
+    def test_reject_counter_metric(self):
+
+        def get_counter(name):
+            response = self.client.get('/management/status', headers=self.headers)
+            self.assertEqual(response.status_code, 200)
+            data = json.loads(response.data.decode('utf-8'))
+            for m in data.get('metrics', []):
+                if m.get('group') == 'alerts' and m.get('name') == name:
+                    return m.get('count', 0)
+            return 0
+
+        initial_reject_count = get_counter('rejected')
+
+        # send alert that will be rejected (no service defined)
+        response = self.client.post('/alert', data=json.dumps(self.reject_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 403)
+
+        # send another rejected alert
+        response = self.client.post('/alert', data=json.dumps(self.reject_alert), headers=self.headers)
+        self.assertEqual(response.status_code, 403)
+
+        # check reject counter incremented
+        self.assertEqual(get_counter('rejected'), initial_reject_count + 2)
+
     # XXX - forwarder plugin tested extensively in test_forwarder.py

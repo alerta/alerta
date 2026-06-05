@@ -238,6 +238,11 @@ class Blackout:
             kwargs['startTime'] = DateTime.parse(kwargs['startTime'])
         if kwargs.get('endTime'):
             kwargs['endTime'] = DateTime.parse(kwargs['endTime'])
+        # coerce None to empty list so Postgres matching works (NULL != '{}')
+        if 'service' in kwargs and kwargs['service'] is None:
+            kwargs['service'] = []
+        if 'tags' in kwargs and kwargs['tags'] is None:
+            kwargs['tags'] = []
         return Blackout.from_db(db.update_blackout(self.id, **kwargs))
 
     def delete(self) -> bool:

@@ -5,6 +5,11 @@ from pyparsing import (Forward, Group, Keyword, Literal, Optional,
 ParserElement.enablePackrat()
 
 
+def _next_param(params):
+    name = f'_qp_{len(params)}'
+    return name
+
+
 class UnaryOperation:
     """takes one operand,e.g. not"""
 
@@ -26,11 +31,17 @@ class SearchModifier(UnaryOperation):
     def __repr__(self):
         return f'{self.op} {self.operands}'
 
+    def to_sql(self, params):
+        return f'{self.op} {self.operands.to_sql(params)}'
+
 
 class SearchAnd(BinaryOperation):
 
     def __repr__(self):
         return f'({self.lhs} AND {self.rhs})'
+
+    def to_sql(self, params):
+        return f'({self.lhs.to_sql(params)} AND {self.rhs.to_sql(params)})'
 
 
 class SearchOr(BinaryOperation):
@@ -40,11 +51,19 @@ class SearchOr(BinaryOperation):
             return f'({self.lhs} AND {self.rhs})'
         return f'({self.lhs} OR {self.rhs})'
 
+    def to_sql(self, params):
+        if getattr(self.rhs, 'op', None) == 'NOT':
+            return f'({self.lhs.to_sql(params)} AND {self.rhs.to_sql(params)})'
+        return f'({self.lhs.to_sql(params)} OR {self.rhs.to_sql(params)})'
+
 
 class SearchNot(UnaryOperation):
 
     def __repr__(self):
         return f'NOT ({self.operands})'
+
+    def to_sql(self, params):
+        return f'NOT ({self.operands.to_sql(params)})'
 
 
 class SearchTerm:
@@ -110,6 +129,89 @@ class SearchTerm:
             else:
                 tokens_fieldname = f'"{self.tokens.fieldname or self.tokens.field[0]}"'
             return f'{self.tokens.subquery[0]}'.replace('"__default_field__"', tokens_fieldname)
+
+        raise ParseException(f'Search term did not match query syntax: {self.tokens}')
+
+    def to_sql(self, params):
+        if 'singleterm' in self.tokens:
+            if self.tokens.fieldname == '_exists_':
+                p = _next_param(params)
+                params[p] = self.tokens.singleterm
+                return f'"attributes"::jsonb ? %({p})s'
+            elif self.tokens.fieldname in ['correlate', 'service', 'tags']:
+                p = _next_param(params)
+                params[p] = self.tokens.singleterm
+                return f'%({p})s=ANY("{self.tokens.field[0]}")'
+            elif self.tokens.attr:
+                tokens_attr = self.tokens.attr.replace('_', 'attributes')
+                p_key = _next_param(params)
+                params[p_key] = self.tokens.fieldname
+                p_val = _next_param(params)
+                params[p_val] = f'%{self.tokens.singleterm}%'
+                return f'"{tokens_attr}"::jsonb ->>%({p_key})s ILIKE %({p_val})s'
+            else:
+                p = _next_param(params)
+                params[p] = f'%{self.tokens.singleterm}%'
+                return f'"{self.tokens.field[0]}" ILIKE %({p})s'
+        if 'phrase' in self.tokens:
+            if self.tokens.field[0] == '__default_field__':
+                p = _next_param(params)
+                params[p] = f'\\y{self.tokens.phrase}\\y'
+                return f'"__default_field__" ~* %({p})s'
+            elif self.tokens.field[0] in ['correlate', 'service', 'tags']:
+                p = _next_param(params)
+                params[p] = self.tokens.phrase
+                return f'%({p})s=ANY("{self.tokens.field[0]}")'
+            elif self.tokens.attr:
+                tokens_attr = self.tokens.attr.replace('_', 'attributes')
+                p_key = _next_param(params)
+                params[p_key] = self.tokens.fieldname
+                p_val = _next_param(params)
+                params[p_val] = f'\\y{self.tokens.phrase}\\y'
+                return f'"{tokens_attr}"::jsonb ->>%({p_key})s ~* %({p_val})s'
+            else:
+                p = _next_param(params)
+                params[p] = f'\\y{self.tokens.phrase}\\y'
+                return f'"{self.tokens.field[0]}" ~* %({p})s'
+        if 'wildcard' in self.tokens:
+            p = _next_param(params)
+            params[p] = f'\\y{self.tokens.wildcard}\\y'
+            return f'"{self.tokens.field[0]}" ~* %({p})s'
+        if 'regex' in self.tokens:
+            p = _next_param(params)
+            params[p] = self.tokens.regex
+            return f'"{self.tokens.field[0]}" ~* %({p})s'
+        if 'range' in self.tokens:
+            if self.tokens.range[0].lowerbound == '*':
+                lower_term = '1=1'
+            else:
+                p = _next_param(params)
+                params[p] = self.tokens.range[0].lowerbound
+                op = '>=' if 'inclusive' in self.tokens.range[0] else '>'
+                lower_term = f'"{self.tokens.field[0]}" {op} %({p})s'
+
+            if self.tokens.range[2].upperbound == '*':
+                upper_term = '1=1'
+            else:
+                p = _next_param(params)
+                params[p] = self.tokens.range[2].upperbound
+                op = '<=' if 'inclusive' in self.tokens.range[2] else '<'
+                upper_term = f'"{self.tokens.field[0]}" {op} %({p})s'
+            return f'({lower_term} AND {upper_term})'
+        if 'onesidedrange' in self.tokens:
+            p = _next_param(params)
+            params[p] = self.tokens.onesidedrange.bound
+            return f'("{self.tokens.field[0]}" {self.tokens.onesidedrange.op} %({p})s)'
+        if 'subquery' in self.tokens:
+            subquery_sql = self.tokens.subquery[0].to_sql(params)
+            if self.tokens.attr:
+                tokens_attr = 'attributes' if self.tokens.attr == '_' else self.tokens.attr
+                p = _next_param(params)
+                params[p] = self.tokens.fieldname
+                tokens_fieldname = f'"{tokens_attr}"::jsonb ->>%({p})s'
+            else:
+                tokens_fieldname = f'"{self.tokens.fieldname or self.tokens.field[0]}"'
+            return subquery_sql.replace('"__default_field__"', tokens_fieldname)
 
         raise ParseException(f'Search term did not match query syntax: {self.tokens}')
 
@@ -181,4 +283,7 @@ class QueryParser:
 
     def parse(self, query, default_field=None):
         default_field = default_field or QueryParser.DEFAULT_FIELD
-        return repr(query_expr.parseString(query)[0]).replace('__default_field__', default_field)
+        params = {}
+        parsed = query_expr.parseString(query)[0]
+        sql = parsed.to_sql(params)
+        return sql.replace('__default_field__', default_field), params
