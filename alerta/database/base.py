@@ -226,7 +226,7 @@ class Database(Base):
 
     # ALERT TAGS
 
-    def get_alert_tags(self, query=None, topn=1000):
+    def get_alert_tags(self, query=None, topn=None):
         raise NotImplementedError
 
     # BLACKOUTS

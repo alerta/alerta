@@ -917,15 +917,17 @@ class Backend(Database):
 
     # ALERT TAGS
 
-    def get_alert_tags(self, query=None, topn=1000):
+    def get_alert_tags(self, query=None, topn=None):
         query = query or Query()
         pipeline = [
             {'$match': query.where},
             {'$unwind': '$tags'},
             {'$project': {'environment': 1, 'tags': 1}},
-            {'$limit': topn},
-            {'$group': {'_id': {'environment': '$environment', 'tag': '$tags'}, 'count': {'$sum': 1}}}
+            {'$group': {'_id': {'environment': '$environment', 'tag': '$tags'}, 'count': {'$sum': 1}}},
+            {'$sort': {'count': -1, '_id.environment': 1, '_id.tag': 1}}
         ]
+        if topn is not None:
+            pipeline.append({'$limit': topn})
         responses = self.get_db().alerts.aggregate(pipeline)
 
         tags = list()

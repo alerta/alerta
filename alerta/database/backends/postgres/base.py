@@ -731,12 +731,13 @@ class Backend(Database):
 
     # ALERT TAGS
 
-    def get_alert_tags(self, query=None, topn=1000):
+    def get_alert_tags(self, query=None, topn=None):
         query = query or Query()
         select = """
             SELECT environment, tag, count(1) FROM alerts, UNNEST(tags) tag
             WHERE {where}
             GROUP BY environment, tag
+            ORDER BY count(1) DESC, environment, tag
         """.format(where=query.where)
         return [{'environment': t.environment, 'tag': t.tag, 'count': t.count} for t in self._fetchall(select, query.vars, limit=topn)]
 

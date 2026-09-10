@@ -387,3 +387,8 @@ class AggregationsTestCase(unittest.TestCase):
                 'tag': 'bar'
             }
         ])
+
+        # every distinct tag is returned, most-used first
+        self.assertEqual(data['total'], 5)
+        counts = [t['count'] for t in data['tags']]
+        self.assertEqual(counts, sorted(counts, reverse=True))
