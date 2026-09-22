@@ -1,5 +1,5 @@
-Alerta Release 9.1
-==================
+alerta-ng Release 9.1
+=====================
 
 > **This is alerta-ng, a community-maintained fork of [Alerta](https://github.com/alerta/alerta).**
 >
@@ -16,10 +16,10 @@ Alerta Release 9.1
 > Please report issues here, not on the upstream tracker.
 
 
-[![Actions Status](https://github.com/alerta/alerta/workflows/CI%20Tests/badge.svg)](https://github.com/alerta/alerta/actions)
-[![Slack chat](https://img.shields.io/badge/chat-on%20slack-blue?logo=slack)](https://slack.alerta.dev)
-[![Coverage Status](https://coveralls.io/repos/github/alerta/alerta/badge.svg?branch=master)](https://coveralls.io/github/alerta/alerta?branch=master)
-[![Docker Pulls](https://img.shields.io/docker/pulls/alerta/alerta-web.svg)](https://hub.docker.com/r/alerta/alerta-web)
+[![Tests](https://github.com/ospo-ionik/alerta-ng/actions/workflows/tests.yml/badge.svg)](https://github.com/ospo-ionik/alerta-ng/actions/workflows/tests.yml)
+[![Lint](https://github.com/ospo-ionik/alerta-ng/actions/workflows/lint.yml/badge.svg)](https://github.com/ospo-ionik/alerta-ng/actions/workflows/lint.yml)
+[![CodeQL](https://github.com/ospo-ionik/alerta-ng/actions/workflows/analysis.yml/badge.svg)](https://github.com/ospo-ionik/alerta-ng/actions/workflows/analysis.yml)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 The Alerta monitoring tool was developed with the following aims in mind:
 
@@ -89,7 +89,10 @@ Documentation
 -------------
 
 More information on configuration and other aspects of alerta can be found
-at <http://docs.alerta.io>
+at <https://docs.alerta.io>. Those are the upstream project's docs; they
+describe the codebase alerta-ng is forked from and remain accurate for
+anything alerta-ng has not changed. Differences introduced by this fork are
+documented in [CHANGELOG.md](CHANGELOG.md).
 
 Development
 -----------
@@ -101,11 +104,12 @@ To run in development mode, listening on port 5000:
     $ flask run
 
 To run in development mode, listening on port 8080, using Postgres and
-reporting errors to [Sentry](https://sentry.io):
+optionally reporting errors to [Sentry](https://sentry.io) (set `SENTRY_DSN`
+to your own project's DSN; error reporting is disabled when it is unset):
 
     $ export FLASK_APP=alerta FLASK_DEBUG=1
     $ export DATABASE_URL=postgres://localhost:5432/alerta5
-    $ export SENTRY_DSN=https://8b56098250544fb78b9578d8af2a7e13:fa9d628da9c4459c922293db72a3203f@sentry.io/153768
+    $ export SENTRY_DSN=https://<key>@<organisation>.ingest.sentry.io/<project>
     $ pip install -e .[postgres]
     $ flask run --debugger --port 8080 --with-threads --reload
 
@@ -156,6 +160,10 @@ License
 
     Alerta monitoring system and console
     Copyright 2012-2023 Nick Satterly
+
+    This distribution is alerta-ng, a fork of that project. Portions of this
+    software have been modified from the original work.
+    Modifications Copyright 2026 the alerta-ng contributors.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
