@@ -98,7 +98,7 @@ class Backend(Database):
         return True
 
     def close(self, db):
-        self.client.close()
+        db.client.close()
 
     def destroy(self):
         db = self.connect()
