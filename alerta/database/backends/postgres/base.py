@@ -1552,6 +1552,7 @@ class Backend(Database):
         cursor = self.get_db().cursor()
         self._log(cursor, query, vars)
         cursor.execute(query, vars)
+        self.get_db().commit()
         return cursor.fetchone()
 
     def _fetchall(self, query, vars, limit=None, offset=0):
@@ -1563,6 +1564,7 @@ class Backend(Database):
         cursor = self.get_db().cursor()
         self._log(cursor, query, vars)
         cursor.execute(query, vars)
+        self.get_db().commit()
         return cursor.fetchall()
 
     def _updateone(self, query, vars, returning=False):
