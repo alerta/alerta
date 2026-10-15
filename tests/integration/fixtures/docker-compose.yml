@@ -26,9 +26,9 @@ services:
           - mom1.local.alerta.io
 
   mom1-db:
-    image: postgres
+    image: postgres:18
     volumes:
-      - ./pg-data/mom1:/var/lib/postgresql/data
+      - ./pg-data/mom1:/var/lib/postgresql
     environment:
       POSTGRES_DB: mom1
       POSTGRES_USER: postgres
@@ -64,9 +64,9 @@ services:
           - mlm1.local.alerta.io
 
   mlm1-db:
-    image: postgres
+    image: postgres:18
     volumes:
-      - ./pg-data/mlm1:/var/lib/postgresql/data
+      - ./pg-data/mlm1:/var/lib/postgresql
     environment:
       POSTGRES_DB: mlm1
       POSTGRES_USER: postgres
