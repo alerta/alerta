@@ -28,7 +28,7 @@ VERSION=$(shell cut -d "'" -f 2 $(PROJECT)/version.py)
 all:	help
 
 $(VENV):
-	python3 -m venv $(VENV)
+	python3.15 -m venv $(VENV)
 
 $(FLAKE8): $(VENV)
 	$(PIP) install flake8

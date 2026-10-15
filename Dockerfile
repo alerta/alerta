@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bookworm
+FROM python:3.15-slim-trixie
 
 ARG BUILD_DATE
 ARG BUILD_NUMBER
