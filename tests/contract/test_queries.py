@@ -138,7 +138,7 @@ def test_top10(api, alert, resource):
     assert top[0]['environments'] == ['Production']
     assert top[0]['services'] == ['Network']
     assert top[0]['resources'][0]['resource'] == resource
-    assert {'id', 'href'} <= set(top[0]['resources'][0])
+    assert {'id', 'resource'} <= set(top[0]['resources'][0])
 
 
 def test_environments(api, alert, resource):

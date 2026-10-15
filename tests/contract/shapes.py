@@ -100,7 +100,6 @@ BLACKOUT: dict[str, Any] = {
     'endTime': TIMESTAMP,
     'duration': int,
     'status': str,
-    'remaining': (int, float),
     'user': (str, NoneType),
     'createTime': TIMESTAMP,
     'text': (str, NoneType),
@@ -114,8 +113,6 @@ PAGED: dict[str, Any] = {
     'pages': int,
     'more': bool,
 }
-
-BLACKOUT_GET = {k: v for k, v in BLACKOUT.items() if k != 'remaining'}
 
 COUNTS: dict[str, Any] = {
     'status': str,

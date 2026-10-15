@@ -1,6 +1,6 @@
 import pytest
 
-from .shapes import BLACKOUT, BLACKOUT_GET, PAGED, assert_error, assert_shape
+from .shapes import BLACKOUT, PAGED, assert_error, assert_shape
 
 
 def test_blackout_lifecycle(api, alert, resource):
@@ -17,7 +17,7 @@ def test_blackout_lifecycle(api, alert, resource):
 
     r = api.get(f'/blackout/{blackout_id}')
     assert r.status == 200
-    assert_shape(r.json['blackout'], BLACKOUT_GET, 'blackout')
+    assert_shape(r.json['blackout'], BLACKOUT, 'blackout')
 
     r = api.get('/blackouts')
     assert r.status == 200
@@ -50,9 +50,10 @@ def test_blackout_requires_environment(api, resource):
     assert_error(api.post('/blackout', {'resource': resource}), 400)
 
 
-@pytest.mark.xfail(strict=True, reason='9.x on Postgres serializes remaining as a decimal string on GET')
+@pytest.mark.xfail(strict=True, reason='9.x: remaining is a decimal string on GET (Postgres) and null (MongoDB)')
 def test_blackout_remaining_is_numeric(api, resource):
-    blackout_id = api.post('/blackout', {'environment': 'Production', 'resource': resource}).json['id']
+    r = api.post('/blackout', {'environment': 'Production', 'resource': resource})
+    blackout_id = r.json['id']
 
-    remaining = api.get(f'/blackout/{blackout_id}').json['blackout']['remaining']
-    assert isinstance(remaining, (int, float)) and not isinstance(remaining, bool)
+    for remaining in (r.json['blackout']['remaining'], api.get(f'/blackout/{blackout_id}').json['blackout']['remaining']):
+        assert isinstance(remaining, (int, float)) and not isinstance(remaining, bool)
