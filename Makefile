@@ -79,6 +79,10 @@ test: test.unit test.integration
 test.unit: $(TOX) $(PYTEST)
 	$(TOX) $(toxparams)
 
+## test.contract		- Run API and plugin contract tests (ALERTA_CONTRACT_URL to target a running server).
+test.contract: $(PYTEST)
+	$(PYTEST) tests/contract
+
 ## test.integration	- Run integration tests.
 test.integration: test.integration.ldap test.integration.saml
 
