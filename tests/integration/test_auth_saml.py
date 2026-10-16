@@ -7,10 +7,11 @@ from alerta.app import create_app
 
 try:
     import saml2.client  # noqa
+    SAML2_IMPORT_ERROR = None
 except TypeError as e:
     # elementpath<5 (pinned via pysaml2's xmlschema<3) fails on Unicode 17 (Python 3.15)
     # https://github.com/IdentityPython/pysaml2/issues/1043
-    pytest.skip(f'pysaml2 does not import: {e}', allow_module_level=True)
+    SAML2_IMPORT_ERROR = e
 
 NAMESPACE_MAP = {
     'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol',
@@ -24,6 +25,7 @@ def xpath(el, path):
     return el.xpath(path, namespaces=NAMESPACE_MAP)[0]
 
 
+@pytest.mark.skipif(SAML2_IMPORT_ERROR is not None, reason=f'pysaml2 does not import: {SAML2_IMPORT_ERROR}')
 class SAMLIntegrationTestCase(unittest.TestCase):
 
     def setUp(self):
