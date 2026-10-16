@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import threading
@@ -62,6 +63,15 @@ Record = namedtuple('Record', [
     'group', 'value', 'text', 'tags', 'attributes', 'origin', 'update_time',
     'user', 'timeout', 'type', 'customer'
 ])
+
+
+def with_keys(alert):
+    return dict(
+        vars(alert),
+        dedup_key=json.dumps([alert.resource, alert.event], ensure_ascii=False),
+        key_source='template',
+        correlate_key=json.dumps([alert.resource], ensure_ascii=False),
+    )
 
 
 class Backend(Database):
@@ -160,42 +170,41 @@ class Backend(Database):
     def get_severity(self, alert):
         select = """
             SELECT severity FROM alerts
-             WHERE environment=%(environment)s AND resource=%(resource)s
-               AND ((event=%(event)s AND severity!=%(severity)s)
-                OR (event!=%(event)s AND %(event)s=ANY(correlate)))
+             WHERE environment=%(environment)s
+               AND ((dedup_key=%(dedup_key)s AND severity!=%(severity)s)
+                OR (correlate_key=%(correlate_key)s AND event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
             """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
-        return self._fetchone(select, vars(alert)).severity
+        return self._fetchone(select, with_keys(alert)).severity
 
     def get_status(self, alert):
         select = """
             SELECT status FROM alerts
-             WHERE environment=%(environment)s AND resource=%(resource)s
-              AND (event=%(event)s OR %(event)s=ANY(correlate))
+             WHERE environment=%(environment)s
+              AND (dedup_key=%(dedup_key)s OR (correlate_key=%(correlate_key)s AND %(event)s=ANY(correlate)))
               AND {customer}
             """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
-        return self._fetchone(select, vars(alert)).status
+        return self._fetchone(select, with_keys(alert)).status
 
     def is_duplicate(self, alert):
         select = """
             SELECT * FROM alerts
              WHERE environment=%(environment)s
-               AND resource=%(resource)s
-               AND event=%(event)s
+               AND dedup_key=%(dedup_key)s
                AND severity=%(severity)s
                AND {customer}
             """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
-        return self._fetchone(select, vars(alert))
+        return self._fetchone(select, with_keys(alert))
 
     def is_correlated(self, alert):
         select = """
             SELECT * FROM alerts
-             WHERE environment=%(environment)s AND resource=%(resource)s
-               AND ((event=%(event)s AND severity!=%(severity)s)
-                OR (event!=%(event)s AND %(event)s=ANY(correlate)))
+             WHERE environment=%(environment)s
+               AND ((dedup_key=%(dedup_key)s AND severity!=%(severity)s)
+                OR (correlate_key=%(correlate_key)s AND event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
         """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
-        return self._fetchone(select, vars(alert))
+        return self._fetchone(select, with_keys(alert))
 
     def is_flapping(self, alert, window=1800, count=2):
         """
@@ -227,8 +236,7 @@ class Backend(Database):
                    tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)), attributes=attributes || %(attributes)s,
                    duplicate_count=duplicate_count + 1, {update_time}, history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
-               AND resource=%(resource)s
-               AND event=%(event)s
+               AND dedup_key=%(dedup_key)s
                AND severity=%(severity)s
                AND {customer}
          RETURNING *
@@ -237,21 +245,21 @@ class Backend(Database):
             update_time='update_time=%(update_time)s' if alert.update_time else 'update_time=update_time',
             customer='customer=%(customer)s' if alert.customer else 'customer IS NULL'
         )
-        return self._updateone(update, vars(alert), returning=True)
+        return self._updateone(update, with_keys(alert), returning=True)
 
     def correlate_alert(self, alert, history):
         alert.history = history
         update = """
             UPDATE alerts
-               SET event=%(event)s, severity=%(severity)s, status=%(status)s, service=%(service)s, value=%(value)s,
+               SET event=%(event)s, dedup_key=%(dedup_key)s, severity=%(severity)s, status=%(status)s, service=%(service)s, value=%(value)s,
                    text=%(text)s, create_time=%(create_time)s, timeout=%(timeout)s, raw_data=%(raw_data)s,
                    duplicate_count=%(duplicate_count)s, repeat=%(repeat)s, previous_severity=%(previous_severity)s,
                    trend_indication=%(trend_indication)s, receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
                    last_receive_time=%(last_receive_time)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
                    attributes=attributes || %(attributes)s, {update_time}, history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
-               AND resource=%(resource)s
-               AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
+               AND ((dedup_key=%(dedup_key)s AND severity!=%(severity)s)
+                OR (correlate_key=%(correlate_key)s AND event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
          RETURNING *
         """.format(
@@ -259,22 +267,23 @@ class Backend(Database):
             update_time='update_time=%(update_time)s' if alert.update_time else 'update_time=update_time',
             customer='customer=%(customer)s' if alert.customer else 'customer IS NULL'
         )
-        return self._updateone(update, vars(alert), returning=True)
+        return self._updateone(update, with_keys(alert), returning=True)
 
     def create_alert(self, alert):
         insert = """
             INSERT INTO alerts (id, resource, event, environment, severity, correlate, status, service, "group",
                 value, text, tags, attributes, origin, type, create_time, timeout, raw_data, customer,
                 duplicate_count, repeat, previous_severity, trend_indication, receive_time, last_receive_id,
-                last_receive_time, update_time, history)
+                last_receive_time, update_time, history, dedup_key, key_source, correlate_key)
             VALUES (%(id)s, %(resource)s, %(event)s, %(environment)s, %(severity)s, %(correlate)s, %(status)s,
                 %(service)s, %(group)s, %(value)s, %(text)s, %(tags)s, %(attributes)s, %(origin)s,
                 %(event_type)s, %(create_time)s, %(timeout)s, %(raw_data)s, %(customer)s, %(duplicate_count)s,
                 %(repeat)s, %(previous_severity)s, %(trend_indication)s, %(receive_time)s, %(last_receive_id)s,
-                %(last_receive_time)s, %(update_time)s, %(history)s::history[])
+                %(last_receive_time)s, %(update_time)s, %(history)s::history[], %(dedup_key)s, %(key_source)s,
+                %(correlate_key)s)
             RETURNING *
         """
-        return self._insert(insert, vars(alert))
+        return self._insert(insert, with_keys(alert))
 
     def set_alert(self, id, severity, status, tags, attributes, timeout, previous_severity, update_time, history=None):
         update = """
