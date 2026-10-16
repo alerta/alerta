@@ -19,25 +19,16 @@ The Alerta monitoring tool was developed with the following aims in mind:
 Requirements
 ------------
 
-Release 9 only supports Python 3.9 or higher.
+Release 10 requires Python 3.15 or higher.
 
-The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
-
-- Postgres version 13 or better
-- MongoDB version 6.0 or better
+The only mandatory dependency is PostgreSQL 18 or higher. Everything else is optional.
+MongoDB is not supported from Release 10.
 
 Installation
 ------------
 
-To install MongoDB on Debian/Ubuntu run:
-
-    $ sudo apt-get install -y mongodb-org
-    $ mongod
-
-To install MongoDB on CentOS/RHEL run:
-
-    $ sudo yum install -y mongodb
-    $ mongod
+Install PostgreSQL 18 from the PostgreSQL package repositories, see
+<https://www.postgresql.org/download/>.
 
 To install the Alerta server and client run:
 
@@ -54,7 +45,7 @@ To install the web console run:
     >> browse to http://localhost:8000
 
 ### Docker
-Alerta and MongoDB can also run using Docker containers, see [alerta/docker-alerta](https://github.com/alerta/docker-alerta).
+Alerta and PostgreSQL can also run using Docker containers, see [alerta/docker-alerta](https://github.com/alerta/docker-alerta).
 
 Configuration
 -------------
@@ -109,19 +100,12 @@ JavaScript logging, network problems and API error responses.
 Tests
 -----
 
-To run the *all* the tests there must be a local Postgres
-and MongoDB database running. Then run:
+To run the tests there must be a local Postgres database running. Then run:
 
-    $ TOXENV=ALL make test
-
-To just run the Postgres or MongoDB tests run:
-
-    $ TOXENV=postgres make test
-    $ TOXENV=mongodb make test
+    $ make test
 
 To run a single test run something like:
 
-    $ TOXENV="mongodb -- tests/test_search.py::QueryParserTestCase::test_boolean_operators" make test
     $ TOXENV="postgres -- tests/test_queryparser.py::PostgresQueryTestCase::test_boolean_operators" make test
 
 Cloud Deployment

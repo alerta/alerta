@@ -29,6 +29,7 @@ setuptools.setup(
         'Flask-Compress>=1.4.0',
         'Flask-Cors>=3.0.2',
         'mohawk',
+        'psycopg2',
         'PyJWT>=2.0.0',
         'pyparsing',
         'python-dateutil',
@@ -40,8 +41,7 @@ setuptools.setup(
         'StrEnum',
     ],
     extras_require={
-        'mongodb': ['pymongo'],
-        'postgres': ['psycopg2']
+        'postgres': []
     },
     include_package_data=True,
     zip_safe=False,

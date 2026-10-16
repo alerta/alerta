@@ -39,6 +39,8 @@ def load_backend(backend):
             module_name = ep.value.split(':')[0]
             break
     else:
+        if backend == 'mongodb':
+            raise ImportError('MongoDB is not supported by Alerta 10, use PostgreSQL')
         module_name = f'alerta.database.backends.{backend}'
 
     try:

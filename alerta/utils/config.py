@@ -28,15 +28,7 @@ class Config:
         config['USE_PROXYFIX'] = get_config('USE_PROXYFIX', default=False, type=bool, config=config)
         config['SECRET_KEY'] = get_config('SECRET_KEY', default='', type=str, config=config)
 
-        database_url = (
-            # The following database settings are deprecated.
-            os.environ.get('MONGO_URI', None)
-            or os.environ.get('MONGODB_URI', None)
-            or os.environ.get('MONGOHQ_URL', None)
-            or os.environ.get('MONGOLAB_URI', None)
-        )
-        # Use app config for DATABASE_URL if no env var from above override it
-        config['DATABASE_URL'] = get_config('DATABASE_URL', default=database_url, type=str, config=config)
+        config['DATABASE_URL'] = get_config('DATABASE_URL', default=None, type=str, config=config)
         config['DATABASE_NAME'] = get_config('DATABASE_NAME', default=None, type=str, config=config)
         config['DATABASE_SCHEMA'] = get_config('DATABASE_SCHEMA', default='public', type=str, config=config)
 

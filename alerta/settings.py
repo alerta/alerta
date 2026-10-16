@@ -32,19 +32,10 @@ DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single
 HISTORY_LIMIT = 100  # cap the number of alert history entries
 HISTORY_ON_VALUE_CHANGE = True  # history entry for duplicate alerts if value changes
 
-# MongoDB (deprecated, use DATABASE_URL setting)
-MONGO_URI = 'mongodb://localhost:27017/monitoring'
-MONGO_DATABASE = None  # can be used to override default database, above
-MONGO_RAISE_ON_ERROR = True
-
-# PostgreSQL (deprecated, use DATABASE_URL setting)
-POSTGRES_URI = 'postgres://localhost:5432/monitoring'  # not used (use DATABASE_URL)
-POSTGRES_DB = None
-
-# Database
-DATABASE_URL = MONGO_URI  # default: MongoDB
-DATABASE_NAME = MONGO_DATABASE or POSTGRES_DB
-DATABASE_RAISE_ON_ERROR = MONGO_RAISE_ON_ERROR  # True - terminate, False - ignore and continue
+# Database (PostgreSQL)
+DATABASE_URL = 'postgres://localhost:5432/monitoring'
+DATABASE_NAME = None
+DATABASE_RAISE_ON_ERROR = True  # True - terminate, False - ignore and continue
 DATABASE_SCHEMA = 'public'  # default: None to use default schema
 
 # Search
