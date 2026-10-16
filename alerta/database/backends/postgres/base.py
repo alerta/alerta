@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 import time
 from collections import defaultdict, namedtuple
@@ -18,6 +19,7 @@ from alerta.models.heartbeat import HeartbeatStatus
 from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
+from .migrate import migrate
 from .utils import Query
 
 MAX_RETRIES = 5
@@ -73,14 +75,12 @@ class Backend(Database):
         with lock:
             conn = self.connect()
 
-            with app.open_resource('sql/schema.sql') as f:
-                try:
-                    conn.cursor().execute(f.read())
-                    conn.commit()
-                except Exception as e:
-                    if raise_on_error:
-                        raise
-                    app.logger.warning(e)
+            try:
+                migrate(conn, os.path.join(app.root_path, 'sql'))
+            except Exception as e:
+                if raise_on_error:
+                    raise
+                app.logger.warning(e)
 
         register_adapter(dict, Json)
         register_adapter(datetime, self._adapt_datetime)
@@ -150,7 +150,7 @@ class Backend(Database):
     def destroy(self):
         conn = self.connect()
         cursor = conn.cursor()
-        for table in ['alerts', 'blackouts', 'customers', 'groups', 'heartbeats', 'keys', 'metrics', 'perms', 'users']:
+        for table in ['alerts', 'blackouts', 'customers', 'groups', 'heartbeats', 'keys', 'metrics', 'perms', 'users', 'schema_migrations']:
             cursor.execute(f'DROP TABLE IF EXISTS {table}')
         conn.commit()
         conn.close()

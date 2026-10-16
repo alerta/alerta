@@ -6,6 +6,6 @@ exclude .gitignore
 global-exclude *.pyc
 include wsgi.py
 include alerta/app.wsgi
-include alerta/sql/schema.sql
+include alerta/sql/*.sql
 recursive-include alerta/templates *
 recursive-include alerta/static *
