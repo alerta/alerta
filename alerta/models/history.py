@@ -38,21 +38,6 @@ class History:
             self.id, self.event, self.severity, self.status, self.change_type)
 
     @classmethod
-    def from_document(cls, doc):
-        return History(
-            id=doc.get('id', None),
-            event=doc.get('event'),
-            severity=doc.get('severity', None),
-            status=doc.get('status', None),
-            value=doc.get('value', None),
-            text=doc.get('text', None),
-            change_type=doc.get('type', None),
-            update_time=doc.get('updateTime', None),
-            user=doc.get('user', None),
-            timeout=doc.get('timeout', None)
-        )
-
-    @classmethod
     def from_record(cls, rec):
         return History(
             id=rec.id,
@@ -69,9 +54,7 @@ class History:
 
     @classmethod
     def from_db(cls, r):
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
 
 
@@ -137,29 +120,6 @@ class RichHistory:
                    self.status, self.timeout, self.change_type, self.customer)
 
     @classmethod
-    def from_document(cls, doc):
-        return RichHistory(
-            id=doc.get('id', None) or doc.get('_id'),
-            resource=doc.get('resource', None),
-            event=doc.get('event', None),
-            environment=doc.get('environment', None),
-            severity=doc.get('severity', None),
-            status=doc.get('status', None),
-            service=doc.get('service', list()),
-            group=doc.get('group', None),
-            value=doc.get('value', None),
-            text=doc.get('text', None),
-            tags=doc.get('tags', list()),
-            attributes=doc.get('attributes', dict()),
-            origin=doc.get('origin', None),
-            update_time=doc.get('updateTime', None),
-            user=doc.get('user', None),
-            timeout=doc.get('timeout', None),
-            change_type=doc.get('type', None),
-            customer=doc.get('customer', None)
-        )
-
-    @classmethod
     def from_record(cls, rec):
         return RichHistory(
             id=rec.id,
@@ -184,7 +144,5 @@ class RichHistory:
 
     @classmethod
     def from_db(cls, r):
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)

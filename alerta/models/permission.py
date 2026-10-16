@@ -43,14 +43,6 @@ class Permission:
         return f'Perm(id={self.id!r}, match={self.match!r}, scopes={self.scopes!r})'
 
     @classmethod
-    def from_document(cls, doc: Dict[str, Any]) -> 'Permission':
-        return Permission(
-            id=doc.get('id', None) or doc.get('_id'),
-            match=doc.get('match', None),
-            scopes=[Scope(s) for s in doc.get('scopes', list())]
-        )
-
-    @classmethod
     def from_record(cls, rec) -> 'Permission':
         return Permission(
             id=rec.id,
@@ -60,9 +52,7 @@ class Permission:
 
     @classmethod
     def from_db(cls, r: Union[Dict, Tuple]) -> 'Permission':
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
 
     def create(self) -> 'Permission':

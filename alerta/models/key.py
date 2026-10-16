@@ -82,27 +82,12 @@ class ApiKey:
             self.key, self.status, self.user, self.scopes, self.expire_time, self.customer)
 
     @classmethod
-    def from_document(cls, doc: Dict[str, Any]) -> 'ApiKey':
-        return ApiKey(
-            id=doc.get('id', None) or doc.get('_id'),
-            key=doc.get('key', None) or doc.get('_id'),
-            user=doc.get('user', None),
-            scopes=[Scope(s) for s in doc.get('scopes', list())] or key_helper.type_to_scopes(
-                doc.get('user', None), doc.get('type', None)) or list(),
-            text=doc.get('text', None),
-            expire_time=doc.get('expireTime', None),
-            count=doc.get('count', None),
-            last_used_time=doc.get('lastUsedTime', None),
-            customer=doc.get('customer', None)
-        )
-
-    @classmethod
     def from_record(cls, rec) -> 'ApiKey':
         return ApiKey(
             id=rec.id,
             key=rec.key,
             user=rec.user,
-            scopes=[Scope(s) for s in rec.scopes],  # legacy type => scopes conversion only required for mongo documents
+            scopes=[Scope(s) for s in rec.scopes],
             text=rec.text,
             expire_time=rec.expire_time,
             count=rec.count,
@@ -112,9 +97,7 @@ class ApiKey:
 
     @classmethod
     def from_db(cls, r: Union[Dict, Tuple]) -> 'ApiKey':
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
 
     def create(self) -> 'ApiKey':

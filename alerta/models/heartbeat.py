@@ -114,22 +114,6 @@ class Heartbeat:
             self.id, self.origin, self.create_time, self.timeout, self.customer)
 
     @classmethod
-    def from_document(cls, doc: Dict[str, Any]) -> 'Heartbeat':
-        return Heartbeat(
-            id=doc.get('id', None) or doc.get('_id'),
-            origin=doc.get('origin', None),
-            tags=doc.get('tags', list()),
-            attributes=doc.get('attributes', dict()),
-            event_type=doc.get('type', None),
-            create_time=doc.get('createTime', None),
-            timeout=doc.get('timeout', None),
-            receive_time=doc.get('receiveTime', None),
-            latency=doc.get('latency', None),
-            since=doc.get('since', None),
-            customer=doc.get('customer', None)
-        )
-
-    @classmethod
     def from_record(cls, rec) -> 'Heartbeat':
         return Heartbeat(
             id=rec.id,
@@ -147,9 +131,7 @@ class Heartbeat:
 
     @classmethod
     def from_db(cls, r: Union[Dict, Tuple]) -> 'Heartbeat':
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
 
     # create/update a heartbeat

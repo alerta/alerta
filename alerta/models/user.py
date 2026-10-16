@@ -101,24 +101,6 @@ class User:
         )
 
     @classmethod
-    def from_document(cls, doc: Dict[str, Any]) -> 'User':
-        return User(
-            id=doc.get('id', None) or doc.get('_id'),
-            name=doc.get('name', None),
-            login=doc.get('login', None) or doc.get('email', None) or 'n/a',
-            password=doc.get('password', None),
-            email=doc.get('email', None),
-            status=doc.get('status', None),
-            roles=doc.get('roles', list()),
-            attributes=doc.get('attributes', dict()),
-            create_time=doc.get('createTime', None),
-            last_login=doc.get('lastLogin', None),
-            text=doc.get('text', None),
-            update_time=doc.get('updateTime', None),
-            email_verified=doc.get('email_verified', None)
-        )
-
-    @classmethod
     def from_record(cls, rec) -> 'User':
         return User(
             id=rec.id,
@@ -138,9 +120,7 @@ class User:
 
     @classmethod
     def from_db(cls, r: Union[Dict, Tuple]) -> 'User':
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
 
     def create(self) -> 'User':

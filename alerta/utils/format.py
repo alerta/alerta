@@ -28,14 +28,6 @@ class CustomJSONEncoder(json.JSONEncoder):
     def default(self, o: Any) -> Any:  # pylint: disable=method-hidden
         from alerta.models.alert import Alert, History
 
-        # only required if using MongoDB backend
-        try:
-            from bson import ObjectId
-            if isinstance(o, ObjectId):
-                return str(o)
-        except ModuleNotFoundError:
-            pass
-
         if isinstance(o, datetime.datetime):
             return DateTime.iso8601(o)
         elif isinstance(o, datetime.timedelta):

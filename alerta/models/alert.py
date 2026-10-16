@@ -167,39 +167,6 @@ class Alert:
         )
 
     @classmethod
-    def from_document(cls, doc: Dict[str, Any]) -> 'Alert':
-        return Alert(
-            id=doc.get('id', None) or doc.get('_id'),
-            resource=doc.get('resource', None),
-            event=doc.get('event', None),
-            environment=doc.get('environment', None),
-            severity=doc.get('severity', None),
-            correlate=doc.get('correlate', list()),
-            status=doc.get('status', None),
-            service=doc.get('service', list()),
-            group=doc.get('group', None),
-            value=doc.get('value', None),
-            text=doc.get('text', None),
-            tags=doc.get('tags', list()),
-            attributes=doc.get('attributes', dict()),
-            origin=doc.get('origin', None),
-            event_type=doc.get('type', None),
-            create_time=doc.get('createTime', None),
-            timeout=doc.get('timeout', None),
-            raw_data=doc.get('rawData', None),
-            customer=doc.get('customer', None),
-            duplicate_count=doc.get('duplicateCount', None),
-            repeat=doc.get('repeat', None),
-            previous_severity=doc.get('previousSeverity', None),
-            trend_indication=doc.get('trendIndication', None),
-            receive_time=doc.get('receiveTime', None),
-            last_receive_id=doc.get('lastReceiveId', None),
-            last_receive_time=doc.get('lastReceiveTime', None),
-            update_time=doc.get('updateTime', None),
-            history=[History.from_db(h) for h in doc.get('history', list())]
-        )
-
-    @classmethod
     def from_record(cls, rec) -> 'Alert':
         return Alert(
             id=rec.id,
@@ -234,9 +201,7 @@ class Alert:
 
     @classmethod
     def from_db(cls, r: Union[Dict, Tuple]) -> 'Alert':
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
 
     def is_duplicate(self) -> Optional['Alert']:

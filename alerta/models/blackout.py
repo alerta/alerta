@@ -166,28 +166,6 @@ class Blackout:
         )
 
     @classmethod
-    def from_document(cls, doc: Dict[str, Any]) -> 'Blackout':
-        return Blackout(
-            id=doc.get('id', None) or doc.get('_id'),
-            priority=doc.get('priority', None),
-            environment=doc['environment'],
-            service=doc.get('service', list()),
-            resource=doc.get('resource', None),
-            event=doc.get('event', None),
-            group=doc.get('group', None),
-            tags=doc.get('tags', list()),
-            origin=doc.get('origin', None),
-            customer=doc.get('customer', None),
-            start_time=doc.get('startTime', None),
-            end_time=doc.get('endTime', None),
-            duration=doc.get('duration', None),
-            remaining=doc.get('remaining', None),
-            user=doc.get('user', None),
-            create_time=doc.get('createTime', None),
-            text=doc.get('text', None)
-        )
-
-    @classmethod
     def from_record(cls, rec) -> 'Blackout':
         return Blackout(
             id=rec.id,
@@ -211,9 +189,7 @@ class Blackout:
 
     @classmethod
     def from_db(cls, r: Union[Dict, Tuple]) -> 'Blackout':
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
 
     # create a blackout

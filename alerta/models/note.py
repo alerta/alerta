@@ -70,20 +70,6 @@ class Note:
         )
 
     @classmethod
-    def from_document(cls, doc: Dict[str, Any]) -> 'Note':
-        return Note(
-            id=doc.get('id', None) or doc.get('_id'),
-            text=doc.get('text', None),
-            user=doc.get('user', None),
-            attributes=doc.get('attributes', dict()),
-            note_type=doc.get('type', None),
-            create_time=doc.get('createTime'),
-            update_time=doc.get('updateTime'),
-            alert=doc.get('alert'),
-            customer=doc.get('customer')
-        )
-
-    @classmethod
     def from_record(cls, rec) -> 'Note':
         return Note(
             id=rec.id,
@@ -99,9 +85,7 @@ class Note:
 
     @classmethod
     def from_db(cls, r: Union[Dict, Tuple]) -> 'Note':
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
 
     def create(self) -> 'Note':

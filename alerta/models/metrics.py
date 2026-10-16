@@ -40,16 +40,6 @@ class Gauge:
         )
 
     @classmethod
-    def from_document(cls, doc):
-        return Gauge(
-            group=doc.get('group'),
-            name=doc.get('name'),
-            title=doc.get('title', None),
-            description=doc.get('description', None),
-            value=doc.get('value', None)
-        )
-
-    @classmethod
     def from_record(cls, rec):
         return Gauge(
             group=rec.group,
@@ -61,9 +51,7 @@ class Gauge:
 
     @classmethod
     def from_db(cls, r):
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
         else:
             return
@@ -113,16 +101,6 @@ class Counter:
         )
 
     @classmethod
-    def from_document(cls, doc):
-        return Counter(
-            group=doc.get('group'),
-            name=doc.get('name'),
-            title=doc.get('title', None),
-            description=doc.get('description', None),
-            count=doc.get('count', None)
-        )
-
-    @classmethod
     def from_record(cls, rec):
         return Counter(
             group=rec.group,
@@ -134,9 +112,7 @@ class Counter:
 
     @classmethod
     def from_db(cls, r):
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
         else:
             return
@@ -201,17 +177,6 @@ class Timer:
         )
 
     @classmethod
-    def from_document(cls, doc):
-        return Timer(
-            group=doc.get('group'),
-            name=doc.get('name'),
-            title=doc.get('title', None),
-            description=doc.get('description', None),
-            count=doc.get('count', None),
-            total_time=doc.get('totalTime', None)
-        )
-
-    @classmethod
     def from_record(cls, rec):
         return Timer(
             group=rec.group,
@@ -224,9 +189,7 @@ class Timer:
 
     @classmethod
     def from_db(cls, r):
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
         else:
             return

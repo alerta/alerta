@@ -27,15 +27,6 @@ class GroupUser:
         }
 
     @classmethod
-    def from_document(cls, doc: Dict[str, Any]) -> 'GroupUser':
-        return GroupUser(
-            id=doc.get('id', None),
-            name=doc.get('name', None),
-            login=doc.get('login', None) or doc.get('email', None),
-            status=doc.get('status', None)
-        )
-
-    @classmethod
     def from_record(cls, rec):
         return GroupUser(
             id=rec.id,
@@ -46,9 +37,7 @@ class GroupUser:
 
     @classmethod
     def from_db(cls, r):
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
 
 
@@ -100,15 +89,6 @@ class Group:
             self.id, self.name, self.text, self.count)
 
     @classmethod
-    def from_document(cls, doc: Dict[str, Any]) -> 'Group':
-        return Group(
-            id=doc.get('id', None) or doc.get('_id'),
-            name=doc.get('name', None),
-            text=doc.get('text', None),
-            count=len(doc.get('users', []))
-        )
-
-    @classmethod
     def from_record(cls, rec) -> 'Group':
         return Group(
             id=rec.id,
@@ -119,9 +99,7 @@ class Group:
 
     @classmethod
     def from_db(cls, r: Union[Dict, Tuple]) -> 'Group':
-        if isinstance(r, dict):
-            return cls.from_document(r)
-        elif isinstance(r, tuple):
+        if isinstance(r, tuple):
             return cls.from_record(r)
 
     def create(self) -> 'Group':
