@@ -1,8 +1,16 @@
 import unittest
 
+import pytest
 from lxml import etree
 
 from alerta.app import create_app
+
+try:
+    import saml2.client  # noqa
+except TypeError as e:
+    # elementpath<5 (pinned via pysaml2's xmlschema<3) fails on Unicode 17 (Python 3.15)
+    # https://github.com/IdentityPython/pysaml2/issues/1043
+    pytest.skip(f'pysaml2 does not import: {e}', allow_module_level=True)
 
 NAMESPACE_MAP = {
     'samlp': 'urn:oasis:names:tc:SAML:2.0:protocol',
