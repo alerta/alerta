@@ -31,6 +31,7 @@ QUERY_LIMIT = 50
 DEFAULT_PAGE_SIZE = QUERY_LIMIT  # maximum number of alerts returned by a single query
 HISTORY_LIMIT = 100  # cap the number of alert history entries
 HISTORY_ON_VALUE_CHANGE = True  # history entry for duplicate alerts if value changes
+DEDUP_KEY_FIELDS = ['resource', 'event']  # resource, event, group, service, origin, type or attributes.<name>
 
 # Database (PostgreSQL)
 DATABASE_URL = 'postgres://localhost:5432/monitoring'

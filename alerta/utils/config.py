@@ -32,6 +32,8 @@ class Config:
         config['DATABASE_NAME'] = get_config('DATABASE_NAME', default=None, type=str, config=config)
         config['DATABASE_SCHEMA'] = get_config('DATABASE_SCHEMA', default='public', type=str, config=config)
 
+        config['DEDUP_KEY_FIELDS'] = get_config('DEDUP_KEY_FIELDS', default=['resource', 'event'], type=list, config=config)
+
         config['AUTH_REQUIRED'] = get_config('AUTH_REQUIRED', default=None, type=bool, config=config)
         config['AUTH_PROVIDER'] = get_config('AUTH_PROVIDER', default=None, type=str, config=config)
         config['ADMIN_USERS'] = get_config('ADMIN_USERS', default=[], type=list, config=config)

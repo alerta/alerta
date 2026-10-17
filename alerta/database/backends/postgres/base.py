@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import threading
@@ -17,6 +16,7 @@ from alerta.database.base import Database
 from alerta.exceptions import NoCustomerMatch
 from alerta.models.enums import ADMIN_SCOPES
 from alerta.models.heartbeat import HeartbeatStatus
+from alerta.utils.dedup import alert_keys
 from alerta.utils.format import DateTime
 from alerta.utils.response import absolute_url
 
@@ -66,12 +66,8 @@ Record = namedtuple('Record', [
 
 
 def with_keys(alert):
-    return dict(
-        vars(alert),
-        dedup_key=json.dumps([alert.resource, alert.event], ensure_ascii=False),
-        key_source='template',
-        correlate_key=json.dumps([alert.resource], ensure_ascii=False),
-    )
+    dedup_key, key_source, correlate_key = alert_keys(alert, current_app.config['DEDUP_KEY_FIELDS'])
+    return dict(vars(alert), dedup_key=dedup_key, key_source=key_source, correlate_key=correlate_key)
 
 
 class Backend(Database):
@@ -171,7 +167,7 @@ class Backend(Database):
         select = """
             SELECT severity FROM alerts
              WHERE environment=%(environment)s
-               AND ((dedup_key=%(dedup_key)s AND severity!=%(severity)s)
+               AND ((dedup_key=%(dedup_key)s AND key_source=%(key_source)s AND severity!=%(severity)s)
                 OR (correlate_key=%(correlate_key)s AND event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
             """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
@@ -181,7 +177,8 @@ class Backend(Database):
         select = """
             SELECT status FROM alerts
              WHERE environment=%(environment)s
-              AND (dedup_key=%(dedup_key)s OR (correlate_key=%(correlate_key)s AND %(event)s=ANY(correlate)))
+              AND ((dedup_key=%(dedup_key)s AND key_source=%(key_source)s)
+                OR (correlate_key=%(correlate_key)s AND %(event)s=ANY(correlate)))
               AND {customer}
             """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         return self._fetchone(select, with_keys(alert)).status
@@ -190,7 +187,7 @@ class Backend(Database):
         select = """
             SELECT * FROM alerts
              WHERE environment=%(environment)s
-               AND dedup_key=%(dedup_key)s
+               AND dedup_key=%(dedup_key)s AND key_source=%(key_source)s
                AND severity=%(severity)s
                AND {customer}
             """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
@@ -200,7 +197,7 @@ class Backend(Database):
         select = """
             SELECT * FROM alerts
              WHERE environment=%(environment)s
-               AND ((dedup_key=%(dedup_key)s AND severity!=%(severity)s)
+               AND ((dedup_key=%(dedup_key)s AND key_source=%(key_source)s AND severity!=%(severity)s)
                 OR (correlate_key=%(correlate_key)s AND event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
         """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
@@ -214,13 +211,13 @@ class Backend(Database):
             SELECT COUNT(*)
               FROM alerts, unnest(history) h
              WHERE environment=%(environment)s
-               AND resource=%(resource)s
-               AND h.event=%(event)s
+               AND ((%(correlate_key)s IS NULL AND dedup_key=%(dedup_key)s AND key_source=%(key_source)s)
+                OR (correlate_key=%(correlate_key)s AND h.event=%(event)s))
                AND h.update_time > (NOW() at time zone 'utc' - INTERVAL '{window} seconds')
                AND h.type='severity'
                AND {customer}
         """.format(window=window, customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
-        return self._fetchone(select, vars(alert)).count > count
+        return self._fetchone(select, with_keys(alert)).count > count
 
     def dedup_alert(self, alert, history):
         """
@@ -230,13 +227,13 @@ class Backend(Database):
         alert.history = history
         update = """
             UPDATE alerts
-               SET status=%(status)s, service=%(service)s, value=%(value)s, text=%(text)s,
-                   timeout=%(timeout)s, raw_data=%(raw_data)s, repeat=%(repeat)s,
+               SET resource=%(resource)s, event=%(event)s, status=%(status)s, service=%(service)s, value=%(value)s,
+                   text=%(text)s, timeout=%(timeout)s, raw_data=%(raw_data)s, repeat=%(repeat)s,
                    last_receive_id=%(last_receive_id)s, last_receive_time=%(last_receive_time)s,
                    tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)), attributes=attributes || %(attributes)s,
                    duplicate_count=duplicate_count + 1, {update_time}, history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
-               AND dedup_key=%(dedup_key)s
+               AND dedup_key=%(dedup_key)s AND key_source=%(key_source)s
                AND severity=%(severity)s
                AND {customer}
          RETURNING *
@@ -251,14 +248,14 @@ class Backend(Database):
         alert.history = history
         update = """
             UPDATE alerts
-               SET event=%(event)s, dedup_key=%(dedup_key)s, severity=%(severity)s, status=%(status)s, service=%(service)s, value=%(value)s,
+               SET resource=%(resource)s, event=%(event)s, dedup_key=%(dedup_key)s, severity=%(severity)s, status=%(status)s, service=%(service)s, value=%(value)s,
                    text=%(text)s, create_time=%(create_time)s, timeout=%(timeout)s, raw_data=%(raw_data)s,
                    duplicate_count=%(duplicate_count)s, repeat=%(repeat)s, previous_severity=%(previous_severity)s,
                    trend_indication=%(trend_indication)s, receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
                    last_receive_time=%(last_receive_time)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
                    attributes=attributes || %(attributes)s, {update_time}, history=(%(history)s || history)[1:{limit}]
              WHERE environment=%(environment)s
-               AND ((dedup_key=%(dedup_key)s AND severity!=%(severity)s)
+               AND ((dedup_key=%(dedup_key)s AND key_source=%(key_source)s AND severity!=%(severity)s)
                 OR (correlate_key=%(correlate_key)s AND event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
          RETURNING *
@@ -425,7 +422,7 @@ class Backend(Database):
                 'id, resource, event, environment, severity, correlate, status, service, "group", value, "text",'
                 + 'tags, attributes, origin, type, create_time, timeout, {raw_data}, customer, duplicate_count, repeat,'
                 + 'previous_severity, trend_indication, receive_time, last_receive_id, last_receive_time, update_time,'
-                + '{history}'
+                + 'dedup_key, key_source, correlate_key, {history}'
             ).format(
                 raw_data='raw_data' if raw_data else 'NULL as raw_data',
                 history='history' if history else 'array[]::history[] as history'
@@ -452,8 +449,9 @@ class Backend(Database):
         select = """
             SELECT resource, environment, service, "group", tags, attributes, origin, customer, h.*
               FROM alerts, unnest(history[1:{limit}]) h
-             WHERE environment=%(environment)s AND resource=%(resource)s
-               AND (h.event=%(event)s OR %(event)s=ANY(correlate))
+             WHERE environment=%(environment)s
+               AND ((%(correlate_key)s IS NULL AND dedup_key=%(dedup_key)s AND key_source=%(key_source)s)
+                OR (correlate_key=%(correlate_key)s AND (h.event=%(event)s OR %(event)s=ANY(correlate))))
                AND {customer}
           ORDER BY update_time DESC
             """.format(
@@ -480,7 +478,7 @@ class Backend(Database):
                 timeout=getattr(h, 'timeout', None),
                 type=h.type,
                 customer=h.customer
-            ) for h in self._fetchall(select, vars(alert), limit=page_size, offset=(page - 1) * page_size)
+            ) for h in self._fetchall(select, with_keys(alert), limit=page_size, offset=(page - 1) * page_size)
         ]
 
     def get_history(self, query=None, page=None, page_size=None):

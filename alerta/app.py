@@ -13,6 +13,7 @@ from alerta.models.alarms import AlarmModel
 from alerta.models.enums import Scope
 from alerta.utils.audit import AuditTrail
 from alerta.utils.config import Config
+from alerta.utils.dedup import validate_template
 from alerta.utils.hooks import HookTrigger
 from alerta.utils.key import ApiKeyHelper
 from alerta.utils.logging import Logger
@@ -50,6 +51,7 @@ def create_app(config_override: Dict[str, Any] = None, environment: str = None) 
     app.config['ENVIRONMENT'] = environment
     config.init_app(app)
     app.config.update(config_override or {})
+    validate_template(app.config['DEDUP_KEY_FIELDS'])
 
     tracing.setup_tracing(app)
     logger.setup_logging(app)

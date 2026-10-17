@@ -13,6 +13,7 @@ from alerta.database.base import Query
 from alerta.models.enums import ChangeType
 from alerta.models.history import History, RichHistory
 from alerta.models.note import Note
+from alerta.utils.dedup import DEDUP_KEY_MAX_LENGTH
 from alerta.utils.format import DateTime
 from alerta.utils.hooks import status_change_hook
 from alerta.utils.response import absolute_url
@@ -67,6 +68,9 @@ class Alert:
         self.timeout = timeout
         self.raw_data = kwargs.get('raw_data', None)
         self.customer = kwargs.get('customer', None)
+        self.dedup_key = kwargs.get('dedup_key', None)
+        self.key_source = kwargs.get('key_source', None) or ('sender' if self.dedup_key else 'template')
+        self.correlate_key = kwargs.get('correlate_key', None)
 
         self.duplicate_count = kwargs.get('duplicate_count', None)
         self.repeat = kwargs.get('repeat', None)
@@ -92,6 +96,8 @@ class Alert:
             raise ValueError('timeout must be an integer')
         if json.get('customer', None) == '':
             raise ValueError('customer must not be an empty string')
+        if 'dedupKey' in json and not (isinstance(json['dedupKey'], str) and 0 < len(json['dedupKey']) <= DEDUP_KEY_MAX_LENGTH):
+            raise ValueError(f'dedupKey must be a string of 1 to {DEDUP_KEY_MAX_LENGTH} characters')
 
         return Alert(
             id=json.get('id', None),
@@ -112,7 +118,8 @@ class Alert:
             create_time=DateTime.parse(json['createTime']) if 'createTime' in json else None,
             timeout=json.get('timeout', None),
             raw_data=json.get('rawData', None),
-            customer=json.get('customer', None)
+            customer=json.get('customer', None),
+            dedup_key=json.get('dedupKey', None)
         )
 
     @property
@@ -138,6 +145,8 @@ class Alert:
             'timeout': self.timeout,
             'rawData': self.raw_data,
             'customer': self.customer,
+            'dedupKey': self.dedup_key,
+            'keySource': self.key_source,
             'duplicateCount': self.duplicate_count,
             'repeat': self.repeat,
             'previousSeverity': self.previous_severity,
@@ -188,6 +197,9 @@ class Alert:
             timeout=rec.timeout,
             raw_data=rec.raw_data,
             customer=rec.customer,
+            dedup_key=rec.dedup_key,
+            key_source=rec.key_source,
+            correlate_key=rec.correlate_key,
             duplicate_count=rec.duplicate_count,
             repeat=rec.repeat,
             previous_severity=rec.previous_severity,

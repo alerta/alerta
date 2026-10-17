@@ -3,7 +3,6 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 from uuid import uuid4
 
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
@@ -82,7 +81,7 @@ class MigrationsTestCase(unittest.TestCase):
         self.assertEqual(self.query('SELECT id FROM alerts'), [('a1',)])
 
     def test_dedup_key_backfilled_from_resource_and_event(self):
-        from alerta.database.backends.postgres.base import with_keys
+        from alerta.utils.dedup import encode
 
         with self.conn.cursor() as cursor:
             cursor.execute((SQL_DIR / '0001_schema.sql').read_text())
@@ -97,9 +96,8 @@ class MigrationsTestCase(unittest.TestCase):
 
         for id, resource, event, dedup_key, key_source, correlate_key in self.query(
                 'SELECT id, resource, event, dedup_key, key_source, correlate_key FROM alerts ORDER BY id'):
-            expected = with_keys(SimpleNamespace(resource=resource, event=event))
-            self.assertEqual(dedup_key, expected['dedup_key'], id)
-            self.assertEqual(correlate_key, expected['correlate_key'], id)
+            self.assertEqual(dedup_key, encode([resource, event]), id)
+            self.assertEqual(correlate_key, encode([resource]), id)
             self.assertEqual(key_source, 'template')
 
         indexes = [r[0] for r in self.query("SELECT indexname FROM pg_indexes WHERE tablename='alerts'")]
