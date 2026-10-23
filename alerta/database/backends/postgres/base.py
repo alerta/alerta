@@ -194,6 +194,8 @@ class Backend(Database):
                AND ((event=%(event)s AND severity!=%(severity)s)
                 OR (event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
+          ORDER BY CASE WHEN event=%(event)s THEN 0 ELSE 1 END,
+                   CASE WHEN status IN ('closed', 'expired') THEN 1 ELSE 0 END, id
         """.format(customer='customer=%(customer)s' if alert.customer else 'customer IS NULL')
         return self._fetchone(select, vars(alert))
 
@@ -239,7 +241,7 @@ class Backend(Database):
         )
         return self._updateone(update, vars(alert), returning=True)
 
-    def correlate_alert(self, alert, history):
+    def correlate_alert(self, alert, history, correlated_alert_id):
         alert.history = history
         update = """
             UPDATE alerts
@@ -249,7 +251,8 @@ class Backend(Database):
                    trend_indication=%(trend_indication)s, receive_time=%(receive_time)s, last_receive_id=%(last_receive_id)s,
                    last_receive_time=%(last_receive_time)s, tags=ARRAY(SELECT DISTINCT UNNEST(tags || %(tags)s)),
                    attributes=attributes || %(attributes)s, {update_time}, history=(%(history)s || history)[1:{limit}]
-             WHERE environment=%(environment)s
+             WHERE id=%(correlated_alert_id)s
+               AND environment=%(environment)s
                AND resource=%(resource)s
                AND ((event=%(event)s AND severity!=%(severity)s) OR (event!=%(event)s AND %(event)s=ANY(correlate)))
                AND {customer}
@@ -259,7 +262,9 @@ class Backend(Database):
             update_time='update_time=%(update_time)s' if alert.update_time else 'update_time=update_time',
             customer='customer=%(customer)s' if alert.customer else 'customer IS NULL'
         )
-        return self._updateone(update, vars(alert), returning=True)
+        variables = vars(alert).copy()
+        variables['correlated_alert_id'] = correlated_alert_id
+        return self._updateone(update, variables, returning=True)
 
     def create_alert(self, alert):
         insert = """

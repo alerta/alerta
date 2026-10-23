@@ -338,7 +338,7 @@ class Alert:
     def update(self, correlate_with) -> 'Alert':
         now = datetime.utcnow()
 
-        self.previous_severity = db.get_severity(self)
+        self.previous_severity = correlate_with.severity
         self.trend_indication = alarm_model.trend(self.previous_severity, self.severity)
 
         status, _, previous_status, _ = self._get_hist_info()
@@ -376,7 +376,7 @@ class Alert:
         )]
 
         self.status = new_status
-        return Alert.from_db(db.correlate_alert(self, history))
+        return Alert.from_db(db.correlate_alert(self, history, correlate_with.id))
 
     # create an alert
     def create(self) -> 'Alert':
