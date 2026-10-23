@@ -123,7 +123,7 @@ class Database(Base):
     def dedup_alert(self, alert, history):
         raise NotImplementedError
 
-    def correlate_alert(self, alert, history):
+    def correlate_alert(self, alert, history, correlated_alert_id):
         raise NotImplementedError
 
     def create_alert(self, alert):

@@ -210,6 +210,30 @@ class AlertsTestCase(unittest.TestCase):
         response = self.client.delete('/alert/' + alert_id)
         self.assertEqual(response.status_code, 200)
 
+    def test_correlate_updates_only_selected_alert(self):
+        target = self.fatal_alert.copy()
+        target.update(event='incoming_state', severity='warning', correlate=['incoming_state'])
+        response = self.client.post('/alert', data=json.dumps(target), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        target_id = json.loads(response.data.decode('utf-8'))['id']
+
+        sibling = self.fatal_alert.copy()
+        sibling.update(event='previous_state', correlate=['incoming_state'])
+        response = self.client.post('/alert', data=json.dumps(sibling), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        sibling_id = json.loads(response.data.decode('utf-8'))['id']
+
+        incoming = self.fatal_alert.copy()
+        incoming.update(event='incoming_state', correlate=[])
+        response = self.client.post('/alert', data=json.dumps(incoming), headers=self.headers)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(json.loads(response.data.decode('utf-8'))['id'], target_id)
+
+        response = self.client.get('/alert/' + sibling_id)
+        self.assertEqual(response.status_code, 200)
+        sibling_data = json.loads(response.data.decode('utf-8'))['alert']
+        self.assertEqual(sibling_data['event'], 'previous_state')
+
     def test_alert_not_found(self):
 
         response = self.client.get('/alert/doesnotexist')

@@ -158,21 +158,31 @@ class Backend(Database):
         return self.get_db().alerts.find_one(query)
 
     def is_correlated(self, alert):
-        query = {
+        db = self.get_db()
+        same_event = {
             'environment': alert.environment,
             'resource': alert.resource,
-            '$or': [
-                {
-                    'event': alert.event,
-                    'severity': {'$ne': alert.severity}
-                },
-                {
-                    'event': {'$ne': alert.event},
-                    'correlate': alert.event
-                }],
+            'event': alert.event,
+            'severity': {'$ne': alert.severity},
             'customer': alert.customer
         }
-        return self.get_db().alerts.find_one(query)
+        match = db.alerts.find_one(same_event)
+        if match:
+            return match
+
+        related_event = {
+            'environment': alert.environment,
+            'resource': alert.resource,
+            'event': {'$ne': alert.event},
+            'correlate': alert.event,
+            'customer': alert.customer
+        }
+        active_related_event = related_event.copy()
+        active_related_event['status'] = {'$nin': ['closed', 'expired']}
+        match = db.alerts.find_one(active_related_event, sort=[('_id', 1)])
+        if match:
+            return match
+        return db.alerts.find_one(related_event, sort=[('_id', 1)])
 
     def is_flapping(self, alert, window=1800, count=2):
         """
@@ -250,7 +260,7 @@ class Backend(Database):
             return_document=ReturnDocument.AFTER
         )
 
-    def correlate_alert(self, alert, history):
+    def correlate_alert(self, alert, history, correlated_alert_id):
         """
         Update alert key attributes, reset duplicate count and set repeat=False, keep track of last
         receive id and time, appending all to history. Append to history again if status changes.
@@ -306,6 +316,7 @@ class Backend(Database):
         if alert.update_time:
             update['$set']['updateTime'] = alert.update_time
 
+        query['_id'] = correlated_alert_id
         return self.get_db().alerts.find_one_and_update(
             query,
             update=update,
