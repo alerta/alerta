@@ -128,8 +128,8 @@ Cloud Deployment
 ----------------
 
 Alerta can be deployed to the cloud easily using Heroku <https://github.com/alerta/heroku-api-alerta>,
-AWS EC2 <https://github.com/alerta/alerta-cloudformation>, or Google Cloud Platform
-<https://github.com/alerta/gcloud-api-alerta>
+AWS EC2 <https://github.com/alerta/alerta-cloudformation>, Google Cloud Platform
+<https://github.com/alerta/gcloud-api-alerta>, or RepoCloud <https://repocloud.io/details/Alerta/>
 
 License
 -------
